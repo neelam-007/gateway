@@ -1,13 +1,11 @@
 package com.l7tech.server.mapping;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
-import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -32,23 +30,23 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
         return mappingValueManager.getMessageContextMappingValues(oid);
     }
 
-    public long saveMessageContextMappingKeys( final MessageContextMappingKeys mappingKeysEntity ) throws SaveException, FindException, UpdateException {
+    public Goid saveMessageContextMappingKeys( final MessageContextMappingKeys mappingKeysEntity ) throws SaveException, FindException, UpdateException {
         MessageContextMappingKeys anEntity = mappingKeyManager.getMessageContextMappingKeys(mappingKeysEntity);
         if (anEntity == null) {
             mappingKeysEntity.setCreateTime(System.currentTimeMillis());
             return mappingKeyManager.save(mappingKeysEntity);
         } else {
-            return anEntity.getOid();
+            return anEntity.getGoid();
         }
     }
 
-    public long saveMessageContextMappingValues( final MessageContextMappingValues mappingValuesEntity ) throws SaveException, FindException {
+    public Goid saveMessageContextMappingValues( final MessageContextMappingValues mappingValuesEntity ) throws SaveException, FindException {
         MessageContextMappingValues anEntity = mappingValueManager.getMessageContextMappingValues(mappingValuesEntity);
         if (anEntity == null) {
             mappingValuesEntity.setCreateTime(System.currentTimeMillis());
             return mappingValueManager.save(mappingValuesEntity);
         } else {
-            return anEntity.getOid();
+            return anEntity.getGoid();
         }
     }
 

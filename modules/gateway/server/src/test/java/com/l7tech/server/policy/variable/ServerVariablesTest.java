@@ -668,7 +668,7 @@ public class ServerVariablesTest {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
         Message.setDefaultEnableOriginalDocument(false);
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
-        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
+        expandAndCheck(c, "${audit.mappingValuesOid}", "0000000000000000000000000000c1b1");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
         expandAndCheck(c, "${audit.requestContentLength}", String.valueOf(REQUEST_BODY.getBytes().length));
         expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(RESPONSE_BODY.getBytes().length));
@@ -697,7 +697,7 @@ public class ServerVariablesTest {
         addTextNode(c.getOriginalResponse(), "respfoo");
         String newreq = "<myrequest>reqfoo</myrequest>";
         String newresp = "<myresponse>respfoo</myresponse>";
-        expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
+        expandAndCheck(c, "${audit.mappingValuesOid}", "0000000000000000000000000000c1b1");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
         expandAndCheck(c, "${audit.request.mainpart}", newreq);
         expandAndCheck(c, "${audit.response.mainpart}", newresp);
@@ -1203,7 +1203,12 @@ public class ServerVariablesTest {
     @SuppressWarnings({"deprecation"})
     AuditRecord auditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse",
-                "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
+                "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", new Functions.Nullary<Goid>() {
+            @Override
+            public Goid call() {
+                return new Goid(0, 49585);
+            }
+        });
         //noinspection deprecation
         auditRecord.setOid(9777L);
         auditRecord.setStrRequestId(new RequestId("222-333").toString());

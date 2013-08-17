@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterContextFactory;
@@ -64,7 +64,7 @@ import static java.util.Collections.singletonList;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManagerImpl
-        extends HibernateEntityManager<SinkConfiguration, EntityHeader>
+        extends HibernateGoidEntityManager<SinkConfiguration, EntityHeader>
         implements SinkManager, ApplicationContextAware, PropertyChangeListener {
 
     //- PUBLIC
@@ -224,7 +224,7 @@ public class SinkManagerImpl
 
     public static Collection<Role> createRolesForSink( final SinkConfiguration entity ) {
         String nameForRole = TextUtils.truncStringMiddle( entity.getName(), 50 );
-        String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, nameForRole, entity.getOid());
+        String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, nameForRole, entity.getGoid());
 
         Role role = new Role();
         role.setName(name);
@@ -236,7 +236,7 @@ public class SinkManagerImpl
 
         // Set role as entity-specific
         role.setEntityType(LOG_SINK);
-        role.setEntityOid(entity.getOidAsLong());
+        role.setEntityGoid(entity.getGoid());
         role.setDescription("Users assigned to the {0} role have the ability to read the log sink and any associated log files.");
 
         return singletonList(role);
@@ -248,20 +248,20 @@ public class SinkManagerImpl
     }
 
     @Override
-    public void deleteRoles(long entityOid) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(LOG_SINK, entityOid);
+    public void deleteRoles(Goid entityGoid) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(LOG_SINK, entityGoid);
     }
 
     @Override
-    public long save(SinkConfiguration entity) throws SaveException {
-        long oid =  super.save(entity);
-        entity.setOid(oid);
+    public Goid save(SinkConfiguration entity) throws SaveException {
+        Goid goid =  super.save(entity);
+        entity.setGoid(goid);
         createRoles(entity);
-        return oid;
+        return goid;
     }
 
     @Override
-    public Collection<LogFileInfo> findAllFilesForSinkByNode( @NotNull final String nodeId, final long sinkId) throws FindException {
+    public Collection<LogFileInfo> findAllFilesForSinkByNode( @NotNull final String nodeId, final Goid sinkId) throws FindException {
         final Collection<LogFileInfo> files = new ArrayList<LogFileInfo>();
         if(isThisNodeMe(nodeId)){
             final SinkConfiguration config = findByPrimaryKey(sinkId);
@@ -316,7 +316,7 @@ public class SinkManagerImpl
 
     @Override
     public LogSinkData getSinkLogs( final String nodeId,
-                                    final long sinkId,
+                                    final Goid sinkId,
                                     final String file,
                                     final LogSinkQuery query) throws FindException {
         LogSinkData data = null;

@@ -1,10 +1,7 @@
 package com.l7tech.server.log;
 
 import com.l7tech.gateway.common.log.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 
@@ -24,24 +21,24 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     }
 
     @Override
-    public SinkConfiguration getSinkConfigurationByPrimaryKey(long oid) throws FindException {
+    public SinkConfiguration getSinkConfigurationByPrimaryKey(Goid oid) throws FindException {
         return sinkManager.findByPrimaryKey(oid);
     }
 
     @Override
-    public long saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException {
-        if (sinkConfiguration.getOid() == SinkConfiguration.DEFAULT_OID) {
+    public Goid saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException {
+        if ( sinkConfiguration.isUnsaved() ) {
             return sinkManager.save(sinkConfiguration);
         } else {
             sinkManager.update(sinkConfiguration);
-            return sinkConfiguration.getOid();
+            return sinkConfiguration.getGoid();
         }
     }
 
     @Override
-    public void deleteSinkConfiguration(long oid) throws DeleteException, FindException {
-        sinkManager.delete(oid);
-        sinkManager.deleteRoles(oid);
+    public void deleteSinkConfiguration(Goid goid) throws DeleteException, FindException {
+        sinkManager.delete(goid);
+        sinkManager.deleteRoles(goid);
     }
 
     @Override
@@ -60,14 +57,14 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     }
 
     @Override
-    public Collection<LogFileInfo> findAllFilesForSinkByNode(final String nodeId, final long sinkId) throws FindException{
+    public Collection<LogFileInfo> findAllFilesForSinkByNode(final String nodeId, final Goid sinkId) throws FindException{
         if ( nodeId == null ) throw new FindException("Missing node identifier");
         return sinkManager.findAllFilesForSinkByNode(nodeId, sinkId);
     }
 
     @Override
     public LogSinkData getSinkLogs( final String nodeId,
-                                    final long sinkId,
+                                    final Goid sinkId,
                                     final String file,
                                     final LogSinkQuery query) throws FindException {
         return sinkManager.getSinkLogs(nodeId, sinkId,file, query);

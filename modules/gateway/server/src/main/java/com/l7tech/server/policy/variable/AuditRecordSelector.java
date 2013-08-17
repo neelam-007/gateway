@@ -390,7 +390,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         messageFields.put("mappingValuesOid", new FieldGetter<MessageSummaryAuditRecord>() {
             @Override
             public Selection getFieldValue(MessageSummaryAuditRecord rec, String baseAndRemainingName) {
-                return new Selection(rec.getMappingValuesOid());
+                return new Selection(rec.getMappingValuesId());
             }
         });
 

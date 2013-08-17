@@ -11,13 +11,13 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.HibernateTemplate;
 
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.EntityType.LOG_SINK;
-import org.springframework.orm.hibernate3.HibernateTemplate;
 
 /**
  * A database upgrade task that adds roles to the database.
@@ -67,9 +67,9 @@ public class Upgrade61To615AddRoles implements UpgradeTask {
                 }
             } );
         for ( final SinkConfiguration sink : sinks ) {
-            final Collection<Role> roles = roleManager.findEntitySpecificRoles(LOG_SINK, sink.getOid());
+            final Collection<Role> roles = roleManager.findEntitySpecificRoles(LOG_SINK, sink.getGoid());
             if ( roles == null || roles.isEmpty() ) {
-                logger.info("Auto-creating missing Role for log sink " + sink.getName() + " (#" + sink.getOid() + ")");
+                logger.info("Auto-creating missing Role for log sink " + sink.getName() + " (#" + sink.getGoid() + ")");
                 for ( final Role role : SinkManagerImpl.createRolesForSink( sink ) ) {
                     roleManager.save( role );
                 }

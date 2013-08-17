@@ -1,8 +1,7 @@
 package com.l7tech.gateway.common.log;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Proxy;
@@ -29,7 +28,7 @@ import static java.util.Collections.unmodifiableMap;
 @Proxy(lazy=false)
 @Table(name="sink_config")
 @AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
-public class SinkConfiguration extends ZoneableNamedEntityImp {
+public class SinkConfiguration extends ZoneableNamedGoidEntityImp {
 
     //- PUBLIC
 
@@ -433,7 +432,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
     }
 
     public void copyFrom( SinkConfiguration objToCopy ) {
-        this.setOid(objToCopy.getOid());
+        this.setGoid(objToCopy.getGoid());
         this.setName(objToCopy.getName());
         this.setDescription(objToCopy.getDescription());
         this.setType(objToCopy.getType());

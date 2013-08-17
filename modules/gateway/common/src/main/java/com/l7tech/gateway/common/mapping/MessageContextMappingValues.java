@@ -1,13 +1,12 @@
 package com.l7tech.gateway.common.mapping;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.util.HexUtils;
-
-import javax.persistence.*;
-
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
 
 /**
  * Value information for a message context mapping.
@@ -19,10 +18,10 @@ import org.hibernate.annotations.Type;
 @Entity
 @Proxy(lazy=false)
 @Table(name="message_context_mapping_values")
-public class MessageContextMappingValues extends PersistentEntityImp {
+public class MessageContextMappingValues extends GoidEntityImp {
     private static final int MAX_VALUE_LENGTH = 255;
 
-    private long mappingKeysOid;
+    private Goid mappingKeysGoid;
     private long createTime;
     private String digested;
 
@@ -50,13 +49,14 @@ public class MessageContextMappingValues extends PersistentEntityImp {
         this.digested = digested;
     }
 
-    @Column(name="mapping_keys_oid")
-    public long getMappingKeysOid() {
-        return mappingKeysOid;
+    @Column(name="mapping_keys_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getMappingKeysGoid() {
+        return mappingKeysGoid;
     }
 
-    public void setMappingKeysOid(long mappingKeysOid) {
-        this.mappingKeysOid = mappingKeysOid;
+    public void setMappingKeysGoid(Goid mappingKeysGoid) {
+        this.mappingKeysGoid = mappingKeysGoid;
     }
 
     @Column(name="create_time")
@@ -183,7 +183,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     @ManyToOne
-    @JoinColumn(name="mapping_keys_oid", insertable=false, updatable=false)
+    @JoinColumn(name="mapping_keys_goid", insertable=false, updatable=false)
     public MessageContextMappingKeys getMappingKeysEntity() {
         return mappingKeysEntity;
     }
@@ -202,7 +202,8 @@ public class MessageContextMappingValues extends PersistentEntityImp {
      */
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean matches( final MessageContextMappingValues values ) {
-        if (mappingKeysOid != values.mappingKeysOid) return false;
+        if (!Goid.equals(mappingKeysGoid, values.mappingKeysGoid))
+            return false;
         if (serviceOperation != null ? !serviceOperation.equals(values.serviceOperation) : values.serviceOperation != null)
             return false;
         if (authUserUniqueId != null ? !authUserUniqueId.equals(values.authUserUniqueId) : values.authUserUniqueId != null) return false;
@@ -229,7 +230,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
      */
     public String generateDigest() {
         StringBuilder sb = new StringBuilder();
-        sb.append(mappingKeysOid);
+        sb.append(mappingKeysGoid);
         sb.append(serviceOperation);
         sb.append(authUserUniqueId);
         sb.append(authUserProviderId);

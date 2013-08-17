@@ -163,9 +163,9 @@ public class AuditRecordDomMarshaller {
             addMessageContextMappingValuesFields(mv, mappingValuesEntity);
             e.appendChild(mv);
         }
-        Long mappingValuesOid = rec.getMappingValuesOid();
+        Goid mappingValuesOid = rec.getMappingValuesId();
         if (mappingValuesOid != null) {
-            elm(e, "mappingValuesOid", Long.toString(mappingValuesOid));
+            elm(e, "mappingValuesOid", mappingValuesOid.toString());
         }
         elm(e, "operationName", rec.getOperationName());
         elm(e, "requestContentLength", Integer.toString(rec.getRequestContentLength()));

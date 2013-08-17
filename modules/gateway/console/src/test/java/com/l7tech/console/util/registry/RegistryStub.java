@@ -395,8 +395,8 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) {
-                return 0L;
+            public Goid saveResolutionConfiguration( final ResolutionConfiguration configuration ) {
+                return new Goid(0, 0);
             }
 
             @Override

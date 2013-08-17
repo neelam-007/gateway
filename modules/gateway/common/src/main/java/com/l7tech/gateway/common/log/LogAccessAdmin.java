@@ -1,10 +1,12 @@
 package com.l7tech.gateway.common.log;
 
 import com.l7tech.objectmodel.FindException;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import com.l7tech.objectmodel.Goid;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Administrative API for read access to Gateway logs.
@@ -28,7 +30,7 @@ public interface LogAccessAdmin {
      * @throws FindException if there is a problem reading from the database
      */
     @Transactional(readOnly=true, noRollbackFor = Throwable.class)
-    Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, long sinkId) throws FindException;
+    Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, Goid sinkId) throws FindException;
 
     /**
      * Get log data from the specified node/sink/file.
@@ -40,6 +42,6 @@ public interface LogAccessAdmin {
      * @return The log data
      */
     @Transactional(readOnly=true, noRollbackFor = Throwable.class)
-    LogSinkData getSinkLogs(String nodeId, long sinkId, String file, LogSinkQuery query) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, Goid sinkId, String file, LogSinkQuery query) throws FindException;
 
 }

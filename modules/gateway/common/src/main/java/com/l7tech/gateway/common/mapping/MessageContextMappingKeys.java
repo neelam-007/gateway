@@ -1,19 +1,13 @@
 package com.l7tech.gateway.common.mapping;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.util.HexUtils;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Version;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Key information for a message context mapping.
@@ -25,7 +19,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="message_context_mapping_keys")
-public class MessageContextMappingKeys extends PersistentEntityImp {
+public class MessageContextMappingKeys extends GoidEntityImp {
     private static final Logger logger = Logger.getLogger(MessageContextMappingKeys.class.getName());
     private static final int MAX_MAPPING_TYPE_LENGTH = 36;
     private static final int MAX_KEY_LENGTH = 128;

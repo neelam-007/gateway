@@ -10,16 +10,10 @@ import com.l7tech.gateway.common.log.LogFileInfo;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.SimpleTableModel;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.PauseListenerAdapter;
-import com.l7tech.gui.util.TableUtil;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.*;
+import com.l7tech.gui.util.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Functions.propertyTransform;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -27,7 +21,10 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -35,6 +32,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.propertyTransform;
 
 public class LogChooserWindow extends JFrame implements LogonListener {
     protected static final Logger logger = Logger.getLogger(LogChooserWindow.class.getName());
@@ -184,7 +184,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
         final SinkConfiguration sinkConfig = row.getSinkConfiguration();
         final String file = row.getFile();
 
-        final String key = nodeInfo.getId() +  sinkConfig.getOid() + file;
+        final String key = nodeInfo.getId() +  sinkConfig.getGoid() + file;
         final Frame window;
         if(openedLogViewers.containsKey(key)){
             window = openedLogViewers.get(key);
@@ -197,7 +197,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
 
         }
         else{
-            window = new LogViewer(nodeInfo,sinkConfig.getOid(), file);
+            window = new LogViewer(nodeInfo,sinkConfig.getGoid(), file);
             window.pack();
             Utilities.centerOnScreen(window);
             window.setVisible(true);
@@ -281,7 +281,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
                 for( final SinkConfiguration sinkConfig: sinkConfigs ){
                     try{
                         // try to get log files
-                        final Collection<LogFileInfo> files = Registry.getDefault().getLogSinkAdmin().findAllFilesForSinkByNode(nodeInfo.getNodeIdentifier(),sinkConfig.getOid());
+                        final Collection<LogFileInfo> files = Registry.getDefault().getLogSinkAdmin().findAllFilesForSinkByNode(nodeInfo.getNodeIdentifier(),sinkConfig.getGoid());
                         rows.addAll( map( files, new Unary<LogTableRow, LogFileInfo>() {
                             @Override
                             public LogTableRow call( final LogFileInfo logFileInfo ) {

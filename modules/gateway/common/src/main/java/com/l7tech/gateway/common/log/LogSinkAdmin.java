@@ -1,20 +1,15 @@
 package com.l7tech.gateway.common.log;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.ENTITY_OPERATION;
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-import static com.l7tech.objectmodel.EntityType.LOG_SINK;
 import com.l7tech.gateway.common.admin.Administrative;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.LOG_SINK;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Provides a remote interface for creating, reading, updating and deleting
@@ -43,14 +38,14 @@ public interface LogSinkAdmin extends LogAccessAdmin {
     /**
      * Download a specific SinkConfiguration instance identified by its primary key.
      *
-     * @param oid the object ID of the SinkConfiguration instance to download.  Required.
+     * @param goid the object ID of the SinkConfiguration instance to download.  Required.
      * @return the requested SinkConfiguration instance.  Never null.
      * @throws FindException if no SinkConfiguration is found with the specified oid, or
      *                       if there is a problem reading from the database
      */
     @Transactional(readOnly=true)
     @Secured(types=LOG_SINK, stereotype=FIND_ENTITIES)
-    SinkConfiguration getSinkConfigurationByPrimaryKey(long oid) throws FindException;
+    SinkConfiguration getSinkConfigurationByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Store the specified new or existing SinkConfiguration. If the specified {@link SinkConfiguration} contains a
@@ -63,17 +58,17 @@ public interface LogSinkAdmin extends LogAccessAdmin {
      * @throws UpdateException if the requested information could not be updated for some reason
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException;
+    Goid saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException;
 
     /**
      * Delete a specific SinkConfiguration instance identified by its primary key.
      *
-     * @param oid the object ID of the SinkConfiguration instance to delete.  Required.
+     * @param goid the object ID of the SinkConfiguration instance to delete.  Required.
      * @throws DeleteException if there is a problem deleting the object
      * @throws FindException if the object cannot be found
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deleteSinkConfiguration(long oid) throws DeleteException, FindException;
+    void deleteSinkConfiguration(Goid goid) throws DeleteException, FindException;
 
     /**
      * Creates a new syslog sink based on the provided configuration and sends a test message to it.
@@ -108,11 +103,11 @@ public interface LogSinkAdmin extends LogAccessAdmin {
     @Override
     @Transactional(readOnly=true)
     @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
-    Collection<LogFileInfo> findAllFilesForSinkByNode( String nodeId, long sinkId ) throws FindException;
+    Collection<LogFileInfo> findAllFilesForSinkByNode( String nodeId, Goid sinkId ) throws FindException;
 
     @Override
     @Administrative(background=true)
     @Transactional(readOnly=true)
     @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
-    LogSinkData getSinkLogs( String nodeId, long sinkId, String file, LogSinkQuery query ) throws FindException;
+    LogSinkData getSinkLogs( String nodeId, Goid sinkId, String file, LogSinkQuery query ) throws FindException;
 }

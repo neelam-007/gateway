@@ -1139,7 +1139,71 @@ ALTER TABLE password_policy ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('password_policy_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='PASSWORD_POLICY' and entity_oid >= 0;
 update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='PASSWORD_POLICY' and entity_oid < 0;
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('password_policy_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'PASSWORD_POLICY' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'PASSWORD_POLICY' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'PASSWORD_POLICY' and substr(oid1.entity_id, 1, 1) = '-'), oid1.entity_id);
+
+-- resolution configuration
+
+ALTER TABLE resolution_configuration ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('resolution_configuration_prefix', cast(randomLongNotReserved() as char(21)));
+update resolution_configuration set goid = toGoid(cast(getVariable('resolution_configuration_prefix') as bigint), objectid) where objectid >= 0;
+update resolution_configuration set goid = toGoid(0, objectid) where objectid < 0;
+ALTER TABLE resolution_configuration ALTER COLUMN goid NOT NULL;
+ALTER TABLE resolution_configuration DROP COLUMN objectid;
+ALTER TABLE resolution_configuration ADD PRIMARY KEY (goid);
+
+-- Message Context mappings and mapping values
+
+alter table message_context_mapping_values drop constraint FKABF3A97B4B03F6D1;
+alter table audit_message drop constraint message_context_mapping;
+ALTER TABLE service_metrics_details drop primary key;
+
+ALTER TABLE message_context_mapping_keys ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('message_context_mapping_keys_prefix', cast(randomLongNotReserved() as char(21)));
+update message_context_mapping_keys set goid = toGoid(cast(getVariable('message_context_mapping_keys_prefix') as bigint), objectid);
+ALTER TABLE message_context_mapping_keys ALTER COLUMN goid NOT NULL;
+ALTER TABLE message_context_mapping_keys DROP COLUMN objectid;
+ALTER TABLE message_context_mapping_keys ADD PRIMARY KEY (goid);
+
+ALTER TABLE message_context_mapping_values ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('message_context_mapping_values_prefix', cast(randomLongNotReserved() as char(21)));
+update message_context_mapping_values set goid = toGoid(cast(getVariable('message_context_mapping_values_prefix') as bigint), objectid);
+ALTER TABLE message_context_mapping_values ALTER COLUMN goid NOT NULL;
+ALTER TABLE message_context_mapping_values DROP COLUMN objectid;
+ALTER TABLE message_context_mapping_values ADD PRIMARY KEY (goid);
+
+ALTER TABLE message_context_mapping_values ADD COLUMN mapping_keys_goid CHAR(16) FOR BIT DATA;
+update message_context_mapping_values set mapping_keys_goid = toGoid(cast(getVariable('message_context_mapping_keys_prefix') as bigint), mapping_keys_oid);
+ALTER TABLE message_context_mapping_values DROP COLUMN mapping_keys_oid;
+
+ALTER TABLE audit_message ADD COLUMN mapping_values_goid CHAR(16) FOR BIT DATA;
+update audit_message set mapping_values_goid = toGoid(cast(getVariable('message_context_mapping_values_prefix') as bigint), mapping_values_oid);
+ALTER TABLE audit_message DROP COLUMN mapping_values_oid;
+
+ALTER TABLE service_metrics_details ADD COLUMN mapping_values_goid CHAR(16) FOR BIT DATA;
+update service_metrics_details set mapping_values_goid = toGoid(cast(getVariable('message_context_mapping_values_prefix') as bigint), mapping_values_oid);
+ALTER TABLE service_metrics_details ALTER COLUMN mapping_values_goid NOT NULL;
+ALTER TABLE service_metrics_details DROP COLUMN mapping_values_oid;
+
+alter table message_context_mapping_values add constraint FKABF3A97B4B03F6D1 foreign key (mapping_keys_goid) references message_context_mapping_keys;
+alter table audit_message add constraint message_context_mapping foreign key (mapping_values_goid) references message_context_mapping_values;
+alter table service_metrics_details add primary key (service_metrics_goid, mapping_values_goid);
+
+-- Log sinks
+
+call setVariable('sink_config_prefix', cast(randomLongNotReserved() as char(21)));
+
+ALTER TABLE sink_config ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update sink_config set goid = toGoid(cast(getVariable('sink_config_prefix') as bigint), objectid) where objectid >= 0;
+update sink_config set goid = toGoid(0, objectid) where objectid < 0;
+ALTER TABLE sink_config ALTER COLUMN goid NOT NULL;
+ALTER TABLE sink_config DROP COLUMN objectid;
+ALTER TABLE sink_config ADD PRIMARY KEY (goid);
+
+update rbac_role set entity_goid = toGoid(cast(getVariable('sink_config_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='LOG_SINK' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='LOG_SINK' and entity_oid < 0;
+update rbac_role set entity_oid = null where entity_oid is not null and entity_type = 'LOG_SINK' and entity_oid < 0;
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('sink_config_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'LOG_SINK'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,-810)) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'LOG_SINK' and oid1.entity_id=goidToString(toGoid(cast(getVariable('sink_config_prefix') as bigint),-810))), oid1.entity_id);
 
 -- RBAC role
 
@@ -1155,7 +1219,7 @@ ALTER TABLE rbac_role ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('rbac_role_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='RBAC_ROLE' and entity_oid >= 0;
 update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type='RBAC_ROLE' and entity_oid < 0;
 update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('rbac_role_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE' and substr(oid1.entity_id, 1, 1) != '-'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(0,cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'RBAC_ROLE' and substr(oid1.entity_id, 1, 1) = '-'), oid1.entity_id);
 
 -- RBAC role assignment
 
@@ -1345,6 +1409,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('rbac_permission', cast(getVariable('rbac_permission_prefix') as bigint)),
       ('rbac_predicate', cast(getVariable('rbac_predicate_prefix') as bigint)),
       ('client_cert', cast(getVariable('client_cert_prefix') as bigint)),
+      ('resolution_configuration', cast(getVariable('resolution_configuration_prefix') as bigint)),
+      ('message_context_mapping_keys', cast(getVariable('message_context_mapping_keys_prefix') as bigint)),
+      ('message_context_mapping_values', cast(getVariable('message_context_mapping_values_prefix') as bigint)),
+      ('sink_config', cast(getVariable('sink_config_prefix') as bigint)),
       ('trusted_cert', cast(getVariable('trusted_cert_prefix') as bigint)),
       ('revocation_check_policy', cast(getVariable('revocation_check_policy_prefix') as bigint)),
       ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint)),

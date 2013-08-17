@@ -12,6 +12,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Config;
+import com.l7tech.util.Functions;
 import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -472,7 +473,12 @@ public class AuditLogFormatterTest {
                     SECURITY_TOKEN,
                     IDENTITY_PROV_OID,
                     USER_NAME, USER_ID,
-                    3);
+                    new Functions.Nullary<Goid>() {
+                        @Override
+                        public Goid call() {
+                            return new Goid(0, 3);
+                        }
+                    });
         }
     }
 

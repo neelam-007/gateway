@@ -4,17 +4,14 @@ import com.l7tech.gateway.common.log.LogFileInfo;
 import com.l7tech.gateway.common.log.LogSinkData;
 import com.l7tech.gateway.common.log.LogSinkQuery;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.RoleAwareEntityManager;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 
 /**
  * Provides the ability to do CRUD operations on SinkConfiguration rows in the database.
  */
-public interface SinkManager extends EntityManager<SinkConfiguration, EntityHeader>, RoleAwareEntityManager<SinkConfiguration> {
+public interface SinkManager extends GoidEntityManager<SinkConfiguration, EntityHeader>, RoleAwareGoidEntityManager<SinkConfiguration> {
 
     /**
      * Get the file storage allocation for logs.
@@ -56,7 +53,7 @@ public interface SinkManager extends EntityManager<SinkConfiguration, EntityHead
      * @return a List of SinkConfiguration instances.  Never null.
      * @throws FindException if there is a problem reading from the database
      */
-    Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, long sinkId) throws FindException;
+    Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, Goid sinkId) throws FindException;
 
     /**
      * Fetch the specified log data
@@ -67,5 +64,5 @@ public interface SinkManager extends EntityManager<SinkConfiguration, EntityHead
      * @param query query data
      * @return The log data
      */
-    LogSinkData getSinkLogs(String nodeId, long sinkId,String file,LogSinkQuery query) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, Goid sinkId, String file,LogSinkQuery query) throws FindException;
 }

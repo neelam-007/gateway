@@ -6,24 +6,25 @@
 
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.logging.Level;
-import java.io.OutputStream;
-import java.io.IOException;
 
 /**
  * An {@link AuditRecord} that describes the processing of a single message.
@@ -63,13 +64,14 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
      * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
+     * @param mappingValueIdHaver generator to look up a mapping value ID if needed, or null if this won't be supported.
      */
     public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status,
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      Goid serviceGoid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, SecurityTokenType authenticationType, Goid identityProviderOid,
-                                     String userName, String userId, Number mappingValueOidHaver)
+                                     String userName, String userId, Functions.Nullary<Goid> mappingValueIdHaver)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
@@ -99,7 +101,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         this.serviceGoid = serviceGoid;
         this.authenticated = authenticated;
         this.authenticationType = authenticationType;
-        this.mappingValueOidHaver = mappingValueOidHaver;
+        this.mappingValueIdHaver = mappingValueIdHaver;
     }
 
     /**
@@ -203,20 +205,23 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         return operationName;
     }
 
-    public Long getMappingValuesOid() {
-        if ( mappingValuesOid == null ) {
-            if (mappingValueOidHaver != null) {
-                mappingValuesOid = mappingValueOidHaver.longValue();
-                if ( mappingValuesOid <= 0 ) mappingValuesOid = null;
+    public Goid getMappingValuesId() {
+        if ( mappingValuesId == null ) {
+            if (mappingValueIdHaver != null) {
+                mappingValuesId = mappingValueIdHaver.call();
+
+                // TODO check under what circumstances a negative OID was possible
+                if (mappingValuesId != null && mappingValuesId.getHi() == 0 && mappingValuesId.getLow() < 0)
+                    mappingValuesId = null;
             }
 
         }
-        return mappingValuesOid;
+        return mappingValuesId;
     }
 
-    public void setMappingValuesOid(Long mappingValuesOid) {
-        this.mappingValueOidHaver = null;
-        this.mappingValuesOid = mappingValuesOid;
+    public void setMappingValuesId(Goid mappingValuesId) {
+        this.mappingValueIdHaver = null;
+        this.mappingValuesId = mappingValuesId;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -387,10 +392,10 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
 
-    private Long mappingValuesOid;
+    private Goid mappingValuesId;
 
-    /** Used to lazily populate mapping_values_oid if it is not yet set. */
-    private Number mappingValueOidHaver;
+    /** Used to lazily populate mapping_values_id if it is not yet set. */
+    private Functions.Nullary<Goid> mappingValueIdHaver;
 
     private MessageContextMappingValues mappingValuesEntity;
 

@@ -299,7 +299,9 @@ ALTER TABLE service_metrics_details CHANGE COLUMN service_metrics_oid service_me
 UPDATE service_metrics_details SET service_metrics_goid = toGoid(@metrics_prefix,service_metrics_oid_backup);
 ALTER TABLE service_metrics_details DROP COLUMN service_metrics_oid_backup;
 
-ALTER TABLE service_metrics_details  ADD FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE;
+-- We don't re-add the foreign key (service_metrics_details -> service_metrics) here
+-- we will do it below, after GOID-ifying message context mappings, so we can rebuild the
+-- service_metrics_details primary key afterwards.
 
 update rbac_role set entity_goid = toGoid(@metrics_prefix,entity_oid) where entity_oid is not null and entity_type='METRICS_BIN';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@metrics_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'METRICS_BIN';
@@ -1295,6 +1297,94 @@ ALTER TABLE uddi_business_service_status ADD FOREIGN KEY (uddi_registry_goid) RE
 ALTER TABLE uddi_service_control ADD FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries (goid) ON DELETE CASCADE;
 ALTER TABLE uddi_service_control_monitor_runtime ADD FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control (goid) ON DELETE CASCADE;
 
+-- resolution configuration
+
+-- For manual runs use: set @resolution_configuration_prefix=createUnreservedPoorRandomPrefix();
+set @resolution_configuration_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE resolution_configuration ADD COLUMN objectid_backup BIGINT(20);
+update resolution_configuration set objectid_backup=objectid;
+ALTER TABLE resolution_configuration CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update resolution_configuration set goid = toGoid(@resolution_configuration_prefix,objectid_backup) where objectid_backup >= 0;
+update resolution_configuration set goid = toGoid(0,objectid_backup) where objectid_backup < 0;
+ALTER TABLE resolution_configuration DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@resolution_configuration_prefix,entity_oid) where entity_oid is not null and entity_type = 'RESOLUTION_CONFIGURATION' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type = 'RESOLUTION_CONFIGURATION' and entity_oid < 0;
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@resolution_configuration_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'RESOLUTION_CONFIGURATION' and left(oid1.entity_id, 1) != '-';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(0,oid1.entity_id)) where rbac_permission.entity_type = 'RESOLUTION_CONFIGURATION' and left(oid1.entity_id, 1) = '-';
+
+-- Message Context mappings and mapping values
+
+call dropForeignKey('message_context_mapping_values','message_context_mapping_keys');
+call dropForeignKey('audit_message','message_context_mapping_values');
+call dropForeignKey('service_metrics_details','message_context_mapping_values');
+ALTER TABLE service_metrics_details DROP PRIMARY KEY;
+
+-- For manual runs use: set @message_context_mapping_keys_prefix=createUnreservedPoorRandomPrefix();
+set @message_context_mapping_keys_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE message_context_mapping_keys ADD COLUMN objectid_backup BIGINT(20);
+update message_context_mapping_keys set objectid_backup=objectid;
+ALTER TABLE message_context_mapping_keys CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update message_context_mapping_keys set goid = toGoid(@message_context_mapping_keys_prefix,objectid_backup) where objectid_backup >= 0;
+update message_context_mapping_keys set goid = toGoid(0,objectid_backup) where objectid_backup < 0;
+ALTER TABLE message_context_mapping_keys DROP COLUMN objectid_backup;
+
+-- For manual runs use: set @message_context_mapping_values_prefix=createUnreservedPoorRandomPrefix();
+set @message_context_mapping_values_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE message_context_mapping_values ADD COLUMN objectid_backup BIGINT(20);
+update message_context_mapping_values set objectid_backup=objectid;
+ALTER TABLE message_context_mapping_values CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update message_context_mapping_values set goid = toGoid(@message_context_mapping_values_prefix,objectid_backup) where objectid_backup >= 0;
+update message_context_mapping_values set goid = toGoid(0,objectid_backup) where objectid_backup < 0;
+ALTER TABLE message_context_mapping_values DROP COLUMN objectid_backup;
+
+ALTER TABLE message_context_mapping_values ADD COLUMN mapping_keys_oid_backup BIGINT(20);
+update message_context_mapping_values set mapping_keys_oid_backup=mapping_keys_oid;
+ALTER TABLE message_context_mapping_values CHANGE COLUMN mapping_keys_oid mapping_keys_goid binary(16) NOT NULL;
+update message_context_mapping_values set mapping_keys_goid = toGoid(@message_context_mapping_keys_prefix,mapping_keys_oid_backup);
+ALTER TABLE message_context_mapping_values DROP COLUMN mapping_keys_oid_backup;
+
+ALTER TABLE audit_message ADD COLUMN mapping_values_oid_backup BIGINT(20);
+update audit_message set mapping_values_oid_backup=mapping_values_oid;
+ALTER TABLE audit_message CHANGE COLUMN mapping_values_oid mapping_values_goid binary(16);
+update audit_message set mapping_values_goid = toGoid(@message_context_mapping_values_prefix,mapping_values_oid_backup);
+ALTER TABLE audit_message DROP COLUMN mapping_values_oid_backup;
+
+ALTER TABLE service_metrics_details ADD COLUMN mapping_values_oid_backup BIGINT(20);
+update service_metrics_details set mapping_values_oid_backup=mapping_values_oid;
+ALTER TABLE service_metrics_details CHANGE COLUMN mapping_values_oid mapping_values_goid binary(16) NOT NULL;
+update service_metrics_details set mapping_values_goid = toGoid(@message_context_mapping_values_prefix,mapping_values_oid_backup);
+ALTER TABLE service_metrics_details DROP COLUMN mapping_values_oid_backup;
+
+ALTER TABLE service_metrics_details ADD PRIMARY KEY (service_metrics_goid, mapping_values_goid);
+ALTER TABLE service_metrics_details ADD CONSTRAINT service_metrics_goid FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE;
+ALTER TABLE service_metrics_details ADD FOREIGN KEY (mapping_values_goid) REFERENCES message_context_mapping_values (goid);
+
+ALTER TABLE message_context_mapping_values ADD FOREIGN KEY (mapping_keys_goid) REFERENCES message_context_mapping_keys (goid);
+
+ALTER TABLE audit_message ADD CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_goid) REFERENCES message_context_mapping_values (goid);
+
+-- Log sinks
+
+-- For manual runs use: set @sink_config_prefix=createUnreservedPoorRandomPrefix();
+set @sink_config_prefix=#RANDOM_LONG_NOT_RESERVED#;
+
+ALTER TABLE sink_config ADD COLUMN objectid_backup BIGINT(20);
+update sink_config set objectid_backup=objectid;
+ALTER TABLE sink_config CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update sink_config set goid = toGoid(@sink_config_prefix,objectid_backup) where objectid_backup >= 0;
+update sink_config set goid = toGoid(0,objectid_backup) where objectid_backup < 0;
+ALTER TABLE sink_config DROP COLUMN objectid_backup;
+
+update rbac_role set entity_goid = toGoid(@sink_config_prefix,entity_oid) where entity_oid is not null and entity_type = 'LOG_SINK' and entity_oid >= 0;
+update rbac_role set entity_goid = toGoid(0,entity_oid) where entity_oid is not null and entity_type = 'LOG_SINK' and entity_oid < 0;
+update rbac_role set entity_oid = null where entity_oid is not null and entity_type = 'LOG_SINK' and entity_oid < 0;
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@sink_config_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'LOG_SINK' and left(oid1.entity_id, 1) != '-';
+update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(0,oid1.entity_id)) where rbac_permission.entity_type = 'LOG_SINK' and left(oid1.entity_id, 1) = '-';
+
 -- Password policy
 
 -- For manual runs use: set @password_policy_prefix=createUnreservedPoorRandomPrefix();
@@ -1535,6 +1625,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('rbac_predicate', @rbac_predicate_prefix),
       ('password_policy', @password_policy_prefix),
       ('client_cert', @client_cert_prefix),
+      ('resolution_configuration', @resolution_configuration_prefix),
+      ('message_context_mapping_keys', @message_context_mapping_keys_prefix),
+      ('message_context_mapping_values', @message_context_mapping_values_prefix),
+      ('sink_config', @sink_config_prefix),
       ('trusted_cert', @trusted_cert_prefix),
       ('revocation_check_policy', @revocation_check_policy_prefix),
       ('resource_entry', @resource_entry_prefix),

@@ -210,7 +210,7 @@ public interface TransportAdmin {
     ResolutionConfiguration getResolutionConfigurationByName( final String name ) throws FindException;
 
     @Secured(stereotype=SAVE_OR_UPDATE,types=RESOLUTION_CONFIGURATION)
-    long saveResolutionConfiguration( ResolutionConfiguration configuration ) throws SaveException;
+    Goid saveResolutionConfiguration( ResolutionConfiguration configuration ) throws SaveException;
 
     /**
      * Gets the xml part max bytes value set in the io.xmlPartMaxBytes cluster property

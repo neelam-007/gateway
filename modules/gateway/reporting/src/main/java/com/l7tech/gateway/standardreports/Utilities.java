@@ -7,19 +7,22 @@
  */
 package com.l7tech.gateway.standardreports;
 
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.text.MessageFormat;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SqlUtils;
+import com.l7tech.util.TextUtils;
+
+import java.awt.*;
 import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.awt.*;
-
-import com.l7tech.util.*;
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import java.util.logging.Logger;
 
 public class Utilities {
 
@@ -96,10 +99,10 @@ public class Utilities {
     static final String MAPPING_VALUE_4 = "MAPPING_VALUE_4";
     static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
 
-    private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
+    private final static String distinctFrom = "SELECT distinct goidToString(p.goid) as SERVICE_ID, p.name as SERVICE_NAME, " +
             "p.routing_uri as ROUTING_URI ,'1' as CONSTANT_GROUP";
 
-    private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
+    private final static String aggregateSelect = "SELECT goidToString(p.goid) as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM({0}.attempted) as ATTEMPTED, " +
             "SUM({0}.authorized) as AUTHORIZED, " +
@@ -117,16 +120,16 @@ public class Utilities {
             "if(SUM({0}.attempted), ( 1.0 - ( ( (SUM({0}.authorized) - SUM({0}.completed)) / SUM({0}.attempted) ) ) ) , 0) as 'AP'" +
             " ,'1' as CONSTANT_GROUP ";
 
-    private final static String usageAggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
+    private final static String usageAggregateSelect = "SELECT goidToString(p.goid) as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM(if(smd.completed, smd.completed,0)) as USAGE_SUM,'1' as CONSTANT_GROUP ";
 
     private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
-            " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
-            "AND sm.goid = smd.service_metrics_goid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
+            " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.goid = sm.published_service_goid " +
+            "AND sm.goid = smd.service_metrics_goid AND smd.mapping_values_goid = mcmv.goid AND mcmv.mapping_keys_goid = mcmk.goid ";
 
     private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
-            "p.objectid = sm.published_service_oid ";
+            "p.goid = sm.published_service_goid ";
 
     final static String onlyIsDetailDisplayText = "Detail Report";
 
@@ -1169,7 +1172,7 @@ public class Utilities {
      * <pre>
      * SELECT
      * ----SECTION A----
-     * SELECT p.objectid as SERVICE_ID,
+     * SELECT goidToString(p.goid) as SERVICE_ID,
      * p.name as SERVICE_NAME,
      * p.routing_uri as ROUTING_URI,
      * SUM(smd.attempted) as ATTEMPTED,
@@ -1215,10 +1218,10 @@ public class Utilities {
      * FROM
      * service_metrics sm, published_service p, service_metrics_details smd, message_context_mapping_values mcmv, message_context_mapping_keys mcmk
      * WHERE
-     * p.objectid = sm.published_service_oid AND
-     * sm.objectid = smd.service_metrics_oid AND
-     * smd.mapping_values_oid = mcmv.objectid AND
-     * mcmv.mapping_keys_oid = mcmk.objectid  AND
+     * p.goid = sm.published_service_goid AND
+     * sm.goid = smd.service_metrics_goid AND
+     * smd.mapping_values_goid = mcmv.goid AND
+     * mcmv.mapping_keys_goid = mcmk.goid  AND
      * ----SECTION F----
      * sm.resolution = 2  AND
      * ----SECTION G----
@@ -1227,15 +1230,15 @@ public class Utilities {
      * ----SECTION H----
      * AND
      * (
-     * (  p.objectid = 229384 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
-     * (  p.objectid = 229382 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
-     * (  p.objectid = 229380 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
-     * (  p.objectid = 229376 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
-     * (  p.objectid = 229378 AND mcmv.service_operation IN ('listProducts','orderProduct') )
+     * (  goidToString(p.goid) = 'abcd229384' AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+     * (  goidToString(p.goid) = 'abcd229382' AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+     * (  goidToString(p.goid) = 'abcd229380' AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+     * (  goidToString(p.goid) = 'abcd229376' AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+     * (  goidToString(p.goid) = 'abcd229378' AND mcmv.service_operation IN ('listProducts','orderProduct') )
      * )
      * SECTIONS H AND I ARE MUTUALLY EXCLUSIVE
      * ----SECTION I----
-     * p.objectid IN (229384, 229382, 229380, 229376, 229378)
+     * goidToString(p.goid) IN ('abcd229384', 'abcd229382', 'abcd229380', 'abcd229376', 'abcd229378')
      * <p/>
      * ----SECTION J----
      * AND
@@ -1267,9 +1270,9 @@ public class Utilities {
      * ( mcmk.mapping5_key = 'CUSTOMER'  AND ( mcmv.mapping5_value = 'GOLD'  OR  mcmv.mapping5_value LIKE 'S%'  )  )
      * )
      * ----SECTION L----
-     * GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5
+     * GROUP BY goidToString(p.goid), SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5
      * ----SECTION M----
-     * ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE
+     * ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5 ,goidToString(p.goid), SERVICE_OPERATION_VALUE
      * </pre>
      *
      * @param isMasterQuery           if true, this query will only return the SERVICE_ID, SERVICE_NAME, ROUTING_URI and
@@ -1277,7 +1280,7 @@ public class Utilities {
      *                                to drive the master interval reports, where we will run a sub report for every serivce id found.
      * @param startTimeInclusiveMilli time_period start time inclusive
      * @param endTimeInclusiveMilli   time_period end time exclsuvie
-     * @param serviceIdToOperations   if supplied the published_service_oid from service_metrics will be constrained by these keys.
+     * @param serviceIdToOperations   if supplied the published_service_goid from service_metrics will be constrained by these keys.
      *                                If the values for a key is a list of operations, then the constraint for that service will include those operations.
      *                                If any service has a non null and non empty list of operations, then services will only be returned which have operations
      *                                specified. if all values are null or empty, then the query is constrained with just service id's, and all operations data
@@ -1457,8 +1460,8 @@ public class Utilities {
 
             sb.append("( ");
 
-            sb.append(" p.objectid = ? ");
-            queryParams.add(Long.valueOf(me.getKey()));
+            sb.append(" goidToString(p.goid) = ? ");
+            queryParams.add(me.getKey());
 
             sb.append(" AND mcmv.service_operation IN (");
 
@@ -1636,9 +1639,9 @@ public class Utilities {
         }
 
         if (isMasterQuery) {
-            sb.append(" ORDER BY p.objectid ");
+            sb.append(" ORDER BY goidToString(p.goid) ");
         } else {
-            sb.append(" GROUP BY p.objectid ");
+            sb.append(" GROUP BY goidToString(p.goid) ");
         }
 
         if (logger.isLoggable(Level.FINER)) {
@@ -1828,13 +1831,13 @@ public class Utilities {
     /**
      * Add the group by clause. Used by both performance statistics queries and usage queries. Ensures the group by
      * is added in the correct order to ensure that the largest group is always first. The group ordering is:-<br>
-     * p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
+     * goidToString(p.goid), SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
      * MAPPING_VALUE_4 and MAPPING_VALUE_5
      *
      * @param sb string builder to add the sql to
      */
     private static void addGroupBy(StringBuilder sb) {
-        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER ");
+        sb.append(" GROUP BY goidToString(p.goid), SERVICE_OPERATION_VALUE, AUTHENTICATED_USER ");
         for (int i = 0; i < NUM_MAPPING_KEYS; i++) {
             sb.append(", ").append("MAPPING_VALUE_").append((i + 1));
         }
@@ -1921,7 +1924,7 @@ public class Utilities {
      * <em>THIS IS ONLY TO BE USED WHEN GENERATING SQL FOR PERFORMANCE STATISTICS REPORTS</em>
      * The order is as follows:-<br>
      * AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5,
-     * p.objectid, SERVICE_OPERATION_VALUE
+     * goidToString(p.goid), SERVICE_OPERATION_VALUE
      *
      * @param sb string builder to add the sql to
      */
@@ -1931,7 +1934,7 @@ public class Utilities {
             if (i != 0) sb.append(", ");
             sb.append("MAPPING_VALUE_").append((i + 1));
         }
-        sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
+        sb.append(" ,goidToString(p.goid), SERVICE_OPERATION_VALUE ");
     }
 
     /**
@@ -1941,13 +1944,13 @@ public class Utilities {
      * usages examined and understand how this ordering will affect the runinng of the jasper reports.<br>
      * <em>THIS IS ONLY TO BE USED WHEN GENERATING SQL FOR USAGE REPORTS</em>
      * The order is as follows:-<br>
-     * p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
+     * goidToString(p.goid), SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
      * MAPPING_VALUE_4, MAPPING_VALUE_5,
      *
      * @param sb string builder to add the sql to
      */
     private static void addUsageMappingOrder(StringBuilder sb) {
-        sb.append(" ORDER BY p.objectid, SERVICE_OPERATION_VALUE ");
+        sb.append(" ORDER BY goidToString(p.goid), SERVICE_OPERATION_VALUE ");
         sb.append(" ,AUTHENTICATED_USER, ");
         for (int i = 0; i < NUM_MAPPING_KEYS; i++) {
             if (i != 0) sb.append(", ");
@@ -2128,7 +2131,7 @@ public class Utilities {
      *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
     private static void addServiceIdConstraint(Collection<String> serviceIds, StringBuilder sb, List<Object> queryParams) {
-        sb.append(" AND p.objectid IN (");
+        sb.append(" AND goidToString(p.goid) IN (");
         boolean first = true;
         for (String s : serviceIds) {
             if (!first) sb.append(", ");

@@ -226,12 +226,12 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) throws SaveException {
-        final long oid;
-        if ( configuration.getOid() == ResolutionConfiguration.DEFAULT_OID ) {
+    public Goid saveResolutionConfiguration( final ResolutionConfiguration configuration ) throws SaveException {
+        final Goid oid;
+        if ( configuration.isUnsaved() ) {
             oid = resolutionConfigurationManager.save( configuration );
         } else {
-            oid = configuration.getOid();
+            oid = configuration.getGoid();
             try {
                 resolutionConfigurationManager.update( configuration );
             } catch ( UpdateException e ) {

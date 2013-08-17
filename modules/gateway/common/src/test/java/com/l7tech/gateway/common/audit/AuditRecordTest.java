@@ -9,6 +9,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.junit.Test;
 
 import java.beans.PropertyDescriptor;
@@ -39,7 +40,7 @@ public class AuditRecordTest {
 
             // TODO These should probably be included
             "mappingValuesEntity",
-            "mappingValuesOid",
+            "mappingValuesId",
 
             // This one apparently IS included but this test currently does not appear to permute it properly
             "strRequestId",
@@ -195,7 +196,12 @@ public class AuditRecordTest {
     }
 
     public static AuditRecord makeMessageAuditRecord() {
-        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0, 8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0, 8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", new Functions.Nullary<Goid>() {
+            @Override
+            public Goid call() {
+                return new Goid(0, 49585);
+            }
+        });
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;

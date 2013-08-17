@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -13,7 +13,7 @@ import javax.persistence.Table;
 @Entity
 @Proxy(lazy=false)
 @Table(name="resolution_configuration")
-public class ResolutionConfiguration extends NamedEntityImp {
+public class ResolutionConfiguration extends NamedGoidEntityImp {
 
     //- PUBLIC
 

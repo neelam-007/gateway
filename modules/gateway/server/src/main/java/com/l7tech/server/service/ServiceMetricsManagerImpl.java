@@ -557,7 +557,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
             for ( Map.Entry<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> entry : detailMap.entrySet() ) {
                 MetricsBinDetail details = new MetricsBinDetail();
                 details.setMetricsBinGoid(goid);
-                details.setMappingValuesOid( saveMessageContextMapping( entry.getKey() ) );
+                details.setMappingValuesId(saveMessageContextMapping(entry.getKey()));
 
                 if ( entry.getValue().getNumAttemptedRequest() > 0 ) {
                     details.setMinFrontendResponseTime( entry.getValue().getMinFrontendResponseTime() );
@@ -638,7 +638,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      * so do the equals/hashcode of MetricsDetailKeys.
      * @see com.l7tech.server.service.ServiceMetrics.MetricsDetailKey#hasUserMapping()
      */
-    private Long saveMessageContextMapping( final ServiceMetrics.MetricsDetailKey key ) {
+    private Goid saveMessageContextMapping( final ServiceMetrics.MetricsDetailKey key ) {
         if (messageContextMappingManager == null) return null;
         
         MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
@@ -666,8 +666,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         }
 
         try {
-            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
-            valuesEntity.setMappingKeysOid(mapping_keys_oid);
+            Goid mapping_keys_id = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
+            valuesEntity.setMappingKeysGoid(mapping_keys_id);
 
             return messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
         } catch (Exception e) {

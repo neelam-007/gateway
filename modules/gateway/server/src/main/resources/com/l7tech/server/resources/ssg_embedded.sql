@@ -113,7 +113,7 @@ create table audit_message (
     status integer not null,
     request_id varchar(40) not null,
     objectid bigint not null,
-    mapping_values_oid bigint,
+    mapping_values_goid CHAR(16) FOR BIT DATA,
     primary key (objectid)
 );
 
@@ -125,7 +125,7 @@ create table audit_system (
 );
 
 create table message_context_mapping_keys (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     version integer,
     digested varchar(36) not null,
     mapping1_key varchar(128),
@@ -139,13 +139,13 @@ create table message_context_mapping_keys (
     mapping5_key varchar(128),
     mapping5_type varchar(36),
     create_time bigint,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table message_context_mapping_values (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     digested varchar(36) not null,
-    mapping_keys_oid bigint,
+    mapping_keys_goid CHAR(16) FOR BIT DATA,
     auth_user_provider_id CHAR(16) FOR BIT DATA,
     auth_user_id varchar(255),
     auth_user_unique_id varchar(255),
@@ -156,7 +156,7 @@ create table message_context_mapping_values (
     mapping4_value varchar(255),
     mapping5_value varchar(255),
     create_time bigint,
-    primary key (objectid)
+    primary key (goid)
 );
 
 alter table audit_admin
@@ -185,8 +185,8 @@ alter table audit_message
 
 alter table audit_message
     add constraint message_context_mapping
-    foreign key (mapping_values_oid)
-    references message_context_mapping_values (objectid);
+    foreign key (mapping_values_goid)
+    references message_context_mapping_values;
 
 alter table audit_system
     add constraint FKB22BD7137AEF109A
@@ -196,7 +196,7 @@ alter table audit_system
 
 alter table message_context_mapping_values
     add constraint FKABF3A97B4B03F6D1
-    foreign key (mapping_keys_oid)
+    foreign key (mapping_keys_goid)
     references message_context_mapping_keys;
 
 -- **************************************************************************
@@ -770,7 +770,7 @@ create table assertion_access (
 );
 
 create table resolution_configuration (
-    objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(128) not null,
     path_required smallint default 0,
@@ -779,7 +779,7 @@ create table resolution_configuration (
     use_service_oid smallint default 0,
     use_soap_action smallint default 0,
     use_soap_namespace smallint default 0,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table resource_entry (
@@ -868,7 +868,7 @@ create table service_metrics (
 
 create table service_metrics_details (
     service_metrics_goid CHAR(16) FOR BIT DATA not null,
-    mapping_values_oid bigint not null,
+    mapping_values_goid CHAR(16) FOR BIT DATA not null,
     attempted integer,
     authorized integer,
     completed integer,
@@ -878,7 +878,7 @@ create table service_metrics_details (
     front_min integer,
     front_sum bigint,
     front_max integer,
-    primary key (service_metrics_goid, mapping_values_oid)
+    primary key (service_metrics_goid, mapping_values_goid)
 );
 
 create table service_usage (
@@ -897,7 +897,7 @@ create table shared_keys (
 );
 
 create table sink_config (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(32) not null,
     description clob(2147483647),
@@ -907,7 +907,7 @@ create table sink_config (
     categories clob(2147483647),
     properties clob(2147483647),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table trusted_cert (
@@ -1244,7 +1244,7 @@ INSERT INTO internal_user (goid, version, name, login, password, digest, first_n
 
 INSERT INTO folder (goid, version, name, parent_folder_goid, security_zone_goid) VALUES (toGoid(0,-5002), 0, 'Root Node', NULL, NULL);
 
-INSERT INTO resolution_configuration (objectid, version, name, path_case_sensitive, use_url_header, use_service_oid, use_soap_action, use_soap_namespace) VALUES (-2, 0, 'Default', 1, 1, 1, 1, 1);
+INSERT INTO resolution_configuration (goid, version, name, path_case_sensitive, use_url_header, use_service_oid, use_soap_action, use_soap_namespace) VALUES (toGoid(0, -2), 0, 'Default', 1, 1, 1, 1, 1);
 
 INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
 
@@ -1617,10 +1617,10 @@ INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGo
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1300),0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810,null, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1300),0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',null,toGoid(0, -810), 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1301),0, toGoid(0, -1300),'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1301),0,toGoid(0, -1301));
-INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -1301),'-810');
+INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -1301),goidToString(toGoid(0, -810)));
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1302),0, toGoid(0, -1300),'READ',NULL,'CLUSTER_INFO');
 
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1303),0, toGoid(0, -1300),'OTHER','log-viewer','LOG_SINK');
@@ -1644,8 +1644,8 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment (goid, provider_goid, role_goid, identity_id, entity_type) VALUES (toGoid(0, -105), toGoid(0, -2), toGoid(0, -100), goidToString(toGoid(0,3)), 'User');
 
-INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
-INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-811,0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
+INSERT INTO sink_config (goid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (toGoid(0, -810),0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
+INSERT INTO sink_config (goid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (toGoid(0, -811),0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
 
 
 --

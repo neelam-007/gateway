@@ -126,7 +126,12 @@ public class AuditSinkSchemaTest {
                 "responseXml", 6 , 1234, 5678,
                 new Goid(0,7), "serviceName", "operationNameHaver",
                 true, SecurityTokenType.UNKNOWN, new Goid(0,-5),
-                "userName", "userId", -10);
+                "userName", "userId", new Functions.Nullary<Goid>() {
+            @Override
+            public Goid call() {
+                return new Goid(0, -10);
+            }
+        });
         signAuditRecord(record);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));

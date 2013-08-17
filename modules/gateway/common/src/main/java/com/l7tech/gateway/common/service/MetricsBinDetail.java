@@ -24,12 +24,12 @@ public class MetricsBinDetail extends GoidEntityImp {
         this.metricsBinGoid = metricsBinGoid;
     }
 
-    public long getMappingValuesOid() {
-        return mappingValuesOid;
+    public Goid getMappingValuesId() {
+        return mappingValuesId;
     }
 
-    public void setMappingValuesOid(long mappingValuesOid) {
-        this.mappingValuesOid = mappingValuesOid;
+    public void setMappingValuesId(Goid mappingValuesId) {
+        this.mappingValuesId = mappingValuesId;
     }
 
     public int getNumAttemptedRequest() {
@@ -113,7 +113,7 @@ public class MetricsBinDetail extends GoidEntityImp {
 
         MetricsBinDetail that = (MetricsBinDetail) o;
 
-        if (mappingValuesOid != that.mappingValuesOid) return false;
+        if (!Goid.equals(mappingValuesId, that.mappingValuesId)) return false;
         if (metricsBinGoid != that.metricsBinGoid) return false;
 
         return true;
@@ -123,14 +123,14 @@ public class MetricsBinDetail extends GoidEntityImp {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + metricsBinGoid.hashCode();
-        result = 31 * result + (int) (mappingValuesOid ^ (mappingValuesOid >>> 32));
+        result = 31 * result + (mappingValuesId != null ? mappingValuesId.hashCode() : 0);
         return result;
     }
 
     //- PRIVATE
 
     private Goid metricsBinGoid;
-    private long mappingValuesOid;
+    private Goid mappingValuesId;
 
     private int numAttemptedRequest;
     private int numAuthorizedRequest;

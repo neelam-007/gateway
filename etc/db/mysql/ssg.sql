@@ -368,7 +368,7 @@ CREATE TABLE client_cert (
 
 DROP TABLE IF EXISTS resolution_configuration;
 CREATE TABLE resolution_configuration (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   path_required tinyint NOT NULL default '0',
@@ -377,11 +377,11 @@ CREATE TABLE resolution_configuration (
   use_service_oid tinyint NOT NULL default '0',
   use_soap_action tinyint NOT NULL default '0',
   use_soap_namespace tinyint NOT NULL default '0',
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE KEY rc_name_idx (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
-INSERT INTO resolution_configuration (objectid, version, name, path_case_sensitive, use_url_header, use_service_oid, use_soap_action, use_soap_namespace) VALUES (-2, 0, 'Default', 1, 1, 1, 1, 1);
+INSERT INTO resolution_configuration (goid, version, name, path_case_sensitive, use_url_header, use_service_oid, use_soap_action, use_soap_namespace) VALUES (toGoid(0, -2), 0, 'Default', 1, 1, 1, 1, 1);
 
 --
 -- Table structure for table 'cluster_info'
@@ -620,7 +620,7 @@ CREATE TABLE fed_group_virtual (
 --
 DROP TABLE IF EXISTS message_context_mapping_keys;
 CREATE TABLE message_context_mapping_keys (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL,
   digested char(36) NOT NULL,
   mapping1_type varchar(36),
@@ -634,7 +634,7 @@ CREATE TABLE message_context_mapping_keys (
   mapping5_type varchar(36),
   mapping5_key varchar(128),
   create_time bigint(20),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   INDEX (digested)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -643,9 +643,9 @@ CREATE TABLE message_context_mapping_keys (
 --
 DROP TABLE IF EXISTS message_context_mapping_values;
 CREATE TABLE message_context_mapping_values (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   digested char(36) NOT NULL,
-  mapping_keys_oid bigint(20) NOT NULL,
+  mapping_keys_goid binary(16) NOT NULL,
   auth_user_provider_id binary(16),
   auth_user_id varchar(255),
   auth_user_unique_id varchar(255),
@@ -656,8 +656,8 @@ CREATE TABLE message_context_mapping_values (
   mapping4_value varchar(255),
   mapping5_value varchar(255),
   create_time bigint(20),
-  PRIMARY KEY  (objectid),
-  FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
+  PRIMARY KEY  (goid),
+  FOREIGN KEY (mapping_keys_goid) REFERENCES message_context_mapping_keys (goid),
   INDEX (digested)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
 
@@ -719,13 +719,13 @@ CREATE TABLE audit_message (
   response_zipxml mediumblob,
   response_status int(11),
   routing_latency int(11),
-  mapping_values_oid BIGINT(20),
+  mapping_values_goid binary(16),
   PRIMARY KEY  (objectid),
   KEY idx_status (status),
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_goid),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
-  CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
+  CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_goid) REFERENCES message_context_mapping_values (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_system;
@@ -882,7 +882,7 @@ CREATE TABLE service_metrics (
 DROP TABLE IF EXISTS service_metrics_details;
 CREATE TABLE service_metrics_details (
   service_metrics_goid BINARY(16) NOT NULL,
-  mapping_values_oid BIGINT(20) NOT NULL,
+  mapping_values_goid BINARY(16) NOT NULL,
   attempted INTEGER NOT NULL,
   authorized INTEGER NOT NULL,
   completed INTEGER NOT NULL,
@@ -892,9 +892,9 @@ CREATE TABLE service_metrics_details (
   front_min INTEGER,
   front_max INTEGER,
   front_sum INTEGER NOT NULL,
-  PRIMARY KEY (service_metrics_goid, mapping_values_oid),
+  PRIMARY KEY (service_metrics_goid, mapping_values_goid),
   CONSTRAINT service_metrics_goid FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics (goid) ON DELETE CASCADE,
-  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
+  FOREIGN KEY (mapping_values_goid) REFERENCES message_context_mapping_values (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1824,10 +1824,10 @@ INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGo
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1300),0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810,null, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_oid, entity_goid, description, user_created) VALUES (toGoid(0, -1300),0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',null, toGoid(0, -810), 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1301),0,toGoid(0, -1300),'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -1301),0,toGoid(0, -1301));
-INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -1301),'-810');
+INSERT INTO rbac_predicate_oid (goid, entity_id) VALUES (toGoid(0, -1301),goidToString(toGoid(0, -810)));
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1302),0,toGoid(0, -1300),'READ',NULL,'CLUSTER_INFO');
 
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1303),0,toGoid(0, -1300),'OTHER','log-viewer','LOG_SINK');
@@ -1853,7 +1853,7 @@ INSERT INTO rbac_assignment (goid, provider_goid, role_goid, identity_id, entity
 
 DROP TABLE IF EXISTS sink_config;
 CREATE TABLE sink_config (
-  objectid bigint(20) NOT NULL,
+  goid BINARY(16) NOT NULL,
   version integer NOT NULL,
   name varchar(32) NOT NULL,
   description mediumtext,
@@ -1863,15 +1863,15 @@ CREATE TABLE sink_config (
   categories mediumtext,
   properties mediumtext,
   security_zone_goid binary(16),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   CONSTRAINT sink_config_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 --  NOTE: if changing this configuration, also update the defaults in JdkLogConfig 
 --
-INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-810,0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
-INSERT INTO sink_config (objectid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (-811,0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
+INSERT INTO sink_config (goid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (toGoid(0, -810),0,'ssg','Main log','FILE',1,'INFO','AUDIT,LOG','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
+INSERT INTO sink_config (goid, version, name, description, type, enabled, severity, categories, properties, security_zone_goid) VALUES (toGoid(0, -811),0,'sspc','Process Controller Log','FILE',0,'FINEST','SSPC','<java version="1.6.0" class="java.beans.XMLDecoder"><object class="java.util.HashMap"><void method="put"><string>file.maxSize</string><string>20000</string></void><void method="put"><string>file.format</string><string>STANDARD</string></void><void method="put"><string>file.logCount</string><string>10</string></void></object></java>',NULL);
 
 DROP TABLE IF EXISTS wsdm_subscription;
 CREATE TABLE wsdm_subscription (

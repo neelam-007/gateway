@@ -12,7 +12,6 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Binary;
 import org.jetbrains.annotations.NotNull;
@@ -356,7 +355,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
 
-        zoneControl.configure(sinkConfiguration.getOid() == SinkConfiguration.DEFAULT_OID ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, sinkConfiguration);
+        zoneControl.configure(sinkConfiguration.isUnsaved()? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, sinkConfiguration);
     }
 
     private void disableTabsForSSPC(){
@@ -729,7 +728,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Updates the base settings fields to match the values from the given SinkConfiguration.
      */
     private void modelToViewBase(final SinkConfiguration sinkConfiguration) {
-        if ( sinkConfiguration.getOid() != SinkConfiguration.DEFAULT_OID ) {
+        if ( !sinkConfiguration.isUnsaved() ) {
             nameField.setEditable(false);
         }
         nameField.setText( sinkConfiguration.getName() );

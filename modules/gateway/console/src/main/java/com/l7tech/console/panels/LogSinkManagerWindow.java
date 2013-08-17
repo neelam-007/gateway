@@ -194,7 +194,7 @@ public class LogSinkManagerWindow extends JDialog {
         if (logSinkAdmin == null)
             return;
         try {
-            logSinkAdmin.deleteSinkConfiguration(sinkConfiguration.getOid());
+            logSinkAdmin.deleteSinkConfiguration(sinkConfiguration.getGoid());
             loadSinkConfigurations();
         } catch (DeleteException e) {
             showErrorMessage(resources.getString("errors.removalFailed.title"),
@@ -245,17 +245,12 @@ public class LogSinkManagerWindow extends JDialog {
                     };
 
                     try {
-                        long oid = getLogSinkAdmin().saveSinkConfiguration( sinkConfiguration );
-                        if ( oid != sinkConfiguration.getOid() ) sinkConfiguration.setOid( oid );
+                        Goid oid = getLogSinkAdmin().saveSinkConfiguration( sinkConfiguration );
+                        if ( !Goid.equals(oid, sinkConfiguration.getGoid()) ) sinkConfiguration.setGoid( oid );
                         reedit = null;
                         loadSinkConfigurations();
                         setSelectedSinkConfiguration( sinkConfiguration );
-                    } catch ( SaveException e ) {
-                        showErrorMessage( resources.getString( "errors.saveFailed.title" ),
-                                resources.getString( "errors.saveFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
-                                ExceptionUtils.getDebugException( e ),
-                                reedit );
-                    } catch ( UpdateException e ) {
+                    } catch ( SaveException | UpdateException e ) {
                         showErrorMessage( resources.getString( "errors.saveFailed.title" ),
                                 resources.getString( "errors.saveFailed.message" ) + " " + ExceptionUtils.getMessage( e ),
                                 ExceptionUtils.getDebugException( e ),
@@ -334,7 +329,7 @@ public class LogSinkManagerWindow extends JDialog {
             final LogSinkTableRow row = grepFirst( tableModel.getRows(), new Unary<Boolean, LogSinkTableRow>() {
                 @Override
                 public Boolean call( final LogSinkTableRow logSinkTableRow ) {
-                    return logSinkTableRow.getSinkConfiguration().getOid()==sinkConfiguration.getOid();
+                    return Goid.equals(logSinkTableRow.getSinkConfiguration().getGoid(), sinkConfiguration.getGoid());
                 }
             } );
             if ( row != null ) {

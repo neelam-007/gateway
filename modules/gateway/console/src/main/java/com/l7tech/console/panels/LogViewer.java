@@ -12,6 +12,7 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -79,7 +80,7 @@ public class LogViewer extends JFrame {
     private Timer logsRefreshTimer;
     private final int logsRefreshInterval = TopComponents.getInstance().getPreferences().getIntProperty( "logViewer.refreshInterval", 3000); // 3secs
     private final ClusterNodeInfo clusterNodeInfo;
-    private final long sinkId;
+    private final Goid sinkId;
     private final String file;
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final AtomicReference<LogWorker> workerReference = new AtomicReference<LogWorker>();
@@ -94,7 +95,7 @@ public class LogViewer extends JFrame {
      *
      */
     public LogViewer(@NotNull ClusterNodeInfo clusterNodeInfo,
-                     long sinkId,
+                     Goid sinkId,
                      @NotNull String file) {
         super(MessageFormat.format(resources.getString("title"), file, clusterNodeInfo.getName()));
 

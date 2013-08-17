@@ -1650,10 +1650,7 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
-                <ref bean="sinkManager"/>
                 <ref bean="keystoreFileManager"/>
-                <ref bean="messageContextMappingKeyManager"/>
-                <ref bean="resolutionConfigurationManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1678,6 +1675,9 @@
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="passwordPolicyManger"/>
+                <ref bean="sinkManager"/>
+                <ref bean="resolutionConfigurationManager"/>
+                <ref bean="messageContextMappingKeyManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="jmsEndpointManager"/>

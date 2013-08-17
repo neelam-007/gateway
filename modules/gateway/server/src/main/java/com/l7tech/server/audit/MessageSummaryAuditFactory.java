@@ -31,10 +31,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
@@ -171,22 +168,17 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         };
 
         // Mapping info
-        Number mapping_values_oid = null;
-        if (addMappingsIntoAudit) {
-            mapping_values_oid = new Number(){
-                private long mvoid=Long.MIN_VALUE;
-                public long longValue() {
-                    if ( mvoid==Long.MIN_VALUE ) {
-                        Long result = saveMessageContextMapping(operationNameHaver, authUser, context.getMappings());
-                        mvoid = result == null ? -1 : result;
-                    }
-                    return mvoid;
+        Functions.Nullary<Goid> mapping_values_id = !addMappingsIntoAudit ? null : new Functions.Nullary<Goid>() {
+            private Goid mvid = null;
+
+            @Override
+            public Goid call() {
+                if (mvid == null) {
+                    mvid = saveMessageContextMapping(operationNameHaver, authUser, context.getMappings());
                 }
-                public int intValue() { return (int)longValue(); }
-                public float floatValue() { return (float)longValue(); }
-                public double doubleValue() { return (double)longValue(); }
-            };
-        }
+                return mvid;
+            }
+        };
 
         MessageSummaryAuditRecord ret = new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
@@ -197,7 +189,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
                                              routingLatency,
                                              serviceGoid, serviceName, operationNameHaver,
                                              authenticated, authType, identityProviderOid, userName, userId,
-                                             mapping_values_oid);
+                                             mapping_values_id);
         ret.originalPolicyEnforcementContext(context);
         return ret;
     }
@@ -221,7 +213,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         }
     }
 
-    private Long saveMessageContextMapping(Object operationHaver, User user, List<MessageContextMapping> mappings) {
+    private Goid saveMessageContextMapping(Object operationHaver, User user, List<MessageContextMapping> mappings) {
         if (messageContextMappingManager == null) return null;
 
         MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
@@ -249,8 +241,8 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener{
         }
 
         try {
-            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
-            valuesEntity.setMappingKeysOid(mapping_keys_oid);
+            Goid mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
+            valuesEntity.setMappingKeysGoid(mapping_keys_oid);
 
             return messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
         } catch (Exception e) {

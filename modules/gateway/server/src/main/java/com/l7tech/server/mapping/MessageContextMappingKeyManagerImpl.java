@@ -1,21 +1,21 @@
 package com.l7tech.server.mapping;
 
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import org.hibernate.Session;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -24,7 +24,7 @@ import java.util.Collection;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class MessageContextMappingKeyManagerImpl
-    extends HibernateEntityManager<MessageContextMappingKeys, EntityHeader>
+    extends HibernateGoidEntityManager<MessageContextMappingKeys, EntityHeader>
     implements MessageContextMappingKeyManager {
 
     private final Logger logger = Logger.getLogger(MessageContextMappingKeyManagerImpl.class.getName());

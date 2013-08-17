@@ -11,6 +11,7 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Functions;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -63,7 +64,12 @@ public class ServerAuditRecordToXmlAssertionTest {
     }
 
     private AuditRecord makeMessageAuditRecord(boolean details) {
-        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", 49585);
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", new Functions.Nullary<Goid>() {
+            @Override
+            public Goid call() {
+                return new Goid(0, 49585);
+            }
+        });
         if ( details ) {
             int ordinal = 1;
             final Set<AuditDetail> auditDetails = auditRecord.getDetails();

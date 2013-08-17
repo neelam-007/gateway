@@ -142,8 +142,8 @@ public class MappingIdentityTest {
     @Test
     public void testValueEquality() {
         MessageContextMappingValues mcmv1 = new MessageContextMappingValues();
-        mcmv1.setOid(123456);
-        mcmv1.setMappingKeysOid(2345L);
+        mcmv1.setGoid(new Goid(0, 123456));
+        mcmv1.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv1.setAuthUserId("testuser1 [Provider A oldname]");
         mcmv1.setAuthUserUniqueId("testuser1");
         mcmv1.setAuthUserProviderId( new Goid(0,200031L) );
@@ -152,8 +152,8 @@ public class MappingIdentityTest {
         mcmv1.setMapping2_value("C");
 
         MessageContextMappingValues mcmv2 = new MessageContextMappingValues();
-        mcmv2.setOid(123);
-        mcmv2.setMappingKeysOid(2345L);
+        mcmv2.setGoid(new Goid(0, 123));
+        mcmv2.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
         mcmv2.setAuthUserProviderId(  new Goid(0,200031L) );
@@ -169,15 +169,15 @@ public class MappingIdentityTest {
     @Test
     public void testUserValueEquality() {
         MessageContextMappingValues mcmv1 = new MessageContextMappingValues();
-        mcmv1.setOid(123456);
-        mcmv1.setMappingKeysOid(2345L);
+        mcmv1.setGoid(new Goid(0, 123456));
+        mcmv1.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv1.setAuthUserId("testuser1 [Provider A oldname]");
         mcmv1.setAuthUserUniqueId("testuser1");
         mcmv1.setAuthUserProviderId(  new Goid(0,200031L) );
 
         MessageContextMappingValues mcmv2 = new MessageContextMappingValues();
-        mcmv2.setOid(123);
-        mcmv2.setMappingKeysOid(2345L);
+        mcmv2.setGoid(new Goid(0, 123));
+        mcmv2.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
         mcmv2.setAuthUserProviderId( new Goid(0, 200031L) );
@@ -190,8 +190,8 @@ public class MappingIdentityTest {
     @Test
     public void testValuesEquality() {
         MessageContextMappingValues mcmv1 = new MessageContextMappingValues();
-        mcmv1.setOid(123456);
-        mcmv1.setMappingKeysOid(2345L);
+        mcmv1.setGoid(new Goid(0, 123456));
+        mcmv1.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv1.setMapping1_value("A");
         mcmv1.setMapping2_value("B");
         mcmv1.setMapping3_value("C");
@@ -199,8 +199,8 @@ public class MappingIdentityTest {
         mcmv1.setMapping5_value("e");
 
         MessageContextMappingValues mcmv2 = new MessageContextMappingValues();
-        mcmv2.setOid(123);
-        mcmv2.setMappingKeysOid(2345L);
+        mcmv2.setGoid(new Goid(0, 123));
+        mcmv2.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv2.setMapping1_value("A");
         mcmv2.setMapping2_value("B");
         mcmv2.setMapping3_value("C");
@@ -215,8 +215,8 @@ public class MappingIdentityTest {
     @Test
     public void testValuesCasesensitiveEquality() {
         MessageContextMappingValues mcmv1 = new MessageContextMappingValues();
-        mcmv1.setOid(123456);
-        mcmv1.setMappingKeysOid(2345L);
+        mcmv1.setGoid(new Goid(0, 123456));
+        mcmv1.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv1.setMapping1_value("A");
         mcmv1.setMapping2_value("B");
         mcmv1.setMapping3_value("C");
@@ -224,8 +224,8 @@ public class MappingIdentityTest {
         mcmv1.setMapping5_value("E");
 
         MessageContextMappingValues mcmv2 = new MessageContextMappingValues();
-        mcmv2.setOid(123);
-        mcmv2.setMappingKeysOid(2345L);
+        mcmv2.setGoid(new Goid(0, 123));
+        mcmv2.setMappingKeysGoid(new Goid(0, 2345L));
         mcmv2.setAuthUserId("testuser [Provider A]");
         mcmv2.setAuthUserUniqueId("testuser1");
         mcmv2.setAuthUserProviderId(  new Goid(0,200031L) );

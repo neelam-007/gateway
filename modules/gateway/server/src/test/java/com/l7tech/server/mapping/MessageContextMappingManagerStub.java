@@ -3,6 +3,7 @@ package com.l7tech.server.mapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 
@@ -20,11 +21,11 @@ public class MessageContextMappingManagerStub implements MessageContextMappingMa
         return null;
     }
 
-    public long saveMessageContextMappingKeys(MessageContextMappingKeys mappingKeysEntity) throws SaveException, FindException, UpdateException {
-        return 0;
+    public Goid saveMessageContextMappingKeys(MessageContextMappingKeys mappingKeysEntity) throws SaveException, FindException, UpdateException {
+        return new Goid(0, 0);
     }
 
-    public long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException {
-        return 0;
+    public Goid saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException {
+        return new Goid(0, 0);
     }
 }

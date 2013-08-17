@@ -6,16 +6,16 @@
  */
 package com.l7tech.gateway.standardreports;
 
-import java.util.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
+import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Pair;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.Assert;
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.util.Pair;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Test coverage for class Utilities
@@ -349,7 +349,7 @@ public class UtilitiesTest {
 
         //p.objectid IN (12345, 67890)
         String sql = sqlAndParamsPair.getKey();
-        int index = sql.indexOf("p.objectid IN");
+        int index = sql.indexOf("goidToString(p.goid) IN");
         Assert.assertTrue(index != -1);
 
         //todo [Donal] this test can no longer validate the values. Needs to look inside the List<Object>
@@ -363,7 +363,7 @@ public class UtilitiesTest {
         sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
         sql = sqlAndParamsPair.getKey();
-        index = sql.indexOf("p.objectid IN");
+        index = sql.indexOf("goidToString(p.goid) IN");
         Assert.assertTrue(index == -1);
     }
 
@@ -554,7 +554,7 @@ public class UtilitiesTest {
                 Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true, false);
         //System.out.println("Group by: "+sql);
         String sql = sqlAndParamsPair.getKey();
-        int index = sql.indexOf("GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, " +
+        int index = sql.indexOf("GROUP BY goidToString(p.goid), SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, " +
                 "MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5");
         Assert.assertTrue(index != -1);
     }
@@ -570,7 +570,7 @@ public class UtilitiesTest {
 //        System.out.println("Order by: "+sql);
         String sql = sqlAndParamsPair.getKey();
         int index = sql.indexOf("ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, " +
-                "MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
+                "MAPPING_VALUE_4, MAPPING_VALUE_5 ,goidToString(p.goid), SERVICE_OPERATION_VALUE");
         Assert.assertTrue(index != -1);
     }
 
@@ -1364,7 +1364,7 @@ public class UtilitiesTest {
         String sql = sqlAndParamsPair.getKey();
 
         //p.objectid IN (12345, 67890)
-        int index = sql.indexOf("p.objectid IN");
+        int index = sql.indexOf("goidToString(p.goid) IN");
         Assert.assertTrue(index != -1);
 
         //todo [Donal] need to look inside to validate
@@ -1377,7 +1377,7 @@ public class UtilitiesTest {
         sqlAndParamsPair = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
         sql = sqlAndParamsPair.getKey();
 
-        index = sql.indexOf("p.objectid IN");
+        index = sql.indexOf("goidToString(p.goid) IN");
         Assert.assertTrue(index == -1);
     }
 
@@ -1393,7 +1393,7 @@ public class UtilitiesTest {
 
         Pair<String, List<Object>> sqlAndParamsPair = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
         String sql = sqlAndParamsPair.getKey();
-        int index = sql.indexOf("GROUP BY p.objectid");
+        int index = sql.indexOf("GROUP BY goidToString(p.goid)");
         Assert.assertTrue(index != -1);
     }
 
@@ -1443,7 +1443,7 @@ public class UtilitiesTest {
 
         Pair<String, List<Object>> sqlAndParamsPair = Utilities.getNoMappingQuery(true, startTime, endTime, null, 1);
         String sql = sqlAndParamsPair.getKey();
-        int index = sql.indexOf("ORDER BY p.objectid");
+        int index = sql.indexOf("ORDER BY goidToString(p.goid)");
         Assert.assertTrue(index != -1);
     }
 

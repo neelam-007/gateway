@@ -81,7 +81,7 @@ public class DbCompareTestUtils {
         }
 
         // ***************************** Check table data in goid tables ******************************************//
-        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file", "resolution_configuration", "sink_config");
+        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file");
         Set<String> otherTables = CollectionUtils.set("cluster_master", "ssg_version", "hibernate_unique_key");
         Set<String> ignoreTables = new HashSet<>(oidTables);
         ignoreTables.addAll(otherTables);
@@ -105,6 +105,11 @@ public class DbCompareTestUtils {
                     String newTablePropertyValue = db1RowData.get(tableData);
                     String upgradedTablePropertyValue = db2RowData.get(tableData);
 
+                    if (newTablePropertyValue != null && !newTablePropertyValue.equals(upgradedTablePropertyValue)) {
+                        System.out.println("ERROR FOUND!\n  db1=" + db1RowData + "\n  db2=" + db2RowData);
+                    } else if (newTablePropertyValue == null && upgradedTablePropertyValue != null) {
+                        System.out.println("ERROR FOUND!\n  db1=" + db1RowData + "\n  db2=" + db2RowData);
+                    }
                     Assert.assertEquals("Table data does not match for table: "+tableName+" Property: " +tableData + " for key: " + key, newTablePropertyValue, upgradedTablePropertyValue);
                 }
             }

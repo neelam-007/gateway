@@ -3,6 +3,7 @@ package com.l7tech.server.mapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 
@@ -37,7 +38,7 @@ public interface MessageContextMappingManager {
      * @throws FindException
      * @throws UpdateException
      */
-    long saveMessageContextMappingKeys(MessageContextMappingKeys mappingKeysEntity) throws SaveException, FindException, UpdateException;
+    Goid saveMessageContextMappingKeys(MessageContextMappingKeys mappingKeysEntity) throws SaveException, FindException, UpdateException;
 
     /**
      * Save a set of values into the database.
@@ -46,5 +47,5 @@ public interface MessageContextMappingManager {
      * @throws SaveException
      * @throws FindException
      */
-    long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException, FindException;
+    Goid saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException, FindException;
 }

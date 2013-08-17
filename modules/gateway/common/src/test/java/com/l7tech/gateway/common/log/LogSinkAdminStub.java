@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.log;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,17 +15,17 @@ public class LogSinkAdminStub implements LogSinkAdmin {
     }
 
     @Override
-    public SinkConfiguration getSinkConfigurationByPrimaryKey(long oid) throws FindException {
+    public SinkConfiguration getSinkConfigurationByPrimaryKey(Goid oid) throws FindException {
         return null;
     }
 
     @Override
-    public long saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException {
-        return -1L;
+    public Goid saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException {
+        return SinkConfiguration.DEFAULT_GOID;
     }
 
     @Override
-    public void deleteSinkConfiguration(long oid) throws DeleteException, FindException {
+    public void deleteSinkConfiguration(Goid oid) throws DeleteException, FindException {
     }
 
     @Override
@@ -47,12 +44,12 @@ public class LogSinkAdminStub implements LogSinkAdmin {
     }
 
     @Override
-    public Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, long sinkId) {
+    public Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, Goid sinkId) {
         return Collections.emptyList();
     }
 
     @Override
-    public LogSinkData getSinkLogs(String nodeId, long sinkId, String file, LogSinkQuery query) {
+    public LogSinkData getSinkLogs(String nodeId, Goid sinkId, String file, LogSinkQuery query) {
         return null;
     }
 }
