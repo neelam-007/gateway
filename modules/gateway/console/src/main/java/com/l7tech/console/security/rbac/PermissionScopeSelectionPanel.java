@@ -22,10 +22,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -65,6 +62,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final int ZONE_TAB_INDEX = 2;
     private static final int FOLDER_TAB_INDEX = 1;
     private static final String SELECT_OPTIONS_FOR_THESE_PERMISSIONS = "Select options for these permissions";
+    private static final String SELECT_A_PROVIDER = "(select a provider)";
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -90,6 +88,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     // use this check box for entity type specific input
     private JCheckBox specificAncestryCheckBox;
     private JCheckBox aliasOwnersCheckBox;
+    private JComboBox providerComboBox;
+    private JPanel providerPanel;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -108,6 +108,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         setShowDescriptionPanel(false);
         add(contentPanel);
         initTables();
+        initProvidersComboBox();
     }
 
     @Override
@@ -173,14 +174,19 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
                                 aliasOwnersCheckBox.setVisible(isAlias);
                                 aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
+                                providerPanel.setVisible(config.getType() == EntityType.USER);
                                 if (config.getSelectedEntities().isEmpty()) {
-                                    final List<EntityHeader> entities = new ArrayList<>();
-                                    try {
-                                        entities.addAll(EntityUtils.getEntities(config.getType()));
-                                    } catch (final FindException e) {
-                                        logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    if (config.getType() != EntityType.USER) {
+                                        final List<EntityHeader> entities = new ArrayList<>();
+                                        try {
+                                            entities.addAll(EntityUtils.getEntities(config.getType()));
+                                        } catch (final FindException e) {
+                                            logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                        }
+                                        specificObjectsModel.setSelectableObjects(entities);
+                                    } else {
+                                        loadUsers();
                                     }
-                                    specificObjectsModel.setSelectableObjects(entities);
                                 }
                             }
                         });
@@ -466,6 +472,52 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             }
         }
         return names;
+    }
+
+    private void initProvidersComboBox() {
+        EntityHeader[] providerHeaders;
+        try {
+            providerHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve identity providers: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            providerHeaders = new EntityHeader[]{};
+        }
+        final List<EntityHeader> selection = new ArrayList<>(providerHeaders.length + 1);
+        selection.add(null);
+        selection.addAll(Arrays.asList(providerHeaders));
+        providerComboBox.setModel(new DefaultComboBoxModel(selection.toArray()));
+        providerComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+                if (value instanceof EntityHeader) {
+                    value = ((EntityHeader) value).getName();
+                } else {
+                    value = SELECT_A_PROVIDER;
+                }
+                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            }
+        });
+        providerComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(final ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    loadUsers();
+                }
+            }
+        });
+    }
+
+    private void loadUsers() {
+        if (providerComboBox.getSelectedItem() instanceof EntityHeader) {
+            final EntityHeader selected = (EntityHeader) providerComboBox.getSelectedItem();
+            final List<EntityHeader> users = new ArrayList<>();
+            try {
+                users.addAll(Registry.getDefault().getIdentityAdmin().findAllUsers(selected.getGoid()));
+            } catch (final FindException ex) {
+                logger.log(Level.WARNING, "Unable to retrieve users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+            }
+            specificObjectsModel.setSelectableObjects(users);
+        }
     }
 
     private class TableListener implements TableModelListener {

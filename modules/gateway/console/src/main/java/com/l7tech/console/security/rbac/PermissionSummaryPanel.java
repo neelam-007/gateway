@@ -163,16 +163,21 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 for (final EntityHeader header : config.getSelectedEntities()) {
                     for (final OperationType op : config.getOperations()) {
                         final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
-                        final ScopePredicate specificPredicate;
+                        final Set<ScopePredicate> scope = new HashSet<>();
                         if (entityType == EntityType.ASSERTION_ACCESS ||
                                 entityType == EntityType.CLUSTER_PROPERTY ||
                                 entityType == EntityType.SERVICE_TEMPLATE) {
-                            specificPredicate = new AttributePredicate(specificEntityPermission, NAME, header.getName());
+                            scope.add(new AttributePredicate(specificEntityPermission, NAME, header.getName()));
+                        } else if (entityType == EntityType.USER && header instanceof IdentityHeader) {
+                            final IdentityHeader identityHeader = (IdentityHeader) header;
+                            scope.add(new AttributePredicate(specificEntityPermission, "providerId", identityHeader.getProviderGoid().toHexString()));
+                            scope.add(new AttributePredicate(specificEntityPermission, "login", identityHeader.getName()));
                         } else {
-                            specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
-                            ((ObjectIdentityPredicate) specificPredicate).setHeader(header);
+                            final ObjectIdentityPredicate specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
+                            specificPredicate.setHeader(header);
+                            scope.add(specificPredicate);
                         }
-                        specificEntityPermission.getScope().add(specificPredicate);
+                        specificEntityPermission.getScope().addAll(scope);
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
                     }
