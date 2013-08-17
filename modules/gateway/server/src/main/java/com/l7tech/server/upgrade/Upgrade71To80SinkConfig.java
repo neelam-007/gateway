@@ -59,14 +59,24 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
         federatedProviderGoids = new ArrayList<String>();
 
         try {
-            for(IdentityProviderConfig idProvider: identityProviderConfigManager.findAll()){
-                if(IdentityProviderType.FEDERATED.equals(idProvider.type()))
-                    federatedProviderGoids.add(Long.toString(idProvider.getGoid().getLow()));
-            }
-        } catch (FindException e) {
+            new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Void>() {
+                @Override
+                public Void doInHibernate(final Session session) throws HibernateException, SQLException {
+                    Criteria schemaCriteria = session.createCriteria(IdentityProviderConfig.class);
+                    for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                        if (schemaCriteriaObj instanceof IdentityProviderConfig) {
+                            IdentityProviderConfig idProvider = (IdentityProviderConfig) schemaCriteriaObj;
+                            if(IdentityProviderType.FEDERATED.equals(idProvider.type()))
+                                federatedProviderGoids.add(Long.toString(idProvider.getGoid().getLow()));
+
+                        }
+                    }
+                    return null;
+                }
+            });
+        }catch (Exception e) {
             throw new FatalUpgradeException("Could not retrieve identity providers", e);
         }
-
 
         try {
             new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Void>() {
@@ -83,20 +93,20 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                                 }
                             });
 
-//                            // update email listener oids to GOIDs
-//                            if (emailPrefix != null) {
-//                                updateLogSinkOids(GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID, emailPrefix, filters);
-//                            }
-//
-//                            // update email listener oids to GOIDs
-//                            if (listenPortPrefix != null) {
-//                                updateLogSinkOids(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, listenPortPrefix, filters);
-//                            }
-//
-//                            // update email listener oids to GOIDs
-//                            if (jmsEndpointPrefix != null) {
-//                                updateLogSinkOids(GatewayDiagnosticContextKeys.JMS_LISTENER_ID, jmsEndpointPrefix, filters);
-//                            }
+                            // update email listener oids to GOIDs
+                            if (emailPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID, emailPrefix, filters);
+                            }
+
+                            // update email listener oids to GOIDs
+                            if (listenPortPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, listenPortPrefix, filters);
+                            }
+
+                            // update email listener oids to GOIDs
+                            if (jmsEndpointPrefix != null) {
+                                updateLogSinkOids(GatewayDiagnosticContextKeys.JMS_LISTENER_ID, jmsEndpointPrefix, filters);
+                            }
 
                             // update published service oids to GOIDs
                             if (publishedServicePrefix != null) {

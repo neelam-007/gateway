@@ -491,8 +491,6 @@ UPDATE internal_user SET goid = toGoid(@internal_user_prefix, old_objectid) wher
 UPDATE internal_user SET goid = toGoid(0, 3) where old_objectid = 3;
 ALTER TABLE internal_user DROP COLUMN old_objectid;
 
-UPDATE rbac_assignment SET identity_id = goidToString(toGoid(0, 3)) where identity_id = '3' and entity_type='User';
-
 DROP INDEX provider_oid ON internal_user_group;
 DROP INDEX user_id ON internal_user_group;
 
@@ -1061,7 +1059,7 @@ ALTER TABLE sample_messages DROP COLUMN published_service_oid_backup;
 ALTER TABLE service_documents ADD COLUMN objectid_backup BIGINT(20);
 update service_documents set objectid_backup=objectid;
 ALTER TABLE service_documents CHANGE COLUMN objectid goid binary(16) NOT NULL;
--- For manual runs use: set @published_service_alias_prefix=createUnreservedPoorRandomPrefix();
+-- For manual runs use: set @service_documents_prefix=createUnreservedPoorRandomPrefix();
 SET @service_documents_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update service_documents set goid = toGoid(@service_documents_prefix,objectid_backup);
 ALTER TABLE service_documents DROP COLUMN objectid_backup;

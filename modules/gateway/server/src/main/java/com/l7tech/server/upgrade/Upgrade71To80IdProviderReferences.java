@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.cert.CertEntryRow;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyVersion;
@@ -36,6 +37,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
     protected SessionFactory sessionFactory;
     protected IdentityProviderConfigManager identityProviderConfigManager;
     protected List<Goid> federatedProviderGoids;
+    protected static String DEFAULT_ADMIN_USER_ID = Goid.toString(new Goid(0,3));
 
     @Override
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
@@ -44,6 +46,8 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
 
         final long fed_user_prefix = ServerGoidUpgradeMapper.getPrefix("fed_user");
         final long internal_user_prefix = ServerGoidUpgradeMapper.getPrefix("internal_user");
+        final long internal_group_prefix = ServerGoidUpgradeMapper.getPrefix("internal_group");
+        final long fed_group_prefix = ServerGoidUpgradeMapper.getPrefix("fed_group");
 
         identityProviderConfigManager = getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         federatedProviderGoids = new ArrayList<Goid>();
@@ -70,10 +74,18 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             RoleAssignment assignment = (RoleAssignment) schemaCriteriaObj;
                             Goid providerId = assignment.getProviderId();
                             if(isInternal(providerId) ){
-                                assignment.setIdentityId(Goid.toString(new Goid(internal_user_prefix, Long.parseLong(assignment.getIdentityId()))));
+                                if(assignment.getEntityType().equals(EntityType.USER.getName())){
+                                    assignment.setIdentityId(getInternalUserId(internal_user_prefix, assignment.getIdentityId()));
+                                }else if(assignment.getEntityType().equals(EntityType.GROUP.getName())){
+                                    assignment.setIdentityId(getInternalUserId(internal_group_prefix, assignment.getIdentityId()));
+                                }
                             }
                             else if(isFederated(providerId)){
-                                assignment.setIdentityId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(assignment.getIdentityId()))));
+                                if(assignment.getEntityType().equals(EntityType.USER.getName())){
+                                    assignment.setIdentityId(getInternalUserId(fed_user_prefix, assignment.getIdentityId()));
+                                }else if(assignment.getEntityType().equals(EntityType.GROUP.getName())){
+                                    assignment.setIdentityId(getInternalUserId(fed_group_prefix, assignment.getIdentityId()));
+                                }
                             }
                         }
                     }
@@ -81,12 +93,8 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                 }
             });
         } catch (Exception e) {
-            throw new FatalUpgradeException("Could not update cert entry row", e);
+            throw new FatalUpgradeException("Could not update rbac assignemnt", e);
         }
-
-        // rbac_role
-
-        // rbac_predicate
 
         // client_cert.user_id
         try {
@@ -100,7 +108,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             CertEntryRow clientCert = (CertEntryRow) schemaCriteriaObj;
                             Goid providerId = clientCert.getProvider();
                             if(isInternal(providerId) ){
-                                clientCert.setUserId(Goid.toString(new Goid(internal_user_prefix,Long.parseLong(clientCert.getUserId()))));
+                                clientCert.setUserId(getInternalUserId(internal_user_prefix, clientCert.getUserId()));
                             }
                             else if(isFederated(providerId)){
                                 clientCert.setUserId(Goid.toString(new Goid(fed_user_prefix,Long.parseLong(clientCert.getUserId()))));
@@ -126,7 +134,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             TrustedEsmUser esmUser = (TrustedEsmUser) schemaCriteriaObj;
                             Goid providerId = esmUser.getProviderGoid();
                             if(isInternal(providerId) ){
-                                esmUser.setSsgUserId(Goid.toString(new Goid(internal_user_prefix, Long.parseLong(esmUser.getSsgUserId()))));
+                                esmUser.setSsgUserId( getInternalUserId(internal_user_prefix, esmUser.getSsgUserId()));
                             }
                             else if(isFederated(providerId)){
                                 esmUser.setSsgUserId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(esmUser.getSsgUserId()))));
@@ -152,7 +160,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             Goid providerId = mappingValues.getAuthUserProviderId();
                             boolean updated = false;
                             if(isInternal(providerId) ){
-                                mappingValues.setAuthUserId(Goid.toString(new Goid(internal_user_prefix, Long.parseLong(mappingValues.getAuthUserId()))));
+                                mappingValues.setAuthUserId(getInternalUserId(internal_user_prefix, mappingValues.getAuthUserId()));
                             }
                             else if(isFederated(providerId)){
                                 mappingValues.setAuthUserId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(mappingValues.getAuthUserId()))));
@@ -180,7 +188,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             StoredSecureConversationSession secureConversation = (StoredSecureConversationSession) schemaCriteriaObj;
                             Goid providerId = secureConversation.getProviderId();
                             if(isInternal(providerId) ){
-                                secureConversation.setUserId(Goid.toString(new Goid(internal_user_prefix, Long.parseLong(secureConversation.getUserId()))));
+                                secureConversation.setUserId(getInternalUserId(internal_user_prefix,secureConversation.getUserId()));
                             }
                             else if(isFederated(providerId)){
                                 secureConversation.setUserId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(secureConversation.getUserId()))));
@@ -202,6 +210,13 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
 
     private boolean isInternal(Goid providerId) {
         return IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.equals(providerId);
+    }
+
+    private String getInternalUserId(long internal_user_prefix, String userIdStr){
+        return isDefaultAdministrator(userIdStr)? DEFAULT_ADMIN_USER_ID: Goid.toString(new Goid(internal_user_prefix, Long.parseLong(userIdStr)));
+    }
+    private boolean isDefaultAdministrator(String userId) {
+        return userId.equals("3");
     }
 
     /**
