@@ -7,6 +7,7 @@ import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -135,7 +136,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         interfacesButton.setEnabled(InterfaceTagsDialog.canViewInterfaceTags());
 
-        manageFirewallRulesButton.setEnabled((flags.canDeleteSome() || flags.canDeleteAll())
+        manageFirewallRulesButton.setEnabled(Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedReadAny(EntityType.FIREWALL_RULE))
                 && "true".equals(Registry.getDefault().getClusterStatusAdmin().getHardwareCapability("appliance.firewall")));
 
         manageFirewallRulesButton.addActionListener(new ActionListener() {
