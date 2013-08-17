@@ -24,6 +24,12 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     private static final Logger logger = Logger.getLogger(PermissionSummaryPanel.class.getName());
     private static final String SUMMARY = "Summary";
     private static final String NAME = "name";
+    private static final String PROVIDER_ID = "providerId";
+    private static final String ID = "id";
+    private static final String ALL_OBJECT_TYPES = "All object types";
+    private static final String ALL_OF_TYPE_LABEL = "All objects of the specified type";
+    private static final String CONDITIONS_LABEL = "Objects matching a set of conditions";
+    private static final String SPECIFIC_OBJECTS_LABEL = "A set of specific objects";
     private JPanel contentPanel;
     private JPanel optionsPanel;
     private RolePermissionsPanel permissionsPanel;
@@ -48,7 +54,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         if (settings instanceof PermissionsConfig) {
             final PermissionsConfig config = (PermissionsConfig) settings;
             if (config.getType() == EntityType.ANY) {
-                applyToLabel.setText("All object types");
+                applyToLabel.setText(ALL_OBJECT_TYPES);
             } else {
                 applyToLabel.setText(config.getType().getPluralName());
             }
@@ -60,11 +66,11 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             permittedOperationsLabel.setText(StringUtils.join(ops, ", "));
 
             if (!config.hasScope()) {
-                restrictScopeLabel.setText("All objects of the specified type");
+                restrictScopeLabel.setText(ALL_OF_TYPE_LABEL);
             } else if (config.getScopeType() == PermissionsConfig.ScopeType.CONDITIONAL) {
-                restrictScopeLabel.setText("Objects matching a set of conditions");
+                restrictScopeLabel.setText(CONDITIONS_LABEL);
             } else if (config.getScopeType() == PermissionsConfig.ScopeType.SPECIFIC_OBJECTS) {
-                restrictScopeLabel.setText("A set of specific objects");
+                restrictScopeLabel.setText(SPECIFIC_OBJECTS_LABEL);
             }
             generatePermissions(config, Registry.getDefault().getFolderAdmin());
             permissionsPanel.configure(config.getGeneratedPermissions());
@@ -168,10 +174,10 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                                 entityType == EntityType.CLUSTER_PROPERTY ||
                                 entityType == EntityType.SERVICE_TEMPLATE) {
                             scope.add(new AttributePredicate(specificEntityPermission, NAME, header.getName()));
-                        } else if (entityType == EntityType.USER && header instanceof IdentityHeader) {
+                        } else if ((entityType == EntityType.USER || entityType == EntityType.GROUP) && header instanceof IdentityHeader) {
                             final IdentityHeader identityHeader = (IdentityHeader) header;
-                            scope.add(new AttributePredicate(specificEntityPermission, "providerId", identityHeader.getProviderGoid().toHexString()));
-                            scope.add(new AttributePredicate(specificEntityPermission, "login", identityHeader.getName()));
+                            scope.add(new AttributePredicate(specificEntityPermission, PROVIDER_ID, identityHeader.getProviderGoid().toHexString()));
+                            scope.add(new AttributePredicate(specificEntityPermission, ID, identityHeader.getStrId()));
                         } else {
                             final ObjectIdentityPredicate specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
                             specificPredicate.setHeader(header);

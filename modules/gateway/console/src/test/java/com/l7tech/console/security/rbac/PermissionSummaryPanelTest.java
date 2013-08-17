@@ -657,7 +657,9 @@ public class PermissionSummaryPanelTest {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.USER);
         operations.add(OperationType.READ);
-        entities.add(new IdentityHeader(new Goid(0, 1), new Goid(1, 2), EntityType.USER, "test", null, null, 0));
+        final Goid providerGoid = new Goid(0, 1);
+        final Goid identityGoid = new Goid(1, 2);
+        entities.add(new IdentityHeader(providerGoid, identityGoid, EntityType.USER, "test", null, null, 0));
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
@@ -668,8 +670,31 @@ public class PermissionSummaryPanelTest {
             final AttributePredicate attribute = (AttributePredicate) predicate;
             attributes.put(attribute.getAttribute(), attribute.getValue());
         }
-        assertEquals("test", attributes.get("login"));
-        assertEquals(new Goid(0, 1).toHexString(), attributes.get("providerId"));
+        assertEquals(identityGoid.toHexString(), attributes.get("id"));
+        assertEquals(providerGoid.toHexString(), attributes.get("providerId"));
+    }
+
+    @BugId("SSG-6956")
+    @Test
+    public void generatePermissionsSpecificGroup() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.GROUP);
+        operations.add(OperationType.READ);
+        final Goid providerGoid = new Goid(0, 1);
+        final Goid identityGoid = new Goid(1, 2);
+        entities.add(new IdentityHeader(providerGoid, identityGoid, EntityType.GROUP, "test", null, null, 0));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(2, scope.size());
+        final Map<String, String> attributes = new HashMap<>();
+        for (final ScopePredicate predicate : scope) {
+            final AttributePredicate attribute = (AttributePredicate) predicate;
+            attributes.put(attribute.getAttribute(), attribute.getValue());
+        }
+        assertEquals(identityGoid.toHexString(), attributes.get("id"));
+        assertEquals(providerGoid.toHexString(), attributes.get("providerId"));
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {

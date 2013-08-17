@@ -174,9 +174,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
                                 aliasOwnersCheckBox.setVisible(isAlias);
                                 aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
-                                providerPanel.setVisible(config.getType() == EntityType.USER);
+                                providerPanel.setVisible(isIdentityType(type));
                                 if (config.getSelectedEntities().isEmpty()) {
-                                    if (config.getType() != EntityType.USER) {
+                                    if (!isIdentityType(type)) {
                                         final List<EntityHeader> entities = new ArrayList<>();
                                         try {
                                             entities.addAll(EntityUtils.getEntities(config.getType()));
@@ -185,7 +185,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                         }
                                         specificObjectsModel.setSelectableObjects(entities);
                                     } else {
-                                        loadUsers();
+                                        loadIdentities(type);
                                     }
                                 }
                             }
@@ -500,24 +500,34 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         providerComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(final ItemEvent e) {
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    loadUsers();
+                if (e.getStateChange() == ItemEvent.SELECTED && config != null) {
+                    loadIdentities(config.getType());
                 }
             }
         });
     }
 
-    private void loadUsers() {
+    private void loadIdentities(final EntityType type) {
         if (providerComboBox.getSelectedItem() instanceof EntityHeader) {
             final EntityHeader selected = (EntityHeader) providerComboBox.getSelectedItem();
-            final List<EntityHeader> users = new ArrayList<>();
+            final List<EntityHeader> identities = new ArrayList<>();
             try {
-                users.addAll(Registry.getDefault().getIdentityAdmin().findAllUsers(selected.getGoid()));
+                if (type == EntityType.USER) {
+                    identities.addAll(Registry.getDefault().getIdentityAdmin().findAllUsers(selected.getGoid()));
+                } else if (type == EntityType.GROUP) {
+                    identities.addAll(Registry.getDefault().getIdentityAdmin().findAllGroups(selected.getGoid()));
+                }
             } catch (final FindException ex) {
-                logger.log(Level.WARNING, "Unable to retrieve users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                logger.log(Level.WARNING, "Unable to retrieve identities: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
-            specificObjectsModel.setSelectableObjects(users);
+            specificObjectsModel.setSelectableObjects(identities);
+        } else {
+            specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
         }
+    }
+
+    private boolean isIdentityType(final EntityType type) {
+        return type == EntityType.USER || type == EntityType.GROUP;
     }
 
     private class TableListener implements TableModelListener {
