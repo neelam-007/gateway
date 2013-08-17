@@ -491,6 +491,8 @@ UPDATE internal_user SET goid = toGoid(@internal_user_prefix, old_objectid) wher
 UPDATE internal_user SET goid = toGoid(0, 3) where old_objectid = 3;
 ALTER TABLE internal_user DROP COLUMN old_objectid;
 
+UPDATE rbac_assignment SET identity_id = goidToString(toGoid(0, 3)) where identity_id = '3' and entity_type='User';
+
 DROP INDEX provider_oid ON internal_user_group;
 DROP INDEX user_id ON internal_user_group;
 

@@ -537,6 +537,8 @@ ALTER TABLE internal_user ALTER COLUMN goid NOT NULL;
 ALTER TABLE internal_user DROP COLUMN objectid_backup;
 ALTER TABLE internal_user ADD PRIMARY KEY (goid);
 
+UPDATE rbac_assignment SET identity_id = goidToString(toGoid(0, 3)) where identity_id = '3' and entity_type='User';
+
 ALTER TABLE internal_user_group ADD COLUMN objectid_backup bigint;
 update internal_user_group set objectid_backup = objectid;
 ALTER TABLE internal_user_group DROP COLUMN objectid;

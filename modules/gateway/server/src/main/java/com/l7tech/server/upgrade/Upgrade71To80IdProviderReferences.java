@@ -216,7 +216,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
         return isDefaultAdministrator(userIdStr)? DEFAULT_ADMIN_USER_ID: Goid.toString(new Goid(internal_user_prefix, Long.parseLong(userIdStr)));
     }
     private boolean isDefaultAdministrator(String userId) {
-        return userId.equals("3");
+        return userId.equals(DEFAULT_ADMIN_USER_ID);
     }
 
     /**
