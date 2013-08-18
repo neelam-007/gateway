@@ -9,7 +9,9 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.HibernateGoidEntityManager;
+import org.apache.http.util.EntityUtils;
 import org.springframework.dao.DataAccessException;
 
 import java.util.*;
@@ -66,6 +68,7 @@ public class JmsEndpointManagerImpl
                 Object[] row = (Object[]) result1;
                 if (row[0]instanceof Goid) {
                     JmsEndpointHeader header = new JmsEndpointHeader(row[0].toString(), String.valueOf(row[1]), String.valueOf(row[2]), Integer.parseInt(String.valueOf(row[3])), Boolean.valueOf(String.valueOf(row[4])));
+                    header.setConnectionGoid(connectionOid);
                     result.add(header);
                 }
             }
@@ -86,6 +89,18 @@ public class JmsEndpointManagerImpl
         jmsFilters.remove(DEFAULT_SEARCH_NAME);
 
         return doFindHeaders( offset, windowSize, jmsFilters, false ); // conjunction
+    }
+
+    @Override
+    protected JmsEndpointHeader newHeader(final JmsEndpoint entity) {
+        JmsEndpointHeader header = null;
+        if (entity != null) {
+            final EntityHeader fromEntity = EntityHeaderUtils.fromEntity(entity);
+            if (fromEntity instanceof JmsEndpointHeader) {
+                header = (JmsEndpointHeader)fromEntity;
+            }
+        }
+        return header != null ? header : super.newHeader(entity);
     }
 
     protected UniqueType getUniqueType() {

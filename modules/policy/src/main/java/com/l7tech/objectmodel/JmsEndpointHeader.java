@@ -14,6 +14,7 @@ public class JmsEndpointHeader extends ZoneableEntityHeader {
 
     private String providerName;
     private boolean incoming;
+    private Goid connectionGoid;
 
     public JmsEndpointHeader(String id, String name, String description, int version, boolean incoming) {
         super(id, EntityType.JMS_ENDPOINT, name, description, version);
@@ -34,6 +35,14 @@ public class JmsEndpointHeader extends ZoneableEntityHeader {
 
     public void setIncoming(boolean incoming) {
         this.incoming = incoming;
+    }
+
+    public Goid getConnectionGoid() {
+        return connectionGoid;
+    }
+
+    public void setConnectionGoid(final Goid connectionGoid) {
+        this.connectionGoid = connectionGoid;
     }
 
     @Override

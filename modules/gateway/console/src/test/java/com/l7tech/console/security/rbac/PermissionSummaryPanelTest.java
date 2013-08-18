@@ -697,6 +697,68 @@ public class PermissionSummaryPanelTest {
         assertEquals(providerGoid.toHexString(), attributes.get("providerId"));
     }
 
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsEndpointWithConnection() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_ENDPOINT);
+        config.setGrantJmsConnectionAccess(true);
+        operations.add(OperationType.READ);
+        final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
+        final Goid connectionGoid = new Goid(0, 1);
+        header.setConnectionGoid(connectionGoid);
+        entities.add(header);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<EntityType, Permission> permissionMap = new HashMap<>();
+        for (final Permission permission : config.getGeneratedPermissions()) {
+            assertEquals(1, permission.getScope().size());
+            permissionMap.put(permission.getEntityType(), permission);
+        }
+        assertEquals("1", ((ObjectIdentityPredicate) permissionMap.get(EntityType.JMS_ENDPOINT).getScope().iterator().next()).getTargetEntityId());
+        assertEquals(connectionGoid.toHexString(), ((ObjectIdentityPredicate) permissionMap.get(EntityType.JMS_CONNECTION).getScope().iterator().next()).getTargetEntityId());
+    }
+
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsEndpointWithoutConnection() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_ENDPOINT);
+        config.setGrantJmsConnectionAccess(false);
+        operations.add(OperationType.READ);
+        final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
+        final Goid connectionGoid = new Goid(0, 1);
+        header.setConnectionGoid(connectionGoid);
+        entities.add(header);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.JMS_ENDPOINT, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
+        assertEquals("1", ((ObjectIdentityPredicate) permission.getScope().iterator().next()).getTargetEntityId());
+    }
+
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsEndpointWithNullConnectionGoid() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_ENDPOINT);
+        config.setGrantJmsConnectionAccess(true);
+        operations.add(OperationType.READ);
+        final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
+        header.setConnectionGoid(null);
+        entities.add(header);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.JMS_ENDPOINT, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
+        assertEquals("1", ((ObjectIdentityPredicate) permission.getScope().iterator().next()).getTargetEntityId());
+    }
+
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {
         return countPredicateTypes(Collections.singleton(permission));
     }

@@ -100,6 +100,7 @@ public final class EntityHeaderUtils {
             JmsEndpoint endpoint = (JmsEndpoint) e;
             final JmsEndpointHeader header = new JmsEndpointHeader(endpoint.getId(), endpoint.getName(), endpoint.getDestinationName(), endpoint.getVersion(), endpoint.isMessageSource());
             header.setSecurityZoneGoid(endpoint.getSecurityZone() == null ? null : endpoint.getSecurityZone().getGoid());
+            header.setConnectionGoid(endpoint.getConnectionGoid());
             return header;
         } else if (e instanceof SsgActiveConnector) {
             return new SsgActiveConnectorHeader((SsgActiveConnector) e);

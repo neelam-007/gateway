@@ -186,6 +186,19 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         specificEntityPermission.getScope().addAll(scope);
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
+                        if (entityType == EntityType.JMS_ENDPOINT && config.isGrantJmsConnectionAccess() && header instanceof JmsEndpointHeader) {
+                            final JmsEndpointHeader endpointHeader = (JmsEndpointHeader) header;
+                            if (endpointHeader.getConnectionGoid() != null) {
+                                final Permission jmsConnectionPermission = new Permission(config.getRole(), op, EntityType.JMS_CONNECTION);
+                                final ObjectIdentityPredicate jmsConnectionPredicate = new ObjectIdentityPredicate(jmsConnectionPermission, endpointHeader.getConnectionGoid().toHexString());
+                                // header is just for display purposes
+                                jmsConnectionPredicate.setHeader(new EntityHeader(endpointHeader.getConnectionGoid().toHexString(), EntityType.JMS_CONNECTION, "connection for endpoint " + endpointHeader.getName(), null));
+                                jmsConnectionPermission.getScope().add(jmsConnectionPredicate);
+                                config.getGeneratedPermissions().add(jmsConnectionPermission);
+                            } else {
+                                logger.log(Level.WARNING, "Cannot add permission for jms connection because endpoint's jms connection goid is null.");
+                            }
+                        }
                     }
                     if (entityType.isFolderable() && config.isGrantReadSpecificFolderAncestry()) {
                         config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));

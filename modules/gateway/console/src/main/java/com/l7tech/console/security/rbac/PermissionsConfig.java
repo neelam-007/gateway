@@ -28,6 +28,7 @@ public class PermissionsConfig {
     private boolean grantReadFolderAncestry;
     private boolean grantReadSpecificFolderAncestry;
     private boolean grantReadAliasOwningEntities;
+    private boolean grantJmsConnectionAccess;
     private Set<AttributePredicate> attributePredicates = new HashSet<>();
     private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
@@ -154,6 +155,18 @@ public class PermissionsConfig {
      */
     public void setGrantReadAliasOwningEntities(final boolean grantReadAliasOwningEntities) {
         this.grantReadAliasOwningEntities = grantReadAliasOwningEntities;
+    }
+
+    public boolean isGrantJmsConnectionAccess() {
+        return grantJmsConnectionAccess;
+    }
+
+    /**
+     * @param grantJmsConnectionAccess true if the user has selected to grant the access to the jms connection of any selected jms endpoints.
+     *                                 Applies to {@link ScopeType#SPECIFIC_OBJECTS}.
+     */
+    public void setGrantJmsConnectionAccess(final boolean grantJmsConnectionAccess) {
+        this.grantJmsConnectionAccess = grantJmsConnectionAccess;
     }
 
     /**

@@ -133,6 +133,18 @@ public class EntityHeaderUtilsTest {
         assertNull(header.getSecurityZoneGoid());
     }
 
+    @BugId("SSG-6919")
+    @Test
+    public void fromEntityJmsEndpointSetsConnectionGoid() {
+        final JmsEndpoint endpoint = new JmsEndpoint();
+        endpoint.setMessageSource(true);
+        final Goid connectionGoid = new Goid(0, 1);
+        endpoint.setConnectionGoid(connectionGoid);
+        final JmsEndpointHeader header = (JmsEndpointHeader) EntityHeaderUtils.fromEntity(endpoint);
+        assertEquals(connectionGoid, header.getConnectionGoid());
+        assertTrue(header.isIncoming());
+    }
+
     @Test
     public void fromEntityZoneablePersistentEntitySetsSecurityZoneOid() {
         final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(OID, VERSION, zone);
