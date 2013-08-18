@@ -58,6 +58,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                     invalidOps.add(OperationType.UPDATE);
+                } else if (type == EntityType.TRUSTED_ESM) {
+                    invalidOps.add(OperationType.CREATE);
+                    invalidOps.add(OperationType.UPDATE);
                 }
                 ENTITY_TYPES.put(type, invalidOps);
             }
