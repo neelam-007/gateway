@@ -24,6 +24,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private static final String SELECT_A_TYPE = "(select a type)";
     private static final Map<EntityType, Set<OperationType>> ENTITY_TYPES;
     private static final Set<EntityType> SINGULAR_ENTITY_TYPES;
+    private static final Set<EntityType> LARGE_ENTITY_TYPES;
     private JPanel contentPanel;
     private JPanel applyToPanel;
     private JPanel restrictScopePanel;
@@ -46,6 +47,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         SINGULAR_ENTITY_TYPES.add(EntityType.RESOLUTION_CONFIGURATION);
         SINGULAR_ENTITY_TYPES.add(EntityType.PASSWORD_POLICY);
 
+        LARGE_ENTITY_TYPES = new HashSet<>();
+        LARGE_ENTITY_TYPES.add(EntityType.METRICS_BIN);
+
         ENTITY_TYPES = new TreeMap(ComparatorUtils.nullLowComparator(EntityType.NAME_COMPARATOR));
         ENTITY_TYPES.put(null, null);
         for (final EntityType type : EntityType.values()) {
@@ -61,6 +65,10 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                 } else if (type == EntityType.TRUSTED_ESM || type == EntityType.TRUSTED_ESM_USER) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.UPDATE);
+                } else if (type == EntityType.METRICS_BIN) {
+                    invalidOps.add(OperationType.CREATE);
+                    invalidOps.add(OperationType.UPDATE);
+                    invalidOps.add(OperationType.DELETE);
                 }
                 ENTITY_TYPES.put(type, invalidOps);
             }
@@ -78,80 +86,6 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         enableDisable();
     }
 
-    private void initRadioButtons() {
-        final RunOnChangeListener radioListener = new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                if (config != null) {
-                    setScope(config);
-                    enableDisable();
-                    notifyListeners();
-                }
-            }
-        });
-        allTypesRadio.addItemListener(radioListener);
-        specificTypeRadio.addItemListener(radioListener);
-        allObjectsRadio.addItemListener(radioListener);
-        conditionRadio.addItemListener(radioListener);
-        specificObjectsRadio.addItemListener(radioListener);
-    }
-
-    private void initCheckBoxes() {
-        final RunOnChangeListener checkBoxListener = new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                notifyListeners();
-            }
-        });
-        createCheckBox.addChangeListener(checkBoxListener);
-        readCheckBox.addChangeListener(checkBoxListener);
-        updateCheckBox.addChangeListener(checkBoxListener);
-        deleteCheckBox.addChangeListener(checkBoxListener);
-    }
-
-    private void initComboBox() {
-        typeComboBox.setModel(new DefaultComboBoxModel(ENTITY_TYPES.keySet().toArray()));
-        typeComboBox.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                if (value instanceof EntityType) {
-                    final EntityType type = (EntityType) value;
-                    value = SINGULAR_ENTITY_TYPES.contains(type) ? type.getName() : type.getPluralName();
-                } else {
-                    value = SELECT_A_TYPE;
-                }
-                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            }
-        });
-        typeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                enableDisable();
-            }
-        }));
-    }
-
-    private void enableDisable() {
-        typeComboBox.setEnabled(specificTypeRadio.isSelected());
-        final Object selectedItem = typeComboBox.getSelectedItem();
-        final boolean enableRadiosAndBoxes = allTypesRadio.isSelected() || selectedItem != null;
-        Set<OperationType> invalidOps = null;
-        if (selectedItem instanceof EntityType) {
-            final EntityType selected = (EntityType) selectedItem;
-            invalidOps = ENTITY_TYPES.get(selected);
-        }
-        allObjectsRadio.setEnabled(enableRadiosAndBoxes);
-        conditionRadio.setEnabled(allTypesRadio.isSelected() || (selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem)));
-        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem));
-        createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
-        readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
-        updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
-        deleteCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.DELETE, invalidOps));
-    }
-
-    private boolean operationEnabled(final OperationType operation, final Set<OperationType> invalidOps) {
-        return invalidOps == null || !invalidOps.contains(operation);
-    }
 
     @Override
     public String getStepLabel() {
@@ -162,8 +96,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     public boolean canAdvance() {
         final boolean atLeastOneOpSelected = createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
         final boolean typeOk = allTypesRadio.isSelected() || (specificTypeRadio.isSelected() && typeComboBox.getSelectedItem() != null);
-        // specific objects scope cannot be selected in combination with all types
-        final boolean scopeOk = !(specificObjectsRadio.isSelected() && allTypesRadio.isSelected());
+        final boolean scopeOk = (allObjectsRadio.isSelected() && allObjectsRadio.isEnabled()) ||
+                (conditionRadio.isSelected() && conditionRadio.isEnabled()) ||
+                (specificObjectsRadio.isSelected() && specificObjectsRadio.isEnabled());
         return atLeastOneOpSelected && typeOk && scopeOk;
     }
 
@@ -233,5 +168,81 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             ops.add(OperationType.DELETE);
         }
         config.setOperations(ops);
+    }
+
+    private void initRadioButtons() {
+        final RunOnChangeListener radioListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                if (config != null) {
+                    setScope(config);
+                    enableDisable();
+                    notifyListeners();
+                }
+            }
+        });
+        allTypesRadio.addItemListener(radioListener);
+        specificTypeRadio.addItemListener(radioListener);
+        allObjectsRadio.addItemListener(radioListener);
+        conditionRadio.addItemListener(radioListener);
+        specificObjectsRadio.addItemListener(radioListener);
+    }
+
+    private void initCheckBoxes() {
+        final RunOnChangeListener checkBoxListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        });
+        createCheckBox.addChangeListener(checkBoxListener);
+        readCheckBox.addChangeListener(checkBoxListener);
+        updateCheckBox.addChangeListener(checkBoxListener);
+        deleteCheckBox.addChangeListener(checkBoxListener);
+    }
+
+    private void initComboBox() {
+        typeComboBox.setModel(new DefaultComboBoxModel(ENTITY_TYPES.keySet().toArray()));
+        typeComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+                if (value instanceof EntityType) {
+                    final EntityType type = (EntityType) value;
+                    value = SINGULAR_ENTITY_TYPES.contains(type) ? type.getName() : type.getPluralName();
+                } else {
+                    value = SELECT_A_TYPE;
+                }
+                return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            }
+        });
+        typeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+                notifyListeners();
+            }
+        }));
+    }
+
+    private void enableDisable() {
+        typeComboBox.setEnabled(specificTypeRadio.isSelected());
+        final Object selectedItem = typeComboBox.getSelectedItem();
+        final boolean enableRadiosAndBoxes = allTypesRadio.isSelected() || selectedItem != null;
+        Set<OperationType> invalidOps = null;
+        if (selectedItem instanceof EntityType) {
+            final EntityType selected = (EntityType) selectedItem;
+            invalidOps = ENTITY_TYPES.get(selected);
+        }
+        allObjectsRadio.setEnabled(enableRadiosAndBoxes);
+        conditionRadio.setEnabled(allTypesRadio.isSelected() || (selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem)));
+        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem) && !LARGE_ENTITY_TYPES.contains(selectedItem));
+        createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
+        readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
+        updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
+        deleteCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.DELETE, invalidOps));
+    }
+
+    private boolean operationEnabled(final OperationType operation, final Set<OperationType> invalidOps) {
+        return invalidOps == null || !invalidOps.contains(operation);
     }
 }
