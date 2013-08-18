@@ -4,6 +4,7 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
@@ -62,7 +63,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final int ZONE_TAB_INDEX = 2;
     private static final int FOLDER_TAB_INDEX = 1;
     private static final String SELECT_OPTIONS_FOR_THESE_PERMISSIONS = "Select options for these permissions";
-    private static final String SELECT_A_PROVIDER = "(select a provider)";
+    private static final String SELECT = "(select)";
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -88,8 +89,9 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     // use this check box for entity type specific input
     private JCheckBox specificAncestryCheckBox;
     private JCheckBox aliasOwnersCheckBox;
-    private JComboBox providerComboBox;
-    private JPanel providerPanel;
+    private JComboBox comboBox;
+    private JPanel comboBoxPanel;
+    private JLabel comboBoxLabel;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -108,7 +110,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         setShowDescriptionPanel(false);
         add(contentPanel);
         initTables();
-        initProvidersComboBox();
+        initComboBox();
     }
 
     @Override
@@ -169,14 +171,29 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 header.setText("Select " + typePlural);
                                 specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
                                 specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
+
+                                // folderable entities
                                 specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
                                 specificAncestryCheckBox.setVisible(type.isFolderable());
+
+                                // aliases
                                 final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
                                 aliasOwnersCheckBox.setVisible(isAlias);
                                 aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
-                                providerPanel.setVisible(isIdentityType(type));
+
+                                // identities or trusted esm user
+                                String comboBoxDisplay = StringUtils.EMPTY;
+                                if (isIdentityType(type)) {
+                                    comboBoxDisplay = EntityType.ID_PROVIDER_CONFIG.getName() + ":";
+                                } else if (type == EntityType.TRUSTED_ESM_USER) {
+                                    comboBoxDisplay = EntityType.TRUSTED_ESM.getName() + ":";
+                                }
+                                comboBoxLabel.setText(comboBoxDisplay);
+                                comboBoxPanel.setVisible(isIdentityType(type) || type == EntityType.TRUSTED_ESM_USER);
+                                loadComboBox(type);
+
                                 if (config.getSelectedEntities().isEmpty()) {
-                                    if (!isIdentityType(type)) {
+                                    if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
                                         final List<EntityHeader> entities = new ArrayList<>();
                                         try {
                                             entities.addAll(EntityUtils.getEntities(config.getType()));
@@ -185,7 +202,11 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                         }
                                         specificObjectsModel.setSelectableObjects(entities);
                                     } else {
-                                        loadIdentities(type);
+                                        if (type == EntityType.TRUSTED_ESM_USER) {
+                                            loadTrustedEsmUsers();
+                                        } else {
+                                            loadIdentities(type);
+                                        }
                                     }
                                 }
                             }
@@ -196,9 +217,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 }
             }
         }
-
         setSkipped(canSkip(settings)
-
         );
     }
 
@@ -474,42 +493,51 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         return names;
     }
 
-    private void initProvidersComboBox() {
-        EntityHeader[] providerHeaders;
-        try {
-            providerHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
-        } catch (final FindException e) {
-            logger.log(Level.WARNING, "Unable to retrieve identity providers: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            providerHeaders = new EntityHeader[]{};
-        }
-        final List<EntityHeader> selection = new ArrayList<>(providerHeaders.length + 1);
-        selection.add(null);
-        selection.addAll(Arrays.asList(providerHeaders));
-        providerComboBox.setModel(new DefaultComboBoxModel(selection.toArray()));
-        providerComboBox.setRenderer(new DefaultListCellRenderer() {
+    private void initComboBox() {
+        comboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
                 if (value instanceof EntityHeader) {
                     value = ((EntityHeader) value).getName();
                 } else {
-                    value = SELECT_A_PROVIDER;
+                    value = SELECT;
                 }
                 return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             }
         });
-        providerComboBox.addItemListener(new ItemListener() {
+        comboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(final ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED && config != null) {
-                    loadIdentities(config.getType());
+                    if (isIdentityType(config.getType())) {
+                        loadIdentities(config.getType());
+                    } else {
+                        loadTrustedEsmUsers();
+                    }
                 }
             }
         });
     }
 
+    private void loadComboBox(final EntityType type) {
+        final List<EntityHeader> selection = new ArrayList<>();
+        selection.add(null);
+        try {
+            if (isIdentityType(type)) {
+                selection.addAll(Registry.getDefault().getRbacAdmin().findEntities(EntityType.ID_PROVIDER_CONFIG));
+            } else if (type == EntityType.TRUSTED_ESM_USER) {
+                selection.addAll(Registry.getDefault().getRbacAdmin().findEntities(EntityType.TRUSTED_ESM));
+            }
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to load combo box entities for type " + type + ":" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+
+        comboBox.setModel(new DefaultComboBoxModel(selection.toArray()));
+    }
+
     private void loadIdentities(final EntityType type) {
-        if (providerComboBox.getSelectedItem() instanceof EntityHeader) {
-            final EntityHeader selected = (EntityHeader) providerComboBox.getSelectedItem();
+        if (comboBox.getSelectedItem() instanceof EntityHeader) {
+            final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
             final List<EntityHeader> identities = new ArrayList<>();
             try {
                 if (type == EntityType.USER) {
@@ -521,6 +549,24 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 logger.log(Level.WARNING, "Unable to retrieve identities: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
             specificObjectsModel.setSelectableObjects(identities);
+        } else {
+            specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+        }
+    }
+
+    private void loadTrustedEsmUsers() {
+        if (comboBox.getSelectedItem() instanceof EntityHeader) {
+            final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
+            final List<EntityHeader> userHeaders = new ArrayList<>();
+            try {
+                final Collection<TrustedEsmUser> trustedEsmUsers = Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(selected.getOid());
+                for (final TrustedEsmUser trustedEsmUser : trustedEsmUsers) {
+                    userHeaders.add(new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, trustedEsmUser.getEsmUserId(), null));
+                }
+            } catch (final FindException ex) {
+                logger.log(Level.WARNING, "Unable to retrieve trusted esm users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+            }
+            specificObjectsModel.setSelectableObjects(userHeaders);
         } else {
             specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
         }

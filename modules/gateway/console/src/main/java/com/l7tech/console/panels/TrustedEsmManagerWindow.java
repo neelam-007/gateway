@@ -4,20 +4,18 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
-import static com.l7tech.gui.util.TableUtil.column;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import static com.l7tech.util.Functions.propertyTransform;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -31,12 +29,16 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gui.util.TableUtil.column;
+import static com.l7tech.util.Functions.propertyTransform;
+
 /**
  * Dialog that provides the ability to view and modify the Trusted ESM and Trusted ESM User registrations
  * on this Gateway.
  */
 public class TrustedEsmManagerWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(TrustedEsmManagerWindow.class.getName());
+    private static final String NAME_UNAVAILABLE = "<name unavailable>";
 
     private JButton deleteButton;
     private JButton closeButton;
@@ -81,7 +83,7 @@ public class TrustedEsmManagerWindow extends JDialog {
         });
 
         Utilities.deuglifySplitPane(splitPane);
-        Utilities.equalizeButtonSizes(new JButton[] {
+        Utilities.equalizeButtonSizes(new JButton[]{
                 deleteButton,
                 closeButton,
                 deleteMappingButton,
@@ -140,7 +142,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                             showError("Unable to delete ESM user mapping", e);
                         }
 
-                        if ( reloadUserMappingDisplay ) {
+                        if (reloadUserMappingDisplay) {
                             loadUsersTable(esm.getOid());
                         }
                     }
@@ -212,8 +214,6 @@ public class TrustedEsmManagerWindow extends JDialog {
     }
 
     private void loadUsersTable(long esmOid) {
-        final boolean[] incompleteLoad = new boolean[] { false };
-
         try {
             List<TrustedEsmUser> esmUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(esmOid));
 
@@ -221,33 +221,42 @@ public class TrustedEsmManagerWindow extends JDialog {
             usersTableModel.setRows(Functions.grepNotNull(Functions.map(esmUsers, new Functions.Unary<UserRow, TrustedEsmUser>() {
                 @Override
                 public UserRow call(TrustedEsmUser trustedEsmUser) {
+                    IdentityProviderConfig idprov = null;
+                    User user = null;
                     try {
-                        final Goid providerOid = trustedEsmUser.getProviderGoid();
-                        IdentityProviderConfig idprov = identityAdmin.findIdentityProviderConfigByID(providerOid);
+                        idprov = identityAdmin.findIdentityProviderConfigByID(trustedEsmUser.getProviderGoid());
                         if (idprov == null) {
                             logger.log(Level.WARNING, "ID provider not found for ESM user mapping " + trustedEsmUser);
-                            incompleteLoad[0] = true;
-                            return null;
                         }
-
-                        String idProviderDisplayName = idprov.getName();
-                        User user = identityAdmin.findUserByID(idprov.getGoid(), trustedEsmUser.getSsgUserId());
-                        if (user == null) {
-                            logger.log(Level.WARNING, "User not found for ESM user mapping " + trustedEsmUser);
-                            incompleteLoad[0] = true;
-                            return null;
-                        }
-
-                        String username = user.getLogin();
-                        if (username == null) username = user.getName();
-                        if (username == null) username = user.getId();
-
-                        return new UserRow(trustedEsmUser, username, idProviderDisplayName);
-                    } catch (ObjectModelException e) {
-                        logger.log(Level.WARNING, "Unable to load user row: " + ExceptionUtils.getMessage(e), e);
-                        incompleteLoad[0] = true;
-                        return null;
+                    } catch (final FindException | PermissionDeniedException e) {
+                        logger.log(Level.WARNING, "Unable to retrieve identity provider for ESM user mapping: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
+
+                    if (idprov != null) {
+                        try {
+                            user = identityAdmin.findUserByID(idprov.getGoid(), trustedEsmUser.getSsgUserId());
+                            if (user == null) {
+                                logger.log(Level.WARNING, "User not found for ESM user mapping " + trustedEsmUser);
+                            } else {
+                            }
+                        } catch (final FindException | PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Unable to retrieve user for ESM user mapping: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                    }
+
+                    final String idProviderDisplayName = idprov == null ? NAME_UNAVAILABLE : idprov.getName();
+                    String username = NAME_UNAVAILABLE;
+                    if (user != null) {
+                        if (user.getLogin() != null) {
+                            username = user.getLogin();
+                        } else if (user.getName() != null) {
+                            username = user.getName();
+                        } else {
+                            username = user.getId();
+                        }
+                    }
+
+                    return new UserRow(trustedEsmUser, username, idProviderDisplayName);
                 }
             })));
         } catch (RuntimeException e) {
@@ -255,9 +264,6 @@ public class TrustedEsmManagerWindow extends JDialog {
         } catch (ObjectModelException e) {
             showError("Unable to load users table", e);
         }
-
-        if (incompleteLoad[0])
-            DialogDisplayer.showMessageDialog(this, "Warning: Not all user mappings were loaded successfully.", "Error", JOptionPane.WARNING_MESSAGE, null);
     }
 
     private static class CertSubjectFormatter implements Functions.Unary<Object, TrustedEsm> {
