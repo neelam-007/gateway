@@ -40,6 +40,14 @@ public class CustomKeyValueStoreManagerImpl extends HibernateGoidEntityManager<C
     }
 
     @Override
+    public CustomKeyValueStore findByUniqueName(final String name) throws FindException {
+        if (name == null) {
+            return null;
+        }
+        return super.findByUniqueName(name);
+    }
+
+    @Override
     public void deleteByKey(@NotNull String key) throws DeleteException {
         try {
             CustomKeyValueStore customKeyValue = this.findByUniqueName(key);

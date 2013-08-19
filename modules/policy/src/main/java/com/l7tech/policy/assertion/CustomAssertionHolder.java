@@ -330,10 +330,15 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
         if (customAssertion instanceof CustomPolicyValidator) {
             meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.console.util.CustomAssertionHolderValidator");
+        } else {
+            meta.put(POLICY_VALIDATOR_CLASSNAME, null);
         }
 
         if (this.getIsUiAutoOpen()) {
             meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.CustomAssertionHolderAdvice");
+        } else {
+            meta.put(POLICY_ADVICE_CLASSNAME, null);
+            meta.put(POLICY_ADVICE_INSTANCE, null);
         }
 
         return meta;
