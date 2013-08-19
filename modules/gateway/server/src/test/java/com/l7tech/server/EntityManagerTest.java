@@ -20,7 +20,7 @@ import java.io.IOException;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/com/l7tech/server/resources/embeddedDbContext.xml",
         "/com/l7tech/server/resources/testManagerContext.xml",
-        "/com/l7tech/server/resources/testDataAccessContext.xml"})
+        "/com/l7tech/server/resources/dataAccessContext.xml"})
 @TransactionConfiguration(transactionManager = "transactionManager", defaultRollback = true)
 @Transactional
 @Ignore

@@ -92,4 +92,29 @@
     <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
+
+    <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
+        <constructor-arg ref="masterPasswordManager"/>
+        <property name="passwordProperties">
+            <list>
+                <value>node.cluster.pass</value>
+                <value>node.db.config.main.pass</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
+        <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
+        <constructor-arg>
+            <bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="masterPasswordManager" class="com.l7tech.util.MasterPasswordManager" depends-on="systemProperties">
+        <constructor-arg>
+            <bean class="com.l7tech.util.DefaultMasterPasswordFinder">
+                <constructor-arg value="file:${com.l7tech.server.configDirectory}${file.separator}omp.dat"/>
+            </bean>
+        </constructor-arg>
+    </bean>
 </beans>
