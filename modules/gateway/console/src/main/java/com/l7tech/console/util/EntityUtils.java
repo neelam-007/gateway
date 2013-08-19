@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
@@ -161,6 +162,13 @@ public class EntityUtils {
             if (serviceUsages != null) {
                 for (final ServiceUsage serviceUsage : serviceUsages) {
                     entities.add(new ServiceUsageHeader(serviceUsage.getServiceid(), serviceUsage.getNodeid()));
+                }
+            }
+        } else if (type == EntityType.CLUSTER_INFO) {
+            final ClusterNodeInfo[] nodeInfos = Registry.getDefault().getClusterStatusAdmin().getClusterStatus();
+            if (nodeInfos != null) {
+                for (final ClusterNodeInfo nodeInfo : nodeInfos) {
+                    entities.add(new EntityHeader(nodeInfo.getId(), EntityType.CLUSTER_INFO, nodeInfo.getName(), null));
                 }
             }
         } else {

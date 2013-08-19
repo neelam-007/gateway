@@ -55,7 +55,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         for (final EntityType type : EntityType.values()) {
             if (type != EntityType.ANY && type.isDisplayedInGui()) {
                 final Set<OperationType> invalidOps = new HashSet<>();
-                if (SINGULAR_ENTITY_TYPES.contains(type) || type == EntityType.ASSERTION_ACCESS) {
+                if (SINGULAR_ENTITY_TYPES.contains(type) || type == EntityType.ASSERTION_ACCESS || type == EntityType.CLUSTER_INFO) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                 } else if (type == EntityType.SERVICE_TEMPLATE || type == EntityType.METRICS_BIN || type == EntityType.SERVICE_USAGE) {
