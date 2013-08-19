@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.transport.ftp;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.io.PrintStream;
 import java.io.Serializable;
 
@@ -57,7 +59,8 @@ public interface FtpClientConfig extends Serializable, Cloneable {
     FtpCredentialsSource getCredentialsSource();
 
     FtpClientConfig setClientCertId(long id);
-    long getClientCertId();
+    FtpClientConfig setClientCertId(Goid id);
+    Goid getClientCertId();
 
     FtpClientConfig setClientCertAlias(String alias);
     String getClientCertAlias();

@@ -3,6 +3,7 @@ package com.l7tech.server.transport.ftp;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
@@ -57,7 +58,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                String userName,
                                String password,
                                boolean useClientCert,
-                               long clientCertKeystoreId,
+                               Goid clientCertKeystoreId,
                                String clientCertKeyAlias,
                                String directory,
                                int timeout) throws FtpTestException {

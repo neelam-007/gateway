@@ -73,9 +73,9 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
-    public SsgKeyEntry findKeyEntry( final String alias, final long keystoreOid ) throws FindException, KeyStoreException {
+    public SsgKeyEntry findKeyEntry( final String alias, final Goid keystoreGoid ) throws FindException, KeyStoreException {
         final TrustedCertAdmin admin = getAdminInterface( TrustedCertAdmin.class );
-        return admin.findKeyEntry( alias, keystoreOid );
+        return admin.findKeyEntry( alias, keystoreGoid );
     }
 
     @Override

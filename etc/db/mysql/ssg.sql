@@ -845,7 +845,7 @@ CREATE TABLE sample_messages (
   xml mediumtext NOT NULL,
   operation_name varchar(128),
   security_zone_goid binary(16),
-  INDEX i_ps_oid (published_service_goid),
+  INDEX i_ps_goid (published_service_goid),
   INDEX i_operation_name (operation_name),
   FOREIGN KEY (published_service_goid) REFERENCES published_service (goid) ON DELETE CASCADE,
   PRIMARY KEY (goid),
@@ -922,47 +922,47 @@ CREATE TABLE service_documents (
 
 DROP TABLE IF EXISTS keystore_file;
 CREATE TABLE keystore_file (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   format varchar(128) NOT NULL,
   databytes mediumblob,
   properties mediumtext,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- placeholder for legacy Software Static, never loaded or saved
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (0, 0, 'Software Static', 'ss', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,0), 0, 'Software Static', 'ss', null, null);
 
 -- tar.gz of items in sca 6000 keydata directory
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (1, 0, 'HSM', 'hsm.sca.targz', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,1), 0, 'HSM', 'hsm.sca.targz', null, null);
 
 -- bytes of a PKCS#12 keystore
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (2, 0, 'Software DB', 'sdb.pkcs12', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,2), 0, 'Software DB', 'sdb.pkcs12', null, null);
 
 -- placeholder for ID reserved for Luna, never loaded or saved
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (3, 0, 'SafeNet HSM', 'luna', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,3), 0, 'SafeNet HSM', 'luna', null, null);
 
 -- serialized NcipherKeyStoreData for an nCipher keystore
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (4, 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,4), 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
 
--- Reserve OID 5 for "Generic" keystores
--- insert into keystore_file (objectid, version, name, format, databytes, properties) values (5, 0, 'Generic', 'generic', null, null);
+-- Reserve GOID 5 for "Generic" keystores
+-- insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,5), 0, 'Generic', 'generic', null, null);
 
 --
 -- Table structure for keystore_key_metadata (stores metadata for keys in keystores accessible to the Gateway)
 --
 DROP TABLE IF EXISTS keystore_key_metadata;
 CREATE TABLE keystore_key_metadata (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   version int(11) NOT NULL default 0,
-  keystore_file_oid bigint(20) NOT NULL,
+  keystore_file_goid binary(16) NOT NULL,
   alias varchar(255) NOT NULL,
   security_zone_goid binary(16),
-  PRIMARY KEY (objectid),
-  UNIQUE KEY i_ks_alias (keystore_file_oid, alias),
-  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_oid) REFERENCES keystore_file (objectid) ON DELETE CASCADE,
+  PRIMARY KEY (goid),
+  UNIQUE KEY i_ks_alias (keystore_file_goid, alias),
+  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_goid) REFERENCES keystore_file (goid) ON DELETE CASCADE,
   CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1004,7 +1004,7 @@ CREATE TABLE http_configuration (
   ntlm_domain varchar(255) DEFAULT NULL,
   tls_version varchar(8) DEFAULT NULL,
   tls_key_use varchar(8) DEFAULT 'DEFAULT',
-  tls_keystore_oid bigint(20) NOT NULL DEFAULT 0,
+  tls_keystore_goid binary(16) NOT NULL DEFAULT 0,
   tls_key_alias varchar(255) DEFAULT NULL,
   tls_cipher_suites varchar(4096) DEFAULT NULL,
   timeout_connect int(10) NOT NULL DEFAULT -1,
@@ -1037,7 +1037,7 @@ CREATE TABLE connector (
   endpoints varchar(256) NOT NULL,
   secure tinyint(1) NOT NULL DEFAULT 0,
   client_auth tinyint(1) NOT NULL DEFAULT 0,
-  keystore_oid bigint(20) NULL,
+  keystore_goid binary(16) NULL,
   key_alias varchar(255) NULL,
   security_zone_goid binary(16),
   PRIMARY KEY (goid),
@@ -1132,7 +1132,7 @@ CREATE TABLE uddi_registries (
   publish_url varchar(255) NOT NULL,
   subscription_url varchar(255) NULL,
   client_auth tinyint(1) NOT NULL DEFAULT 0,
-  keystore_oid bigint(20) NULL,
+  keystore_goid binary(16) NULL,
   key_alias varchar(255) NULL,
   user_name varchar(128),
   password varchar(128),
@@ -1355,7 +1355,7 @@ CREATE TABLE rbac_assignment (
   UNIQUE KEY unique_assignment (provider_goid,role_goid,identity_id, entity_type),
   FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE,
   CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE,
-  INDEX i_rbacassign_poid (provider_goid),
+  INDEX i_rbacassign_pid (provider_goid),
   INDEX i_rbacassign_uid (identity_id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -2091,6 +2091,14 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1504),0,toGoid(0, -1500),'DELETE',NULL,'SITEMINDER_CONFIGURATION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -1505),0,toGoid(0, -1500),'READ',NULL,'SECURE_PASSWORD');
 
+CREATE TABLE goid_upgrade_map (
+  prefix bigint NOT NULL,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (prefix, table_name)
+);
+
+INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
+      ('keystore_file', 0);
 
 INSERT INTO ssg_version (current_version) VALUES ('8.0.0');
 

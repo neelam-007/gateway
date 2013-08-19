@@ -2,46 +2,33 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.api.ListenPortMO;
-import static com.l7tech.gateway.api.ListenPortMO.*;
-import static com.l7tech.gateway.api.ListenPortMO.TlsSettings.*;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.SsgConnectorManager;
-import com.l7tech.util.CollectionUtils;
-import static com.l7tech.util.CollectionUtils.foreach;
-import static com.l7tech.util.CollectionUtils.set;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
-import static com.l7tech.util.Functions.grepFirst;
-import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
-import static com.l7tech.util.Option.optional;
-import static com.l7tech.util.Option.some;
-import com.l7tech.util.Pair;
-import static com.l7tech.util.TextUtils.isNotEmpty;
-import static com.l7tech.util.TextUtils.join;
-import com.l7tech.util.ValidationUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static com.l7tech.gateway.api.ListenPortMO.TlsSettings;
+import static com.l7tech.gateway.api.ListenPortMO.TlsSettings.ClientAuthentication;
+import static com.l7tech.util.CollectionUtils.foreach;
+import static com.l7tech.util.CollectionUtils.set;
+import static com.l7tech.util.Functions.grepFirst;
+import static com.l7tech.util.Option.*;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.join;
 
 /**
  *
@@ -126,7 +113,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
         oldEntity.setPort( newEntity.getPort() );
         oldEntity.setEndpoints( newEntity.getEndpoints() );
         oldEntity.setClientAuth( newEntity.getClientAuth() );
-        oldEntity.setKeystoreOid( newEntity.getKeystoreOid() );
+        oldEntity.setKeystoreGoid(newEntity.getKeystoreGoid());
         oldEntity.setKeyAlias( newEntity.getKeyAlias() );
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );
         for ( final String name : oldEntity.getPropertyNames() ) {
@@ -225,7 +212,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
         if ( isSecureProtocol( entity.getScheme() ) ) {
             tlsSettings = ManagedObjectFactory.createTlsSettings();
             if ( entity.getKeyAlias() != null ) {
-                tlsSettings.setPrivateKeyId( PrivateKeyResourceFactory.toExternalId( entity.getKeystoreOid(), entity.getKeyAlias() ) );
+                tlsSettings.setPrivateKeyId( PrivateKeyResourceFactory.toExternalId( entity.getKeystoreGoid(), entity.getKeyAlias() ) );
             }
             switch ( entity.getClientAuth() ) {
                 case SsgConnector.CLIENT_AUTH_ALWAYS:
@@ -253,8 +240,8 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
             if ( tlsSettings.isSome() ) {
                 final Option<String> externalKeyIdentifier = optional( tlsSettings.some().getPrivateKeyId() );
                 if ( externalKeyIdentifier.isSome() ) {
-                    final Pair<Long,String> keyIdentifier = PrivateKeyResourceFactory.toInternalId( externalKeyIdentifier.some(), PrivateKeyResourceFactory.INVALIDRESOURCE_THROWER );
-                    connector.setKeystoreOid( keyIdentifier.left );
+                    final Pair<Goid,String> keyIdentifier = PrivateKeyResourceFactory.toInternalId( externalKeyIdentifier.some(), PrivateKeyResourceFactory.INVALIDRESOURCE_THROWER );
+                    connector.setKeystoreGoid(keyIdentifier.left);
                     connector.setKeyAlias( keyIdentifier.right );
                 }
                 putProperty( connector, SsgConnector.PROP_TLS_CIPHERLIST, ifNotEmpty( join( ",", tlsSettings.some().getEnabledCipherSuites() ).toString() ) );

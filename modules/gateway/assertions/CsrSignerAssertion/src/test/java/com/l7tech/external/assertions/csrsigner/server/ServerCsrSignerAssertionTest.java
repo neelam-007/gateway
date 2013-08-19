@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -60,7 +61,7 @@ public class ServerCsrSignerAssertionTest {
     @BeforeClass
     public static void setUpStatics() throws Exception {
         Pair<X509Certificate, PrivateKey> ca = TestKeys.getCertAndKey("RSA_1024");
-        caEntry = new SsgKeyEntry(77, "my_ca_key", new X509Certificate[] { ca.left }, ca.right );
+        caEntry = new SsgKeyEntry(new Goid(0,77), "my_ca_key", new X509Certificate[] { ca.left }, ca.right );
 
         Pair<X509Certificate, PrivateKey> client = TestKeys.getCertAndKey("RSA_1536");
         clientKeyPair = new KeyPair(client.left.getPublicKey(), client.right);
@@ -74,7 +75,7 @@ public class ServerCsrSignerAssertionTest {
         ass = new CsrSignerAssertion();
         ass.setUsesDefaultKeyStore(false);
         ass.setKeyAlias("my_ca_key");
-        ass.setNonDefaultKeystoreId(77);
+        ass.setNonDefaultKeystoreId(new Goid(0,77));
         ass.setCsrVariableName("csr_var");
         ass.setOutputPrefix(null);
 
@@ -105,7 +106,7 @@ public class ServerCsrSignerAssertionTest {
 
     private void haveCaKey() throws FindException, KeyStoreException {
         // Configure keystore manager mock to have entry for 77:my_ca_key returning caEntry
-        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", 77)).thenReturn(caEntry);
+        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", new Goid(0,77))).thenReturn(caEntry);
     }
 
     @Test
@@ -173,7 +174,7 @@ public class ServerCsrSignerAssertionTest {
 
     @Test
     public void testPrivateKeyInaccessible() throws Exception {
-        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", 77)).thenThrow(new ObjectNotFoundException("no such key"));
+        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", new Goid(0,77))).thenThrow(new ObjectNotFoundException("no such key"));
 
         checkRequest(sass(), context(), AssertionStatus.SERVER_ERROR);
 
@@ -196,8 +197,8 @@ public class ServerCsrSignerAssertionTest {
 
     @Test
     public void testUnrecoverableKey() throws Exception {
-        SsgKeyEntry unrecoverableEntry = new SsgKeyEntry(77, "my_ca_key", caEntry.getCertificateChain(), null);
-        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", 77)).thenReturn(unrecoverableEntry);
+        SsgKeyEntry unrecoverableEntry = new SsgKeyEntry(new Goid(0,77), "my_ca_key", caEntry.getCertificateChain(), null);
+        when(ssgKeyStoreManager.lookupKeyByKeyAlias("my_ca_key", new Goid(0,77))).thenReturn(unrecoverableEntry);
 
         checkRequest(sass(), context(), AssertionStatus.SERVER_ERROR);
 

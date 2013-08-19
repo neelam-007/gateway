@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * Implemented by assertions having the possibility of using a non-default key pair. Using this interface on assertions
  * will make the referenced private key get picked up by the DependencyAnalyzer. If an assertion used more then one
@@ -11,8 +13,8 @@ package com.l7tech.policy.assertion;
 public interface PrivateKeyable {
     boolean isUsesDefaultKeyStore();
     void setUsesDefaultKeyStore(boolean usesDefault);
-    long getNonDefaultKeystoreId();
-    void setNonDefaultKeystoreId(long nonDefaultId);
+    Goid getNonDefaultKeystoreId();
+    void setNonDefaultKeystoreId(Goid nonDefaultId);
     String getKeyAlias();
     void setKeyAlias(String keyid);
 }

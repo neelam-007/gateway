@@ -12,6 +12,7 @@ import com.l7tech.util.Pair;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import javax.validation.constraints.Max;
@@ -93,7 +94,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
     /** If specified, this is the size of the thread pool for the connector (Currently HTTP(S) only). */
     public static final String PROP_THREAD_POOL_SIZE = "threadPoolSize";
 
-    /** If specified, service resolution should be bypassed for incoming requests, and they should be immediately routed to the specified service OID. */
+    /** If specified, service resolution should be bypassed for incoming requests, and they should be immediately routed to the specified service GOID. */
     public static final String PROP_HARDWIRED_SERVICE_ID = "hardwiredServiceId";
 
     /** If specified, incoming messages should be assumed to use the specified content type. */
@@ -234,7 +235,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
     private boolean secure;
     private String endpoints = "";
     private int clientAuth;
-    private Long keystoreOid;
+    private Goid keystoreGoid;
     private String keyAlias;
 
     private Map<String,String> properties = new HashMap<String,String>();
@@ -245,7 +246,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
     public SsgConnector() {
     }
 
-    public SsgConnector(Goid goid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Long keystoreOid, String keyAlias) {
+    public SsgConnector(Goid goid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Goid keystoreGoid, String keyAlias) {
         setGoid(goid);
         setName(name);
         this.port = port;
@@ -253,7 +254,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
         this.secure = secure;
         this.endpoints = endpoints;
         this.clientAuth = clientAuth;
-        this.keystoreOid = keystoreOid;
+        this.keystoreGoid = keystoreGoid;
         this.keyAlias = keyAlias;
     }
 
@@ -367,7 +368,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
     }
 
     /**
-     * Get the OID of the KeystoreFile instance in which can be found the server certificate and private key,
+     * Get the GOID of the KeystoreFile instance in which can be found the server certificate and private key,
      * if this connector will be using SSL.
      * <p/>
      * <b>Note:</b> caller should be prepared for the corresponding keystore to be unavailable on the current system.
@@ -375,35 +376,36 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
      * If this happens, the system should honor the "keyStoreSearchForAlias" ServerConfig setting (possibly searching
      * other keystores for a matching alias).
      * <p/>
-     * <b>Note:</b> A connector with a null key alias or keystore OID can still be configured as an HTTPS
+     * <b>Note:</b> A connector with a null key alias or keystore GOID can still be configured as an HTTPS
      * listener -- such listeners will just use the current default SSL key as their server cert.
      *
-     * @return the OID of the KeystoreFile instance that provides this connector's SSL server cert and private key,
+     * @return the GOID of the KeystoreFile instance that provides this connector's SSL server cert and private key,
      *         or null if one isn't set.
      */
-    @Column(name="keystore_oid")
-    public Long getKeystoreOid() {
-        return keystoreOid;
+    @Column(name="keystore_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getKeystoreGoid() {
+        return keystoreGoid;
     }
 
     /**
-     * Set the OID of the KeystoreFile instance in which can be found the server certificate and private key,
+     * Set the GOID of the KeystoreFile instance in which can be found the server certificate and private key,
      * if this connector will be using SSL.
      * <p/>
-     * See {@link #getKeystoreOid()} for more information.
+     * See {@link #getKeystoreGoid} for more information.
      *
-     * @param keystoreOid the OID of the KeystoreFile instance in which to find the private key with alias
+     * @param keystoreGoid the GOID of the KeystoreFile instance in which to find the private key with alias
      *        {@link #keyAlias}, or null if one is not configured.
      */
-    public void setKeystoreOid(Long keystoreOid) {
+    public void setKeystoreGoid(Goid keystoreGoid) {
         checkLocked();
-        this.keystoreOid = keystoreOid;
+        this.keystoreGoid = keystoreGoid;
     }
 
     /**
      * Get the alias of the private key to use for the SSL server socket, if this connector will be using SSL.
      * <p/>
-     * <b>Note:</b> A connector with a null key alias or keystore OID can still be configured as an HTTPS
+     * <b>Note:</b> A connector with a null key alias or keystore GOID can still be configured as an HTTPS
      * listener -- such listeners will just use the current default SSL key as their server cert.
      *
      * @return the private key alias, or null if one is not configured.
@@ -713,7 +715,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
         this.getPortRange();
         this.getClientAuth();
         this.getKeyAlias();
-        this.getKeystoreOid();
+        this.getKeystoreGoid();
         this.getPort();
         this.getPropertyNames();
         this.getScheme();
@@ -757,7 +759,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
         if (secure != that.secure) return false;
         if (endpoints != null ? !endpoints.equals(that.endpoints) : that.endpoints != null) return false;
         if (keyAlias != null ? !keyAlias.equals(that.keyAlias) : that.keyAlias != null) return false;
-        if (keystoreOid != null ? !keystoreOid.equals(that.keystoreOid) : that.keystoreOid != null) return false;
+        if (!Goid.equals(keystoreGoid, that.keystoreGoid)) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
         if (scheme != null ? !scheme.equals(that.scheme) : that.scheme != null) return false;
         if (securityZone != null ? !securityZone.equals(that.securityZone) : that.securityZone != null) return false;
@@ -774,7 +776,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
         result = 31 * result + (secure ? 1 : 0);
         result = 31 * result + (endpoints != null ? endpoints.hashCode() : 0);
         result = 31 * result + clientAuth;
-        result = 31 * result + (keystoreOid != null ? keystoreOid.hashCode() : 0);
+        result = 31 * result + (keystoreGoid != null ? keystoreGoid.hashCode() : 0);
         result = 31 * result + (keyAlias != null ? keyAlias.hashCode() : 0);
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
         result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
@@ -787,7 +789,7 @@ public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwne
         sb.append(port);
         sb.append(' ').append(scheme).append(secure ? " secure" : " noSecure");
         sb.append(' ').append(endpoints).append(" clientAuth=").append(clientAuth);
-        sb.append(" keystoreOid=").append(keystoreOid).append(" keyAlias=").append(keyAlias);
+        sb.append(" keystoreGoid=").append(keystoreGoid).append(" keyAlias=").append(keyAlias);
         List<String> props = getPropertyNames();
         for (String prop : props)
             sb.append(" P:").append(prop).append('=').append(getProperty(prop));

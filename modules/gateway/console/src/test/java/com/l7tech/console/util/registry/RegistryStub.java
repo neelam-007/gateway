@@ -301,7 +301,7 @@ public class RegistryStub extends Registry {
                     true,
                     SsgConnector.Endpoint.MESSAGE_INPUT.toString(),
                     SsgConnector.CLIENT_AUTH_OPTIONAL,
-                    -1L,
+                    new Goid(0,-1L),
                     null
             );
 

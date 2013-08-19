@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
@@ -109,11 +110,11 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         boolean createdNcipher = false;
 
         for (KeystoreFile dbFile : dbFiles) {
-            long id = Long.parseLong(dbFile.getId());
+            Goid id = dbFile.getGoid();
             String name = dbFile.getName();
             String format = dbFile.getFormat();
             if (format == null)
-                throw new KeyStoreException("Database contains keystore_file with no format objectid=" + id);
+                throw new KeyStoreException("Database contains keystore_file with no format goid=" + id);
             if (format.startsWith("hsm.sca.")) {
                 if (!haveSca) {
                     logger.info("Ignoring keystore_file row with a format of hsm.sca because this Gateway node is not configured to use an internal SCA HSM");
@@ -149,13 +150,13 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         }
 
         if (haveLuna && list.isEmpty()) {
-            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM", keyAccessFilter, metadataManager));
+            list.add(new LunaSsgKeyStore(new Goid(0,3), SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM", keyAccessFilter, metadataManager));
         }
 
         if (haveGeneric && list.isEmpty()) {
             String password = ConfigFactory.getProperty( GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD );
             char[] decryptedPassword = password == null ? null : dbEncrypter.decryptPasswordIfEncrypted(password);
-            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter, metadataManager));
+            list.add(new GenericSsgKeyStore(new Goid(0,5), SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter, metadataManager));
         }
 
         // Force all keyfinders to initialize their keystores early, so they don't end up trying to do so lazily
@@ -192,21 +193,22 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         return keystores;
     }
 
-    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
+    public SsgKeyFinder findByPrimaryKey(Goid id) throws FindException, KeyStoreException {
         if (!initialized)
             init();
         for (SsgKeyFinder keystore : keystores) {
-            if (keystore.getOid() == id)
+            if (Goid.equals(keystore.getGoid(), id))
                 return keystore;
         }
         throw new ObjectNotFoundException("No SsgKeyFinder available on this node with id=" + id);
     }
 
+    Goid ZERO_GOID = new Goid(0,0);
     @Transactional(readOnly = true)
-    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException {
         if (!initialized)
             init();
-        boolean mustSearchAll = preferredKeystoreId == -1 || preferredKeystoreId == 0;
+        boolean mustSearchAll = Goid.isDefault(preferredKeystoreId) || Goid.equals(ZERO_GOID, preferredKeystoreId);
 
         // First look in the preferred keystore
         SsgKeyFinder alreadySearched = null;
@@ -219,15 +221,15 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                 /* FALLTHROUGH and scan all keystores */
             } catch (ObjectNotFoundException e) {
                 if (logger.isLoggable(Level.FINER))
-                    logger.log(Level.FINER, "Private key alias {0} not found in preferred keystore OID {1}", new Object[] { keyAlias, preferredKeystoreId });
+                    logger.log(Level.FINER, "Private key alias {0} not found in preferred keystore GOID {1}", new Object[] { keyAlias, preferredKeystoreId });
                 /* FALLTHROUGH and scan all keystores */
             } catch (FindException e) {
                 if (logger.isLoggable(Level.FINE))
-                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore OID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
+                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore GOID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
                 /* FALLTHROUGH and scan all keystores */
             } catch (KeyStoreException e) {
                 if (logger.isLoggable(Level.FINE))
-                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore OID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
+                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore GOID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
                 /* FALLTHROUGH and scan the other keystores */
             }
         }

@@ -2,6 +2,7 @@ package com.l7tech.server.log.syslog.impl;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -39,7 +40,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     /** SSL with client auth keystore alias (optional) */
     private String sslKeystoreAlias;
     /** SSL with client auth keystore id (optional) */
-    private Long sslKeystoreId;
+    private Goid sslKeystoreId;
     /** List of errors encountered by the handler before the connection is terminated */
     private StringBuffer errorMessages;
     /** Flag indicating whether the currently held session has been open */
@@ -57,7 +58,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
      */
     MinaSecureSyslogHandler(Functions.BinaryVoid<IoSession, String> sessionCallback,
                             Functions.Unary<Boolean, IoSession> currentSessionChecker,
-                            String sslKeystoreAlias, Long sslKeystoreId) {
+                            String sslKeystoreAlias, Goid sslKeystoreId) {
         super(sessionCallback);
         this.currentSessionCheckCallback = currentSessionChecker;
         this.errorMessages = new StringBuffer();
@@ -84,7 +85,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
         try {
             KeyManager[] km;
             TrustManager tm = SyslogSslClientSupport.getTrustManager();
-            if (sslKeystoreAlias != null && sslKeystoreId != null && !sslKeystoreId.equals(-1L)) {
+            if (sslKeystoreAlias != null && sslKeystoreId != null && !Goid.isDefault(sslKeystoreId)) {
                 // use the configured sslKeystore
                 try {
                     if (SyslogSslClientSupport.isInitialized()) {

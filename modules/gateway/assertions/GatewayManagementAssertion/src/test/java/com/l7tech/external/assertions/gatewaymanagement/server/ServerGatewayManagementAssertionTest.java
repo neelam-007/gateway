@@ -1911,7 +1911,7 @@ public class ServerGatewayManagementAssertionTest {
                 final Element certificateData = XmlUtil.findFirstChildElementByName(certificateChain, NS_GATEWAY_MANAGEMENT, "CertificateData");
                 final Element subjectName = XmlUtil.findFirstChildElementByName(certificateData, NS_GATEWAY_MANAGEMENT, "SubjectName");
 
-                assertEquals("PrivateKey id", "0:bob", privateKey.getAttribute( "id" ));
+                assertEquals("PrivateKey id", "00000000000000000000000000000000:bob", privateKey.getAttribute( "id" ));
                 assertEquals("PrivateKey cert chain [0] subject", "CN=Alice,OU=OASIS Interop Test Cert,O=OASIS", XmlUtil.getTextValue( subjectName ));
             }
         };
@@ -3046,7 +3046,7 @@ public class ServerGatewayManagementAssertionTest {
                 testPolicy1,
                 policy( new Goid(0,2L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
         beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
-                key( 0L, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
+                key( new Goid(0,0), "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
@@ -3157,6 +3157,8 @@ public class ServerGatewayManagementAssertionTest {
         managementAssertion = new ServerGatewayManagementAssertion(
                 new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml", false );
 
+        GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
+
     }
 
     private static TrustedCert cert( final Goid oid, final String name, final X509Certificate x509Certificate ) {
@@ -3242,8 +3244,8 @@ public class ServerGatewayManagementAssertionTest {
         return policy;
     }
 
-    private static SsgKeyEntry key( final long keystoreOid, final String alias, final X509Certificate cert, final PrivateKey privateKey ) {
-        return new SsgKeyEntry( keystoreOid, alias, new X509Certificate[]{cert}, privateKey);
+    private static SsgKeyEntry key( final Goid keystoreGoid, final String alias, final X509Certificate cert, final PrivateKey privateKey ) {
+        return new SsgKeyEntry( keystoreGoid, alias, new X509Certificate[]{cert}, privateKey);
     }
 
     private static ResourceEntry resource( final Goid goid, final String uri, final ResourceType type, final String key, final String content, final String desc ) {

@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.ldap;
 
 import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -238,7 +239,7 @@ public final class LdapUtils {
      */
     public static DirContext getLdapContext( final String url,
                                              final boolean useClientAuth,
-                                             @Nullable final Long keystoreId,
+                                             @Nullable final Goid keystoreId,
                                              @Nullable final String keyAlias,
                                              final String login,
                                              final String pass,
@@ -306,7 +307,7 @@ public final class LdapUtils {
             DirContext userCtx = null;
             try {
                 boolean clientAuth = providerConfig.isClientAuthEnabled();
-                Long keystoreId = providerConfig.getKeystoreId();
+                Goid keystoreId = providerConfig.getKeystoreId();
                 String keyAlias = providerConfig.getKeyAlias();
                 userCtx = getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, ldapRuntimeConfig.getLdapConnectionTimeout(), ldapRuntimeConfig.getLdapReadTimeout(), null, false);
                 logger.info("User: " + dn + " authenticated successfully in provider " + providerConfig.getName());

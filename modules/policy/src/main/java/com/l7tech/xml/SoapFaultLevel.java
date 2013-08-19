@@ -1,5 +1,6 @@
 package com.l7tech.xml;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -195,12 +196,12 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return privatekeyableSupport.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
+    public void setNonDefaultKeystoreId( final Goid nonDefaultKeystoreId ) {
         privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
     }
 

@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.samlpassertion;
 
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -13,6 +15,7 @@ import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -466,7 +469,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
     }
 
     protected boolean usesDefaultKeyStore = true;
-    protected long nonDefaultKeystoreId;
+    protected Goid nonDefaultKeystoreId;
     protected String keyId;
 
     @Override
@@ -481,13 +484,18 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId);
     }
 
     @Override

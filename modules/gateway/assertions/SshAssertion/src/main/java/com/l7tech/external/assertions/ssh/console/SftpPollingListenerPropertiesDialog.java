@@ -2,7 +2,10 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
-import com.l7tech.console.util.*;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.console.util.SquigglyFieldUtils;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -18,6 +21,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -361,8 +365,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
         usernameField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_USERNAME, "" ) );
 
-        final Goid passwordGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID));
-        final Goid keyGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID));
+        final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty( SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID));
+        final Goid keyGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID));
         if( passwordGoid != null && !Goid.isDefault(passwordGoid) ) {
             passwordField.setSelectedSecurePassword( passwordGoid );
             passwordRadioButton.setSelected(true);

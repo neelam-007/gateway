@@ -1,14 +1,15 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Functions;
 
 /**
  * Interface that provides the ability to do CRUD operations on KeystoreFile rows in the database.
  */
-public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityHeader> {
+public interface KeystoreFileManager extends GoidEntityManager<KeystoreFile, EntityHeader> {
     /**
      * Atomically update the specified KeystoreFile entity in the database.
      * The most up-to-date entity will be fetched, mutated per the caller's mutator, and then saved back,
@@ -24,7 +25,7 @@ public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityH
      * @throws UpdateException if the update could not be performed due to DB connectivity or the mutator throwing
      *                         a RuntimeException.
      */
-    KeystoreFile mutateKeystoreFile(final long id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException;
+    KeystoreFile mutateKeystoreFile(final Goid id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException;
 
     void initializeHsmKeystorePasswordFromFile() throws UpdateException;
 }

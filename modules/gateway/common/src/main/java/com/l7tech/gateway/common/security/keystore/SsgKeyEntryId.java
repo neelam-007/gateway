@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.security.keystore;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -7,18 +9,18 @@ import java.util.regex.Matcher;
  * Represents a keystore ID and a key alias.
  */
 public class SsgKeyEntryId {
-    private static final Pattern PATTERN = Pattern.compile("^(\\d+):(.*)$", Pattern.DOTALL);
+    private static final Pattern PATTERN = Pattern.compile("^(\\d+|[0-9a-fA-F]{32}):(.*)$", Pattern.DOTALL);
 
-    private final long keystoreId;
+    private final Goid keystoreId;
     private final String alias;
 
     /**
      * Create an SsgKeyEntryId from the specified keystoreId and alias.
      *
-     * @param keystoreId  the OID of the SsgKeyFinder that owns this alias.  Required.
+     * @param keystoreId  the GOID of the SsgKeyFinder that owns this alias.  Required.
      * @param alias       the unique alias within the SsgKeyFinder.  Required.
      */
-    public SsgKeyEntryId(long keystoreId, String alias) {
+    public SsgKeyEntryId(Goid keystoreId, String alias) {
         this.keystoreId = keystoreId;
         this.alias = alias;
     }
@@ -41,7 +43,7 @@ public class SsgKeyEntryId {
         if (ksis == null || alias == null)
             throw new IllegalArgumentException("Bad SsgKeyEntryId String format (should be \"keystoreId:alias\")");
 
-        this.keystoreId = Long.parseLong(ksis);
+        this.keystoreId = Goid.parseGoid(ksis);
         this.alias = alias;
     }
 

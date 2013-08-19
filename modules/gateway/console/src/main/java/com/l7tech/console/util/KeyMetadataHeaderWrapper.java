@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ZoneableEntityHeader;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +13,7 @@ public class KeyMetadataHeaderWrapper extends ZoneableEntityHeader {
     private final SsgKeyMetadata metadata;
 
     public KeyMetadataHeaderWrapper(@NotNull final SsgKeyMetadata metadata) {
-        super(metadata.getOid(), EntityType.SSG_KEY_METADATA, null, null, metadata.getVersion());
+        super(metadata.getGoid(), EntityType.SSG_KEY_METADATA, null, null, metadata.getVersion());
         this.metadata = metadata;
         setSecurityZoneGoid(metadata.getSecurityZone() == null ? null : metadata.getSecurityZone().getGoid());
     }
@@ -21,8 +22,8 @@ public class KeyMetadataHeaderWrapper extends ZoneableEntityHeader {
         return metadata.getAlias();
     }
 
-    public long getKeystoreOid() {
-        return metadata.getKeystoreOid();
+    public Goid getKeystoreOid() {
+        return metadata.getKeystoreGoid();
     }
 
 }

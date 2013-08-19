@@ -1,6 +1,7 @@
 package com.l7tech.server.security.keystore.software;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
@@ -29,7 +30,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     private static final long refreshTime = (long) (5 * 1000);
     private static final String DB_FORMAT = "sdb.pkcs12";
 
-    private final long id;
+    private final Goid id;
     private final String name;
     private final KeystoreFileManager kem;
     private final char[] password;
@@ -41,7 +42,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     /**
      * Create an SsgKeyStore that uses a PKCS#12 file in a KeystoreFile in the database as its backing store.
      *
-     * @param oid      the OID of this SsgKeyStore.  This will also be the OID of the KeystoreFile instance we use
+     * @param id      the GOID of this SsgKeyStore.  This will also be the GOID of the KeystoreFile instance we use
      *                 as our backing store.
      * @param name     The name of this SsgKeyStore.  Required.
      * @param kem      KeystoreFileManager.  Required.
@@ -49,9 +50,9 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
      * @param keyAccessFilter key access filter.  Required.
      * @param metadataManager the SsgKeyMetadataManager.
      */
-    public DatabasePkcs12SsgKeyStore(long oid, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) {
+    public DatabasePkcs12SsgKeyStore(Goid id, String name, KeystoreFileManager kem, char[] password, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) {
         super(keyAccessFilter, metadataManager);
-        this.id = oid;
+        this.id = id;
         this.name = name;
         this.kem = kem;
         this.password = password;
@@ -65,7 +66,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     }
 
     @Override
-    public long getOid() {
+    public Goid getGoid() {
         return id;
     }
 
@@ -83,7 +84,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
                 int dbVersion = keystoreFile.getVersion();
                 if (cachedKeystore != null && keystoreVersion == dbVersion) {
                     // No changes since last time we checked.  Just use the one we've got.
@@ -118,10 +119,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         try {
             ByteArrayInputStream inputStream = null;
             if (bytes != null && bytes.length > 0) {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Loading existing PKCS#12 data for keystore id " + getOid());
+                if (logger.isLoggable(Level.FINE)) logger.fine("Loading existing PKCS#12 data for keystore id " + getGoid());
                 inputStream = new ByteArrayInputStream(bytes);
             } else {
-                if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getOid());
+                if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getGoid());
             }
 
             KeyStore keystore = JceProvider.getInstance().getKeyStore("PKCS12");
@@ -162,7 +163,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (DatabasePkcs12SsgKeyStore.this) {
-                        KeystoreFile updated = kem.mutateKeystoreFile(getOid(), new Functions.UnaryVoid<KeystoreFile>() {
+                        KeystoreFile updated = kem.mutateKeystoreFile(getGoid(), new Functions.UnaryVoid<KeystoreFile>() {
                             @Override
                             public void call(KeystoreFile keystoreFile) {
                                 try {

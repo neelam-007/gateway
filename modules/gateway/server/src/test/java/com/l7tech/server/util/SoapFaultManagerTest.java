@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -525,7 +526,7 @@ public class SoapFaultManagerTest {
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
         level.setSignSoapFault( true );
         level.setUsesDefaultKeyStore( false );
-        level.setNonDefaultKeystoreId( -1 );
+        level.setNonDefaultKeystoreId( new Goid(0,-1) );
         level.setKeyAlias( "alice" );
         final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
@@ -842,11 +843,11 @@ public class SoapFaultManagerTest {
     }
 
     private SsgKeyEntry getAliceKey() throws Exception {
-        return new SsgKeyEntry( -1, "alice", TestDocuments.getWssInteropAliceChain(), TestDocuments.getWssInteropAliceKey());
+        return new SsgKeyEntry( new Goid(0,-1), "alice", TestDocuments.getWssInteropAliceChain(), TestDocuments.getWssInteropAliceKey());
     }
 
     private SsgKeyEntry getBobKey() throws Exception {
-        return new SsgKeyEntry( -1, "bob", TestDocuments.getWssInteropBobChain(), TestDocuments.getWssInteropBobKey());
+        return new SsgKeyEntry( new Goid(0,-1), "bob", TestDocuments.getWssInteropBobChain(), TestDocuments.getWssInteropBobKey());
     }
 
     private Exception constructException() {

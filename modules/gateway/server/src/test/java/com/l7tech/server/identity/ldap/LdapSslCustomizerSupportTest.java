@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.objectmodel.Goid;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
@@ -33,7 +34,7 @@ public class LdapSslCustomizerSupportTest {
 
     @Test
     public void testLoadSpecificKey() throws Exception {
-        String classname = LdapSslCustomizerSupport.getSSLSocketFactoryClassname( true, 2L, "ssl" );
+        String classname = LdapSslCustomizerSupport.getSSLSocketFactoryClassname( true, new Goid(0,2), "ssl" );
         Class sfClass = LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader().loadClass( classname );
         Assert.assertTrue( "Supports pooling", implementsComparator(sfClass) );
     }

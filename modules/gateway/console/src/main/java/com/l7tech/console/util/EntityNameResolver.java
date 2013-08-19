@@ -132,7 +132,7 @@ public class EntityNameResolver {
                     relatedEntity = owningPolicy;
                     break;
                 case SSG_KEY_METADATA:
-                    SsgKeyMetadata metadata = trustedCertAdmin.findKeyMetadata(header.getOid());
+                    SsgKeyMetadata metadata = trustedCertAdmin.findKeyMetadata(header.getGoid());
                     if (metadata == null) {
                         // may not have been persisted yet
                         if (header instanceof KeyMetadataHeaderWrapper) {

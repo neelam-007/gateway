@@ -4,10 +4,7 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -15,6 +12,7 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -46,8 +44,8 @@ import java.util.regex.Pattern;
 public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(DefaultKeyImpl.class.getName());
 
-    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+):(.*)$");
-    private static final SsgKeyEntry NULL_ENTRY = new SsgKeyEntry(Long.MIN_VALUE, null, null, null);
+    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+|[0-9a-fA-F]{32}):(.*)$");
+    private static final SsgKeyEntry NULL_ENTRY = new SsgKeyEntry(new Goid(0,Long.MIN_VALUE), null, null, null);
 
     private final ServerConfig serverConfig;
     private final ClusterPropertyManager clusterPropertyManager;
@@ -209,7 +207,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     private String findUnusedAlias(String propertyName, String defaultBaseAlias) throws IOException {
-        Pair<Long, String> keyaddr = getKeyStoreOidAndAlias(propertyName);
+        Pair<Goid, String> keyaddr = getKeyStoreGoidAndAlias(propertyName);
         String baseAlias = keyaddr == null ? null : keyaddr.right;
         if (baseAlias == null || baseAlias.trim().length() < 1)
             baseAlias = defaultBaseAlias;
@@ -223,7 +221,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     private boolean aliasAlreadyUsed(String alias) throws IOException {
         try {
-            keyStoreManager.lookupKeyByKeyAlias(alias, -1);
+            keyStoreManager.lookupKeyByKeyAlias(alias, GoidEntity.DEFAULT_GOID);
             return true;
         } catch (ObjectNotFoundException e) {
             return false;
@@ -267,13 +265,13 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     @Override
-    public Pair<Long, String> getAuditViewerAlias() {
+    public Pair<Goid, String> getAuditViewerAlias() {
         SsgKeyEntry info = cachedAuditViewerInfo.get();
         if (info != null)
-            return new Pair<Long, String>(info.getKeystoreId(), info.getAlias());
+            return new Pair<Goid, String>(info.getKeystoreId(), info.getAlias());
 
         try {
-            return getKeyStoreOidAndAlias( ServerConfigParams.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
+            return getKeyStoreGoidAndAlias(ServerConfigParams.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up audit viewer key alias: " + ExceptionUtils.getMessage(e), e);
         }
@@ -293,7 +291,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
-    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException, IOException {
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException, IOException {
         return keyAlias == null ? getSslInfo() : keyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreId);
     }
 
@@ -337,7 +335,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         return ret == NULL_ENTRY ? null : ret;
     }
 
-    private Pair<Long, String> getKeyStoreOidAndAlias(String propertyName) throws IOException {
+    private Pair<Goid, String> getKeyStoreGoidAndAlias(String propertyName) throws IOException {
         String propVal = ConfigFactory.getUncachedConfig().getProperty( propertyName );
         if (propVal == null || propVal.trim().length() < 1)
             return null;
@@ -349,17 +347,17 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
 
         try {
-            long keystoreOid = Long.parseLong(matcher.group(1));
+            Goid keystoreGoid = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, matcher.group(1));
             String keyAlias = matcher.group(2);
-            return new Pair<Long, String>(keystoreOid, keyAlias);
-        } catch (NumberFormatException nfe) {
+            return new Pair<Goid, String>(keystoreGoid, keyAlias);
+        } catch (IllegalArgumentException iae) {
             logger.log(Level.WARNING, "Badly formatted value for serverconfig property " + propertyName + ": " + propVal);
             return null;
         }
     }
 
     private SsgKeyEntry lookupEntry(String propertyName) throws IOException, FindException, KeyStoreException {
-        Pair<Long, String> keyaddr = getKeyStoreOidAndAlias(propertyName);
+        Pair<Goid, String> keyaddr = getKeyStoreGoidAndAlias(propertyName);
         if (keyaddr == null)
             return NULL_ENTRY;
 

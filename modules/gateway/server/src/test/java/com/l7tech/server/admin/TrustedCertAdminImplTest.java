@@ -29,9 +29,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TrustedCertAdminImplTest {
-    private static final long KEYSTORE_ID = 1234L;
+    private static final Goid KEYSTORE_ID = new Goid(0,1234L);
     private static final String ALIAS = "alias";
     private static final String SIG_ALGORITHM = "algorithm";
     private static final String DN = "CN=test";
@@ -119,7 +119,7 @@ public class TrustedCertAdminImplTest {
         admin.updateKeyEntry(keyEntry);
         verify(adminHelper).doUpdateKeyMetadata(KEYSTORE_ID, ALIAS, keyEntry.getKeyMetadata());
         // chain was not updated
-        verify(adminHelper, never()).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
+        verify(adminHelper, never()).doUpdateCertificateChain(any(Goid.class), anyString(), any(X509Certificate[].class));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class TrustedCertAdminImplTest {
         admin.updateKeyEntry(keyEntry);
         verify(adminHelper).doUpdateCertificateChain(KEYSTORE_ID, ALIAS, chain);
         // metadata was not updated
-        verify(adminHelper, never()).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+        verify(adminHelper, never()).doUpdateKeyMetadata(any(Goid.class), anyString(), any(SsgKeyMetadata.class));
     }
 
     @Test
@@ -151,8 +151,8 @@ public class TrustedCertAdminImplTest {
         when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(keyEntry);
 
         admin.updateKeyEntry(keyEntry);
-        verify(adminHelper, never()).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
-        verify(adminHelper, never()).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+        verify(adminHelper, never()).doUpdateCertificateChain(any(Goid.class), anyString(), any(X509Certificate[].class));
+        verify(adminHelper, never()).doUpdateKeyMetadata(any(Goid.class), anyString(), any(SsgKeyMetadata.class));
     }
 
     @Test(expected = UpdateException.class)
@@ -170,7 +170,7 @@ public class TrustedCertAdminImplTest {
     @Test(expected = UpdateException.class)
     public void updateKeyEntryUpdateChainException() throws Exception {
         when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
-        doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateCertificateChain(anyLong(), anyString(), any(X509Certificate[].class));
+        doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateCertificateChain(any(Goid.class), anyString(), any(X509Certificate[].class));
         admin.updateKeyEntry(new SsgKeyEntry(KEYSTORE_ID, ALIAS, generateCertChain(), privateKey));
     }
 
@@ -179,27 +179,27 @@ public class TrustedCertAdminImplTest {
         final SsgKeyEntry keyEntry = new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey);
         keyEntry.setSecurityZone(new SecurityZone());
         when(adminHelper.doFindKeyEntry(ALIAS, KEYSTORE_ID)).thenReturn(new SsgKeyEntry(KEYSTORE_ID, ALIAS, chain, privateKey));
-        doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+        doThrow(new UpdateException("mocking exception")).when(adminHelper).doUpdateKeyMetadata(any(Goid.class), anyString(), any(SsgKeyMetadata.class));
         admin.updateKeyEntry(keyEntry);
     }
 
     @Test
     public void saveOrUpdateMetadataCreate() throws Exception {
-        metadata.setOid(PersistentEntity.DEFAULT_OID);
+        metadata.setGoid(GoidEntity.DEFAULT_GOID);
         admin.saveOrUpdateMetadata(metadata);
         verify(ssgKeyMetadataManager).save(metadata);
     }
 
     @Test
     public void saveOrUpdateMetadataUpdate() throws Exception {
-        metadata.setOid(1L);
+        metadata.setGoid(new Goid(0,1));
         admin.saveOrUpdateMetadata(metadata);
         verify(ssgKeyMetadataManager).update(metadata);
     }
 
     @Test(expected=SaveException.class)
     public void saveOrUpdateMetadataUpdateException() throws Exception {
-        metadata.setOid(1L);
+        metadata.setGoid(new Goid(0,1));
         doThrow(new UpdateException("mocking exception")).when(ssgKeyMetadataManager).update(metadata);
         admin.saveOrUpdateMetadata(metadata);
     }

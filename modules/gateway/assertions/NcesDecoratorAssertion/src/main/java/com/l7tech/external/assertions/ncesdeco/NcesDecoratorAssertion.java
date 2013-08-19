@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.ncesdeco;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -7,6 +9,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.Arrays;
 
@@ -47,7 +50,7 @@ public class NcesDecoratorAssertion
     private String samlAssertionTemplate;
     private boolean nodeBasedUuid;
     private boolean usesDefaultKeystore = true;
-    private long nonDefaultKeystoreId;
+    private Goid nonDefaultKeystoreId;
     private String keyAlias;
     private boolean deferDecoration = false;
     private boolean useExistingWsa = false;
@@ -140,13 +143,18 @@ public class NcesDecoratorAssertion
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId);
     }
 
     @Override

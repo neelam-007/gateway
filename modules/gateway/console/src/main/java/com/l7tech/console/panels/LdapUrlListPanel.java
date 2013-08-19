@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -199,7 +200,7 @@ public class LdapUrlListPanel extends JPanel {
         privateKeyComboBox.setEnabled(clientAuth);
     }
 
-    public Long getSelectedKeystoreId() {
+    public Goid getSelectedKeystoreId() {
         return privateKeyComboBox.getSelectedKeystoreId();
     }
 
@@ -207,7 +208,7 @@ public class LdapUrlListPanel extends JPanel {
         return privateKeyComboBox.getSelectedKeyAlias();
     }
 
-    public void selectPrivateKey(Long keystoreId, String keyAlias) {
+    public void selectPrivateKey(Goid keystoreId, String keyAlias) {
         if ( keystoreId != null && keyAlias != null ) {
             privateKeyComboBox.select(keystoreId, keyAlias);
         }

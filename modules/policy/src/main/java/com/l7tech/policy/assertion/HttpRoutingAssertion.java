@@ -110,7 +110,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     protected boolean usesDefaultKeyStore = true;
     protected boolean usesNoKey = false;
-    protected long nonDefaultKeystoreId;
+    protected Goid nonDefaultKeystoreId;
     protected String keyId;
     private HttpMethod httpMethod;
     private GenericHttpRequestParams.HttpVersion httpVersion;
@@ -674,13 +674,18 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId);
     }
 
     @Override

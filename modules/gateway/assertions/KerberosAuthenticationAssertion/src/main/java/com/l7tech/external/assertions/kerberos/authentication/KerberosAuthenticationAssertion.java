@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.kerberos.authentication;
 
-import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -20,6 +19,7 @@ import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -115,7 +115,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
      */
     @Deprecated
     public void setKrbSecurePasswordReference(long securePasswordOid) {
-        this.krbSecurePasswordReference = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, securePasswordOid);
+        this.krbSecurePasswordReference = GoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, securePasswordOid);
     }
 
     public void setKrbSecurePasswordReference(Goid securePasswordGoid) {

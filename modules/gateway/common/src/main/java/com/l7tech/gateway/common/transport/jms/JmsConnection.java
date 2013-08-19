@@ -4,12 +4,14 @@
 
 package com.l7tech.gateway.common.transport.jms;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
@@ -303,12 +305,12 @@ public class JmsConnection extends ZoneableNamedGoidEntityImp implements UsesPri
         if (TibcoEmsConstants.SSL.equals(properties().getProperty(TibcoEmsConstants.TibjmsContext.SECURITY_PROTOCOL)) && properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID) != null) {
             String alias = properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEY_ALIAS);
             String keyStoreId = properties().getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID);
-            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, Long.parseLong(keyStoreId), alias, alias));
+            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), alias, alias));
         }
         if (("com.l7tech.server.transport.jms.prov.MQSeriesCustomizer".equals(properties().getProperty(JmsConnection.PROP_CUSTOMIZER)) || "com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer".equals(properties().getProperty(JmsConnection.PROP_CUSTOMIZER))) && properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID) != null) {
             String alias = properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
             String keyStoreId = properties().getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
-            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, Long.parseLong(keyStoreId), alias, alias));
+            headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), alias, alias));
         }
         return headers.toArray(new SsgKeyHeader[headers.size()]);
     }

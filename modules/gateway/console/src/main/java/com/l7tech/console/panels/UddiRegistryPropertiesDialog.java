@@ -446,10 +446,10 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         subscriptionUrlTextField.setCaretPosition( 0 );
         clientAuthenticationCheckBox.setSelected(uddiRegistry.isClientAuth());
         PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
-        final Long keyStoreOid = (uddiRegistry.getKeystoreOid() != null)? uddiRegistry.getKeystoreOid(): 0L;
+        final Goid keyStoreGoid = (uddiRegistry.getKeystoreGoid() != null)? uddiRegistry.getKeystoreGoid(): new Goid(0,0);
         final String alias = uddiRegistry.getKeyAlias();
 
-        privateKeyDropDown.select(keyStoreOid, alias);
+        privateKeyDropDown.select(keyStoreGoid, alias);
         userNameTextField.setText(uddiRegistry.getRegistryAccountUserName()==null ? "" : uddiRegistry.getRegistryAccountUserName());
         userNameTextField.setCaretPosition( 0 );
         passwordTextField.setText(uddiRegistry.getRegistryAccountPassword()==null ? "" : uddiRegistry.getRegistryAccountPassword());
@@ -571,8 +571,8 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
         final String keyAlias = privateKeyDropDown.getSelectedKeyAlias();
         uddiRegistry.setKeyAlias(keyAlias);
-        final long keyStoreId = privateKeyDropDown.getSelectedKeystoreId();
-        uddiRegistry.setKeystoreOid(keyStoreId);
+        final Goid keyStoreId = privateKeyDropDown.getSelectedKeystoreId();
+        uddiRegistry.setKeystoreGoid(keyStoreId);
 
         if ( userNameTextField.getText() != null && !userNameTextField.getText().trim().isEmpty() ) {
             uddiRegistry.setRegistryAccountUserName(userNameTextField.getText().trim());

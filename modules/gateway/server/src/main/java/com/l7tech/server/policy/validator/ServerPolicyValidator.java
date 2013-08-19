@@ -542,13 +542,13 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if (!a.isUsesDefaultKeyStore()) {
             boolean found = false;
             try {
-                long keystoreId = a.getNonDefaultKeystoreId();
+                Goid keystoreId = a.getNonDefaultKeystoreId();
                 String keyAlias = a.getKeyAlias();
                 SsgKeyEntry foundKey = ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, keystoreId);
                 if (foundKey != null) {
                     found = true;
-                    long foundKeystoreId = foundKey.getKeystoreId();
-                    if (foundKey.getKeystoreId() != keystoreId) {
+                    Goid foundKeystoreId = foundKey.getKeystoreId();
+                    if (!Goid.equals(foundKey.getKeystoreId(), keystoreId)) {
                         SsgKeyFinder ks = ssgKeyStoreManager.findByPrimaryKey(foundKeystoreId);
                         String name = ks != null ? ks.getName() : ("id:" + foundKeystoreId);
                         r.addWarning(new PolicyValidatorResult.Warning((Assertion)a,

@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.keystore.KeyAccessFilter;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -37,11 +38,11 @@ public class GatewayKeyAccessFilter implements KeyAccessFilter, InitializingBean
         }
 
         boolean restricted = false;
-        Pair<Long, String> avInfo = defaultKey.getAuditViewerAlias();
+        Pair<Goid, String> avInfo = defaultKey.getAuditViewerAlias();
         if (avInfo != null) {
-            long kid = avInfo.left;
+            Goid kid = avInfo.left;
             String avAlias = avInfo.right;
-            if (avAlias != null && avAlias.equalsIgnoreCase(keyEntry.getAlias()) && (kid == -1 || kid == keyEntry.getKeystoreId())) {
+            if (avAlias != null && avAlias.equalsIgnoreCase(keyEntry.getAlias()) && (Goid.isDefault(kid) || Goid.equals(kid, keyEntry.getKeystoreId()))) {
                     restricted = true;
             }
         }

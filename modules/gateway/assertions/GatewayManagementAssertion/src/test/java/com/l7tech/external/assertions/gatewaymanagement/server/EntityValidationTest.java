@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -410,7 +411,7 @@ public class EntityValidationTest {
 
     @Test
     public void testPrivateKey() throws Exception {
-        final SsgKeyEntry entry = new SsgKeyEntry( 1L, "alias", new X509Certificate[]{ TestDocuments.getWssInteropAliceCert() }, null );
+        final SsgKeyEntry entry = new SsgKeyEntry( new Goid(0,1), "alias", new X509Certificate[]{ TestDocuments.getWssInteropAliceCert() }, null );
         valid( entry, "basic private key" );
 
         // test certificate chain

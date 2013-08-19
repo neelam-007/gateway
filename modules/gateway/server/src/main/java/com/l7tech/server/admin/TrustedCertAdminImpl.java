@@ -252,7 +252,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                 continue;   // skip
             }
             list.add(new KeystoreFileEntityHeader(
-                    ssgKeyFinder.getOid(),
+                    ssgKeyFinder.getGoid(),
                     ssgKeyFinder.getName(),
                     ssgKeyFinder.getType().toString(),
                     !ssgKeyFinder.isMutable()));
@@ -261,7 +261,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException {
+    public List<SsgKeyEntry> findAllKeys(Goid keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException {
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
 
@@ -285,18 +285,18 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
      * Find a key entry using the rules assertions and connectors would follow.
      *
      * @param keyAlias  key alias to find, or null to find default SSL key.
-     * @param preferredKeystoreOid preferred keystore OID to look in, or -1 to search all keystores (if permitted).
+     * @param preferredKeystoreGoid preferred keystore GOID to look in, or Default Goid to search all keystores (if permitted).
      * @return the requested private key, or null if it wasn't found.
      * @throws FindException if there is a database problem (other than ObjectNotFoundException)
      * @throws KeyStoreException if there is a problem reading a keystore
      */
     @Override
-    public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
-        return getPrivateKeyAdminHelper().doFindKeyEntry( keyAlias, preferredKeystoreOid );
+    public SsgKeyEntry findKeyEntry(String keyAlias, Goid preferredKeystoreGoid) throws FindException, KeyStoreException {
+        return getPrivateKeyAdminHelper().doFindKeyEntry( keyAlias, preferredKeystoreGoid );
     }
 
     @Override
-    public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
+    public void deleteKey(Goid keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
         checkLicenseKeyStore();
         if (keyAlias == null) throw new NullPointerException("keyAlias");
         try {
@@ -318,27 +318,27 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
         return registerJob(helper.doGenerateKeyPair(keystoreId, alias, metadata, dn, new KeyGenParams(keybits), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
         return registerJob(helper.doGenerateKeyPair(keystoreId, alias, metadata, dn, new KeyGenParams(curveName), expiryDays, makeCaCert, sigAlg), X509Certificate.class);
     }
 
-    private SsgKeyMetadata makeMeta(long keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
+    private SsgKeyMetadata makeMeta(Goid keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
         // Currently metadata is required only if a security zone needs to be set for the new key entry.
         // TODO if we change metadata to store other stuff (like special key purposes) it may need to be set in more situations than just for a non-null security zone.
         return securityZone == null ? null : new SsgKeyMetadata(keystoreOid, alias, securityZone);
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, CertGenParams params) throws FindException {
+    public byte[] generateCSR(Goid keystoreId, String alias, CertGenParams params) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -366,7 +366,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException {
+    public String[] signCSR(Goid keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -472,7 +472,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
+    public SsgKeyEntry importKeyFromKeyStoreFile(Goid keystoreId,
                                                  String alias,
                                                  @Nullable SsgKeyMetadata metadata,
                                                  byte[] keyStoreBytes,
@@ -515,7 +515,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
+    public byte[] exportKey(Goid keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         checkLicenseKeyStore();
 
         final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
@@ -568,10 +568,10 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) throws UpdateException {
+    public void setDefaultKey(SpecialKeyType keyType, Goid keystoreId, String alias) throws UpdateException {
         if (keyType == null)
             throw new NullPointerException("A keyType must be specified");
-        if (keystoreId == -1L )
+        if (Goid.isDefault(keystoreId) )
             throw new IllegalArgumentException("A specific keystore ID must be specified.");
         if (!isDefaultKeyMutable(keyType))
             throw new IllegalArgumentException("The " + keyType + " private key cannot be changed on this system.");
@@ -761,7 +761,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException {
+    public boolean isShortSigningKey(Goid keystoreId, String alias) throws FindException, KeyStoreException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -787,13 +787,13 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public SsgKeyMetadata findKeyMetadata(final long metadataOid) throws FindException {
-        return ssgKeyMetadataManager.findByPrimaryKey(metadataOid);
+    public SsgKeyMetadata findKeyMetadata(final Goid metadataGoid) throws FindException {
+        return ssgKeyMetadataManager.findByPrimaryKey(metadataGoid);
     }
 
     @Override
-    public long saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
-        if (metadata.getOid() == SsgKeyMetadata.DEFAULT_OID) {
+    public Goid saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
+        if (Goid.isDefault(metadata.getGoid())) {
             return ssgKeyMetadataManager.save(metadata);
         } else {
             try {
@@ -801,7 +801,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             } catch (final UpdateException e) {
                 throw new SaveException(e);
             }
-            return metadata.getOid();
+            return metadata.getGoid();
         }
     }
 

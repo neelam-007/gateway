@@ -5,6 +5,7 @@ import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.NotFuture;
@@ -25,15 +26,15 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JdkKeyStoreBackedSsgKeyStoreTest {
-    private static final long KEYSTORE_ID = 1234L;
+    private static final Goid KEYSTORE_ID = new Goid(0, 1234L);
     private static final String ALIAS = "alias";
     private JdkKeyStoreBackedSsgKeyStore keyStore;
     @Mock
@@ -76,7 +77,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
     @Test(expected = KeyStoreException.class)
     public void storePrivateKeyEntryErrorSavingMetadata() throws Exception {
         entry.attachMetadata(metadata);
-        when(metadataManager.updateMetadataForKey(anyLong(), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
+        when(metadataManager.updateMetadataForKey(any(Goid.class), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
         keyStore.storePrivateKeyEntry(null, entry, false);
     }
 
@@ -96,7 +97,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
 
     @Test(expected = KeyStoreException.class)
     public void generateKeyPairErrorSavingMetadata() throws Exception {
-        when(metadataManager.updateMetadataForKey(anyLong(), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
+        when(metadataManager.updateMetadataForKey(any(Goid.class), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
         keyStore.generateKeyPair(null, ALIAS, new KeyGenParams(), certGenParams, metadata);
     }
 
@@ -114,7 +115,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
 
     @Test(expected = UpdateException.class)
     public void updateKeyMetadataError() throws Exception {
-        when(metadataManager.updateMetadataForKey(anyLong(), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
+        when(metadataManager.updateMetadataForKey(any(Goid.class), anyString(), any(SsgKeyMetadata.class))).thenThrow(new UpdateException("mocking exception"));
         keyStore.updateKeyMetadata(KEYSTORE_ID, ALIAS, metadata);
     }
 
@@ -126,7 +127,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
 
     @Test(expected = KeyStoreException.class)
     public void deletePrivateKeyEntryErrorDeletingMetadata() throws Exception {
-        doThrow(new DeleteException("mocking exception")).when(metadataManager).deleteMetadataForKey(anyLong(), anyString());
+        doThrow(new DeleteException("mocking exception")).when(metadataManager).deleteMetadataForKey(any(Goid.class), anyString());
         keyStore.deletePrivateKeyEntry(null, ALIAS);
     }
 
@@ -168,7 +169,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
         }
 
         @Override
-        public long getOid() {
+        public Goid getGoid() {
             return KEYSTORE_ID;
         }
 

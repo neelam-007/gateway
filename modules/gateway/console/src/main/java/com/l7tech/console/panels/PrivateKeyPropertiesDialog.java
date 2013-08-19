@@ -585,7 +585,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 try {
                     CertGenParams params = new CertGenParams(new X500Principal(dlg.getCsrSubjectDN()), 365 * 2, false, null);
                     params.setHashAlgorithm(dlg.getSelectedHash());
-                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), params);
+                    csr = admin.generateCSR(subject.getKeystore().getGoid(), subject.getAlias(), params);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
@@ -682,7 +682,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         subject.getKeyEntry().setCertificateChain(certChain);
                         admin.updateKeyEntry(subject.getKeyEntry());
                         //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
-                        List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid(), true);
+                        List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getGoid(), true);
                         for (SsgKeyEntry ske : tmp) {
                             if (ske.getAlias().equalsIgnoreCase(subject.getAlias())) {
                                 subject.setKeyEntry(ske);

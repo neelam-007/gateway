@@ -2,6 +2,8 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
@@ -94,19 +96,19 @@ public class LdapSslCustomizerSupport {
      * Get the name for the SSLSocketFactory class with the given options.
      *
      * @param useCertCert True if client certificate authentication should be enabled.
-     * @param keystoreOid The keystore OID (null for default key)
+     * @param keystoreGoid The keystore GOID (null for default key)
      * @param keyAlias The alias for the key in the keystore
      * @return The classname to use
      */
-    public static String getSSLSocketFactoryClassname( final boolean useCertCert, final Long keystoreOid, final String keyAlias ) {
+    public static String getSSLSocketFactoryClassname( final boolean useCertCert, final Goid keystoreGoid, final String keyAlias ) {
         String classname;
 
-        if ( useCertCert && (keystoreOid == null || keystoreOid == -1) && keyAlias == null ) {
+        if ( useCertCert && (keystoreGoid == null || Goid.isDefault(keystoreGoid)) && keyAlias == null ) {
             classname = SslClientHostnameAwareSocketFactory.class.getName(); // uses default key
         } else if ( !useCertCert ) {
             classname = LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory";
         } else {
-            classname = LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory_"+keystoreOid+"_"+keyAlias;
+            classname = LdapSSLSocketFactory.class.getPackage().getName() + ".generated.SSLSocketFactory_"+keystoreGoid+"_"+keyAlias;
         }
 
         return classname;
@@ -182,7 +184,7 @@ public class LdapSslCustomizerSupport {
      */
     private static final String PROP_SSL_SESSION_TIMEOUT = SslClientSocketFactory.class.getName() + ".sslSessionTimeoutSeconds";
     private static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
-    private static final Map<Pair<Long,String>, SSLContext> instancesByKeyEntryId = new HashMap<Pair<Long,String>, SSLContext>();
+    private static final Map<Pair<Goid,String>, SSLContext> instancesByKeyEntryId = new HashMap<Pair<Goid,String>, SSLContext>();
     private static final ClassPool pool = new ClassPool();
     static {
         pool.insertClassPath(new ClassClassPath(LdapSSLSocketFactory.class));
@@ -207,19 +209,19 @@ public class LdapSslCustomizerSupport {
         if (ssgKeyStoreManager == null) throw new IllegalStateException("SSG Keystore Manager must be set first");
         if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
 
-        final Pair<Long,String> keyId;
+        final Pair<Goid,String> keyId;
         if ( keystoreIdStr==null && alias == null ) {
-            keyId = new Pair<Long,String>(-1L, "");
+            keyId = new Pair<Goid,String>(GoidEntity.DEFAULT_GOID, "");
         } else {
             // process keystore
-            long keystoreId;
+            Goid keystoreId;
             try {
-                keystoreId = Long.parseLong( keystoreIdStr );
-            } catch ( NumberFormatException nfe ) {
+                keystoreId = Goid.parseGoid( keystoreIdStr );
+            } catch ( IllegalArgumentException iae ) {
                 throw new LdapConfigException("Bad keystore ID: " + keystoreIdStr);
             }
 
-            keyId = new Pair<Long,String>(keystoreId, alias);
+            keyId = new Pair<Goid,String>(keystoreId, alias);
         }
 
         SSLContext instance = instancesByKeyEntryId.get(keyId);

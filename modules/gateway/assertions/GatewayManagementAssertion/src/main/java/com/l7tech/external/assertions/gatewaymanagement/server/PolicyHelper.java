@@ -46,7 +46,6 @@ import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
@@ -462,9 +461,9 @@ public class PolicyHelper {
         }
 
         @Override
-        public SsgKeyEntry findKeyEntry( final String alias, final long keystoreOid ) throws FindException, KeyStoreException {
+        public SsgKeyEntry findKeyEntry( final String alias, final Goid keystoreGoid ) throws FindException, KeyStoreException {
             try {
-                return filter(ssgKeyStoreManager.lookupKeyByKeyAlias( alias, keystoreOid ) );
+                return filter(ssgKeyStoreManager.lookupKeyByKeyAlias( alias, keystoreGoid ) );
             } catch ( ObjectNotFoundException e ) {
                 return null;
             }

@@ -8,6 +8,10 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.TibcoEmsConstants;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.swing.*;
 import java.awt.*;
@@ -82,8 +86,8 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST_NAME)));
             useCertForClientAuthCheckBox.setSelected(properties.getProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY) != null);
             
-            Long keystoreId = Long.parseLong(properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, "-1"));
-            String keyAlias = keystoreId == -1? null : properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
+            Goid keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, GoidEntity.DEFAULT_GOID.toHexString()));
+            String keyAlias = Goid.isDefault(keystoreId)? null : properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
             int index = clientCertsComboBox.select(keystoreId, keyAlias);
             if (index < 0) clientCertsComboBox.setSelectedIndex(0);
         }
@@ -116,13 +120,13 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             properties.setProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY, JmsConnection.VALUE_KEYSTORE_BYTES + whichKey);
             properties.setProperty(TibcoEmsConstants.TibjmsSSL.PASSWORD, JmsConnection.VALUE_KEYSTORE_PASSWORD + whichKey);
             
-            long selectedKeystoreId = clientCertsComboBox.getSelectedKeystoreId();
-            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(selectedKeystoreId));
+            Goid selectedKeystoreId = clientCertsComboBox.getSelectedKeystoreId();
+            properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, selectedKeystoreId.toHexString());
 
             String selectedKeyAlias;
-            if (selectedKeystoreId == -1) {
+            if (Goid.isDefault(selectedKeystoreId)) {
                 try {
-                    SsgKeyEntry defaultSslKey = Registry.getDefault().getTrustedCertManager().findKeyEntry(null, -1);
+                    SsgKeyEntry defaultSslKey = Registry.getDefault().getTrustedCertManager().findKeyEntry(null, GoidEntity.DEFAULT_GOID);
                     selectedKeyAlias = defaultSslKey.getAlias();
                 } catch (Exception e) {
                     throw new RuntimeException("Cannot find Default SSL Key", e);

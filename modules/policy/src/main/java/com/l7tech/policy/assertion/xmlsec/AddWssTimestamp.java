@@ -3,6 +3,8 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -13,6 +15,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.TimeUnit;
 
 import java.util.Collections;
@@ -175,13 +178,18 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return privatekeyableSupport.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultKeystoreId) {
         privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        privatekeyableSupport.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultKeystoreId));
     }
 
     @Override

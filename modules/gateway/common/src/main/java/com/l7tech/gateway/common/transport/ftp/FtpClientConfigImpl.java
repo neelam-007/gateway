@@ -1,5 +1,10 @@
 package com.l7tech.gateway.common.transport.ftp;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.util.GoidUpgradeMapper;
+
 import java.io.PrintStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -34,7 +39,11 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     // authentication
     private boolean useClientCert = false;
     private FtpCredentialsSource credentialsSource = FtpCredentialsSource.SPECIFIED;
+    // DO NOT REMOVE!
+    // The long clientCertKeystoreId needs to be here for backwards compatibility serialization purposes.
+    @SuppressWarnings("UnusedDeclaration")
     private long clientCertKeystoreId = -1;
+    private Goid clientCertKeystoreGoid = GoidEntity.DEFAULT_GOID;
     private String clientCertKeyAlias;
 
     private FtpFileNameSource fileNameSource;
@@ -132,9 +141,12 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     public FtpCredentialsSource getCredentialsSource() { return this.credentialsSource; }
 
     @Override
-    public FtpClientConfig setClientCertId(long id) { this.clientCertKeystoreId = id; return this; }
+    public FtpClientConfig setClientCertId(long id) { this.clientCertKeystoreGoid = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, id); return this; }
+
     @Override
-    public long getClientCertId() { return this.clientCertKeystoreId; }
+    public FtpClientConfig setClientCertId(Goid id) { this.clientCertKeystoreGoid = id; return this; }
+    @Override
+    public Goid getClientCertId() { return this.clientCertKeystoreGoid; }
 
     @Override
     public FtpClientConfig setClientCertAlias(String alias) { this.clientCertKeyAlias = alias; return this; }

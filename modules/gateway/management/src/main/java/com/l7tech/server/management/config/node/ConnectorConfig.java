@@ -54,7 +54,7 @@ public class ConnectorConfig extends SsgConnector {
         setSecure(sc.isSecure());
         setEndpoints(sc.getEndpoints());
         setClientAuth(sc.getClientAuth());
-        setKeystoreOid(sc.getKeystoreOid());
+        setKeystoreGoid(sc.getKeystoreGoid());
         setKeyAlias(sc.getKeyAlias());
 
         Map<String,String> props = new HashMap<String, String>();

@@ -22,6 +22,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -160,7 +161,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         try {
             EntityHeaderSet<EntityHeader> result = new EntityHeaderSet<EntityHeader>();
             for (SsgKeyFinder ssgKeyFinder : keyStoreManager.findAll()) {
-                result.add(new KeystoreFileEntityHeader(ssgKeyFinder.getOid(), ssgKeyFinder.getName(), ssgKeyFinder.getType().toString(), !ssgKeyFinder.isMutable()));
+                result.add(new KeystoreFileEntityHeader(ssgKeyFinder.getGoid(), ssgKeyFinder.getName(), ssgKeyFinder.getType().toString(), !ssgKeyFinder.isMutable()));
             }
             return result;
         } catch (KeyStoreException e) {
@@ -238,9 +239,9 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             if (EntityType.SSG_KEY_ENTRY == type) {
                 String id = (String) pk;
                 int sepIndex = id.indexOf(":");
-                return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), Long.parseLong(id.substring(0,sepIndex)));
+                return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id.substring(0, sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
-                return (ET) keyStoreManager.findByPrimaryKey(Long.valueOf((String)pk));
+                return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
             } else if (GoidEntity.class.isAssignableFrom(clazz)) {
                 tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
             } else if(PersistentEntity.class.isAssignableFrom(clazz) && pk instanceof String) {

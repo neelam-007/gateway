@@ -1,13 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
-import com.l7tech.console.action.Actions;
-import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.OptionalPrivateKeyable;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.util.Functions;
@@ -16,10 +17,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Dialog allowing SSM administrator to set the keystore used by a particular assertion.
@@ -175,13 +176,13 @@ public class AssertionKeyAliasEditor extends JDialog {
     }
 
     class ComboEntry implements Comparable {
-        public ComboEntry(long keystoreid, String keystorename, String alias) {
+        public ComboEntry(Goid keystoreid, String keystorename, String alias) {
             this.keystoreid = keystoreid;
             this.keystorename = keystorename;
             this.alias = alias;
         }
 
-        public long keystoreid;
+        public Goid keystoreid;
         public String keystorename;
         public String alias;
         public String toString() {
@@ -194,6 +195,7 @@ public class AssertionKeyAliasEditor extends JDialog {
         }
     }
 
+    private static final Goid ZERO_GOID = new Goid(0,0);
     private void populateCombobox() {
         //PrivateKeyManagerWindow
         try {
@@ -201,12 +203,12 @@ public class AssertionKeyAliasEditor extends JDialog {
             if (keystores != null) {
                 java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
                 ComboEntry toSelect = null;
-                final long wantId = assertion.getNonDefaultKeystoreId();
+                final Goid wantId = assertion.getNonDefaultKeystoreId();
                 for (KeystoreFileEntityHeader kfeh : keystores) {
-                    for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getOid(), true)) {
-                        ComboEntry comboEntry = new ComboEntry(kfeh.getOid(), kfeh.getName(), entry.getAlias());
+                    for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getGoid(), true)) {
+                        ComboEntry comboEntry = new ComboEntry(kfeh.getGoid(), kfeh.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
-                        if ((wantId == 0 || wantId == -1 || wantId == kfeh.getOid()) && entry.getAlias().equalsIgnoreCase(assertion.getKeyAlias()))
+                        if ((Goid.equals(ZERO_GOID,wantId) || Goid.isDefault(wantId) || Goid.equals(wantId, kfeh.getGoid())) && entry.getAlias().equalsIgnoreCase(assertion.getKeyAlias()))
                             toSelect = comboEntry;
                     }
                 }

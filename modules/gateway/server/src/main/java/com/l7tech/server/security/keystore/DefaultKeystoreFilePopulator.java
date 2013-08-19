@@ -23,10 +23,10 @@ import java.util.logging.Logger;
 public class DefaultKeystoreFilePopulator extends HibernateDaoSupport implements UpgradeTask {
     protected static final Logger logger = Logger.getLogger(DefaultKeystoreFilePopulator.class.getName());
 
-    private static final String PREFIX = "insert into keystore_file (objectid, version, name, format, databytes) values ";
-    public static final String INSERT_ROW_0 = PREFIX + "(0, 0, 'Software Static', 'ss', null)";     // placeholder, never loaded or saved
-    public static final String INSERT_ROW_1 = PREFIX + "(1, 0, 'HSM', 'hsm.sca.targz', null)";      // tar.gz of items in sca 6000 keydata directory
-    public static final String INSERT_ROW_2 = PREFIX + "(2, 0, 'Software DB', 'sdb.pkcs12', null)"; // bytes of a PKCS#12 keystore
+    private static final String PREFIX = "insert into keystore_file (goid, version, name, format, databytes) values ";
+    public static final String INSERT_ROW_0 = PREFIX + "(toGoid(0,0), 0, 'Software Static', 'ss', null)";     // placeholder, never loaded or saved
+    public static final String INSERT_ROW_1 = PREFIX + "(toGoid(0,1), 0, 'HSM', 'hsm.sca.targz', null)";      // tar.gz of items in sca 6000 keydata directory
+    public static final String INSERT_ROW_2 = PREFIX + "(toGoid(0,2), 0, 'Software DB', 'sdb.pkcs12', null)"; // bytes of a PKCS#12 keystore
 
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
         // First, see if there is anything for us to do.  We'll take no action if there is already anything

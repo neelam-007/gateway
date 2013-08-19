@@ -4,12 +4,14 @@
  */
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -64,7 +66,7 @@ public class UDDIRegistry extends ZoneableNamedGoidEntityImp implements UsesPriv
      * When using SSL, we should use client auth. Optionally used with a private key
      */
     private boolean clientAuth;
-    private Long keystoreOid;
+    private Goid keystoreGoid;
     private String keyAlias;
 
 
@@ -162,13 +164,14 @@ public class UDDIRegistry extends ZoneableNamedGoidEntityImp implements UsesPriv
         this.clientAuth = clientAuth;
     }
 
-    @Column(name="keystore_oid")
-    public Long getKeystoreOid() {
-        return keystoreOid;
+    @Column(name="keystore_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getKeystoreGoid() {
+        return keystoreGoid;
     }
 
-    public void setKeystoreOid(Long keystoreOid) {
-        this.keystoreOid = keystoreOid;
+    public void setKeystoreGoid(Goid keystoreGoid) {
+        this.keystoreGoid = keystoreGoid;
     }
 
     @Column(name="key_alias")
@@ -264,7 +267,7 @@ public class UDDIRegistry extends ZoneableNamedGoidEntityImp implements UsesPriv
     @Transient
     public SsgKeyHeader[] getPrivateKeysUsed() {
         if(getKeyAlias() != null) {
-            return new SsgKeyHeader[]{new SsgKeyHeader(getKeystoreOid() + ":" + getKeyAlias(), getKeystoreOid(), getKeyAlias(), getKeyAlias())};
+            return new SsgKeyHeader[]{new SsgKeyHeader(getKeystoreGoid() + ":" + getKeyAlias(), getKeystoreGoid(), getKeyAlias(), getKeyAlias())};
         }
         return null;
     }
@@ -280,7 +283,7 @@ public class UDDIRegistry extends ZoneableNamedGoidEntityImp implements UsesPriv
         this.setSecurityUrl(copyFrom.getSecurityUrl());
         this.setSubscriptionUrl(copyFrom.getSubscriptionUrl());
         this.setClientAuth(copyFrom.isClientAuth());
-        this.setKeystoreOid(copyFrom.getKeystoreOid());
+        this.setKeystoreGoid(copyFrom.getKeystoreGoid());
         this.setKeyAlias(copyFrom.getKeyAlias());
         this.setRegistryAccountUserName(copyFrom.getRegistryAccountUserName());
         this.setRegistryAccountPassword(copyFrom.getRegistryAccountPassword());

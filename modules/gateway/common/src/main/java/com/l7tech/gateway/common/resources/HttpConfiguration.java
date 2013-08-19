@@ -85,7 +85,7 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
         setNtlmDomain( httpConfiguration.getNtlmDomain() );
         setTlsVersion( httpConfiguration.getTlsVersion() );
         setTlsKeyUse( httpConfiguration.getTlsKeyUse() );
-        setTlsKeystoreOid( httpConfiguration.getTlsKeystoreOid() );
+        setTlsKeystoreGoid(httpConfiguration.getTlsKeystoreGoid());
         setTlsKeystoreAlias( httpConfiguration.getTlsKeystoreAlias() );
         setTlsCipherSuites( httpConfiguration.getTlsCipherSuites() );
         setConnectTimeout( httpConfiguration.getConnectTimeout() );
@@ -213,14 +213,15 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
         this.tlsKeyUse = tlsKeyUse;
     }
 
-    @Column(name="tls_keystore_oid")
-    public long getTlsKeystoreOid() {
-        return tlsKeystoreOid;
+    @Column(name="tls_keystore_goid")
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getTlsKeystoreGoid() {
+        return tlsKeystoreGoid;
     }
 
-    public void setTlsKeystoreOid( final long tlsKeystoreOid ) {
+    public void setTlsKeystoreGoid(final Goid tlsKeystoreGoid) {
         checkLocked();
-        this.tlsKeystoreOid = tlsKeystoreOid;
+        this.tlsKeystoreGoid = tlsKeystoreGoid;
     }
 
     @Column(name="tls_key_alias", length=255)
@@ -307,7 +308,7 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
     @Transient
     public SsgKeyHeader[] getPrivateKeysUsed() {
         if(getTlsKeystoreAlias() != null) {
-            return new SsgKeyHeader[]{new SsgKeyHeader(getTlsKeystoreOid() + ":" + getTlsKeystoreAlias(), getTlsKeystoreOid(), getTlsKeystoreAlias(), getTlsKeystoreAlias())};
+            return new SsgKeyHeader[]{new SsgKeyHeader(getTlsKeystoreGoid() + ":" + getTlsKeystoreAlias(), getTlsKeystoreGoid(), getTlsKeystoreAlias(), getTlsKeystoreAlias())};
         }
         return null;
     }
@@ -324,7 +325,7 @@ public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPriv
     private String ntlmDomain;
     private String tlsVersion;
     private Option tlsKeyUse = Option.DEFAULT;
-    private long tlsKeystoreOid;
+    private Goid tlsKeystoreGoid;
     private String tlsKeystoreAlias;
     private String tlsCipherSuites;
     private int connectTimeout = -1;

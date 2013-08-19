@@ -4,6 +4,7 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.CertificateRequest;
@@ -40,8 +41,8 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     }
 
     @Override
-    public long getOid() {
-        return 0;
+    public Goid getGoid() {
+        return new Goid(0,0);
     }
 
     @Override
@@ -84,7 +85,7 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     }
 
     @Override
-    public void updateKeyMetadata(long keystoreId, String alias, SsgKeyMetadata metadata) throws UpdateException {
+    public void updateKeyMetadata(Goid keystoreId, String alias, SsgKeyMetadata metadata) throws UpdateException {
     }
 
     @Override

@@ -17,7 +17,6 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.Either;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,7 +42,7 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public SsgKeyEntry findKeyEntry( final String alias, final long keystoreOid ) throws FindException, KeyStoreException {
+    public SsgKeyEntry findKeyEntry( final String alias, final Goid keystoreGoid ) throws FindException, KeyStoreException {
         return null;
     }
 

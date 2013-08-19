@@ -927,9 +927,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private void selectPrivateKey(Long oid, String alias) {
-        if (oid != null && alias != null) {
-            privateKeyComboBox.select(oid, alias);
+    private void selectPrivateKey(Goid goid, String alias) {
+        if (goid != null && alias != null) {
+            privateKeyComboBox.select(goid, alias);
         } else {
             if (privateKeyComboBox.getModel().getSize() > 0)
                 privateKeyComboBox.setSelectedIndex(0);
@@ -1248,7 +1248,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // SSL-specific properties
         cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_TLS_CIPHERLIST));
         clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
-        selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
+        selectPrivateKey(connector.getKeystoreGoid(), connector.getKeyAlias());
 
         List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
 
@@ -1347,12 +1347,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // SSL-specific properties
         boolean isSsl = isSslProto(proto);
         connector.setSecure(isSsl);
-        connector.setKeystoreOid(null);
+        connector.setKeystoreGoid(null);
         connector.setKeyAlias(null);
         if (isSsl) {
             final String alias = privateKeyComboBox.getSelectedKeyAlias();
             if (!privateKeyComboBox.isSelectedDefaultSsl()) {
-                connector.setKeystoreOid(privateKeyComboBox.getSelectedKeystoreId());
+                connector.setKeystoreGoid(privateKeyComboBox.getSelectedKeystoreId());
                 connector.setKeyAlias(alias);
             }
         }

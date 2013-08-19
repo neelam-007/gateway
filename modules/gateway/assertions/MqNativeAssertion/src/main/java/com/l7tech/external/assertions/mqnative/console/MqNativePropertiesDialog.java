@@ -28,6 +28,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +47,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
@@ -579,7 +581,7 @@ public class MqNativePropertiesDialog extends JDialog {
             enabledCheckBox.setSelected(mqNativeActiveConnector.isEnabled());
 
             final String userId = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
-            final Goid passwordGoid = ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
+            final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
 
             credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || (passwordGoid != null && !Goid.isDefault(passwordGoid)));
             authUserNameTextBox.setText(userId);
@@ -608,8 +610,8 @@ public class MqNativePropertiesDialog extends JDialog {
                     keystoreComboBox.setEnabled(true);
 
                     final String sslKeyStoreAlias = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
-                    final long sslKeyStoreId = mqNativeActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, -1L);
-                    if (!StringUtils.isEmpty(sslKeyStoreAlias) && sslKeyStoreId > -1L) {
+                    final Goid sslKeyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID));
+                    if (!StringUtils.isEmpty(sslKeyStoreAlias) && !Goid.isDefault(sslKeyStoreId)) {
                         keystoreComboBox.select(sslKeyStoreId, sslKeyStoreAlias);
                     } else {
                         keystoreComboBox.selectDefaultSsl();
@@ -1038,10 +1040,10 @@ public class MqNativePropertiesDialog extends JDialog {
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED, Boolean.toString(isSslKeyStoreUsed));
             if (isSslKeyStoreUsed) {
                 String keyAlias = keystoreComboBox.getSelectedKeyAlias();
-                long keyStoreId = keystoreComboBox.getSelectedKeystoreId();
-                if ( keyAlias != null && keyStoreId != -1 ) {
+                Goid keyStoreId = keystoreComboBox.getSelectedKeystoreId();
+                if ( keyAlias != null && !Goid.isDefault(keyStoreId) ) {
                     connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS, keyAlias);
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, Long.toString(keyStoreId));
+                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, Goid.toString(keyStoreId));
                 } else {
                     connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
                     connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);

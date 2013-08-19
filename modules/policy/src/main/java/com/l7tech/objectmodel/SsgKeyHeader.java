@@ -5,20 +5,20 @@ package com.l7tech.objectmodel;
  */
 public class SsgKeyHeader extends EntityHeader {
 
-    private long keystoreId;
+    private Goid keystoreId;
     private String alias;
 
-    public SsgKeyHeader(String id, long keystoreId, String alias, String name) {
+    public SsgKeyHeader(String id, Goid keystoreId, String alias, String name) {
         super(id, EntityType.SSG_KEY_ENTRY, name, "");
         this.keystoreId = keystoreId;
         this.alias = alias;
     }
 
-    public long getKeystoreId() {
+    public Goid getKeystoreId() {
         return keystoreId;
     }
 
-    public void setKeystoreId(long keystoreId) {
+    public void setKeystoreId(Goid keystoreId) {
         this.keystoreId = keystoreId;
     }
 

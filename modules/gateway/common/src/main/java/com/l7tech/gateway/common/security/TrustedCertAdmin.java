@@ -115,15 +115,15 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException;
 
     /**
-     * Retrieves the {@link RevocationCheckPolicy} with the specified oid.
+     * Retrieves the {@link RevocationCheckPolicy} with the specified goid.
      *
-     * @param oid the oid of the {@link RevocationCheckPolicy} to retrieve
-     * @return the RevocationCheckPolicy or null if no policy exists with the given oid
+     * @param goid the goid of the {@link RevocationCheckPolicy} to retrieve
+     * @return the RevocationCheckPolicy or null if no policy exists with the given goid
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
     @Secured(types=REVOCATION_CHECK_POLICY, stereotype=FIND_ENTITY)
-    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(Goid oid) throws FindException;
+    public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Saves a new or existing {@link RevocationCheckPolicy} to the database.
@@ -132,7 +132,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * updated so they are not the default.</p>
      *
      * @param revocationCheckPolicy the {@link RevocationCheckPolicy} to be saved
-     * @return the object id (oid) of the newly saved policy
+     * @return the object id (goid) of the newly saved policy
      * @throws SaveException if there was a server-side problem saving the policy
      * @throws UpdateException if there was a server-side problem updating the policy
      * @throws VersionException if the updated policy was not up-to-date (updating an old version)
@@ -143,13 +143,13 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Removes the specified {@link RevocationCheckPolicy} from the database.
      *
-     * @param oid the oid of the {@link RevocationCheckPolicy} to be deleted
+     * @param goid the goid of the {@link RevocationCheckPolicy} to be deleted
      * @throws FindException if the {@link RevocationCheckPolicy} cannot be found
      * @throws DeleteException if the {@link RevocationCheckPolicy} cannot be deleted
      * @throws ConstraintViolationException if the {@link RevocationCheckPolicy} cannot be deleted
      */
     @Secured(types=REVOCATION_CHECK_POLICY,stereotype= DELETE_BY_ID)
-    public void deleteRevocationCheckPolicy(Goid oid) throws FindException, DeleteException, ConstraintViolationException;
+    public void deleteRevocationCheckPolicy(Goid goid) throws FindException, DeleteException, ConstraintViolationException;
 
 
     public static class HostnameMismatchException extends Exception {
@@ -236,13 +236,13 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=FILTER_RETURN)
-    public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException;
+    public List<SsgKeyEntry> findAllKeys(Goid keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException;
 
     /**
      * Find a key entry using the rules assertions and connectors would follow.
      *
      * @param keyAlias  key alias to find, or null to find default SSL key.
-     * @param preferredKeystoreOid preferred keystore OID to look in, or -1 to search all keystores (if permitted).
+     * @param preferredKeystoreGoid preferred keystore GOID to look in, or Default GOID to search all keystores (if permitted).
      * @return the requested private key, or null if it wasn't found.
      * @throws FindException if there is a database problem (other than ObjectNotFoundException)
      * @throws KeyStoreException if there is a problem reading a keystore
@@ -250,7 +250,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={NO_PRE_CHECK}, returnCheck=CHECK_RETURN)
-    public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException;
+    public SsgKeyEntry findKeyEntry(String keyAlias, Goid preferredKeystoreGoid) throws FindException, KeyStoreException;
 
     /**
      * Destroys an SsgKeyEntry identified by its keystore ID and entry alias.
@@ -264,7 +264,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.DELETE)
-    void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException;
+    void deleteKey(Goid keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException;
 
     /**
      * Generate a new RSA key pair and self-signed certificate in the specified keystore with the specified
@@ -288,7 +288,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
-    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new ECC key pair and self-signed certificate in the specified keystore with the specified
@@ -312,7 +312,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
-    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateEcKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
@@ -327,7 +327,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(readOnly=true)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
-    byte[] generateCSR(long keystoreId, String alias, CertGenParams params) throws FindException;
+    byte[] generateCSR(Goid keystoreId, String alias, CertGenParams params) throws FindException;
 
     /**
      * Process a PKCS#10 Certificate Signing Request, producing a new signed certificate from it
@@ -348,7 +348,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ, returnCheck=NO_RETURN_CHECK)
-    String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
+    String[] signCSR(Goid keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Update the SsgKeyEntry of a private key.
@@ -401,7 +401,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.CREATE, metadataArg=2, returnCheck=NO_RETURN_CHECK)
-    SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId,
+    SsgKeyEntry importKeyFromKeyStoreFile(Goid keystoreId,
                                           String alias,
                                           @Nullable SsgKeyMetadata metadata,
                                           byte[] keyStoreBytes,
@@ -429,7 +429,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION, CHECK_ARG_EXPORT_KEY}, argOp=OperationType.READ)
-    byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
+    byte[] exportKey(Goid keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 
 
     /**
@@ -465,8 +465,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
-    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION, CHECK_UPDATE_ALL_KEYSTORES_NONFATAL}, argOp=OperationType.READ, keystoreOidArg=1, keyAliasArg=2, allowNonFatalPreChecks=false)
-    void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) throws UpdateException;
+    @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION, CHECK_UPDATE_ALL_KEYSTORES_NONFATAL}, argOp=OperationType.READ, keystoreGoidArg=1, keyAliasArg=2, allowNonFatalPreChecks=false)
+    void setDefaultKey(SpecialKeyType keyType, Goid keystoreId, String alias) throws UpdateException;
 
     /**
      * Retrieves all {@link SecurePassword} entity headers from the database.
@@ -565,23 +565,23 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Secured(customInterceptor="com.l7tech.server.admin.PrivateKeyRbacInterceptor")
     @PrivateKeySecured(preChecks={CHECK_ARG_OPERATION}, argOp=OperationType.READ)
-    boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
+    boolean isShortSigningKey(Goid keystoreId, String alias) throws FindException, KeyStoreException;
 
     /**
-     * @param metadataOid the oid of the SsgKeyMetadata to retrieve.
-     * @return an SsgKeyMetadata identified by the given oid or null if it does not exist.
+     * @param metadataGoid the goid of the SsgKeyMetadata to retrieve.
+     * @return an SsgKeyMetadata identified by the given goid or null if it does not exist.
      * @throws FindException if an error occurs retrieving the SsgKeyMetadata.
      */
     @Secured(types=SSG_KEY_METADATA, stereotype = FIND_ENTITY)
-    SsgKeyMetadata findKeyMetadata(final long metadataOid) throws FindException;
+    SsgKeyMetadata findKeyMetadata(final Goid metadataGoid) throws FindException;
 
     /**
      * Save a new SsgKeyMetadata or update an existing SsgKeyMetadata.
      *
      * @param metadata the SsgKeyMetadata to save or update.
-     * @return the oid of the saved SsgKeyMetadata.
+     * @return the goid of the saved SsgKeyMetadata.
      * @throws SaveException if an error occurs saving/updating the SsgKeyMetadata.
      */
     @Secured(types=SSG_KEY_METADATA, stereotype = SAVE_OR_UPDATE, relevantArg = 0)
-    long saveOrUpdateMetadata(@NotNull final SsgKeyMetadata metadata) throws SaveException;
+    Goid saveOrUpdateMetadata(@NotNull final SsgKeyMetadata metadata) throws SaveException;
 }

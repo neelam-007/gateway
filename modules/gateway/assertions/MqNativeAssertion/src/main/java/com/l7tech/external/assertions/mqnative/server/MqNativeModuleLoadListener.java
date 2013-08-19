@@ -125,7 +125,7 @@ public class MqNativeModuleLoadListener {
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
                         String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
                         String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
-                        dependentEntities.addAll(finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, Long.parseLong(keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
+                        dependentEntities.addAll(finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
                     }
                     return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
                 }

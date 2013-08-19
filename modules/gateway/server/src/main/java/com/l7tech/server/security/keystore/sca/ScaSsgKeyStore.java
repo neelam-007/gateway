@@ -3,6 +3,7 @@ package com.l7tech.server.security.keystore.sca;
 import com.l7tech.gateway.hsm.sca.ScaException;
 import com.l7tech.gateway.hsm.sca.ScaManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
@@ -31,7 +32,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
     private static ScaSsgKeyStore INSTANCE = null;
 
-    private final long id;
+    private final Goid id;
     private final String name;
     private final char[] password;
     private final KeystoreFileManager kem;
@@ -53,13 +54,13 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      * @return the ScaSsgKeyStore instance for this process
      * @throws KeyStoreException  if the global instance cannot be created
      */
-    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+    public synchronized static ScaSsgKeyStore getInstance(Goid id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
         if (INSTANCE != null)
             return INSTANCE;
         return INSTANCE = new ScaSsgKeyStore(id, name, password, kem, keyAccessFilter, metadataManager);
     }
 
-    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+    private ScaSsgKeyStore(Goid id, String name, char[] password, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) throws KeyStoreException {
         super(keyAccessFilter, metadataManager);
         if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
             throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
@@ -77,7 +78,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     }
 
     @Override
-    public long getOid() {
+    public Goid getGoid() {
         return id;
     }
 
@@ -100,7 +101,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
                 int dbVersion = keystoreFile.getVersion();
                 if (keystore != null && keystoreVersion == dbVersion) {
                     // No changes since last time we checked.  Just use the one we've got.
@@ -176,7 +177,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (ScaSsgKeyStore.this) {
-                        KeystoreFile updated = kem.mutateKeystoreFile(getOid(), new Functions.UnaryVoid<KeystoreFile>() {
+                        KeystoreFile updated = kem.mutateKeystoreFile(getGoid(), new Functions.UnaryVoid<KeystoreFile>() {
                             @Override
                             public void call(KeystoreFile keystoreFile) {
                                 if (transactionCallback != null)

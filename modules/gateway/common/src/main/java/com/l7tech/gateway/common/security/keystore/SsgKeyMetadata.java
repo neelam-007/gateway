@@ -1,13 +1,17 @@
 package com.l7tech.gateway.common.security.keystore;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.imp.ZoneablePersistentEntityImp;
-import org.apache.commons.lang.ObjectUtils;
+import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Version;
 
 /**
  * Represents metadata that is associated with a key in a keystore accessible to the Gateway, indexed by
@@ -18,27 +22,28 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="keystore_key_metadata")
-public class SsgKeyMetadata extends ZoneablePersistentEntityImp {
+public class SsgKeyMetadata extends ZoneableGoidEntityImp {
 
-    long keystoreOid;
+    Goid keystoreGoid;
     String alias;
 
     public SsgKeyMetadata() {
     }
 
-    public SsgKeyMetadata(long keystoreOid, @NotNull String alias, @Nullable SecurityZone securityZone) {
-        setKeystoreOid(keystoreOid);
+    public SsgKeyMetadata(Goid keystoreGoid, @NotNull String alias, @Nullable SecurityZone securityZone) {
+        setKeystoreGoid(keystoreGoid);
         setAlias(alias);
         setSecurityZone(securityZone);
     }
 
-    @Column(name = "keystore_file_oid", nullable=false)
-    public long getKeystoreOid() {
-        return keystoreOid;
+    @Column(name = "keystore_file_goid", nullable=false)
+    @Type(type = "com.l7tech.server.util.GoidType")
+    public Goid getKeystoreGoid() {
+        return keystoreGoid;
     }
 
-    public void setKeystoreOid(long keystoreOid) {
-        this.keystoreOid = keystoreOid;
+    public void setKeystoreGoid(Goid keystoreGoid) {
+        this.keystoreGoid = keystoreGoid;
     }
 
     @Column(name = "alias", nullable=false)
@@ -81,7 +86,7 @@ public class SsgKeyMetadata extends ZoneablePersistentEntityImp {
 
         SsgKeyMetadata metadata = (SsgKeyMetadata) o;
 
-        if (keystoreOid != metadata.keystoreOid) return false;
+        if (!Goid.equals(keystoreGoid, metadata.keystoreGoid)) return false;
         if (alias != null ? !alias.equals(metadata.alias) : metadata.alias != null) return false;
         if (securityZone != null ? !securityZone.equals(metadata.securityZone) : metadata.securityZone != null) return false;
 
@@ -91,7 +96,7 @@ public class SsgKeyMetadata extends ZoneablePersistentEntityImp {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (keystoreOid ^ (keystoreOid >>> 32));
+        result = 31 * result + (keystoreGoid != null ? keystoreGoid.hashCode() : 0);
         result = 31 * result + (alias != null ? alias.hashCode() : 0);
         result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;

@@ -7,6 +7,8 @@ package com.l7tech.external.assertions.ftprouting;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -18,6 +20,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,7 +80,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private boolean _useClientCert;
 
     /** ID of keystore to use if {@link #_useClientCert} is true. */
-    private long _clientCertKeystoreId;
+    private Goid _clientCertKeystoreId;
 
     /** Key alias in keystore to use if {@link #_useClientCert} is true. */
     private String _clientCertKeyAlias;
@@ -129,12 +132,17 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _clientCertKeyAlias = clientCertKeyAlias;
     }
 
-    public long getClientCertKeystoreId() {
+    public Goid getClientCertKeystoreId() {
         return _clientCertKeystoreId;
     }
 
-    public void setClientCertKeystoreId(long clientCertKeystoreId) {
+    public void setClientCertKeystoreId(Goid clientCertKeystoreId) {
         _clientCertKeystoreId = clientCertKeystoreId;
+    }
+
+    @Deprecated
+    public void setClientCertKeystoreId(long clientCertKeystoreId) {
+        _clientCertKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, clientCertKeystoreId);
     }
 
     public String getDirectory() {

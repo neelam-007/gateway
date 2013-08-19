@@ -2,8 +2,12 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.UsesPrivateKeys;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
@@ -60,11 +64,11 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
      * @return  Keystore Id used for client auth or NULL for default key.
      */
     @Transient
-    public Long getKeystoreId() {
-        return (Long) getProperty(KEYSTORE_ID);
+    public Goid getKeystoreId() {
+        return GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, this.<String>getProperty(KEYSTORE_ID));
     }
 
-    public void setKeystoreId(@Nullable Long keystoreId) {
+    public void setKeystoreId(@Nullable Goid keystoreId) {
         setProperty(KEYSTORE_ID, keystoreId);
     }
 
@@ -83,7 +87,7 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
     @Override
     public SsgKeyHeader[] getPrivateKeysUsed() {
         if (isClientAuthEnabled()) {
-            final Long keystoreId = getKeystoreId() == null ? -1 : getKeystoreId();
+            final Goid keystoreId = getKeystoreId() == null ? GoidEntity.DEFAULT_GOID : getKeystoreId();
             return new SsgKeyHeader[]{new SsgKeyHeader(keystoreId + ":" + getKeyAlias(), keystoreId, getKeyAlias(), getKeyAlias())};
         }
         return null;

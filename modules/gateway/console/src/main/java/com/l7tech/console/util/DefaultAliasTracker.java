@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -77,7 +78,7 @@ public class DefaultAliasTracker {
     public EnumSet<SpecialKeyType> getSpecialKeyTypes(SsgKeyEntry entry) {
         if (entry == null) throw new NullPointerException("A key entry must be provided to retrieve its special key types");
         if (entry.getAlias() == null) throw new IllegalArgumentException("Key entry must have an alias assigned in order retrieve its special key types");
-        if (entry.getKeystoreId() == -1) throw new IllegalArgumentException("Key entry must have specific keystore ID assigned in order to retrieve its special key types");
+        if (Goid.isDefault(entry.getKeystoreId())) throw new IllegalArgumentException("Key entry must have specific keystore ID assigned in order to retrieve its special key types");
 
         EnumSet<SpecialKeyType> ret = EnumSet.noneOf(SpecialKeyType.class);
         for (SpecialKeyType type : SpecialKeyType.values()) {
@@ -91,7 +92,7 @@ public class DefaultAliasTracker {
         if (type == null) throw new NullPointerException("A special key type must be provided");
         if (entry == null) throw new NullPointerException("A key entry must be provided to check whether it is a special key type");
         if (entry.getAlias() == null) throw new IllegalArgumentException("Key entry must have an alias assigned in order to check whether it is a special key type");
-        if (entry.getKeystoreId() == -1) throw new IllegalArgumentException("Key entry must have specific keystore ID assigned in order to check whether it is a special key type");
+        if (Goid.isDefault(entry.getKeystoreId())) throw new IllegalArgumentException("Key entry must have specific keystore ID assigned in order to check whether it is a special key type");
 
         SpecialKeyInfo info = info().infoByType.get(type);
         return info != null && info.entry != null &&
@@ -99,13 +100,13 @@ public class DefaultAliasTracker {
                 entry.getKeystoreId() == info.entry.getKeystoreId();
     }
 
-    public boolean isSpecialKey(long keystoreId, String alias, SpecialKeyType type) {
+    public boolean isSpecialKey(Goid keystoreId, String alias, SpecialKeyType type) {
         if (type == null) throw new NullPointerException("A special key type must be provided");
         if (alias == null) throw new IllegalArgumentException("An alias must be provided");
 
         SpecialKeyInfo info = info().infoByType.get(type);
         return info != null && info.entry != null &&
-                (keystoreId == -1 || keystoreId == info.entry.getKeystoreId()) &&
+                (Goid.isDefault(keystoreId) || Goid.equals(keystoreId, info.entry.getKeystoreId())) &&
                 alias.equalsIgnoreCase(info.entry.getAlias());
     }
 

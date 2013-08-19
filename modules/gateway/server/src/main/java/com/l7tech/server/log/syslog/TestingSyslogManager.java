@@ -1,5 +1,6 @@
 package com.l7tech.server.log.syslog;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.log.syslog.impl.MinaManagedSyslog;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class TestingSyslogManager extends SyslogManager {
     }
 
     @Override
-    Syslog getSyslog(SyslogProtocol protocol, SocketAddress[] addresses, String format, String timeZone, int facility, String host, String charset, String delimiter, String sslKeystoreAlias, Long sslKeystoreId) {
+    Syslog getSyslog(SyslogProtocol protocol, SocketAddress[] addresses, String format, String timeZone, int facility, String host, String charset, String delimiter, String sslKeystoreAlias, Goid sslKeystoreId) {
 
         if (protocol == null) throw new IllegalArgumentException("protocol must not be null");
 

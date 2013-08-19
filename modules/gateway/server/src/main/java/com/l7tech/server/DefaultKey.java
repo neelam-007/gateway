@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 
 import javax.net.ssl.KeyManager;
@@ -51,10 +52,10 @@ public interface DefaultKey {
     /**
      * Get just the keystore ID and alias of the audit viewer decryption key, if one is set, otherwise null.
      *
-     * @return the audit viewer keystore oid and alias, or null if not set.  The keystore oid may be returned as -1
+     * @return the audit viewer keystore goid and alias, or null if not set.  The keystore goid may be returned as default
      * if it is configured as a wildcard match the actual matching key entry has not been loaded yet.
      */
-    Pair<Long, String> getAuditViewerAlias();
+    Pair<Goid, String> getAuditViewerAlias();
 
     /**
      * Get an array containing a single KeyManager implementation which will always present the current
@@ -65,7 +66,7 @@ public interface DefaultKey {
     KeyManager[] getSslKeyManagers();
 
     /**
-     * Similar to {@link com.l7tech.server.security.keystore.SsgKeyStoreManager#lookupKeyByKeyAlias(String, long)} but
+     * Similar to {@link com.l7tech.server.security.keystore.SsgKeyStoreManager#lookupKeyByKeyAlias(String, Goid)} but
      * recognizes a null keyAlias as a request for the default SSL key.  In other respects, this just chains
      * to the other method; see its JavaDoc for more information.
      *
@@ -79,5 +80,5 @@ public interface DefaultKey {
      * @throws java.io.IOException if there is a problem reading the certificate file or the private key,
      *                             or if no default SSL key is currently designated.
      */
-    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException, IOException;
+    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException, IOException;
 }

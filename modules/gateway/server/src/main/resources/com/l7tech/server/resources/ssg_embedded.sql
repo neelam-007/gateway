@@ -294,7 +294,7 @@ create table connector (
     enabled smallint,
     endpoints varchar(255) not null,
     key_alias varchar(255),
-    keystore_oid bigint,
+    keystore_goid CHAR(16) FOR BIT DATA,
     port integer,
     scheme varchar(128) not null,
     secure smallint,
@@ -422,7 +422,7 @@ create table http_configuration (
     tls_cipher_suites varchar(4096),
     tls_key_use varchar(255),
     tls_key_alias varchar(255),
-    tls_keystore_oid bigint,
+    tls_keystore_goid CHAR(16) FOR BIT DATA,
     tls_version varchar(8),
     username varchar(255),
     version integer,
@@ -566,23 +566,23 @@ create table jms_endpoint (
 );
 
 create table keystore_file (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(128) not null,
     format varchar(255),
     databytes blob(2147483647),
     properties clob(2147483647),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table keystore_key_metadata (
-  objectid bigint not null,
+  goid CHAR(16) FOR BIT DATA not null,
   version integer,
-  keystore_file_oid bigint not null references keystore_file(objectid) on delete cascade,
+  keystore_file_goid CHAR(16) FOR BIT DATA not null references keystore_file(goid) on delete cascade,
   alias varchar(255) not null,
   security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-  primary key (objectid),
-  unique (keystore_file_oid, alias)
+  primary key (goid),
+  unique (keystore_file_goid, alias)
 );
 
 create table logon_info (
@@ -1018,7 +1018,7 @@ create table uddi_registries (
     enabled smallint,
     inquiry_url varchar(4096),
     key_alias varchar(255),
-    keystore_oid bigint,
+    keystore_goid CHAR(16) FOR BIT DATA,
     metrics_publish_frequency bigint,
     metrics_enabled smallint,
     monitoring_enabled smallint,
@@ -1249,19 +1249,19 @@ INSERT INTO resolution_configuration (goid, version, name, path_case_sensitive, 
 INSERT INTO cluster_master (nodeid, touched_time, version) VALUES (NULL, 0, 0);
 
 -- placeholder for legacy Software Static, never loaded or saved
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (0, 0, 'Software Static', 'ss', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,0), 0, 'Software Static', 'ss', null, null);
 
 -- tar.gz of items in sca 6000 keydata directory
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (1, 0, 'HSM', 'hsm.sca.targz', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,1), 0, 'HSM', 'hsm.sca.targz', null, null);
 
 -- bytes of a PKCS#12 keystore
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (2, 0, 'Software DB', 'sdb.pkcs12', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,2), 0, 'Software DB', 'sdb.pkcs12', null, null);
 
 -- placeholder for ID reserved for Luna, never loaded or saved
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (3, 0, 'SafeNet HSM', 'luna', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,3), 0, 'SafeNet HSM', 'luna', null, null);
 
 -- serialized NcipherKeyStoreData for an nCipher keystore
-insert into keystore_file (objectid, version, name, format, databytes, properties) values (4, 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
+insert into keystore_file (goid, version, name, format, databytes, properties) values (toGoid(0,4), 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
 
 -- STIG default:
 INSERT INTO password_policy (goid, version, properties, internal_identity_provider_goid) VALUES (toGoid(0, -2), 0, '<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>', toGoid(0,-2));
@@ -1808,3 +1808,12 @@ CREATE TABLE license_document (
   contents clob(2147483647),
   PRIMARY KEY (goid)
 );
+
+CREATE TABLE goid_upgrade_map (
+  prefix bigint NOT NULL,
+  table_name varchar(255) NOT NULL,
+  PRIMARY KEY (prefix, table_name)
+);
+
+INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
+      ('keystore_file', 0);

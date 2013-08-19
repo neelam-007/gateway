@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.PrivateKeyReference;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
@@ -61,7 +62,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
     @Override
     public boolean onNextButton() {
         if ( useDefaultKeyPairRadioButton.isSelected() ) {
-            keyReference.setLocalizeReplace(true, null, 0);
+            keyReference.setLocalizeReplace(true, null, new Goid(0,0));
         } else if ( useCustomKeyPairRadioButton.isSelected() ) {
             ComboEntry comboentry = (ComboEntry)aliasCombo.getSelectedItem();
             if (comboentry.alias == null) {
@@ -129,8 +130,8 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
                 final java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
                 final ComboEntry previousSelection = (ComboEntry) aliasCombo.getSelectedItem();
                 for ( final KeystoreFileEntityHeader header : keystores ) {
-                    for ( final SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(header.getOid(), true) ) {
-                        final ComboEntry comboEntry = new ComboEntry(header.getOid(), header.getName(), entry.getAlias());
+                    for ( final SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(header.getGoid(), true) ) {
+                        final ComboEntry comboEntry = new ComboEntry(header.getGoid(), header.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
                     }
                 }
@@ -160,11 +161,11 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
     }
 
     private class ComboEntry implements Comparable<ComboEntry> {
-        private final long keystoreid;
+        private final Goid keystoreid;
         private final String keystorename;
         private final String alias;
 
-        private ComboEntry(long keystoreid, String keystorename, String alias) {
+        private ComboEntry(Goid keystoreid, String keystorename, String alias) {
             this.keystoreid = keystoreid;
             this.keystorename = keystorename;
             this.alias = alias;
@@ -197,7 +198,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
 
         @Override
         public int hashCode() {
-            int result = (int) (keystoreid ^ (keystoreid >>> 32));
+            int result = keystoreid != null ? keystoreid.hashCode() : 0;
             result = 31 * result + (keystorename != null ? keystorename.hashCode() : 0);
             result = 31 * result + (alias != null ? alias.hashCode() : 0);
             return result;

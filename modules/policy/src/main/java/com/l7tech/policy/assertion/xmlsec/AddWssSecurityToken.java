@@ -1,6 +1,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -10,6 +12,7 @@ import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyReference;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -124,13 +127,18 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return privatekeyableSupport.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultKeystoreId) {
         privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        privatekeyableSupport.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultKeystoreId));
     }
 
     @Override

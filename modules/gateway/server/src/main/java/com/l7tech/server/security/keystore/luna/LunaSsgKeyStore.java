@@ -1,5 +1,6 @@
 package com.l7tech.server.security.keystore.luna;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.util.ExceptionUtils;
@@ -25,15 +26,15 @@ import java.util.logging.Logger;
 public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final Logger logger = Logger.getLogger(LunaSsgKeyStore.class.getName());
 
-    private final long oid;
+    private final Goid goid;
     private final SsgKeyStoreType type;
     private final String name;
     private final KeyStore keystore;
     private final AtomicBoolean checkedInit = new AtomicBoolean(false);
 
-    public LunaSsgKeyStore(long oid, SsgKeyStoreType type, String name, KeyAccessFilter keyAccessFilter, SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+    public LunaSsgKeyStore(Goid goid, SsgKeyStoreType type, String name, KeyAccessFilter keyAccessFilter, SsgKeyMetadataManager metadataManager) throws KeyStoreException {
         super(keyAccessFilter, metadataManager);
-        this.oid = oid;
+        this.goid = goid;
         this.type = type;
         this.name = name;
         final String keystoreType = isUsingPkcs11() ? "PKCS11" : "Luna";
@@ -130,8 +131,8 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
     }
 
     @Override
-    public long getOid() {
-        return oid;
+    public Goid getGoid() {
+        return goid;
     }
 
     @Override

@@ -1,10 +1,15 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -25,11 +30,12 @@ public class PrivateKeyReference extends ExternalReference {
     public static final String IS_DEFAULT_KEY_EL_NAME = "IsDefaultKey";
 
     private String keyAlias;
-    private long keystoreOid;
+    private Goid keystoreGoid;
+    private Long keystoreOid;
     private boolean isDefaultKey;
 
     private String localKeyAlias;
-    private long localKeystoreOid;
+    private Goid localKeystoreGoid;
     private boolean localIsDefaultKey;
 
     private LocalizeAction localizeType;
@@ -46,7 +52,7 @@ public class PrivateKeyReference extends ExternalReference {
                 isDefaultKey = true;
             } else {
                 isDefaultKey = false;
-                keystoreOid = keyable.getNonDefaultKeystoreId();
+                localKeystoreGoid = keyable.getNonDefaultKeystoreId();
                 keyAlias = keyable.getKeyAlias();
             }
         }
@@ -57,8 +63,10 @@ public class PrivateKeyReference extends ExternalReference {
     public String getRefId() {
         String id = null;
 
-        if ( keystoreOid > 0 && keyAlias!=null ) {
+        if(keystoreOid != null && keystoreOid > 0 && keyAlias!=null) {
             id = keystoreOid + ":" + keyAlias;
+        }else if (GoidRange.ZEROED_PREFIX.isInRange(keystoreGoid) && keystoreGoid.getLow() > 0 && keyAlias!=null ) {
+            id = keystoreGoid + ":" + keyAlias;
         }
 
         return id;
@@ -68,8 +76,8 @@ public class PrivateKeyReference extends ExternalReference {
         return keyAlias;
     }
 
-    public long getKeystoreOid() {
-        return keystoreOid;
+    public Goid getKeystoreGoid() {
+        return keystoreGoid;
     }
 
     public boolean isDefaultKey() {
@@ -81,20 +89,20 @@ public class PrivateKeyReference extends ExternalReference {
         boolean ok = false;
 
         if ( identifier == null ) {
-            setLocalizeReplace( true, null, -1 );
+            setLocalizeReplace( true, null, GoidEntity.DEFAULT_GOID);
             ok = true;
         } else {
             String[] keystoreAndAlias = identifier.split( ":", 2 );
             if ( keystoreAndAlias.length==2 ) {
                 try {
-                    final long keystoreOid = Long.parseLong( keystoreAndAlias[0] );
+                    final Goid keystoreGoid = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreAndAlias[0]);
                     final String alias = keystoreAndAlias[1].trim();
 
                     if ( !alias.isEmpty() ) {
-                        setLocalizeReplace( false, alias, keystoreOid );
+                        setLocalizeReplace( false, alias, keystoreGoid );
                         ok = true;
                     }
-                } catch ( NumberFormatException nfe ) {
+                } catch ( IllegalArgumentException iae ) {
                     // not ok
                 }
             }
@@ -113,13 +121,13 @@ public class PrivateKeyReference extends ExternalReference {
         localizeType = LocalizeAction.IGNORE;
     }
 
-    public void setLocalizeReplace(boolean isDefaultKey, String keyAlias, long keystoreOid) {
+    public void setLocalizeReplace(boolean isDefaultKey, String keyAlias, Goid keystoreGoid) {
         localizeType = LocalizeAction.REPLACE;
         localIsDefaultKey = isDefaultKey;
 
         if (!isDefaultKey) {
             localKeyAlias = keyAlias;
-            localKeystoreOid = keystoreOid;
+            localKeystoreGoid = keystoreGoid;
         }
     }
 
@@ -135,7 +143,12 @@ public class PrivateKeyReference extends ExternalReference {
         if (!output.isDefaultKey) {
             String keystoreId = getParamFromEl(el, KEYSTORE_OID_EL_NAME);
             if (keystoreId != null) {
-                output.keystoreOid = Long.parseLong(keystoreId);
+                output.keystoreGoid = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreId);
+                try {
+                    output.keystoreOid = Long.parseLong(keystoreId);
+                } catch(NumberFormatException e) {
+                    //do nothing. If it isn't a oid then that's ok.
+                }
             }
             output.keyAlias = getParamFromEl(el, KEY_ALIAS_EL_NAME);
         }
@@ -156,7 +169,7 @@ public class PrivateKeyReference extends ExternalReference {
 
         if (!isDefaultKey && keyAlias != null) {
             Element keystoreOidEl = referencesParentElement.getOwnerDocument().createElement(KEYSTORE_OID_EL_NAME);
-            txt = DomUtils.createTextNode(referencesParentElement, Long.toString(keystoreOid));
+            txt = DomUtils.createTextNode(referencesParentElement, keystoreGoid != null ? Goid.toString(keystoreGoid) : null);
             keystoreOidEl.appendChild(txt);
             refEl.appendChild(keystoreOidEl);
 
@@ -175,9 +188,9 @@ public class PrivateKeyReference extends ExternalReference {
         }
 
         try {
-            SsgKeyEntry foundKey = getFinder().findKeyEntry(keyAlias, keystoreOid);
+            SsgKeyEntry foundKey = getFinder().findKeyEntry(keyAlias, keystoreGoid);
             if (foundKey == null) {
-                logger.warning("The private key with alias '" + keyAlias + "' and keystore OID '" + keystoreOid +
+                logger.warning("The private key with alias '" + keyAlias + "' and keystore GOID '" + keystoreGoid +
                     "' does not exist in this Gateway.");
                 localizeType = LocalizeAction.REPLACE;
                 return false;
@@ -203,7 +216,7 @@ public class PrivateKeyReference extends ExternalReference {
                         } else {
                             keyable.setUsesDefaultKeyStore(false);
                             keyable.setKeyAlias(localKeyAlias);
-                            keyable.setNonDefaultKeystoreId(localKeystoreOid);
+                            keyable.setNonDefaultKeystoreId(localKeystoreGoid);
                         }
                     }  else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
@@ -224,7 +237,7 @@ public class PrivateKeyReference extends ExternalReference {
         final PrivateKeyReference that = (PrivateKeyReference) o;
 
         if ( isDefaultKey != that.isDefaultKey ) return false;
-        if ( keystoreOid != that.keystoreOid ) return false;
+        if ( !Goid.equals(keystoreGoid, that.keystoreGoid) ) return false;
         if ( keyAlias != null ? !keyAlias.equals( that.keyAlias ) : that.keyAlias != null ) return false;
 
         return true;
@@ -233,7 +246,7 @@ public class PrivateKeyReference extends ExternalReference {
     @Override
     public int hashCode() {
         int result = keyAlias != null ? keyAlias.hashCode() : 0;
-        result = 31 * result + (int) (keystoreOid ^ (keystoreOid >>> 32));
+        result = 31 * result + (keystoreGoid != null ? keystoreGoid.hashCode() : 0);
         result = 31 * result + (isDefaultKey ? 1 : 0);
         return result;
     }

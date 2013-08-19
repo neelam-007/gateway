@@ -3,10 +3,7 @@ package com.l7tech.server.ems.setup;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -50,7 +47,7 @@ public class SslSetupManagerImpl implements SslSetupManager {
             // save key
             String alias = findUnusedAlias();
             SsgKeyStore sks = findFirstMutableKeystore();
-            SsgKeyEntry entry = new SsgKeyEntry( sks.getOid(), alias, certificateChain, key );
+            SsgKeyEntry entry = new SsgKeyEntry( sks.getGoid(), alias, certificateChain, key );
             sks.storePrivateKeyEntry(null, entry, false );
             return alias;
         } catch ( KeyStoreException kse ) {
@@ -166,7 +163,7 @@ public class SslSetupManagerImpl implements SslSetupManager {
 
     private boolean aliasAlreadyUsed( final String alias ) throws IOException {
         try {
-            keyStoreManager.lookupKeyByKeyAlias(alias, -1);
+            keyStoreManager.lookupKeyByKeyAlias(alias, new Goid(0,-1));
             return true;
         } catch ( ObjectNotFoundException e) {
             return false;
@@ -196,8 +193,8 @@ public class SslSetupManagerImpl implements SslSetupManager {
                 if ( !currentAlias.equalsIgnoreCase(alias) &&
                      (configAlias == null || !currentAlias.equalsIgnoreCase(configAlias)) ) {
                     try {
-                        SsgKeyEntry entry = keyStoreManager.lookupKeyByKeyAlias(currentAlias, -1);
-                        long keystoreId = entry.getKeystoreId();
+                        SsgKeyEntry entry = keyStoreManager.lookupKeyByKeyAlias(currentAlias, new Goid(0,-1));
+                        Goid keystoreId = entry.getKeystoreId();
                         SsgKeyFinder finder = keyStoreManager.findByPrimaryKey( keystoreId );
                         if ( finder.isMutable() ) {
                             if ( finder.getKeyStore().deletePrivateKeyEntry(null, currentAlias ).get() ) {

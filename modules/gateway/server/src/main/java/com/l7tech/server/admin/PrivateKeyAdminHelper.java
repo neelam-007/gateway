@@ -72,18 +72,18 @@ public class PrivateKeyAdminHelper {
     }
 
     /**
-     * Find a private key using the given alias / keystore oid.
+     * Find a private key using the given alias / keystore goid.
      *
      * @param keyAlias The alias (optional, null for the default ssl key)
-     * @param preferredKeystoreOid The preferred keystore oid (-1 for any)
+     * @param preferredKeystoreGoid The preferred keystore goid (DEFAULT_GOID for any)
      * @return The key or null
      * @throws FindException If an error occurs
      * @throws KeyStoreException  If an error occurs
      */
     public SsgKeyEntry doFindKeyEntry( final String keyAlias,
-                                       final long preferredKeystoreOid ) throws FindException, KeyStoreException {
+                                       final Goid preferredKeystoreGoid ) throws FindException, KeyStoreException {
         try {
-            return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreOid);
+            return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreGoid);
         } catch (IOException e) {
             // No default SSL key
             return null;
@@ -102,7 +102,7 @@ public class PrivateKeyAdminHelper {
      * <li> this thread has no active servlet request
      * <li> no active connector can be found for this thread's active servlet request
      * <li> the active connector explicitly specifies a key alias that does not match the specified keyAlias
-     * <li> the active connector explicitly specifies a keystore OID that does not match the specified store's OID
+     * <li> the active connector explicitly specifies a keystore GOID that does not match the specified store's GOID
      * <li> the specified store does not contain the specified keyAlias
      * <li> the specified key entry's certificate does not exactly match the active connector's SSL server cert
      * <li> there is a database problem checking any of the above information
@@ -125,8 +125,8 @@ public class PrivateKeyAdminHelper {
             return false;
         if (connector.getKeyAlias() != null && !keyAlias.equalsIgnoreCase(connector.getKeyAlias()))
             return false;
-        Long portStoreOid = connector.getKeystoreOid();
-        if (portStoreOid != null && portStoreOid != store.getOid())
+        Goid portStoreGoid = connector.getKeystoreGoid();
+        if (portStoreGoid != null && !Goid.equals(portStoreGoid, store.getGoid()))
             return false;
 
         final SsgKeyEntry entry;
@@ -137,7 +137,7 @@ public class PrivateKeyAdminHelper {
         }
 
         try {
-            SsgKeyEntry portEntry = doFindKeyEntry( connector.getKeyAlias(), portStoreOid != null ? portStoreOid : -1L );
+            SsgKeyEntry portEntry = doFindKeyEntry( connector.getKeyAlias(), portStoreGoid != null ? portStoreGoid : GoidEntity.DEFAULT_GOID );
             return CertUtils.certsAreEqual(portEntry.getCertificate(), entry.getCertificate());
         } catch (FindException e) {
             return false;
@@ -147,12 +147,12 @@ public class PrivateKeyAdminHelper {
     /**
      * Update the certificate chain for the given private key.
      *
-     * @param keystoreId The keystore oid.
+     * @param keystoreId The keystore goid.
      * @param alias The key alias.
      * @param chain The chain to use
      * @throws UpdateException If an error occurs
      */
-    public void doUpdateCertificateChain( final long keystoreId,
+    public void doUpdateCertificateChain( final Goid keystoreId,
                                           final String alias,
                                           final X509Certificate[] chain ) throws UpdateException {
         SsgKeyFinder keyFinder;
@@ -183,12 +183,12 @@ public class PrivateKeyAdminHelper {
      * Update metadata for a private key.  The private key must exist in the keystore in order to have its
      * metadata updated.
      *
-     * @param keystoreId The keystore oid.
+     * @param keystoreId The keystore goid.
      * @param alias The key alias.
      * @param keyMetadata The new key metadata, or null to clear any existing metadata.
      * @throws UpdateException If an error occurs
      */
-    public void doUpdateKeyMetadata(long keystoreId, @NotNull String alias, @Nullable SsgKeyMetadata keyMetadata) throws UpdateException {
+    public void doUpdateKeyMetadata(Goid keystoreId, @NotNull String alias, @Nullable SsgKeyMetadata keyMetadata) throws UpdateException {
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
@@ -226,7 +226,7 @@ public class PrivateKeyAdminHelper {
      * @throws FindException If an error occurs
      * @throws GeneralSecurityException If an error occurs
      */
-    public Future<X509Certificate> doGenerateKeyPair( final long keystoreId,
+    public Future<X509Certificate> doGenerateKeyPair( final Goid keystoreId,
                                                       final String alias,
                                                       final @Nullable SsgKeyMetadata ssgKeyMetadata,
                                                       final X500Principal dn,
@@ -242,7 +242,7 @@ public class PrivateKeyAdminHelper {
     /**
      * Import a private key from a keystore file.
      *
-     * @param keystoreId The target keystore oid
+     * @param keystoreId The target keystore goid
      * @param alias The target alias
      * @param ssgKeyMetadata The metadata to record for the new key, or null.
      * @param keyStoreBytes The keystore data
@@ -252,7 +252,7 @@ public class PrivateKeyAdminHelper {
      * @param entryAlias The alias of the key in the keystore
      * @return The newly imported key
      */
-    public SsgKeyEntry doImportKeyFromKeyStoreFile( final long keystoreId,
+    public SsgKeyEntry doImportKeyFromKeyStoreFile( final Goid keystoreId,
                                               final String alias,
                                               final @Nullable SsgKeyMetadata ssgKeyMetadata,
                                               @Nullable final byte[] keyStoreBytes, 
@@ -292,7 +292,7 @@ public class PrivateKeyAdminHelper {
             throw new KeyStoreException("Key entry is not a PrivateKey: " + key.getClass());
 
         SsgKeyStore keystore = getKeyStore(keystoreId);
-        SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
+        SsgKeyEntry entry = new SsgKeyEntry(keystore.getGoid(), alias, x509chain, (PrivateKey)key);
         if (ssgKeyMetadata != null) {
             entry.attachMetadata(ssgKeyMetadata);
         }
@@ -306,13 +306,13 @@ public class PrivateKeyAdminHelper {
     /**
      * Export the identified key as PKCS12 data.
      *
-     * @param keystoreId The keystore oid
+     * @param keystoreId The keystore goid
      * @param alias The alias of the key to export
      * @param p12alias The alias to use in the PKCS12 data
      * @param p12passphrase The passphrase ot use in the PKCS12 data
      * @return The PKCS12 keystore data
      */
-    public byte[] doExportKeyAsPkcs12( final long keystoreId,
+    public byte[] doExportKeyAsPkcs12( final Goid keystoreId,
                                        final String alias,
                                        String p12alias,
                                        final char[] p12passphrase ) throws FindException, KeyStoreException, UnrecoverableKeyException {
@@ -410,7 +410,7 @@ public class PrivateKeyAdminHelper {
         }
     }
 
-    private SsgKeyStore getKeyStore(long keystoreId) throws SaveException {
+    private SsgKeyStore getKeyStore(Goid keystoreId) throws SaveException {
         SsgKeyFinder keyFinder;
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
@@ -426,7 +426,7 @@ public class PrivateKeyAdminHelper {
         return keystore;
     }
 
-    private SsgKeyStore checkBeforeGenerate(long keystoreId, String alias, X500Principal dn, int expiryDays) throws FindException, KeyStoreException {
+    private SsgKeyStore checkBeforeGenerate(Goid keystoreId, String alias, X500Principal dn, int expiryDays) throws FindException, KeyStoreException {
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
         if (dn == null) throw new NullPointerException("dn is null");
@@ -454,7 +454,7 @@ public class PrivateKeyAdminHelper {
         return new CallableRunnable<Object>( AdminInfo.find( true ).wrapCallable(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                applicationEventPublisher.publishEvent(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
+                applicationEventPublisher.publishEvent(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getGoid(), alias), note));
                 return null;
             }
         }));
@@ -462,11 +462,11 @@ public class PrivateKeyAdminHelper {
 
     private Runnable auditAfterUpdate(SsgKeyStore keystore, String alias, String property, String note) {
         EntityChangeSet changeset = new EntityChangeSet(new String[] {property}, new Object[] {new Object()}, new Object[] {new Object()});
-        return publisher(new Updated<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), changeset, note));
+        return publisher(new Updated<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getGoid(), alias), changeset, note));
     }
 
     private Runnable auditAfterDelete(SsgKeyStore keystore, String alias) {
-        return publisher( new Deleted<SsgKeyEntry>( SsgKeyEntry.createDummyEntityForAuditing( keystore.getOid(), alias ) ) );
+        return publisher( new Deleted<SsgKeyEntry>( SsgKeyEntry.createDummyEntityForAuditing( keystore.getGoid(), alias ) ) );
     }
 
     private Runnable publisher(final ApplicationEvent event) {

@@ -1,25 +1,30 @@
 package com.l7tech.external.assertions.samlissuer;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * @author alex
@@ -44,7 +49,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
     private boolean usesDefaultKeyStore = true;
-    private long nonDefaultKeystoreId = -1;
+    private Goid nonDefaultKeystoreId = GoidEntity.DEFAULT_GOID;
     private String keyAlias = "SSL";
     private String customIssuerValue;
     private String customIssuerFormat;
@@ -95,13 +100,18 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultKeystoreId) {
         this.nonDefaultKeystoreId = nonDefaultKeystoreId;
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        this.nonDefaultKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultKeystoreId);
     }
 
     @Override

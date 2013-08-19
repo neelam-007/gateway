@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.ssh;
 
-import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
@@ -17,6 +16,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -205,7 +205,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
      */
     @Deprecated
     public void setPrivateKeyOid(@Nullable Long privateKeyOid) {
-        this.privateKeyGoid = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, privateKeyOid);
+        this.privateKeyGoid = GoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, privateKeyOid);
     }
 
      public String getSshPublicKey() {
@@ -230,7 +230,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
      */
     @Deprecated
     public void setPasswordOid(@Nullable Long passwordOid) {
-        this.passwordGoid = ConsoleGoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, passwordOid);
+        this.passwordGoid = GoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, passwordOid);
     }
 
     public String getDirectory() {

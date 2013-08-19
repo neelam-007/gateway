@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.security.xml.SignerInfo;
@@ -40,7 +41,7 @@ public class ServerAssertionUtils {
             if (maybePrivateKeyable instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)maybePrivateKeyable;
                 if (!keyable.isUsesDefaultKeyStore()) {
-                    final long keystoreId = keyable.getNonDefaultKeystoreId();
+                    final Goid keystoreId = keyable.getNonDefaultKeystoreId();
                     final String keyAlias = keyable.getKeyAlias();
                     com.l7tech.server.security.keystore.SsgKeyStoreManager sksm =
                             ctx.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);

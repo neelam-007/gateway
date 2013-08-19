@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.*;
-import com.l7tech.console.util.ConsoleGoidUpgradeMapper;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -12,6 +11,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.GoidEntityUtil;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
 
 import javax.swing.*;
@@ -129,7 +129,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         maxConcurrentSessionsField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS,
                 // Not a mistake, we default to the per user value
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
-        privateKeyField.setSelectedSecurePassword(ConsoleGoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, getStringProp(props, SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_GOID.toHexString())));
+        privateKeyField.setSelectedSecurePassword(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, getStringProp(props, SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_GOID.toHexString())));
         enableDisableComponents();
     }
 

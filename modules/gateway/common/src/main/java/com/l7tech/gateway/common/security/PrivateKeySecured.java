@@ -37,7 +37,7 @@ public @interface PrivateKeySecured {
          *
          * The key entry can be provided by either:
          *
-         * 1. indicating a {@link #keystoreOidArg}, {@link #keyAliasArg} and optional {@link #metadataArg} for
+         * 1. indicating a {@link #keystoreGoidArg}, {@link #keyAliasArg} and optional {@link #metadataArg} for
          * CREATE/UPDATE operations which identifies the SsgKeyMetadata (or null) the key will be assigned when it is created/updated.
          *
          * 2. indicating a {@link #keyEntryArg}
@@ -45,7 +45,7 @@ public @interface PrivateKeySecured {
         CHECK_ARG_OPERATION,
 
         /**
-         * A {@link #keystoreOidArg} and {@link #keyAliasArg} identify a key entry for which
+         * A {@link #keystoreGoidArg} and {@link #keyAliasArg} identify a key entry for which
          * the calling user must posses permission to EXPORT THE PRIVATE KEY.
          * <p/>
          * Currently this is done by requiring permission to DELETE ALL SSG_KEY_ENTRY.
@@ -85,7 +85,7 @@ public @interface PrivateKeySecured {
     /**
      * @return index of keystore OID argument of type long.
      */
-    int keystoreOidArg() default 0;
+    int keystoreGoidArg() default 0;
 
     /**
      * @return index of key entry alias argument of type String.

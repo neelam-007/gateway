@@ -12,6 +12,8 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Binary;
 import org.jetbrains.annotations.NotNull;
@@ -832,7 +834,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             String id = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID);
             String alias = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS);
             if (id != null && alias != null)
-                syslogSSLKeystoreComboBox.select(Long.parseLong(id), alias);
+                syslogSSLKeystoreComboBox.select(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id), alias);
             else
                 syslogSSLKeystoreComboBox.selectDefaultSsl();
         }
@@ -942,7 +944,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         if (syslogSSLClientAuthenticationCheckBox.isEnabled() && syslogSSLClientAuthenticationCheckBox.isSelected()) {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH, "true");
-            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID, Long.toString(syslogSSLKeystoreComboBox.getSelectedKeystoreId()));
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID, Goid.toString(syslogSSLKeystoreComboBox.getSelectedKeystoreId()));
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS, syslogSSLKeystoreComboBox.getSelectedKeyAlias());
         } else {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH, "false");

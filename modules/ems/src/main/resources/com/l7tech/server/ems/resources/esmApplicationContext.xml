@@ -224,20 +224,12 @@
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
-    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker">
-        <property name="applicationEventProxy" ref="applicationEventProxy"/>
-        <property name="entityManagers">
-            <list>
-                <ref bean="identityProviderConfigManager"/>
-            </list>
-        </property>
-        <property name="timer" ref="entityVersionCheckerTimer" />
-    </bean>
 
     <bean id="goidEntityInvalidator" class="com.l7tech.server.GoidEntityVersionChecker">
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
+                <ref bean="identityProviderConfigManager"/>
                 <ref bean="clusterPropertyManager"/>
             </list>
         </property>

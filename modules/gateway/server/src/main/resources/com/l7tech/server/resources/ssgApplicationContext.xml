@@ -1646,16 +1646,6 @@
         <constructor-arg value="EntityVersionChecker"/>
     </bean>
 
-    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
-        <property name="applicationEventProxy" ref="applicationEventProxy"/>
-        <property name="entityManagers">
-            <list>
-                <ref bean="keystoreFileManager"/>
-            </list>
-        </property>
-        <property name="timer" ref="entityVersionCheckerTimer"/>
-    </bean>
-
     <bean id="goidEntityInvalidator" class="com.l7tech.server.GoidEntityVersionChecker" depends-on="ssgBoot">
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
@@ -1663,6 +1653,7 @@
                 <ref bean="resourceEntryManager"/>
                 <ref bean="securePasswordManager"/>
                 <ref bean="clusterPropertyManager"/>
+                <ref bean="keystoreFileManager"/>
                 <ref bean="uddiRegistryManager"/>
                 <ref bean="uddiPublishStatusManager"/>
                 <ref bean="uddiServiceControlManager"/>

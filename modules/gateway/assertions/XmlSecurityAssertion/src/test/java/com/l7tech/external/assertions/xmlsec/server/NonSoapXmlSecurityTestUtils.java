@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.xmlsec.server;
 
 import com.l7tech.common.TestKeys;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
@@ -35,7 +36,7 @@ public class NonSoapXmlSecurityTestUtils {
      */
     public static SsgKeyEntry getTestKey() throws IOException, GeneralSecurityException {
         final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(TEST_KEYSTORE);
-        return new SsgKeyEntry(99, TEST_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+        return new SsgKeyEntry(new Goid(0,99), TEST_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     /**
@@ -43,7 +44,7 @@ public class NonSoapXmlSecurityTestUtils {
      */
     public static SsgKeyEntry getDataKey() throws IOException, GeneralSecurityException {
         final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(DATA_KEYSTORE);
-        return new SsgKeyEntry(99, DATA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+        return new SsgKeyEntry(new Goid(0,99), DATA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     /**
@@ -51,13 +52,13 @@ public class NonSoapXmlSecurityTestUtils {
      */
     public static SsgKeyEntry getTestRsa1024Key() {
         Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
-        return new SsgKeyEntry(99, TEST_RSA_1024_ALIAS, new X509Certificate[] { k.left }, k.right);
+        return new SsgKeyEntry(new Goid(0,99), TEST_RSA_1024_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     public static SsgKeyEntry getEcdsaKey() throws IOException, GeneralSecurityException {
         ensureEcProviderAvailable();
         Pair<X509Certificate, PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(ECDSA_KEYSTORE);
-        return new SsgKeyEntry(99, ECDSA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+        return new SsgKeyEntry(new Goid(0,99), ECDSA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     private static void ensureEcProviderAvailable() {

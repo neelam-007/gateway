@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -499,11 +500,11 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         KeyManager keyManager = null;
 
         if ( uddiRegistry.isClientAuth() ) {
-            final long keystoreOid = uddiRegistry.getKeystoreOid();
+            final Goid keystoreGoid = uddiRegistry.getKeystoreGoid();
             final String alias = uddiRegistry.getKeyAlias();
-            if ( keystoreOid>=-1 && alias != null ) {
+            if (GoidRange.ZEROED_PREFIX.isInRange(keystoreGoid) && keystoreGoid.getLow()>=-1 && alias != null ) {
                 try {
-                    SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreOid);
+                    SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreGoid);
                     keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());
                 } catch (FindException e) {
                     logger.log( Level.WARNING, "Error configuring UDDI X.509 key manager.", e );

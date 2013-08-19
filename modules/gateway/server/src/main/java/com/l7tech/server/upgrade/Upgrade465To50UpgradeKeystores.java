@@ -1,51 +1,43 @@
 package com.l7tech.server.upgrade;
 
-import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.*;
-import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
+import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.server.util.PropertiesDecryptor;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.EncryptionUtil;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.prov.JceProvider;
-import org.jetbrains.annotations.NotNull;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.BadPaddingException;
-import java.util.logging.Logger;
-import java.util.Properties;
-import java.util.List;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 import java.io.File;
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.PrivateKey;
-import java.security.Key;
-import java.security.InvalidKeyException;
-import java.security.interfaces.RSAPublicKey;
+import java.io.InputStream;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 /**
  * A database upgrade task that re-encrypts the cluster shared key and imports keystore settings from disk.
@@ -187,10 +179,10 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
 
             // Import the SSL/CA keys
             SsgKeyStore keyStore = findFirstMutableKeystore();
-            SsgKeyEntry sslKey = new SsgKeyEntry( keyStore.getOid(), "SSL",
+            SsgKeyEntry sslKey = new SsgKeyEntry( keyStore.getGoid(), "SSL",
                     CertUtils.asX509CertificateArray(sslKeyStore.getCertificateChain(keystoreInfo.sslAlias)),
                     (PrivateKey)sslKeyStore.getKey(keystoreInfo.sslAlias, keystoreInfo.sslPassphrase )  );
-            SsgKeyEntry caKey = new SsgKeyEntry( keyStore.getOid(), "CA",
+            SsgKeyEntry caKey = new SsgKeyEntry( keyStore.getGoid(), "CA",
                     CertUtils.asX509CertificateArray(caKeyStore.getCertificateChain(keystoreInfo.caAlias)),
                     (PrivateKey)caKeyStore.getKey(keystoreInfo.caAlias, keystoreInfo.caPassphrase ) );
 
@@ -263,7 +255,7 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                 throw new FatalUpgradeException("Keystore upgrade is for HSM, but there is no HSM keystore database entry.");
             }
 
-            ScaSsgKeyStore scaKeyStore = ScaSsgKeyStore.getInstance(hsmKeystoreFile.getOid(), hsmKeystoreFile.getName(), keystoreInfo.sslPassphrase, keystoreFileManager, new KeyAccessFilter() {
+            ScaSsgKeyStore scaKeyStore = ScaSsgKeyStore.getInstance(hsmKeystoreFile.getGoid(), hsmKeystoreFile.getName(), keystoreInfo.sslPassphrase, keystoreFileManager, new KeyAccessFilter() {
                 @Override
                 public boolean isRestrictedAccessKeyEntry(SsgKeyEntry keyEntry) {
                     return false;

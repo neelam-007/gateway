@@ -13,6 +13,12 @@ public enum GoidRange {
     DEFAULT(0, -1, 0, -1),
 
     /**
+     * Represents a goid with a 0 prefix. These will include default and other hardcoded goids.
+     * Note that this will include the default goid (0,-1)
+     */
+    ZEROED_PREFIX(0, Long.MIN_VALUE, 0, Long.MAX_VALUE),
+
+    /**
      * Represents a temporary GOID value to use for a wrapped OID.
      * This is an OID that cannot be mapped to a (reserved or upgraded) GOID value.
      * Such wrapped OID GOIDs should be used only for transitional purposes

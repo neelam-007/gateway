@@ -34,8 +34,8 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyLong;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -118,21 +118,21 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForKeyMetadataHeader() throws Exception {
-        when(trustedCertAdmin.findKeyMetadata(OID)).thenReturn(new SsgKeyMetadata(1L, NAME, null));
-        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(OID, EntityType.SSG_KEY_METADATA, null, null)));
+        when(trustedCertAdmin.findKeyMetadata(GOID)).thenReturn(new SsgKeyMetadata(new Goid(0,1), NAME, null));
+        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(GOID, EntityType.SSG_KEY_METADATA, null, null)));
     }
 
     @Test(expected = FindException.class)
     public void getNameForKeyMetadataHeaderNotFound() throws Exception {
-        when(trustedCertAdmin.findKeyMetadata(anyLong())).thenReturn(null);
-        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(OID, EntityType.SSG_KEY_METADATA, null, null)));
+        when(trustedCertAdmin.findKeyMetadata(any(Goid.class))).thenReturn(null);
+        assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(GOID, EntityType.SSG_KEY_METADATA, null, null)));
     }
 
     @BugId("SSG-7314")
     @Test
     public void getNameForKeyMetadataHeaderNotYetPersisted() throws Exception {
-        when(trustedCertAdmin.findKeyMetadata(anyLong())).thenReturn(null);
-        assertEquals(NAME, resolver.getNameForHeader(new KeyMetadataHeaderWrapper(new SsgKeyMetadata(1L, NAME, null))));
+        when(trustedCertAdmin.findKeyMetadata(any(Goid.class))).thenReturn(null);
+        assertEquals(NAME, resolver.getNameForHeader(new KeyMetadataHeaderWrapper(new SsgKeyMetadata(new Goid(0,1), NAME, null))));
     }
 
     @Test

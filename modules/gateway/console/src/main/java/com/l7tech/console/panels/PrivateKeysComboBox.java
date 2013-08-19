@@ -5,12 +5,17 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,12 +31,12 @@ public class PrivateKeysComboBox extends JComboBox {
 
     /** An item in the combo box. */
     private static class PrivateKeyItem {
-        public long keystoreId;
+        public Goid keystoreId;
         public String keystoreName;
         public String keyAlias;
         public String keyAlgorithm;
 
-        public PrivateKeyItem(final long keystoreId, final String keystoreName, final String keyAlias, final String keyAlgorithm) {
+        public PrivateKeyItem(final Goid keystoreId, final String keystoreName, final String keyAlias, final String keyAlgorithm) {
             this.keystoreId = keystoreId;
             this.keystoreName = keystoreName;
             this.keyAlias = keyAlias;
@@ -43,7 +48,7 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
-    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null, "NONE") {
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(GoidEntity.DEFAULT_GOID, null, null, "NONE") {
         @Override
         public String toString() {
             return "<Default SSL Key>";
@@ -106,8 +111,8 @@ public class PrivateKeysComboBox extends JComboBox {
             if (_includeDefaultSslKey)
                 items.add(ITEM_DEFAULT_SSL);
             for (KeystoreFileEntityHeader keystore : keystores) {
-                for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getOid(), _includeRestrictedAccessKeys)) {
-                    items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));
+                for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getGoid(), _includeRestrictedAccessKeys)) {
+                    items.add(new PrivateKeyItem(keystore.getGoid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));
                 }
             }
             Collections.sort(items, new PrivateKeyItemComparator());
@@ -133,7 +138,7 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public int repopulate() {
         // Saves the current selection.
-        final long keystoreId = getSelectedKeystoreId();
+        final Goid keystoreId = getSelectedKeystoreId();
         final String keyAlias = getSelectedKeyAlias();
 
         this.removeAllItems();
@@ -151,7 +156,7 @@ public class PrivateKeysComboBox extends JComboBox {
      * @param keyAlias      the private key alias
      * @return index of selected key; or -1 if no match
      */
-    public int select(final long keystoreId, final String keyAlias) {
+    public int select(final Goid keystoreId, final String keyAlias) {
         if (keyAlias == null) {
             setSelectedIndex(-1);
             return 0;
@@ -164,7 +169,7 @@ public class PrivateKeysComboBox extends JComboBox {
         return idx;
     }
 
-    private int findIndex(long keystoreId, String keyAlias, boolean matchLegacy) {
+    private int findIndex(Goid keystoreId, String keyAlias, boolean matchLegacy) {
         if (keyAlias == null)
             return getItemCount() > 0 && getItemAt(0) == ITEM_DEFAULT_SSL ? 0 : -1;
         for (int i = 0; i < getItemCount(); ++ i) {
@@ -176,17 +181,17 @@ public class PrivateKeysComboBox extends JComboBox {
         return -1;
     }
 
-    private static boolean keystoreIdMatches(long wantId, long id, boolean matchLegacy) {
+    private static boolean keystoreIdMatches(Goid wantId, Goid id, boolean matchLegacy) {
         // Checks for wildcard keystore ID (-1), exact match with keystore ID, or (if matchLegacy) if the key used to be in the Software Static keystore (removed for 5.0)
-        return wantId == id || wantId == -1 || (matchLegacy && wantId == 0);
+        return Goid.equals(wantId, id) || Goid.isDefault(wantId) || (matchLegacy && Goid.equals(new Goid(0,0), wantId));
     }
 
     /**
      * @return keystore ID of current selection; -1 if none selected
      */
-    public long getSelectedKeystoreId() {
+    public Goid getSelectedKeystoreId() {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
-        if (item == null) return -1;
+        if (item == null) return GoidEntity.DEFAULT_GOID;
         return item.keystoreId;
     }
 
@@ -211,7 +216,7 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public boolean isSelectedDefaultSsl() {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
-        return item != null && (item == ITEM_DEFAULT_SSL || item.keyAlias == null || item.keystoreId == -1);
+        return item != null && (item == ITEM_DEFAULT_SSL || item.keyAlias == null || Goid.isDefault(item.keystoreId));
     }
 
     public void selectDefaultSsl() {

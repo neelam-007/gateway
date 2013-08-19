@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -40,12 +41,12 @@ public class PrivateKeyableSupport implements OptionalPrivateKeyable, Serializab
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId( long nonDefaultKeystoreId ) {
+    public void setNonDefaultKeystoreId( Goid nonDefaultKeystoreId ) {
         this.nonDefaultKeystoreId = nonDefaultKeystoreId;
     }
 
@@ -86,7 +87,7 @@ public class PrivateKeyableSupport implements OptionalPrivateKeyable, Serializab
     private final boolean usesNoKeyAllowed;
 
     private boolean usesDefaultKeyStore = true;
-    private long nonDefaultKeystoreId;
+    private Goid nonDefaultKeystoreId;
     private String keyAlias;
     private boolean usesNoKey = false;
 

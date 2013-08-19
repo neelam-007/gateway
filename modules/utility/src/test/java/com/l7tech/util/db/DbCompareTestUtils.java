@@ -26,10 +26,6 @@ public class DbCompareTestUtils {
         Map<String, Map<String, String>> newTablesInfo = getResultSetInfo(newDatabaseMetadata.getTables(null, "APP", null, null), 3);
         Map<String, Map<String, String>> upgradedTablesInfo = getResultSetInfo(upgradedDatabaseMetadata.getTables(null, "APP", null, null), 3);
 
-        // remove the goid_upgrade_map table as it will never be in a newly created schema.
-        upgradedTablesInfo.remove("goid_upgrade_map");
-        upgradedTablesInfo.remove("goid_upgrade_map".toUpperCase());
-
         compareResultInfo(newTablesInfo, upgradedTablesInfo,
                 "The table sizes need to be equal.",
                 "The upgraded database is missing table: %1$s",
@@ -81,8 +77,8 @@ public class DbCompareTestUtils {
         }
 
         // ***************************** Check table data in goid tables ******************************************//
-        Set<String> oidTables = CollectionUtils.set("replication_status", "keystore_file");
-        Set<String> otherTables = CollectionUtils.set("cluster_master", "ssg_version", "hibernate_unique_key");
+        Set<String> oidTables = CollectionUtils.set("replication_status");
+        Set<String> otherTables = CollectionUtils.set("cluster_master", "ssg_version", "hibernate_unique_key", "goid_upgrade_map");
         Set<String> ignoreTables = new HashSet<>(oidTables);
         ignoreTables.addAll(otherTables);
         Set<String> ignoreProperties = CollectionUtils.set();
@@ -105,11 +101,6 @@ public class DbCompareTestUtils {
                     String newTablePropertyValue = db1RowData.get(tableData);
                     String upgradedTablePropertyValue = db2RowData.get(tableData);
 
-                    if (newTablePropertyValue != null && !newTablePropertyValue.equals(upgradedTablePropertyValue)) {
-                        System.out.println("ERROR FOUND!\n  db1=" + db1RowData + "\n  db2=" + db2RowData);
-                    } else if (newTablePropertyValue == null && upgradedTablePropertyValue != null) {
-                        System.out.println("ERROR FOUND!\n  db1=" + db1RowData + "\n  db2=" + db2RowData);
-                    }
                     Assert.assertEquals("Table data does not match for table: "+tableName+" Property: " +tableData + " for key: " + key, newTablePropertyValue, upgradedTablePropertyValue);
                 }
             }

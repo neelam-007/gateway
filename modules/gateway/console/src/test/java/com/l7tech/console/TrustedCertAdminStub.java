@@ -106,36 +106,36 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException {
+    public List<SsgKeyEntry> findAllKeys(Goid keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException {
         return null;
     }
 
     @Override
-    public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
+    public SsgKeyEntry findKeyEntry(String keyAlias, Goid preferredKeystoreOid) throws FindException, KeyStoreException {
         return null;
     }
 
     @Override
-    public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
+    public void deleteKey(Goid keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         return null;
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         return null;
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, CertGenParams params) throws FindException {
+    public byte[] generateCSR(Goid keystoreId, String alias, CertGenParams params) throws FindException {
         return new byte[0];
     }
 
     @Override
-    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException {
+    public String[] signCSR(Goid keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException {
         return new String[0];
     }
 
@@ -144,12 +144,12 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public SsgKeyEntry importKeyFromKeyStoreFile(long keystoreId, String alias, @Nullable SsgKeyMetadata metadata, byte[] keyStoreBytes, String keyStoreType, char[] keyStorePass, char[] entryPass, String entryAlias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
+    public SsgKeyEntry importKeyFromKeyStoreFile(Goid keystoreId, String alias, @Nullable SsgKeyMetadata metadata, byte[] keyStoreBytes, String keyStoreType, char[] keyStorePass, char[] entryPass, String entryAlias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
         return null;
     }
 
     @Override
-    public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
+    public byte[] exportKey(Goid keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         return new byte[0];
     }
 
@@ -165,7 +165,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) {
+    public void setDefaultKey(SpecialKeyType keyType, Goid keystoreId, String alias) {
         // not currently implemented in stub
     }
 
@@ -206,18 +206,18 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException {
+    public boolean isShortSigningKey(Goid keystoreId, String alias) throws FindException, KeyStoreException {
         return false;
     }
 
     @Override
-    public SsgKeyMetadata findKeyMetadata(long metadataOid) throws FindException {
+    public SsgKeyMetadata findKeyMetadata(Goid metadataOid) throws FindException {
         return null;
     }
 
     @Override
-    public long saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
-        return 0;
+    public Goid saveOrUpdateMetadata(@NotNull SsgKeyMetadata metadata) throws SaveException {
+        return new Goid(0,0);
     }
 
     @Override

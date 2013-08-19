@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.security.keystore;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import org.junit.Before;
@@ -10,7 +11,7 @@ import java.security.cert.X509Certificate;
 import static org.junit.Assert.*;
 
 public class SsgKeyEntryTest {
-    private static final long KEYSTORE_ID = 1234L;
+    private static final Goid KEYSTORE_ID = new Goid(0,1234L);
     private static final String ALIAS = "alias";
     private SsgKeyEntry keyEntry;
     private X509Certificate[] chain;
@@ -29,7 +30,7 @@ public class SsgKeyEntryTest {
     public void setSecurityZoneMetadataNotYetAttached() {
         keyEntry.setSecurityZone(zone);
         assertEquals(zone, keyEntry.getSecurityZone());
-        assertEquals(KEYSTORE_ID, keyEntry.getKeyMetadata().getKeystoreOid());
+        assertEquals(KEYSTORE_ID, keyEntry.getKeyMetadata().getKeystoreGoid());
         assertEquals(ALIAS, keyEntry.getKeyMetadata().getAlias());
     }
 
@@ -39,7 +40,7 @@ public class SsgKeyEntryTest {
 
         keyEntry.setSecurityZone(zone);
         assertEquals(zone, keyEntry.getSecurityZone());
-        assertEquals(KEYSTORE_ID, keyEntry.getKeyMetadata().getKeystoreOid());
+        assertEquals(KEYSTORE_ID, keyEntry.getKeyMetadata().getKeystoreGoid());
         assertEquals(ALIAS, keyEntry.getKeyMetadata().getAlias());
     }
 }

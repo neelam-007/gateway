@@ -1,5 +1,6 @@
 package com.l7tech.server.log.syslog.impl;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.log.syslog.ManagedSyslog;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogProtocol;
@@ -43,7 +44,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
      * @param sslKeystoreId The keystore Id to use for the SSLContext
      */
     public MinaManagedSyslog(final SyslogProtocol protocol, final SocketAddress[] addresses,
-                             final String sslKeystoreAlias, final Long sslKeystoreId) {
+                             final String sslKeystoreAlias, final Goid sslKeystoreId) {
         this.protocol = protocol;
         this.syslogAddresses = addresses;
         this.sslKeystoreAlias = sslKeystoreAlias;
@@ -147,7 +148,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
     /** The SSL keystore - used for client auth only */
     private String sslKeystoreAlias;
     /** The SSL keystore id - used for client auth only */
-    private Long sslKeystoreId;
+    private Goid sslKeystoreId;
     /** List of all configured syslog host addresses (for failover)  */
     private SocketAddress[] syslogAddresses;
     /** Flag specifying whether there are failover syslog destinations */
@@ -225,7 +226,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                              final SyslogProtocol protocol,
                              final SocketAddress[] addresses,
                              final String sslKeystoreAlias,
-                             final Long sslKeystoreId) {
+                             final Goid sslKeystoreId) {
             this.messageQueue = messageQueue;
             this.protocol = protocol;
             this.addressList = addresses;

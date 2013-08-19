@@ -1,8 +1,11 @@
 package com.l7tech.external.assertions.csrsigner;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -57,13 +60,18 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
     }
 
     @Override
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return pks.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         pks.setNonDefaultKeystoreId(nonDefaultId);
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        pks.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId));
     }
 
     @Override

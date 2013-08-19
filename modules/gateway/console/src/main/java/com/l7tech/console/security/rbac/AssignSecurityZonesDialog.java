@@ -6,8 +6,6 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
@@ -22,7 +20,6 @@ import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -37,9 +34,6 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.security.KeyStoreException;
-import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -350,14 +344,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                 try {
                     final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
                     for (final EntityHeader header : selectedEntities) {
-                        if (header.getOid() < 0) {
+                        if (GoidRange.ZEROED_PREFIX.isInRange(header.getGoid()) && header.getGoid().getLow() < 0) {
                             final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
                             // save new key metadata
                             if (header instanceof KeyMetadataHeaderWrapper) {
                                 final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
                                 final SsgKeyMetadata metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), selectedZone);
-                                final long savedOid = trustedCertManager.saveOrUpdateMetadata(metadata);
-                                header.setOid(savedOid);
+                                final Goid savedGoid = trustedCertManager.saveOrUpdateMetadata(metadata);
+                                header.setGoid(savedGoid);
                                 setZoneOnHeader(selectedZone, header);
                                 dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
                             }

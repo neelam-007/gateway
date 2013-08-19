@@ -1,11 +1,14 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.security.xml.WsSecurityVersion;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -139,13 +142,18 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     }
 
     @Override
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return privatekeyableSupport.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultId);
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        privatekeyableSupport.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId));
     }
 
     @Override

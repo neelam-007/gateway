@@ -75,7 +75,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     @Override
     public String getId() {
-        return String.valueOf(getOid());
+        return String.valueOf(getGoid());
     }
 
     @Override
@@ -142,10 +142,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             // Fallthrough and do without
         }
 
-        SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
+        SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(getGoid(), alias, x509chain, privateKey);
 
         try {
-            SsgKeyMetadata meta = metadataManager.findMetadata(getOid(), alias);
+            SsgKeyMetadata meta = metadataManager.findMetadata(getGoid(), alias);
             if (meta != null)
                 ssgKeyEntry.attachMetadata(meta);
         } catch (FindException e) {
@@ -248,7 +248,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             public Boolean call() throws KeyStoreException {
                 keyStore().deleteEntry(keyAlias);
                 try {
-                    metadataManager.deleteMetadataForKey(getOid(), keyAlias);
+                    metadataManager.deleteMetadataForKey(getGoid(), keyAlias);
                 } catch (final DeleteException e) {
                     throw new KeyStoreException("Unable to delete metadata for key " + keyAlias, e);
                 }
@@ -274,7 +274,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
                 try {
-                    metadataManager.updateMetadataForKey(getOid(), alias, metadata);
+                    metadataManager.updateMetadataForKey(getGoid(), alias, metadata);
                 } catch (final ObjectModelException e) {
                     throw new KeyStoreException("Unable to save metadata for key " + alias, e);
                 }
@@ -339,8 +339,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     @Override
-    public void updateKeyMetadata(final long keystoreOid, @NotNull final String alias, @Nullable SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException {
-        metadataManager.updateMetadataForKey(keystoreOid, alias, metadata);
+    public void updateKeyMetadata(final Goid keystoreGoid, @NotNull final String alias, @Nullable SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException {
+        metadataManager.updateMetadataForKey(keystoreGoid, alias, metadata);
     }
 
     /**

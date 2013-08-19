@@ -10,6 +10,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.TestSSLSocketFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
@@ -21,8 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -42,7 +41,7 @@ public class HttpClientFactoryTest {
         final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
         final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
 
-        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( -1, "alias", chain, key));
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( new Goid(0,-1), "alias", chain, key));
 
         TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
         TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);

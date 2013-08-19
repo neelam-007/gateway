@@ -1,7 +1,10 @@
 package com.l7tech.server.log.syslog;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.log.syslog.impl.MinaManagedSyslog;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.Closeable;
@@ -60,11 +63,11 @@ public class SyslogManager implements Closeable {
         if (host == null) throw new IllegalArgumentException("host must not be null");
         if (facility < 0 || facility > 124) throw new IllegalArgumentException("invalid facility " + facility);
 
-        Long keystoreIdLong = null;
+        Goid keystoreId = null;
         if (SyslogProtocol.SSL.equals(protocol) && sslKeystoreId != null)
             try {
-            keystoreIdLong = Long.parseLong(sslKeystoreId);
-            } catch (NumberFormatException nfe) {
+                keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, sslKeystoreId);
+            } catch (IllegalArgumentException iae) {
                 throw new IllegalArgumentException("SSL Keystore Id must be numeric " + sslKeystoreId);
             }
 
@@ -77,7 +80,7 @@ public class SyslogManager implements Closeable {
         InetSocketAddress[] addresses = getHostAddresses(syslogHosts);
         // InetSocketAddress addresses = new InetSocketAddress(syslogHost, syslogPort);
 
-        return getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, sslKeystoreAlias, keystoreIdLong);
+        return getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, sslKeystoreAlias, keystoreId);
     }
 
     /**
@@ -123,7 +126,7 @@ public class SyslogManager implements Closeable {
                      final String charset,
                      final String delimiter,
                      final String sslKeystoreAlias,
-                     final Long sslKeystoreId) {
+                     final Goid sslKeystoreId) {
         // access/create managed syslog
         ManagedSyslog mSyslog = getManagedSyslog(protocol, addresses, sslKeystoreAlias, sslKeystoreId);
 
@@ -199,7 +202,7 @@ public class SyslogManager implements Closeable {
     private ManagedSyslog getManagedSyslog(final SyslogProtocol protocol,
                                            final SocketAddress[] addresses,
                                            final String sslKeystoreAlias,
-                                           final Long sslKeystoreId) {
+                                           final Goid sslKeystoreId) {
         if (protocol == null) throw new IllegalArgumentException("protocol must not be null");
 
         ManagedSyslog syslog;

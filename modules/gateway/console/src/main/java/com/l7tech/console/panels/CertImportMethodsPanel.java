@@ -13,6 +13,7 @@ import com.l7tech.gui.util.FontUtil;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -396,7 +397,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         } else if (privateKeyRadioButton.isSelected()) {
             String alias = privateKeysComboBox.getSelectedKeyAlias();
-            long keystoreId = privateKeysComboBox.getSelectedKeystoreId();
+            Goid keystoreId = privateKeysComboBox.getSelectedKeystoreId();
             if (alias == null) {
                 showViewError("view.error.privatekey.noneselected");
                 return false;

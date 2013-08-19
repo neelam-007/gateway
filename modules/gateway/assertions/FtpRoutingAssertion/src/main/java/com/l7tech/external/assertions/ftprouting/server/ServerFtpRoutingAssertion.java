@@ -6,6 +6,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.CausedIOException;
@@ -177,7 +178,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         boolean verifyServerCert = assertion.isVerifyServerCert();
         String hostName = getHostName(variableExpander);
         boolean useClientCert = assertion.isUseClientCert();
-        long clientCertKeystoreId = assertion.getClientCertKeystoreId();
+        Goid clientCertKeystoreId = assertion.getClientCertKeystoreId();
         String clientCertKeyAlias = assertion.getClientCertKeyAlias();
         String directory = getDirectory(variableExpander);
 
@@ -185,7 +186,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         assert(hostName != null);
         assert(userName != null);
         assert(password != null);
-        assert(!useClientCert || (clientCertKeystoreId != -1L && clientCertKeyAlias != null));
+        assert(!useClientCert || (!Goid.isDefault(clientCertKeystoreId) && clientCertKeyAlias != null));
         assert(directory != null);
 
         FtpClientConfig config = FtpClientUtils.newConfig(hostName);

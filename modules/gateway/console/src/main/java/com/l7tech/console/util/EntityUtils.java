@@ -118,13 +118,13 @@ public class EntityUtils {
                 final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
                 final List<KeystoreFileEntityHeader> keystores = trustedCertManager.findAllKeystores(true);
                 for (final KeystoreFileEntityHeader keystore : keystores) {
-                    final List<SsgKeyEntry> keys = trustedCertManager.findAllKeys(keystore.getOid(), true);
+                    final List<SsgKeyEntry> keys = trustedCertManager.findAllKeys(keystore.getGoid(), true);
                     for (final SsgKeyEntry key : keys) {
                         SsgKeyMetadata keyMetadata = key.getKeyMetadata();
                         if (keyMetadata == null) {
                             // this key metadata is not yet persisted
                             keyMetadata = new SsgKeyMetadata(key.getKeystoreId(), key.getAlias(), null);
-                            keyMetadata.setOid(--nonPersistedMetadatas);
+                            keyMetadata.setGoid(new Goid(0,--nonPersistedMetadatas));
                         }
                         entities.add(new KeyMetadataHeaderWrapper(keyMetadata));
                     }

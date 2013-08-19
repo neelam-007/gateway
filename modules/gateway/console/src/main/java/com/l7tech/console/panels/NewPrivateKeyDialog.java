@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -322,7 +321,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final boolean makeCaCert = caCheckBox.isSelected();
         final KeyType keyType = getSelectedKeyType();
-        final SsgKeyMetadata metadata = zoneControl.getSelectedZone() == null ? null: new SsgKeyMetadata(keystoreInfo.getOid(), alias, zoneControl.getSelectedZone());
+        final SsgKeyMetadata metadata = zoneControl.getSelectedZone() == null ? null: new SsgKeyMetadata(keystoreInfo.getGoid(), alias, zoneControl.getSelectedZone());
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
@@ -339,10 +338,10 @@ public class  NewPrivateKeyDialog extends JDialog {
                 public Object call() throws Exception {
                     if (keyType.curveName != null) {
                         // Elliptic curve
-                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, metadata, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
+                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getGoid(), alias, metadata, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
                     } else {
                         // RSA
-                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, metadata, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
+                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getGoid(), alias, metadata, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
                     }
                     newAlias = alias;
                     return null;

@@ -273,7 +273,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
         final SslSocketFactoryKey key = new SslSocketFactoryKey(
                 httpConfiguration.getTlsKeyUse(),
                 httpConfiguration.getTlsVersion(),
-                httpConfiguration.getTlsKeystoreOid(),
+                httpConfiguration.getTlsKeystoreGoid(),
                 httpConfiguration.getTlsKeystoreAlias(),
                 httpConfiguration.getTlsCipherSuites() );
         SSLSocketFactory sslSocketFactory = sslSocketFactoryMap.get( key );
@@ -290,10 +290,10 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                         final SslSocketFactoryKey keyNoVersion = new SslSocketFactoryKey(
                                         httpConfiguration.getTlsKeyUse(),
                                         null,
-                                        httpConfiguration.getTlsKeystoreOid(),
+                                        httpConfiguration.getTlsKeystoreGoid(),
                                         httpConfiguration.getTlsKeystoreAlias(),
                                         null );
-                        final long keystoreId = httpConfiguration.getTlsKeystoreOid();
+                        final Goid keystoreId = httpConfiguration.getTlsKeystoreGoid();
                         final String keyAlias = httpConfiguration.getTlsKeystoreAlias()==null ? "" : httpConfiguration.getTlsKeystoreAlias();
                         sslSocketFactory = sslSocketFactoryMap.get( keyNoVersion );
                         if ( sslSocketFactory == null ) {
@@ -635,19 +635,19 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
     private static final class SslSocketFactoryKey {
         private final HttpConfiguration.Option tlsUse;
         private final String tlsVersion;
-        private final long keyStoreOid;
+        private final Goid keyStoreGoid;
         private final String keyStoreAlias;
         private final String tlsCipherSuites;
 
         private SslSocketFactoryKey( final HttpConfiguration.Option tlsUse,
                                      final String tlsVersion,
-                                     final long keyStoreOid,
+                                     final Goid keyStoreGoid,
                                      final String keyStoreAlias,
                                      final String tlsCipherSuites ) {
             if ( tlsUse==null ) throw new IllegalArgumentException( "use is required" );
             this.tlsUse = tlsUse;
             this.tlsVersion = tlsVersion;
-            this.keyStoreOid = keyStoreOid;
+            this.keyStoreGoid = keyStoreGoid;
             this.keyStoreAlias = keyStoreAlias;
             this.tlsCipherSuites = tlsCipherSuites;
         }
@@ -660,7 +660,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
 
             final SslSocketFactoryKey that = (SslSocketFactoryKey) o;
 
-            if ( keyStoreOid != that.keyStoreOid ) return false;
+            if ( !Goid.equals(keyStoreGoid, that.keyStoreGoid )) return false;
             if ( keyStoreAlias != null ? !keyStoreAlias.equals( that.keyStoreAlias ) : that.keyStoreAlias != null )
                 return false;
             if ( tlsUse != that.tlsUse ) return false;
@@ -674,7 +674,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
         public int hashCode() {
             int result = tlsUse.hashCode();
             result = 31 * result + (tlsVersion != null ? tlsVersion.hashCode() : 0);
-            result = 31 * result + (int) (keyStoreOid ^ (keyStoreOid >>> 32));
+            result = 31 * result + (keyStoreGoid != null ? keyStoreGoid.hashCode() : 0);
             result = 31 * result + (keyStoreAlias != null ? keyStoreAlias.hashCode() : 0);
             result = 31 * result + (tlsCipherSuites != null ? tlsCipherSuites.hashCode() : 0);
             return result;

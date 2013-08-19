@@ -1,5 +1,6 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -108,7 +109,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
 
     private boolean isSamePrivateKey( final PrivateKeyable pk1,
                                       final PrivateKeyable pk2 ) {
-        return (pk1.getNonDefaultKeystoreId() == pk2.getNonDefaultKeystoreId() || pk1.getNonDefaultKeystoreId()==-1 ) &&
+        return (Goid.equals(pk1.getNonDefaultKeystoreId(), pk2.getNonDefaultKeystoreId()) || Goid.isDefault(pk1.getNonDefaultKeystoreId()) ) &&
                (pk1.getKeyAlias()!=null && pk1.getKeyAlias().equalsIgnoreCase( pk2.getKeyAlias() ));
     }
 }

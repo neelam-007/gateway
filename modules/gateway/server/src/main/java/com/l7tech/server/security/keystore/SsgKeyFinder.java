@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
@@ -27,7 +28,7 @@ public interface SsgKeyFinder extends NamedEntity {
         GENERIC,
     }
 
-    long getOid();
+    Goid getGoid();
 
     /** @return the SsgKeyStoreType of this keystore instance. */
     SsgKeyStoreType getType();

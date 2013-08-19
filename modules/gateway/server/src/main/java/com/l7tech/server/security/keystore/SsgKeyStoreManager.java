@@ -1,6 +1,7 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
@@ -36,7 +37,7 @@ public interface SsgKeyStoreManager {
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
     @Transactional(readOnly=true)
-    SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException;
+    SsgKeyFinder findByPrimaryKey(Goid id) throws FindException, KeyStoreException;
 
     /**
      * Find a single private key, along with its cert chain, by searching for a key with the specified alias.
@@ -45,7 +46,7 @@ public interface SsgKeyStoreManager {
      * If the key cannot be found in any key store, FindException is thrown.
      *
      * @param keyAlias  the alias of the key to find.  Required.
-     * @param preferredKeystoreId  the ID of a keystore to look in first, or -1 to scan all key stores.
+     * @param preferredKeystoreId  the ID of a keystore to look in first, or GoidEntity.DEFAULT_GOID to scan all key stores.
      *                             For compatibility with systems ugpraded from pre-5.0, an ID of zero is treated like -1.
      * @return a SignerInfo instance containing a private key and cert chain.  Never null.
      * @throws ObjectNotFoundException if the requested alias could not be found in any keystore
@@ -53,5 +54,5 @@ public interface SsgKeyStoreManager {
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
     @Transactional(readOnly=true)
-    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException;
+    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException;
 }

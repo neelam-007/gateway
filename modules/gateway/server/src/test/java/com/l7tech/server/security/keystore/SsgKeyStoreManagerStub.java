@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.common.TestDocuments;
 
@@ -30,13 +31,13 @@ public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
     }
 
     @Override
-    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
-        if ( ssgKeyFinder != null && ssgKeyFinder.getOid()==id ) return ssgKeyFinder;
+    public SsgKeyFinder findByPrimaryKey(Goid id) throws FindException, KeyStoreException {
+        if ( ssgKeyFinder != null && Goid.equals(ssgKeyFinder.getGoid(), id) ) return ssgKeyFinder;
         throw new ObjectNotFoundException("Not found");
     }
 
     @Override
-    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, Goid preferredKeystoreId) throws FindException, KeyStoreException {
         if (ssgKeyFinder != null) {
             try {
                 SsgKeyEntry entry = ssgKeyFinder.getCertificateChain(keyAlias);

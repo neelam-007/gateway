@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.security.keystore;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
@@ -24,7 +25,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
 
     private static Functions.Nullary<Boolean> restrictedKeyAccessChecker;
 
-    private long keystoreId;
+    private Goid keystoreId;
     private String alias;
     private boolean restrictedAccess;
     private SsgKeyMetadata keyMetadata;
@@ -39,13 +40,13 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      *                          (perhaps because it is stored in an HSM and cannot be exported/serialized, and this
      *                          code is currently running on the client).
      */
-    public SsgKeyEntry(long keystoreId,
+    public SsgKeyEntry(Goid keystoreId,
                        String alias,
                        X509Certificate[] certificateChain,
                        PrivateKey privateKey)
     {
         super(privateKey, certificateChain);
-        if (keystoreId != Long.MIN_VALUE && alias != null && (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null))
+        if (!Goid.equals(keystoreId, new Goid(0, Long.MIN_VALUE)) && alias != null && (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null))
             throw new IllegalArgumentException("certificateChain must contain at least one certificate");
         this.keystoreId = keystoreId;
         this.alias = alias;
@@ -72,7 +73,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      * @param keystoreId        ID of the keystore to which this entry belongs
      * @param alias  the alias for this SsgKeyEntry.  Required.
      */
-    private SsgKeyEntry(long keystoreId, String alias) {
+    private SsgKeyEntry(Goid keystoreId, String alias) {
         super(null, null);
         if (alias == null)
             throw new IllegalArgumentException("alias is required for auditing purposes");
@@ -87,7 +88,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      * @param alias  the alias for this SsgKeyEntry.  Required.
      * @return a new KeyEntry.  never null.
      */
-    public static SsgKeyEntry createDummyEntityForAuditing(long keystoreId, String alias) {
+    public static SsgKeyEntry createDummyEntityForAuditing(Goid keystoreId, String alias) {
         return new SsgKeyEntry(keystoreId, alias);
     }
 
@@ -167,13 +168,13 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /** @return the keystore id from which this entry came. */
-    @Dependency(methodReturnType = Dependency.MethodReturnType.OID, type = Dependency.DependencyType.SSG_KEYSTORE)
-    public long getKeystoreId() {
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SSG_KEYSTORE)
+    public Goid getKeystoreId() {
         return keystoreId;
     }
 
     /** @param keystoreId the new keystore id. */
-    public void setKeystoreId(long keystoreId) {
+    public void setKeystoreId(Goid keystoreId) {
         this.keystoreId = keystoreId;
     }
 

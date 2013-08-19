@@ -11,6 +11,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -303,7 +304,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             case CUSTOM:
                 useCustomPrivateKeyRadioButton.setSelected( true );
                 final PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
-                privateKeyDropDown.select( httpConfiguration.getTlsKeystoreOid(), httpConfiguration.getTlsKeystoreAlias() );
+                privateKeyDropDown.select( httpConfiguration.getTlsKeystoreGoid(), httpConfiguration.getTlsKeystoreAlias() );
                 break;
         }
 
@@ -371,7 +372,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         httpConfiguration.setNtlmDomain( getText( ntlmDomainTextField, true ) );
         httpConfiguration.setNtlmHost( getText( ntlmHostTextField, true ) );
 
-        httpConfiguration.setTlsKeystoreOid( 0 );
+        httpConfiguration.setTlsKeystoreGoid(new Goid(0,0));
         httpConfiguration.setTlsKeystoreAlias( null );
         if ( tlsVersionComboBox.isEnabled() ) {
             if ( tlsVersionComboBox.getSelectedItem() == ANY ) {
@@ -386,7 +387,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             } else {
                 httpConfiguration.setTlsKeyUse( HttpConfiguration.Option.CUSTOM );
                 final PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
-                httpConfiguration.setTlsKeystoreOid( privateKeyDropDown.getSelectedKeystoreId() );
+                httpConfiguration.setTlsKeystoreGoid(privateKeyDropDown.getSelectedKeystoreId());
                 httpConfiguration.setTlsKeystoreAlias( privateKeyDropDown.getSelectedKeyAlias() );
             }
             httpConfiguration.setTlsCipherSuites( useCustomCipherSuitesRadioButton.isSelected() ? tlsCipherSuiteList : null );

@@ -271,7 +271,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             final SsgKeyHeader keyHeader = (SsgKeyHeader) entityHeader;
             final SsgKeyEntry keyEntry;
             try {
-                if (keyHeader.getKeystoreId() == -1) {
+                if (Goid.isDefault(keyHeader.getKeystoreId())) {
                     if (keyHeader.getAlias() == null) {
                         //if the keystore id is -1 and the alias is 0 then use the default key.
                         try {

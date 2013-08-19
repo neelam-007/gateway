@@ -1,5 +1,9 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.GoidUpgradeMapper;
+
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
@@ -20,13 +24,18 @@ public abstract class MessageTargetableAssertionPrivateKeyable
     }
 
     @Override
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return privateKeyableSupport.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         privateKeyableSupport.setNonDefaultKeystoreId(nonDefaultId);
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        privateKeyableSupport.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId));
     }
 
     @Override

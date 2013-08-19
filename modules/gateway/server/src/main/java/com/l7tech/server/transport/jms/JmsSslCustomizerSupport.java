@@ -1,9 +1,13 @@
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.SingleCertX509KeyManager;
@@ -70,7 +74,7 @@ public class JmsSslCustomizerSupport {
      */
     private static final String PROP_SSL_SESSION_TIMEOUT = SslClientSocketFactory.class.getName() + ".sslSessionTimeoutSeconds";
     private static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
-    private static final Map<Pair<Long,String>, SSLContext> instancesByKeyEntryId = new HashMap<Pair<Long,String>, SSLContext>();
+    private static final Map<Pair<Goid,String>, SSLContext> instancesByKeyEntryId = new HashMap<Pair<Goid,String>, SSLContext>();
 
     private static SsgKeyStoreManager ssgKeyStoreManager;
     private static X509TrustManager trustManager;
@@ -89,19 +93,19 @@ public class JmsSslCustomizerSupport {
         if (ssgKeyStoreManager == null) throw new IllegalStateException("Gateway Keystore Manager must be set first");
         if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
 
-        final Pair<Long,String> keyId;
+        final Pair<Goid,String> keyId;
         if ( keystoreIdStr==null && alias == null ) {
-            keyId = new Pair<Long,String>(-1L, "");
+            keyId = new Pair<Goid,String>(GoidEntity.DEFAULT_GOID, "");
         } else {
             // process keystore
-            long keystoreId;
+            Goid keystoreId;
             try {
-                keystoreId = Long.parseLong( keystoreIdStr );
-            } catch ( NumberFormatException nfe ) {
+                keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreIdStr);
+            } catch ( IllegalArgumentException iae ) {
                 throw new JmsConfigException("Bad keystore ID: " + keystoreIdStr);
             }
 
-            keyId = new Pair<Long,String>(keystoreId, alias);
+            keyId = new Pair<Goid,String>(keystoreId, alias);
         }
 
         SSLContext instance = instancesByKeyEntryId.get(keyId);

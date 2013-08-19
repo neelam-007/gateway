@@ -1,8 +1,11 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.policy.assertion.*;
@@ -53,13 +56,18 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
     @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId(long nonDefaultId) {
+        this.nonDefaultKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId);
     }
 
     @Override
@@ -140,7 +148,7 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     private String keyReference = KeyReference.BST.getName();
     private boolean protectTokens = false;
     private boolean usesDefaultKeyStore = true;
-    private long nonDefaultKeystoreId;
+    private Goid nonDefaultKeystoreId;
     private String keyId;
     private @Nullable String digestAlgorithmName;
     

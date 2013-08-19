@@ -155,18 +155,6 @@ INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_
 ALTER TABLE client_cert ALTER COLUMN issuer_dn SET DATA TYPE VARCHAR(2048);
 ALTER TABLE trusted_cert ALTER COLUMN issuer_dn SET DATA TYPE VARCHAR(2048);
 
---
--- Keystore private key metadata (security zones)
---
-create table keystore_key_metadata (
-  objectid bigint not null,
-  version integer,
-  keystore_file_oid bigint not null references keystore_file(objectid) on delete cascade,
-  alias varchar(255) not null,
-  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-  primary key (objectid),
-  unique (keystore_file_oid, alias)
-);
 
 --
 -- Register upgrade task for adding Assertion Access to auto-created "Manage <Blah>" roles
@@ -308,6 +296,39 @@ ALTER TABLE http_configuration DROP COLUMN proxy_password_oid;
 ALTER TABLE siteminder_configuration ADD COLUMN password_goid CHAR(16) FOR BIT DATA;
 update siteminder_configuration set password_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), password_oid);
 ALTER TABLE siteminder_configuration DROP COLUMN password_oid;
+
+-- Keystore
+ALTER TABLE keystore_file ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update keystore_file set goid = toGoid(0, objectid);
+ALTER TABLE keystore_file ALTER COLUMN goid NOT NULL;
+ALTER TABLE keystore_file DROP PRIMARY KEY;
+ALTER TABLE keystore_file DROP COLUMN objectid;
+ALTER TABLE keystore_file ADD PRIMARY KEY (goid);
+
+--
+-- Keystore private key metadata (security zones)
+--
+create table keystore_key_metadata (
+  goid CHAR(16) FOR BIT DATA not null,
+  version integer,
+  keystore_file_goid CHAR(16) FOR BIT DATA not null references keystore_file(goid) on delete cascade,
+  alias varchar(255) not null,
+  security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
+  primary key (goid),
+  unique (keystore_file_goid, alias)
+);
+
+ALTER TABLE http_configuration ADD COLUMN tls_keystore_goid CHAR(16) FOR BIT DATA;
+update http_configuration set tls_keystore_goid = toGoid(0, tls_keystore_oid);
+ALTER TABLE http_configuration DROP COLUMN tls_keystore_oid;
+
+ALTER TABLE uddi_registries ADD COLUMN keystore_goid CHAR(16) FOR BIT DATA;
+update uddi_registries set keystore_goid = toGoid(0, keystore_oid);
+ALTER TABLE uddi_registries DROP COLUMN keystore_oid;
+
+ALTER TABLE connector ADD COLUMN keystore_goid CHAR(16) FOR BIT DATA;
+update connector set keystore_goid = toGoid(0, keystore_oid);
+ALTER TABLE connector DROP COLUMN keystore_oid;
 
 -- Resource Entry
 ALTER TABLE resource_entry ADD COLUMN goid CHAR(16) FOR BIT DATA;
@@ -1447,5 +1468,6 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('secure_password', cast(getVariable('secure_password_prefix') as bigint)),
       ('wssc_session', cast(getVariable('wssc_session_prefix') as bigint)),
       ('counters', cast(getVariable('counters_prefix') as bigint)),
+      ('keystore_file', 0),
       ('trusted_esm', cast(getVariable('trusted_esm_prefix') as bigint)),
       ('trusted_esm_user', cast(getVariable('trusted_esm_user_prefix') as bigint));

@@ -7,7 +7,9 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PrivateKeyable;
@@ -454,12 +456,12 @@ public class SoapFaultManager implements ApplicationContextAware {
                 if ( fromSettings.isSignSoapFault() && keyAlias!=null && !keyAlias.trim().isEmpty() ) {
                     keyAlias = keyAlias.trim();
                     fromSettings.setUsesDefaultKeyStore( false );
-                    fromSettings.setNonDefaultKeystoreId( -1L );
+                    fromSettings.setNonDefaultKeystoreId(GoidEntity.DEFAULT_GOID);
                     fromSettings.setKeyAlias( keyAlias );
                     int index = keyAlias.indexOf( ':' );
                     if ( index > 0 && index < keyAlias.length()-1 ) {
                         try {
-                            fromSettings.setNonDefaultKeystoreId( Long.parseLong( keyAlias.substring( 0, index )));
+                            fromSettings.setNonDefaultKeystoreId( GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyAlias.substring(0, index)));
                             fromSettings.setKeyAlias( keyAlias.substring( index+1 ));
                         } catch ( NumberFormatException nfe ) {
                             logger.fine( "Error processing key alias for SOAP fault signing." );

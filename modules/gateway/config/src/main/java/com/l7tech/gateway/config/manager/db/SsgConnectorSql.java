@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -198,7 +197,7 @@ public class SsgConnectorSql {
                connector.getEndpoints(),
                connector.isSecure(),
                connector.getClientAuth(),
-               connector.getKeystoreOid(),
+               connector.getKeystoreGoid(),
                connector.getKeyAlias(),
                 null);
 

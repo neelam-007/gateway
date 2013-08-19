@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -261,7 +262,7 @@ public final class EntityHeaderUtils {
                 sepIndex = eh.getExternalId().indexOf(":");
                 header = new SsgKeyHeader(
                         eh.getStrId(),
-                        Long.parseLong(eh.getExternalId().substring(0, sepIndex)),
+                        GoidUpgradeMapper.mapId(SSG_KEYSTORE, eh.getExternalId().substring(0, sepIndex)),
                         eh.getExternalId().substring(sepIndex + 1),
                         eh.getName());
                 break;

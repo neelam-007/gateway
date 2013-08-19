@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.util.Pair;
 
 import java.security.PrivateKey;
@@ -65,8 +67,8 @@ public class TestDefaultKey extends DefaultKeyImpl {
     }
 
     @Override
-    public Pair<Long, String> getAuditViewerAlias() {
-        return auditViewerInfo == null ? null : new Pair<Long, String>(auditViewerInfo.getKeystoreId(), auditViewerInfo.getAlias());
+    public Pair<Goid, String> getAuditViewerAlias() {
+        return auditViewerInfo == null ? null : new Pair<Goid, String>(auditViewerInfo.getKeystoreId(), auditViewerInfo.getAlias());
     }
 
     public void setCaInfo(SsgKeyEntry caInfo) {
@@ -78,6 +80,6 @@ public class TestDefaultKey extends DefaultKeyImpl {
     }
 
     private SsgKeyEntry makeFakeKeyEntry(X509Certificate cert, PrivateKey key) {
-        return new SsgKeyEntry(-1, "SSL", new X509Certificate[] {cert}, key);
+        return new SsgKeyEntry(GoidEntity.DEFAULT_GOID, "SSL", new X509Certificate[] {cert}, key);
     }
 }

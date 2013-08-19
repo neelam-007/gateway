@@ -4,6 +4,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class PrivateKeyAdminHelperTest {
     private static final String ALIAS = "alias";
-    private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private static final String KEY_STORE_TYPE = "PKCS12";
     private static final char[] password = "password".toCharArray();
     private static final String alias = "6e0e88f36ebb8744d470f62f604d03ea4ebe5094";
@@ -75,85 +76,85 @@ public class PrivateKeyAdminHelperTest {
 
     @Test
     public void doUpdateKeyMetadata() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         when(keyFinder.getKeyStore()).thenReturn(keystore);
 
-        helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
-        verify(keystore).updateKeyMetadata(OID, ALIAS, metadata);
+        helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
+        verify(keystore).updateKeyMetadata(GOID, ALIAS, metadata);
     }
 
     @Test(expected = UpdateException.class)
     public void doUpdateKeyMetadataUpdateError() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         when(keyFinder.getKeyStore()).thenReturn(keystore);
-        doThrow(new UpdateException("mocking exception")).when(keystore).updateKeyMetadata(anyLong(), anyString(), any(SsgKeyMetadata.class));
+        doThrow(new UpdateException("mocking exception")).when(keystore).updateKeyMetadata(any(Goid.class), anyString(), any(SsgKeyMetadata.class));
 
         try {
-            helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
+            helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            verify(keystore).updateKeyMetadata(OID, ALIAS, metadata);
+            verify(keystore).updateKeyMetadata(GOID, ALIAS, metadata);
             throw e;
         }
     }
 
     @Test(expected = UpdateException.class)
     public void doUpdateKeyMetadataCannotFindKeyFinder() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenThrow(new ObjectNotFoundException("mocking exception"));
+        when(keystoreManager.findByPrimaryKey(GOID)).thenThrow(new ObjectNotFoundException("mocking exception"));
         try {
-            helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
+            helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            verify(keystore, never()).updateKeyMetadata(OID, ALIAS, new SsgKeyMetadata());
+            verify(keystore, never()).updateKeyMetadata(GOID, ALIAS, new SsgKeyMetadata());
             throw e;
         }
     }
 
     @Test(expected = UpdateException.class)
     public void doUpdateKeyMetadataKeystoreException() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenThrow(new KeyStoreException("mocking exception"));
+        when(keystoreManager.findByPrimaryKey(GOID)).thenThrow(new KeyStoreException("mocking exception"));
         try {
-            helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
+            helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            verify(keystore, never()).updateKeyMetadata(OID, ALIAS, new SsgKeyMetadata());
+            verify(keystore, never()).updateKeyMetadata(GOID, ALIAS, new SsgKeyMetadata());
             throw e;
         }
     }
 
     @Test(expected = UpdateException.class)
     public void doUpdateKeyMetadataKeyDoesNotExist() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         when(keyFinder.getCertificateChain(ALIAS)).thenThrow(new ObjectNotFoundException("mocking exception"));
 
         try {
-            helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
+            helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
             fail("Expected UpdateException");
         } catch (final UpdateException e) {
-            verify(keystore, never()).updateKeyMetadata(OID, ALIAS, new SsgKeyMetadata());
+            verify(keystore, never()).updateKeyMetadata(GOID, ALIAS, new SsgKeyMetadata());
             throw e;
         }
     }
 
     @Test
     public void doUpdateKeyMetadataReadOnlyKeyStore() throws Exception {
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         // key store is read only
         when(keyFinder.getKeyStore()).thenReturn(null);
 
-        helper.doUpdateKeyMetadata(OID, ALIAS, metadata);
-        verify(keystore, never()).updateKeyMetadata(OID, ALIAS, metadata);
+        helper.doUpdateKeyMetadata(GOID, ALIAS, metadata);
+        verify(keystore, never()).updateKeyMetadata(GOID, ALIAS, metadata);
     }
 
     @Test
     public void doImportKeyFromKeyStoreFileAttachesMetadata() throws Exception {
         final SsgKeyEntry keyEntry = createDummyKeyEntry();
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         when(keyFinder.getKeyStore()).thenReturn(keystore);
         when(keystore.storePrivateKeyEntry(any(Runnable.class), any(SsgKeyEntry.class), eq(false))).thenReturn(new NotFuture<Boolean>(true));
         when(keystore.getCertificateChain(alias)).thenReturn(keyEntry);
 
-        final SsgKeyEntry result = helper.doImportKeyFromKeyStoreFile(OID, alias, metadata, keyStoreBytes, KEY_STORE_TYPE, password, password, alias);
+        final SsgKeyEntry result = helper.doImportKeyFromKeyStoreFile(GOID, alias, metadata, keyStoreBytes, KEY_STORE_TYPE, password, password, alias);
 
         assertEquals(keyEntry, result);
         // ensure key entry is sent to keystore with metadata attached
@@ -163,12 +164,12 @@ public class PrivateKeyAdminHelperTest {
     @Test
     public void doImportKeyFromKeyStoreFileDoesNotAttachNullMetadata() throws Exception {
         final SsgKeyEntry keyEntry = createDummyKeyEntry();
-        when(keystoreManager.findByPrimaryKey(OID)).thenReturn(keyFinder);
+        when(keystoreManager.findByPrimaryKey(GOID)).thenReturn(keyFinder);
         when(keyFinder.getKeyStore()).thenReturn(keystore);
         when(keystore.storePrivateKeyEntry(any(Runnable.class), any(SsgKeyEntry.class), eq(false))).thenReturn(new NotFuture<Boolean>(true));
         when(keystore.getCertificateChain(alias)).thenReturn(keyEntry);
 
-        final SsgKeyEntry result = helper.doImportKeyFromKeyStoreFile(OID, alias, null, keyStoreBytes, KEY_STORE_TYPE, password, password, alias);
+        final SsgKeyEntry result = helper.doImportKeyFromKeyStoreFile(GOID, alias, null, keyStoreBytes, KEY_STORE_TYPE, password, password, alias);
 
         assertEquals(keyEntry, result);
         // ensure key entry is sent to keystore with null metadata
@@ -176,7 +177,7 @@ public class PrivateKeyAdminHelperTest {
     }
 
     private SsgKeyEntry createDummyKeyEntry() throws GeneralSecurityException {
-        return new SsgKeyEntry(OID, ALIAS, new X509Certificate[]{new TestCertificateGenerator().subject("CN=test").generate()},
+        return new SsgKeyEntry(GOID, ALIAS, new X509Certificate[]{new TestCertificateGenerator().subject("CN=test").generate()},
                     new TestCertificateGenerator().getPrivateKey());
     }
 

@@ -42,7 +42,7 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
 
     // Cache of keystores already looked up for the current invocation so we don't have to do something incredibly slow
     // like loop up the (same) keystore repeatedly for every returned key entry
-    private Map<Long,SsgKeyFinder> keystoreCache = new HashMap<Long,SsgKeyFinder>();
+    private Map<Goid,SsgKeyFinder> keystoreCache = new HashMap<Goid,SsgKeyFinder>();
 
     @SuppressWarnings("ThrowFromFinallyBlock")
     @Override
@@ -114,7 +114,7 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
                     if (keyEntry != null) {
                         checkArgOperation(keyEntry, secured.argOp());
                     } else {
-                        long keystoreId = getKeystoreIdFromArg(invocation, secured);
+                        Goid keystoreId = getKeystoreIdFromArg(invocation, secured);
                         String keyAlias = getKeyAliasFromArg(invocation, secured);
                         final SsgKeyMetadata meta = getMetadataFromArg(invocation, secured);
                         checkArgOperation(keystoreId, keyAlias, meta, secured.argOp());
@@ -169,8 +169,8 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return (String)invocation.getArguments()[secured.keyAliasArg()];
     }
 
-    private static Long getKeystoreIdFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
-        return (Long)invocation.getArguments()[secured.keystoreOidArg()];
+    private static Goid getKeystoreIdFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
+        return (Goid)invocation.getArguments()[secured.keystoreGoidArg()];
     }
 
     private static SsgKeyMetadata getMetadataFromArg(MethodInvocation invocation, PrivateKeySecured secured) {
@@ -194,7 +194,7 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         checkPermittedForKeystore(keyEntry.getKeystoreId(), ksOperation);
     }
 
-    private void checkArgOperation( long keystoreId, String keyAlias, SsgKeyMetadata metadata, OperationType operation ) throws FindException, KeyStoreException {
+    private void checkArgOperation( Goid keystoreId, String keyAlias, SsgKeyMetadata metadata, OperationType operation ) throws FindException, KeyStoreException {
         final SsgKeyEntry keyEntry;
         if (operation == CREATE || operation == UPDATE) {
             keyEntry = createFakeKeyEntry(keystoreId, keyAlias, metadata);
@@ -285,34 +285,34 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
     }
 
     /**
-     * Look up a keystore by OID, with caching for the current invocation.
+     * Look up a keystore by GOID, with caching for the current invocation.
      *
-     * @param keystoreOid keystore OID.  Must not be -1.
+     * @param keystoreGoid keystore GOID.  Must not be DEFAULT.
      * @return matching keystore.  Never null.
      * @throws FindException on find error
      * @throws KeyStoreException on keystore error
      */
     @NotNull
-    public SsgKeyFinder findKeystore( long keystoreOid ) throws FindException, KeyStoreException {
-        if (keystoreOid == -1)
-            throw new IllegalArgumentException("valid keystoreOid required");
+    public SsgKeyFinder findKeystore( Goid keystoreGoid ) throws FindException, KeyStoreException {
+        if (Goid.isDefault(keystoreGoid))
+            throw new IllegalArgumentException("valid keystoreGoid required");
 
-        SsgKeyFinder ret = keystoreCache.get(keystoreOid);
+        SsgKeyFinder ret = keystoreCache.get(keystoreGoid);
         if (ret != null)
             return ret;
 
-        ret = ssgKeyStoreManager.findByPrimaryKey(keystoreOid);
+        ret = ssgKeyStoreManager.findByPrimaryKey(keystoreGoid);
         if (ret == null) {
             // though this can't happen in production, for ease of unit testing we will treat null as "not found" so it plays well with unstubbed mocks
-            throw new ObjectNotFoundException("No keystore found for oid " + keystoreOid);
+            throw new ObjectNotFoundException("No keystore found for goid " + keystoreGoid);
         }
-        keystoreCache.put(keystoreOid, ret);
+        keystoreCache.put(keystoreGoid, ret);
         return ret;
     }
 
 
     @NotNull
-    private SsgKeyEntry createFakeKeyEntry(long keystoreId, String alias, SsgKeyMetadata metadata) {
+    private SsgKeyEntry createFakeKeyEntry(Goid keystoreId, String alias, SsgKeyMetadata metadata) {
         final SsgKeyEntry entry = SsgKeyEntry.createDummyEntityForAuditing(keystoreId, alias);
         entry.attachMetadata(metadata);
         return entry;
@@ -324,8 +324,8 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
     }
 
     @NotNull
-    SsgKeyEntry findKeyEntry(long keystoreOid, @NotNull String keyAlias) throws FindException, KeyStoreException {
-        return findKeyEntry(findKeystore(keystoreOid), keyAlias);
+    SsgKeyEntry findKeyEntry(Goid keystoreGoid, @NotNull String keyAlias) throws FindException, KeyStoreException {
+        return findKeyEntry(findKeystore(keystoreGoid), keyAlias);
     }
 
 
@@ -393,14 +393,14 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         return null;
     }
 
-    private boolean isPermittedForKeystore(long keystoreOid, OperationType operation) throws FindException, KeyStoreException {
-        if (keystoreOid == -1) {
+    private boolean isPermittedForKeystore(Goid keystoreGoid, OperationType operation) throws FindException, KeyStoreException {
+        if (Goid.isDefault(keystoreGoid)) {
             // Must be able to access ALL keystores
             return rbacServices.isPermittedForAnyEntityOfType(user, operation, EntityType.SSG_KEYSTORE);
         }
 
         // Must be able to access THIS keystore
-        SsgKeyFinder keystore = findKeystore(keystoreOid);
+        SsgKeyFinder keystore = findKeystore(keystoreGoid);
         return rbacServices.isPermittedForEntity(user, keystore, operation, null);
     }
 
@@ -422,10 +422,10 @@ public class PrivateKeyRbacInterceptor implements CustomRbacInterceptor {
         }
     }
 
-    private void checkPermittedForKeystore(long keystoreOid, OperationType operation) throws FindException, KeyStoreException {
-        if (keystoreOid != -1) {
+    private void checkPermittedForKeystore(Goid keystoreGoid, OperationType operation) throws FindException, KeyStoreException {
+        if (!Goid.isDefault(keystoreGoid)) {
             // Must be able to access THIS keystore
-            SsgKeyFinder keystore = findKeystore(keystoreOid);
+            SsgKeyFinder keystore = findKeystore(keystoreGoid);
             if (!rbacServices.isPermittedForEntity(user, keystore, operation, null))
                 throw new PermissionDeniedException(operation, EntityType.SSG_KEYSTORE);
         } else {

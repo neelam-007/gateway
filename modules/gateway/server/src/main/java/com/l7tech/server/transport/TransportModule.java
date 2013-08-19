@@ -260,7 +260,7 @@ public abstract class TransportModule extends LifecycleBean {
      */
     public SsgKeyEntry getKeyEntry(SsgConnector c) throws ListenerException {
         try {
-            return c.getKeystoreOid() == null ? defaultKey.getSslInfo() : defaultKey.lookupKeyByKeyAlias(c.getKeyAlias(), c.getKeystoreOid());
+            return c.getKeystoreGoid() == null ? defaultKey.getSslInfo() : defaultKey.lookupKeyByKeyAlias(c.getKeyAlias(), c.getKeystoreGoid());
         } catch (IOException e) {
             throw new ListenerException("No default SSL key is currently available: " + ExceptionUtils.getMessage(e), e);
         } catch (KeyStoreException e) {

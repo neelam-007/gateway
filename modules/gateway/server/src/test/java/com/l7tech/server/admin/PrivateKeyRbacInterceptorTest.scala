@@ -10,7 +10,7 @@ import com.l7tech.identity.User
 import com.l7tech.server.security.rbac.RbacServices
 import com.l7tech.server.security.keystore.{SsgKeyFinder, SsgKeyStoreManager}
 import com.l7tech.gateway.common.security.keystore.{SsgKeyMetadata, SsgKeyEntry}
-import com.l7tech.objectmodel.{SecurityZone, Entity, EntityType, ObjectNotFoundException}
+import com.l7tech.objectmodel._
 import com.l7tech.objectmodel.EntityType._
 import java.{lang, util}
 import com.l7tech.gateway.common.security.rbac.{PermissionDeniedException, OperationType}
@@ -48,7 +48,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     "fail CHECK_ARG_OPERATION precheck if attempt is made to specify wildcard keystore OID" in new DefaultScope {
       grantAllNonMockedKeyEntries(UPDATE)
-      interceptor.invoke(methodInvocation(updateKeyEntry, new lang.Long(-1), keyAlias)) must throwA[IllegalArgumentException](message = "valid keystoreOid required")
+      interceptor.invoke(methodInvocation(updateKeyEntry,new Goid(0,-1), keyAlias)) must throwA[IllegalArgumentException](message = "valid keystoreGoid required")
       there was no(ssgKeyStoreManager).findByPrimaryKey(any)
     }
 
@@ -103,7 +103,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       rbacServices.isPermittedForEntity(any, any, beEqualTo(CREATE), any) returns true  // use wildcard match, so will match the created dummy entity
 
       testInterface.createKeyEntry(any, any) returns true
-      interceptor.invoke(methodInvocation(createKeyEntry, new lang.Long(-1), keyAlias)) must throwA[PermissionDeniedException]
+      interceptor.invoke(methodInvocation(createKeyEntry, new Goid(0,-1), keyAlias)) must throwA[PermissionDeniedException]
 
       there was one(rbacServices).isPermittedForEntity(any, any, beEqualTo(CREATE), any)
       there was one(rbacServices).isPermittedForAnyEntityOfType(any, any, any)
@@ -116,7 +116,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       grantAll(UPDATE, SSG_KEYSTORE)
 
       testInterface.createKeyEntry(any, any) returns true
-      interceptor.invoke(methodInvocation(createKeyEntry, new lang.Long(-1), keyAlias)) must_== true
+      interceptor.invoke(methodInvocation(createKeyEntry, new Goid(0,-1), keyAlias)) must_== true
 
       there was one(rbacServices).isPermittedForEntity(any, any, any, any)
       there was one(rbacServices).isPermittedForAnyEntityOfType(user, OperationType.UPDATE, EntityType.SSG_KEYSTORE)
@@ -127,7 +127,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       grant(UPDATE, keystore)
       grant(DELETE, keyEntry)
 
-      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Long], classOf[Object])
+      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Goid], classOf[Object])
       testInterface.deleteWithStrangeArgumentOrder(null, keyAlias, null, keystoreId, null) returns true
       interceptor.invoke(methodInvocation(deleteWithStrangeArgumentOrder, null, keyAlias, null, keystoreId, null)) must_== true
 
@@ -139,7 +139,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       keyLookupWillSucceed
       grant(DELETE, keyEntry)
 
-      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Long], classOf[Object])
+      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Goid], classOf[Object])
       testInterface.deleteWithStrangeArgumentOrder(null, keyAlias, null, keystoreId, null) returns true
       interceptor.invoke(methodInvocation(deleteWithStrangeArgumentOrder, null, keyAlias, null, keystoreId, null)) must throwA[PermissionDeniedException]
 
@@ -151,7 +151,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       keyLookupWillSucceed
       grant(UPDATE, keystore)
 
-      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Long], classOf[Object])
+      val deleteWithStrangeArgumentOrder = testInterfaceClass.getMethod("deleteWithStrangeArgumentOrder", classOf[Object], classOf[String], classOf[Object], classOf[Goid], classOf[Object])
       testInterface.deleteWithStrangeArgumentOrder(null, keyAlias, null, keystoreId, null) returns true
       interceptor.invoke(methodInvocation(deleteWithStrangeArgumentOrder, null, keyAlias, null, keystoreId, null)) must throwA[PermissionDeniedException]
 
@@ -250,7 +250,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     }
 
     "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if key entry lookup fails" in new DefaultScope {
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) returns keystore
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) returns keystore
       keystore.getCertificateChain(keyAlias) throws new ObjectNotFoundException("key entry not found")
 
       interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[ObjectNotFoundException]
@@ -261,7 +261,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     "fail CHECK_ARG_OPERATION precheck that requires update permission on key entry and provides metadata if keystore lookup fails" in new DefaultScope {
       interceptor.invoke(methodInvocation(checkArgOpUpdateWithMetadata, keystoreId, keyAlias, keyMetadata)) must throwA[ObjectNotFoundException]
 
-      there was one(ssgKeyStoreManager).findByPrimaryKey(new lang.Long(keystoreId))
+      there was one(ssgKeyStoreManager).findByPrimaryKey(keystoreId)
       there was no(rbacServices).isPermittedForEntity(any, any, any, any)
     }
 
@@ -290,7 +290,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     }
 
     "pass NO_PRE_CHECK even if all permissions would be denied" in new DefaultScope {
-      val noPreChecks = testInterfaceClass.getMethod("noPreChecks", classOf[Long], classOf[String])
+      val noPreChecks = testInterfaceClass.getMethod("noPreChecks", classOf[Goid], classOf[String])
       testInterface.noPreChecks(any, any) returns true
       interceptor.invoke(methodInvocation(noPreChecks, keystoreId, keyAlias)) must_== true
 
@@ -327,7 +327,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       grant(READ, keyEntry)
       grant(READ, keystore)
       grantAll(UPDATE, SSG_KEYSTORE)
-      val readAttributeFromKeyEntry = testInterfaceClass.getMethod("readAttributeFromKeyEntry", classOf[Long], classOf[String])
+      val readAttributeFromKeyEntry = testInterfaceClass.getMethod("readAttributeFromKeyEntry", classOf[Goid], classOf[String])
 
       testInterface.readAttributeFromKeyEntry(any, any) returns true
       interceptor.invoke(methodInvocation(readAttributeFromKeyEntry, keystoreId, keyAlias)) must_== true
@@ -401,7 +401,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     }
 
     "fail CHECK_ARG_OPERATION pre check for UPDATE and key entry in arg if key entry lookup fails" in new DefaultScope {
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) returns keystore
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) returns keystore
       keystore.getCertificateChain(keyAlias) throws new ObjectNotFoundException("key entry not found")
 
       interceptor.invoke(methodInvocation(checkArgOpUpdateWithKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
@@ -458,7 +458,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     "fail CHECK_ARG_OPERATION pre check for CREATE and key entry in arg if keystore look up fails" in new DefaultScope {
       grant(CREATE, keyEntry)
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) throws new ObjectNotFoundException("key store not found")
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) throws new ObjectNotFoundException("key store not found")
 
       interceptor.invoke(methodInvocation(checkArgOpCreateWithKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
 
@@ -496,7 +496,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     }
 
     "fail CHECK_ARG_OPERATION pre check for DELETE and key entry in arg if keystore lookup fails" in new DefaultScope {
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) throws new ObjectNotFoundException("key store not found")
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) throws new ObjectNotFoundException("key store not found")
       grant(DELETE, keyEntry)
 
       interceptor.invoke(methodInvocation(checkArgOpDeleteWithKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
@@ -535,7 +535,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     }
 
     "fail CHECK_ARG_OPERATION pre check for READ and key entry in arg if keystore lookup fails" in new DefaultScope {
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) throws new ObjectNotFoundException("key store not found")
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) throws new ObjectNotFoundException("key store not found")
       grant(READ, keyEntry)
 
       interceptor.invoke(methodInvocation(checkArgOpReadWithKeyEntry, keyEntry)) must throwA[ObjectNotFoundException]
@@ -548,7 +548,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       keyLookupWillSucceed
       grant(READ, keyEntry)
       grant(READ, keystore)
-      val readAttributeFromKeyEntry = testInterfaceClass.getMethod("readAttributeFromKeyEntry", classOf[Long], classOf[String])
+      val readAttributeFromKeyEntry = testInterfaceClass.getMethod("readAttributeFromKeyEntry", classOf[Goid], classOf[String])
 
       testInterface.readAttributeFromKeyEntry(any, any) returns true
       interceptor.invoke(methodInvocation(readAttributeFromKeyEntry, keystoreId, keyAlias)) must throwA[PermissionDeniedException]
@@ -578,7 +578,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       grant(READ, keyEntry)
       val findAllKeyEntries = testInterfaceClass.getMethod("findAllKeyEntries")
 
-      val ret = util.Arrays.asList(keyEntry, keyEntry, makeEntry(4848, "blah"))
+      val ret = util.Arrays.asList(keyEntry, keyEntry, makeEntry(new Goid(0,4848), "blah"))
       testInterface.findAllKeyEntries() returns ret
       interceptor.invoke(methodInvocation(findAllKeyEntries)) must throwA[PermissionDeniedException]
 
@@ -617,7 +617,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
       keyLookupWillSucceed
       grant(READ, keystore)
       grant(READ, keyEntry)
-      val findKeyEntry = testInterfaceClass.getMethod("findKeyEntry", classOf[Long], classOf[String])
+      val findKeyEntry = testInterfaceClass.getMethod("findKeyEntry", classOf[Goid], classOf[String])
 
       testInterface.findKeyEntry(keystoreId, keyAlias) returns keyEntry
       interceptor.invoke(methodInvocation(findKeyEntry, keystoreId, keyAlias)) must_== keyEntry
@@ -629,7 +629,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     "pass return filter (single entity) with null result if permission is withheld for the returned entity itself" in new DefaultScope {
       keyLookupWillSucceed
       grant(READ, keystore)
-      val findKeyEntryFilter = testInterfaceClass.getMethod("findKeyEntryFilter", classOf[Long], classOf[String])
+      val findKeyEntryFilter = testInterfaceClass.getMethod("findKeyEntryFilter", classOf[Goid], classOf[String])
 
       testInterface.findKeyEntryFilter(keystoreId, keyAlias) returns keyEntry
       interceptor.invoke(methodInvocation(findKeyEntryFilter, keystoreId, keyAlias)) must_== null
@@ -641,7 +641,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
     "pass return filter (single entity) with null result if permission is withheld for the returned entity's keystore" in new DefaultScope {
       keyLookupWillSucceed
       grant(READ, keyEntry)
-      val findKeyEntryFilter = testInterfaceClass.getMethod("findKeyEntryFilter", classOf[Long], classOf[String])
+      val findKeyEntryFilter = testInterfaceClass.getMethod("findKeyEntryFilter", classOf[Goid], classOf[String])
 
       testInterface.findKeyEntryFilter(keystoreId, keyAlias) returns keyEntry
       interceptor.invoke(methodInvocation(findKeyEntryFilter, keystoreId, keyAlias)) must_== null
@@ -668,12 +668,12 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     // Test methods that may be used more than once
     val noPreChecksEmptyList = testInterfaceClass.getMethod("noPreChecksEmptyList")
-    val updateKeyEntry = testInterfaceClass.getMethod("updateKeyEntry", classOf[Long], classOf[String])
-    val createKeyEntry = testInterfaceClass.getMethod("createKeyEntry", classOf[Long], classOf[String])
+    val updateKeyEntry = testInterfaceClass.getMethod("updateKeyEntry", classOf[Goid], classOf[String])
+    val createKeyEntry = testInterfaceClass.getMethod("createKeyEntry", classOf[Goid], classOf[String])
     val isNonFatalPreCheckPassed = testInterfaceClass.getMethod("isNonFatalPreCheckPassed", classOf[Object])
-    val exportKey = testInterfaceClass.getMethod("exportKey", classOf[Long], classOf[String])
-    val checkArgOpCreateWithMetadata = testInterfaceClass.getMethod("checkArgOpCreateWithMetadata", classOf[Long], classOf[String], classOf[SsgKeyMetadata])
-    val checkArgOpUpdateWithMetadata = testInterfaceClass.getMethod("checkArgOpUpdateWithMetadata", classOf[Long], classOf[String], classOf[SsgKeyMetadata])
+    val exportKey = testInterfaceClass.getMethod("exportKey", classOf[Goid], classOf[String])
+    val checkArgOpCreateWithMetadata = testInterfaceClass.getMethod("checkArgOpCreateWithMetadata", classOf[Goid], classOf[String], classOf[SsgKeyMetadata])
+    val checkArgOpUpdateWithMetadata = testInterfaceClass.getMethod("checkArgOpUpdateWithMetadata", classOf[Goid], classOf[String], classOf[SsgKeyMetadata])
     val checkArgOpUpdateWithKeyEntry = testInterfaceClass.getMethod("checkArgOpUpdateWithKeyEntry", classOf[SsgKeyEntry])
     val checkArgOpCreateWithKeyEntry = testInterfaceClass.getMethod("checkArgOpCreateWithKeyEntry", classOf[SsgKeyEntry])
     val checkArgOpReadWithKeyEntry = testInterfaceClass.getMethod("checkArgOpReadWithKeyEntry", classOf[SsgKeyEntry])
@@ -685,30 +685,30 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     def methodInvocation(m: java.lang.reflect.Method, arguments: AnyRef*): MethodInvocation = new MyReflectiveMethodInvocation(null, testInterface, m, arguments.toArray, testInterfaceClass)
 
-    def makeEntry(keystoreOid: Long, keyAlias: String): SsgKeyEntry = {
+    def makeEntry(keystoreGoid: Goid, keyAlias: String): SsgKeyEntry = {
       val entry = mock[SsgKeyEntry]
       entry.getAlias returns keyAlias
-      entry.getKeystoreId returns keystoreOid
+      entry.getKeystoreId returns keystoreGoid
       entry
     }
 
-    def makeEntry(keystoreOid: Long, keyAlias: String, securityZone: SecurityZone): SsgKeyEntry = {
+    def makeEntry(keystoreGoid: Goid, keyAlias: String, securityZone: SecurityZone): SsgKeyEntry = {
       val entry = mock[SsgKeyEntry]
       entry.getAlias returns keyAlias
-      entry.getKeystoreId returns keystoreOid
+      entry.getKeystoreId returns keystoreGoid
       entry.getSecurityZone returns securityZone
       entry
     }
 
-    def makeKeyMetadata(keystoreOid: Long, keyAlias: String, securityZone: SecurityZone) : SsgKeyMetadata = {
+    def makeKeyMetadata(keystoreGoid: Goid, keyAlias: String, securityZone: SecurityZone) : SsgKeyMetadata = {
       val entry = mock[SsgKeyMetadata]
       entry.getAlias returns keyAlias
-      entry.getKeystoreOid returns keystoreId
+      entry.getKeystoreGoid returns keystoreId
       entry.getSecurityZone returns securityZone;
       entry
     }
 
-    val keystoreId = new java.lang.Long(82734)
+    val keystoreId = new Goid(0,82734)
     val keystore = mock[SsgKeyFinder]
 
     val keyAlias = "interceptor_test_key_alias"
@@ -728,7 +728,7 @@ class PrivateKeyRbacInterceptorTest extends SpecificationWithJUnit with Mockito 
 
     /** configure the finder mocks to do a successful lookup of our mock keystore and key entry */
     def keyLookupWillSucceed = {
-      ssgKeyStoreManager.findByPrimaryKey(new lang.Long(keystoreId)) returns keystore
+      ssgKeyStoreManager.findByPrimaryKey(keystoreId) returns keystore
       keystore.getCertificateChain(keyAlias) returns keyEntry
     }
 

@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -371,7 +372,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
                         _userNameTextField.getText(),
                         new String(_passwordField.getPassword()),
                         false,
-                        0,
+                        new Goid(0,0),
                         null,
                         _directoryTextField.getText(),
                         Integer.parseInt(_timeoutTextField.getText()) * 1000);

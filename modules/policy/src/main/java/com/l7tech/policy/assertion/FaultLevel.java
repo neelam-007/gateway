@@ -1,5 +1,8 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -58,13 +61,18 @@ public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariabl
 
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
-    public long getNonDefaultKeystoreId() {
+    public Goid getNonDefaultKeystoreId() {
         return data.getNonDefaultKeystoreId();
     }
 
     @Override
-    public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
+    public void setNonDefaultKeystoreId( final Goid nonDefaultKeystoreId ) {
         data.setNonDefaultKeystoreId( nonDefaultKeystoreId );
+    }
+
+    @Deprecated
+    public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
+        data.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultKeystoreId ));
     }
 
     @Override

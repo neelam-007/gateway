@@ -6,7 +6,6 @@ package com.l7tech.server.admin;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.GatewayConfiguration;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -15,6 +14,7 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -313,7 +313,7 @@ public class AdminLoginImpl
         if (connector == null)
             throw new AccessControlException("Admin request disallowed: Unable to determine which connector this request came in on");
 
-        Long keystoreId = connector.getKeystoreOid();
+        Goid keystoreId = connector.getKeystoreGoid();
         String keyAlias = connector.getKeyAlias();
         if (keystoreId == null || keyAlias == null)
             return getDefaultSslCertificate();

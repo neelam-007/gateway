@@ -146,7 +146,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public E2<ResourceNotFoundException,InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
                 try {
-                    final Pair<Long, String> keyId = getKeyId( selectorMap );
+                    final Pair<Goid, String> keyId = getKeyId( selectorMap );
                     final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
 
                     checkPermitted( OperationType.UPDATE, null, ssgKeyEntry );
@@ -182,7 +182,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public Either<ResourceNotFoundException, String> execute() throws ObjectModelException {
                 try {
-                    final Pair<Long, String> keyId = getKeyId( selectorMap );
+                    final Pair<Goid, String> keyId = getKeyId( selectorMap );
                     final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
 
                     checkPermitted( OperationType.DELETE, null, ssgKeyEntry );
@@ -341,14 +341,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     @ResourceMethod(name="CreateKey", resource=true, selectors=true)
     public PrivateKeyMO createPrivateKey( final Map<String,String> selectorMap,
                                           final PrivateKeyCreationContext resource ) throws InvalidResourceException, InvalidResourceSelectors {
-        final Pair<Long,String> keyId = getKeyId( selectorMap );
+        final Pair<Goid,String> keyId = getKeyId( selectorMap );
         return extract( transactional( new TransactionalCallback<Either<InvalidResourceException,PrivateKeyMO>>(){
             @Override
             public Either<InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
                 try {
                     checkPermittedForSomeEntity( OperationType.CREATE, EntityType.SSG_KEY_ENTRY );
 
-                    final long keystoreId = keyId.left;
+                    final Goid keystoreId = keyId.left;
                     final String alias = keyId.right;
 
                     final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
@@ -396,13 +396,13 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     @ResourceMethod(name="ImportKey", resource=true, selectors=true)
     public PrivateKeyMO importPrivateKey( final Map<String,String> selectorMap,
                                           final PrivateKeyImportContext resource ) throws InvalidResourceException, InvalidResourceSelectors {
-        final Pair<Long,String> keyId = getKeyId( selectorMap );
+        final Pair<Goid,String> keyId = getKeyId( selectorMap );
         return extract( transactional( new TransactionalCallback<Either<InvalidResourceException, PrivateKeyMO>>() {
             @Override
             public Either<InvalidResourceException, PrivateKeyMO> execute() throws ObjectModelException {
                 checkPermittedForSomeEntity( OperationType.CREATE, EntityType.SSG_KEY_ENTRY );
 
-                final long keystoreId = keyId.left;
+                final Goid keystoreId = keyId.left;
                 final String alias = keyId.right;
                 final byte[] pkcs12bytes = resource.getPkcs12Data();
                 final char[] pkcs12pass = resource.getPassword().toCharArray();
@@ -441,7 +441,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     @ResourceMethod(name="ExportKey", resource=true, selectors=true)
     public PrivateKeyExportResult exportPrivateKey( final Map<String,String> selectorMap,
                                                     final PrivateKeyExportContext resource ) throws ResourceNotFoundException {
-        final Pair<Long,String> keyId = getKeyId( selectorMap );
+        final Pair<Goid,String> keyId = getKeyId( selectorMap );
         return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException, PrivateKeyExportResult>>() {
             @Override
             public Either<ResourceNotFoundException, PrivateKeyExportResult> execute() throws ObjectModelException {
@@ -486,15 +486,15 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
      * @return The identifier pair
      * @throws E If the given identifier is not valid
      */
-    static <E extends Exception> Pair<Long,String>  toInternalId( final String identifier ,
+    static <E extends Exception> Pair<Goid,String>  toInternalId( final String identifier ,
                                                                   final Functions.NullaryVoidThrows<E> validationThrower ) throws E {
         return toInternalId(Collections.<String,String>emptyMap().put(IDENTITY_SELECTOR,identifier), validationThrower);
     }
 
-    static <E extends Exception> Pair<Long,String>  toInternalId( final Map<String,String> selectorMap ,
+    static <E extends Exception> Pair<Goid,String>  toInternalId( final Map<String,String> selectorMap ,
                                                                   final Functions.NullaryVoidThrows<E> validationThrower ) throws E {
         String identifier = selectorMap.get(NAME_SELECTOR);
-        long keyStoreId;
+        Goid keyStoreId;
         final String alias;
         if ( identifier == null ){
             identifier = selectorMap.get(IDENTITY_SELECTOR);
@@ -504,21 +504,21 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 validationThrower.call();
             }
             try {
-                keyStoreId = Long.parseLong(keystoreAndAlias[0]);
+                keyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreAndAlias[0]);
             } catch ( NumberFormatException nfe ) {
                 validationThrower.call();
-                keyStoreId = -1L;
+                keyStoreId = GoidEntity.DEFAULT_GOID;
             }
             alias = keystoreAndAlias[1];
         }else{
-            keyStoreId = -1L;
+            keyStoreId = GoidEntity.DEFAULT_GOID;
             alias = identifier;
         }
 
-        return new Pair<Long,String>( keyStoreId, alias );
+        return new Pair<Goid,String>( keyStoreId, alias );
     }
 
-    static String toExternalId( final long keyStoreId, final String alias ) {
+    static String toExternalId( final Goid keyStoreId, final String alias ) {
         return keyStoreId + ":" + alias;
     }
 
@@ -563,7 +563,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
     }
 
-    private Pair<Long,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {
+    private Pair<Goid,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {
         return toInternalId( selectorMap, SELECTOR_THROWER );
     }
 
@@ -573,7 +573,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public Either<ResourceNotFoundException,PrivateKeyMO> execute() throws ObjectModelException {
                 try {
-                    final Pair<Long,String> keyId = getKeyId( selectorMap );
+                    final Pair<Goid,String> keyId = getKeyId( selectorMap );
                     final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
 
                     checkPermitted( OperationType.READ, null, ssgKeyEntry );
@@ -592,7 +592,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         try {
             for ( final SsgKeyFinder ssgKeyFinder : ssgKeyStoreManager.findAll() ) {
                 for ( final String alias : ssgKeyFinder.getAliases() ) {
-                    headers.add( new SsgKeyHeader( toExternalId(ssgKeyFinder.getOid(), alias), ssgKeyFinder.getOid(), alias, alias ) );
+                    headers.add( new SsgKeyHeader( toExternalId(ssgKeyFinder.getGoid(), alias), ssgKeyFinder.getGoid(), alias, alias ) );
                 }
             }
         } catch ( KeyStoreException e ) {
@@ -609,7 +609,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         final PrivateKeyMO privateKey = ManagedObjectFactory.createPrivateKey();
 
         privateKey.setId( toExternalId( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() ) );
-        privateKey.setKeystoreId( Long.toString( ssgKeyEntry.getKeystoreId() ) );
+        privateKey.setKeystoreId( Goid.toString( ssgKeyEntry.getKeystoreId() ) );
         privateKey.setAlias( ssgKeyEntry.getAlias() );
         privateKey.setCertificateChain( buildCertificateChain( ssgKeyEntry ) );
         privateKey.setProperties( buildProperties( ssgKeyEntry, keyTypes ) );
@@ -617,7 +617,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return privateKey;
     }
 
-    private SsgKeyStore getSsgKeyStore( final long keystoreId ) throws ObjectModelException {
+    private SsgKeyStore getSsgKeyStore( final Goid keystoreId ) throws ObjectModelException {
         final SsgKeyFinder ssgKeyFinder;
         try {
             ssgKeyFinder = ssgKeyStoreManager.findByPrimaryKey( keystoreId );
@@ -631,14 +631,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return keystore;
     }
 
-    private SsgKeyEntry getSsgKeyEntry( final Pair<Long,String> keyId ) throws FindException, ResourceNotFoundException {
-        final long keyStoreId = keyId.left;
+    private SsgKeyEntry getSsgKeyEntry( final Pair<Goid,String> keyId ) throws FindException, ResourceNotFoundException {
+        final Goid keyStoreId = keyId.left;
         final String alias = keyId.right;
 
         SsgKeyEntry ssgKeyEntry = null;
         try {
-            if ( keyStoreId == -1L ) {
-                ssgKeyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( alias, -1L );
+            if ( Goid.isDefault(keyStoreId) ) {
+                ssgKeyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( alias, GoidEntity.DEFAULT_GOID );
             } else {
                 final SsgKeyFinder ssgKeyFinder = ssgKeyStoreManager.findByPrimaryKey( keyStoreId );
                 ssgKeyEntry = ssgKeyFinder.getCertificateChain( alias );
@@ -712,7 +712,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         };
     }
 
-    private String toClusterPropertyValue( final long keystoreId,
+    private String toClusterPropertyValue( final Goid keystoreId,
                                            final String alias ) {
         // currently this is the same as the external identifier format
         return toExternalId( keystoreId, alias );

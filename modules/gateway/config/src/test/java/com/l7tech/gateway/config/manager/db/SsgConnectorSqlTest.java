@@ -2,6 +2,7 @@ package com.l7tech.gateway.config.manager.db;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.SyspropUtil;
 import org.junit.AfterClass;
 import org.junit.Ignore;
@@ -52,7 +53,7 @@ public class SsgConnectorSqlTest {
         c.setEndpoints(Endpoint.asCommaList(EnumSet.of(Endpoint.MESSAGE_INPUT, Endpoint.ADMIN_APPLET)));
         c.setClientAuth(SsgConnector.CLIENT_AUTH_ALWAYS);
         c.setKeyAlias("mykeyalias");
-        c.setKeystoreOid(29382L);
+        c.setKeystoreGoid(new Goid(0,29382L));
         c.setScheme(SsgConnector.SCHEME_HTTP);
         c.setSecure(true);
         c.putProperty("My funky property 1", "my funky prop value 1");

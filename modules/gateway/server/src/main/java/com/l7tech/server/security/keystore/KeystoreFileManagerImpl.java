@@ -2,9 +2,10 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -13,12 +14,12 @@ import com.l7tech.util.ResourceUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
 import org.hibernate.Session;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +37,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class KeystoreFileManagerImpl
-        extends HibernateEntityManager<KeystoreFile, EntityHeader>
+        extends HibernateGoidEntityManager<KeystoreFile, EntityHeader>
         implements KeystoreFileManager, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(KeystoreFileManagerImpl.class.getName());
@@ -62,7 +63,7 @@ public class KeystoreFileManagerImpl
     }
 
     @Override
-    public KeystoreFile mutateKeystoreFile(final long id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException {
+    public KeystoreFile mutateKeystoreFile(final Goid id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException {
         try {
             return (KeystoreFile)getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
@@ -111,7 +112,7 @@ public class KeystoreFileManagerImpl
                 }
 
                 if (hsmKeystoreFile == null) throw new UpdateException("Could not find an SCA HSM keystore row in the database");
-                updatePassword(hsmKeystoreFile.getOidAsLong(), hsmPasswordDecrypted.toCharArray());
+                updatePassword(hsmKeystoreFile.getGoid(), hsmPasswordDecrypted.toCharArray());
                 if (hsmInitFile.exists()) {
                     if (!hsmInitFile.delete()) {
                         logger.warning("Delete failed for SCA HSM init file '"+hsmInitFile.getAbsolutePath()+"'.");
@@ -123,7 +124,7 @@ public class KeystoreFileManagerImpl
         }
     }
 
-    private void updatePassword(final long id, final char[] password) throws UpdateException {
+    private void updatePassword(final Goid id, final char[] password) throws UpdateException {
         //set the password in the properties for this KeystoreFile (encrypted with the db encrypter), so we always have it from now on
         try {
             final MasterPasswordManager dbEncrypter = (MasterPasswordManager) appContext.getBean("dbPasswordEncryption");

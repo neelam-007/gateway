@@ -6,6 +6,7 @@ package com.l7tech.gateway.common.transport.ftp;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.objectmodel.Goid;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -43,7 +44,7 @@ public interface FtpAdmin {
                         String userName,
                         String password,
                         boolean useClientCert,
-                        long clientCertKeystoreId,
+                        Goid clientCertKeystoreId,
                         String clientCertKeyAlias,
                         String directory,
                         int timeout) throws FtpTestException;

@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore.generic;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeyAccessFilter;
@@ -70,7 +71,7 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     public static final String PROP_RELOAD_AFTER_STORE = "com.l7tech.keystore.reloadAfterStore";
     public static final boolean DEFAULT_RELOAD_AFTER_STORE = false;
 
-    private final long oid;
+    private final Goid goid;
     private final SsgKeyStoreType type;
     private final String name;
     private final String keystoreType;
@@ -84,9 +85,9 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     private final boolean reloadAfterStore;
     private final AtomicReference<KeyStore> keystore = new AtomicReference<KeyStore>();
 
-    public GenericSsgKeyStore(long oid, SsgKeyStoreType type, String name, char[] systemKeystorePassword, KeyAccessFilter keyAccessFilter, SsgKeyMetadataManager metadataManager) throws KeyStoreException {
+    public GenericSsgKeyStore(Goid goid, SsgKeyStoreType type, String name, char[] systemKeystorePassword, KeyAccessFilter keyAccessFilter, SsgKeyMetadataManager metadataManager) throws KeyStoreException {
         super(keyAccessFilter, metadataManager);
-        this.oid = oid;
+        this.goid = goid;
         this.type = type;
         this.name = name;
         this.keystorePassword = getPassword(PROP_KEYSTORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD, systemKeystorePassword);
@@ -322,8 +323,8 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     }
 
     @Override
-    public long getOid() {
-        return oid;
+    public Goid getGoid() {
+        return goid;
     }
 
     @Override

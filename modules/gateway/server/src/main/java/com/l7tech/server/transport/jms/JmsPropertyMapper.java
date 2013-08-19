@@ -2,11 +2,15 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.HexUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -67,13 +71,13 @@ public class JmsPropertyMapper {
                     JmsConnection.VALUE_KEYSTORE_BYTES.equals(values[0]) ||
                     JmsConnection.VALUE_KEYSTORE_PASSWORD.equals(values[0])) {
                     try {
-                        long ssgKeystoreId = -1;
+                        Goid ssgKeystoreId = GoidEntity.DEFAULT_GOID;
                         String ssgKeyAlias = null;
                         if (values.length == 1) {
                             // version 3.7 format - no SSG keystore ID and key alias specified; defaults to the SSG SSL private key and cert
                         } else if (values.length == 3) {
                             // version 4.0 format - with tab-separated SSG keystore ID and key alias
-                            ssgKeystoreId = Long.parseLong((values[1]));
+                            ssgKeystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (values[1]));
                             ssgKeyAlias = values[2];
                         } else {
                             logger.log(Level.WARNING, "Unexpected format of substitutable property value. Expected format is \"" + values[0] + "<tab><Gateway kesytore ID><tab><Gateway key alias>\". Encountered: \"" + property.getValue() + "\"");
@@ -197,7 +201,7 @@ public class JmsPropertyMapper {
      * @return The newly populated KeyStoreInfo
      * @throws KeyStoreException If an error occurs
      */
-    private KeyStoreInfo buildKeystoreInfo(long ssgKeystoreId, String ssgKeyAlias, Map properties) throws KeyStoreException {
+    private KeyStoreInfo buildKeystoreInfo(Goid ssgKeystoreId, String ssgKeyAlias, Map properties) throws KeyStoreException {
         final String whichKey = ssgKeystoreId + "\t" + ssgKeyAlias;
         KeyStoreInfo keyStoreInfo = keyStoreInfos.get(whichKey);
         if (keyStoreInfo == null) {

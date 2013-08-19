@@ -208,7 +208,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         final KeystoreFileEntityHeader keystore = certHolder.getKeystore();
         String alias = certHolder.getAlias();
         try {
-            getTrustedCertAdmin().deleteKey(keystore.getOid(), alias);
+            getTrustedCertAdmin().deleteKey(keystore.getGoid(), alias);
         } catch (IOException e) {
             showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         } catch (CertificateException e) {
@@ -294,7 +294,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (csrBytes[0] == null)
             return;
 
-        final long keystoreId = subject.getKeyEntry().getKeystoreId();
+        final Goid keystoreId = subject.getKeyEntry().getKeystoreId();
         final String keyAlias = subject.getKeyEntry().getAlias();
         Functions.Nullary<Boolean> precheckingShortKeyFunc = new Functions.Nullary<Boolean>() {
             @Override
@@ -435,7 +435,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void doImport() {
         if (mutableKeystore == null)
             return;
-        final long mutableKeystoreId = mutableKeystore.getOid();
+        final Goid mutableKeystoreId = mutableKeystore.getGoid();
 
         final ImportPrivateKeyDialog importDialog = new ImportPrivateKeyDialog(TopComponents.getInstance().getTopParent());
         importDialog.pack();
@@ -461,7 +461,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
 
-    private SsgKeyEntry performImport(long keystoreId, String alias, SecurityZone zone) {
+    private SsgKeyEntry performImport(Goid keystoreId, String alias, SecurityZone zone) {
         byte[] ksbytes = null;
         String kstype = null;
         String ksalias = null;
@@ -649,7 +649,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         activeKeypairJob.setMinJobPollInterval(minPoll);
     }
 
-    private void setSelectedKeyEntry(long keystoreId, String newAlias) {
+    private void setSelectedKeyEntry(Goid keystoreId, String newAlias) {
         keyTable.setSelectedKeyEntry(keystoreId, newAlias);
     }
 
@@ -724,7 +724,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.isReadonly())
                     mutableKeystore = keystore;
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid(), true)) {
+                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getGoid(), true)) {
                     final KeyTableRow row = new KeyTableRow(keystore, entry, defaultAliasTracker.getSpecialKeyTypes(entry));
                     if (row.isMultiRoleKey())
                         hasAtLeastOneMultiRoleKey = true;
@@ -737,7 +737,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             enableOrDisableButtons();
 
             if (activeKeypairJob.getActiveKeypairJobAlias() != null && mutableKeystore != null) {
-                keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJob.getActiveKeypairJobAlias());
+                keyTable.setSelectedKeyEntry(mutableKeystore.getGoid(), activeKeypairJob.getActiveKeypairJobAlias());
                 activeKeypairJob.setActiveKeypairJobAlias(null);
             }
 
@@ -833,7 +833,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                                                       "Key Generation Failed",
                                                       JOptionPane.ERROR_MESSAGE);
                     } else if (result.result != null && mutableKeystore != null && activeKeypairJob.getActiveKeypairJobAlias() != null) {
-                        keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJob.getActiveKeypairJobAlias());
+                        keyTable.setSelectedKeyEntry(mutableKeystore.getGoid(), activeKeypairJob.getActiveKeypairJobAlias());
                         activeKeypairJob.setActiveKeypairJobAlias(null);
                     }
                     isActive = false;
@@ -1039,7 +1039,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             model.setData(rows);
         }
 
-        public void setSelectedKeyEntry(long keystoreId, String newAlias) {
+        public void setSelectedKeyEntry(Goid keystoreId, String newAlias) {
             int row = model.findRowIndex(keystoreId, newAlias);
             if (row < 0) {
                 getSelectionModel().clearSelection();
@@ -1201,11 +1201,11 @@ public class PrivateKeyManagerWindow extends JDialog {
              * @param newAlias   alias to search for.  must not be null
              * @return index of row with the specified keystore ID and alias, or -1 if not found.
              */
-            public int findRowIndex(long keystoreId, String newAlias) {
+            public int findRowIndex(Goid keystoreId, String newAlias) {
                 KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[rows.size()]);
                 for (int i = 0; i < rowsArray.length; i++) {
                     KeyTableRow row = rowsArray[i];
-                    if (row.getKeystore().getOid() == keystoreId && row.getAlias().equalsIgnoreCase(newAlias))
+                    if (Goid.equals(row.getKeystore().getGoid(), keystoreId) && row.getAlias().equalsIgnoreCase(newAlias))
                         return i;
                 }
                 return -1;

@@ -5,6 +5,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.swing.*;
 import java.awt.*;
@@ -56,7 +59,7 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             final String skid = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
             if (skid != null) {
                 final String alias = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
-                final Long keystoreId = Long.valueOf(skid);
+                final Goid keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, skid);
                 keystoreComboBox.select(keystoreId, alias);
             }
         }
@@ -73,10 +76,10 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             if (clientAuthCheckbox.isSelected()) {
                 properties.setProperty(JmsConnection.PROP_QUEUE_USE_CLIENT_AUTH, "true");
                 String keyAlias = keystoreComboBox.getSelectedKeyAlias();
-                long keyStoreId = keystoreComboBox.getSelectedKeystoreId();
-                if ( keyAlias != null && keyStoreId != -1 ) {
+                Goid keyStoreId = keystoreComboBox.getSelectedKeystoreId();
+                if ( keyAlias != null && !Goid.isDefault(keyStoreId) ) {
                     properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, keyAlias);
-                    properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(keyStoreId));
+                    properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Goid.toString(keyStoreId));
                 }
             } else {
                 properties.setProperty(JmsConnection.PROP_QUEUE_USE_CLIENT_AUTH, "false"); // Null is a special case

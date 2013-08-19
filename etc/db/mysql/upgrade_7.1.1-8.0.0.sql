@@ -66,7 +66,7 @@ delimiter ;
 -- ****** It will create a not very random goid prefix that is not a reserved prefix ****** --
 -- DROP FUNCTION IF EXISTS createUnreservedPoorRandomPrefix;
 -- CREATE FUNCTION createUnreservedPoorRandomPrefix()
--- RETURNS bigint DETERMINISTIC
+-- RETURNS bigint
 -- return ((floor(rand()*2147483647)+1) << 32) | floor(rand()*2147483648);
 
 --
@@ -228,21 +228,6 @@ ALTER TABLE client_cert DROP INDEX i_issuer_dn;
 CREATE INDEX i_issuer_dn ON client_cert (issuer_dn(255));
 
 --
--- Keystore private key metadata (security zones)
---
-CREATE TABLE keystore_key_metadata (
-  objectid bigint(20) NOT NULL,
-  version int(11) NOT NULL default 0,
-  keystore_file_oid bigint(20) NOT NULL,
-  alias varchar(255) NOT NULL,
-  security_zone_goid BINARY(16),
-  PRIMARY KEY (objectid),
-  UNIQUE KEY i_ks_alias (keystore_file_oid, alias),
-  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_oid) REFERENCES keystore_file (objectid) ON DELETE CASCADE,
-  CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
 -- Register upgrade task for adding Assertion Access to auto-created "Manage <Blah>" roles
 --
 INSERT INTO cluster_properties
@@ -340,6 +325,46 @@ ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@cluster_properties_prefix,entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
 
+--Keystore
+ALTER TABLE keystore_file ADD COLUMN objectid_backup BIGINT(20);
+update keystore_file set objectid_backup=objectid;
+ALTER TABLE keystore_file CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+update keystore_file set goid = toGoid(0,objectid_backup);
+ALTER TABLE keystore_file DROP COLUMN objectid_backup;
+
+--
+-- Keystore private key metadata (security zones)
+--
+CREATE TABLE keystore_key_metadata (
+  goid binary(16) NOT NULL,
+  version int(11) NOT NULL default 0,
+  keystore_file_goid binary(16) NOT NULL,
+  alias varchar(255) NOT NULL,
+  security_zone_goid BINARY(16),
+  PRIMARY KEY (goid),
+  UNIQUE KEY i_ks_alias (keystore_file_goid, alias),
+  CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_goid) REFERENCES keystore_file (goid) ON DELETE CASCADE,
+  CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+ALTER TABLE http_configuration ADD COLUMN tls_keystore_oid_backup BIGINT(20);
+UPDATE http_configuration SET tls_keystore_oid_backup=tls_keystore_oid;
+ALTER TABLE http_configuration CHANGE COLUMN tls_keystore_oid tls_keystore_goid BINARY(16) NOT NULL DEFAULT 0;
+UPDATE http_configuration SET tls_keystore_goid = toGoid(0,tls_keystore_oid_backup);
+ALTER TABLE http_configuration DROP COLUMN tls_keystore_oid_backup;
+
+ALTER TABLE uddi_registries ADD COLUMN keystore_oid_backup BIGINT(20);
+UPDATE uddi_registries SET keystore_oid_backup=keystore_oid;
+ALTER TABLE uddi_registries CHANGE COLUMN keystore_oid keystore_goid BINARY(16);
+UPDATE uddi_registries SET keystore_goid = toGoid(0,keystore_oid_backup);
+ALTER TABLE uddi_registries DROP COLUMN keystore_oid_backup;
+
+ALTER TABLE connector ADD COLUMN keystore_oid_backup BIGINT(20);
+UPDATE connector SET keystore_oid_backup=keystore_oid;
+ALTER TABLE connector CHANGE COLUMN keystore_oid keystore_goid BINARY(16);
+UPDATE connector SET keystore_goid = toGoid(0,keystore_oid_backup);
+ALTER TABLE connector DROP COLUMN keystore_oid_backup;
+
 -- SecurePassword
 call dropForeignKey('http_configuration','secure_password');
 call dropForeignKey('siteminder_configuration','secure_password');
@@ -415,7 +440,7 @@ ALTER TABLE email_listener_state CHANGE COLUMN objectid goid BINARY(16) NOT NULL
 SET @emailState_prefix=#RANDOM_LONG_NOT_RESERVED#;
 UPDATE email_listener_state SET goid = toGoid(@emailState_prefix,objectid_backup);
 ALTER TABLE email_listener_state DROP COLUMN objectid_backup;
-                
+
 update rbac_role set entity_goid = toGoid(@email_prefix,entity_oid) where entity_oid is not null and entity_type='EMAIL_LISTENER';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@email_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'EMAIL_LISTENER';
 
@@ -1662,6 +1687,7 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('secure_password', @secure_password_prefix),
       ('wssc_session', @wssc_session_prefix),
       ('counters', @counters_prefix),
+      ('keystore_file', 0),
       ('trusted_esm', @counters_prefix),
       ('trusted_esm_user', @counters_prefix);
 
