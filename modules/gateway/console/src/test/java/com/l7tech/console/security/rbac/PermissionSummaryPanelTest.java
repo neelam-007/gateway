@@ -5,6 +5,8 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.transport.jms.JmsAdmin;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -23,7 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PermissionSummaryPanelTest {
@@ -31,6 +33,8 @@ public class PermissionSummaryPanelTest {
     private final Folder TEST_FOLDER = new Folder("test", null);
     @Mock
     private FolderAdmin folderAdmin;
+    @Mock
+    private JmsAdmin jmsAdmin;
     private PermissionsConfig config;
     private Set<SecurityZone> selectedZones;
     private Set<FolderHeader> selectedFolders;
@@ -58,7 +62,7 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsNoScope() {
         config.setScopeType(null);
         operations.add(OperationType.READ);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         assertTrue(config.getGeneratedPermissions().iterator().next().getScope().isEmpty());
     }
@@ -68,7 +72,7 @@ public class PermissionSummaryPanelTest {
         config.setScopeType(null);
         operations.add(OperationType.READ);
         operations.add(OperationType.CREATE);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
             assertTrue(permission.getScope().isEmpty());
@@ -86,7 +90,7 @@ public class PermissionSummaryPanelTest {
         final SecurityZone zone2 = new SecurityZone();
         zone2.setName("ZoneB");
         selectedZones.add(zone2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(2, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -107,7 +111,7 @@ public class PermissionSummaryPanelTest {
         final SecurityZone zone2 = new SecurityZone();
         zone2.setName("ZoneB");
         selectedZones.add(zone2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(4, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -122,7 +126,7 @@ public class PermissionSummaryPanelTest {
         config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
         operations.add(OperationType.READ);
         selectedZones.add(SecurityZoneUtil.getNullZone());
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(1, config.getGeneratedPermissions().size());
         final Permission permission = config.getGeneratedPermissions().iterator().next();
@@ -142,7 +146,7 @@ public class PermissionSummaryPanelTest {
         folder2.setGoid(goid);
         selectedFolders.add(new FolderHeader(folder2));
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(2, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -163,7 +167,7 @@ public class PermissionSummaryPanelTest {
         folder2.setGoid(goid);
         selectedFolders.add(new FolderHeader(folder2));
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(4, config.getGeneratedPermissions().size());
         final Set<OperationType> foundOps = new HashSet<>();
@@ -189,7 +193,7 @@ public class PermissionSummaryPanelTest {
         selectedFolders.add(new FolderHeader(folder2));
         // should skip this folder
         when(folderAdmin.findByPrimaryKey(goid)).thenThrow(new FindException("mocking exception"));
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(1, config.getGeneratedPermissions().size());
         final Permission permission = config.getGeneratedPermissions().iterator().next();
@@ -211,7 +215,7 @@ public class PermissionSummaryPanelTest {
         folder2.setGoid(goid);
         selectedFolders.add(new FolderHeader(folder2));
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(8, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
@@ -253,7 +257,7 @@ public class PermissionSummaryPanelTest {
         folder2.setGoid(goid);
         selectedFolders.add(new FolderHeader(folder2));
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(10, config.getGeneratedPermissions().size());
         int ancestryPermissionCount = 0;
@@ -292,7 +296,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         attributes.add(new AttributePredicate(null, "name", "test"));
         attributes.add(new AttributePredicate(null, "id", "1"));
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predicateTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
         assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
@@ -305,7 +309,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.UPDATE);
         attributes.add(new AttributePredicate(null, "name", "test"));
         attributes.add(new AttributePredicate(null, "id", "1"));
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(2, config.getGeneratedPermissions().size());
         final Set<OperationType> foundOps = new HashSet<>();
@@ -326,7 +330,7 @@ public class PermissionSummaryPanelTest {
         selectedZones.add(new SecurityZone());
         attributes.add(new AttributePredicate(null, "name", "test"));
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(1, config.getGeneratedPermissions().size());
         final Permission permission = config.getGeneratedPermissions().iterator().next();
@@ -345,7 +349,7 @@ public class PermissionSummaryPanelTest {
         selectedZones.add(new SecurityZone());
         attributes.add(new AttributePredicate(null, "name", "test"));
         selectedFolders.add(new FolderHeader(TEST_FOLDER));
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(2, config.getGeneratedPermissions().size());
         final Set<OperationType> foundOps = new HashSet<>();
@@ -386,7 +390,7 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         selectedFolders.add(new FolderHeader(folder2));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(4, config.getGeneratedPermissions().size());
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -423,7 +427,7 @@ public class PermissionSummaryPanelTest {
         when(folderAdmin.findByPrimaryKey(goid)).thenReturn(folder2);
         selectedFolders.add(new FolderHeader(folder2));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
 
         assertEquals(8, config.getGeneratedPermissions().size());
         final Set<OperationType> foundOps = new HashSet<>();
@@ -447,7 +451,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.ASSERTION_ACCESS, AllAssertion.class.getName(), null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
         assertEquals(1, scope.size());
@@ -465,7 +469,7 @@ public class PermissionSummaryPanelTest {
         entities.add(new EntityHeader("1", EntityType.ASSERTION_ACCESS, AllAssertion.class.getName(), null));
         entities.add(new EntityHeader("2", EntityType.ASSERTION_ACCESS, Include.class.getName(), null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(4, config.getGeneratedPermissions().size());
         final Set<OperationType> foundOps = new HashSet<>();
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -486,7 +490,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions().iterator().next());
         assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
@@ -500,7 +504,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.FOLDER, "test", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
@@ -517,7 +521,7 @@ public class PermissionSummaryPanelTest {
         entities.add(new EntityHeader(new Goid(0, 1), EntityType.FOLDER, "test", null));
         entities.add(new EntityHeader(new Goid(0, 2), EntityType.FOLDER, "test2", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(6, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(new Integer(4), predTypes.get(ObjectIdentityPredicate.class));
@@ -531,7 +535,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.CLUSTER_PROPERTY, "test", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
         assertEquals(1, scope.size());
@@ -548,7 +552,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.SERVICE, "test", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
@@ -568,7 +572,7 @@ public class PermissionSummaryPanelTest {
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
         entities.add(new AliasHeader(alias));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
@@ -588,7 +592,7 @@ public class PermissionSummaryPanelTest {
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
         entities.add(new AliasHeader(alias));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
@@ -607,7 +611,7 @@ public class PermissionSummaryPanelTest {
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("test", null));
         entities.add(new AliasHeader(alias));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(3, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         // one identity predicate for alias itself and one for owning service
@@ -628,7 +632,7 @@ public class PermissionSummaryPanelTest {
         final PolicyAlias alias = new PolicyAlias(policy, new Folder("test", null));
         entities.add(new AliasHeader(alias));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<Class, Integer> predTypes = countPredicateTypes(config.getGeneratedPermissions());
         assertEquals(new Integer(2), predTypes.get(ObjectIdentityPredicate.class));
@@ -642,7 +646,7 @@ public class PermissionSummaryPanelTest {
         operations.add(OperationType.READ);
         entities.add(new EntityHeader("1", EntityType.SERVICE_TEMPLATE, "test", null));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
         assertEquals(1, scope.size());
@@ -661,7 +665,7 @@ public class PermissionSummaryPanelTest {
         final Goid identityGoid = new Goid(1, 2);
         entities.add(new IdentityHeader(providerGoid, identityGoid, EntityType.USER, "test", null, null, 0));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
         assertEquals(2, scope.size());
@@ -684,7 +688,7 @@ public class PermissionSummaryPanelTest {
         final Goid identityGoid = new Goid(1, 2);
         entities.add(new IdentityHeader(providerGoid, identityGoid, EntityType.GROUP, "test", null, null, 0));
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
         assertEquals(2, scope.size());
@@ -702,14 +706,14 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsEndpointWithConnection() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantJmsConnectionAccess(true);
+        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
         final Goid connectionGoid = new Goid(0, 1);
         header.setConnectionGoid(connectionGoid);
         entities.add(header);
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(2, config.getGeneratedPermissions().size());
         final Map<EntityType, Permission> permissionMap = new HashMap<>();
         for (final Permission permission : config.getGeneratedPermissions()) {
@@ -725,14 +729,14 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsEndpointWithoutConnection() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantJmsConnectionAccess(false);
+        config.setGrantAdditionalJmsAccess(false);
         operations.add(OperationType.READ);
         final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
         final Goid connectionGoid = new Goid(0, 1);
         header.setConnectionGoid(connectionGoid);
         entities.add(header);
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Permission permission = config.getGeneratedPermissions().iterator().next();
         assertEquals(EntityType.JMS_ENDPOINT, permission.getEntityType());
@@ -745,18 +749,95 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsEndpointWithNullConnectionGoid() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantJmsConnectionAccess(true);
+        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
         header.setConnectionGoid(null);
         entities.add(header);
 
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
         final Permission permission = config.getGeneratedPermissions().iterator().next();
         assertEquals(EntityType.JMS_ENDPOINT, permission.getEntityType());
         assertEquals(1, permission.getScope().size());
         assertEquals("1", ((ObjectIdentityPredicate) permission.getScope().iterator().next()).getTargetEntityId());
+    }
+
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsConnectionWithEndpoints() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_CONNECTION);
+        config.setGrantAdditionalJmsAccess(true);
+        operations.add(OperationType.READ);
+        final Goid connectionGoid = new Goid(0, 1);
+        entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
+        final JmsEndpoint endpoint1 = new JmsEndpoint();
+        endpoint1.setGoid(new Goid(1, 2));
+        final JmsEndpoint endpoint2 = new JmsEndpoint();
+        endpoint2.setGoid(new Goid(2, 3));
+        when(jmsAdmin.getEndpointsForConnection(connectionGoid)).thenReturn(new JmsEndpoint[]{endpoint1, endpoint2});
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(3, config.getGeneratedPermissions().size());
+        final Map<EntityType, Set<Permission>> permissionMap = new HashMap<>();
+        for (final Permission permission : config.getGeneratedPermissions()) {
+            assertEquals(1, permission.getScope().size());
+            if (!permissionMap.containsKey(permission.getEntityType())) {
+                permissionMap.put(permission.getEntityType(), new HashSet<Permission>());
+            }
+            permissionMap.get(permission.getEntityType()).add(permission);
+        }
+        assertEquals(1, permissionMap.get(EntityType.JMS_CONNECTION).size());
+        final Set<ScopePredicate> connectionScope = permissionMap.get(EntityType.JMS_CONNECTION).iterator().next().getScope();
+        assertEquals(1, connectionScope.size());
+        assertEquals(connectionGoid.toHexString(), ((ObjectIdentityPredicate) connectionScope.iterator().next()).getTargetEntityId());
+        final Set<Permission> endpointPermissions = permissionMap.get(EntityType.JMS_ENDPOINT);
+        assertEquals(2, endpointPermissions.size());
+        for (final Permission endpointPermission : endpointPermissions) {
+            assertEquals(1, endpointPermission.getScope().size());
+            assertTrue(endpointPermission.getScope().iterator().next() instanceof ObjectIdentityPredicate);
+        }
+    }
+
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsConnectionCannotFindEndpoints() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_CONNECTION);
+        config.setGrantAdditionalJmsAccess(true);
+        operations.add(OperationType.READ);
+        final Goid connectionGoid = new Goid(0, 1);
+        entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
+        final JmsEndpoint endpoint1 = new JmsEndpoint();
+        endpoint1.setGoid(new Goid(1, 2));
+        final JmsEndpoint endpoint2 = new JmsEndpoint();
+        endpoint2.setGoid(new Goid(2, 3));
+        when(jmsAdmin.getEndpointsForConnection(connectionGoid)).thenThrow(new FindException("mocking exception"));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        assertEquals(EntityType.JMS_CONNECTION, config.getGeneratedPermissions().iterator().next().getEntityType());
+    }
+
+    @BugId("SSG-6919")
+    @Test
+    public void generatePermissionsSpecificJmsConnectionWithoutEndpoints() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.JMS_CONNECTION);
+        config.setGrantAdditionalJmsAccess(false);
+        operations.add(OperationType.READ);
+        final Goid connectionGoid = new Goid(0, 1);
+        entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
+        final JmsEndpoint endpoint1 = new JmsEndpoint();
+        endpoint1.setGoid(new Goid(1, 2));
+        final JmsEndpoint endpoint2 = new JmsEndpoint();
+        endpoint2.setGoid(new Goid(2, 3));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        assertEquals(EntityType.JMS_CONNECTION, config.getGeneratedPermissions().iterator().next().getEntityType());
+        verify(jmsAdmin, never()).getEndpointsForConnection(connectionGoid);
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {

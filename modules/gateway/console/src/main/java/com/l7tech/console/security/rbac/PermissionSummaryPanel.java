@@ -5,9 +5,12 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.transport.jms.JmsAdmin;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -72,24 +75,24 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             } else if (config.getScopeType() == PermissionsConfig.ScopeType.SPECIFIC_OBJECTS) {
                 restrictScopeLabel.setText(SPECIFIC_OBJECTS_LABEL);
             }
-            generatePermissions(config, Registry.getDefault().getFolderAdmin());
+            generatePermissions(config, Registry.getDefault().getFolderAdmin(), Registry.getDefault().getJmsManager());
             permissionsPanel.configure(config.getGeneratedPermissions());
         } else {
             logger.log(Level.WARNING, "Cannot read settings because received invalid settings object: " + settings);
         }
     }
 
-    static void generatePermissions(@NotNull final PermissionsConfig config, @NotNull FolderAdmin folderAdmin) {
+    static void generatePermissions(@NotNull final PermissionsConfig config, @NotNull final FolderAdmin folderAdmin, @NotNull final JmsAdmin jmsAdmin) {
         // start fresh
         config.getGeneratedPermissions().clear();
         if (config.hasScope()) {
-            generateScopedPermissions(config, folderAdmin);
+            generateScopedPermissions(config, folderAdmin, jmsAdmin);
         } else {
             generateUnrestrictedPermissions(config);
         }
     }
 
-    private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
+    private static void generateScopedPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin, final JmsAdmin jmsAdmin) {
         final EntityType entityType = config.getType();
         switch (config.getScopeType()) {
             case CONDITIONAL:
@@ -186,7 +189,8 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         specificEntityPermission.getScope().addAll(scope);
                         config.getGeneratedPermissions().add(specificEntityPermission);
 
-                        if (entityType == EntityType.JMS_ENDPOINT && config.isGrantJmsConnectionAccess() && header instanceof JmsEndpointHeader) {
+                        if (entityType == EntityType.JMS_ENDPOINT && config.isGrantAdditionalJmsAccess() && header instanceof JmsEndpointHeader) {
+                            // grant additional access to the connections associated with the selected endpoint
                             final JmsEndpointHeader endpointHeader = (JmsEndpointHeader) header;
                             if (endpointHeader.getConnectionGoid() != null) {
                                 final Permission jmsConnectionPermission = new Permission(config.getRole(), op, EntityType.JMS_CONNECTION);
@@ -197,6 +201,24 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                                 config.getGeneratedPermissions().add(jmsConnectionPermission);
                             } else {
                                 logger.log(Level.WARNING, "Cannot add permission for jms connection because endpoint's jms connection goid is null.");
+                            }
+                        }
+
+                        if (entityType == EntityType.JMS_CONNECTION && config.isGrantAdditionalJmsAccess()) {
+                            // grant additional access to the endpoints associated with the selected connection
+                            try {
+                                final JmsEndpoint[] endpoints = jmsAdmin.getEndpointsForConnection(header.getGoid());
+                                if (endpoints != null) {
+                                    for (final JmsEndpoint endpoint : endpoints) {
+                                        final Permission jmsEndpointPermission = new Permission(config.getRole(), op, EntityType.JMS_ENDPOINT);
+                                        final ObjectIdentityPredicate jmsEndpointPredicate = new ObjectIdentityPredicate(jmsEndpointPermission, endpoint.getGoid().toHexString());
+                                        jmsEndpointPredicate.setHeader(new EntityHeader(endpoint.getGoid(), EntityType.JMS_ENDPOINT, endpoint.getName(), null));
+                                        jmsEndpointPermission.getScope().add(jmsEndpointPredicate);
+                                        config.getGeneratedPermissions().add(jmsEndpointPermission);
+                                    }
+                                }
+                            } catch (final FindException | PermissionDeniedException e) {
+                                logger.log(Level.WARNING, "Unable to retrieve jms endpoints for connection with goid " + header.getGoid() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             }
                         }
                     }
