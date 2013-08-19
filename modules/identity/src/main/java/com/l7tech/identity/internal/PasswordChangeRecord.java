@@ -1,11 +1,10 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.*;
-
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A bean that holds a particular password that was changed at a particular time.
@@ -17,7 +16,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="password_history")
-public class PasswordChangeRecord extends PersistentEntityImp {
+public class PasswordChangeRecord extends GoidEntityImp {
     private static final long serialVersionUID = 1988465921721711468L;
 
     private InternalUser internalUser;

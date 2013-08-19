@@ -604,11 +604,11 @@ create table message_id (
 );
 
 create table password_history (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     last_changed bigint,
     prev_password varchar(255) not null,
     internal_user_goid CHAR(16) FOR BIT DATA not null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table password_policy (
@@ -1082,7 +1082,7 @@ create table uddi_service_control_monitor_runtime (
 );
 
 create table wsdm_subscription (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     esm_service_goid CHAR(16) FOR BIT DATA not null,
     last_notification bigint,
     notification_policy_guid varchar(36),
@@ -1094,7 +1094,7 @@ create table wsdm_subscription (
     topic integer not null,
     uuid varchar(36) not null unique,
     version integer,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table wssc_session (

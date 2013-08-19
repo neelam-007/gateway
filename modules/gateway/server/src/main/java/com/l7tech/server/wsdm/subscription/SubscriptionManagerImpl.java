@@ -5,7 +5,7 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 /** @author alex */
 public class SubscriptionManagerImpl
-    extends HibernateEntityManager<Subscription, EntityHeader>
+    extends HibernateGoidEntityManager<Subscription, EntityHeader>
     implements SubscriptionManager
 {
     private static final Logger logger = Logger.getLogger(SubscriptionManagerImpl.class.getName());

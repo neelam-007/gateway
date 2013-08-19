@@ -216,11 +216,11 @@ CREATE TABLE logon_info (
 --
 DROP TABLE IF EXISTS password_history;
 CREATE TABLE password_history (
-  objectid bigint(20) NOT NULL,
+  goid binary(16) NOT NULL,
   internal_user_goid binary(16) NOT NULL,
   last_changed bigint(20) NOT NULL,
   prev_password varchar(256) NULL,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (goid),
   FOREIGN KEY (internal_user_goid) REFERENCES internal_user (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1875,7 +1875,7 @@ INSERT INTO sink_config (goid, version, name, description, type, enabled, severi
 
 DROP TABLE IF EXISTS wsdm_subscription;
 CREATE TABLE wsdm_subscription (
-  objectid bigint(20) NOT NULL,
+  goid BINARY(16) NOT NULL,
   version int(11) NOT NULL,
   uuid varchar(36) NOT NULL,
   callback_url varchar(255) NOT NULL,
@@ -1887,7 +1887,7 @@ CREATE TABLE wsdm_subscription (
   notification_policy_guid CHAR(36),
   last_notification bigint(20),
   owner_node_id varchar(36),
-  PRIMARY KEY  (objectid),
+  PRIMARY KEY  (goid),
   UNIQUE KEY uuid (uuid),
   FOREIGN KEY (notification_policy_guid) REFERENCES policy (guid)  
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

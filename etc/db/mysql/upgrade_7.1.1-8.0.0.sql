@@ -325,6 +325,25 @@ ALTER TABLE cluster_properties DROP COLUMN objectid_backup;
 update rbac_role set entity_goid = toGoid(@cluster_properties_prefix,entity_oid) where entity_oid is not null and entity_type='CLUSTER_PROPERTY';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@cluster_properties_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'CLUSTER_PROPERTY';
 
+-- Subscription
+ALTER TABLE wsdm_subscription ADD COLUMN objectid_backup BIGINT(20);
+update wsdm_subscription set objectid_backup=objectid;
+ALTER TABLE wsdm_subscription CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @wsdm_subscription_prefix=createUnreservedPoorRandomPrefix();
+set @wsdm_subscription_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update wsdm_subscription set goid = toGoid(@wsdm_subscription_prefix,objectid_backup);
+ALTER TABLE wsdm_subscription DROP COLUMN objectid_backup;
+
+-- Password History
+ALTER TABLE password_history ADD COLUMN objectid_backup BIGINT(20);
+update password_history set objectid_backup=objectid;
+ALTER TABLE password_history CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @password_history_prefix=createUnreservedPoorRandomPrefix();
+set @password_history_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update password_history set goid = toGoid(@password_history_prefix,objectid_backup);
+ALTER TABLE password_history DROP COLUMN objectid_backup;
+
+
 --Keystore
 ALTER TABLE keystore_file ADD COLUMN objectid_backup BIGINT(20);
 update keystore_file set objectid_backup=objectid;
@@ -1688,8 +1707,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('wssc_session', @wssc_session_prefix),
       ('counters', @counters_prefix),
       ('keystore_file', 0),
-      ('trusted_esm', @counters_prefix),
-      ('trusted_esm_user', @counters_prefix);
+      ('trusted_esm', @trusted_esm_prefix),
+      ('trusted_esm_user', @trusted_esm_user_prefix),
+      ('wsdm_subscription', @wsdm_subscription_prefix),
+      ('password_history', @password_history_prefix);
 
 
 --

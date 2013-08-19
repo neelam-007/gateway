@@ -297,6 +297,24 @@ ALTER TABLE siteminder_configuration ADD COLUMN password_goid CHAR(16) FOR BIT D
 update siteminder_configuration set password_goid = toGoid(cast(getVariable('secure_password_prefix') as bigint), password_oid);
 ALTER TABLE siteminder_configuration DROP COLUMN password_oid;
 
+-- Subscription
+ALTER TABLE wsdm_subscription ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('wsdm_subscription_prefix', cast(randomLongNotReserved() as char(21)));
+update wsdm_subscription set goid = toGoid(cast(getVariable('wsdm_subscription_prefix') as bigint), objectid);
+ALTER TABLE wsdm_subscription ALTER COLUMN goid NOT NULL;
+ALTER TABLE wsdm_subscription DROP PRIMARY KEY;
+ALTER TABLE wsdm_subscription DROP COLUMN objectid;
+ALTER TABLE wsdm_subscription ADD PRIMARY KEY (goid);
+
+ALTER TABLE password_history ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('password_history_prefix', cast(randomLongNotReserved() as char(21)));
+update password_history set goid = toGoid(cast(getVariable('password_history_prefix') as bigint), objectid);
+ALTER TABLE password_history ALTER COLUMN goid NOT NULL;
+ALTER TABLE password_history DROP PRIMARY KEY;
+ALTER TABLE password_history DROP COLUMN objectid;
+ALTER TABLE password_history ADD PRIMARY KEY (goid);
+
+
 -- Keystore
 ALTER TABLE keystore_file ADD COLUMN goid CHAR(16) FOR BIT DATA;
 update keystore_file set goid = toGoid(0, objectid);
@@ -1470,4 +1488,6 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('counters', cast(getVariable('counters_prefix') as bigint)),
       ('keystore_file', 0),
       ('trusted_esm', cast(getVariable('trusted_esm_prefix') as bigint)),
-      ('trusted_esm_user', cast(getVariable('trusted_esm_user_prefix') as bigint));
+      ('trusted_esm_user', cast(getVariable('trusted_esm_user_prefix') as bigint)),
+      ('wsdm_subscription', cast(getVariable('wsdm_subscription_prefix') as bigint)),
+      ('password_history_user', cast(getVariable('password_history_prefix') as bigint));
