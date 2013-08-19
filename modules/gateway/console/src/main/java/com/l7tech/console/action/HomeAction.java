@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.TopComponents;
 
 /**
@@ -26,7 +27,7 @@ public class HomeAction extends SecureAction {
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
     public String getDescription() {
         return "Go to the Policy Manager home page";
@@ -37,6 +38,12 @@ public class HomeAction extends SecureAction {
      */
     protected String iconResource() {
         return "com/l7tech/console/resources/server16.gif";
+    }
+
+    @Override
+    protected boolean isPrerequisiteFeatureSetLicensed(ConsoleLicenseManager lm) {
+        // this action does not require service:Admin to be licensed
+        return true;
     }
 
     /**
