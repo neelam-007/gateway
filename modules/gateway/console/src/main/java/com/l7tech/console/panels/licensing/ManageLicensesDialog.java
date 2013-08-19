@@ -50,7 +50,7 @@ import static com.l7tech.gui.util.TableUtil.*;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public class ManageLicensesDialog extends JDialog {
-    private static final String TITLE = "Manage Gateway Cluster Licenses";
+    private static final String TITLE = "Manage Gateway Licenses";
     private static final String INVALID_LICENSE = "INVALID LICENSE";
     private static final String EXPIRED = "EXPIRED";
     private static final String NA = "N/A";
