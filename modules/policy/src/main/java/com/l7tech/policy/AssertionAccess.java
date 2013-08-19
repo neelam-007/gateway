@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -32,6 +34,13 @@ public class AssertionAccess extends ZoneableNamedGoidEntityImp implements Seria
 
     public AssertionAccess(String assertionClass) {
         setName(assertionClass);
+    }
+
+    @Size(min = 1, max = 255)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
     }
 
     /**

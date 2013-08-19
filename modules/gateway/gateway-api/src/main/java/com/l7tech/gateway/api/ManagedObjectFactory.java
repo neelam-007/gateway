@@ -425,6 +425,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new AssertionSecurityZoneMO instance.
+     *
+     * @return The new instance
+     */
+    public static AssertionSecurityZoneMO createAssertionAccess() {
+        return new AssertionSecurityZoneMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
@@ -514,7 +523,8 @@ public class ManagedObjectFactory {
                 CustomKeyValueStoreMO.class,
                 ActiveConnectorMO.class,
                 SecurityZoneMO.class,
-                SiteMinderConfigurationMO.class
+                SiteMinderConfigurationMO.class,
+                AssertionSecurityZoneMO.class
         };
     }
 

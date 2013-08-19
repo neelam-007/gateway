@@ -183,6 +183,10 @@
                     <constructor-arg index="4" ref="securePasswordManager"/>
                     <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.AssertionSecurityZoneResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="assertionAccessManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
+                </bean>
             </list>
         </constructor-arg>
     </bean>
