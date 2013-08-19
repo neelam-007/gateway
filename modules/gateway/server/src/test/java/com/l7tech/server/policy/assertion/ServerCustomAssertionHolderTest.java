@@ -9,12 +9,14 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.message.*;
+import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormat;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.custom.CustomAssertionsPolicyTestBase;
 import com.l7tech.server.policy.custom.CustomAssertionsSampleContents;
+import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 
 import org.junit.Before;
@@ -958,5 +960,87 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
         assertEquals(AssertionStatus.NONE, status);
+    }
+
+    private static final String OUTPUT_MESSAGE_VARIABLE = "output1";
+    private static final String SAMPLE_TEXT_MSG = "sample output text/plain message.";
+
+    @BugId("SSG-7487")
+    @Test
+    public void testChangeContentTypeOfUninitializedMessage() throws Exception {
+        final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
+        customAssertionHolder.setCategories(Category.AUDIT_ALERT);
+        customAssertionHolder.setDescriptionText("Test Custom Assertion");
+        customAssertionHolder.setCustomAssertion(new TestLegacyCustomAssertion());
+
+        assertNotNull("CustomAssertion cannot be null.", customAssertionHolder.getCustomAssertion());
+        serviceInvocation.setCustomAssertion(customAssertionHolder.getCustomAssertion());
+
+        // build the context (creates empty request and response)
+        final PolicyEnforcementContext context = createPolicyContext();
+
+        doAnswer(new Answer<CustomAssertionStatus>() {
+            @Override
+            public CustomAssertionStatus answer(InvocationOnMock invocation) throws Throwable {
+                assertTrue("there is only one parameter for onRequest", invocation.getArguments().length == 1);
+
+                final Object param1 = invocation.getArguments()[0];
+                assertTrue("Param is CustomPolicyContext", param1 instanceof CustomPolicyContext);
+                final CustomPolicyContext policyContext = (CustomPolicyContext) param1;
+
+                // create the output context variable message
+                final CustomMessage output = policyContext.getMessage(OUTPUT_MESSAGE_VARIABLE);
+
+                // get the stream format
+                final CustomMessageFormat<InputStream> streamFormat = policyContext.getFormats().getStreamFormat();
+
+                // create the output stream
+                final InputStream stream = streamFormat.createBody(SAMPLE_TEXT_MSG);
+
+                // set content type to text plain, before calling overwrite since overwrite expects the message content to be set beforehand
+                output.setContentType(policyContext.createContentType("text/plain; charset=utf-8"));
+
+                // write to the output message
+                streamFormat.overwrite(output, stream);
+
+                return CustomAssertionStatus.NONE;
+            }
+        }).when(serviceInvocation).checkRequest(Matchers.<CustomPolicyContext>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onRequest should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onRequest(Matchers.<ServiceRequest>any());
+
+        //noinspection deprecation
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                fail("onResponse should not be called when checkRequest is implemented!");
+                return null;
+            }
+        }).when(serviceInvocation).onResponse(Matchers.<ServiceResponse>any());
+
+        final ServerAssertion serverAssertion = serverPolicyFactory.compilePolicy(customAssertionHolder, false);
+        assertTrue("Is instance of ServerCustomAssertionHolder", serverAssertion instanceof ServerCustomAssertionHolder);
+        final ServerCustomAssertionHolder serverCustomAssertionHolder = (ServerCustomAssertionHolder)serverAssertion;
+
+        AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        // get our output message
+        final Message outputMessage = context.getTargetMessage(new MessageTargetableSupport(OUTPUT_MESSAGE_VARIABLE));
+        assertNotNull(outputMessage);
+        assertNotNull(outputMessage.getMimeKnob());
+
+        // verify that the message content type is text/plain
+        assertTrue(outputMessage.getMimeKnob().getOuterContentType().matches("text", "plain"));
+
+        // verify the content
+        assertEquals(new String(IOUtils.slurpStream(outputMessage.getMimeKnob().getEntireMessageBodyAsInputStream())), SAMPLE_TEXT_MSG);
     }
 }

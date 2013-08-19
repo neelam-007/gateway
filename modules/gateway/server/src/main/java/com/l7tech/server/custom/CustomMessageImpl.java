@@ -54,7 +54,7 @@ public class CustomMessageImpl implements CustomMessage {
     static public ContentTypeHeader extractContentTypeHeader(@NotNull Message message) {
         ContentTypeHeader contentTypeHeader = null;
         MimeKnob mimeKnob;
-        if (message.isInitialized() && (mimeKnob = message.getKnob(MimeKnob.class)) != null) {
+        if ((mimeKnob = message.getKnob(MimeKnob.class)) != null) {
             contentTypeHeader = mimeKnob.getOuterContentType();
         }
         return (contentTypeHeader != null) ? contentTypeHeader : ContentTypeHeader.OCTET_STREAM_DEFAULT; // default to app octet;

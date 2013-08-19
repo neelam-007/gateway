@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.ext.message.knob.CustomMessageKnob;
 import com.l7tech.policy.assertion.ext.message.knob.NoSuchKnobException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
+import com.l7tech.test.BugId;
 import com.l7tech.util.IOUtils;
 
 import org.jetbrains.annotations.NotNull;
@@ -956,5 +957,29 @@ public class CustomMessageFormatTest {
         } catch (IllegalArgumentException e) {
             assertNull(e.getCause());
         }
+    }
+
+    private static final String SAMPLE_TEXT_MSG = "sample output text/plain message.";
+
+    @BugId("SSG-7487")
+    @Test
+    public void testChangeContentTypeOfUninitializedMessage() throws Exception {
+        // create uninitialized message
+        CustomMessage message = createMessage();
+
+        // get the stream format
+        final CustomMessageFormat<InputStream> streamFormat = formatFactory.getStreamFormat();
+
+        // create the output stream
+        final InputStream stream = streamFormat.createBody(SAMPLE_TEXT_MSG);
+
+        // set content type to text plain, before calling overwrite since overwrite expects the message content to be set beforehand
+        message.setContentType(new ContentTypeHeaderToCustomConverter(ContentTypeHeader.parseValue("text/plain; charset=utf-8")));
+
+        // write to the output message
+        streamFormat.overwrite(message, stream);
+
+        assertTrue(message.getContentType().matches("text", "plain"));
+        assertEquals(new String(IOUtils.slurpStream(message.getInputStream())), SAMPLE_TEXT_MSG);
     }
 }
