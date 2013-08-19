@@ -687,7 +687,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     private void removeRCPFromCaches(Goid oid) {
         revocationCheckerFactory.invalidateRevocationCheckPolicy( oid );
         revocationPoliciesByOid.remove( oid );
-        if (currentDefaultRevocationPolicy.getGoid() == oid) {
+        if (currentDefaultRevocationPolicy.getGoid().equals(oid)) {
             currentDefaultRevocationPolicy = null;
             logger.fine("Default revocation policy deleted; hopefully soon we'll be notified that a new one was set as default");
         }

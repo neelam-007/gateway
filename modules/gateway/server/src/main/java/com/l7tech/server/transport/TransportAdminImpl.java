@@ -85,7 +85,7 @@ public class TransportAdminImpl implements TransportAdmin {
     public Goid saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(connector.getGoid()))
             throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
-        if (connector.getGoid() == SsgConnector.DEFAULT_GOID) {
+        if (connector.getGoid().equals(SsgConnector.DEFAULT_GOID)) {
             return connectorManager.save(connector);
         } else {
             connectorManager.update(connector);
@@ -265,7 +265,7 @@ public class TransportAdminImpl implements TransportAdmin {
     public Goid saveFirewallRule(final SsgFirewallRule firewallRule) throws SaveException, UpdateException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(firewallRule.getGoid()))
             throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
-        if (firewallRule.getGoid() == SsgFirewallRule.DEFAULT_GOID) {
+        if (firewallRule.getGoid().equals(SsgFirewallRule.DEFAULT_GOID)) {
             return firewallRuleManager.save(firewallRule);
         } else {
             firewallRuleManager.update(firewallRule);

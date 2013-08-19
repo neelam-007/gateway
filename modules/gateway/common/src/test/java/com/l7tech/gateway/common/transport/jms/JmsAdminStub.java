@@ -78,7 +78,7 @@ public class JmsAdminStub implements JmsAdmin {
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
-            if (endpoint.getConnectionGoid() == connectionOid)
+            if (endpoint.getConnectionGoid().equals(connectionOid))
                 found.add(endpoint);
         }
         return (JmsEndpoint[]) found.toArray(new JmsEndpoint[0]);

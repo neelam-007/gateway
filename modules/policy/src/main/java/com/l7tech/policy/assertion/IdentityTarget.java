@@ -297,7 +297,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                          oldEntityHeader  instanceof IdentityHeader ) {
                         IdentityHeader newIdentityHeader = (IdentityHeader) newEntityHeader;
                         IdentityHeader oldIdentityHeader = (IdentityHeader) oldEntityHeader;
-                        if ( oldIdentityHeader.getProviderGoid() == identityProviderGoid &&
+                        if ( oldIdentityHeader.getProviderGoid().equals(identityProviderGoid) &&
                              oldIdentityHeader.getStrId() != null &&
                              oldIdentityHeader.getStrId().equalsIgnoreCase(identityId) ) {
                             this.identityProviderGoid = newIdentityHeader.getProviderGoid();

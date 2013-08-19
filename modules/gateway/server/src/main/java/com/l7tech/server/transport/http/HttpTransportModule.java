@@ -529,7 +529,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
-        if ( connector.getGoid() == SsgConnector.DEFAULT_GOID )
+        if ( connector.getGoid().equals(SsgConnector.DEFAULT_GOID ))
             throw new ListenerException("Connector must be persistent.");
         
         if (isCurrent(connector.getGoid(), connector.getVersion()))

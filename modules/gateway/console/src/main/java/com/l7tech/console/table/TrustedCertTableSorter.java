@@ -102,7 +102,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
 
             for (int i = 0; i < rawdata.size(); i++) {
                 tc = rawdata.get(i);
-                if (tc != null && tc.getGoid() == newtc.getGoid()) {
+                if (tc != null && tc.getGoid().equals(newtc.getGoid())) {
                     // replace the old one
                     rawdata.set(i, newtc);
                 }
