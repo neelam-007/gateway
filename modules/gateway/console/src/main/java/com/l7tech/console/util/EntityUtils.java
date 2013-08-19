@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -154,6 +155,13 @@ public class EntityUtils {
             final Set<ServiceTemplate> templates = Registry.getDefault().getServiceManager().findAllTemplates();
             for (final ServiceTemplate template : templates) {
                 entities.add(new EntityHeader(template.getName(), EntityType.SERVICE_TEMPLATE, template.getName(), null, 0));
+            }
+        } else if (type == EntityType.SERVICE_USAGE) {
+            final ServiceUsage[] serviceUsages = Registry.getDefault().getClusterStatusAdmin().getServiceUsage();
+            if (serviceUsages != null) {
+                for (final ServiceUsage serviceUsage : serviceUsages) {
+                    entities.add(new ServiceUsageHeader(serviceUsage.getServiceid(), serviceUsage.getNodeid()));
+                }
             }
         } else {
             entities = Registry.getDefault().getRbacAdmin().findEntities(type);

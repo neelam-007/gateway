@@ -706,7 +706,6 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsEndpointWithConnection() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
         final Goid connectionGoid = new Goid(0, 1);
@@ -726,30 +725,9 @@ public class PermissionSummaryPanelTest {
 
     @BugId("SSG-6919")
     @Test
-    public void generatePermissionsSpecificJmsEndpointWithoutConnection() throws Exception {
-        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
-        config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantAdditionalJmsAccess(false);
-        operations.add(OperationType.READ);
-        final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
-        final Goid connectionGoid = new Goid(0, 1);
-        header.setConnectionGoid(connectionGoid);
-        entities.add(header);
-
-        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
-        assertEquals(1, config.getGeneratedPermissions().size());
-        final Permission permission = config.getGeneratedPermissions().iterator().next();
-        assertEquals(EntityType.JMS_ENDPOINT, permission.getEntityType());
-        assertEquals(1, permission.getScope().size());
-        assertEquals("1", ((ObjectIdentityPredicate) permission.getScope().iterator().next()).getTargetEntityId());
-    }
-
-    @BugId("SSG-6919")
-    @Test
     public void generatePermissionsSpecificJmsEndpointWithNullConnectionGoid() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_ENDPOINT);
-        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final JmsEndpointHeader header = new JmsEndpointHeader("1", "test", null, 0, true);
         header.setConnectionGoid(null);
@@ -768,7 +746,6 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsConnectionWithEndpoints() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_CONNECTION);
-        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final Goid connectionGoid = new Goid(0, 1);
         entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
@@ -805,7 +782,6 @@ public class PermissionSummaryPanelTest {
     public void generatePermissionsSpecificJmsConnectionCannotFindEndpoints() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
         config.setType(EntityType.JMS_CONNECTION);
-        config.setGrantAdditionalJmsAccess(true);
         operations.add(OperationType.READ);
         final Goid connectionGoid = new Goid(0, 1);
         entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
@@ -820,24 +796,27 @@ public class PermissionSummaryPanelTest {
         assertEquals(EntityType.JMS_CONNECTION, config.getGeneratedPermissions().iterator().next().getEntityType());
     }
 
-    @BugId("SSG-6919")
+    @BugId("SSG-6976")
     @Test
-    public void generatePermissionsSpecificJmsConnectionWithoutEndpoints() throws Exception {
+    public void generatePermissionsSpecificServiceUsage() throws Exception {
         config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
-        config.setType(EntityType.JMS_CONNECTION);
-        config.setGrantAdditionalJmsAccess(false);
+        config.setType(EntityType.SERVICE_USAGE);
         operations.add(OperationType.READ);
-        final Goid connectionGoid = new Goid(0, 1);
-        entities.add(new EntityHeader(connectionGoid, EntityType.JMS_CONNECTION, "test", null));
-        final JmsEndpoint endpoint1 = new JmsEndpoint();
-        endpoint1.setGoid(new Goid(1, 2));
-        final JmsEndpoint endpoint2 = new JmsEndpoint();
-        endpoint2.setGoid(new Goid(2, 3));
+        final Goid serviceGoid = new Goid(0, 1);
+        entities.add(new ServiceUsageHeader(serviceGoid, "abc123"));
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(1, config.getGeneratedPermissions().size());
-        assertEquals(EntityType.JMS_CONNECTION, config.getGeneratedPermissions().iterator().next().getEntityType());
-        verify(jmsAdmin, never()).getEndpointsForConnection(connectionGoid);
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(2, scope.size());
+        final Map<String, String> attributes = new HashMap<>();
+        for (final ScopePredicate predicate : scope) {
+            final AttributePredicate attribute = (AttributePredicate) predicate;
+            attributes.put(attribute.getAttribute(), attribute.getValue());
+        }
+        assertEquals(serviceGoid.toHexString(), attributes.get("serviceid"));
+        assertEquals("abc123", attributes.get("nodeid"));
+
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {

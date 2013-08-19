@@ -92,8 +92,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JComboBox comboBox;
     private JPanel comboBoxPanel;
     private JLabel comboBoxLabel;
-    private JCheckBox jmsConnectionCheckBox;
-    private JCheckBox jmsEndpointCheckBox;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -183,10 +181,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 aliasOwnersCheckBox.setVisible(isAlias);
                                 aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
 
-                                // jms
-                                jmsConnectionCheckBox.setVisible(type == EntityType.JMS_ENDPOINT);
-                                jmsEndpointCheckBox.setVisible(type == EntityType.JMS_CONNECTION);
-
                                 // identities or trusted esm user
                                 String comboBoxDisplay = StringUtils.EMPTY;
                                 if (isIdentityType(type)) {
@@ -243,7 +237,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
                     config.setGrantReadSpecificFolderAncestry(config.getType().isFolderable() && specificAncestryCheckBox.isSelected());
                     config.setGrantReadAliasOwningEntities(Alias.class.isAssignableFrom(config.getType().getEntityClass()) && aliasOwnersCheckBox.isSelected());
-                    config.setGrantAdditionalJmsAccess(jmsConnectionCheckBox.isSelected() && (config.getType() == EntityType.JMS_ENDPOINT || config.getType() == EntityType.JMS_CONNECTION));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported scope type: " + config.getScopeType());

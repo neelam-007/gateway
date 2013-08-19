@@ -33,6 +33,8 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     private static final String ALL_OF_TYPE_LABEL = "All objects of the specified type";
     private static final String CONDITIONS_LABEL = "Objects matching a set of conditions";
     private static final String SPECIFIC_OBJECTS_LABEL = "A set of specific objects";
+    private static final String SERVICE_ID = "serviceid";
+    private static final String NODE_ID = "nodeid";
     private JPanel contentPanel;
     private JPanel optionsPanel;
     private RolePermissionsPanel permissionsPanel;
@@ -96,42 +98,16 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         final EntityType entityType = config.getType();
         switch (config.getScopeType()) {
             case CONDITIONAL:
-                final Map<Goid, Folder> retrievedFolders = new HashMap<>();
-                if (config.isGrantReadFolderAncestry()) {
-                    // provide read access for ancestry of each selected folder, the selected folder itself and its subfolders
-                    for (final FolderHeader folderHeader : config.getSelectedFolders()) {
-                        try {
-                            final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
-                            if (folder == null) {
-                                throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
-                            } else {
-                                retrievedFolders.put(folderHeader.getGoid(), folder);
-                                config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, folderHeader));
-
-                                final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-                                final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
-                                specificFolderPredicate.setHeader(folderHeader);
-                                readFolderPermission.getScope().add(specificFolderPredicate);
-                                config.getGeneratedPermissions().add(readFolderPermission);
-
-                                final Permission readSubfoldersPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
-                                readSubfoldersPermission.getScope().add(new FolderPredicate(readSubfoldersPermission, folder, true));
-                                config.getGeneratedPermissions().add(readSubfoldersPermission);
-                            }
-                        } catch (final FindException e) {
-                            logger.log(Level.WARNING, "Skipping ancestry permissions because unable to retrieve folder for header: " + folderHeader);
-                        }
-                    }
+                final Map<Goid, Folder> retrievedFolders = generateAdditionalFolderPermissions(config, folderAdmin);
+                if (config.getSelectedFolders().isEmpty()) {
+                    // no folders were selected
+                    config.getSelectedFolders().add(null);
+                }
+                if (config.getSelectedZones().isEmpty()) {
+                    // no zones were selected
+                    config.getSelectedZones().add(null);
                 }
                 for (final OperationType op : config.getOperations()) {
-                    if (config.getSelectedFolders().isEmpty()) {
-                        // no folders were selected
-                        config.getSelectedFolders().add(null);
-                    }
-                    if (config.getSelectedZones().isEmpty()) {
-                        // no zones were selected
-                        config.getSelectedZones().add(null);
-                    }
                     // permission created for each zone-folder pair
                     for (final SecurityZone zone : config.getSelectedZones()) {
                         for (final FolderHeader folderHeader : config.getSelectedFolders()) {
@@ -162,87 +138,135 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                             } catch (final FindException e) {
                                 logger.log(Level.WARNING, "Skipping permission because unable to retrieve folder for header: " + folderHeader);
                             }
-
                         }
                     }
-
                 }
                 break;
             case SPECIFIC_OBJECTS:
                 for (final EntityHeader header : config.getSelectedEntities()) {
                     for (final OperationType op : config.getOperations()) {
-                        final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
-                        final Set<ScopePredicate> scope = new HashSet<>();
-                        if (entityType == EntityType.ASSERTION_ACCESS ||
-                                entityType == EntityType.CLUSTER_PROPERTY ||
-                                entityType == EntityType.SERVICE_TEMPLATE) {
-                            scope.add(new AttributePredicate(specificEntityPermission, NAME, header.getName()));
-                        } else if ((entityType == EntityType.USER || entityType == EntityType.GROUP) && header instanceof IdentityHeader) {
-                            final IdentityHeader identityHeader = (IdentityHeader) header;
-                            scope.add(new AttributePredicate(specificEntityPermission, PROVIDER_ID, identityHeader.getProviderGoid().toHexString()));
-                            scope.add(new AttributePredicate(specificEntityPermission, ID, identityHeader.getStrId()));
-                        } else {
-                            final ObjectIdentityPredicate specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
-                            specificPredicate.setHeader(header);
-                            scope.add(specificPredicate);
-                        }
-                        specificEntityPermission.getScope().addAll(scope);
-                        config.getGeneratedPermissions().add(specificEntityPermission);
-
-                        if (entityType == EntityType.JMS_ENDPOINT && config.isGrantAdditionalJmsAccess() && header instanceof JmsEndpointHeader) {
-                            // grant additional access to the connections associated with the selected endpoint
-                            final JmsEndpointHeader endpointHeader = (JmsEndpointHeader) header;
-                            if (endpointHeader.getConnectionGoid() != null) {
-                                final Permission jmsConnectionPermission = new Permission(config.getRole(), op, EntityType.JMS_CONNECTION);
-                                final ObjectIdentityPredicate jmsConnectionPredicate = new ObjectIdentityPredicate(jmsConnectionPermission, endpointHeader.getConnectionGoid().toHexString());
-                                // header is just for display purposes
-                                jmsConnectionPredicate.setHeader(new EntityHeader(endpointHeader.getConnectionGoid().toHexString(), EntityType.JMS_CONNECTION, "connection for endpoint " + endpointHeader.getName(), null));
-                                jmsConnectionPermission.getScope().add(jmsConnectionPredicate);
-                                config.getGeneratedPermissions().add(jmsConnectionPermission);
-                            } else {
-                                logger.log(Level.WARNING, "Cannot add permission for jms connection because endpoint's jms connection goid is null.");
-                            }
-                        }
-
-                        if (entityType == EntityType.JMS_CONNECTION && config.isGrantAdditionalJmsAccess()) {
-                            // grant additional access to the endpoints associated with the selected connection
-                            try {
-                                final JmsEndpoint[] endpoints = jmsAdmin.getEndpointsForConnection(header.getGoid());
-                                if (endpoints != null) {
-                                    for (final JmsEndpoint endpoint : endpoints) {
-                                        final Permission jmsEndpointPermission = new Permission(config.getRole(), op, EntityType.JMS_ENDPOINT);
-                                        final ObjectIdentityPredicate jmsEndpointPredicate = new ObjectIdentityPredicate(jmsEndpointPermission, endpoint.getGoid().toHexString());
-                                        jmsEndpointPredicate.setHeader(new EntityHeader(endpoint.getGoid(), EntityType.JMS_ENDPOINT, endpoint.getName(), null));
-                                        jmsEndpointPermission.getScope().add(jmsEndpointPredicate);
-                                        config.getGeneratedPermissions().add(jmsEndpointPermission);
-                                    }
-                                }
-                            } catch (final FindException | PermissionDeniedException e) {
-                                logger.log(Level.WARNING, "Unable to retrieve jms endpoints for connection with goid " + header.getGoid() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            }
-                        }
+                        generateSpecificObjectPermission(config, entityType, header, op);
+                        generateJmsPermissions(config, jmsAdmin, entityType, header, op);
                     }
-                    if (entityType.isFolderable() && config.isGrantReadSpecificFolderAncestry()) {
-                        config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
-                    }
-                    if (header instanceof AliasHeader && config.isGrantReadAliasOwningEntities()) {
-                        final AliasHeader aliasHeader = (AliasHeader) header;
-                        if (aliasHeader.getAliasedEntityId() != null && aliasHeader.getAliasedEntityType() != null) {
-                            final Permission readOwningEntityPermission = new Permission(config.getRole(), OperationType.READ, aliasHeader.getAliasedEntityType());
-                            final String owningEntityId = aliasHeader.getAliasedEntityId().toHexString();
-                            final ObjectIdentityPredicate identityPredicate = new ObjectIdentityPredicate(readOwningEntityPermission, owningEntityId);
-                            identityPredicate.setHeader(new EntityHeader(owningEntityId, aliasHeader.getAliasedEntityType(), null, null));
-                            readOwningEntityPermission.getScope().add(identityPredicate);
-                            config.getGeneratedPermissions().add(readOwningEntityPermission);
-                        } else {
-                            logger.log(Level.WARNING, "Cannot add read owning entity permission for alias " + aliasHeader + " because either aliased entity id or type is null.");
-                        }
-                    }
+                    generateFolderAncestorPermission(config, entityType, header);
+                    generateAliasOwnerPermission(config, header);
                 }
                 break;
             default:
                 throw new IllegalArgumentException("Scope type not supported: " + config.getScopeType());
         }
+    }
+
+    private static Map<Goid, Folder> generateAdditionalFolderPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {
+        final Map<Goid, Folder> retrievedFolders = new HashMap<>();
+        if (config.isGrantReadFolderAncestry()) {
+            // provide read access for ancestry of each selected folder, the selected folder itself and its subfolders
+            for (final FolderHeader folderHeader : config.getSelectedFolders()) {
+                try {
+                    final Folder folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                    if (folder == null) {
+                        throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
+                    } else {
+                        retrievedFolders.put(folderHeader.getGoid(), folder);
+                        config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, folderHeader));
+
+                        final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
+                        specificFolderPredicate.setHeader(folderHeader);
+                        readFolderPermission.getScope().add(specificFolderPredicate);
+                        config.getGeneratedPermissions().add(readFolderPermission);
+
+                        final Permission readSubfoldersPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        readSubfoldersPermission.getScope().add(new FolderPredicate(readSubfoldersPermission, folder, true));
+                        config.getGeneratedPermissions().add(readSubfoldersPermission);
+                    }
+                } catch (final FindException e) {
+                    logger.log(Level.WARNING, "Skipping ancestry permissions because unable to retrieve folder for header: " + folderHeader);
+                }
+            }
+        }
+        return retrievedFolders;
+    }
+
+    private static void generateFolderAncestorPermission(final PermissionsConfig config, final EntityType entityType, final EntityHeader header) {
+        if (entityType.isFolderable() && config.isGrantReadSpecificFolderAncestry()) {
+            config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, header));
+        }
+    }
+
+    private static void generateAliasOwnerPermission(final PermissionsConfig config, final EntityHeader header) {
+        if (header instanceof AliasHeader && config.isGrantReadAliasOwningEntities()) {
+            final AliasHeader aliasHeader = (AliasHeader) header;
+            if (aliasHeader.getAliasedEntityId() != null && aliasHeader.getAliasedEntityType() != null) {
+                final Permission readOwningEntityPermission = new Permission(config.getRole(), OperationType.READ, aliasHeader.getAliasedEntityType());
+                final String owningEntityId = aliasHeader.getAliasedEntityId().toHexString();
+                final ObjectIdentityPredicate identityPredicate = new ObjectIdentityPredicate(readOwningEntityPermission, owningEntityId);
+                identityPredicate.setHeader(new EntityHeader(owningEntityId, aliasHeader.getAliasedEntityType(), null, null));
+                readOwningEntityPermission.getScope().add(identityPredicate);
+                config.getGeneratedPermissions().add(readOwningEntityPermission);
+            } else {
+                logger.log(Level.WARNING, "Cannot add read owning entity permission for alias " + aliasHeader + " because either aliased entity id or type is null.");
+            }
+        }
+    }
+
+    private static void generateJmsPermissions(final PermissionsConfig config, final JmsAdmin jmsAdmin, final EntityType entityType, final EntityHeader header, final OperationType op) {
+        if (entityType == EntityType.JMS_ENDPOINT && header instanceof JmsEndpointHeader) {
+            // grant additional access to the connections associated with the selected endpoint
+            final JmsEndpointHeader endpointHeader = (JmsEndpointHeader) header;
+            if (endpointHeader.getConnectionGoid() != null) {
+                final Permission jmsConnectionPermission = new Permission(config.getRole(), op, EntityType.JMS_CONNECTION);
+                final ObjectIdentityPredicate jmsConnectionPredicate = new ObjectIdentityPredicate(jmsConnectionPermission, endpointHeader.getConnectionGoid().toHexString());
+                // header is just for display purposes
+                jmsConnectionPredicate.setHeader(new EntityHeader(endpointHeader.getConnectionGoid().toHexString(), EntityType.JMS_CONNECTION, "connection for endpoint " + endpointHeader.getName(), null));
+                jmsConnectionPermission.getScope().add(jmsConnectionPredicate);
+                config.getGeneratedPermissions().add(jmsConnectionPermission);
+            } else {
+                logger.log(Level.WARNING, "Cannot add permission for jms connection because endpoint's jms connection goid is null.");
+            }
+        }
+
+        if (entityType == EntityType.JMS_CONNECTION) {
+            // grant additional access to the endpoints associated with the selected connection
+            try {
+                final JmsEndpoint[] endpoints = jmsAdmin.getEndpointsForConnection(header.getGoid());
+                if (endpoints != null) {
+                    for (final JmsEndpoint endpoint : endpoints) {
+                        final Permission jmsEndpointPermission = new Permission(config.getRole(), op, EntityType.JMS_ENDPOINT);
+                        final ObjectIdentityPredicate jmsEndpointPredicate = new ObjectIdentityPredicate(jmsEndpointPermission, endpoint.getGoid().toHexString());
+                        jmsEndpointPredicate.setHeader(new EntityHeader(endpoint.getGoid(), EntityType.JMS_ENDPOINT, endpoint.getName(), null));
+                        jmsEndpointPermission.getScope().add(jmsEndpointPredicate);
+                        config.getGeneratedPermissions().add(jmsEndpointPermission);
+                    }
+                }
+            } catch (final FindException | PermissionDeniedException e) {
+                logger.log(Level.WARNING, "Unable to retrieve jms endpoints for connection with goid " + header.getGoid() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+    }
+
+    private static void generateSpecificObjectPermission(final PermissionsConfig config, final EntityType entityType, final EntityHeader header, final OperationType op) {
+        final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
+        final Set<ScopePredicate> scope = new HashSet<>();
+        if (entityType == EntityType.ASSERTION_ACCESS ||
+                entityType == EntityType.CLUSTER_PROPERTY ||
+                entityType == EntityType.SERVICE_TEMPLATE) {
+            scope.add(new AttributePredicate(specificEntityPermission, NAME, header.getName()));
+        } else if ((entityType == EntityType.USER || entityType == EntityType.GROUP) && header instanceof IdentityHeader) {
+            final IdentityHeader identityHeader = (IdentityHeader) header;
+            scope.add(new AttributePredicate(specificEntityPermission, PROVIDER_ID, identityHeader.getProviderGoid().toHexString()));
+            scope.add(new AttributePredicate(specificEntityPermission, ID, identityHeader.getStrId()));
+        } else if (entityType == EntityType.SERVICE_USAGE && header instanceof ServiceUsageHeader) {
+            final ServiceUsageHeader usageHeader = (ServiceUsageHeader) header;
+            scope.add(new AttributePredicate(specificEntityPermission, SERVICE_ID, usageHeader.getServiceGoid().toHexString()));
+            scope.add(new AttributePredicate(specificEntityPermission, NODE_ID, usageHeader.getNodeId()));
+        } else {
+            final ObjectIdentityPredicate specificPredicate = new ObjectIdentityPredicate(specificEntityPermission, header.getStrId());
+            specificPredicate.setHeader(header);
+            scope.add(specificPredicate);
+        }
+        specificEntityPermission.getScope().addAll(scope);
+        config.getGeneratedPermissions().add(specificEntityPermission);
     }
 
     /**

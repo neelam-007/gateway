@@ -58,17 +58,13 @@ public class PermissionOptionsPanel extends WizardStepPanel {
                 if (SINGULAR_ENTITY_TYPES.contains(type) || type == EntityType.ASSERTION_ACCESS) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
-                } else if (type == EntityType.SERVICE_TEMPLATE) {
+                } else if (type == EntityType.SERVICE_TEMPLATE || type == EntityType.METRICS_BIN || type == EntityType.SERVICE_USAGE) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                     invalidOps.add(OperationType.UPDATE);
                 } else if (type == EntityType.TRUSTED_ESM || type == EntityType.TRUSTED_ESM_USER) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.UPDATE);
-                } else if (type == EntityType.METRICS_BIN) {
-                    invalidOps.add(OperationType.CREATE);
-                    invalidOps.add(OperationType.UPDATE);
-                    invalidOps.add(OperationType.DELETE);
                 }
                 ENTITY_TYPES.put(type, invalidOps);
             }

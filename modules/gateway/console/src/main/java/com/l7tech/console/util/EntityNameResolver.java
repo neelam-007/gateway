@@ -159,6 +159,17 @@ public class EntityNameResolver {
                         name = getNameForAssertion(assertion, header.getName());
                     }
                     break;
+                case SERVICE_USAGE:
+                    if (header instanceof ServiceUsageHeader) {
+                        final ServiceUsageHeader usageHeader = (ServiceUsageHeader) header;
+                        final PublishedService usageService = serviceAdmin.findServiceByID(usageHeader.getServiceGoid().toHexString());
+                        if (usageService != null) {
+                            name = getNameForEntity(usageService, includePath) + " on node " + usageHeader.getNodeId();
+                        } else {
+                            name = "unknown service on node " + usageHeader.getNodeId();
+                        }
+                    }
+                    break;
                 default:
                     logger.log(Level.WARNING, "Name on header is null or empty but entity type is not supported: " + header.getType());
                     name = StringUtils.EMPTY;

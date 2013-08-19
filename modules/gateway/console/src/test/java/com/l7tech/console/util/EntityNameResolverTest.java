@@ -197,6 +197,26 @@ public class EntityNameResolverTest {
     }
 
     @Test
+    public void getNameForServiceUsageHeader() throws Exception {
+        final Goid serviceGoid = new Goid(0, 1);
+        final ServiceUsageHeader usageHeader = new ServiceUsageHeader(serviceGoid, "abc123");
+        final PublishedService service = new PublishedService();
+        service.setName("test");
+        when(serviceAdmin.findServiceByID(serviceGoid.toHexString())).thenReturn(service);
+
+        assertEquals("test (/test) on node abc123", resolver.getNameForHeader(usageHeader, true));
+    }
+
+    @Test
+    public void getNameForServiceUsageHeaderServiceDoesNotExist() throws Exception {
+        final Goid serviceGoid = new Goid(0, 1);
+        final ServiceUsageHeader usageHeader = new ServiceUsageHeader(serviceGoid, "abc123");
+        when(serviceAdmin.findServiceByID(serviceGoid.toHexString())).thenReturn(null);
+
+        assertEquals("unknown service on node abc123", resolver.getNameForHeader(usageHeader, true));
+    }
+
+    @Test
     public void getPathNoFolder() throws Exception {
         assertEquals("/", resolver.getPath(new HasFolderStub(null)));
     }
