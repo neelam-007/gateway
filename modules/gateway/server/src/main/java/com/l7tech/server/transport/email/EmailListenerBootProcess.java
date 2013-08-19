@@ -243,7 +243,7 @@ public class EmailListenerBootProcess extends LifecycleBean{
             PollingEmailListener listener = null;
             for (Iterator<PollingEmailListener> i = activeListeners.iterator(); i.hasNext();) {
                 listener = i.next();
-                if (listener.getEmailListenerGoid() == deletedEmailListenerGoid ) {
+                if (listener.getEmailListenerGoid().equals(deletedEmailListenerGoid )){
                     listener.stop();
                     i.remove();
                 }
