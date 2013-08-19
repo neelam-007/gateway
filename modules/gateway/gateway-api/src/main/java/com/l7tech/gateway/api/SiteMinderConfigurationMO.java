@@ -2,16 +2,13 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
-import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
@@ -91,7 +88,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public boolean getIpCheck() {
-        return get(this.ipCheck);
+        return get(this.ipCheck, false);
     }
 
     public void setIpCheck(boolean ipCheck) {
@@ -99,7 +96,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public boolean getUpdateSsoToken() {
-        return get(this.updateSsoToken);
+        return get(this.updateSsoToken, false);
     }
 
     public void setUpdateSsoToken(boolean updateSsoToken) {
@@ -107,7 +104,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public boolean getEnabled() {
-        return get(this.enabled);
+        return get(this.enabled, false);
     }
 
     public void setEnabled(boolean enabled) {
@@ -115,7 +112,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public boolean getNonClusterFailover() {
-        return get(this.nonClusterFailover);
+        return get(this.nonClusterFailover, false);
     }
 
     public void setNonClusterFailover(boolean nonClusterFailover) {
@@ -123,7 +120,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public int getFipsMode() {
-        return get(this.fipsMode);
+        return get(this.fipsMode, 0);
     }
 
     public void setFipsMode(int fipsMode) {
@@ -131,7 +128,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     }
 
     public int getClusterThreshold() {
-        return get(this.clusterThreshold);
+        return get(this.clusterThreshold, 50);
     }
 
     public void setClusterThreshold(int clusterThreshold) {
@@ -177,7 +174,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.address = address;
     }
 
-    @XmlElement(name="Secret",required=true)
+    @XmlElement(name="Secret")
     protected AttributeExtensibleString getSecretValue() {
         return secret;
     }
@@ -222,7 +219,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.passwordId = passwordOid;
     }
 
-    @XmlElement(name="IpCheck")
+    @XmlElement(name="IpCheck",required=true)
     protected AttributeExtensibleBoolean getIpCheckValue() {
         return ipCheck;
     }
@@ -231,7 +228,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.ipCheck = ipCheck;
     }
 
-    @XmlElement(name="UpdateSsoToken")
+    @XmlElement(name="UpdateSsoToken",required=true)
     protected AttributeExtensibleBoolean getUpdateSsoTokenValue() {
         return updateSsoToken;
     }
@@ -249,7 +246,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.enabled = enabled;
     }
 
-    @XmlElement(name="NonClusterFailover")
+    @XmlElement(name="NonClusterFailover",required=true)
     protected AttributeExtensibleBoolean getNonClusterFailoverValue() {
         return nonClusterFailover;
     }
