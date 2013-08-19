@@ -528,31 +528,31 @@ public interface ClusterStatusAdmin {
     /**
      * Delete an ESM registration and all its user mappings.
      *
-     * @param trustedEsmOid the object ID of the TrustedEsm instance to delete.
+     * @param trustedEsmGoid the object ID of the TrustedEsm instance to delete.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(types=EntityType.TRUSTED_ESM, stereotype=MethodStereotype.DELETE_BY_ID, relevantArg=0)
-    void deleteTrustedEsmInstance(long trustedEsmOid) throws DeleteException, FindException;
+    void deleteTrustedEsmInstance(Goid trustedEsmGoid) throws DeleteException, FindException;
 
     /**
      * Delete an ESM user mapping.
      *
-     * @param trustedEsmUserOid the object ID of the TrustedEsmUser instance to delete.
+     * @param trustedEsmUserGoid the object ID of the TrustedEsmUser instance to delete.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(types=EntityType.TRUSTED_ESM_USER, stereotype=MethodStereotype.DELETE_BY_ID, relevantArg=0)
-    void deleteTrustedEsmUserMapping(long trustedEsmUserOid) throws DeleteException, FindException;
+    void deleteTrustedEsmUserMapping(Goid trustedEsmUserGoid) throws DeleteException, FindException;
 
     /**
      * Get all TrustedEsmUser instances belonging to the registered TrustedEsm instance with the specified
      * OID on this Gateway.
      *
-     * @param trustedEsmId object ID of a TrustedEsm instance.
+     * @param trustedEsmGoid object ID of a TrustedEsm instance.
      * @return a List of the user mappings for this TrustedEsm.  May be empty but never null.
      * @throws FindException if there is a problem finding the requested information.
      */
     @Secured(types=EntityType.TRUSTED_ESM_USER, stereotype=MethodStereotype.FIND_ENTITIES)
-    Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException;
+    Collection<TrustedEsmUser> getTrustedEsmUserMappings(Goid trustedEsmGoid) throws FindException;
 
 
     /**

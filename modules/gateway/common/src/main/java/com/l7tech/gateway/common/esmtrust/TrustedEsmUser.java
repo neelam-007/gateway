@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.esmtrust;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -14,7 +15,7 @@ import org.hibernate.annotations.Type;
 @Entity
 @Proxy(lazy=false)
 @Table(name="trusted_esm_user")
-public class TrustedEsmUser extends PersistentEntityImp {
+public class TrustedEsmUser extends GoidEntityImp {
     private transient TrustedEsm trustedEsm;
     private Goid providerGoid;
     private String ssgUserId;
@@ -29,7 +30,7 @@ public class TrustedEsmUser extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
-    @JoinColumn(name="trusted_esm_oid", nullable=false)
+    @JoinColumn(name="trusted_esm_goid", nullable=false)
     public TrustedEsm getTrustedEsm() {
         return trustedEsm;
     }

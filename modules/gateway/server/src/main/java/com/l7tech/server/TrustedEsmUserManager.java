@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsmUser}.
  */
-public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, EntityHeader> {
+public interface TrustedEsmUserManager extends GoidEntityManager<TrustedEsmUser, EntityHeader> {
     /** Exception thrown if an attempt is made to configure a user mapping which already exists. */
     public static class MappingAlreadyExistsException extends Exception {
         public MappingAlreadyExistsException() {
@@ -91,19 +91,19 @@ public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, Ent
     /**
      * Find all user mappings for the specified Trusted ESM, identified by its OID.
      *
-     * @param trustedEsmOid OID of the ESM instance whose mappings to find.
+     * @param trustedEsmGoid OID of the ESM instance whose mappings to find.
      * @return a Collection of all TrustedEsmUser instances associated with this TrustedEsm.  May be empty but never null.
      * @throws com.l7tech.objectmodel.FindException if DB problem
      */
-    Collection<TrustedEsmUser> findByEsmId(long trustedEsmOid) throws FindException;
+    Collection<TrustedEsmUser> findByEsmId(Goid trustedEsmGoid) throws FindException;
 
     /**
      * Find a user mapping for the specified Trusted ESM, identified by its OIDs.
      *
-     * @param trustedEsmOid OID of the ESM instance whose mapping to find.
+     * @param trustedEsmGoid OID of the ESM instance whose mapping to find.
      * @param esmUsername UUID of the ESM user whose mapping to find.
      * @return a Collection of all TrustedEsmUser instances associated with this TrustedEsm.  May be empty but never null.
      * @throws com.l7tech.objectmodel.FindException if DB problem
      */
-    TrustedEsmUser findByEsmIdAndUserUUID(long trustedEsmOid, String esmUsername) throws FindException;
+    TrustedEsmUser findByEsmIdAndUserUUID(Goid trustedEsmGoid, String esmUsername) throws FindException;
 }

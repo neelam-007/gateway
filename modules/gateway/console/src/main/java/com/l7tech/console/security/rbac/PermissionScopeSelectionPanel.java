@@ -559,7 +559,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
             final List<EntityHeader> userHeaders = new ArrayList<>();
             try {
-                final Collection<TrustedEsmUser> trustedEsmUsers = Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(selected.getOid());
+                final Collection<TrustedEsmUser> trustedEsmUsers = Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(selected.getGoid());
                 for (final TrustedEsmUser trustedEsmUser : trustedEsmUsers) {
                     userHeaders.add(new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, trustedEsmUser.getEsmUserId(), null));
                 }

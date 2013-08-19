@@ -1336,6 +1336,34 @@ ALTER TABLE counters DROP PRIMARY KEY;
 ALTER TABLE counters DROP COLUMN counterid;
 ALTER TABLE counters ADD PRIMARY KEY (goid);
 
+-- TRUSTED_ESM
+ALTER TABLE trusted_esm ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('trusted_esm_prefix', cast(randomLongNotReserved() as char(21)));
+update trusted_esm set goid = toGoid(cast(getVariable('trusted_esm_prefix') as bigint), objectid);
+ALTER TABLE trusted_esm ALTER COLUMN goid NOT NULL;
+ALTER TABLE trusted_esm DROP COLUMN objectid;
+ALTER TABLE trusted_esm ADD PRIMARY KEY (goid);
+
+ALTER TABLE trusted_esm_user ADD COLUMN trusted_esm_oid_backup bigint;
+update trusted_esm_user set trusted_esm_oid_backup = trusted_esm_oid;
+ALTER TABLE trusted_esm_user DROP COLUMN trusted_esm_oid;
+ALTER TABLE trusted_esm_user ADD COLUMN trusted_esm_goid CHAR(16) FOR BIT DATA;
+update trusted_esm_user set trusted_esm_goid = toGoid(cast(getVariable('trusted_esm_prefix') as bigint), trusted_esm_oid_backup);
+update trusted_esm_user set trusted_esm_goid = toGoid(0, trusted_esm_oid_backup) where trusted_esm_oid_backup < 0;
+ALTER TABLE trusted_esm_user DROP COLUMN trusted_esm_oid_backup;
+ALTER TABLE trusted_esm_user ALTER COLUMN trusted_esm_goid NOT NULL;
+
+-- TRUSTED_ESM_USER
+ALTER TABLE trusted_esm_user ADD COLUMN goid CHAR(16) FOR BIT DATA;
+call setVariable('trusted_esm_user_prefix', cast(randomLongNotReserved() as char(21)));
+update trusted_esm_user set goid = toGoid(cast(getVariable('trusted_esm_user_prefix') as bigint), objectid);
+ALTER TABLE trusted_esm_user ALTER COLUMN goid NOT NULL;
+ALTER TABLE trusted_esm_user DROP PRIMARY KEY;
+ALTER TABLE trusted_esm_user DROP COLUMN objectid;
+ALTER TABLE trusted_esm_user ADD PRIMARY KEY (goid);
+
+ALTER TABLE trusted_esm_user add constraint FKC48AF4D34548A1A6 foreign key (trusted_esm_goid) references trusted_esm on delete cascade;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1418,4 +1446,6 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('resource_entry', cast(getVariable('resource_entry_prefix') as bigint)),
       ('secure_password', cast(getVariable('secure_password_prefix') as bigint)),
       ('wssc_session', cast(getVariable('wssc_session_prefix') as bigint)),
-      ('counters', cast(getVariable('counters_prefix') as bigint));
+      ('counters', cast(getVariable('counters_prefix') as bigint)),
+      ('trusted_esm', cast(getVariable('trusted_esm_prefix') as bigint)),
+      ('trusted_esm_user', cast(getVariable('trusted_esm_user_prefix') as bigint));

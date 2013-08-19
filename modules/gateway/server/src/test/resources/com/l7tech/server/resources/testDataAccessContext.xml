@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    The Spring Hibernate configuration. References Hibernate mappings, defines transaction managers
+    persistence interceptors, and transactional behaviour.
+-->
+<!--suppress SpringModelInspection -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+
+
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
+    <tx:annotation-driven order="20000"/>
+
+    <!--
+    Hibernate / C3P0 Properties location
+    -->
+    <bean id="hibernateProperties"
+          class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
+          depends-on="systemProperties">
+        <constructor-arg ref="propertiesDecryptor"/>
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath:com/l7tech/server/resources/database.properties</value>
+                <value>classpath:com/l7tech/server/resources/c3p0.properties</value>
+                <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
+                <value>classpath:hibernate.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}local.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Configures data source based on hibernateProperties -->
+    <bean class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+        <property name="ignoreInvalidKeys" value="true"/>
+        <property name="properties" value="#{ hibernateProperties.?[key.startsWith('c3p0')] }"/>
+    </bean>
+
+    <!--
+      Allow use of properties for isolation level and autocommit
+    -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="configureConnectionIsolation"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.util.StandardConnectionCustomizer.setTransactionIsolation"/>
+        <property name="arguments" value="${hibernate.connection.isolation}"/>
+    </bean>
+    <bean id="configureConnectionAutoCommit"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.util.StandardConnectionCustomizer.setAutoCommit"/>
+        <property name="arguments" value="${hibernate.connection.autocommit}"/>
+    </bean>
+
+    <!--
+    Default Hibernate Session Manager
+    -->
+    <bean id="sessionFactory" class="com.l7tech.server.util.ConfiguredSessionFactoryBean">
+        <constructor-arg index="0">
+            <map>
+                <entry key="layer7-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredHiLoGenerator"/>
+                <entry key="layer7-goid-generator" value="com.l7tech.server.util.ConfiguredSessionFactoryBean$ConfiguredGOIDGenerator"/>
+            </map>
+        </constructor-arg>
+        <property name="mappingResources">
+            <list>
+                <value>com/l7tech/server/resources/SSG.hbm.xml</value>
+                <value>com/l7tech/server/resources/audit.hbm.xml</value>
+            </list>
+        </property>
+        <property name="annotatedClasses">
+            <list>
+                <!-- Transports -->
+                <value>com.l7tech.gateway.common.transport.email.EmailListener</value>
+                <value>com.l7tech.gateway.common.transport.email.EmailListenerState</value>
+                <value>com.l7tech.gateway.common.transport.SsgActiveConnector</value>
+                <value>com.l7tech.gateway.common.transport.SsgConnector</value>
+                <value>com.l7tech.gateway.common.transport.jms.JmsConnection</value>
+                <value>com.l7tech.gateway.common.transport.jms.JmsEndpoint</value>
+
+                <!-- Identity Provider Entities -->
+                <value>com.l7tech.identity.IdentityProviderConfig</value>
+                <value>com.l7tech.identity.internal.InternalGroup</value>
+                <value>com.l7tech.identity.internal.InternalUser</value>
+                <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
+                <value>com.l7tech.identity.internal.InternalGroupMembership</value>
+                <value>com.l7tech.identity.ldap.LdapIdentityProviderConfig</value>
+                <value>com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig</value>
+                <value>com.l7tech.identity.fed.FederatedIdentityProviderConfig</value>
+                <value>com.l7tech.identity.fed.FederatedUser</value>
+                <value>com.l7tech.identity.fed.FederatedGroup</value>
+                <value>com.l7tech.identity.fed.FederatedGroupMembership</value>
+                <value>com.l7tech.identity.fed.VirtualGroup</value>
+
+                <!-- WSDM Entities -->
+                <value>com.l7tech.server.wsdm.subscription.Subscription</value>
+
+                <!-- RBAC Entities -->
+                <value>com.l7tech.gateway.common.security.rbac.Role</value>
+                <value>com.l7tech.gateway.common.security.rbac.RoleAssignment</value>
+                <value>com.l7tech.gateway.common.security.rbac.Permission</value>
+                <value>com.l7tech.gateway.common.security.rbac.ScopePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.AttributePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.FolderPredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.SecurityZonePredicate</value>
+                <value>com.l7tech.objectmodel.SecurityZone</value>
+                <value>com.l7tech.policy.AssertionAccess</value>
+
+                <!-- Customer Mapping -->
+                <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
+                <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
+
+                <!-- JDBC Connection -->
+                <value>com.l7tech.gateway.common.jdbc.JdbcConnection</value>
+
+                <!-- SiteMinder Configuration -->
+                <value>com.l7tech.gateway.common.siteminder.SiteMinderConfiguration</value>
+
+                <!-- Password Policy -->
+                <value>com.l7tech.identity.IdentityProviderPasswordPolicy</value>
+
+                <!-- General -->
+                <value>com.l7tech.gateway.common.cluster.ClusterNodeInfo</value>
+                <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
+                <value>com.l7tech.gateway.common.log.SinkConfiguration</value>
+                <value>com.l7tech.gateway.common.resources.HttpConfiguration</value>
+                <value>com.l7tech.gateway.common.resources.ResourceEntry</value>
+                <value>com.l7tech.gateway.common.transport.ResolutionConfiguration</value>
+                <value>com.l7tech.gateway.common.security.password.SecurePassword</value>
+                <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
+                <value>com.l7tech.identity.cert.CertEntryRow</value>
+                <value>com.l7tech.identity.LogonInfo</value>
+                <value>com.l7tech.security.cert.TrustedCert</value>
+                <value>com.l7tech.server.secureconversation.StoredSecureConversationSession</value>
+                <value>com.l7tech.server.security.keystore.KeystoreFile</value>
+                <value>com.l7tech.gateway.common.security.keystore.SsgKeyMetadata</value>
+                <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
+                <value>com.l7tech.policy.GenericEntity</value>
+
+                <!-- License Document Entity -->
+                <value>com.l7tech.gateway.common.licensing.LicenseDocument</value>
+
+                <!-- Encapsulated Assertions -->
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig</value>
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor</value>
+                <value>com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor</value>
+
+                <!-- UDDI -->
+                <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIProxiedService</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIPublishStatus</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIServiceControl</value>
+                <value>com.l7tech.server.uddi.UDDIRegistrySubscription</value>
+                <value>com.l7tech.server.uddi.UDDIBusinessServiceStatus</value>
+                <value>com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime</value>
+
+                <!-- Policy Assertion Related Entities -->
+                <value>com.l7tech.server.sla.CounterRecord</value>
+
+                <!-- EMS Support -->
+                <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>
+                <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
+
+                <!-- Firewall Rules Entity -->
+                <value>com.l7tech.gateway.common.transport.firewall.SsgFirewallRule</value>
+
+                <!-- Custom Key Value Store -->
+                <value>com.l7tech.policy.CustomKeyValueStore</value>
+            </list>
+        </property>
+        <property name="dataSource" ref="hibernateDataSource"/>
+        <property name="hibernateProperties" ref="hibernateProperties"/>
+        <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
+    </bean>
+
+    <!--
+    Default Hibernate Transaction Manager
+    -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- The audit events hibernate interceptor -->
+    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
+
+    <!-- Override updateSchema with any schema updates that need to be performed -->
+    <bean id="updateSchema" class="com.l7tech.server.util.NoOpSchemaUpdater"/>
+
+    <!-- -->
+    <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
+        <constructor-arg ref="masterPasswordManager"/>
+        <property name="passwordProperties">
+            <list>
+                <value>node.cluster.pass</value>
+                <value>node.db.config.main.pass</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
+        <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
+        <constructor-arg>
+            <bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="masterPasswordManager" class="com.l7tech.util.MasterPasswordManager" depends-on="systemProperties">
+        <constructor-arg>
+            <bean class="com.l7tech.util.DefaultMasterPasswordFinder">
+                <constructor-arg value="file:${com.l7tech.server.configDirectory}${file.separator}omp.dat"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+</beans>

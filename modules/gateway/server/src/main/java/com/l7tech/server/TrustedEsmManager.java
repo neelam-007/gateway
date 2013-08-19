@@ -2,10 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
@@ -14,7 +11,7 @@ import java.security.cert.X509Certificate;
 /**
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
  */
-public interface TrustedEsmManager extends EntityManager<TrustedEsm, EntityHeader> {
+public interface TrustedEsmManager extends GoidEntityManager<TrustedEsm, EntityHeader> {
 
     /**
      * Find TrustedEms by ID.

@@ -289,18 +289,18 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public void deleteTrustedEsmInstance(long trustedEsmOid) {
+    public void deleteTrustedEsmInstance(Goid trustedEsmGoid) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteTrustedEsmUserMapping(long trustedEsmUserOid) {
+    public void deleteTrustedEsmUserMapping(Goid trustedEsmUserGoid) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
+    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(Goid trustedEsmGoid) throws FindException {
         return Collections.emptyList();
     }
 

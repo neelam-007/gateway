@@ -497,18 +497,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public void deleteTrustedEsmInstance(long trustedEsmOid) throws DeleteException, FindException {
-        trustedEsmManager.delete(trustedEsmOid);
+    public void deleteTrustedEsmInstance(Goid trustedEsmGoid) throws DeleteException, FindException {
+        trustedEsmManager.delete(trustedEsmGoid);
     }
 
     @Override
-    public void deleteTrustedEsmUserMapping(long trustedEsmUserOid) throws DeleteException, FindException {
-        trustedEsmUserManager.delete(trustedEsmUserOid);
+    public void deleteTrustedEsmUserMapping(Goid trustedEsmUserGoid) throws DeleteException, FindException {
+        trustedEsmUserManager.delete(trustedEsmUserGoid);
     }
 
     @Override
-    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
-        return trustedEsmUserManager.findByEsmId(trustedEsmId);
+    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(Goid trustedEsmGoid) throws FindException {
+        return trustedEsmUserManager.findByEsmId(trustedEsmGoid);
     }
 
     @Override

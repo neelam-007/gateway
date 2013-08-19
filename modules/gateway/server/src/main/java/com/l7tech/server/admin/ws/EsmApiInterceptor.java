@@ -150,7 +150,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
             }
 
             if ( esmUserId != null ) {
-                TrustedEsmUser emsUser = trustedEmsUserManager.findByEsmIdAndUserUUID( esm.getOid(), esmUserId );
+                TrustedEsmUser emsUser = trustedEmsUserManager.findByEsmIdAndUserUUID( esm.getGoid(), esmUserId );
                 if ( emsUser == null ) {
                     throw new SoapFault("Access Denied", SoapFault.FAULT_CODE_CLIENT);
                 }

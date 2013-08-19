@@ -934,22 +934,22 @@ create table trusted_cert (
 );
 
 create table trusted_esm (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     name varchar(128) not null,
     version integer,
     trusted_cert_goid CHAR(16) FOR BIT DATA not null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table trusted_esm_user (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     esm_user_display_name varchar(128),
     esm_user_id varchar(128),
     provider_goid  CHAR(16) FOR BIT DATA not null,
     user_id varchar(128),
     version integer,
-    trusted_esm_oid bigint not null,
-    primary key (objectid)
+    trusted_esm_goid CHAR(16) FOR BIT DATA not null,
+    primary key (goid)
 );
 
 create table uddi_business_service_status (
@@ -1223,7 +1223,7 @@ alter table trusted_esm
 
 alter table trusted_esm_user
     add constraint FKC48AF4D34548A1A6
-    foreign key (trusted_esm_oid)
+    foreign key (trusted_esm_goid)
     references trusted_esm
     on delete cascade;
 

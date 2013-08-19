@@ -537,25 +537,25 @@ CREATE TABLE trusted_cert (
 
 DROP TABLE IF EXISTS trusted_esm;
 CREATE TABLE trusted_esm (
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   trusted_cert_goid binary(16) NOT NULL,
-  primary key(objectid),
+  primary key(goid),
   FOREIGN KEY (trusted_cert_goid) REFERENCES trusted_cert (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS trusted_esm_user;
 CREATE TABLE trusted_esm_user (
-  objectid bigint NOT NULL,
+  goid binary(16) NOT NULL,
   version integer NOT NULL,
-  trusted_esm_oid bigint(20) NOT NULL,
+  trusted_esm_goid binary(16) NOT NULL,
   provider_goid binary(16) NOT NULL,
   user_id varchar(128) NOT NULL,
   esm_user_id varchar(128) NOT NULL,
   esm_user_display_name varchar(128) default NULL,
-  PRIMARY KEY(objectid),
-  FOREIGN KEY (trusted_esm_oid) REFERENCES trusted_esm (objectid) ON DELETE CASCADE,
+  PRIMARY KEY(goid),
+  FOREIGN KEY (trusted_esm_goid) REFERENCES trusted_esm (goid) ON DELETE CASCADE,
   FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

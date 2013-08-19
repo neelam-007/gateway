@@ -1550,6 +1550,33 @@ set @counters_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update counters set goid = toGoid(@counters_prefix,counterid_backup);
 ALTER TABLE counters DROP COLUMN counterid_backup;
 
+-- FOR TRUSTED_ESM
+call dropForeignKey('trusted_esm_user','trusted_esm');
+
+ALTER TABLE trusted_esm ADD COLUMN objectid_backup BIGINT(20);
+update trusted_esm set objectid_backup=objectid;
+ALTER TABLE trusted_esm CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @trusted_esm_prefix=createUnreservedPoorRandomPrefix();
+set @trusted_esm_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update trusted_esm set goid = toGoid(@trusted_esm_prefix,objectid_backup);
+ALTER TABLE trusted_esm DROP COLUMN objectid_backup;
+
+ALTER TABLE trusted_esm_user ADD COLUMN old_trusted_esm_oid BIGINT(20);
+UPDATE trusted_esm_user SET old_trusted_esm_oid=trusted_esm_oid;
+ALTER TABLE trusted_esm_user CHANGE COLUMN trusted_esm_oid trusted_esm_goid binary(16) NOT NULL;
+UPDATE trusted_esm_user SET trusted_esm_goid = toGoid(@trusted_esm_prefix, old_trusted_esm_oid);
+update trusted_esm_user set trusted_esm_goid = toGoid(0,old_trusted_esm_oid) where old_trusted_esm_oid < 0;
+ALTER TABLE trusted_esm_user DROP COLUMN old_trusted_esm_oid;
+ALTER TABLE trusted_esm_user ADD FOREIGN KEY (trusted_esm_goid) REFERENCES trusted_esm (goid) ON DELETE CASCADE;
+
+-- FOR TRUSTED_ESM_USER
+ALTER TABLE trusted_esm_user ADD COLUMN objectid_backup BIGINT(20);
+update trusted_esm_user set objectid_backup=objectid;
+ALTER TABLE trusted_esm_user CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
+-- For manual runs use: set @trusted_esm_user_prefix=createUnreservedPoorRandomPrefix();
+set @trusted_esm_user_prefix=#RANDOM_LONG_NOT_RESERVED#;
+update trusted_esm_user set goid = toGoid(@trusted_esm_user_prefix,objectid_backup);
+ALTER TABLE trusted_esm_user DROP COLUMN objectid_backup;
 
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
@@ -1634,7 +1661,9 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('resource_entry', @resource_entry_prefix),
       ('secure_password', @secure_password_prefix),
       ('wssc_session', @wssc_session_prefix),
-      ('counters', @counters_prefix);
+      ('counters', @counters_prefix),
+      ('trusted_esm', @counters_prefix),
+      ('trusted_esm_user', @counters_prefix);
 
 
 --

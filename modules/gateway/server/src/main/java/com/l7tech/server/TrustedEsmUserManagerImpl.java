@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * TODO ensure user mappings get delete when the corresponding user is deleted.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsmUser, EntityHeader> implements TrustedEsmUserManager {
+public class TrustedEsmUserManagerImpl extends HibernateGoidEntityManager<TrustedEsmUser, EntityHeader> implements TrustedEsmUserManager {
     private static final Logger logger = Logger.getLogger(TrustedEsmUserManagerImpl.class.getName());
     private static final boolean PERMIT_MAPPING_UPDATE = ConfigFactory.getBooleanProperty("com.l7tech.server.remotetrust.permitMappingUpdate", true);
 
@@ -97,8 +97,8 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
         trustedEsmUser.setEsmUserId(esmUsername);
         trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
 
-        long oid = save(trustedEsmUser);
-        trustedEsmUser.setOid(oid);
+        Goid goid = save(trustedEsmUser);
+        trustedEsmUser.setGoid(goid);
 
         return trustedEsmUser;
     }
@@ -140,24 +140,24 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     }
 
     @Override
-    public Collection<TrustedEsmUser> findByEsmId(long trustedEsmOid) throws FindException {
+    public Collection<TrustedEsmUser> findByEsmId(Goid trustedEsmGoid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("trustedEsm.oid", trustedEsmOid);
+        map.put("trustedEsm.goid", trustedEsmGoid);
         return findMatching(Arrays.asList(map));
     }
 
     @Override
-    public TrustedEsmUser findByEsmIdAndUserUUID(final long trustedEsmOid, final String esmUuid) throws FindException {
+    public TrustedEsmUser findByEsmIdAndUserUUID(final Goid trustedEsmGoid, final String esmUuid) throws FindException {
         TrustedEsmUser user = null;
 
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("trustedEsm.oid", trustedEsmOid);
+        map.put("trustedEsm.goid", trustedEsmGoid);
         map.put("esmUserId", esmUuid);
         Collection<TrustedEsmUser> users = findMatching(Arrays.asList(map));
         if ( users.size()==1 ) {
             user = users.iterator().next();
         } else if ( users.size() > 1 ) {
-            logger.warning("Multiple users are mapped with identity '"+esmUuid+"', for esm '"+trustedEsmOid+"'.");
+            logger.warning("Multiple users are mapped with identity '"+esmUuid+"', for esm '"+trustedEsmGoid+"'.");
         }
 
         return user;
@@ -174,7 +174,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        findAndDelete(oid);
+    public void delete(Goid goid) throws DeleteException, FindException {
+        findAndDelete(goid);
     }
 }

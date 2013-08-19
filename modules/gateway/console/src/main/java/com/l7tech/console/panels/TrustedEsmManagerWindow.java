@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
@@ -134,7 +135,7 @@ public class TrustedEsmManagerWindow extends JDialog {
 
                         boolean reloadUserMappingDisplay = false;
                         try {
-                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmUserMapping(user.getTrustedEsmUser().getOid());
+                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmUserMapping(user.getTrustedEsmUser().getGoid());
                             reloadUserMappingDisplay = true;
                         } catch (ObjectNotFoundException e) {
                             reloadUserMappingDisplay = true;
@@ -143,7 +144,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                         }
 
                         if (reloadUserMappingDisplay) {
-                            loadUsersTable(esm.getOid());
+                            loadUsersTable(esm.getGoid());
                         }
                     }
                 });
@@ -167,7 +168,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                         if (option != JOptionPane.OK_OPTION)
                             return;
                         try {
-                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmInstance(esm.getOid());
+                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmInstance(esm.getGoid());
                             loadEsmTable();
                             updateUsersTable();
                         } catch (ObjectModelException e) {
@@ -186,7 +187,7 @@ public class TrustedEsmManagerWindow extends JDialog {
         if (esm == null) {
             usersTableModel.setRows(Collections.<UserRow>emptyList());
         } else {
-            loadUsersTable(esm.getOid());
+            loadUsersTable(esm.getGoid());
         }
     }
 
@@ -213,9 +214,9 @@ public class TrustedEsmManagerWindow extends JDialog {
         }
     }
 
-    private void loadUsersTable(long esmOid) {
+    private void loadUsersTable(Goid esmGoid) {
         try {
-            List<TrustedEsmUser> esmUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(esmOid));
+            List<TrustedEsmUser> esmUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(esmGoid));
 
             final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
             usersTableModel.setRows(Functions.grepNotNull(Functions.map(esmUsers, new Functions.Unary<UserRow, TrustedEsmUser>() {

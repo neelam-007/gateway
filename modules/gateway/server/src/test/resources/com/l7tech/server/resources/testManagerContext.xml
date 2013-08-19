@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+    <context:annotation-config/>
+
+
+    <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
+    <bean id="hibernateBean" abstract="true">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="transactionManager" ref="transactionManager"/>
+    </bean>
+
+    <bean id="trustedEsmManager" class="com.l7tech.server.TrustedEsmManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="trustedEsmUserManager" class="com.l7tech.server.TrustedEsmUserManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
+        <property name="rbacServices">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="rbacServices"/>
+                <constructor-arg value="com.l7tech.server.security.rbac.RbacServices"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp"
+          parent="hibernateBean" depends-on="clusterPropertyCache">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Trusted Certificate Expiry Checker"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="clusterInfoManager"/>
+    </bean>
+
+
+    <bean id="clusterInfoManager" class="com.l7tech.server.cluster.ClusterInfoManagerImpl"
+          depends-on="clusterPropertyCache">
+        <constructor-arg index="0" ref="clusterNodeId"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer"
+          parent="hibernateBean">
+        <property name="roleManager" ref="roleManager"/>
+    </bean>
+
+    <!-- Non Manager related -->
+
+    <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='clusterIDManager'/>
+        <property name="targetMethod" value="thisNodeId"/>
+    </bean>
+
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl"
+          depends-on="keyUsageChecker ssgKeyStoreManager clusterPropertyCache">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="3" ref="transactionManager"/>
+    </bean>
+
+    <bean id="keyUsageChecker" class="com.l7tech.server.security.cert.GatewayKeyUsageChecker">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+    </bean>
+
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
+
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+    </bean>
+
+    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl"
+          parent="hibernateBean">
+    </bean>
+
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
+    </bean>
+</beans>
