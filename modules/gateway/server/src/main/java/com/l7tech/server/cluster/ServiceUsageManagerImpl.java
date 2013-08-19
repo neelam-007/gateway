@@ -2,6 +2,7 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import org.hibernate.FlushMode;
@@ -105,7 +106,7 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
     @SuppressWarnings({ "unchecked" })
     @Override
     @Transactional(readOnly=true)
-    public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
+    public ServiceUsage[] findByServiceGoid(Goid serviceGoid) throws FindException {
         Session s = null;
         FlushMode old = null;
         try {
@@ -113,7 +114,7 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
             old = s.getFlushMode();
             s.setFlushMode(FlushMode.MANUAL);
             Query q = s.createQuery(HQL_FIND_BY_SERVICE);
-            q.setLong(0, serviceOid);
+            q.setParameter(0, serviceGoid);
             List results = q.list();
             return (ServiceUsage[])results.toArray(new ServiceUsage[results.size()]);
         } catch (HibernateException e) {

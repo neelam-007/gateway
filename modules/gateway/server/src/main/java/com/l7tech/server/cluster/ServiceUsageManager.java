@@ -5,6 +5,7 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,7 @@ public interface ServiceUsageManager {
     ServiceUsage[] findByNode(String nodeId) throws FindException;
 
     @Transactional(readOnly=true)
-    ServiceUsage[] findByServiceOid(long serviceOid) throws FindException;
+    ServiceUsage[] findByServiceGoid(Goid serviceGoid) throws FindException;
 
     void record(ServiceUsage data) throws UpdateException;
 

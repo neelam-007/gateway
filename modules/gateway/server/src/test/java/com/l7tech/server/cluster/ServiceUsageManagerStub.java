@@ -1,10 +1,10 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.cluster.ServiceUsageManager;
-import com.l7tech.gateway.common.cluster.ServiceUsage;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -23,7 +23,7 @@ public class ServiceUsageManagerStub implements ServiceUsageManager {
     }
 
     @Transactional(readOnly = true)
-    public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
+    public ServiceUsage[] findByServiceGoid(Goid serviceGoid) throws FindException {
         return new ServiceUsage[0];
     }
 
