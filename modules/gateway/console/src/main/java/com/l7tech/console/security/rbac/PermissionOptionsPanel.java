@@ -8,10 +8,7 @@ import org.apache.commons.collections.ComparatorUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,16 +46,17 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
         LARGE_ENTITY_TYPES = new HashSet<>();
         LARGE_ENTITY_TYPES.add(EntityType.METRICS_BIN);
+        LARGE_ENTITY_TYPES.add(EntityType.AUDIT_RECORD);
 
         ENTITY_TYPES = new TreeMap(ComparatorUtils.nullLowComparator(EntityType.NAME_COMPARATOR));
         ENTITY_TYPES.put(null, null);
         for (final EntityType type : EntityType.values()) {
-            if (type != EntityType.ANY && type.isDisplayedInGui()) {
+            if (type != EntityType.ANY && type.isDisplayedInGui() && type != EntityType.AUDIT_ADMIN && type != EntityType.AUDIT_MESSAGE && type != EntityType.AUDIT_SYSTEM) {
                 final Set<OperationType> invalidOps = new HashSet<>();
                 if (SINGULAR_ENTITY_TYPES.contains(type) || type == EntityType.ASSERTION_ACCESS || type == EntityType.CLUSTER_INFO) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
-                } else if (type == EntityType.SERVICE_TEMPLATE || type == EntityType.METRICS_BIN || type == EntityType.SERVICE_USAGE) {
+                } else if (type == EntityType.SERVICE_TEMPLATE || type == EntityType.SERVICE_USAGE || LARGE_ENTITY_TYPES.contains(type)) {
                     invalidOps.add(OperationType.CREATE);
                     invalidOps.add(OperationType.DELETE);
                     invalidOps.add(OperationType.UPDATE);

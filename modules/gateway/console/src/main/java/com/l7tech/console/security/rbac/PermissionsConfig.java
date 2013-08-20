@@ -31,6 +31,7 @@ public class PermissionsConfig {
     private Set<AttributePredicate> attributePredicates = new HashSet<>();
     private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
+    private Set<EntityType> selectedAuditTypes = null;
 
     public PermissionsConfig(@NotNull final Role role) {
         this.role = role;
@@ -178,6 +179,17 @@ public class PermissionsConfig {
 
     public void setSelectedEntities(@NotNull final Set<EntityHeader> selectedEntities) {
         this.selectedEntities = selectedEntities;
+    }
+
+    public Set<EntityType> getSelectedAuditTypes() {
+        return selectedAuditTypes;
+    }
+
+    /**
+     * @param selectedAuditTypes the set of audit EntityTypes the user has selected to apply permissions to or null for all audit types. Applies to {@link ScopeType#CONDITIONAL}.
+     */
+    public void setSelectedAuditTypes(@Nullable final Set<EntityType> selectedAuditTypes) {
+        this.selectedAuditTypes = selectedAuditTypes;
     }
 
     /**

@@ -112,29 +112,14 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                     for (final SecurityZone zone : config.getSelectedZones()) {
                         for (final FolderHeader folderHeader : config.getSelectedFolders()) {
                             try {
-                                final Permission permission = new Permission(config.getRole(), op, entityType);
-                                if (zone != null) {
-                                    permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
-                                }
-                                if (folderHeader != null) {
-                                    final Folder folder;
-                                    if (retrievedFolders.containsKey(folderHeader.getGoid())) {
-                                        folder = retrievedFolders.get(folderHeader.getGoid());
-                                    } else {
-                                        folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+                                if (entityType == EntityType.AUDIT_RECORD && config.getSelectedAuditTypes() != null) {
+                                    for (final EntityType auditType : config.getSelectedAuditTypes()) {
+                                        // generate permission for each audit type selected (otherwise applies to all audit types)
+                                        generatePermission(config, folderAdmin, auditType, retrievedFolders, op, zone, folderHeader);
                                     }
-                                    if (folder != null) {
-                                        permission.getScope().add(new FolderPredicate(permission, folder, config.isFolderTransitive()));
-                                    } else {
-                                        throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
-                                    }
+                                } else {
+                                    generatePermission(config, folderAdmin, entityType, retrievedFolders, op, zone, folderHeader);
                                 }
-                                for (final AttributePredicate attribute : config.getAttributePredicates()) {
-                                    final AttributePredicate attributePredicate = new AttributePredicate(permission, attribute.getAttribute(), attribute.getValue());
-                                    attributePredicate.setMode(attribute.getMode());
-                                    permission.getScope().add(attributePredicate);
-                                }
-                                config.getGeneratedPermissions().add(permission);
                             } catch (final FindException e) {
                                 logger.log(Level.WARNING, "Skipping permission because unable to retrieve folder for header: " + folderHeader);
                             }
@@ -155,6 +140,32 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             default:
                 throw new IllegalArgumentException("Scope type not supported: " + config.getScopeType());
         }
+    }
+
+    private static void generatePermission(final PermissionsConfig config, final FolderAdmin folderAdmin, final EntityType entityType, final Map<Goid, Folder> retrievedFolders, final OperationType op, final SecurityZone zone, final FolderHeader folderHeader) throws FindException {
+        final Permission permission = new Permission(config.getRole(), op, entityType);
+        if (zone != null) {
+            permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
+        }
+        if (folderHeader != null) {
+            final Folder folder;
+            if (retrievedFolders.containsKey(folderHeader.getGoid())) {
+                folder = retrievedFolders.get(folderHeader.getGoid());
+            } else {
+                folder = folderAdmin.findByPrimaryKey(folderHeader.getGoid());
+            }
+            if (folder != null) {
+                permission.getScope().add(new FolderPredicate(permission, folder, config.isFolderTransitive()));
+            } else {
+                throw new FindException("No folder exists with goid: " + folderHeader.getGoid());
+            }
+        }
+        for (final AttributePredicate attribute : config.getAttributePredicates()) {
+            final AttributePredicate attributePredicate = new AttributePredicate(permission, attribute.getAttribute(), attribute.getValue());
+            attributePredicate.setMode(attribute.getMode());
+            permission.getScope().add(attributePredicate);
+        }
+        config.getGeneratedPermissions().add(permission);
     }
 
     private static Map<Goid, Folder> generateAdditionalFolderPermissions(final PermissionsConfig config, final FolderAdmin folderAdmin) {

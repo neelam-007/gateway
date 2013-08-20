@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
@@ -21,7 +22,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.BeanInfo;
@@ -60,10 +60,16 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private static final String EQ = "eq";
     private static final String SW = "sw";
     private static final String ENTITIES_WITH_NO_ZONE = "All entities that are not assigned a security zone";
-    private static final int ZONE_TAB_INDEX = 2;
-    private static final int FOLDER_TAB_INDEX = 1;
     private static final String SELECT_OPTIONS_FOR_THESE_PERMISSIONS = "Select options for these permissions";
     private static final String SELECT = "(select)";
+    private static final String TYPES = "Types";
+    private static final String ATTRIBUTES = "Attributes";
+    private static final String FOLDERS = "Folders";
+    private static final String ZONES = "Zones";
+    private static final int INITIAL_TYPES_TAB_INDEX = 0;
+    private static final int INITIAL_ATTRIBUTES_TAB_INDEX = 1;
+    private static final int INITIAL_FOLDERS_TAB_INDEX = 2;
+    private static final int INITIAL_ZONES_TAB_INDEX = 3;
     private JPanel contentPanel;
     private JTabbedPane tabPanel;
     private JPanel zonesPanel;
@@ -92,12 +98,25 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JComboBox comboBox;
     private JPanel comboBoxPanel;
     private JLabel comboBoxLabel;
+    private JPanel typesPanel;
+    private JRadioButton allAuditsRadioButton;
+    private JRadioButton selectedAuditsRadioButton;
+    private JCheckBox systemAuditsCheckBox;
+    private JCheckBox adminAuditsCheckBox;
+    private JCheckBox messageAuditsCheckBox;
+    private JPanel zonesAvailablePanel;
+    private JPanel zonesUnavailablePanel;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
     private CheckBoxSelectableTableModel<EntityHeader> specificObjectsModel;
     private static Map<String, String> validComparisons = new HashMap<>();
     private PermissionsConfig config;
+    private Component typesTab;
+    private Component attributesTab;
+    private Component foldersTab;
+    private Component zonesTab;
+    private NotifyListener notifyListener;
 
     static {
         validComparisons.put(EQUALS, EQ);
@@ -106,11 +125,13 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     public PermissionScopeSelectionPanel() {
         super(null);
+        notifyListener = new NotifyListener();
         setLayout(new BorderLayout());
         setShowDescriptionPanel(false);
         add(contentPanel);
         initTables();
         initComboBox();
+        initTabs();
     }
 
     @Override
@@ -121,7 +142,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     @Override
     public boolean canAdvance() {
         return (config.getScopeType() == PermissionsConfig.ScopeType.SPECIFIC_OBJECTS && !specificObjectsModel.getSelected().isEmpty()) ||
-                (config.getScopeType() == PermissionsConfig.ScopeType.CONDITIONAL && (!zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty() || attributesModel.getRowCount() > 0));
+                (config.getScopeType() == PermissionsConfig.ScopeType.CONDITIONAL &&
+                        (auditTypesSelectionValid() || !zonesModel.getSelected().isEmpty() || !foldersModel.getSelected().isEmpty() || attributesModel.getRowCount() > 0));
     }
 
     @Override
@@ -155,9 +177,20 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 conditionsPanel.setVisible(true);
                                 specificObjectsPanel.setVisible(false);
                                 header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
-                                tabPanel.setEnabledAt(FOLDER_TAB_INDEX, type == EntityType.ANY || type.isFolderable());
-                                tabPanel.setEnabledAt(ZONE_TAB_INDEX, type == EntityType.ANY || type.isSecurityZoneable());
+                                tabPanel.removeAll();
+                                if (type == EntityType.AUDIT_RECORD) {
+                                    tabPanel.addTab(TYPES, typesTab);
+                                }
+                                tabPanel.addTab(ATTRIBUTES, attributesTab);
+                                if (type == EntityType.ANY || type.isFolderable()) {
+                                    tabPanel.addTab(FOLDERS, foldersTab);
+                                }
+                                if (type == EntityType.ANY || type == EntityType.AUDIT_RECORD || type.isSecurityZoneable()) {
+                                    tabPanel.addTab(ZONES, zonesTab);
+                                    enableDisableZones();
+                                }
                                 reloadAttributeComboBox();
+                                notifyListeners();
                             }
                         });
                         break;
@@ -217,8 +250,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 }
             }
         }
-        setSkipped(canSkip(settings)
-        );
+        setSkipped(canSkip(settings));
     }
 
     @Override
@@ -232,6 +264,24 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     config.setFolderTransitive(transitiveCheckBox.isSelected());
                     config.setGrantReadFolderAncestry(ancestryCheckBox.isSelected());
                     config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
+                    Set<EntityType> auditTypes = null;
+                    if (config.getType() == EntityType.AUDIT_RECORD && selectedAuditsRadioButton.isSelected()) {
+                        auditTypes = new HashSet<>();
+                        if (systemAuditsCheckBox.isSelected()) {
+                            auditTypes.add(EntityType.AUDIT_SYSTEM);
+                        }
+                        if (adminAuditsCheckBox.isSelected()) {
+                            auditTypes.add(EntityType.AUDIT_ADMIN);
+                        }
+                        if (messageAuditsCheckBox.isSelected()) {
+                            auditTypes.add(EntityType.AUDIT_MESSAGE);
+                        }
+                    }
+                    config.setSelectedAuditTypes(auditTypes);
+                    if (config.getType() == EntityType.AUDIT_RECORD && (auditTypes == null || auditTypes.contains(EntityType.AUDIT_ADMIN) || auditTypes.contains(EntityType.AUDIT_SYSTEM))) {
+                        // clear any selected zones as they are not valid
+                        config.getSelectedZones().clear();
+                    }
                     break;
                 case SPECIFIC_OBJECTS:
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
@@ -247,14 +297,13 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private void initTables() {
-        final TableListener tableListener = new TableListener();
-        initZonesTable(tableListener);
-        initFoldersTable(tableListener);
-        initAttributes(tableListener);
-        initSpecificObjects(tableListener);
+        initZonesTable();
+        initFoldersTable();
+        initAttributes();
+        initSpecificObjects();
     }
 
-    private void initSpecificObjects(final TableListener tableListener) {
+    private void initSpecificObjects() {
         specificObjectsModel = TableUtil.configureSelectableTable(specificObjectsTablePanel.getSelectableTable(), CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
@@ -274,12 +323,12 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         return name;
                     }
                 }));
-        specificObjectsModel.addTableModelListener(tableListener);
+        specificObjectsModel.addTableModelListener(notifyListener);
         specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
         specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, null);
     }
 
-    private void initAttributes(final TableListener tableListener) {
+    private void initAttributes() {
         attributesModel = TableUtil.configureTable(attributePredicatesTable,
                 column(ATTRIBUTE, 30, 200, MAX_WIDTH, new Functions.Unary<String, AttributePredicate>() {
                     @Override
@@ -299,7 +348,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         return predicate.getValue();
                     }
                 }));
-        attributesModel.addTableModelListener(tableListener);
+        attributesModel.addTableModelListener(notifyListener);
         attributesModel.setRows(new ArrayList<AttributePredicate>());
         attributePredicatesTable.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         attributePredicatesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -375,7 +424,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(config == null ? EntityType.ANY : config.getType()).toArray()));
     }
 
-    private void initFoldersTable(final TableListener tableListener) {
+    private void initFoldersTable() {
         foldersModel = TableUtil.configureSelectableTable(foldersTablePanel.getSelectableTable(), CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, FolderHeader>() {
                     @Override
@@ -417,7 +466,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         return zone == null ? NO_SECURITY_ZONE : zone.getName();
                     }
                 }));
-        foldersModel.addTableModelListener(tableListener);
+        foldersModel.addTableModelListener(notifyListener);
         try {
             final Collection<FolderHeader> folders = Registry.getDefault().getFolderAdmin().findAllFolders();
             foldersModel.setSelectableObjects(new ArrayList<>(folders));
@@ -427,7 +476,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         foldersTablePanel.configure(foldersModel, new int[]{NAME_COL_INDEX}, "folders");
     }
 
-    private void initZonesTable(final TableListener tableListener) {
+    private void initZonesTable() {
         zonesModel = TableUtil.configureSelectableTable(zonesTablePanel.getSelectableTable(), CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, SecurityZone>() {
                     @Override
@@ -451,7 +500,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         zones.add(SecurityZoneUtil.getNullZone());
         zones.addAll(SecurityZoneUtil.getSortedReadableSecurityZones());
         zonesModel.setSelectableObjects(zones);
-        zonesModel.addTableModelListener(tableListener);
+        zonesModel.addTableModelListener(notifyListener);
         zonesTablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
     }
 
@@ -576,12 +625,67 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         return type == EntityType.USER || type == EntityType.GROUP;
     }
 
-    private class TableListener implements TableModelListener {
+    private void initTypesTab() {
+        final ActionListener auditActionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableDisableAuditTypes();
+                notifyListeners();
+            }
+        };
+        allAuditsRadioButton.addActionListener(auditActionListener);
+        selectedAuditsRadioButton.addActionListener(auditActionListener);
+        systemAuditsCheckBox.addActionListener(auditActionListener);
+        adminAuditsCheckBox.addActionListener(auditActionListener);
+        messageAuditsCheckBox.addActionListener(auditActionListener);
+        enableDisableAuditTypes();
+    }
+
+    private void initTabs() {
+        initTypesTab();
+        typesTab = tabPanel.getComponentAt(INITIAL_TYPES_TAB_INDEX);
+        attributesTab = tabPanel.getComponentAt(INITIAL_ATTRIBUTES_TAB_INDEX);
+        foldersTab = tabPanel.getComponent(INITIAL_FOLDERS_TAB_INDEX);
+        zonesTab = tabPanel.getComponent(INITIAL_ZONES_TAB_INDEX);
+        if (typesTab == null || attributesTab == null || foldersTab == null || zonesTab == null) {
+            throw new IllegalStateException("Not all tabs were initialized");
+        }
+    }
+
+    private void enableDisableAuditTypes() {
+        systemAuditsCheckBox.setEnabled(selectedAuditsRadioButton.isSelected());
+        adminAuditsCheckBox.setEnabled(selectedAuditsRadioButton.isSelected());
+        messageAuditsCheckBox.setEnabled(selectedAuditsRadioButton.isSelected());
+        enableDisableZones();
+    }
+
+    private boolean auditTypesSelectionValid() {
+        return tabPanel.indexOfTab(TYPES) != -1 &&
+                (allAuditsRadioButton.isSelected() ||
+                        selectedAuditsRadioButton.isSelected() && (systemAuditsCheckBox.isSelected() || adminAuditsCheckBox.isSelected() || messageAuditsCheckBox.isSelected()));
+    }
+
+    private void enableDisableZones() {
+        boolean showZones = config == null || config.getType() != EntityType.AUDIT_RECORD || (selectedAuditsRadioButton.isSelected() && !systemAuditsCheckBox.isSelected() && !adminAuditsCheckBox.isSelected() && messageAuditsCheckBox.isSelected());
+        zonesUnavailablePanel.setVisible(!showZones);
+        zonesAvailablePanel.setVisible(showZones);
+    }
+
+    private class NotifyListener extends RunOnChangeListener {
+        private NotifyListener() {
+            super(new Runnable() {
+                @Override
+                public void run() {
+                    notifyListeners();
+                }
+            });
+        }
+
         @Override
         public void tableChanged(final TableModelEvent e) {
             final int type = e.getType();
             if (type == TableModelEvent.UPDATE || type == TableModelEvent.INSERT || type == TableModelEvent.DELETE) {
-                notifyListeners();
+                run();
             }
         }
     }

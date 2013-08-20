@@ -25,7 +25,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PermissionSummaryPanelTest {
@@ -757,14 +757,7 @@ public class PermissionSummaryPanelTest {
 
         PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
         assertEquals(3, config.getGeneratedPermissions().size());
-        final Map<EntityType, Set<Permission>> permissionMap = new HashMap<>();
-        for (final Permission permission : config.getGeneratedPermissions()) {
-            assertEquals(1, permission.getScope().size());
-            if (!permissionMap.containsKey(permission.getEntityType())) {
-                permissionMap.put(permission.getEntityType(), new HashSet<Permission>());
-            }
-            permissionMap.get(permission.getEntityType()).add(permission);
-        }
+        final Map<EntityType, Set<Permission>> permissionMap = sortPermissionsByType(config.getGeneratedPermissions());
         assertEquals(1, permissionMap.get(EntityType.JMS_CONNECTION).size());
         final Set<ScopePredicate> connectionScope = permissionMap.get(EntityType.JMS_CONNECTION).iterator().next().getScope();
         assertEquals(1, connectionScope.size());
@@ -817,6 +810,105 @@ public class PermissionSummaryPanelTest {
         assertEquals(serviceGoid.toHexString(), attributes.get("serviceid"));
         assertEquals("abc123", attributes.get("nodeid"));
 
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsAuditRecordsAllTypes() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
+        config.setType(EntityType.AUDIT_RECORD);
+        config.setSelectedAuditTypes(null);
+        operations.add(OperationType.READ);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.AUDIT_RECORD, permission.getEntityType());
+        assertTrue(permission.getScope().isEmpty());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsAuditRecordsAllTypesMultipleAttributesAndZones() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
+        config.setType(EntityType.AUDIT_RECORD);
+        config.setSelectedAuditTypes(null);
+        operations.add(OperationType.READ);
+        // 2 attributes
+        attributes.add(new AttributePredicate(null, "name", "abc"));
+        attributes.add(new AttributePredicate(null, "message", "123"));
+        // 2 zones
+        final SecurityZone zone1 = new SecurityZone();
+        zone1.setName("ZoneA");
+        selectedZones.add(zone1);
+        final SecurityZone zone2 = new SecurityZone();
+        zone2.setName("ZoneB");
+        selectedZones.add(zone2);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        for (final Permission permission : config.getGeneratedPermissions()) {
+            assertEquals(EntityType.AUDIT_RECORD, permission.getEntityType());
+            final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
+        }
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsAuditRecordsWithAuditTypes() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
+        config.setType(EntityType.AUDIT_RECORD);
+        config.setSelectedAuditTypes(new HashSet<>(Arrays.asList(new EntityType[]{EntityType.AUDIT_SYSTEM, EntityType.AUDIT_ADMIN})));
+        operations.add(OperationType.READ);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<EntityType, Set<Permission>> permissionsByType = sortPermissionsByType(config.getGeneratedPermissions());
+        assertEquals(1, permissionsByType.get(EntityType.AUDIT_SYSTEM).size());
+        assertEquals(1, permissionsByType.get(EntityType.AUDIT_ADMIN).size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsAuditRecordsWithAuditTypesMultipleAttributesAndZones() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.CONDITIONAL);
+        config.setType(EntityType.AUDIT_RECORD);
+        config.setSelectedAuditTypes(new HashSet<>(Arrays.asList(new EntityType[]{EntityType.AUDIT_SYSTEM, EntityType.AUDIT_ADMIN})));
+        operations.add(OperationType.READ);
+        // 2 attributes
+        attributes.add(new AttributePredicate(null, "name", "abc"));
+        attributes.add(new AttributePredicate(null, "message", "123"));
+        // 2 zones
+        final SecurityZone zone1 = new SecurityZone();
+        zone1.setName("ZoneA");
+        selectedZones.add(zone1);
+        final SecurityZone zone2 = new SecurityZone();
+        zone2.setName("ZoneB");
+        selectedZones.add(zone2);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(4, config.getGeneratedPermissions().size());
+        final Map<EntityType, Set<Permission>> permissionsByType = sortPermissionsByType(config.getGeneratedPermissions());
+        assertEquals(2, permissionsByType.get(EntityType.AUDIT_SYSTEM).size());
+        assertEquals(2, permissionsByType.get(EntityType.AUDIT_ADMIN).size());
+        for (final Permission permission : config.getGeneratedPermissions()) {
+            final Map<Class, Integer> predicateTypes = countPredicateTypes(permission);
+            assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
+            assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
+        }
+    }
+
+    private Map<EntityType, Set<Permission>> sortPermissionsByType(final Set<Permission> permissions) {
+        final Map<EntityType, Set<Permission>> permissionMap = new HashMap<>();
+        for (final Permission permission : permissions) {
+            if (!permissionMap.containsKey(permission.getEntityType())) {
+                permissionMap.put(permission.getEntityType(), new HashSet<Permission>());
+            }
+            permissionMap.get(permission.getEntityType()).add(permission);
+        }
+        return permissionMap;
     }
 
     private Map<Class, Integer> countPredicateTypes(final Permission permission) {
