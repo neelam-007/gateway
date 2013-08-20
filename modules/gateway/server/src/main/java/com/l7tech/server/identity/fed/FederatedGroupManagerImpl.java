@@ -104,8 +104,8 @@ public class FederatedGroupManagerImpl
                 }
             }
             return g;
-        } catch (NumberFormatException nfe) {
-            throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
+        } catch (IllegalArgumentException nfe) {
+            throw new FindException("Can't find groups with malformed GOIDs!", nfe);
         }
     }
 
@@ -170,7 +170,7 @@ public class FederatedGroupManagerImpl
 
     @Override
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
-        crit.add(Restrictions.eq("thisGroupProviderOid", group.getProviderId()));
+        crit.add(Restrictions.eq("thisGroupProviderGoid", group.getProviderId()));
     }
 
     @Override
