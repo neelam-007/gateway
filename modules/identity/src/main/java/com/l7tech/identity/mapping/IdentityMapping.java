@@ -29,7 +29,7 @@ public abstract class IdentityMapping extends AttributeMapping {
             AttributeHeader.FIRST_NAME,
             AttributeHeader.LAST_NAME,
             AttributeHeader.DEPARTMENT,
-            AttributeHeader.PROVIDER_OID,
+            AttributeHeader.PROVIDER_GOID,
             AttributeHeader.DESCRIPTION,
         };
     }

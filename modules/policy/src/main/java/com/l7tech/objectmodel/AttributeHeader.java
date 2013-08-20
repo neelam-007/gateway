@@ -31,7 +31,7 @@ public class AttributeHeader extends NamedEntityImp implements Serializable {
     private static final Map<String, AttributeHeader> nameCache = new HashMap<String, AttributeHeader>();
 
     public static final AttributeHeader ID = new AttributeHeader("id", "Unique ID", STRING, BOTH, Builtin.BUILTIN);
-    public static final AttributeHeader PROVIDER_OID = new AttributeHeader("providerId", "Identity Provider OID", DataType.INTEGER, BOTH, Builtin.BUILTIN);
+    public static final AttributeHeader PROVIDER_GOID = new AttributeHeader("providerId", "Identity Provider GOID", DataType.INTEGER, BOTH, Builtin.BUILTIN);
     public static final AttributeHeader NAME = new AttributeHeader("name", "Common Name", STRING, BOTH, Builtin.BUILTIN);
     public static final AttributeHeader SUBJECT_DN = new AttributeHeader("subjectDn", "X.500 Subject DN", STRING, BOTH, Builtin.BUILTIN);
 

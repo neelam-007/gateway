@@ -27,7 +27,7 @@ abstract class DefaultAttributeExtractor<MT extends IdentityMapping> implements 
     public Object[] extractValues(Identity identity) {
         AttributeHeader header = mapping.getAttributeConfig().getHeader();
         if (header == AttributeHeader.ID) return a(identity.getId());
-        if (header == AttributeHeader.PROVIDER_OID) return a(identity.getProviderId());
+        if (header == AttributeHeader.PROVIDER_GOID) return a(identity.getProviderId());
         if (header == AttributeHeader.NAME) return a(identity.getName());
 
         if (identity instanceof User) {

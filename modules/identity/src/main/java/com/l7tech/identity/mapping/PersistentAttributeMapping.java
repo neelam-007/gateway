@@ -15,14 +15,16 @@ import com.l7tech.objectmodel.AttributeHeader;
  * @author alex
  */
 public abstract class PersistentAttributeMapping extends IdentityMapping {
+    @Deprecated
     public static final AttributeHeader PERSISTENT_OID = new AttributeHeader("oid", "Object Identifier", DataType.INTEGER, UsersOrGroups.BOTH, AttributeHeader.Builtin.BUILTIN);
+    public static final AttributeHeader PERSISTENT_GOID = new AttributeHeader("goid", "Object Identifier", DataType.STRING, UsersOrGroups.BOTH, AttributeHeader.Builtin.BUILTIN);
     public static final AttributeHeader PERSISTENT_USER_EXPIRATION = new AttributeHeader("expiration", "Expiration Date", DataType.DATE_TIME, UsersOrGroups.USERS, AttributeHeader.Builtin.BUILTIN);
 
     public static AttributeHeader[] getBuiltinAttributes() {
         AttributeHeader[] supers = IdentityMapping.getBuiltinAttributes();
         AttributeHeader[] my = new AttributeHeader[supers.length+2];
         System.arraycopy(supers, 0, my, 0, supers.length);
-        my[my.length-2] = PERSISTENT_OID;
+        my[my.length-2] = PERSISTENT_GOID;
         my[my.length-1] = PERSISTENT_USER_EXPIRATION;
         return my;
     }
