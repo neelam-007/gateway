@@ -64,7 +64,7 @@ public class EntityFinderImplTest {
 
     @Test
     public void findAuditRecordHeaderDelegatesToManager() throws Exception {
-        final AuditRecordHeader auditRecordHeader = new AuditRecordHeader(1234L, "Name", "Description", null, null, "nodeId", 1234L, Level.INFO, 0);
+        final AuditRecordHeader auditRecordHeader = new AuditRecordHeader(new Goid(3634,1234L), "Name", "Description", null, null, "nodeId", 1234L, Level.INFO, 0);
         finder.find(auditRecordHeader);
         verify(auditRecordManager).findByHeader(auditRecordHeader);
     }

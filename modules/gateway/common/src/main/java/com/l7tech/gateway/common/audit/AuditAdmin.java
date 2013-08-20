@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.OpaqueId;
 import org.springframework.transaction.annotation.Propagation;
@@ -176,7 +177,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
     @Administrative(licensed=false)
     OpaqueId downloadAllAudits(long fromTime,
                                long toTime,
-                               long[] serviceOids,
+                               Goid[] serviceGoids,
                                int chunkSizeInBytes);
 
     /** Represents a chunk of audits being downloaded. */
@@ -248,7 +249,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws AuditViewerPolicyNotAvailableException if audit viewer policy is not available
      */
     @Secured(stereotype = ENTITY_OPERATION, otherOperation = "audit-viewer policy", relevantArg = 0)
-    String invokeAuditViewerPolicyForMessage(long auditRecordId, boolean isRequest)
+    String invokeAuditViewerPolicyForMessage(Goid auditRecordId, boolean isRequest)
             throws FindException, AuditViewerPolicyNotAvailableException;
 
     /**
@@ -269,7 +270,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws AuditViewerPolicyNotAvailableException if audit viewer policy is not available
      */
     @Secured(stereotype = ENTITY_OPERATION, otherOperation = "audit-viewer policy", relevantArg = 0)
-    String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException;
+    String invokeAuditViewerPolicyForDetail(Goid auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException;
 
     /**
      * All user audit detail message ids.

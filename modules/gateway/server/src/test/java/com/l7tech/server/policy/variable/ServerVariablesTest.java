@@ -643,7 +643,7 @@ public class ServerVariablesTest {
     public void testAuditRecordFields() throws Exception {
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.type}", "message");
-        expandAndCheck(c, "${audit.id}", "9777");
+        expandAndCheck(c, "${audit.id}", Goid.toString(new Goid(1234,9777L)));
         expandAndCheck(c, "${audit.level}", "800");
         expandAndCheck(c, "${audit.levelStr}", "INFO");
         expandAndCheck(c, "${audit.name}", "ACMEWarehouse");
@@ -737,7 +737,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testAdminAuditRecordFields() throws Exception {
-        AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", new Goid(0,-2), "alice", "483", "1.4.2.1");
+        AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", new Goid(346,31), "com.l7tech.MyEntity", "thename", 'U', "Updated thename", new Goid(0,-2), "alice", "483", "1.4.2.1");
         rec.setStrRequestId(new RequestId("222-333").toString());
         final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "admin");
@@ -755,7 +755,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.authType}", "");
         expandAndCheck(c, "${audit.thrown}", "");
         expandAndCheck(c, "${audit.entity.class}", "com.l7tech.MyEntity"); // only for admin records
-        expandAndCheck(c, "${audit.entity.oid}", "31");
+        expandAndCheck(c, "${audit.entity.oid}", "000000000000015a000000000000001f");
     }
 
     @Test
@@ -1210,7 +1210,7 @@ public class ServerVariablesTest {
             }
         });
         //noinspection deprecation
-        auditRecord.setOid(9777L);
+        auditRecord.setGoid(new Goid(1234,9777L));
         auditRecord.setStrRequestId(new RequestId("222-333").toString());
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         detail1.setOrdinal(0);

@@ -2,6 +2,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.test.BenchmarkRunner;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -51,7 +52,7 @@ public class AuditRecordDomMarshallerTest {
         AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
         AuditRecord auditRecord = AuditRecordTest.makeMessageAuditRecord();
         //noinspection deprecation
-        auditRecord.setOid(232);
+        auditRecord.setGoid(new Goid(236,232));
         //noinspection deprecation
         auditRecord.getDetails().iterator().next().setException(null);
         Element got = m.marshal(d, auditRecord);

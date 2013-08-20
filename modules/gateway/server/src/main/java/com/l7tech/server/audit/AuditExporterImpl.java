@@ -4,6 +4,7 @@ import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.server.ServerConfigParams;
@@ -77,31 +78,31 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * NOTE: This content and order is important for audit signature verification. See AuditRecord#serializeSignableProperties
      */
     private static final String AUDIT_COLUMNS = 
-            "audit_main.objectid, audit_main.nodeid, audit_main.time, audit_main.audit_level, audit_main.name, audit_main.message, audit_main.ip_address, audit_main.user_name, audit_main.user_id, audit_main.provider_oid, audit_main.signature, " +
-            "audit_admin.objectid, audit_admin.entity_class, audit_admin.entity_id, audit_admin.action, " +
-            "audit_message.objectid, audit_message.status, audit_message.request_id, audit_message.service_oid, audit_message.operation_name, audit_message.authenticated, audit_message.authenticationType, audit_message.request_length, audit_message.response_length, audit_message.request_zipxml, audit_message.response_zipxml, audit_message.response_status, audit_message.routing_latency, " +
-            "audit_system.objectid, audit_system.component_id, audit_system.action";
+            "audit_main.goid, audit_main.nodeid, audit_main.time, audit_main.audit_level, audit_main.name, audit_main.message, audit_main.ip_address, audit_main.user_name, audit_main.user_id, audit_main.provider_goid, audit_main.signature, " +
+            "audit_admin.goid, audit_admin.entity_class, audit_admin.entity_id, audit_admin.action, " +
+            "audit_message.goid, audit_message.status, audit_message.request_id, audit_message.service_goid, audit_message.operation_name, audit_message.authenticated, audit_message.authenticationType, audit_message.request_length, audit_message.response_length, audit_message.request_zipxml, audit_message.response_zipxml, audit_message.response_status, audit_message.routing_latency, " +
+            "audit_system.goid, audit_system.component_id, audit_system.action";
 
     private static final int QUERY_EXPORT = 0;
     private static final String[][] QUERIES_BY_DIALECT = {
             {  /* MySQL export query */
                     "SELECT " + AUDIT_COLUMNS +", " +
                     "GROUP_CONCAT(''ADMID:'', audit_detail.message_id, ''/-/_/-/'', (SELECT COALESCE(GROUP_CONCAT(value ORDER BY position ASC SEPARATOR ''/-/_/-/''), '''') FROM audit_detail_params WHERE " +
-                    "audit_detail_params.audit_detail_oid = audit_detail.objectid) ORDER BY ordinal SEPARATOR ''/-/_/-/'') AS audit_associated_logs " +
+                    "audit_detail_params.audit_detail_goid = audit_detail.goid) ORDER BY ordinal SEPARATOR ''/-/_/-/'') AS audit_associated_logs " +
                     "FROM audit_main " +
-                    "LEFT OUTER JOIN audit_admin ON audit_main.objectid = audit_admin.objectid " +
-                    "LEFT OUTER JOIN audit_message ON audit_main.objectid = audit_message.objectid " +
-                    "LEFT OUTER JOIN audit_system ON audit_main.objectid = audit_system.objectid " +
-                    "LEFT OUTER JOIN audit_detail ON audit_main.objectid = audit_detail.audit_oid {0}  GROUP BY audit_main.objectid",
+                    "LEFT OUTER JOIN audit_admin ON audit_main.goid = audit_admin.goid " +
+                    "LEFT OUTER JOIN audit_message ON audit_main.goid = audit_message.goid " +
+                    "LEFT OUTER JOIN audit_system ON audit_main.goid = audit_system.goid " +
+                    "LEFT OUTER JOIN audit_detail ON audit_main.goid = audit_detail.audit_goid {0}  GROUP BY audit_main.goid",
             },
             {  /* Derby export query */
                     "SELECT " + AUDIT_COLUMNS +", " +
-                    "getAuditDetails(audit_main.objectid) AS audit_associated_logs " +
+                    "getAuditDetails(audit_main.goid) AS audit_associated_logs " +
                     "FROM audit_main " +
-                    "LEFT OUTER JOIN audit_admin ON audit_main.objectid = audit_admin.objectid " +
-                    "LEFT OUTER JOIN audit_message ON audit_main.objectid = audit_message.objectid " +
-                    "LEFT OUTER JOIN audit_system ON audit_main.objectid = audit_system.objectid " +
-                    "LEFT OUTER JOIN audit_detail ON audit_main.objectid = audit_detail.audit_oid {0}",
+                    "LEFT OUTER JOIN audit_admin ON audit_main.goid = audit_admin.goid " +
+                    "LEFT OUTER JOIN audit_message ON audit_main.goid = audit_message.goid " +
+                    "LEFT OUTER JOIN audit_system ON audit_main.goid = audit_system.goid " +
+                    "LEFT OUTER JOIN audit_detail ON audit_main.goid = audit_detail.audit_goid {0}",
             },
     };
 
@@ -119,7 +120,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     protected void initDao() throws Exception {
         if ( dialect == Dialect.DERBY && initialized.compareAndSet(false, true)) {
             // create function
-            String queryCreateFunc = "CREATE FUNCTION GETAUDITDETAILS (AUDITDETAILID BIGINT) RETURNS VARCHAR(16384) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA RETURNS NULL ON NULL INPUT EXTERNAL NAME '"+AuditExporterImpl.class.getName()+".getAuditDetails'";
+            String queryCreateFunc = "CREATE FUNCTION GETAUDITDETAILS (AUDITDETAILID CHAR (16) FOR BIT DATA) RETURNS VARCHAR(16384) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA RETURNS NULL ON NULL INPUT EXTERNAL NAME '"+AuditExporterImpl.class.getName()+".getAuditDetails'";
 
             Connection conn = null;
             Statement st = null;
@@ -166,14 +167,14 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL statement; never null
      */
-    static String composeCountSql(long fromTime, long toTime, long[] serviceOids) {
+    static String composeCountSql(long fromTime, long toTime, Goid[] serviceOids) {
         final StringBuilder s = new StringBuilder("SELECT COUNT(*) FROM audit_main");
         if (serviceOids != null && serviceOids.length > 0) {
             s.append(", audit_message");
         }
         s.append(composeWhereClause(fromTime, toTime, serviceOids));
         if (serviceOids != null && serviceOids.length > 0) {
-            s.append(" AND audit_main.objectid = audit_message.objectid");
+            s.append(" AND audit_main.goid = audit_message.goid");
         }
         return s.toString();
     }
@@ -187,7 +188,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      */
     static String composeCountByOidSql(long startOid, long endOid) {
         final StringBuilder s = new StringBuilder("SELECT COUNT(*) FROM audit_main");
-        s.append(composeOidWhereClause(startOid, endOid));
+        s.append(composeTimeWhereClause(startOid, endOid));
         return s.toString();
     }
 
@@ -199,7 +200,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL WHERE clause; may be empty but never null
      */
-    static String composeWhereClause(long fromTime, long toTime, long[] serviceOids) {
+    static String composeWhereClause(long fromTime, long toTime, Goid[] serviceOids) {
         final StringBuilder s = new StringBuilder();
 
         if (fromTime != -1) {
@@ -215,10 +216,12 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
         if (serviceOids != null && serviceOids.length > 0) {
             if (s.length() > 0) s.append(" AND ");
-            s.append("audit_message.service_oid IN (");
+            s.append("audit_message.service_goid IN (");
             for (int i = 0; i < serviceOids.length; ++ i) {
                 if (i != 0) s.append(", ");
-                s.append(serviceOids[i]);
+                s.append("X'");
+                s.append(serviceOids[i].toString());
+                s.append("'");
             }
             s.append(")");
         }
@@ -233,20 +236,20 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     /**
      * Composes the SQL WHERE clause based on the given contraints.
      *
-     * @param startOid  Minimum objectid to be selected.
-     * @param endOid    Maximum objectid to be selected.
+     * @param startTime  Minimum time to be selected.
+     * @param endTime    Maximum time to be selected.
      * @return SQL WHERE clause
      */
-    static String composeOidWhereClause(long startOid, long endOid) {
+    static String composeTimeWhereClause(long startTime, long endTime) {
         final StringBuilder s = new StringBuilder();
 
-        s.append(" WHERE audit_main.objectid >= ");
-        s.append(startOid);
+        s.append(" WHERE audit_main.time >= ");
+        s.append(startTime);
 
         s.append(" AND ");
 
-        s.append("audit_main.objectid <= ");
-        s.append(endOid);
+        s.append("audit_main.time <= ");
+        s.append(endTime);
 
         return s.toString();
     }
@@ -407,8 +410,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             out.print("\n");
 
             boolean needInitialFlush = true;
-            long lowestId = Long.MAX_VALUE;
-            long highestId = Long.MIN_VALUE;
             long lowestTime = Long.MAX_VALUE;
             long highestTime = Long.MIN_VALUE;
             synchronized (this) { numExportedSoFar = 0; }
@@ -449,12 +450,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                                     // Matches MessageSummaryAuditRecord.serializeOtherProperties().
                             } else if (i == detailsToExpand) {
                                 data = expandDetails(data);
-                            } else if (i == 1) {
-                                long id = rs.getLong(i);
-                                if (id > highestId)
-                                    highestId = id;
-                                if (id < lowestId)
-                                    lowestId = id;
                             }
                             out.print(quoteMeta(data));
                         }
@@ -474,8 +469,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
             synchronized (this) { this.highestTime = highestTime;}
 
-            final long finalLowestId = lowestId;
-            final long finalHighestId = highestId;
             final long finalLowestTime = lowestTime;
             final long finalHighestTime = highestTime;
             final boolean finalHasTransferredFullRange = ! lastRow;
@@ -483,14 +476,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             final DigestZipOutputStream finalZipOut = zipOut;
 
             return new ExportedInfo() {
-                public long getLowestId() {
-                    return finalLowestId;
-                }
-
-                public long getHighestId() {
-                    return finalHighestId;
-                }
-
                 public long getEarliestTime() {
                     return finalLowestTime;
                 }
@@ -651,12 +636,10 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             auditMetadata.appendChild(DomUtils.createTextNode(auditMetadata, "\n"));
 
             final String i2 = "        ";
-            addElement(ead, i2, ns, p, "lowestAuditRecordId", String.valueOf(exportedInfo.getLowestId()));
             addElement(ead, i2, ns, p, "earliestAuditRecordDate",
                        ISO8601Date.format(new Date(exportedInfo.getEarliestTime())));
             addElement(ead, i2, ns, p, "earliestAuditRecordDateMillis", String.valueOf(exportedInfo.getEarliestTime()));
             ead.appendChild(DomUtils.createTextNode(ead, "\n"));
-            addElement(ead, i2, ns, p, "highestAuditRecordId", String.valueOf(exportedInfo.getHighestId()));
             addElement(ead, i2, ns, p, "latestAuditRecordDate",
                        ISO8601Date.format(new Date(exportedInfo.getLatestTime())));
             addElement(ead, i2, ns, p, "latestAuditRecordDateMillis", String.valueOf(exportedInfo.getLatestTime()));
@@ -707,7 +690,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      *
      * ADMID:4714/-/_/-/string(document('file:.../server.xml')/Server/@port)/-/_/-/ADMID:3017/-/_/-/Warehouse [524288]/-/_/-/601/-/_/-/Error in Assertion Processing
      */
-    public static String getAuditDetails( long auditRecordId ) throws SQLException {
+    public static String getAuditDetails( byte auditRecordId[] ) throws SQLException {
         StringBuilder details = new StringBuilder();
 
         Connection connection = null;
@@ -715,8 +698,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         ResultSet results = null;
         try {
             connection = DriverManager.getConnection("jdbc:default:connection");
-            statement = connection.prepareStatement(  "select audit_detail.message_id, audit_detail_params.value from audit_detail left outer join audit_detail_params on audit_detail.objectid = audit_detail_params.audit_detail_oid where audit_detail.audit_oid = ?  order by audit_detail.ordinal, audit_detail_params.position" );
-            statement.setLong( 1, auditRecordId );
+            statement = connection.prepareStatement(  "select audit_detail.message_id, audit_detail_params.value from audit_detail left outer join audit_detail_params on audit_detail.goid = audit_detail_params.audit_detail_goid where audit_detail.audit_goid = ?  order by audit_detail.ordinal, audit_detail_params.position" );
+            statement.setBytes(1, auditRecordId);
             results = statement.executeQuery();
             int messageId = Integer.MIN_VALUE;
             boolean isFirst = true;
@@ -750,7 +733,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
     public void exportAuditsAsZipFile(long fromTime,
                                       long toTime,
-                                      long[] serviceOids,
+                                      Goid[] serviceOids,
                                       OutputStream outputStream,
                                       X509Certificate signingCert,
                                       PrivateKey signingKey)
@@ -765,7 +748,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     public ExportedInfo exportAudits(long startOid, long endOid, DigestZipOutputStream zipOut, long maxBytes, ExportedInfo previous)
         throws IOException, SQLException, InterruptedException
     {
-        return exportAudits(composeCountByOidSql(startOid, endOid), composeSql(dialect, composeOidWhereClause(startOid, endOid)),
+        return exportAudits(composeCountByOidSql(startOid, endOid), composeSql(dialect, composeTimeWhereClause(startOid, endOid)),
                             zipOut, maxBytes, previous);
     }
 

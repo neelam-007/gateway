@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.logging.Level;
 import java.util.Arrays;
@@ -18,7 +19,7 @@ public class AuditRecordHeader extends EntityHeader {
     private Level level;
 
     public AuditRecordHeader(final AuditRecord auditRecord){
-        this( auditRecord.getOid(),
+        this( auditRecord.getGoid(),
               auditRecord instanceof MessageSummaryAuditRecord ? auditRecord.getName() : "",
               auditRecord.getMessage(),
               null,
@@ -30,7 +31,7 @@ public class AuditRecordHeader extends EntityHeader {
     }
 
     public AuditRecordHeader(final AuditRecordHeader auditRecordHeader) {
-        this( auditRecordHeader.getOid(),
+        this( auditRecordHeader.getGoid(),
               auditRecordHeader.getName(),
               auditRecordHeader.getDescription(),
               auditRecordHeader.getSignatureDigest(),
@@ -42,7 +43,7 @@ public class AuditRecordHeader extends EntityHeader {
     }
 
     //todo: version should not be required.
-    public AuditRecordHeader(long id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
+    public AuditRecordHeader(Goid id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super(id, EntityType.AUDIT_RECORD, name, description, version);
         this.signatureDigest = signatureDigest;
         this.signature = signature;

@@ -1,5 +1,6 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.Background;
@@ -30,7 +31,7 @@ public class AuditDownloadManager implements ApplicationContextAware  {
 
     public OpaqueId createDownloadContext( final long fromTime,
                                            final long toTime,
-                                           final long[] serviceOids ) throws IOException {
+                                           final Goid[] serviceOids ) throws IOException {
         X509Certificate signingCert;
         PrivateKey signingKey;
 
@@ -162,7 +163,7 @@ public class AuditDownloadManager implements ApplicationContextAware  {
         private final Timer timer = new Timer("DownloadContextTimer", true);
         private final long fromTime;
         private final long toTime;
-        private final long[] serviceOids;
+        private final Goid[] serviceOids;
         private final int chunkLength;
         private final Thread producerThread = new Thread(new Runnable() {
             public void run() {
@@ -191,7 +192,7 @@ public class AuditDownloadManager implements ApplicationContextAware  {
 
         private DownloadContext(long fromTime,
                                 long toTime,
-                                long[] serviceOids,
+                                Goid[] serviceOids,
                                 int chunkLength,
                                 AuditExporter exporter,
                                 X509Certificate sslCert,

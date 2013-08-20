@@ -31,7 +31,7 @@ public class AuditRecordTest {
     // All other properties ARE expected to be covered by the signature.
     private String[] propertiesNotCoveredBySignature = {
             // Omitted because they change after creation
-            "oid",
+            "goid",
             "signature",
             "version", 
 
@@ -188,7 +188,7 @@ public class AuditRecordTest {
     }
 
     public static AuditRecord makeAdminAuditRecord() {
-        AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", 1234, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", new Goid(0,-1), "admin", "1111", "2.3.4.5");
+        AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", new Goid(456,1234), User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", new Goid(0,-1), "admin", "1111", "2.3.4.5");
         auditRecord.setStrRequestId(new RequestId(3, 555).toString());
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);

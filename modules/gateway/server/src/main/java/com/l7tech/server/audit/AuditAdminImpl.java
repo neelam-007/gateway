@@ -145,8 +145,8 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     public AuditRecord findByPrimaryKey( String id, boolean fromInternal) throws FindException {
         if(fromInternal){
             try{
-                long oid = Long.parseLong(id);
-                return auditRecordManager.findByPrimaryKey(oid);
+                Goid goid = Goid.parseGoid(id);
+                return auditRecordManager.findByPrimaryKey(goid);
             }catch (NumberFormatException e){
                 throw new FindException("Invalid oid:"+id, e);
             }
@@ -364,7 +364,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     @Override
     public OpaqueId downloadAllAudits(long fromTime,
                                       long toTime,
-                                      long[] serviceOids,
+                                      Goid[] serviceOids,
                                       int chunkSizeInBytes) {
         try {
             return auditDownloadManager.createDownloadContext( fromTime, toTime, serviceOids );
@@ -512,7 +512,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public String invokeAuditViewerPolicyForMessage(long auditRecordId, final boolean isRequest)
+    public String invokeAuditViewerPolicyForMessage(Goid auditRecordId, final boolean isRequest)
             throws FindException, AuditViewerPolicyNotAvailableException {
 
         final List<Pair<Level, String>> auditMessages = new ArrayList<Pair<Level, String>>();
@@ -550,7 +550,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException {
+    public String invokeAuditViewerPolicyForDetail(Goid auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException {
 
         if(ordinal < 0) throw new IllegalArgumentException("ordinal must be >= 0");
 

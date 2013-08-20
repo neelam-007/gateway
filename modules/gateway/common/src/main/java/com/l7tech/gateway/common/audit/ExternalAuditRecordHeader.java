@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.util.logging.Level;
 
 /**
@@ -13,7 +15,7 @@ public class ExternalAuditRecordHeader extends AuditRecordHeader {
     public ExternalAuditRecordHeader(final AuditRecord auditRecord, String guid){
         this( guid,
               AuditRecordUtils.AuditRecordType(auditRecord),
-              auditRecord.getOid(),
+              auditRecord.getGoid(),
               auditRecord instanceof MessageSummaryAuditRecord ? auditRecord.getName() : "",
               auditRecord.getMessage(),
               null,
@@ -27,7 +29,7 @@ public class ExternalAuditRecordHeader extends AuditRecordHeader {
     public ExternalAuditRecordHeader(final ExternalAuditRecordHeader externalAuditRecordHeader) {
         this( externalAuditRecordHeader.getGuid(),
               externalAuditRecordHeader.getRecordType(),
-              externalAuditRecordHeader.getOid(),
+              externalAuditRecordHeader.getGoid(),
               externalAuditRecordHeader.getName(),
               externalAuditRecordHeader.getDescription(),
               externalAuditRecordHeader.getSignatureDigest(),
@@ -42,7 +44,7 @@ public class ExternalAuditRecordHeader extends AuditRecordHeader {
      *
      * @param name should be empty if not an message summary audit record
      */
-    public ExternalAuditRecordHeader(String guid, String recordType, long id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
+    public ExternalAuditRecordHeader(String guid, String recordType, Goid id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super( id, name, description,  signatureDigest, signature, nodeId, timestamp, level, version);
         this.guid = guid;
         this.recordType = recordType;

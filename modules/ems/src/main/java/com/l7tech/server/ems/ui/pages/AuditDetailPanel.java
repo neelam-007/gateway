@@ -93,7 +93,7 @@ public class AuditDetailPanel extends Panel {
             if (AdminAuditRecord.ACTION_LOGIN!=aarec.getAction() &&
                 AdminAuditRecord.ACTION_OTHER!=aarec.getAction()) {
                 add(details, "Entity name", record.getName());
-                add(details, "Entity id", aarec.getEntityOid());
+                add(details, "Entity id", aarec.getEntityGoid());
                 add(details, "Entity type", fixType(aarec.getEntityClassname()));
             }
         } else if (record instanceof SystemAuditRecord) {

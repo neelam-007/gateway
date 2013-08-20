@@ -212,7 +212,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             ExternalAuditRecordHeader auditHeader = (ExternalAuditRecordHeader) header;
             if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_ADMIN)){
                 return new AdminAuditRecord(
-                        auditHeader.getLevel(),auditHeader.getNodeId(),123,null, auditHeader.getName(),AdminAuditRecord.ACTION_OTHER,null,new Goid(123,456),"fake",null,null);
+                        auditHeader.getLevel(),auditHeader.getNodeId(),new Goid(987,123),null, auditHeader.getName(),AdminAuditRecord.ACTION_OTHER,null,new Goid(123,456),"fake",null,null);
             }else if(auditHeader.getRecordType().equals(AuditRecordUtils.TYPE_MESSAGE)){
                 return new MessageSummaryAuditRecord(
                         auditHeader.getLevel(),auditHeader.getNodeId(),  null,AssertionStatus.NONE,null,null, 3,

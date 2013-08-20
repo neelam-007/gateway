@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -39,7 +40,7 @@ public class ClusterLogWorker extends SwingWorker {
     private final AuditAdmin logService;
     private Map<String, GatewayStatus> newNodeList;
     private LogRequest logRequest;
-    private final Map<Long, AuditHeaderMessage> retrievedLogs = new HashMap<Long, AuditHeaderMessage>();
+    private final Map<Goid, AuditHeaderMessage> retrievedLogs = new HashMap<Goid, AuditHeaderMessage>();
     private java.util.Date currentClusterSystemTime = null;
     private final AtomicBoolean cancelled;
 
@@ -78,7 +79,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return new logs
      */
-    public Map<Long, AuditHeaderMessage> getNewLogs(){
+    public Map<Goid, AuditHeaderMessage> getNewLogs(){
         return retrievedLogs;
     }
 
@@ -141,7 +142,7 @@ public class ClusterLogWorker extends SwingWorker {
 
             AuditRecordHeader[] rawHeaders;
             if (logRequest != null) {
-                Map<Long, AuditHeaderMessage> newLogs = new HashMap<Long, AuditHeaderMessage>();
+                Map<Goid, AuditHeaderMessage> newLogs = new HashMap<Goid, AuditHeaderMessage>();
 
                 try {
                     AuditHeaderMessage logMessage;
@@ -156,41 +157,21 @@ public class ClusterLogWorker extends SwingWorker {
                     if (!isCancelled() && rawHeaders.length > 0) {
                         long oldest = Long.MAX_VALUE;
 
-                        Map<String, Long> nodeToLowestId = new HashMap<String, Long>();
-                        for (String nodeId : newNodeList.keySet()) {
-                            nodeToLowestId.put(nodeId, Long.MAX_VALUE);
-                        }
-
                         for (int j = 0; j < (rawHeaders.length) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
                             AuditRecordHeader header = rawHeaders[j];
                             logMessage = new AuditHeaderMessage(header);
 
                             final GatewayStatus nodeStatus = newNodeList.get(header.getNodeId());
                             if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
-                                if (nodeToLowestId.containsKey(header.getNodeId())) {
-                                    //based on nodeStatus != null this if is always true
-
-                                    //track lowest object id seen from each node
-                                    final Long lowest = nodeToLowestId.get(header.getNodeId());
-                                    if (header.getOid() < lowest ) {
-                                        nodeToLowestId.put(header.getNodeId(), header.getOid());
-                                    }
-
-                                    //track oldest across a cluster
-                                    if (header.getTimestamp() < oldest ) {
-                                        oldest = header.getTimestamp();
-                                    }
+                                //track oldest across a cluster
+                                if (header.getTimestamp() < oldest ) {
+                                    oldest = header.getTimestamp();
                                 }
-
                                 logMessage.setNodeName(nodeStatus.getName());
                                 newLogs.put(logMessage.getMsgNumber(), logMessage);
                             }
                         }
 
-                        for (Map.Entry<String, Long> entry : nodeToLowestId.entrySet()) {
-                            //for each node - we only want records with an object smaller than entry.getValue()
-                            logRequest.setEndMsgNumberForNode(entry.getKey(), entry.getValue());
-                        }
                         if (oldest == Long.MAX_VALUE) {
                             //should never happen.
                             oldest = -1L;

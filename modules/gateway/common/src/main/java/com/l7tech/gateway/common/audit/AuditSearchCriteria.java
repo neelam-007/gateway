@@ -8,6 +8,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Pair;
 
 import java.io.Serializable;
@@ -133,7 +134,7 @@ public final class AuditSearchCriteria implements Serializable {
     public final String userIdOrDn;
     public final Integer messageId; // null = any
     public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
-    public final Long entityId; // null = any
+    public final Goid entityId; // null = any
     public final String operation;
     public final boolean getFromPolicy;
 
@@ -299,7 +300,7 @@ public final class AuditSearchCriteria implements Serializable {
         private String userIdOrDn; // null == any
         private Integer messageId; // null == any
         private String entityClassName; // null == any
-        private Long entityId; // null == any
+        private Goid entityId; // null == any
         private String operation = null; // null == any
 
         public Builder() {
@@ -323,7 +324,7 @@ public final class AuditSearchCriteria implements Serializable {
             operation(logRequest.getOperation());
             getFromPolicy(logRequest.isGetFromPolicy());
             //String and Long are immutable - can just add all to Map.
-            nodeIdToStartMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToStartMsg()));
+            nodeIdToStartMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToStartTimestamp()));
             nodeIdToEndMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToEndMsg()));
         }
 
@@ -444,7 +445,7 @@ public final class AuditSearchCriteria implements Serializable {
             return this;
         }
 
-        public Builder entityId(Long value) {
+        public Builder entityId(Goid value) {
             entityId = value;
             return this;
         }

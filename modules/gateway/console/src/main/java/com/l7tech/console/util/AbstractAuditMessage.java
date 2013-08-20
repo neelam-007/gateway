@@ -1,5 +1,7 @@
 package com.l7tech.console.util;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.io.IOException;
 
 /**
@@ -17,7 +19,7 @@ public abstract class AbstractAuditMessage implements Comparable {
         this.nodeName = nodeName;
     }
 
-    public abstract long getMsgNumber();
+    public abstract Goid getMsgNumber();
 
     public abstract long getTimestamp();
 
@@ -55,7 +57,7 @@ public abstract class AbstractAuditMessage implements Comparable {
     public int hashCode() {
         int result;
 
-        result = Long.valueOf(getMsgNumber()).hashCode();
+        result = getMsgNumber().hashCode();
         result = 31 * result + (nodeName != null ? nodeName.hashCode() : 0);
         return result;
     }
@@ -84,7 +86,7 @@ public abstract class AbstractAuditMessage implements Comparable {
                     compareValue = 1;
                 } else {
                     // this may not be meaningful for audit records, but is at least definitive
-                    compareValue = Long.valueOf(other.getMsgNumber()).compareTo(getMsgNumber());
+                    compareValue = other.getMsgNumber().compareTo(getMsgNumber());
                 }
             }
         }

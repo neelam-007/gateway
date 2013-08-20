@@ -130,7 +130,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
             }
 
             if (logger.isLoggable(Level.FINE))
-                logger.fine("Starting export for audit records with objectid in [" + startOid + " : " + endOid + "], " +
+                logger.fine("Starting export for audit records with time in [" + startOid + " : " + endOid + "], " +
                             "destination configured to accept max " + maxUploadFileSize + " bytes." );
 
             AuditExporter.ExportedInfo result = auditExporter.exportAudits(startOid, endOid, os, maxUploadFileSize, exportedInfo);
@@ -143,8 +143,8 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                 
             } else {
                 if (logger.isLoggable(Level.FINE))
-                    logger.fine("Exported audit records with objectid in " +
-                                "[" + exportedInfo.getLowestId() + " : " + exportedInfo.getHighestId() + "], " +
+                    logger.fine("Exported audit records with time in " +
+                                "[" + exportedInfo.getEarliestTime() + " : " + exportedInfo.getLatestTime() + "], " +
                                 exportedInfo.getTransferredBytes() + " bytes");
             }
 

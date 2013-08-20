@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
@@ -354,7 +355,7 @@ public class AssociatedLogsTable extends JTable {
         return null;
     }
 
-    private String getAVPolicyOutput(final long auditRecordId, long ordinal){
+    private String getAVPolicyOutput(final Goid auditRecordId, long ordinal){
         final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
         try {
             return auditAdmin.invokeAuditViewerPolicyForDetail(auditRecordId, ordinal);

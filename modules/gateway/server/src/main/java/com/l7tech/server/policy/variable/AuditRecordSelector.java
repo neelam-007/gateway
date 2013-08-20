@@ -326,7 +326,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
                 if (rec instanceof AdminAuditRecord) {
                     AdminAuditRecord adminRec = (AdminAuditRecord) rec;
-                    return new Selection(adminRec.getEntityOid());
+                    return new Selection(adminRec.getEntityGoid());
                 }
                 else  return new Selection("");
             }

@@ -55,7 +55,7 @@ public class AuditRecordManagerImplTest {
     public void findByPrimaryKeySetsSecurityZoneForMessageSummary() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(messageSummary);
         when(serviceCache.getCachedService(SERVICE_GOID)).thenReturn(service);
-        final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(1L);
+        final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(new Goid(0,1L));
         assertEquals(zone, found.getSecurityZone());
     }
 
@@ -63,7 +63,7 @@ public class AuditRecordManagerImplTest {
     public void findByPrimaryKeyNotMessageSummary() throws Exception {
         final SystemAuditRecord systemAuditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GATEWAY, "test", true, new Goid(0,1234), "user", "userId", "action", "127.0.0.1");
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(systemAuditRecord);
-        final AuditRecord found = manager.findByPrimaryKey(1L);
+        final AuditRecord found = manager.findByPrimaryKey(new Goid(0,1L));
         assertEquals(systemAuditRecord, found);
         verify(serviceCache, never()).getCachedService(any(Goid.class));
     }
@@ -72,7 +72,7 @@ public class AuditRecordManagerImplTest {
     public void findByPrimaryKeyMessageSummaryCachedServiceNotFound() throws Exception {
         when(hibernateTemplate.execute(any(HibernateCallback.class))).thenReturn(messageSummary);
         when(serviceCache.getCachedService(SERVICE_GOID)).thenReturn(null);
-        final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(1L);
+        final MessageSummaryAuditRecord found = (MessageSummaryAuditRecord) manager.findByPrimaryKey(new Goid(0,1L));
         assertNull(found.getSecurityZone());
     }
 

@@ -11,8 +11,8 @@
     <typedef class="com.l7tech.server.util.GoidType" name="goid"/>
 
     <class name="com.l7tech.gateway.common.audit.AuditRecord" table="audit_main" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <!-- No version column required, since these never get modified -->
@@ -28,12 +28,12 @@
         <property name="signature" column="signature" type="string"/>
 
         <set name="details" lazy="false" inverse="true" cascade="all">
-            <key column="audit_oid"/>
+            <key column="audit_goid"/>
             <one-to-many class="com.l7tech.gateway.common.audit.AuditDetail"/>
         </set>
         
         <joined-subclass name="com.l7tech.gateway.common.audit.MessageSummaryAuditRecord" table="audit_message" lazy="false">
-            <key column="objectid"/>
+            <key column="goid"/>
             <property name="status" type="int"/>
             <property name="strRequestId" column="request_id" type="string"/>
             <property name="serviceGoid" column="service_goid" type="goid"/>
@@ -52,22 +52,22 @@
         </joined-subclass>
 
         <joined-subclass name="com.l7tech.gateway.common.audit.AdminAuditRecord" table="audit_admin" lazy="false">
-            <key column="objectid"/>
+            <key column="goid"/>
             <property name="entityClassname" column="entity_class" type="string"/>
-            <property name="entityOid" column="entity_id" type="long"/>
+            <property name="entityGoid" column="entity_id" type="goid"/>
             <property name="action" column="action" type="char"/>
         </joined-subclass>
 
         <joined-subclass name="com.l7tech.gateway.common.audit.SystemAuditRecord" table="audit_system" lazy="false">
-            <key column="objectid"/>
+            <key column="goid"/>
             <property name="componentId" column="component_id" type="int"/>
             <property name="action" type="string"/>
         </joined-subclass>
     </class>
 
     <class name="com.l7tech.gateway.common.audit.AuditDetail" table="audit_detail" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="layer7-generator"/>
+        <id name="goid" column="goid" type="goid">
+            <generator class="layer7-goid-generator"/>
         </id>
 
         <property name="time" type="long"/>
@@ -77,12 +77,12 @@
         <property name="exception" column="exception_message" type="text"/>
 
         <array name="params" table="audit_detail_params" cascade="all" outer-join="true">
-            <key column="audit_detail_oid"/>
+            <key column="audit_detail_goid"/>
             <index column="position"/>
             <element column="value" type="string"/>
         </array>
 
-        <many-to-one name="auditRecord" class="com.l7tech.gateway.common.audit.AuditRecord" column="audit_oid"/>
+        <many-to-one name="auditRecord" class="com.l7tech.gateway.common.audit.AuditRecord" column="audit_goid"/>
     </class>
 
 </hibernate-mapping>

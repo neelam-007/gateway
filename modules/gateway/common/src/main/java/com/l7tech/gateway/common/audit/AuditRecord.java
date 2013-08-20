@@ -3,10 +3,12 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidEntity;
 import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
 
+import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,13 +29,13 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author alex
  */
-public abstract class AuditRecord implements NamedEntity, PersistentEntity, Serializable {
+public abstract class AuditRecord implements NamedEntity, GoidEntity, Serializable {
     private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
     private static AtomicLong globalSequenceNumber = new AtomicLong(0L);
 
     public static final String SERSEP = ":";
 
-    private long oid;
+    private Goid goid;
     private int version;
     private String signature;
     private String nodeId;
@@ -42,7 +44,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     private long millis;
     private final long sequenceNumber;
 
-    /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
+    /** OID of the IdentityProvider that the requesting user, if any, belongs to. */
     protected Goid identityProviderGoid = IdentityProviderConfig.DEFAULT_GOID;
     /** Login or name of the user that is making the request if known, or null otherwise. */
     protected String userName;
@@ -81,9 +83,9 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @param ipAddress the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor, or null if unavailable.
      * @param name the name of the service or system affected by event that generated the AuditRecord
      * @param message a short description of the event that generated the AuditRecord
-     * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
+     * @param identityProviderOid the GOID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_GOID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
-     * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
+     * @param userId the GOID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
     protected AuditRecord(Level level, String nodeId, String ipAddress, Goid identityProviderOid, String userName, String userId, String name, String message) {
         this.sequenceNumber = globalSequenceNumber.incrementAndGet();
@@ -153,12 +155,12 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
 
     @Override
     public String getId() {
-        return Long.toString(oid);
+        return Goid.toString(goid);
     }
 
     @Override
-    public long getOid() {
-        return oid;
+    public Goid getGoid() {
+        return goid;
     }
 
     @Override
@@ -249,11 +251,18 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         return userId;
     }
 
+    @Override
+    @Transient
+    @XmlTransient
+    public boolean isUnsaved() {
+        return DEFAULT_GOID.equals(goid);
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
     @Override
-    public void setOid(long oid) {
-        this.oid = oid;
+    public void setGoid(Goid oid) {
+        this.goid = oid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */

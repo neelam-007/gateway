@@ -286,38 +286,38 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
         auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_JOB_STARTED);
 
         while (true) { // loop until the unadjusted (zipBytesArchived==0) usage check drops below the stop threshold
-            long initialStartOid = Long.MIN_VALUE;
-            long maxOidArchived = Long.MIN_VALUE;
+            long initialStartTime = Long.MIN_VALUE;
+            long maxTimeArchived = Long.MIN_VALUE;
             long zipBytesArchived = 0L;
 
             while (stopThreshold <= (currentUsageCheck(zipBytesArchived))) {
                 //todo fix for when stop threshold is below size of non audit data
                 // get starting point
-                long startOid;
+                long startTime;
                 try {
-                    startOid = recordManager.getMinOid(maxOidArchived);
+                    startTime = recordManager.getMinMills(maxTimeArchived);
                 } catch (Exception e) {
                     //todo this situation is expected when the limits are set such that the archiver wants to run but there are no more audits to archive.
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, new String[]{"Error getting lowest audit record object id."}, e);
                     break;
                 }
-                if (initialStartOid == Long.MIN_VALUE) initialStartOid = startOid;
-                if (startOid == -1L) {
+                if (initialStartTime == Long.MIN_VALUE) initialStartTime = startTime;
+                if (startTime == -1L) {
                     //todo this situation is expected when the limits are set such that the archiver wants to run but there are no more audits to archive.
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Error getting lowest audit record object id.");
                     break;
                 }
-                long endOid = startOid + (long)(batchSize > MAX_BATCH_SIZE ? MAX_BATCH_SIZE : batchSize);
+                long endOid = startTime + (long)(batchSize > MAX_BATCH_SIZE ? MAX_BATCH_SIZE : batchSize);
 
                 // archive
                 try {
                     if (logger.isLoggable(Level.FINE))
-                        logger.fine("Archiving audit records with objectid in [" + startOid + " : " + endOid + "]");
+                        logger.fine("Archiving audit records with time in [" + startTime + " : " + endOid + "]");
 
-                    AuditExporter.ExportedInfo result = archiveReceiver.archiveRecords(startOid, endOid);
+                    AuditExporter.ExportedInfo result = archiveReceiver.archiveRecords(startTime, endOid);
                     if (result == null) break;
 
-                    maxOidArchived = result.getHighestId();
+                    maxTimeArchived = result.getLatestTime();
                     zipBytesArchived += result.getTransferredBytes(); // using this for heuristics, since req/resp message are archived in the DB as well
 
                 } catch (Exception e) {
@@ -328,16 +328,16 @@ public class AuditArchiver implements ApplicationContextAware, PostStartupApplic
 
             // flush & delete
             try {
-                if (initialStartOid == Long.MIN_VALUE && maxOidArchived == Long.MIN_VALUE) {
+                if (initialStartTime == Long.MIN_VALUE && maxTimeArchived == Long.MIN_VALUE) {
                     break; // dropped below the start threshold at the previous iteration
-                } else if (maxOidArchived < initialStartOid || maxOidArchived == Long.MIN_VALUE) {
+                } else if (maxTimeArchived < initialStartTime || maxTimeArchived == Long.MIN_VALUE) {
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "No records were saved by the configured archive receiver!");
                     break;
                 } else if (archiveReceiver.flush()) {
                     if (logger.isLoggable(Level.FINE))
-                        logger.fine("Deleting audit records with objectid in [" + initialStartOid + " : " + maxOidArchived + "]");
-                    recordManager.deleteRangeByOid(initialStartOid, maxOidArchived);
-                    auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_JOB_ARCHIVED, Long.toString(initialStartOid), Long.toString(maxOidArchived));
+                        logger.fine("Deleting audit records with time in [" + initialStartTime + " : " + maxTimeArchived + "]");
+                    recordManager.deleteRangeByTime(initialStartTime, maxTimeArchived);
+                    auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_JOB_ARCHIVED, Long.toString(initialStartTime), Long.toString(maxTimeArchived));
                     Thread.sleep(MYSQL_STATS_UPDATE_SLEEP_WAIT); // wait for the stats to update
                 } else {
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Error flushing archive receiver; NOT deleting any records.");

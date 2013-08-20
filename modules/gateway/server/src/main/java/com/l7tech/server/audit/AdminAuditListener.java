@@ -9,9 +9,7 @@ import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.HasAuditDetails;
@@ -209,20 +207,20 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
-            long oid = PersistentEntity.DEFAULT_OID;
+            Goid goid = GoidEntity.DEFAULT_GOID;
             try {
-                oid = Long.parseLong(entityId);
-            } catch (NumberFormatException nfe) {
-                logger.log(Level.FINE, "Entity ID was not a long");
+                goid = Goid.parseGoid(entityId);
+            } catch (IllegalArgumentException iae) {
+                logger.log(Level.FINE, "Entity ID was not a Goid");
             }
 
-            return new AdminAuditRecord(level(event), nodeId, oid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
+            return new AdminAuditRecord(level(event), nodeId, goid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof BackupEvent) {
             final BackupEvent event = (BackupEvent)genericEvent;
             final User user = event.getUser();
             return new AdminAuditRecord(event.getLevel(),
                                         nodeId,
-                                        0,
+                                        null,
                                         "<none>",
                                         "Backup Service",
                                         AdminAuditRecord.ACTION_OTHER,
@@ -236,7 +234,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
-            return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_OTHER, event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
+            return new AdminAuditRecord(level(event), nodeId, null, "<none>", "", AdminAuditRecord.ACTION_OTHER, event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)genericEvent;
             User admin = (User)le.getSource();
@@ -247,11 +245,11 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
             if ( le.getType() == LogonEvent.LOGON ) {
-                return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
+                return new AdminAuditRecord(Level.INFO, nodeId, null, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
                                             "User logged in",
                                             admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
             } else {
-                return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGOUT,
+                return new AdminAuditRecord(Level.INFO, nodeId, null, "<none>", "", AdminAuditRecord.ACTION_LOGOUT,
                                             "User logged out",
                                             admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
             }

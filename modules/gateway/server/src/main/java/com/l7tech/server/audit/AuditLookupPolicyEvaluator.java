@@ -4,6 +4,8 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -204,10 +206,10 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                             entityClass,entityId,status,requestId,serviceOid,operationName,authenticated,authenticationType,
                             requestLength,responseLength,requestZip,responseZip,responseStatus,latency,componentId,action,properties);
 
-                    Long oid = (Long)auditRecordsIDCache.retrieve(id);
-                    record.setOid(oid== null? nextFakeOid.incrementAndGet():oid);
+                    Goid goid = (Goid)auditRecordsIDCache.retrieve(id);
+                    record.setGoid(goid == null ? GoidUpgradeMapper.mapOid(null,nextFakeOid.incrementAndGet()) : goid);
                     if(messageLimitSize > 0L && (requestLength > messageLimitSize || responseLength > messageLimitSize)){
-                        auditRecordsIDCache.store(id,oid);
+                        auditRecordsIDCache.store(id,goid);
                         largeMessageAudits.put(id, record);
                     }else{
                         auditRecordsCache.store(id,record);
@@ -255,15 +257,15 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
 
                 // try getting id from audit records
                 AuditRecord record = getAuditRecordFromCache(id,null);
-                Long oid ;
+                Goid goid ;
                 if(record == null ){
                     Object get  = auditRecordsIDCache.retrieve(id);
                     if(get == null){
-                        oid = nextFakeOid.incrementAndGet();
+                        goid = GoidUpgradeMapper.mapOid(null,nextFakeOid.incrementAndGet());
                         // save guid -> fake id mapping
-                        auditRecordsIDCache.store(id,oid);
+                        auditRecordsIDCache.store(id,goid);
                     }else {
-                        oid = (Long)get;
+                        goid = (Goid)get;
                     }
 
                     String nodeid = ExternalAuditsUtils.getStringData(nodeid_var[i]);
@@ -277,7 +279,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                     header = new ExternalAuditRecordHeader(
                             id,
                             type,
-                            oid,
+                            goid,
                             type.equals("message")? name : "",
                             message,
                             null,
@@ -349,7 +351,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                 detail.setAuditGuid(audit_oid);
                 detail.setOrdinal(ordinal);
                 detail.setComponentId(componentId);
-                detail.setOid(ordinal);
+                detail.setGoid(new Goid(0,i));
 
                 AuditRecord record = getAuditRecordFromCache(audit_oid,largeAuditMessages);
                 if(record == null){

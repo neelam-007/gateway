@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -26,8 +27,8 @@ public class AuditMessage extends AbstractAuditMessage {
     }
 
     @Override
-    public long getMsgNumber() {
-        return auditRecord.getOid();
+    public Goid getMsgNumber() {
+        return auditRecord.getGoid();
     }
 
     @Override

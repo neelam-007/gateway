@@ -21,7 +21,7 @@ import java.util.Map;
  * @author alex
  * @version $Revision$
  */
-public interface AuditRecordManager extends EntityManager<AuditRecord, AuditRecordHeader> {
+public interface AuditRecordManager extends GoidEntityManager<AuditRecord, AuditRecordHeader> {
     public static final String PROP_NAME = "name";
     public static final String PROP_MSG = "message";
 
@@ -99,9 +99,9 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
      */
     Collection<AuditRecord> findPage( final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final AuditSearchCriteria criteria ) throws FindException;
 
-    long getMinOid(long lowerLomit) throws SQLException;
+    long getMinMills(long lowerLimit) throws SQLException;
 
-    public int deleteRangeByOid(final long start, final long end) throws SQLException;
+    public int deleteRangeByTime(final long start, final long end) throws SQLException;
 
     /**
      * Get the max table space size in bytes for the current database.

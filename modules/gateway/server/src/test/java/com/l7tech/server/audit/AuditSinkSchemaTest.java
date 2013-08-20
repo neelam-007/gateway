@@ -98,7 +98,7 @@ public class AuditSinkSchemaTest {
         AdminAuditRecord aar = new AdminAuditRecord(
                 Level.FINE,
                 guid,
-                123,
+                new Goid(235,123),
                 "entityClassname",
                 "name",
                 AdminAuditRecord.ACTION_OTHER,

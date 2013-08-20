@@ -223,7 +223,7 @@ ALTER TABLE jdbc_connection DROP PRIMARY KEY;
 ALTER TABLE jdbc_connection DROP COLUMN objectid;
 ALTER TABLE jdbc_connection ADD PRIMARY KEY (goid);
 update rbac_role set entity_goid = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint),entity_oid) where entity_oid is not null and entity_type='JDBC_CONNECTION';
-update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jdbc_connection_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'SERVICE'), oid1.entity_id);
+update rbac_predicate_oid oid1 set oid1.entity_id = ifnull((select goidToString(toGoid(cast(getVariable('jdbc_connection_prefix') as bigint),cast(oid1.entity_id as bigint))) from rbac_predicate left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid where rbac_predicate.objectid = oid1.objectid and rbac_permission.entity_type = 'JDBC_CONNECTION'), oid1.entity_id);
 
 -- MetricsBin, MetricsBinDetail  - metrics are not enabled for derby, no data to upgrade
 ALTER TABLE service_metrics DROP PRIMARY KEY;
@@ -434,6 +434,7 @@ call setVariable('internal_user_group_prefix', cast(randomLongNotReserved() as c
 call setVariable('fed_user_prefix', cast(randomLongNotReserved() as char(21)));
 call setVariable('fed_group_prefix', cast(randomLongNotReserved() as char(21)));
 call setVariable('fed_user_group_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('fed_group_virtual_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE audit_main ADD COLUMN provider_oid_backup bigint;
 update audit_main set provider_oid_backup = provider_oid;
@@ -483,7 +484,7 @@ ALTER TABLE fed_group_virtual ADD COLUMN objectid_backup bigint;
 update fed_group_virtual set objectid_backup = objectid;
 ALTER TABLE fed_group_virtual DROP COLUMN objectid;
 ALTER TABLE fed_group_virtual ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update fed_group_virtual set goid = toGoid(cast(getVariable('fed_group_prefix') as bigint), objectid_backup);
+update fed_group_virtual set goid = toGoid(cast(getVariable('fed_group_virtual_prefix') as bigint), objectid_backup);
 ALTER TABLE fed_group_virtual ALTER COLUMN goid NOT NULL;
 ALTER TABLE fed_group_virtual DROP COLUMN objectid_backup;
 ALTER TABLE fed_group_virtual ADD PRIMARY KEY (goid);
@@ -674,6 +675,84 @@ ALTER TABLE wssc_session ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
 update wssc_session set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
 update wssc_session set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
 ALTER TABLE wssc_session DROP COLUMN provider_oid_backup;
+
+-- audits
+call setVariable('audit_main_prefix', cast(randomLongNotReserved() as char(21)));
+call setVariable('audit_detail_prefix', cast(randomLongNotReserved() as char(21)));
+
+ALTER TABLE audit_main ADD COLUMN objectid_backup bigint;
+update audit_main set objectid_backup = objectid;
+ALTER TABLE audit_main DROP COLUMN objectid;
+ALTER TABLE audit_main ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update audit_main set goid = toGoid(cast(getVariable('audit_main_prefix') as bigint), objectid_backup);
+ALTER TABLE audit_main ALTER COLUMN goid NOT NULL;
+ALTER TABLE audit_main DROP COLUMN objectid_backup;
+ALTER TABLE audit_main ADD PRIMARY KEY (goid);
+
+ALTER TABLE audit_admin ADD COLUMN objectid_backup bigint;
+update audit_admin set objectid_backup = objectid;
+ALTER TABLE audit_admin DROP COLUMN objectid;
+ALTER TABLE audit_admin ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update audit_admin set goid = toGoid(cast(getVariable('audit_main_prefix') as bigint), objectid_backup);
+ALTER TABLE audit_admin ALTER COLUMN goid NOT NULL;
+ALTER TABLE audit_admin DROP COLUMN objectid_backup;
+ALTER TABLE audit_admin ADD PRIMARY KEY (goid);
+alter table audit_admin add constraint FK364471EB7AEF109A foreign key (goid) references audit_main on delete cascade;
+
+ALTER TABLE audit_admin ADD COLUMN entity_id_backup bigint;
+update audit_admin set entity_id_backup = entity_id;
+ALTER TABLE audit_admin DROP COLUMN entity_id;
+ALTER TABLE audit_admin ADD COLUMN entity_id CHAR(16) FOR BIT DATA;
+update audit_admin set entity_id = toGoid(3, entity_id_backup) where entity_id_backup != 0;
+
+ALTER TABLE audit_detail ADD COLUMN objectid_backup bigint;
+update audit_detail set objectid_backup = objectid;
+ALTER TABLE audit_detail DROP COLUMN objectid;
+ALTER TABLE audit_detail ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update audit_detail set goid = toGoid(cast(getVariable('audit_detail_prefix') as bigint), objectid_backup);
+ALTER TABLE audit_detail ALTER COLUMN goid NOT NULL;
+ALTER TABLE audit_detail DROP COLUMN objectid_backup;
+ALTER TABLE audit_detail ADD PRIMARY KEY (goid);
+
+ALTER TABLE audit_detail ADD COLUMN audit_oid_backup bigint;
+update audit_detail set audit_oid_backup = audit_oid;
+ALTER TABLE audit_detail DROP COLUMN audit_oid;
+ALTER TABLE audit_detail ADD COLUMN audit_goid CHAR(16) FOR BIT DATA;
+update audit_detail set audit_goid = toGoid(cast(getVariable('audit_main_prefix') as bigint), audit_oid_backup);
+ALTER TABLE audit_detail ALTER COLUMN audit_goid NOT NULL;
+ALTER TABLE audit_detail DROP COLUMN audit_oid_backup;
+alter table audit_detail add constraint FK97797D35810D4766 foreign key (audit_goid) references audit_main on delete cascade;
+
+ALTER TABLE audit_detail_params ADD COLUMN audit_detail_oid_backup bigint;
+update audit_detail_params set audit_detail_oid_backup = audit_detail_oid;
+ALTER TABLE audit_detail_params DROP COLUMN audit_detail_oid;
+ALTER TABLE audit_detail_params ADD COLUMN audit_detail_goid CHAR(16) FOR BIT DATA;
+update audit_detail_params set audit_detail_goid = toGoid(cast(getVariable('audit_detail_prefix') as bigint), audit_detail_oid_backup);
+ALTER TABLE audit_detail_params ALTER COLUMN audit_detail_goid NOT NULL;
+ALTER TABLE audit_detail_params DROP COLUMN audit_detail_oid_backup;
+ALTER TABLE audit_detail_params ADD PRIMARY KEY (audit_detail_goid, position);
+alter table audit_detail_params add constraint FK990923D0753897C0 foreign key (audit_detail_goid) references audit_detail on delete cascade;
+
+
+ALTER TABLE audit_message ADD COLUMN objectid_backup bigint;
+update audit_message set objectid_backup = objectid;
+ALTER TABLE audit_message DROP COLUMN objectid;
+ALTER TABLE audit_message ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update audit_message set goid = toGoid(cast(getVariable('audit_main_prefix') as bigint), objectid_backup);
+ALTER TABLE audit_message ALTER COLUMN goid NOT NULL;
+ALTER TABLE audit_message DROP COLUMN objectid_backup;
+ALTER TABLE audit_message ADD PRIMARY KEY (goid);
+alter table audit_message add constraint FK33C837A37AEF109A foreign key (goid) references audit_main on delete cascade;
+
+ALTER TABLE audit_system ADD COLUMN objectid_backup bigint;
+update audit_system set objectid_backup = objectid;
+ALTER TABLE audit_system DROP COLUMN objectid;
+ALTER TABLE audit_system ADD COLUMN goid CHAR(16) FOR BIT DATA;
+update audit_system set goid = toGoid(cast(getVariable('audit_main_prefix') as bigint), objectid_backup);
+ALTER TABLE audit_system ALTER COLUMN goid NOT NULL;
+ALTER TABLE audit_system DROP COLUMN objectid_backup;
+ALTER TABLE audit_system ADD PRIMARY KEY (goid);
+alter table audit_system add constraint FKB22BD7137AEF109A foreign key (goid) references audit_main on delete cascade;
 
 -- Firewall rule
 
@@ -1403,6 +1482,60 @@ ALTER TABLE trusted_esm_user ADD PRIMARY KEY (goid);
 
 ALTER TABLE trusted_esm_user add constraint FKC48AF4D34548A1A6 foreign key (trusted_esm_goid) references trusted_esm on delete cascade;
 
+
+-- update audit record entity ids at the end
+
+update audit_admin set entity_id = toGoid(cast(getVariable('policy_alias_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.policy.PolicyAlias';
+update audit_admin set entity_id = toGoid(0, entity_id_backup) where entity_class='com.l7tech.server.security.keystore.KeystoreFile';
+update audit_admin set entity_id = toGoid(cast(getVariable('jms_endpoint_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.jms.JmsEndpoint';
+update audit_admin set entity_id = toGoid(cast(getVariable('password_history_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.internal.PasswordChangeRecord';
+update audit_admin set entity_id = toGoid(cast(getVariable('connector_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.SsgConnector';
+update audit_admin set entity_id = toGoid(cast(getVariable('jdbc_connection_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.jdbc.JdbcConnection';
+update audit_admin set entity_id = toGoid(cast(getVariable('secure_password_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.security.password.SecurePassword';
+update audit_admin set entity_id = toGoid(cast(getVariable('http_configuration_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.resources.HttpConfiguration';
+update audit_admin set entity_id = toGoid(cast(getVariable('encass_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig';
+update audit_admin set entity_id = toGoid(cast(getVariable('jms_connection_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.jms.JmsConnection';
+update audit_admin set entity_id = toGoid(cast(getVariable('internal_user_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.internal.InternalUser';
+update audit_admin set entity_id = toGoid(0, entity_id_backup) where entity_class='com.l7tech.identity.internal.InternalUser' and entity_id_backup=3;
+update audit_admin set entity_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig';
+update audit_admin set entity_id = toGoid(cast(getVariable('client_cert_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.cert.CertEntryRow';
+update audit_admin set entity_id = toGoid(cast(getVariable('active_connector_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.SsgActiveConnector';
+update audit_admin set entity_id = toGoid(cast(getVariable('wssc_session_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.server.secureconversation.StoredSecureConversationSession';
+update audit_admin set entity_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.ldap.LdapIdentityProviderConfig';
+update audit_admin set entity_id = toGoid(cast(getVariable('password_policy_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.IdentityProviderPasswordPolicy';
+update audit_admin set entity_id = toGoid(cast(getVariable('fed_group_virtual_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.VirtualGroup';
+update audit_admin set entity_id = toGoid(cast(getVariable('published_service_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.service.PublishedService';
+update audit_admin set entity_id = toGoid(cast(getVariable('internal_group_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.internal.InternalGroup';
+update audit_admin set entity_id = toGoid(cast(getVariable('cluster_properties_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.cluster.ClusterProperty';
+update audit_admin set entity_id = toGoid(cast(getVariable('resolution_configuration_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.ResolutionConfiguration';
+update audit_admin set entity_id = toGoid(cast(getVariable('folder_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.objectmodel.folder.Folder';
+update audit_admin set entity_id = toGoid(cast(getVariable('email_listener_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.email.EmailListener';
+update audit_admin set entity_id = toGoid(cast(getVariable('policy_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.policy.Policy';
+update audit_admin set entity_id = toGoid(cast(getVariable('revocation_check_policy_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.security.RevocationCheckPolicy';
+update audit_admin set entity_id = toGoid(cast(getVariable('published_service_alias_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.service.PublishedServiceAlias';
+update audit_admin set entity_id = toGoid(cast(getVariable('uddi_proxied_service_info_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo';
+update audit_admin set entity_id = toGoid(cast(getVariable('resource_entry_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.resources.ResourceEntry';
+update audit_admin set entity_id = toGoid(cast(getVariable('firewall_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.transport.firewall.SsgFirewallRule';
+update audit_admin set entity_id = toGoid(cast(getVariable('rbac_role_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.security.rbac.Role';
+update audit_admin set entity_id = toGoid(cast(getVariable('sink_config_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.log.SinkConfiguration';
+update audit_admin set entity_id = toGoid(cast(getVariable('sample_messages_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.service.SampleMessage';
+update audit_admin set entity_id = toGoid(cast(getVariable('uddi_registries_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.uddi.UDDIRegistry';
+update audit_admin set entity_id = toGoid(cast(getVariable('trusted_esm_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.esmtrust.TrustedEsm';
+update audit_admin set entity_id = toGoid(cast(getVariable('fed_user_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.FederatedUser';
+update audit_admin set entity_id = toGoid(cast(getVariable('fed_group_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.FederatedGroup';
+update audit_admin set entity_id = toGoid(cast(getVariable('encass_argument_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor';
+update audit_admin set entity_id = toGoid(cast(getVariable('uddi_service_control_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.uddi.UDDIServiceControl';
+update audit_admin set entity_id = toGoid(cast(getVariable('encass_result_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor';
+update audit_admin set entity_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.FederatedIdentityProviderConfig';
+update audit_admin set entity_id = toGoid(cast(getVariable('trusted_cert_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.security.cert.TrustedCert';
+update audit_admin set entity_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.IdentityProviderConfig';
+update audit_admin set entity_id = toGoid(cast(getVariable('trusted_esm_user_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.esmtrust.TrustedEsmUser';
+update audit_admin set entity_id = toGoid(cast(getVariable('generic_entity_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.policy.GenericEntity';
+update audit_admin set entity_id = toGoid(cast(getVariable('policy_version_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.policy.PolicyVersion';
+update audit_admin set entity_id = toGoid(cast(getVariable('service_documents_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.service.ServiceDocument';
+update audit_admin set entity_id = toGoid(0, entity_id_backup) where entity_id_backup < 0;
+ALTER TABLE audit_admin DROP COLUMN entity_id_backup;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --
@@ -1447,7 +1580,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('internal_user_group', cast(getVariable('internal_user_group_prefix') as bigint)),
       ('fed_user', cast(getVariable('fed_user_prefix') as bigint)),
       ('fed_group', cast(getVariable('fed_group_prefix') as bigint)),
+      ('fed_group_virtual', cast(getVariable('fed_group_virtual_prefix') as bigint)),
       ('fed_user_group', cast(getVariable('fed_user_group_prefix') as bigint)),
+      ('audit_main', cast(getVariable('audit_main_prefix') as bigint)),
+      ('audit_detail', cast(getVariable('audit_detail_prefix') as bigint)),
       ('firewall_rule', cast(getVariable('firewall_rule_prefix') as bigint)),
       ('encapsulated_assertion', cast(getVariable('encass_prefix') as bigint)),
       ('encapsulated_assertion_argument', cast(getVariable('encass_argument_prefix') as bigint)),

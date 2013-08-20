@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -120,7 +121,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
     private final AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
     private TimeZone timeZone;
 
-    private volatile Map<Long, AbstractAuditMessage> rawLogCache = new HashMap<Long, AbstractAuditMessage>();
+    private volatile Map<Goid, AbstractAuditMessage> rawLogCache = new HashMap<Goid, AbstractAuditMessage>();
     private volatile List<AbstractAuditMessage> filteredLogCache = new ArrayList<AbstractAuditMessage>();
     private Map<String, GatewayStatus> currentNodeList;
 
@@ -187,7 +188,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
      *
      * @param newLogs  The new logs.
      */
-    private void addLogs(Map<Long, ? extends AbstractAuditMessage> newLogs) {
+    private void addLogs(Map<Goid, ? extends AbstractAuditMessage> newLogs) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
@@ -196,7 +197,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
 
             synchronized (auditHeaderLock) {
 
-                for( long key : newLogs.keySet()) {
+                for( Goid key : newLogs.keySet()) {
                     if(rawLogCache.containsKey(key))  {
 
                         AbstractAuditMessage oldMsg = rawLogCache.get(key);
@@ -264,7 +265,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                                 final AuditHeaderMessage logMessage = (AuditHeaderMessage) filteredLogCache.get(index);
                                 if (logMessage.getSignatureDigest() == null) {
                                     fromPolicy = fromPolicy || logMessage.getGuid()!=null;
-                                    String id = fromPolicy ? logMessage.getGuid() : Long.toString(logMessage.getMsgNumber());
+                                    String id = fromPolicy ? logMessage.getGuid() : Goid.toString(logMessage.getMsgNumber());
                                     auditHeaders.put(id , logMessage);
                                 }
                                 index++;
@@ -680,7 +681,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         }
 
         synchronized (auditHeaderLock) {
-            rawLogCache = new HashMap<Long,AbstractAuditMessage>();
+            rawLogCache = new HashMap<Goid,AbstractAuditMessage>();
             sigValidationIndex = 0;
             filteredLogCache = new ArrayList<AbstractAuditMessage>();
         }
@@ -722,27 +723,27 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         if (restartTimer) {
             //...so must set the start message number
             //TODO there is likely a faster way to do this
-            Map<String, Long> nodeToHighestId = new HashMap<String, Long>();
+            Map<String, Long> nodeToNewest = new HashMap<String, Long>();
             Collection<AbstractAuditMessage> rawLogCacheCollection = rawLogCache.values();
 
             // new results can only be obtained for known nodes in the cluster.
             for (String nodeId : currentNodeList.keySet()) {
-                nodeToHighestId.put(nodeId, -1L);
+                nodeToNewest.put(nodeId, -1L);
             }
 
             for (AbstractAuditMessage logMessage : rawLogCacheCollection) {
                 //protect against records from nodes not in the cluster anymore
-                if (nodeToHighestId.containsKey(logMessage.getNodeId())) {
-                    final Long nodesHighest = nodeToHighestId.get(logMessage.getNodeId());
-                    if (logMessage.getMsgNumber() > nodesHighest) {
-                        nodeToHighestId.put(logMessage.getNodeId(), logMessage.getMsgNumber());
+                if (nodeToNewest.containsKey(logMessage.getNodeId())) {
+                    final long nodesHighest = nodeToNewest.get(logMessage.getNodeId());
+                    if (logMessage.getTimestamp() > nodesHighest) {
+                        nodeToNewest.put(logMessage.getNodeId(), logMessage.getTimestamp());
                     }
                 }
             }
 
-            for (Map.Entry<String, Long> entry : nodeToHighestId.entrySet()) {
+            for (Map.Entry<String, Long> entry : nodeToNewest.entrySet()) {
                 //some of entry.getValue() may be -1, this just means we are yet to see a record from the node.
-                logRequest.setStartMsgNumberForNode(entry.getKey(), entry.getValue());
+                logRequest.setStartTimestampForNode(entry.getKey(), entry.getValue());
             }
         }
         doRefreshLogs(logPane, logRequest, restartTimer, 0);
@@ -754,7 +755,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param logs the data list.
      */
-    public void setLogs(final LogPanel logPane, final Map<Long, ? extends AbstractAuditMessage> logs) {
+    public void setLogs(final LogPanel logPane, final Map<Goid, ? extends AbstractAuditMessage> logs) {
         logger.info("Importing "+/*count*/logs.size()+"audit records.");
 
         // import
@@ -807,7 +808,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                     // Note: the get() operation is a blocking operation.
                     // get() will never block based on construct()'s implementation.
                     if ( !isCancelled() && this.get() != null) {
-                        Map<Long, AuditHeaderMessage> newLogs = getNewLogs();
+                        Map<Goid, AuditHeaderMessage> newLogs = getNewLogs();
                         int logCount = newLogs.size();
                         boolean updated = logCount > 0;
 

@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.objectmodel.Goid;
+
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
@@ -7,7 +9,7 @@ package com.l7tech.gateway.common.audit;
  */
 public class AssociatedLog {
 
-    private final long auditRecordId;
+    private final Goid auditRecordId;
     private final long timeStamp;
     private final String message;
     private final String severity;
@@ -15,7 +17,7 @@ public class AssociatedLog {
     private final int messageId;
     private final int ordinal;
 
-    public AssociatedLog(long auditRecordId, long timeStamp, String severity, String message, String exception, int messageId, int ordinal) {
+    public AssociatedLog(Goid auditRecordId, long timeStamp, String severity, String message, String exception, int messageId, int ordinal) {
         this.auditRecordId = auditRecordId;
         this.timeStamp = timeStamp;
         this.severity = severity;
@@ -25,7 +27,7 @@ public class AssociatedLog {
         this.ordinal = ordinal;
     }
 
-    public long getAuditRecordId() {
+    public Goid getAuditRecordId() {
         return auditRecordId;
     }
 

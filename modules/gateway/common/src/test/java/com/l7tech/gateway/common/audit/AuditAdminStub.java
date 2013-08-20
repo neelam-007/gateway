@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -77,7 +78,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public OpaqueId downloadAllAudits(long fromTime, long toTime, long[] serviceOids, int chunkSizeInBytes) {
+    public OpaqueId downloadAllAudits(long fromTime, long toTime, Goid[] serviceOids, int chunkSizeInBytes) {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
@@ -127,12 +128,12 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public String invokeAuditViewerPolicyForMessage(long auditId, boolean isRequest) {
+    public String invokeAuditViewerPolicyForMessage(Goid auditId, boolean isRequest) {
         return null;
     }
 
     @Override
-    public String invokeAuditViewerPolicyForDetail(long auditId, long ordinal) {
+    public String invokeAuditViewerPolicyForDetail(Goid auditId, long ordinal) {
         return null;
     }
 

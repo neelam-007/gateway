@@ -14,12 +14,6 @@ public class GoidTest {
     private static final int NUM_TESTS = 10;
 
     @Test
-    public void blah(){
-        System.out.println(new Goid(123,456));
-    }
-
-
-    @Test
     public void goidFromLong() {
         Random random = new Random();
         for (int i = 0; i < NUM_TESTS; i++) {

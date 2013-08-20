@@ -50,8 +50,8 @@ public class ServiceMessages extends Messages {
     public static final M ESM_NOTIFY_IO_ERROR           = m(3654, Level.WARNING, "IO Error ''{2}'' when sending ESM notification for policy ''{1}'' to ''{0}''");
     public static final M ESM_NOTIFY_SUCCESS            = m(3655, Level.INFO,    "Notification sent successfully to ''{0}''; HTTP response status ''{1}''");
     public static final M ESM_NOTIFY_FAILURE            = m(3656, Level.WARNING, "Notification failed for ''{0}''; HTTP response status ''{1}''");   
-    public static final M ESM_SUBSCRIPTION_SERVICE_GONE = m(3657, Level.WARNING, "ESM Subscription service (oid=''{0}'') not found, using ''{1}'' instead.");
-    public static final M ESM_NO_SUBSCRIPTION_SERVICE   = m(3658, Level.WARNING, "Routing URI for ESM Subscription service (oid=''{0}'') could no be determined; using ''{0}''");
+    public static final M ESM_SUBSCRIPTION_SERVICE_GONE = m(3657, Level.WARNING, "ESM Subscription service (goid=''{0}'') not found, using ''{1}'' instead.");
+    public static final M ESM_NO_SUBSCRIPTION_SERVICE   = m(3658, Level.WARNING, "Routing URI for ESM Subscription service (goid=''{0}'') could no be determined; using ''{0}''");
 
     // MAX -                                              m(3999
 }

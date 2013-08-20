@@ -61,31 +61,31 @@ create table security_zone (
 create table audit_admin (
     action char(1),
     entity_class varchar(1024),
-    entity_id bigint,
-    objectid bigint not null,
-    primary key (objectid)
+    entity_id CHAR(16) FOR BIT DATA,
+    goid CHAR(16) FOR BIT DATA not null,
+    primary key (goid)
 );
 
 create table audit_detail (
-    objectid bigint not null,
-    audit_oid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
+    audit_goid CHAR(16) FOR BIT DATA not null,
     component_id integer,
     exception_message clob(2147483647),
     message_id integer not null,
     ordinal integer,
     time bigint not null,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table audit_detail_params (
-    audit_detail_oid bigint not null,
+    audit_detail_goid CHAR(16) FOR BIT DATA not null,
     value clob(2147483647),
     position integer not null,
-    primary key (audit_detail_oid, position)
+    primary key (audit_detail_goid, position)
 );
 
 create table audit_main (
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     provider_goid CHAR(16) FOR BIT DATA,
     ip_address varchar(32),
     message varchar(255) not null,
@@ -96,7 +96,7 @@ create table audit_main (
     audit_level varchar(12) not null,
     user_id varchar(255),
     user_name varchar(255),
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table audit_message (
@@ -112,16 +112,16 @@ create table audit_message (
     service_goid CHAR(16) FOR BIT DATA,
     status integer not null,
     request_id varchar(40) not null,
-    objectid bigint not null,
+    goid CHAR(16) FOR BIT DATA not null,
     mapping_values_goid CHAR(16) FOR BIT DATA,
-    primary key (objectid)
+    primary key (goid)
 );
 
 create table audit_system (
     action varchar(32) not null,
     component_id integer not null,
-    objectid bigint not null,
-    primary key (objectid)
+    goid CHAR(16) FOR BIT DATA not null,
+    primary key (goid)
 );
 
 create table message_context_mapping_keys (
@@ -161,25 +161,25 @@ create table message_context_mapping_values (
 
 alter table audit_admin
     add constraint FK364471EB7AEF109A
-    foreign key (objectid)
+    foreign key (goid)
     references audit_main
     on delete cascade;
 
 alter table audit_detail
     add constraint FK97797D35810D4766
-    foreign key (audit_oid)
+    foreign key (audit_goid)
     references audit_main
     on delete cascade;
 
 alter table audit_detail_params
     add constraint FK990923D0753897C0
-    foreign key (audit_detail_oid)
+    foreign key (audit_detail_goid)
     references audit_detail
     on delete cascade;
 
 alter table audit_message
     add constraint FK33C837A37AEF109A
-    foreign key (objectid)
+    foreign key (goid)
     references audit_main
     on delete cascade;
 
@@ -190,7 +190,7 @@ alter table audit_message
 
 alter table audit_system
     add constraint FKB22BD7137AEF109A
-    foreign key (objectid)
+    foreign key (goid)
     references audit_main
     on delete cascade;
 

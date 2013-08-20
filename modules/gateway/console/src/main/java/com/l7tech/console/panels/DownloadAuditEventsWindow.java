@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.util.FileUtils;
 import com.l7tech.console.MainWindow;
@@ -313,10 +314,10 @@ public class DownloadAuditEventsWindow extends JFrame {
 
         final Object[] selected = publishedServiceList.getSelectedValues();
         final int numSelected= selected.length;
-        final long[] serviceOids = allPublishedServiceRadioButton.isSelected() ? null : new long[numSelected];
+        final Goid[] serviceOids = allPublishedServiceRadioButton.isSelected() ? null : new Goid[numSelected];
         if (selectedPublishedServiceRadioButton.isSelected()) {
             for (int i = 0; i < numSelected; ++ i) {
-                serviceOids[i] = ((EntityHeader)selected[i]).getOid();
+                serviceOids[i] = ((EntityHeader)selected[i]).getGoid();
             }
         }
 

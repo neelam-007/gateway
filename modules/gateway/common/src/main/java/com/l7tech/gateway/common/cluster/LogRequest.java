@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.audit.AuditType;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -30,11 +31,11 @@ public final class LogRequest {
     private final Integer messageId; // null = any
     private final String paramValue;
     private final String entityClassName; // null = any
-    private final Long entityId; // null = any
+    private final Goid entityId; // null = any
     private int retrievedLogCount;
     private final boolean getFromPolicy;
     private final String operation;
-    private final Map<String, Long> nodeIdToStartMsg = new HashMap<String, Long>();
+    private final Map<String, Long> nodeIdToStartTimestamp = new HashMap<String, Long>();
     private final Map<String, Long> nodeIdToEndMsg = new HashMap<String, Long>();
 
     private LogRequest(Builder builder) {
@@ -76,7 +77,7 @@ public final class LogRequest {
         private Integer messageId; // null = any
         private String paramValue; //not currently supported. Will be ignored.
         private String entityClassName; // null = any
-        private Long entityId; // null = any
+        private Goid entityId; // null = any
         private String operation = null;
 
         public Builder(){
@@ -156,7 +157,7 @@ public final class LogRequest {
             return this;
         }
 
-        public Builder entityId(Long value) {
+        public Builder entityId(Goid value) {
             entityId = value;
             return this;
         }
@@ -256,16 +257,16 @@ public final class LogRequest {
      * @param nodeId String node id
      * @param startMsgNumber object id of the audit record.
      */
-    public void setStartMsgNumberForNode(String nodeId, long startMsgNumber) {
-        nodeIdToStartMsg.put(nodeId, startMsgNumber);
+    public void setStartTimestampForNode(String nodeId, long startMsgNumber) {
+        nodeIdToStartTimestamp.put(nodeId, startMsgNumber);
     }
 
     /**
      * Get the node id to minimum audit record id mappings.
      * @return Map of node id to minimum audit record object id
      */
-    public Map<String, Long> getNodeIdToStartMsg() {
-        return Collections.unmodifiableMap(nodeIdToStartMsg);
+    public Map<String, Long> getNodeIdToStartTimestamp() {
+        return Collections.unmodifiableMap(nodeIdToStartTimestamp);
     }
 
     /**
@@ -319,7 +320,7 @@ public final class LogRequest {
         return auditType;
     }
 
-    public Long getEntityId() {
+    public Goid getEntityId() {
         return entityId;
     }
 

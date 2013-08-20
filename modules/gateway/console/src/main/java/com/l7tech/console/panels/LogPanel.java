@@ -21,6 +21,7 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -146,7 +147,7 @@ public class LogPanel extends JPanel {
     private boolean connected = false;
 
     private final Map<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
-    private final Map<Long, SoftReference<AuditMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditMessage>>() );
+    private final Map<Goid, SoftReference<AuditMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Goid, SoftReference<AuditMessage>>() );
     private JButton invokeRequestAVPolicyButton;
     private JButton invokeResponseAVPolicyButton;
     private JLabel sigStatusLabel;
@@ -245,7 +246,7 @@ public class LogPanel extends JPanel {
     private String entityTypeName;
 
     // Entity ID
-    private Long entityId;
+    private Goid entityId;
 
     // Operation
     private String operation;
@@ -785,10 +786,10 @@ public class LogPanel extends JPanel {
                 if (entityIdTxt == null || entityIdTxt.trim().isEmpty()) {
                     entityId = null;
                 } else {
-                    entityId = Long.parseLong(entityIdTxt);
+                    entityId = Goid.parseGoid(entityIdTxt);
                 }
             } catch (NumberFormatException e) {
-                entityId = Long.MIN_VALUE; // This case presents Invalid Entity Id.
+                entityId = AuditRecord.DEFAULT_GOID; // This case presents Invalid Entity Id.
             }
         } else {
             entityId = null;
@@ -967,9 +968,9 @@ public class LogPanel extends JPanel {
         final String entityIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
         if (entityIdProperty != null) {
             try {
-                entityId = Long.parseLong(entityIdProperty);
+                entityId = Goid.parseGoid(entityIdProperty);
             } catch (NumberFormatException e) {
-                entityId = Long.MIN_VALUE; // This case represents Invalid Entity Id
+                entityId = AuditRecord.DEFAULT_GOID; // This case represents Invalid Entity Id
             }
         } else {
             entityId = null; // null = Any
@@ -1249,7 +1250,7 @@ public class LogPanel extends JPanel {
                 if ( (int) AdminAuditRecord.ACTION_LOGIN != (int) aarec.getAction() &&
                         (int) AdminAuditRecord.ACTION_OTHER != (int) aarec.getAction() ) {
                     msg += TextUtils.pad("Entity Name", maxWidth) + ": " + arec.getName() + "\n";
-                    msg += TextUtils.pad("Entity ID", maxWidth) + ": " + aarec.getEntityOid() + "\n";
+                    msg += TextUtils.pad("Entity ID", maxWidth) + ": " + aarec.getEntityGoid() + "\n";
                     msg += TextUtils.pad("Entity Type", maxWidth) + ": " + fixType(aarec.getEntityClassname()) + "\n";
                 }
             } else if (arec instanceof MessageSummaryAuditRecord) {
@@ -1363,7 +1364,7 @@ public class LogPanel extends JPanel {
                     MessageFormat mf = new MessageFormat(associatedLogMessage);
                     mf.format(ad.getParams(), result, new FieldPosition(0));
                 }
-                AssociatedLog al = new AssociatedLog(arec.getOid(), ad.getTime(), associatedLogLevel, result.toString(), ad.getException(), ad.getMessageId(), ad.getOrdinal());
+                AssociatedLog al = new AssociatedLog(arec.getGoid(), ad.getTime(), associatedLogLevel, result.toString(), ad.getException(), ad.getMessageId(), ad.getOrdinal());
                 associatedLogs.add(al);
             }
             getAssociatedLogsTable().getTableSorter().setData(associatedLogs);
@@ -2332,7 +2333,7 @@ public class LogPanel extends JPanel {
      * @param logs log messages to load; as a map of gateway node ID and
      *             corresponding collection of {@link AuditMessage}s
      */
-    public void setLogs(Map<Long, ? extends AbstractAuditMessage> logs) {
+    public void setLogs(Map<Goid, ? extends AbstractAuditMessage> logs) {
         onDisconnect();
         retrievalMode = RetrievalMode.NONE;
         getFilteredLogTableSorter().setLogs(this, logs);
@@ -2660,7 +2661,7 @@ public class LogPanel extends JPanel {
                 if (data.isEmpty()) {
                     logger.info("No data in file! '" + file.getAbsolutePath() + "'.");
                 }
-                Map<Long, AbstractAuditMessage> loadedLogs = new HashMap<Long, AbstractAuditMessage>();
+                Map<Goid, AbstractAuditMessage> loadedLogs = new HashMap<Goid, AbstractAuditMessage>();
                 for (WriteableLogMessage message : data) {
                     AbstractAuditMessage lm =  new AuditMessage((AuditRecord)message.ssgLogRecord);
                     lm.setNodeName(message.nodeName);
@@ -2692,7 +2693,7 @@ public class LogPanel extends JPanel {
         }
 
         if(record == null){
-            record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( Long.toString(logMessage.getMsgNumber()),true );
+            record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( Goid.toString(logMessage.getMsgNumber()),true );
         }
 
         if ( record == null )

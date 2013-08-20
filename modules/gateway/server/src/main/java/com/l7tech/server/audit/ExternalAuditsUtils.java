@@ -69,7 +69,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get a system audit record";
 
-        boolean verify = verifyRetreievedAuditRecord(result,sar.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,sar.getGoid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
@@ -90,7 +90,7 @@ public class ExternalAuditsUtils {
         AdminAuditRecord aar = new AdminAuditRecord(
                 Level.FINE,
                 UUID.randomUUID().toString(),
-                123,
+                new Goid(457,123),
                 "entityClassname",
                 "name",
                 AdminAuditRecord.ACTION_OTHER,
@@ -115,7 +115,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get an admin audit record";
 
-        boolean verify = verifyRetreievedAuditRecord(result,aar.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,aar.getGoid(),defaultKey);
 
         // delete
         result =  deleteRow(jdbcQueryingManager,auditRecordTable,guid,connectionName);
@@ -171,7 +171,7 @@ public class ExternalAuditsUtils {
         if(!success)
             return "Failed to get an message summary  audit record";
 
-        boolean verify = verifyRetreievedAuditRecord(result,record.getOid(),defaultKey);
+        boolean verify = verifyRetreievedAuditRecord(result,record.getGoid(),defaultKey);
 
         // save detail
         AuditDetail detail = new AuditDetail(Messages.EXCEPTION_SEVERE,new String[]{"param1","param2"}, new RuntimeException("message"));
@@ -270,7 +270,7 @@ public class ExternalAuditsUtils {
             record = new AdminAuditRecord(
                     Level.parse(auditLevel),
                     nodeid,
-                    Long.parseLong(entityId),
+                    getGoid(entityId),
                     entityClass,
                     name,
                     action.charAt(0),
@@ -421,7 +421,7 @@ public class ExternalAuditsUtils {
         return null;
     }
 
-    private static boolean verifyRetreievedAuditRecord( Object resultSet, long originalOid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException, ClassCastException {
+    private static boolean verifyRetreievedAuditRecord( Object resultSet, Goid originalGoid,DefaultKey defaultKey) throws IOException, SignatureException, InvalidKeyException, KeyUsageException, NoSuchAlgorithmException, CertificateParsingException, ClassCastException {
         Map<String,List<Object>> result = ( Map<String,List<Object>>) resultSet;
 
         String id = getStringData(result.get("id").get(0));
@@ -456,7 +456,7 @@ public class ExternalAuditsUtils {
 
         AuditRecord record =
                 makeAuditRecord(id,nodeid, time, type, auditLevel, name, message ,ip_addr, userName, userId, providerOid, signature,entityClass, entityId, status, requestId, serviceOid,  operationName, authenticated, authenticationType, requestLength,  responseLength, requestZip, responseZip, responseStatus, latency, componentId, action, properties);
-        record.setOid(originalOid);
+        record.setGoid(originalGoid);
 
         SignerInfo signerInfo = defaultKey.getAuditSigningInfo();
         if (signerInfo == null) signerInfo = defaultKey.getSslInfo();

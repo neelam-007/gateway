@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.audit;
 
+import com.l7tech.objectmodel.Goid;
 import org.hibernate.HibernateException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public interface AuditExporter {
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
     void exportAuditsAsZipFile(long fromTime,
                                long toTime,
-                               long[] serviceOids,
+                               Goid[] serviceOids,
                                OutputStream fileOut,
                                X509Certificate signingCert,
                                PrivateKey signingKey)
@@ -75,9 +76,6 @@ public interface AuditExporter {
         throws SignatureException;
 
     public interface ExportedInfo {
-        long getLowestId();
-        long getHighestId();
-
         long getEarliestTime();
         long getLatestTime();
 

@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +94,7 @@ public class AuditRecordWorker extends SwingWorker {
                 auditRecord = auditAdminService.findByPrimaryKey( guid, false);
             } else{
 
-                auditRecord = auditAdminService.findByPrimaryKey( Long.toString(auditHeaderLogMessage.getMsgNumber()), true );
+                auditRecord = auditAdminService.findByPrimaryKey( Goid.toString(auditHeaderLogMessage.getMsgNumber()), true );
             }
 
             if (auditRecord != null) this.logMessage = new AuditMessage(auditRecord);

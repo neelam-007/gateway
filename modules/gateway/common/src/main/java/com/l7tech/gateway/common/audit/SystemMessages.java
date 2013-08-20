@@ -100,7 +100,7 @@ public class SystemMessages extends Messages {
     public static final M AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED  = m(2200, Level.SEVERE, "Message processing suspended by the Audit Archiver: {0}");
     public static final M AUDIT_ARCHIVER_MESSAGE_PROCESSING_RESTARTED  = m(2201, Level.WARNING, "Message processing restarted by the Audit Archiver.");
     public static final M AUDIT_ARCHIVER_JOB_STARTED  = m(2202, Level.WARNING, "Started Audit Archiver job");
-    public static final M AUDIT_ARCHIVER_JOB_ARCHIVED  = m(2203, Level.WARNING, "Archived and deleted audit records with objectid in [{0}:{1}]");
+    public static final M AUDIT_ARCHIVER_JOB_ARCHIVED  = m(2203, Level.WARNING, "Archived and deleted audit records with time in [{0}:{1}]");
     public static final M AUDIT_ARCHIVER_JOB_COMPLETE  = m(2204, Level.WARNING, "Completed Audit Archiver job.");
     public static final M AUDIT_ARCHIVER_ERROR = m(2205, Level.WARNING, "Audit Archiver error: {0}");
     public static final M AUDIT_ARCHIVER_IMMEDIATE_TRIGGER  = m(2206, Level.WARNING, "Immediate Audit Archive trigger requested.");

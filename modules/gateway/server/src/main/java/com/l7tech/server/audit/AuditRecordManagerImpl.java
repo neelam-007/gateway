@@ -3,12 +3,13 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.*;
@@ -45,10 +46,10 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
-        extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
+        extends HibernateGoidEntityManager<AuditRecord, AuditRecordHeader>
         implements AuditRecordManager, ApplicationContextAware, PropertyChangeListener
 {
-    private static final String SQL_GET_MIN_OID = "SELECT MIN(objectid) FROM audit_main WHERE objectid > ?";
+    private static final String SQL_GET_MIN_MILLS = "SELECT MIN(time) FROM audit_main WHERE time > ?";
     private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
     private static final String SQL_CURRENT_USAGE = "SHOW TABLE STATUS";
 
@@ -58,15 +59,15 @@ public class AuditRecordManagerImpl
      * Concrete class tables are outer joined and hibernate generates correct sql to safely reference message_audit only
      * properties.
      */
-    private static final String HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED = "from AuditRecord where oid in (:"+IDS_PARAMETER+") and (requestXml is null or length(requestXml) < :"+MAX_SIZE_PARAMETER+") and (responseXml is null or length(responseXml) < :"+MAX_SIZE_PARAMETER+")";
+    private static final String HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED = "from AuditRecord where goid in (:"+IDS_PARAMETER+") and (requestXml is null or length(requestXml) < :"+MAX_SIZE_PARAMETER+") and (responseXml is null or length(responseXml) < :"+MAX_SIZE_PARAMETER+")";
 
     private ValidatedConfig validatedConfig;
 
     //- PUBLIC
 
     @Override
-    public AuditRecord findByPrimaryKey(final long oid) throws FindException {
-        final AuditRecord found = super.findByPrimaryKey(oid);
+    public AuditRecord findByPrimaryKey(final Goid goid) throws FindException {
+        final AuditRecord found = super.findByPrimaryKey(goid);
         if (found != null && found instanceof MessageSummaryAuditRecord) {
             final MessageSummaryAuditRecord messageSummary = (MessageSummaryAuditRecord) found;
             final PublishedService cachedService = serviceCache.get().getCachedService(messageSummary.getServiceGoid());
@@ -130,7 +131,7 @@ public class AuditRecordManagerImpl
                 String sig = record.getSignature();
                 if (sig != null && !sig.isEmpty()) {
                     final byte[] digest = record.computeSignatureDigest();
-                    returnMap.put(Long.toString(record.getOid()), digest);
+                    returnMap.put(Goid.toString(record.getGoid()), digest);
                 }
                 session.evict(record);
             }
@@ -159,7 +160,7 @@ public class AuditRecordManagerImpl
             public void call(final Criteria hibernateCriteria) {
 
                 final ProjectionList projectionList = Projections.projectionList()
-                        .add(Property.forName(PROP_OID))
+                        .add(Property.forName(PROP_GOID))
                         .add(Property.forName(PROP_NAME))
                         .add(Property.forName(PROP_MESSAGE))
                         .add(Property.forName(PROP_SIGNATURE))
@@ -196,7 +197,7 @@ public class AuditRecordManagerImpl
 
                 boolean isMessageAudit = hasRequestIdProperty && values[7] != null;
 
-                final Long id = Long.valueOf(values[0].toString());
+                final Goid id = Goid.parseGoid(values[0].toString());
                 final String name = (values[1] == null || !isMessageAudit) ? null : values[1].toString();
                 final String description = values[2].toString();
                 final String signature = (values[3] == null) ? null : values[3].toString();
@@ -351,13 +352,13 @@ public class AuditRecordManagerImpl
     }
 
     @Override
-    public long getMinOid(long lowerLimit) throws SQLException {
+    public long getMinMills(long lowerLimit) throws SQLException {
         final Session session = getSession();
         PreparedStatement stmt = null;
         ResultSet rs = null;
         try {
             final Connection conn = session.connection();
-            stmt = conn.prepareStatement(SQL_GET_MIN_OID);
+            stmt = conn.prepareStatement(SQL_GET_MIN_MILLS);
             stmt.setLong(1, lowerLimit);
             rs = stmt.executeQuery();
             if (rs.next()) {
@@ -377,12 +378,12 @@ public class AuditRecordManagerImpl
     }
 
     @Override
-    public int deleteRangeByOid(final long start, final long end) throws SQLException {
+    public int deleteRangeByTime(final long start, final long end) throws SQLException {
         final Session session = getSession();
         PreparedStatement deleteStmt = null;
         try {
             final Connection conn = session.connection();
-            deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE objectid >= ? AND objectid <= ? LIMIT 10000");
+            deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE time >= ? AND time <= ? LIMIT 10000");
             deleteStmt.setLong(1, start);
             deleteStmt.setLong(2, end);
             return deleteStmt.executeUpdate();
@@ -504,7 +505,7 @@ public class AuditRecordManagerImpl
     private static final Level[] LEVELS_IN_ORDER = { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.CONFIG, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF };
     private static final String PROP_TIME = "millis";
     private static final String PROP_LEVEL = "strLvl";
-    private static final String PROP_OID = "oid";
+    private static final String PROP_GOID = "goid";
     private static final String PROP_NODEID = "nodeId";
     private static final String PROP_MESSAGE = "message";
     private static final String PROP_SIGNATURE = "signature";
@@ -516,13 +517,13 @@ public class AuditRecordManagerImpl
     private static final String PROP_USER_ID = "userId";
     private static final String PROP_USER_NAME = "userName";
     private static final String PROP_ENTITY_CLASS = "entityClassname";
-    private static final String PROP_ENTITY_ID = "entityOid";
+    private static final String PROP_ENTITY_ID = "entityGoid";
 
     private static final String DELETE_RANGE_START = "delete_range_start";
     private static final String DELETE_RANGE_END = "delete_range_end";
 
     private static final String DELETE_MYSQL = "DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000";
-    private static final String DELETE_DERBY = "DELETE FROM audit_main where objectid in (SELECT objectid FROM (SELECT ROW_NUMBER() OVER() as rownumber, objectid FROM audit_main WHERE audit_level <> ?  and time < ?) AS foo WHERE rownumber <= 10000)";
+    private static final String DELETE_DERBY = "DELETE FROM audit_main where goid in (SELECT goid FROM (SELECT ROW_NUMBER() OVER() as rownumber, goid FROM audit_main WHERE audit_level <> ?  and time < ?) AS foo WHERE rownumber <= 10000)";
     private static final AtomicBoolean mySql = new AtomicBoolean(true);
 
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
@@ -583,12 +584,12 @@ public class AuditRecordManagerImpl
 
         final Map<String, Long> nodeIdToStartMsg = criteria.nodeIdToStartMsg;
         if (!nodeIdToStartMsg.isEmpty()) {
-            criterion.add(getObjectIdForNodeDisjunction(nodeIdToStartMsg, true));
+            criterion.add(getTimestampForNodeDisjunction(nodeIdToStartMsg, true));
         }
 
         final Map<String, Long> nodeIdToEndMsg = criteria.nodeIdToEndMsg;
         if (!nodeIdToEndMsg.isEmpty()) {
-            criterion.add(getObjectIdForNodeDisjunction(nodeIdToEndMsg, false));
+            criterion.add(getTimestampForNodeDisjunction(nodeIdToEndMsg, false));
         }
 
         if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));
@@ -630,22 +631,22 @@ public class AuditRecordManagerImpl
      * then only results for nodes contained within nodeIdToObjectIdValue will be returned.
      *
      * Returned disjunction will represent the following SQL:
-     * ((nodeid=? and objectid <|> ?) or (nodeid=? and objectid <|> ?)) , one AND block for each node id in the supplied map.
+     * ((nodeid=? and millis <|> ?) or (nodeid=? and millis <|> ?)) , one AND block for each node id in the supplied map.
      *
-     * @param nodeIdToObjectIdValue map of node id to an object id, which will have a constraint applied to it.
+     * @param nodeIdToTimestampValue map of node id to an object id, which will have a constraint applied to it.
      * Cannot be null or empty.
      * @param greaterThan if true, then the constraint added is Restrictions.gt, otherwise Restrictions.lt
      * @return Disjunction to add to a hibernate criteria object.
      */
-    private Disjunction getObjectIdForNodeDisjunction(final Map<String, Long> nodeIdToObjectIdValue, boolean greaterThan) {
+    private Disjunction getTimestampForNodeDisjunction(final Map<String, Long> nodeIdToTimestampValue, boolean greaterThan) {
         final Disjunction disjunction = Restrictions.disjunction();
-        for (Map.Entry<String, Long> nodeToObjectId : nodeIdToObjectIdValue.entrySet()) {
+        for (Map.Entry<String, Long> nodeToObjectId : nodeIdToTimestampValue.entrySet()) {
             final Conjunction conjunction = Restrictions.conjunction();
             conjunction.add(Restrictions.eq(PROP_NODEID, nodeToObjectId.getKey()));
             if (greaterThan) {
-                conjunction.add(Restrictions.gt(PROP_OID, nodeToObjectId.getValue()));
+                conjunction.add(Restrictions.gt(PROP_TIME, nodeToObjectId.getValue()));
             } else {
-                conjunction.add(Restrictions.lt(PROP_OID, nodeToObjectId.getValue()));
+                conjunction.add(Restrictions.lt(PROP_TIME, nodeToObjectId.getValue()));
             }
 
             disjunction.add(conjunction);

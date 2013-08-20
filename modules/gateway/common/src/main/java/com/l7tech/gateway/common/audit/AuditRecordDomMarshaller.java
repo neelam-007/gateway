@@ -61,7 +61,7 @@ public class AuditRecordDomMarshaller {
         if (rec == null)
             return;
 
-        String id = rec.getId();
+        String id = rec.getGoid()!=null?rec.getId():null;
         String ipAddress = rec.getIpAddress();
         String message = rec.getMessage();
         long millis = rec.getMillis();
@@ -71,7 +71,7 @@ public class AuditRecordDomMarshaller {
         String requestId = rec.getStrRequestId();
         long sequenceNumber = rec.getSequenceNumber();
 
-        if (!("0".equals(id)))
+        if (id!=null)
             e.setAttribute("id", id);
         e.setAttribute("name", rec.getName());
         e.setAttribute("sequenceNumber", Long.toString(sequenceNumber));
@@ -200,7 +200,7 @@ public class AuditRecordDomMarshaller {
 
         Element ent = factory.createElementNS(NS, "entity");
         ent.setAttribute("class", rec.getEntityClassname());
-        ent.setAttribute("oid", Long.toString(rec.getEntityOid()));
+        ent.setAttribute("goid", Goid.toString(rec.getEntityGoid()));
         e.appendChild(ent);
 
         return e;

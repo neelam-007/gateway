@@ -505,7 +505,7 @@ public class AuditLogFormatterTest {
             return new AdminAuditRecord(
                     LEVEL,
                     NODE_ID,
-                    33333L,
+                    new Goid(123,33333L),
                     AdminAuditGen.class.getName(),
                     "AuditName",
                     'L',

@@ -23,6 +23,7 @@ import com.l7tech.console.util.AuditMessage;
 import com.l7tech.console.util.AbstractAuditMessage;
 import com.l7tech.console.util.AuditHeaderMessage;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -271,7 +272,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // else Leave the map empty.
 
         // Converts flat collection to Map.
-        final Map<Long, AbstractAuditMessage> logs = new HashMap<Long, AbstractAuditMessage>();
+        final Map<Goid, AbstractAuditMessage> logs = new HashMap<Goid, AbstractAuditMessage>();
         for ( T auditData : auditDataCollection ) {
             final AbstractAuditMessage logMessage = logMessageBuilder.call( auditData );
             final String nodeId = logMessage.getNodeId();

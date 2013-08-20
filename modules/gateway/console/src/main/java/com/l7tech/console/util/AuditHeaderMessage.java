@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.audit.ExternalAuditRecordHeader;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.objectmodel.Goid;
 
 import java.io.IOException;
 
@@ -17,8 +18,8 @@ public class AuditHeaderMessage extends AbstractAuditMessage {
     }
 
     @Override
-    public long getMsgNumber() {
-        return header.getOid();
+    public Goid getMsgNumber() {
+        return header.getGoid();
     }
 
     @Override
