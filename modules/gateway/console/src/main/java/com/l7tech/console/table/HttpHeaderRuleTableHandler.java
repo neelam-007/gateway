@@ -1,5 +1,6 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 
@@ -22,7 +23,9 @@ public class HttpHeaderRuleTableHandler extends HttpRuleTableHandler{
 
     protected boolean validateNewRule(HttpPassthroughRule in) {
         String name = in.getName().toLowerCase();
-        if ( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains( name ) ) {
+        //Allow to set the host, the host will be handled with virtual host
+        if ( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains( name )
+                && !HttpConstants.HEADER_HOST.equalsIgnoreCase(name)) {
                 JOptionPane.showMessageDialog(table, "Custom rules can't be defined for this header name.",
                                               "Error", JOptionPane.WARNING_MESSAGE);
                 return false;

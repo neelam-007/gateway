@@ -299,7 +299,14 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         methodParams.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
         if (virtualHost != null && virtualHost.length() > 0) {
-            methodParams.setParameter(ClientPNames.VIRTUAL_HOST, virtualHost);
+            Pair<String, String> addr = InetAddressUtil.getHostAndPort(virtualHost, null);
+            HttpHost httpHost;
+            if (addr.right != null) {
+                httpHost = new HttpHost(addr.left, Integer.parseInt(addr.right));
+            } else {
+                httpHost = new HttpHost(addr.left);
+            }
+            methodParams.setParameter(ClientPNames.VIRTUAL_HOST, httpHost);
         }
 
         final Long contentLen = params.getContentLength();

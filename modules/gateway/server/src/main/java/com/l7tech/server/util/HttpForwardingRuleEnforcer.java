@@ -119,6 +119,8 @@ public class HttpForwardingRuleEnforcer {
                     final String headerName = rule.getName();
                     if (headerName.length() < 1)
                         throw new IOException("Request contains an HTTP header with an empty name");
+                    //Handle it by virtual host
+                    if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerName)) continue;
                     String headerValue = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
@@ -132,6 +134,8 @@ public class HttpForwardingRuleEnforcer {
                     final String headerNameFromRule = rule.getName();
                     if (headerNameFromRule.length() < 1)
                         throw new IOException("Request contains an HTTP header with an empty name");
+                    // Use the route host instead of gateway host
+                    if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerNameFromRule)) continue;
 
                     if (knob != null) {
                         // special cookie handling
@@ -293,6 +297,8 @@ public class HttpForwardingRuleEnforcer {
                     // set header with custom value
                     String headerName = rule.getName();
                     String headerValue = rule.getCustomizeValue();
+                    //Handle it by virtual host
+                    if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerName)) continue;
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
@@ -309,6 +315,8 @@ public class HttpForwardingRuleEnforcer {
                         // outgoing cookies are handled separately by the ServerBra
                     } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
                         // the bridge already has its own handling for soap action
+                    } else if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerName)) {
+                        // Use the route host instead of gateway host
                     } else {
                         final String[] values = source.containsHeader(headerName) || knob == null ?
                                 source.getHeaderValues( headerName ) :

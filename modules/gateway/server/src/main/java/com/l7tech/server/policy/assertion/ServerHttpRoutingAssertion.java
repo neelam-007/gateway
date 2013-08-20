@@ -350,7 +350,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 hostValue.append(":");
                 hostValue.append(port);
             }
-            routedRequestParams.addExtraHeader(new GenericHttpHeader(HOST, hostValue.toString()));
 
             HttpRequestKnob httpRequestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
 

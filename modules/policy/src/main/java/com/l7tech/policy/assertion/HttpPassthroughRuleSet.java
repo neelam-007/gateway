@@ -35,7 +35,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
 
     private static final String PROP_HEADERS_TO_SKIP = "com.l7tech.policy.assertion.HttpPassthroughRuleSet.headersToSkip";
     private static final String HEADERS_TO_SKIP_DEFAULT =
-            "keep-alive, connection, server, content-type, date, content-length, transfer-encoding, content-encoding";
+            "keep-alive, connection, server, content-type, date, content-length, transfer-encoding, content-encoding, host";
     public static final List<String> HEADERS_NOT_TO_IMPLICITLY_FORWARD =
             unmodifiableList( grep( map( list( getProperty( PROP_HEADERS_TO_SKIP, HEADERS_TO_SKIP_DEFAULT ).split( "\\s*,\\s*" ) ), then( trim(), lower() ) ), isNotEmpty() ) );
 
