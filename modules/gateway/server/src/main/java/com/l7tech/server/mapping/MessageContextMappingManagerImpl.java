@@ -22,14 +22,6 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
         this.mappingValueManager = mappingValueManager;
     }
 
-    public MessageContextMappingKeys getMessageContextMappingKeys( final long oid ) throws FindException {
-        return mappingKeyManager.getMessageContextMappingKeys(oid);
-    }
-
-    public MessageContextMappingValues getMessageContextMappingValues( final long oid ) throws FindException {
-        return mappingValueManager.getMessageContextMappingValues(oid);
-    }
-
     public Goid saveMessageContextMappingKeys( final MessageContextMappingKeys mappingKeysEntity ) throws SaveException, FindException, UpdateException {
         MessageContextMappingKeys anEntity = mappingKeyManager.getMessageContextMappingKeys(mappingKeysEntity);
         if (anEntity == null) {

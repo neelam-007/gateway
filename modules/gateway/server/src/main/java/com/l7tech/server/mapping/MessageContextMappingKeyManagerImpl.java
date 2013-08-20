@@ -8,7 +8,6 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,28 +27,8 @@ public class MessageContextMappingKeyManagerImpl
     implements MessageContextMappingKeyManager {
 
     private final Logger logger = Logger.getLogger(MessageContextMappingKeyManagerImpl.class.getName());
-    private final String HQL_GET_MAPPING_KEYS_BY_OID = "FROM " + getTableName() +
-        " IN CLASS " + getImpClass().getName() + " WHERE objectid = ?";
     private final String HQL_GET_MAPPING_KEYS_BY_DIGEST = "FROM " + getTableName() +
         " IN CLASS " + getImpClass().getName() + " WHERE digested = ?";
-
-    @Override
-    public MessageContextMappingKeys getMessageContextMappingKeys(final long oid) throws FindException {
-        try {
-            return (MessageContextMappingKeys)getHibernateTemplate().execute(new HibernateCallback() {
-                @Override
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_GET_MAPPING_KEYS_BY_OID);
-                    q.setLong(0, oid);
-                    return q.uniqueResult();
-                }
-            });
-        } catch (Exception e) {
-            String errorMsg = "Cannot retrieve the keys of a message context mapping with objectid = " + oid + ".";
-            logger.log(Level.WARNING, errorMsg, e);
-            throw new FindException(errorMsg);
-        }
-    }
 
     @Override
     public MessageContextMappingKeys getMessageContextMappingKeys(final MessageContextMappingKeys lookupKeys) throws FindException {

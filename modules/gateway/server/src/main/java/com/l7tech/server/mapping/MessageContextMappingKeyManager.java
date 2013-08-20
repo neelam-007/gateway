@@ -11,6 +11,5 @@ import com.l7tech.objectmodel.GoidEntityManager;
  * @Date: Aug 13, 2008
  */
 public interface MessageContextMappingKeyManager extends GoidEntityManager<MessageContextMappingKeys, EntityHeader> {
-    MessageContextMappingKeys getMessageContextMappingKeys(long oid) throws FindException;
     MessageContextMappingKeys getMessageContextMappingKeys(MessageContextMappingKeys keys) throws FindException;
 }
