@@ -147,10 +147,10 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityZoneablePersistentEntitySetsSecurityZoneOid() {
-        final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(OID, VERSION, zone);
+        final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(GOID, VERSION, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertNull(header.getName());
         assertNull(header.getDescription());
         // unknown entity type b/c it's a stub class
@@ -159,17 +159,17 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityZoneablePersistentEntitySetsNullSecurityZoneOid() {
-        final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(OID, VERSION, null);
+        final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(GOID, VERSION, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
     public void fromEntityZoneableNamedEntitySetsSecurityZoneOid() {
-        final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(OID, VERSION, NAME, zone);
+        final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(GOID, VERSION, NAME, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertNull(header.getDescription());
         assertEquals(EntityType.ANY, header.getType());
@@ -177,7 +177,7 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityZoneableNamedEntitySetsNullSecurityZoneOid() {
-        final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(OID, VERSION, NAME, null);
+        final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(GOID, VERSION, NAME, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertNull(header.getSecurityZoneGoid());
     }
@@ -279,17 +279,17 @@ public class EntityHeaderUtilsTest {
         }
     }
 
-    private class StubZoneablePersistentEntity extends ZoneablePersistentEntityImp {
-        private StubZoneablePersistentEntity(final long oid, final int version, final SecurityZone zone) {
-            setOid(oid);
+    private class StubZoneablePersistentEntity extends ZoneableGoidEntityImp {
+        private StubZoneablePersistentEntity(final Goid goid, final int version, final SecurityZone zone) {
+            setGoid(goid);
             setVersion(version);
             setSecurityZone(zone);
         }
     }
 
-    private class StubZoneableNamedEntity extends ZoneableNamedEntityImp {
-        private StubZoneableNamedEntity(final long oid, final int version, final String name, final SecurityZone zone) {
-            setOid(oid);
+    private class StubZoneableNamedEntity extends ZoneableNamedGoidEntityImp {
+        private StubZoneableNamedEntity(final Goid goid, final int version, final String name, final SecurityZone zone) {
+            setGoid(goid);
             setVersion(version);
             setName(name);
             setSecurityZone(zone);

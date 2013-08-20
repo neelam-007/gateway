@@ -60,7 +60,7 @@ public class PropertyResolverFactory {
             public EntityType getTargetType() { return EntityType.POLICY; }
         });
         addToRegistry(new AssertionPropertyResolver(this, ASSERTION));
-        addToRegistry(new AbstractOidPropertyResolver(this, ID_PROVIDER_CONFIG, entityFinder) {
+        addToRegistry(new AbstractGoidPropertyResolver(this, ID_PROVIDER_CONFIG, entityFinder) {
             @Override
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });

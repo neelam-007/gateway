@@ -2,11 +2,8 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQQueueManager;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.MqNativeEndpointKey;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ManagedTimer;
@@ -18,15 +15,8 @@ import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +24,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 
 /**
  * Manages all outbound MQ routing connections to QueueManagers.

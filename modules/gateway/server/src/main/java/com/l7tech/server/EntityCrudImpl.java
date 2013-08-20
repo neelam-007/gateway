@@ -145,8 +145,8 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
             final GoidEntityManager manager = getGoidEntityManager(e.getClass());
             if (manager != null) {
                 Serializable key = manager.save((GoidEntity) e);
-                if (manager instanceof RoleAwareEntityManager) {
-                    ((RoleAwareEntityManager) manager).createRoles((PersistentEntity) e);
+                if (manager instanceof RoleAwareGoidEntityManager) {
+                    ((RoleAwareGoidEntityManager) manager).createRoles((GoidEntity) e);
                 }
                 return key;
             }
@@ -205,8 +205,8 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
             final GoidEntityManager manager = getGoidEntityManager(e.getClass());
             if (manager != null) {
                 manager.delete((GoidEntity)e);
-                if ( manager instanceof GoidRoleAwareEntityManager ) {
-                    ((GoidRoleAwareEntityManager)manager).deleteRoles( ((GoidEntity) e).getGoid() );
+                if ( manager instanceof RoleAwareGoidEntityManager ) {
+                    ((RoleAwareGoidEntityManager)manager).deleteRoles( ((GoidEntity) e).getGoid() );
                 }
                 return;
             }

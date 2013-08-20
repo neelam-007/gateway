@@ -18,7 +18,7 @@ import java.lang.reflect.Method;
  * @author jbufu
  */
 public class ServiceDocumentResolver extends AbstractPropertyResolver {
-    private static final Logger logger = Logger.getLogger(AbstractOidPropertyResolver.class.getName());
+    private static final Logger logger = Logger.getLogger(ServiceDocumentResolver.class.getName());
 
     private ServiceDocumentManager documentManager;
 
