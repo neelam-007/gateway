@@ -110,10 +110,11 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
         Action[] ret = new Action[0];
         final Assertion assertion = asAssertion();
         if (assertion != null) {
-            // If no security zones are visible to current admin, don't bother offering the security zone action
+            // If no security zones are visible to current admin and the zone is not set on the assertion, don't bother offering the security zone action
             try {
                 Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
-                if (zones == null || zones.isEmpty()) {
+                final AssertionAccess assertionAccess = TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion);
+                if ((zones == null || zones.isEmpty()) && (assertionAccess == null || assertionAccess.getSecurityZone() == null)) {
                     return ret;
                 }
             } catch (FindException e) {

@@ -6,15 +6,14 @@ import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 
 /**
  * The class represents an tree node gui node element that
@@ -112,18 +111,25 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
 
             list.add(new ForceAdminPasswordResetAction());
             list.add(new IdentityProviderManagePasswordPolicyAction());
-            list.add(new ConfigureSecurityZoneAction<IdentityProviderConfig>(config, new EntitySaver<IdentityProviderConfig>() {
-                @Override
-                public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
-                    try {
-                        final Goid oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
-                        entity.setGoid(oid);
-                    } catch (final UpdateException e) {
-                        throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
-                    }
-                    return entity;
+            try {
+                // only provide the security zone action if the provider already has a zone or the current user can read at least one zone
+                if (config.getSecurityZone() != null || !Registry.getDefault().getRbacAdmin().findAllSecurityZones().isEmpty()) {
+                    list.add(new ConfigureSecurityZoneAction<>(config, new EntitySaver<IdentityProviderConfig>() {
+                        @Override
+                        public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
+                            try {
+                                final Goid oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
+                                entity.setGoid(oid);
+                            } catch (final UpdateException e) {
+                                throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
+                            }
+                            return entity;
+                        }
+                    }));
                 }
-            }));
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
         }
 
 

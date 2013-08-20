@@ -27,7 +27,7 @@ public class EncapsulatedAssertionNode extends DefaultAssertionPaletteNode<Encap
             final EncapsulatedAssertion encass = (EncapsulatedAssertion) assertion;
             final EncapsulatedAssertionConfig config = encass.config();
             if (config != null) {
-                action = new ConfigureSecurityZoneAction<EncapsulatedAssertionConfig>(config, new EntitySaver<EncapsulatedAssertionConfig>() {
+                action = new ConfigureSecurityZoneAction<>(config, new EntitySaver<EncapsulatedAssertionConfig>() {
                     @Override
                     public EncapsulatedAssertionConfig saveEntity(final EncapsulatedAssertionConfig entity) throws SaveException {
                         try {

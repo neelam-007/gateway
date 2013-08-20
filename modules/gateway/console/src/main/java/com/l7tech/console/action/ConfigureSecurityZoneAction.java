@@ -5,6 +5,7 @@ import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -28,7 +29,7 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
     private final EntitySaver<ET> entitySaver;
 
     public ConfigureSecurityZoneAction(@NotNull ET entity, @NotNull EntitySaver<ET> saver) {
-        super(new AttemptedReadAny(EntityType.SECURITY_ZONE), UI_MANAGE_SECURITY_ZONES);
+        super(null, UI_MANAGE_SECURITY_ZONES);
         this.entity = entity;
         this.entityType = EntityType.findTypeByEntity(entity.getClass());
         this.entitySaver = saver;
@@ -42,6 +43,12 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
     @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/RedYellowShield16.gif";
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        return Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedReadAny(EntityType.SECURITY_ZONE)) ||
+                (entity instanceof ZoneableEntity && entity.getSecurityZone() != null);
     }
 
     @Override

@@ -181,12 +181,29 @@ public class SecurityZoneWidget extends JPanel {
         }
     }
 
+    /**
+     * Hides the widget if there are no zones to display or displays the zone as static text if readonly.
+     */
+    private void customizeDisplay() {
+        if (hideIfNoZones && (loadedZones.isEmpty() || (loadedZones.size() == 1 && loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())))) {
+            logger.log(Level.FINER, "Hiding the SecurityZoneWidget because no zones are available");
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    setVisible(false);
+                }
+            });
+        } else {
+            displayAsStaticTextWhenNecessary();
+        }
+    }
+
     @Override
-    public void paint(Graphics g) {
+    public void paint(final Graphics g) {
         if (!zoneLoadAttempted) {
             reloadZones();
         }
-        hideOrDisable();
+        customizeDisplay();
         super.paint(g);
     }
 
@@ -247,21 +264,23 @@ public class SecurityZoneWidget extends JPanel {
         zonesComboBox.setEnabled(enabled);
     }
 
-    private void hideOrDisable() {
-        if (loadedZones.isEmpty() && hideIfNoZones) {
-            setVisible(false);
-        }
-        if (OperationType.READ == operation) {
-            zonesComboBox.setUI(new BasicComboBoxUI() {
+    private void displayAsStaticTextWhenNecessary() {
+        if (OperationType.READ == operation || loadedZones.size() == 1) {
+            SwingUtilities.invokeLater(new Runnable() {
                 @Override
-                protected JButton createArrowButton() {
-                    // remove arrow by creating a plain button
-                    return new JButton() {
+                public void run() {
+                    zonesComboBox.setUI(new BasicComboBoxUI() {
                         @Override
-                        public int getWidth() {
-                            return 0;
+                        protected JButton createArrowButton() {
+                            // remove arrow by creating a plain button
+                            return new JButton() {
+                                @Override
+                                public int getWidth() {
+                                    return 0;
+                                }
+                            };
                         }
-                    };
+                    });
                 }
             });
         }

@@ -37,15 +37,19 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         actions.add(new DeletePolicyAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         final PolicyAlias alias = getAlias();
-        if (alias != null) {
-            actions.add(new ConfigureSecurityZoneAction<PolicyAlias>(alias, new EntitySaver<PolicyAlias>() {
-                @Override
-                public PolicyAlias saveEntity(@NotNull final PolicyAlias entity) throws SaveException {
-                    final Goid goid = Registry.getDefault().getPolicyAdmin().saveAlias(entity);
-                    entity.setGoid(goid);
-                    return entity;
-                }
-            }));
+        try {
+            if (alias != null && (alias.getSecurityZone() != null || !Registry.getDefault().getRbacAdmin().findAllSecurityZones().isEmpty())) {
+                actions.add(new ConfigureSecurityZoneAction<>(alias, new EntitySaver<PolicyAlias>() {
+                    @Override
+                    public PolicyAlias saveEntity(@NotNull final PolicyAlias entity) throws SaveException {
+                        final Goid goid = Registry.getDefault().getPolicyAdmin().saveAlias(entity);
+                        entity.setGoid(goid);
+                        return entity;
+                    }
+                }));
+            }
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), e);
         }
         actions.add(new RefreshTreeNodeAction(this));
 
