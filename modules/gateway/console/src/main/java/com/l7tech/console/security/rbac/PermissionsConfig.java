@@ -28,6 +28,7 @@ public class PermissionsConfig {
     private boolean grantReadFolderAncestry;
     private boolean grantReadSpecificFolderAncestry;
     private boolean grantReadAliasOwningEntities;
+    private boolean grantAccessToUddiService;
     private Set<AttributePredicate> attributePredicates = new HashSet<>();
     private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
@@ -155,6 +156,18 @@ public class PermissionsConfig {
      */
     public void setGrantReadAliasOwningEntities(final boolean grantReadAliasOwningEntities) {
         this.grantReadAliasOwningEntities = grantReadAliasOwningEntities;
+    }
+
+    public boolean isGrantAccessToUddiService() {
+        return grantAccessToUddiService;
+    }
+
+    /**
+     * @param grantAccessToUddiService true if the user has selected to grant additional access to all published services referenced by any selected UDDIServiceControls or UDDIProxiedServiceInfos.
+     *                                 Applies to {@link ScopeType#SPECIFIC_OBJECTS}.
+     */
+    public void setGrantAccessToUddiService(boolean grantAccessToUddiService) {
+        this.grantAccessToUddiService = grantAccessToUddiService;
     }
 
     /**

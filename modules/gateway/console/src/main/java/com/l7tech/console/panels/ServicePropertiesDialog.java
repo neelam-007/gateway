@@ -11,6 +11,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -55,6 +56,7 @@ import java.util.logging.Logger;
 public class ServicePropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
     private static final boolean ENABLE_CUSTOM_HTTP_VERB = SyspropUtil.getBoolean("com.l7tech.enableCustomHttpVerb", false);
+    private static final String NAME_UNAVAILABLE = "<name unavailable>";
 
     private final PublishedService subject;
     private final boolean wasTracingEnabled;
@@ -571,6 +573,9 @@ public class ServicePropertiesDialog extends JDialog {
             } catch (FindException e) {
                 showErrorMessage("Cannot find UDDI Registry", "UDDI Registry cannot be found", e, true);
                 return;
+            } catch (final PermissionDeniedException e) {
+                logger.log(Level.WARNING, "Cannot display uddi registry name because user does not have permission to read it.", ExceptionUtils.getDebugException(e));
+                uddiRegistryTextField.setText(NAME_UNAVAILABLE);
             }
 
             bsNameTextField.setText(uddiServiceControl.getUddiServiceName());

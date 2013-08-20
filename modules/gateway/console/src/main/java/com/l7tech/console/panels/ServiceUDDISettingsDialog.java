@@ -283,7 +283,9 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                     found = true;
                 }
             }
-            if(!found) throw new IllegalStateException("UDDI Registry not found for pulished Gateway WSDL");
+            if(!found) {
+                logger.log(Level.WARNING, "Configured UDDI registry cannot be read or does not exist.");
+            }
 
             final UDDIProxiedServiceInfo.PublishType publishType = uddiProxyServiceInfo.getPublishType();
             clearStatusLabels(publishType);

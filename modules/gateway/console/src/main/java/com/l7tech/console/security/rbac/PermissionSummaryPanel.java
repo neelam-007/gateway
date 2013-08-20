@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.uddi.ReferencesZoneAndServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -132,6 +133,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                     for (final OperationType op : config.getOperations()) {
                         generateSpecificObjectPermission(config, entityType, header, op);
                         generateJmsPermissions(config, jmsAdmin, entityType, header, op);
+                        generateUddiServicePermission(config, entityType, header, op);
                     }
                     generateFolderAncestorPermission(config, entityType, header);
                     generateAliasOwnerPermission(config, header);
@@ -139,6 +141,22 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 break;
             default:
                 throw new IllegalArgumentException("Scope type not supported: " + config.getScopeType());
+        }
+    }
+
+    private static void generateUddiServicePermission(final PermissionsConfig config, final EntityType entityType, final EntityHeader header, final OperationType op) {
+        if ((entityType == EntityType.UDDI_PROXIED_SERVICE_INFO || entityType == EntityType.UDDI_SERVICE_CONTROL) &&
+                config.isGrantAccessToUddiService() && header instanceof ReferencesZoneAndServiceHeader) {
+            final ReferencesZoneAndServiceHeader referencesServiceHeader = (ReferencesZoneAndServiceHeader) header;
+            if (referencesServiceHeader.getPublishedServiceGoid() != null) {
+                final Permission uddiServicePermission = new Permission(config.getRole(), op, EntityType.SERVICE);
+                final ObjectIdentityPredicate uddiServicePredicate = new ObjectIdentityPredicate(uddiServicePermission, referencesServiceHeader.getPublishedServiceGoid().toHexString());
+                uddiServicePredicate.setHeader(new EntityHeader(referencesServiceHeader.getPublishedServiceGoid().toHexString(), EntityType.SERVICE, null, null));
+                uddiServicePermission.getScope().add(uddiServicePredicate);
+                config.getGeneratedPermissions().add(uddiServicePermission);
+            } else {
+                logger.log(Level.WARNING, "Cannot add permission for uddi service because header's publishedServiceGoid is null.");
+            }
         }
     }
 

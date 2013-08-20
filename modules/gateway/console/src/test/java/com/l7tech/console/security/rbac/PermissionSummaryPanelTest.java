@@ -7,6 +7,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfoHeader;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -898,6 +900,106 @@ public class PermissionSummaryPanelTest {
             assertEquals(ONE, predicateTypes.get(SecurityZonePredicate.class));
             assertEquals(new Integer(2), predicateTypes.get(AttributePredicate.class));
         }
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiServiceControlWithPublishedService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_SERVICE_CONTROL);
+        config.setGrantAccessToUddiService(true);
+        operations.add(OperationType.READ);
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        entities.add(new UDDIServiceControlHeader(new Goid(0, 1), null, null, null, null, publishedServiceGoid));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<EntityType, Set<Permission>> permissionsByType = sortPermissionsByType(config.getGeneratedPermissions());
+        assertEquals(1, permissionsByType.get(EntityType.UDDI_SERVICE_CONTROL).size());
+        assertEquals(1, permissionsByType.get(EntityType.SERVICE).size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiServiceControlWithoutPublishedService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_SERVICE_CONTROL);
+        config.setGrantAccessToUddiService(false);
+        operations.add(OperationType.READ);
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        entities.add(new UDDIServiceControlHeader(new Goid(0, 1), null, null, null, null, publishedServiceGoid));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.UDDI_SERVICE_CONTROL, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiServiceControlNullPublishedServiceGoid() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_SERVICE_CONTROL);
+        config.setGrantAccessToUddiService(false);
+        operations.add(OperationType.READ);
+        entities.add(new UDDIServiceControlHeader(new Goid(0, 1), null, null, null, null, null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.UDDI_SERVICE_CONTROL, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiProxiedServiceInfoWithPublishedService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_PROXIED_SERVICE_INFO);
+        config.setGrantAccessToUddiService(true);
+        operations.add(OperationType.READ);
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        entities.add(new UDDIProxiedServiceInfoHeader(new Goid(0, 1), null, null, null, null, publishedServiceGoid));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(2, config.getGeneratedPermissions().size());
+        final Map<EntityType, Set<Permission>> permissionsByType = sortPermissionsByType(config.getGeneratedPermissions());
+        assertEquals(1, permissionsByType.get(EntityType.UDDI_PROXIED_SERVICE_INFO).size());
+        assertEquals(1, permissionsByType.get(EntityType.SERVICE).size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiProxiedServiceInfoWithoutPublishedService() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_PROXIED_SERVICE_INFO);
+        config.setGrantAccessToUddiService(false);
+        operations.add(OperationType.READ);
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        entities.add(new UDDIProxiedServiceInfoHeader(new Goid(0, 1), null, null, null, null, publishedServiceGoid));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.UDDI_PROXIED_SERVICE_INFO, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
+    }
+
+    @BugId("SSG-6948")
+    @Test
+    public void generatePermissionsUddiProxiedServiceInfoNullPublishedServiceGoid() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.UDDI_PROXIED_SERVICE_INFO);
+        config.setGrantAccessToUddiService(false);
+        operations.add(OperationType.READ);
+        entities.add(new UDDIProxiedServiceInfoHeader(new Goid(0, 1), null, null, null, null, null));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission permission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(EntityType.UDDI_PROXIED_SERVICE_INFO, permission.getEntityType());
+        assertEquals(1, permission.getScope().size());
     }
 
     private Map<EntityType, Set<Permission>> sortPermissionsByType(final Set<Permission> permissions) {

@@ -107,6 +107,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JCheckBox messageAuditsCheckBox;
     private JPanel zonesAvailablePanel;
     private JPanel zonesUnavailablePanel;
+    private JCheckBox uddiServiceCheckBox;
     private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
     private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
@@ -226,6 +227,14 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 comboBoxPanel.setVisible(isIdentityType(type) || type == EntityType.TRUSTED_ESM_USER);
                                 loadComboBox(type);
 
+                                // uddi
+                                uddiServiceCheckBox.setVisible(type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO);
+                                if (type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO) {
+                                    uddiServiceCheckBox.setText("Grant additional access to the uddi services referenced by each selected " + type.getName().toLowerCase() + ".");
+                                } else {
+                                    uddiServiceCheckBox.setText(StringUtils.EMPTY);
+                                }
+
                                 if (config.getSelectedEntities().isEmpty()) {
                                     if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
                                         final List<EntityHeader> entities = new ArrayList<>();
@@ -288,6 +297,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     config.setSelectedEntities(new HashSet<>(specificObjectsModel.getSelected()));
                     config.setGrantReadSpecificFolderAncestry(config.getType().isFolderable() && specificAncestryCheckBox.isSelected());
                     config.setGrantReadAliasOwningEntities(Alias.class.isAssignableFrom(config.getType().getEntityClass()) && aliasOwnersCheckBox.isSelected());
+                    config.setGrantAccessToUddiService(uddiServiceCheckBox.isSelected() && (config.getType() == EntityType.UDDI_PROXIED_SERVICE_INFO || config.getType() == EntityType.UDDI_SERVICE_CONTROL));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported scope type: " + config.getScopeType());
