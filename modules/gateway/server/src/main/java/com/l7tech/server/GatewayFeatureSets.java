@@ -290,6 +290,10 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet flagPermaFips = flag(FLAG_PERMAFIPS, "FIPS mode is always required.");
 
+        GatewayFeatureSet identityAttributesAssertion = fsr("set:IdentityAttributes:Assertions",
+                "The necessary assertions to enable Identity Attributes extraction functionality",
+                mass("assertion:IdentityAttributes"));
+
         //
         // Declare "building block" feature sets
         // (feature sets built out of "twig" feature sets, and which may include other building block feature sets,
@@ -349,7 +353,7 @@ public class GatewayFeatureSets {
             ass(RemoteDomainIdentityInjection.class),
             mass("assertion:SamlIssuer"),
             mass("assertion:LDAPQuery"),
-            mass("assertion:IdentityAttributes"),
+            fs(identityAttributesAssertion),
             mass("assertion:CertificateAttributes"),
             mass("assertion:ValidateNonSoapSamlToken"));
 
@@ -724,10 +728,6 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable Generic Identity Management Service functionality",
                 mass("assertion:GenericIdentityManagementService"));
 
-        GatewayFeatureSet identityAttributesAssertion = fsr("set:IdentityAttributes:Assertions",
-                "The necessary assertions to enable Identity Attributes extraction functionality",
-                mass("assertion:IdentityAttributes"));
-
         GatewayFeatureSet jsonSchemaAssertion = fsr("set:JSONSchema:Assertions",
                 "The necessary assertions to enable JSON Schema validation functionality",
                 mass("assertion:JSONSchema"));
@@ -875,6 +875,7 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
+            fs(modularAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
@@ -932,7 +933,6 @@ public class GatewayFeatureSets {
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
             fs(genericIdentityManagementServiceAssertion),
-            fs(identityAttributesAssertion),
             fs(apiPortalIntegration),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
@@ -997,7 +997,6 @@ public class GatewayFeatureSets {
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
             fs(genericIdentityManagementServiceAssertion),
-            fs(identityAttributesAssertion),
             fs(apiPortalIntegration),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
