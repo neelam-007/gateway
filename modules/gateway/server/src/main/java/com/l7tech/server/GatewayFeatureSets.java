@@ -746,6 +746,10 @@ public class GatewayFeatureSets {
                 mass("assertion:SiteMinderAuthenticate"),
                 mass("assertion:SiteMinderAuthorize"));
 
+        GatewayFeatureSet csrfProtectionAssertion = fsr("set:CsrfProtection:Assertions",
+                "Cross Site Request Forgery Protection Assertion",
+                mass("assertion:CsrfProtection"));
+
         /**
          * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
          * the policy bundle installer module also being added.
@@ -876,6 +880,7 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
             fs(modularAssertions),
+            fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
@@ -938,6 +943,7 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(siteMinderAssertions),
             fs(salesforceAssertions),
+            fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
@@ -1003,6 +1009,7 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
             fs(salesforceAssertions),
+            fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
@@ -1052,7 +1059,8 @@ public class GatewayFeatureSets {
                 mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore),
                 fs(siteMinderAssertions),
-                fs(salesforceAssertions));
+                fs(salesforceAssertions),
+                fs(csrfProtectionAssertion));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",

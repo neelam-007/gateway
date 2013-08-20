@@ -27,7 +27,7 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
     private boolean enableHttpRefererChecking = false;
     private boolean allowMissingOrEmptyReferer = false;
     private boolean onlyAllowCurrentDomain = true;
-    private List<String> trustedDomains = new ArrayList<String>();
+    private List<String> trustedDomains = new ArrayList<>();
 
     @Override
     public VariableMetadata[] getVariablesSet() {
@@ -54,7 +54,7 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
                 "detect and prevent CSRF (Cross-Site Request Forgery) attacks");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, "Protect Against CSRF Forgery");
 
-        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
+        Collection<TypeMapping> othermappings = new ArrayList<>();
         othermappings.add(new Java5EnumTypeMapping(HttpParameterType.class, "httpParameterType"));
         othermappings.add(new CollectionTypeMapping(List.class, String.class, ArrayList.class, "trustedDomainsList"));
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
@@ -76,7 +76,7 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:CsrfProtection" rather than "set:modularAssertions"
-        //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
