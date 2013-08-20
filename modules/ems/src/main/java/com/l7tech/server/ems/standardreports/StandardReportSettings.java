@@ -3,11 +3,11 @@ package com.l7tech.server.ems.standardreports;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -31,7 +31,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="standard_report_settings")
-public class StandardReportSettings extends NamedEntityImp implements JSON.Convertible {
+public class StandardReportSettings extends NamedGoidEntityImp implements JSON.Convertible {
 
     //- PUBLIC
 

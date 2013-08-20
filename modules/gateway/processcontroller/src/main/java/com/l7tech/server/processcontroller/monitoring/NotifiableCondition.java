@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.Monitorable;
 
 import java.util.Set;
@@ -16,15 +17,15 @@ abstract class NotifiableCondition<MT extends Monitorable> {
     private final MT monitorable;
     private final String componentId;
     private final Long timestamp;
-    private final Set<Long> triggerOids;
+    private final Set<Goid> triggerGoids;
     private final InOut inOut;
 
-    protected NotifiableCondition(MT monitorable, String componentId, InOut inOut, Long timestamp, Set<Long> triggerOids) {
+    protected NotifiableCondition(MT monitorable, String componentId, InOut inOut, Long timestamp, Set<Goid> triggerGoids) {
         this.monitorable = monitorable;
         this.inOut = inOut;
         this.componentId = componentId;
         this.timestamp = timestamp;
-        this.triggerOids = triggerOids;
+        this.triggerGoids = triggerGoids;
     }
 
     /**
@@ -40,8 +41,8 @@ abstract class NotifiableCondition<MT extends Monitorable> {
     }
 
     /** The OID(s) of the {@Link Trigger}s that were responsible for the condition */
-    public Set<Long> getTriggerOids() {
-        return triggerOids;
+    public Set<Goid> getTriggerGoids() {
+        return triggerGoids;
     }
 
     /** The ID of the component that has the condition */

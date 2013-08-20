@@ -1,18 +1,10 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.JoinColumn;
-import javax.persistence.Basic;
-import javax.persistence.FetchType;
-import java.util.Arrays;
-
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import java.util.Arrays;
 
 /**
  * 
@@ -20,7 +12,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="report_artifact")
-public class StandardReportArtifact extends PersistentEntityImp {
+public class StandardReportArtifact extends GoidEntityImp {
 
     //- PUBLIC
 

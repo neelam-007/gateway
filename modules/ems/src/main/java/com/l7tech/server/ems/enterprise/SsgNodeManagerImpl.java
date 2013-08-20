@@ -2,21 +2,21 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Arrays;
+import java.util.Map;
 
 /**
  * The implementation for SsgNodeManager that manages the ssg_node table.
@@ -26,7 +26,7 @@ import java.util.Arrays;
  * @Date: Nov 14, 2008
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
+public class SsgNodeManagerImpl extends HibernateGoidEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
 
     //- PUBLIC
 

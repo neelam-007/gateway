@@ -1,12 +1,10 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.server.EntityManagementContext.EntityManagerException;
 import com.l7tech.server.EntityManagementContext.EntityManagerProvider;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.some;
-import static java.util.Collections.singleton;
 import org.hibernate.dialect.MySQL5InnoDBDialect;
 import org.hibernate.id.TableHiLoGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +19,9 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import static com.l7tech.util.Option.some;
+import static java.util.Collections.singleton;
 
 /**
  * Provides entity management contexts.
@@ -85,7 +86,7 @@ public class EntityManagementContextProvider {
 
         @NotNull
         @Override
-        public <EM extends EntityManager> Option<EM> getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
+        public <EM extends GoidEntityManager> Option<EM> getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
             try {
                 return some( beanFactory.getBean( entityManager ) );
             } catch ( final BeansException e ) {

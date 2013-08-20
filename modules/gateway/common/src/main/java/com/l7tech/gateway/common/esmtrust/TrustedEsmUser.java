@@ -2,12 +2,10 @@ package com.l7tech.gateway.common.esmtrust;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.*;
-
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
+
+import javax.persistence.*;
 
 /**
  * Represents a mapping of an ESM user ID (on some Trusted ESM) to a local user ID on this Gateway cluster.

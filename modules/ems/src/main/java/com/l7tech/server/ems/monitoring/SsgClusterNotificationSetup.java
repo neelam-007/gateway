@@ -1,14 +1,11 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * This class stores the notification setup for each SSG Cluster.
@@ -21,7 +18,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="ssgcluster_notification_setup")
-public class SsgClusterNotificationSetup extends PersistentEntityImp {
+public class SsgClusterNotificationSetup extends GoidEntityImp {
 
     private String ssgClusterGuid;
     private Set<SystemMonitoringNotificationRule> systemNotificationRules = new HashSet<SystemMonitoringNotificationRule>();

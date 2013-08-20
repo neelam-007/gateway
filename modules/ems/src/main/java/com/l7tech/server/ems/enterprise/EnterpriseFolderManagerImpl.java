@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * @author rmak
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class EnterpriseFolderManagerImpl extends HibernateEntityManager<EnterpriseFolder, EntityHeader> implements EnterpriseFolderManager {
+public class EnterpriseFolderManagerImpl extends HibernateGoidEntityManager<EnterpriseFolder, EntityHeader> implements EnterpriseFolderManager {
     private static final Logger logger = Logger.getLogger(EnterpriseFolderManagerImpl.class.getName());
 
     private SsgClusterManager ssgClusterManager;

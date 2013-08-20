@@ -92,7 +92,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     public static class LevelMapping {
         public LevelMapping(Class<? extends Entity> entityClass, Map<Class<? extends PersistenceEvent>, Level> eventClassesToLevels) {
             if (entityClass == null || eventClassesToLevels == null) throw new IllegalArgumentException("Args must not be null");
-            if (!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException(PersistentEntity.class.getName() + " is not assignable from " + entityClass.getName());
+            if (!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException(Entity.class.getName() + " is not assignable from " + entityClass.getName());
             for (Class<? extends PersistenceEvent> eventClass : eventClassesToLevels.keySet()) {
                 if (!ApplicationEvent.class.isAssignableFrom(eventClass))
                     throw new IllegalArgumentException(ApplicationEvent.class.getName() + " is not assignable from " + eventClass.getName());

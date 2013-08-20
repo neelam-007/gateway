@@ -4,7 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.OidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 
 import java.util.Collection;
@@ -14,7 +14,7 @@ import java.util.List;
 /**
  *
  */
-public class MockStandardReportManager extends OidEntityManagerStub<StandardReport, EntityHeader> implements StandardReportManager {
+public class MockStandardReportManager extends EntityManagerStub<StandardReport, EntityHeader> implements StandardReportManager {
     @Override
     public List<StandardReport> findPage(User user, String sortProperty, boolean ascending, int offset, int count) throws FindException {
         return Collections.emptyList();

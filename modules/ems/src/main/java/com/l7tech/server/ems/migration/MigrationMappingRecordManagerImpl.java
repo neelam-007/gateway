@@ -1,21 +1,21 @@
 package com.l7tech.server.ems.migration;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Arrays;
+import java.util.Map;
 
 /**
  *
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<MigrationMappingRecord, ExternalEntityHeader> implements MigrationMappingRecordManager {
+public class MigrationMappingRecordManagerImpl extends HibernateGoidEntityManager<MigrationMappingRecord, ExternalEntityHeader> implements MigrationMappingRecordManager {
 
     //- PUBLIC
 
@@ -74,10 +74,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     }
 
     @Override
-    public long persistMapping( final String sourceClusterGuid,
-                                final ExternalEntityHeader sourceEntityHeader,
-                                final String targetClusterGuid,
-                                final String targetValue ) throws SaveException {
+    public Goid persistMapping(final String sourceClusterGuid,
+                               final ExternalEntityHeader sourceEntityHeader,
+                               final String targetClusterGuid,
+                               final String targetValue) throws SaveException {
         MigrationMappingRecord mapping = new MigrationMappingRecord();
         try {
             mapping.setSourceCluster( ssgClusterManager.findByGuid( sourceClusterGuid ) );
@@ -86,7 +86,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );
         }
 
-        long oid = -1;
+        Goid goid = GoidEntity.DEFAULT_GOID;
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {
@@ -111,24 +111,24 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
                     mapping.setSource( sourceEntity );
                     mapping.setTarget( targetEntity );
 
-                    oid = super.save( mapping );
+                    goid = super.save( mapping );
                 } else {
-                    oid = existingMapping.getOid();
+                    goid = existingMapping.getGoid();
                 }
             } catch ( FindException fe ) {
                 throw new SaveException( "Error checking for existing mapping saving.", fe );
             }
         }
 
-        return oid;
+        return goid;
     }
 
     @Override
-    public long persistMapping( final String sourceClusterGuid,
-                                final ExternalEntityHeader sourceEntityHeader,
-                                final String targetClusterGuid,
-                                final ExternalEntityHeader targetEntityHeader,
-                                final boolean sameEntity ) throws SaveException {
+    public Goid persistMapping(final String sourceClusterGuid,
+                               final ExternalEntityHeader sourceEntityHeader,
+                               final String targetClusterGuid,
+                               final ExternalEntityHeader targetEntityHeader,
+                               final boolean sameEntity) throws SaveException {
         MigrationMappingRecord mapping = new MigrationMappingRecord();
         try {
             mapping.setSourceCluster( ssgClusterManager.findByGuid( sourceClusterGuid ) );
@@ -137,7 +137,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );            
         }
 
-        long oid = -1;
+        Goid goid = GoidEntity.DEFAULT_GOID;
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {
@@ -167,16 +167,16 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
                     mapping.setTarget( targetEntity );
                     mapping.setSameEntity(sameEntity);
 
-                    oid = super.save( mapping );
+                    goid = super.save( mapping );
                 } else {
-                    oid = existingMapping.getOid();
+                    goid = existingMapping.getGoid();
                 }
             } catch ( FindException fe ) {
                 throw new SaveException( "Error checking for existing mapping saving.", fe );
             }
         }
 
-        return oid;
+        return goid;
     }
 
     @Override

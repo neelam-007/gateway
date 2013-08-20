@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
  * @since Enterprise Manager 1.0
  * @author rmak
  */
-public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeader> {
+public interface SsgClusterManager extends GoidEntityManager<SsgCluster, EntityHeader> {
 
     /**
      * Find all online clusters.

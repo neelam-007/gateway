@@ -3,7 +3,7 @@ package com.l7tech.server.ems.monitoring;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.OidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.List;
 /**
  *
  */
-public class MockEntityMonitoringPropertySetupManager extends OidEntityManagerStub<EntityMonitoringPropertySetup, EntityHeader> implements EntityMonitoringPropertySetupManager {
+public class MockEntityMonitoringPropertySetupManager extends EntityManagerStub<EntityMonitoringPropertySetup, EntityHeader> implements EntityMonitoringPropertySetupManager {
     public MockEntityMonitoringPropertySetupManager() {
     }
 

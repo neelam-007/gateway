@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
+import com.l7tech.objectmodel.Goid;
+
 import java.util.Set;
 
 /**
@@ -16,8 +18,8 @@ public class MonitoredEventStatus extends MonitoredStatus {
     protected MonitoredEventStatus() {
     }
 
-    public MonitoredEventStatus(MonitorableEvent monitorable, String componentId, StatusType status, long timestamp, Set<Long> triggerOids, int count, long period) {
-        super(monitorable.getComponentType(), monitorable.getName(), componentId, timestamp, status, triggerOids);
+    public MonitoredEventStatus(MonitorableEvent monitorable, String componentId, StatusType status, long timestamp, Set<Goid> triggerGoids, int count, long period) {
+        super(monitorable.getComponentType(), monitorable.getName(), componentId, timestamp, status, triggerGoids);
         this.count = count;
         this.period = period;
     }

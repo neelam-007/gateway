@@ -1,21 +1,16 @@
 package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import org.hibernate.annotations.*;
 
+import javax.persistence.CascadeType;
+import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.ManyToOne;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import java.util.Set;
 import java.util.HashSet;
-
-import org.hibernate.annotations.*;
+import java.util.Set;
 
 /**
  * 
@@ -23,7 +18,7 @@ import org.hibernate.annotations.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="report")
-public class StandardReport extends NamedEntityImp {
+public class StandardReport extends NamedGoidEntityImp {
 
     //- PUBLIC
 

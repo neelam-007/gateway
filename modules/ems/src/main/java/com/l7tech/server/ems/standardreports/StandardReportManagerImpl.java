@@ -1,42 +1,36 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.identity.User;
-import com.l7tech.util.TextUtils;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
-import static com.l7tech.gateway.common.security.rbac.OperationType.UPDATE;
-import static com.l7tech.gateway.common.security.rbac.OperationType.DELETE;
-
-import java.util.List;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.sql.SQLException;
-
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.TextUtils;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Criteria;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.List;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 
 /**
  * TODO re-enable role creation for standard reports (once viewing is role, not ownership, based)
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
+public class StandardReportManagerImpl  extends HibernateGoidEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
 
     //- PUBLIC
 
@@ -104,12 +98,12 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        super.findAndDelete(oid);
+    public void delete(Goid goid) throws DeleteException, FindException {
+        super.findAndDelete(goid);
     }
 
     @Override
-    public long save( final StandardReport entity ) throws SaveException {
+    public Goid save( final StandardReport entity ) throws SaveException {
 
         // addReportRole( oid, entity );
 

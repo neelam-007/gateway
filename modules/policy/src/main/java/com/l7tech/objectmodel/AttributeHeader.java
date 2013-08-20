@@ -3,25 +3,26 @@
  */
 package com.l7tech.objectmodel;
 
-import static com.l7tech.objectmodel.AttributeHeader.Builtin.CUSTOM;
-import static com.l7tech.policy.variable.DataType.STRING;
-import static com.l7tech.objectmodel.UsersOrGroups.USERS;
-import static com.l7tech.objectmodel.UsersOrGroups.BOTH;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.policy.variable.DataType;
 
-import java.io.Serializable;
 import java.io.ObjectStreamException;
-import java.util.Map;
-import java.util.HashMap;
+import java.io.Serializable;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.l7tech.objectmodel.AttributeHeader.Builtin.CUSTOM;
+import static com.l7tech.objectmodel.UsersOrGroups.BOTH;
+import static com.l7tech.objectmodel.UsersOrGroups.USERS;
+import static com.l7tech.policy.variable.DataType.STRING;
 
 /**
  * Basic information about an attribute; typically forms part of an {@Link AttributeConfig}.
  *
  * @author alex
  */
-public class AttributeHeader extends NamedEntityImp implements Serializable {
+public class AttributeHeader extends NamedGoidEntityImp implements Serializable {
     /**
      * Only classes in this package can declare whether a variable is built-in (any header created by "outsiders" 
      * is considered "custom.")

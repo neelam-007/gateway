@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 /**
  *
  */
-public interface MigrationMappingRecordManager extends EntityManager<MigrationMappingRecord, ExternalEntityHeader> {
+public interface MigrationMappingRecordManager extends GoidEntityManager<MigrationMappingRecord, ExternalEntityHeader> {
 
     /**
      * Lookup a mapping record by source cluster/entity and destination cluster.
@@ -35,6 +35,7 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
      *
      * <p>This will do nothing if the source or destination cluster identifiers are invalid (will return -1 in this case)</p>
      *
+     *
      * @param sourceClusterId The identifier for the source cluster.
      * @param sourceEntityHeader The source entity.
      * @param destinationClusterId  The identifier for the destination cluster.
@@ -43,12 +44,13 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
      * @return the mapping OID or -1 if none was persisted
      * @throws SaveException If an error occurs when persisting
      */
-    long persistMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, ExternalEntityHeader destinationEntityHeader, boolean sameEntity ) throws SaveException;
+    Goid persistMapping(String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, ExternalEntityHeader destinationEntityHeader, boolean sameEntity) throws SaveException;
 
     /**
      * Save a value mapping for the given source / destination.
      *
      * <p>This will do nothing if the source or destination cluster identifiers are invalid (will return -1 in this case)</p>
+     *
      *
      * @param sourceClusterId The identifier for the source cluster.
      * @param sourceEntityHeader The source entity.
@@ -57,5 +59,5 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
      * @return the mapping OID or -1 if none was persisted
      * @throws SaveException If an error occurs when persisting
      */
-    long persistMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, String value ) throws SaveException;
+    Goid persistMapping(String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, String value) throws SaveException;
 }

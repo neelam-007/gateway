@@ -1,18 +1,18 @@
 package com.l7tech.server.ems.monitoring;
 
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.dao.DataAccessException;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 
@@ -23,7 +23,7 @@ import java.sql.SQLException;
  * @since Enterprise Manager 1.0
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class SystemMonitoringNotificationRulesManagerImpl extends HibernateEntityManager<SystemMonitoringNotificationRule, EntityHeader> implements SystemMonitoringNotificationRulesManager {
+public class SystemMonitoringNotificationRulesManagerImpl extends HibernateGoidEntityManager<SystemMonitoringNotificationRule, EntityHeader> implements SystemMonitoringNotificationRulesManager {
 
     @Override
     public Class<? extends Entity> getInterfaceClass() {

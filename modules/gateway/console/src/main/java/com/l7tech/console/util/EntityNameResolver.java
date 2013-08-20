@@ -19,7 +19,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderGoid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
@@ -335,9 +334,6 @@ public class EntityNameResolver {
             } else {
                 logger.log(Level.WARNING, "Unable to determine name for EntityFolderAncestryPredicate because it is missing entity type and/or entity id.");
             }
-        } else if (entity instanceof NamedEntityImp) {
-            final NamedEntityImp named = (NamedEntityImp) entity;
-            name = named.getName();
         } else if (entity instanceof NamedGoidEntityImp) {
             final NamedGoidEntityImp named = (NamedGoidEntityImp) entity;
             name = named.getName();

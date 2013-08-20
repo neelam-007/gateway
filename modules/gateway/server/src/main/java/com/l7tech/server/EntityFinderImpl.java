@@ -243,13 +243,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
             } else if (GoidEntity.class.isAssignableFrom(clazz)) {
-                tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
-            } else if(PersistentEntity.class.isAssignableFrom(clazz) && pk instanceof String) {
                 try {
-                    tempPk = Long.valueOf((String)pk);
-                } catch (NumberFormatException nfe) {
-                    // TODO make this metadata-based?
-                    logger.fine("Primary key {0} is not a valid Long; using String value instead");
+                    tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
+                } catch (IllegalArgumentException iae) {
+                    logger.fine("Primary key "+pk+" is not a valid key; using String value instead");
                     tempPk = pk;
                 }
             } else {

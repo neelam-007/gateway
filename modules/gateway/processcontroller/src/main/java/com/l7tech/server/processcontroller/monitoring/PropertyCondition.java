@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 
 import java.util.Set;
@@ -10,8 +11,8 @@ import java.util.Set;
 public class PropertyCondition extends NotifiableCondition<MonitorableProperty> {
     private final Object value;
 
-    protected PropertyCondition(MonitorableProperty monitorable, String componentId, InOut inOut, Long timestamp, Set<Long> triggerOids, Object value) {
-        super(monitorable, componentId, inOut, timestamp, triggerOids);
+    protected PropertyCondition(MonitorableProperty monitorable, String componentId, InOut inOut, Long timestamp, Set<Goid> triggerGoids, Object value) {
+        super(monitorable, componentId, inOut, timestamp, triggerGoids);
         this.value = value;
     }
 

@@ -1,14 +1,14 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import org.mortbay.util.ajax.JSON;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import org.hibernate.annotations.Proxy;
+import org.mortbay.util.ajax.JSON;
 
 import javax.persistence.*;
 import java.net.InetAddress;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Entity class for SSG Node
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 @Entity
 @Proxy(lazy=false)
 @Table(name="ssg_node")
-public class SsgNode extends NamedEntityImp implements JSON.Convertible, Comparable {
+public class SsgNode extends NamedGoidEntityImp implements JSON.Convertible, Comparable {
     public static final int MAX_NAME_LENGTH = 128;
     public static final String ILLEGAL_CHARACTERS = "/";
 

@@ -61,20 +61,20 @@ public class EntityUtil {
         return column.length();
     }
 
-    public static <ET extends PersistentEntity> Map<Long, ET> buildEntityMap(Iterable<ET> entities) {
-        final Map<Long, ET> map = new HashMap<Long, ET>();
+    public static <ET extends GoidEntity> Map<Goid, ET> buildEntityMap(Iterable<ET> entities) {
+        final Map<Goid, ET> map = new HashMap<Goid, ET>();
         for (ET entity : entities) {
-            map.put(entity.getOid(), entity);
+            map.put(entity.getGoid(), entity);
         }
         return map;
     }
 
-    public static class CreatedUpdatedDeleted<T extends PersistentEntity> {
-        public final Map<Long, T> created;
-        public final Map<Long, T> updated;
-        public final Set<Long> deleted;
+    public static class CreatedUpdatedDeleted<T extends GoidEntity> {
+        public final Map<Goid, T> created;
+        public final Map<Goid, T> updated;
+        public final Set<Goid> deleted;
 
-        public CreatedUpdatedDeleted(Map<Long, T> created, Map<Long, T> updated, Set<Long> deleted) {
+        public CreatedUpdatedDeleted(Map<Goid, T> created, Map<Goid, T> updated, Set<Goid> deleted) {
             this.created = created;
             this.updated = updated;
             this.deleted = deleted;
@@ -90,25 +90,25 @@ public class EntityUtil {
      * @param <T> the type of entity
      * @return a Triple consisting of the created entities, the updated entities, and the OIDs of the deleted entities.
      */
-    public static <T extends PersistentEntity> CreatedUpdatedDeleted<T> findCreatedUpdatedDeleted(Map<Long, T> before, Map<Long, T> after) {
-        final Map<Long, T> creates = new HashMap<Long, T>();
-        final Map<Long, T> updates = new HashMap<Long, T>();
-        for (Map.Entry<Long, T> entry : after.entrySet()) {
-            final Long oid = entry.getKey();
+    public static <T extends GoidEntity> CreatedUpdatedDeleted<T> findCreatedUpdatedDeleted(Map<Goid, T> before, Map<Goid, T> after) {
+        final Map<Goid, T> creates = new HashMap<Goid, T>();
+        final Map<Goid, T> updates = new HashMap<Goid, T>();
+        for (Map.Entry<Goid, T> entry : after.entrySet()) {
+            final Goid goid = entry.getKey();
             final T newb = entry.getValue();
-            if (!before.containsKey(oid)) {
-                creates.put(oid, newb);
+            if (!before.containsKey(goid)) {
+                creates.put(goid, newb);
             } else {
-                T old = before.get(oid);
+                T old = before.get(goid);
                 if (old.getVersion() != newb.getVersion()) {
-                    updates.put(oid, newb);
+                    updates.put(goid, newb);
                 }
             }
         }
 
-        final Set<Long> deletes = new HashSet<Long>();
-        for (Long oid : before.keySet()) {
-            if (!after.containsKey(oid)) deletes.add(oid);
+        final Set<Goid> deletes = new HashSet<Goid>();
+        for (Goid goid : before.keySet()) {
+            if (!after.containsKey(goid)) deletes.add(goid);
         }
 
         return new CreatedUpdatedDeleted<T>(creates, updates, deletes);

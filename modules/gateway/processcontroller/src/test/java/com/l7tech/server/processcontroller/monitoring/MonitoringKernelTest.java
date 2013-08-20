@@ -5,15 +5,16 @@ package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.util.ComparisonOperator;
-import static junit.framework.Assert.assertEquals;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxb.JAXBDataBinding;
-import org.junit.*;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -25,6 +26,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
+import static junit.framework.Assert.assertEquals;
 
 public class MonitoringKernelTest {
     @Test
@@ -121,14 +124,14 @@ public class MonitoringKernelTest {
     public static MonitoringConfiguration makeConfig() {
         Random random = new Random();
         final MonitoringConfiguration mc = new MonitoringConfiguration();
-        mc.setOid(Math.abs(random.nextLong()));
+        mc.setGoid(new Goid(0,Math.abs(random.nextLong())));
 
         final HttpNotificationRule rulez = new HttpNotificationRule();
         rulez.setUrl("http://localhost:8080/dump");
         rulez.setMethod(HttpMethod.POST);
         rulez.setRequestBody("<a>Hi there!</a>");
         rulez.setContentType("text/xml; charset=\"utf-8\"");
-        rulez.setOid(Math.abs(random.nextLong()));
+        rulez.setGoid(new Goid(0,Math.abs(random.nextLong())));
         mc.getNotificationRules().add(rulez);
 
         final EmailNotificationRule rulez2 = new EmailNotificationRule();
@@ -137,7 +140,7 @@ public class MonitoringKernelTest {
         rulez2.setSubject("Uh-oh");
         rulez2.setSmtpHost("mail.l7tech.com");
         rulez2.setText("Here is a very nice message for you");
-        rulez2.setOid(Math.abs(random.nextLong()));
+        rulez2.setGoid(new Goid(0,Math.abs(random.nextLong())));
         mc.getNotificationRules().add(rulez2);
 
         final SnmpTrapNotificationRule rulez3 = new SnmpTrapNotificationRule();
@@ -145,7 +148,7 @@ public class MonitoringKernelTest {
         rulez3.setOidSuffix(1234);
         rulez3.setSnmpHost("localhost");
         rulez3.setText("yo dawg, I herd you like traps");
-        rulez3.setOid(Math.abs(random.nextLong()));
+        rulez3.setGoid(new Goid(0,Math.abs(random.nextLong())));
         mc.getNotificationRules().add(rulez3);
 
         addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
@@ -161,7 +164,7 @@ public class MonitoringKernelTest {
         addTrigger(mc, BuiltinMonitorables.RAID_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
 
         final EventTrigger anotherTrigger = new EventTrigger(new MonitorableEvent(ComponentType.HOST, "shuttingDown"), null, 1, null);
-        anotherTrigger.setOid(Math.abs(random.nextLong()));
+        anotherTrigger.setGoid(new Goid(0,Math.abs(random.nextLong())));
 
         return mc;
     }
@@ -169,7 +172,7 @@ public class MonitoringKernelTest {
     public static void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, final int interval, NotificationRule... rulez) {
         final PropertyTrigger tempTrigger = new PropertyTrigger(prop, "foo.bar.example.com", op, val, interval);
         tempTrigger.setName("idoru");
-        tempTrigger.setOid(oid);
+        tempTrigger.setGoid(new Goid(0,oid));
         tempTrigger.getNotificationRules().addAll(Arrays.asList(rulez));
         mc.getTriggers().add(tempTrigger);
     }

@@ -4,9 +4,11 @@ import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import com.l7tech.objectmodel.migration.MigrationDependency;
-import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterContent;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
 import com.l7tech.server.ems.ui.NavigationPage;
@@ -17,12 +19,7 @@ import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxEventBehavior;
@@ -40,19 +37,16 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.model.IDetachable;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.LoadableDetachableModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.*;
 
 import javax.inject.Inject;
-
 import javax.xml.ws.WebServiceException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 
 /**
  *
@@ -875,9 +869,9 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final class PreviousMigrationModel implements Comparable, Serializable {
         private final String label;
-        private final long id;
+        private final Goid id;
 
-        private PreviousMigrationModel( final long id,
+        private PreviousMigrationModel( final Goid id,
                                        final String label )  {
             this.id = id;
             this.label = label;
@@ -897,7 +891,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             final PreviousMigrationModel that = (PreviousMigrationModel) o;
 
-            if ( id != that.id ) return false;
+            if ( !Goid.equals(id, that.id ) ) return false;
             if ( label != null ? !label.equals( that.label ) : that.label != null ) return false;
 
             return true;
@@ -906,7 +900,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         @Override
         public int hashCode() {
             int result = label != null ? label.hashCode() : 0;
-            result = 31 * result + (int) (id ^ (id >>> 32));
+            result = 31 * result + (id != null ? id.hashCode() : 0);
             return result;
         }
 
@@ -930,7 +924,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
             if ( records != null ) {
                 for ( MigrationRecord record : records ) {
-                    previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
+                    previousMigrations.add( new PreviousMigrationModel( record.getGoid(), record.getName() ) );
                 }
             }
         } catch ( FindException fe ) {
@@ -2897,13 +2891,13 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static class MigrationRecordModel extends LoadableDetachableModel<MigrationRecord> {
         private final MigrationRecordManager manager;
-        private final long recordId;
+        private final Goid recordId;
 
         private MigrationRecordModel( final MigrationRecordManager manager,
                                       final MigrationRecord migrationRecord ) {
             super( migrationRecord );
             this.manager = manager;
-            this.recordId = migrationRecord.getOid();
+            this.recordId = migrationRecord.getGoid();
         }
 
         @Override

@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -34,8 +35,8 @@ public class MonitoredPropertyStatus extends MonitoredStatus {
     protected MonitoredPropertyStatus() {
     }
 
-    public MonitoredPropertyStatus(ComponentType type, String monitorableId, String componentId, long timestamp, StatusType status, Set<Long> triggerOids, String value, ValueType valueType) {
-        super(type, monitorableId, componentId, timestamp, status, triggerOids);
+    public MonitoredPropertyStatus(ComponentType type, String monitorableId, String componentId, long timestamp, StatusType status, Set<Goid> triggerGoids, String value, ValueType valueType) {
+        super(type, monitorableId, componentId, timestamp, status, triggerGoids);
         this.value = value;
         this.valueType = valueType;
     }

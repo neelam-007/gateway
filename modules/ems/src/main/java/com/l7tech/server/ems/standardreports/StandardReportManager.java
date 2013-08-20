@@ -1,19 +1,19 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.identity.User;
+import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 
 /**
  *
  */
-public interface StandardReportManager extends EntityManager<StandardReport, EntityHeader> {
+public interface StandardReportManager extends GoidEntityManager<StandardReport, EntityHeader> {
 
     /**
      * Find reports by page.

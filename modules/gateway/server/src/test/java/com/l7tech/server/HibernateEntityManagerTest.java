@@ -7,10 +7,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class HibernateEntityManagerTest {
-    private static final long OID = 1234L;
+    private static final Goid GOID = new Goid(0,1234L);
     private static final Integer VER = 1;
     private static final Goid ZONE_GOID = new Goid(0,1111L);
-    private HibernateEntityManager<PersistentEntity, EntityHeader> genericHeaderManager;
+    private HibernateGoidEntityManager<GoidEntity, EntityHeader> genericHeaderManager;
     private SecurityZone zone;
 
     @Before
@@ -22,8 +22,8 @@ public class HibernateEntityManagerTest {
 
     @Test
     public void newHeaderEntityNotZoneable() {
-        final EntityHeader header = genericHeaderManager.newHeader(new StubPersistentEntity(OID, VER));
-        assertEquals(OID, header.getOid());
+        final EntityHeader header = genericHeaderManager.newHeader(new StubPersistentEntity(GOID, VER));
+        assertEquals(GOID, header.getGoid());
         assertEquals(VER, header.getVersion());
         assertTrue(header.getDescription().isEmpty());
         assertEquals(EntityType.ANY, header.getType());
@@ -32,9 +32,9 @@ public class HibernateEntityManagerTest {
 
     @Test
     public void newHeaderEntityZoneable() {
-        final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(OID, VER, zone));
+        final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, zone));
         assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(VER, header.getVersion());
         assertTrue(header.getDescription().isEmpty());
         assertEquals(EntityType.ANY, header.getType());
@@ -42,11 +42,11 @@ public class HibernateEntityManagerTest {
 
     @Test
     public void newHeaderEntityZoneableNullZone() {
-        final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(OID, VER, null));
+        final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, null));
         assertNull(header.getSecurityZoneGoid());
     }
 
-    private class TestableHibernateEntityManager extends HibernateEntityManager<PersistentEntity, EntityHeader> {
+    private class TestableHibernateEntityManager extends HibernateGoidEntityManager<GoidEntity, EntityHeader> {
         @Override
         public Class<? extends Entity> getImpClass() {
             return StubPersistentEntity.class;
@@ -58,15 +58,15 @@ public class HibernateEntityManagerTest {
         }
     }
 
-    private class StubPersistentEntity implements PersistentEntity {
-        private long oid;
+    private class StubPersistentEntity implements GoidEntity {
+        private Goid goid;
         private int version;
 
         private StubPersistentEntity() {
         }
 
-        private StubPersistentEntity(final long oid, final int version) {
-            this.oid = oid;
+        private StubPersistentEntity(final Goid goid, final int version) {
+            this.goid = goid;
             this.version = version;
         }
 
@@ -81,26 +81,31 @@ public class HibernateEntityManagerTest {
         }
 
         @Override
-        public long getOid() {
-            return oid;
+        public Goid getGoid() {
+            return goid;
         }
 
         @Override
-        public void setOid(long oid) {
-            this.oid = oid;
+        public void setGoid(Goid goid) {
+            this.goid = goid;
+        }
+
+        @Override
+        public boolean isUnsaved() {
+            return Goid.isDefault(goid);
         }
 
         @Override
         public String getId() {
-            return String.valueOf(oid);
+            return String.valueOf(goid);
         }
     }
 
     private class StubZoneableEntity extends StubPersistentEntity implements ZoneableEntity {
         private SecurityZone zone;
 
-        private StubZoneableEntity(final long oid, final int version, final SecurityZone zone) {
-            super(oid, version);
+        private StubZoneableEntity(final Goid goid, final int version, final SecurityZone zone) {
+            super(goid, version);
             this.zone = zone;
         }
 

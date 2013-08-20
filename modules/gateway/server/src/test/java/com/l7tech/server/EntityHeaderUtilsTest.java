@@ -15,8 +15,6 @@ import java.util.Random;
 import static org.junit.Assert.*;
 
 public class EntityHeaderUtilsTest {
-    private static final Goid goid_OID = new Goid(0L,1234L);
-    private static final long OID = 1234L;
     private static final Goid GOID = new Goid(new Random().nextLong(), new Random().nextLong());
     private static final Goid ZONE_GOID = new Goid(0,1111L);
     private static final String GUID = "abc123";
@@ -34,9 +32,9 @@ public class EntityHeaderUtilsTest {
     @BugId("EM-914")
     @Test
     public void fromEntityEncapsulatedAssertionConfig() {
-        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(goid_OID, GUID, NAME, VERSION, zone));
+        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(GOID, GUID, NAME, VERSION, zone));
         assertEquals(GUID, header.getGuid());
-        assertEquals(goid_OID, header.getGoid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
         assertEquals(NAME, header.getName());
         assertEquals(VERSION, header.getVersion());
@@ -46,10 +44,10 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityEncapsulatedAssertionConfigNullValues() {
-        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(goid_OID, null, null, VERSION, null));
+        final ZoneableGuidEntityHeader header = (ZoneableGuidEntityHeader) EntityHeaderUtils.fromEntity(createEncapsulatedAssertionConfig(GOID, null, null, VERSION, null));
         assertNull(header.getGuid());
         assertNull(header.getName());
-        assertEquals(goid_OID, header.getGoid());
+        assertEquals(GOID, header.getGoid());
         assertNull(header.getSecurityZoneGoid());
     }
 
@@ -184,33 +182,33 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityZoneableNonPersistentEntitySetsSecurityZoneOid() {
-        final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(OID), zone);
+        final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(GOID), zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
     }
 
     @Test
     public void fromEntityZoneableNonPersistentEntitySetsNullSecurityZoneOid() {
-        final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(OID), null);
+        final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(GOID), null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
         assertNull(header.getSecurityZoneGoid());
     }
 
     @Test
     public void fromEntityPersistentEntity() {
-        final StubPersistentEntity entity = new StubPersistentEntity(OID, VERSION);
+        final StubPersistentEntity entity = new StubPersistentEntity(GOID, VERSION);
         final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(VERSION, header.getVersion());
         assertFalse(header instanceof ZoneableEntityHeader);
     }
 
     @Test
     public void fromEntityNamedEntity() {
-        final StubNamedEntity entity = new StubNamedEntity(OID, VERSION, NAME);
+        final StubNamedEntity entity = new StubNamedEntity(GOID, VERSION, NAME);
         final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
-        assertEquals(OID, header.getOid());
+        assertEquals(GOID, header.getGoid());
         assertEquals(VERSION, header.getVersion());
         assertEquals(NAME, header.getName());
         assertFalse(header instanceof ZoneableEntityHeader);
@@ -251,16 +249,16 @@ public class EntityHeaderUtilsTest {
         return guidHeader;
     }
 
-    private class StubPersistentEntity extends PersistentEntityImp {
-        private StubPersistentEntity(final long oid, final int version) {
-            setOid(oid);
+    private class StubPersistentEntity extends GoidEntityImp {
+        private StubPersistentEntity(final Goid goid, final int version) {
+            setGoid(goid);
             setVersion(version);
         }
     }
 
-    private class StubNamedEntity extends NamedEntityImp {
-        private StubNamedEntity(final long oid, final int version, final String name) {
-            setOid(oid);
+    private class StubNamedEntity extends NamedGoidEntityImp {
+        private StubNamedEntity(final Goid goid, final int version, final String name) {
+            setGoid(goid);
             setVersion(version);
             setName(name);
         }

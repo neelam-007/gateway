@@ -111,14 +111,6 @@ public final class EntityHeaderUtils {
             guidEntityHeader.setGuid(config.getGuid());
             guidEntityHeader.setSecurityZoneGoid(config.getSecurityZone() == null ? null : config.getSecurityZone().getGoid());
             return guidEntityHeader;
-        } else if (e instanceof PersistentEntity) {
-            PersistentEntity entity = (PersistentEntity) e;
-            EntityHeader entityHeader = new EntityHeader(entity.getOid(),
-                    EntityTypeRegistry.getEntityType(entity.getClass()),
-                    entity instanceof NamedEntity ? ((NamedEntity) entity).getName() : null,
-                    null,
-                    entity.getVersion());
-            return createZoneableHeaderIfPossible(e, entityHeader);
         } else if (e instanceof GoidEntity) {
             GoidEntity entity = (GoidEntity) e;
             EntityHeader entityHeader = new EntityHeader(entity.getGoid(),

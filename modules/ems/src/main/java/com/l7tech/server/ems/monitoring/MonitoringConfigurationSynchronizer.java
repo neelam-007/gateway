@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.EsmConfigParams;
@@ -337,13 +338,13 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, Map<String, Object> globalSettings, boolean responsibleForClusterMonitoring) throws FindException {
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
-        config.setOid(node.getOid());
+        config.setGoid(node.getGoid());
         config.setVersion(node.getVersion());
         config.setResponsibleForClusterMonitoring(responsibleForClusterMonitoring);
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
-        Map<Long, NotificationRule> notRules = clusterSetup==null ?
-                Collections.<Long, NotificationRule>emptyMap() :
+        Map<Goid, NotificationRule> notRules = clusterSetup==null ?
+                Collections.<Goid, NotificationRule>emptyMap() :
                 convertNotificationRules(areNotificationsGloballyDisabled(globalSettings), clusterSetup.getSystemNotificationRules());
         config.setNotificationRules(new HashSet<NotificationRule>(notRules.values()));
 
@@ -371,7 +372,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private Collection<Trigger> convertTriggers(Map<String, Object> globalSettings,
-                                                Map<Long, NotificationRule> notificationRules,
+                                                Map<Goid, NotificationRule> notificationRules,
                                                 List<EntityMonitoringPropertySetup> setups,
                                                 String componentId)
     {
@@ -387,7 +388,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     }
 
     Trigger convertTrigger(Map<String, Object> globalSettings,
-                           Map<Long, NotificationRule> notificationRules,
+                           Map<Goid, NotificationRule> notificationRules,
                            EntityMonitoringPropertySetup setup,
                            String componentId)
     {
@@ -412,7 +413,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
         samplingInterval = Math.max(samplingInterval, 5000L);
 
         PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, samplingInterval);
-        trigger.setOid(setup.getOid());
+        trigger.setGoid(setup.getGoid());
         trigger.setVersion(setup.getVersion());
         trigger.setNotificationRules(lookupNotificationRules(areNotificationsGloballyDisabled(globalSettings), setup, notificationRules, propertyName));
         return trigger;
@@ -421,7 +422,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private static List<NotificationRule> lookupNotificationRules(boolean notificationsDisabled,
                                                                   EntityMonitoringPropertySetup entityMonitoringPropertySetup,
-                                                                  Map<Long, NotificationRule> notificationRules,
+                                                                  Map<Goid, NotificationRule> notificationRules,
                                                                   String propertyName)
     {
         if (notificationsDisabled || !entityMonitoringPropertySetup.isNotificationEnabled())
@@ -430,12 +431,12 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
         Set<SystemMonitoringNotificationRule> rules = entityMonitoringPropertySetup.getSsgClusterNotificationSetup().getSystemNotificationRules();
         List<NotificationRule> notRules = new ArrayList<NotificationRule>();
         for (SystemMonitoringNotificationRule rule : rules) {
-            NotificationRule notRule = notificationRules.get(rule.getOid());
+            NotificationRule notRule = notificationRules.get(rule.getGoid());
             if (notRule != null) {
                 notRules.add(notRule);
             } else {
                 if (logger.isLoggable(Level.WARNING))
-                    logger.log(Level.WARNING, MessageFormat.format("Trigger on monitorable property {0} refers to unavailable notification rule with OID {2}", propertyName, rule.getOid()));
+                    logger.log(Level.WARNING, MessageFormat.format("Trigger on monitorable property {0} refers to unavailable notification rule with OID {2}", propertyName, rule.getGoid()));
             }
 
         }
@@ -443,11 +444,11 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     }
 
     // returns map of SystemMonitoringNotificationRule OID => NotificationRule instance
-    private Map<Long, NotificationRule> convertNotificationRules(boolean notificationsDisabled, Set<SystemMonitoringNotificationRule> systemNotificationRules) {
-        Map<Long, NotificationRule> rules = new HashMap<Long, NotificationRule>();
+    private Map<Goid, NotificationRule> convertNotificationRules(boolean notificationsDisabled, Set<SystemMonitoringNotificationRule> systemNotificationRules) {
+        Map<Goid, NotificationRule> rules = new HashMap<Goid, NotificationRule>();
         if (!notificationsDisabled)
             for (SystemMonitoringNotificationRule rule : systemNotificationRules)
-                rules.put(rule.getOid(), rule.asNotificationRule());
+                rules.put(rule.getGoid(), rule.asNotificationRule());
         return rules;
     }
 

@@ -10,7 +10,7 @@ import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.objectmodel.Entity;
 
 /**
- * Fired when a {@link com.l7tech.objectmodel.PersistentEntity} has been updated.
+ * Fired when a {@link com.l7tech.objectmodel.GoidEntity} has been updated.
  * <p>
  * The {@link #source} is the updated object, and the included {@link com.l7tech.server.event.EntityChangeSet} gives access
  * to the old and new values on a per-property basis.

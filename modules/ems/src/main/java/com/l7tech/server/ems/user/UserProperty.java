@@ -1,15 +1,14 @@
 package com.l7tech.server.ems.user;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.UniqueConstraint;
-
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 /**
  *  Represents a single property name/value pair for a user.
@@ -18,7 +17,7 @@ import org.hibernate.annotations.Type;
 @Proxy(lazy=false)
 @Table(name="user_property",
        uniqueConstraints=@UniqueConstraint(columnNames={"provider", "user_id", "propkey"}))
-public class UserProperty extends PersistentEntityImp {
+public class UserProperty extends GoidEntityImp {
 
     //- PUBLIC
     

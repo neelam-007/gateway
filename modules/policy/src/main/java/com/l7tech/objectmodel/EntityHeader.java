@@ -4,7 +4,6 @@
 package com.l7tech.objectmodel;
 
 
-import com.l7tech.util.Either;
 import org.jetbrains.annotations.Nullable;
 
 import javax.validation.constraints.NotNull;
@@ -89,11 +88,11 @@ public class EntityHeader extends EntityHeaderRef {
 
     @Deprecated // oid's are being replaced by goids
     public long getOid() {
-        if (strId == null || strId.isEmpty()) return PersistentEntity.DEFAULT_OID;
+        if (strId == null || strId.isEmpty()) return -1;
         try {
             return Long.parseLong(strId);
         } catch (Exception e) {
-            return PersistentEntity.DEFAULT_OID;
+            return -1;
         }
     }
 

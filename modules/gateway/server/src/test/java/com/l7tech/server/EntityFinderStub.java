@@ -16,8 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Stub implementation of {@link EntityFinder} that delegates to an {@link EntityManager} selected based on the
- * manager's declared {@link EntityManager#getImpClass}.
+ * Stub implementation of {@link EntityFinder} that delegates to an {@link GoidEntityManager} selected based on the
+ * manager's declared {@link GoidEntityManager#getImpClass}.
  *  
  * @author alex
  */

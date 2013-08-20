@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -34,29 +33,9 @@ public class EntityUtils {
      *
      * @param entity The entity to update
      */
-    public static void updateCopy(final NamedEntityImp entity) {
-        resetIdentity(entity);
-        entity.setName(getNameForCopy(entity.getName()));
-    }
-
-    /**
-     * Configure an entity as a copy.
-     *
-     * @param entity The entity to update
-     */
     public static void updateCopy(final NamedGoidEntityImp entity) {
         resetIdentity(entity);
         entity.setName(getNameForCopy(entity.getName()));
-    }
-
-    /**
-     * Remove identity information from an entity.
-     *
-     * @param entity The entity to update.
-     */
-    public static void resetIdentity(final PersistentEntity entity) {
-        entity.setOid(PersistentEntity.DEFAULT_OID);
-        entity.setVersion(0);
     }
 
     /**

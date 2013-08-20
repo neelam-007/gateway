@@ -1,27 +1,25 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.management.migration.bundle.MigrationBundle;
-import com.l7tech.server.management.migration.bundle.MigratedItem;
-import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
-
-import javax.persistence.*;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.JAXB;
-
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
+import javax.persistence.*;
+import javax.xml.bind.JAXB;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * This entity class stores the information of a migration such as name, id, time created,
@@ -35,7 +33,7 @@ import java.util.ArrayList;
 @Proxy(lazy=false)
 @Table(name="migration")
 @XmlRootElement
-public class MigrationRecord extends NamedEntityImp {
+public class MigrationRecord extends NamedGoidEntityImp {
 
     private long timeCreated;
     private Goid provider;

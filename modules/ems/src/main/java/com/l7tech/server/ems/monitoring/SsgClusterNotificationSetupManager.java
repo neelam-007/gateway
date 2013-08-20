@@ -1,11 +1,11 @@
 package com.l7tech.server.ems.monitoring;
 
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntityManager;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This class manages the notification rules setup for each SSG Cluster.
@@ -16,7 +16,7 @@ import com.l7tech.objectmodel.DeleteException;
  * @since Enterprise Manager 1.0
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public interface SsgClusterNotificationSetupManager extends EntityManager<SsgClusterNotificationSetup, EntityHeader> {
+public interface SsgClusterNotificationSetupManager extends GoidEntityManager<SsgClusterNotificationSetup, EntityHeader> {
     /**
      * Find the notification rules setup by the given SSG Cluster guid.
      * @param ssgClusterGuid: the GUID of a SSG Cluster

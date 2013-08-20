@@ -1,10 +1,10 @@
 package com.l7tech.server.ems.monitoring;
 
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -25,7 +25,7 @@ import java.util.*;
  * @Date: Feb 6, 2009
  * @since Enterprise Manager 1.0
  */
-public class EntityMonitoringPropertySetupManagerImpl extends HibernateEntityManager<EntityMonitoringPropertySetup, EntityHeader> implements EntityMonitoringPropertySetupManager {
+public class EntityMonitoringPropertySetupManagerImpl extends HibernateGoidEntityManager<EntityMonitoringPropertySetup, EntityHeader> implements EntityMonitoringPropertySetupManager {
     private SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
     private SsgClusterManager ssgClusterManager;
 

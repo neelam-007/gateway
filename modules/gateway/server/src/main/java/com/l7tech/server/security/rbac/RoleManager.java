@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -116,16 +115,6 @@ public interface RoleManager extends GoidEntityManager<Role, EntityHeader>, Rbac
      * @param entityGoid GOID of entity instnace whose roles are to be deleted.  Required.
      */
     void deleteEntitySpecificRoles(EntityType etype, Goid entityGoid) throws DeleteException;
-
-    /**
-     * Updates the Roles corresponding to the provided Entity to match a new name, if it's different
-     * @param entityType the RBAC type of the Entity being updated
-     * @param entity the entity being updated
-     * @param replacePattern a Pattern that finds the name component in the entity name
-     * @throws com.l7tech.objectmodel.UpdateException
-     */
-    @Deprecated
-    void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
 
     /**
      * Updates the Roles corresponding to the provided Entity to match a new name, if it's different

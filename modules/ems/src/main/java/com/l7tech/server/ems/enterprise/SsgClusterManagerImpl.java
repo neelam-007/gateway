@@ -1,11 +1,9 @@
 package com.l7tech.server.ems.enterprise;
 
-import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.HibernateGoidEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Functions;
@@ -28,6 +26,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
+import static com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER;
+
 /**
  * Entity manager for {@link SsgCluster}.
  *
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  * @author rmak
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
+public class SsgClusterManagerImpl extends HibernateGoidEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
     private static final Logger logger = Logger.getLogger(SsgClusterManagerImpl.class.getName());
 
     private static final String ROLE_NAME_TYPE_SUFFIX = "Gateway Cluster Nodes";
@@ -86,7 +87,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         verifyLegalClusterName(name);
         verifyHostnameUniqueness(sslHostName);
         final SsgCluster result = new SsgCluster(name, sslHostName, adminPort, parentFolder);
-        long id = save(result);
+        Goid id = save(result);
         addManageClusterRole( id, result );
         return result;
     }
@@ -253,14 +254,14 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public void delete( final long oid ) throws DeleteException, FindException {
-        findAndDelete(oid);
+    public void delete( final Goid goid ) throws DeleteException, FindException {
+        findAndDelete(goid);
     }
 
     @Override
     public void delete( final SsgCluster ssgCluster ) throws DeleteException {
         super.delete(ssgCluster);
-        roleManager.deleteEntitySpecificRoles(ESM_SSG_CLUSTER, ssgCluster.getOid());
+        roleManager.deleteEntitySpecificRoles(ESM_SSG_CLUSTER, ssgCluster.getGoid());
     }
 
     @Override
@@ -389,7 +390,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
      * @param ssgCluster      the SsgCluster that is in need of a Role.  Must not be null.
      * @throws SaveException  if the new Role could not be saved
      */
-    private void addManageClusterRole( final Long id, final SsgCluster ssgCluster ) throws SaveException {
+    private void addManageClusterRole( final Goid id, final SsgCluster ssgCluster ) throws SaveException {
         // truncate service name in the role name to avoid going beyond 128 limit
         String clustername = ssgCluster.getName();
         // cutoff is arbitrarily set to 50
@@ -405,7 +406,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         newRole.addEntityPermission(READ, ESM_SSG_CLUSTER, id.toString()); // Read this cluster
 
         newRole.setEntityType(ESM_SSG_CLUSTER);
-        newRole.setEntityOid(id);
+        newRole.setEntityGoid(id);
         newRole.setDescription("Users assigned to the {0} role have the ability to manage Gateway Nodes in the {1} cluster.");
 
         roleManager.save(newRole);

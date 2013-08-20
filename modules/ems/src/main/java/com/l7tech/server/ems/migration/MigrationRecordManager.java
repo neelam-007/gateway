@@ -15,7 +15,7 @@ import java.util.Date;
  *
  * @author ghuang
  */
-public interface MigrationRecordManager extends EntityManager<MigrationRecord, EntityHeader> {
+public interface MigrationRecordManager extends GoidEntityManager<MigrationRecord, EntityHeader> {
 
     enum SortProperty {
         NAME("name"), TIME("timeCreated");
@@ -69,11 +69,11 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
     /**
      * Find a MigrationRecord by primary key. The bundleXml property will not be set.
      *
-     * @param oid primary key
+     * @param goid primary key
      * @return MigrationRecord with all properties apart from bundleXml set.
      * @throws FindException if cannot be found.
      */
-    MigrationRecord findByPrimaryKeyNoBundle(long oid) throws FindException;
+    MigrationRecord findByPrimaryKeyNoBundle(Goid goid) throws FindException;
 
     /**
      * Find a "page" worth of migrations for the given sort, offset, count, start, and end.

@@ -1,20 +1,12 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.ManyToOne;
-import javax.persistence.JoinColumn;
-import javax.persistence.Embedded;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.AttributeOverride;
-
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
 
 /**
  * 
@@ -22,7 +14,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="migration_mapping")
-public class MigrationMappingRecord extends PersistentEntityImp {
+public class MigrationMappingRecord extends GoidEntityImp {
 
     //- PUBLIC
 

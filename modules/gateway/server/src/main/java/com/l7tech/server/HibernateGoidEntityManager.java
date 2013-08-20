@@ -841,10 +841,10 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
     }
 
     /**
-     * Gets the {@link com.l7tech.objectmodel.PersistentEntity} with the specified name from a cache where possible.  If the
+     * Gets the {@link com.l7tech.objectmodel.GoidEntity} with the specified name from a cache where possible.  If the
      * entity is not present in the cache, it will be retrieved from the database.  If the entity
      * is present in the cache but was cached too long ago, checks whether the cached entity
-     * is stale by looking up its {@link com.l7tech.objectmodel.PersistentEntity#getVersion}.  If the cached entity has the same
+     * is stale by looking up its {@link com.l7tech.objectmodel.GoidEntity#getVersion}.  If the cached entity has the same
      * version as the database, the cached version is marked fresh.
      *
      * @param goid the OID of the object to get

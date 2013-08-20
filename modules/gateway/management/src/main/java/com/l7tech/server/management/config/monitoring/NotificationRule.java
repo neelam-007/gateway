@@ -3,7 +3,8 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 
 import javax.persistence.Entity;
 
@@ -13,7 +14,7 @@ import javax.persistence.Entity;
  * @author alex
  */
 @Entity
-public abstract class NotificationRule extends NamedEntityImp {
+public abstract class NotificationRule extends NamedGoidEntityImp {
     private Type type;
 
     @Deprecated
@@ -29,7 +30,7 @@ public abstract class NotificationRule extends NamedEntityImp {
 
     public boolean isIncompatibleWith(NotificationRule that) {
         return this.type != that.type ||
-               this._oid != that._oid;
+               !Goid.equals(this.getGoid(), that.getGoid());
     }
 
     public enum Type {

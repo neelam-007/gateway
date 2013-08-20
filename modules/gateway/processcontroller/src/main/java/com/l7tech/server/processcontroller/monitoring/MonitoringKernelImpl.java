@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.server.processcontroller.ConfigService;
@@ -54,8 +55,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     private volatile Map<MonitorableProperty, PropertyState<?>> currentPropertyStates;
     private volatile Map<MonitorableEvent, EventState> currentEventStates;
-    private volatile Map<Long, TriggerState> currentTriggerStates = null;
-    private volatile Map<Long, NotificationState> currentNotificationStates = new ConcurrentHashMap<Long, NotificationState>();
+    private volatile Map<Goid, TriggerState> currentTriggerStates = null;
+    private volatile Map<Goid, NotificationState> currentNotificationStates = new ConcurrentHashMap<Goid, NotificationState>();
 
     private volatile MonitoringConfiguration currentConfig = null;
 
@@ -180,9 +181,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             return;
         }
 
-        final Map<Long, Trigger> newTriggers = EntityUtil.buildEntityMap(newConfiguration.getTriggers());
-        final Map<Long, TriggerState> priorTstates = currentTriggerStates;
-        final Map<Long, TriggerState> buildingTstates = new HashMap<Long, TriggerState>();
+        final Map<Goid, Trigger> newTriggers = EntityUtil.buildEntityMap(newConfiguration.getTriggers());
+        final Map<Goid, TriggerState> priorTstates = currentTriggerStates;
+        final Map<Goid, TriggerState> buildingTstates = new HashMap<Goid, TriggerState>();
 
         // Check for properties that are starting to be monitored or are no longer being monitored
         final Map<MonitorableProperty, PropertyState<?>> buildingPstates = new HashMap<MonitorableProperty, PropertyState<?>>();
@@ -194,27 +195,27 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         final Map<MonitorableEvent, EventState> priorEstates = currentEventStates;
         if (priorEstates != null) buildingEstates.putAll(priorEstates);
 
-        final Map<Monitorable, Set<Long>> triggerOids = new HashMap<Monitorable, Set<Long>>();
+        final Map<Monitorable, Set<Goid>> triggerGoids = new HashMap<Monitorable, Set<Goid>>();
 
         final Set<MonitorableEvent> liveEvents = new HashSet<MonitorableEvent>();
         final Set<MonitorableProperty> liveProperties = new HashSet<MonitorableProperty>();
 
         // Initialize/update states for created/updated properties
-        for (Map.Entry<Long, Trigger> entry : newTriggers.entrySet()) {
-            final Long triggerOid = entry.getKey();
+        for (Map.Entry<Goid, Trigger> entry : newTriggers.entrySet()) {
+            final Goid triggerGoid = entry.getKey();
             final Trigger<?> trigger = entry.getValue();
-            final TriggerState priorTs = priorTstates == null ? null : priorTstates.get(triggerOid);
+            final TriggerState priorTs = priorTstates == null ? null : priorTstates.get(triggerGoid);
 
-            Set<Long> oids = triggerOids.get(trigger.getMonitorable());
-            if (oids == null) {
-                oids = new HashSet<Long>();
-                triggerOids.put(trigger.getMonitorable(), oids);
+            Set<Goid> goids = triggerGoids.get(trigger.getMonitorable());
+            if (goids == null) {
+                goids = new HashSet<Goid>();
+                triggerGoids.put(trigger.getMonitorable(), goids);
             }
-            oids.add(triggerOid);
+            goids.add(triggerGoid);
 
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
-                buildingTstates.put(triggerOid, new PropertyTriggerState(pt, priorTs == null ? null : priorTs.tolerance));
+                buildingTstates.put(triggerGoid, new PropertyTriggerState(pt, priorTs == null ? null : priorTs.tolerance));
                 MonitorableProperty mp = pt.getMonitorable();
                 liveProperties.add(mp);
                 PropertyState<?> ps = buildingPstates.get(mp);
@@ -245,7 +246,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 buildingPstates.put(mp, ps);
             } else if (trigger instanceof EventTrigger) {
                 EventTrigger et = (EventTrigger) trigger;
-                buildingTstates.put(triggerOid, new EventTriggerState(et, priorTs == null ? null : priorTs.tolerance));
+                buildingTstates.put(triggerGoid, new EventTriggerState(et, priorTs == null ? null : priorTs.tolerance));
                 MonitorableEvent me = et.getMonitorable();
                 liveEvents.add(me);
                 EventState es = buildingEstates.get(me);
@@ -259,9 +260,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             }
         }
 
-        for (Map.Entry<Monitorable, Set<Long>> entry : triggerOids.entrySet()) {
+        for (Map.Entry<Monitorable, Set<Goid>> entry : triggerGoids.entrySet()) {
             Monitorable mon = entry.getKey();
-            Set<Long> oids = entry.getValue();
+            Set<Goid> goids = entry.getValue();
             if (mon instanceof MonitorableProperty) {
                 MonitorableProperty property = (MonitorableProperty) mon;
                 PropertyState<?> pstate = buildingPstates.get(property);
@@ -270,7 +271,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     continue;
                 }
 
-                pstate.setTriggerOids(oids);
+                pstate.setTriggerGoids(goids);
             } else if (mon instanceof MonitorableEvent) {
                 MonitorableEvent event = (MonitorableEvent) mon;
 
@@ -280,7 +281,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     continue;
                 }
 
-                estate.setTriggerOids(oids);
+                estate.setTriggerGoids(goids);
             }
         }
 
@@ -303,7 +304,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     }
 
     private static class TransientStatus {
-        private final Set<Long> badTriggerOids = new HashSet<Long>();
+        private final Set<Goid> badTriggerGoids = new HashSet<Goid>();
         private MonitoredStatus.StatusType status = MonitoredStatus.StatusType.OK;
         private MonitoredPropertyStatus.ValueType valueType;
         private Serializable value;
@@ -319,8 +320,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         final Map<MonitorableProperty, TransientStatus> stati = new HashMap<MonitorableProperty, TransientStatus>();
 
         final Map<MonitorableProperty, PropertyState<?>> pstates;
-        final Map<Long, TriggerState> tstates;
-        final Map<Long, NotificationState> nstates;
+        final Map<Goid, TriggerState> tstates;
+        final Map<Goid, NotificationState> nstates;
         synchronized (MonitoringKernelImpl.this) {
             pstates = currentPropertyStates;
             tstates = currentTriggerStates;
@@ -332,9 +333,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         for (Map.Entry<MonitorableProperty, PropertyState<?>> entry : pstates.entrySet()) {
             final MonitorableProperty prop = entry.getKey();
             final PropertyState<?> pstate = entry.getValue();
-            final Set<Long> toids = pstate.getTriggerOids();
-            for (Long toid : toids) {
-                final TriggerState tstate = tstates.get(toid);
+            final Set<Goid> tgoids = pstate.getTriggerGoids();
+            for (Goid tgoid : tgoids) {
+                final TriggerState tstate = tstates.get(tgoid);
                 if (tstate == null) continue;
                 final Trigger<?> trig = tstate.trigger;
                 if (!(trig instanceof PropertyTrigger)) continue;
@@ -348,7 +349,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 }
 
                 if (tstate.tolerance != null && tstate.tolerance.inOut == InOut.OUT) {
-                    transientStatus.badTriggerOids.add(toid);
+                    transientStatus.badTriggerGoids.add(tgoid);
                     transientStatus.status = MonitoredStatus.StatusType.WARNING;
                 }
 
@@ -371,7 +372,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                 if (tstate.tolerance != null && tstate.tolerance.inOut == InOut.OUT && nstates != null) {
                     for (NotificationRule rule : ptrig.getNotificationRules()) {
-                        NotificationState nstate = nstates.get(rule.getOid());
+                        NotificationState nstate = nstates.get(rule.getGoid());
                         if (nstate == null) continue;
                         if (nstate.isNotified()) {
                             transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
@@ -386,7 +387,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             final MonitorableProperty prop = entry.getKey();
             final TransientStatus transientStatus = entry.getValue();
             final Serializable value = transientStatus.value;
-            result.add(new MonitoredPropertyStatus(prop.getComponentType(), prop.getName(), transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, value == null ? null : value.toString(), transientStatus.valueType));
+            result.add(new MonitoredPropertyStatus(prop.getComponentType(), prop.getName(), transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerGoids, value == null ? null : value.toString(), transientStatus.valueType));
         }
 
         return result;
@@ -395,7 +396,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     @Override
     public List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen) {
         final List<NotificationAttempt> result = new ArrayList<NotificationAttempt>();
-        final Map<Long, NotificationState> nstates = currentNotificationStates;
+        final Map<Goid, NotificationState> nstates = currentNotificationStates;
         for (NotificationState nstate : nstates.values()) {
             result.addAll(nstate.getNotificationAttempts(sinceWhen).values());
         }
@@ -460,8 +461,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 final long now = System.currentTimeMillis();
 
                 final Map<MonitorableProperty, PropertyState<?>> pstates;
-                final Map<Long, TriggerState> tstates;
-                final Map<Long, NotificationState> nstates;
+                final Map<Goid, TriggerState> tstates;
+                final Map<Goid, NotificationState> nstates;
 
                 synchronized (MonitoringKernelImpl.this) {
                     pstates = currentPropertyStates;
@@ -475,8 +476,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 }
 
                 final Map<MonitorableProperty, PropertyCondition> conditions = new HashMap<MonitorableProperty, PropertyCondition>();
-                for (Map.Entry<Long,TriggerState> entry : tstates.entrySet()) {
-                    final Long triggerOid = entry.getKey();
+                for (Map.Entry<Goid,TriggerState> entry : tstates.entrySet()) {
+                    final Goid triggerGoid = entry.getKey();
                     final TriggerState tstate = entry.getValue();
                     if (!(tstate.trigger instanceof PropertyTrigger)) continue;
 
@@ -486,7 +487,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     final PropertyState<?> mstate = pstates.get(property);
                     if (mstate == null) {
-                        logger.warning("Couldn't find PropertyState for " + property + " (required by trigger #" + triggerOid + "); skipping");
+                        logger.warning("Couldn't find PropertyState for " + property + " (required by trigger #" + triggerGoid + "); skipping");
                         continue;
                     }
 
@@ -537,7 +538,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                         // Only notify if last attempt failed.
                         if (prevTolerance.notified == null && prevTolerance.sinceWhen != null) {
-                            final NotificationState nstate = nstates.get(triggerOid);
+                            final NotificationState nstate = nstates.get(triggerGoid);
                             final NotificationAttempt attempt = nstate == null ? null : nstate.getLastAttempt();
                             notify = nstate == null || attempt == null || attempt.getStatus() == NotificationAttempt.StatusType.FAILED;
                         } else {
@@ -554,10 +555,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         PropertyCondition cond = conditions.get(property);
                         newTolerance.notified = now;
                         if (cond == null) {
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(triggerOid), sampledValue));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(triggerGoid), sampledValue));
                         } else {
                             // Merge the previous condition with this one
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, cond.getTimestamp(), Sets.union(cond.getTriggerOids(), triggerOid), cond.getValue()));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, cond.getTimestamp(), Sets.union(cond.getTriggerGoids(), triggerGoid), cond.getValue()));
                         }
                     }
 
@@ -580,26 +581,26 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     final NotifiableCondition<?> got = notificationQueue.poll(10000, TimeUnit.MILLISECONDS); // TODO timeout configurable?
                     if (got == null) continue;
 
-                    final Set<Long> triggerOids = got.getTriggerOids();
-                    if (triggerOids == null || triggerOids.isEmpty()) {
-                        logger.warning("Got a condition with no trigger OIDs");
+                    final Set<Goid> triggerGoids = got.getTriggerGoids();
+                    if (triggerGoids == null || triggerGoids.isEmpty()) {
+                        logger.warning("Got a condition with no trigger IDs");
                         continue;
                     }
 
                     final InOut inOut = got.getInOut();
 
-                    final Map<Long, TriggerState> tstates;
-                    final Map<Long, NotificationState> nstates;
+                    final Map<Goid, TriggerState> tstates;
+                    final Map<Goid, NotificationState> nstates;
                     synchronized (MonitoringKernelImpl.this) {
                         tstates = currentTriggerStates;
                         nstates = currentNotificationStates;
                     }
                     if (tstates == null) continue;
 
-                    for (Long triggerOid : triggerOids) {
-                        final TriggerState tstate = tstates.get(triggerOid);
+                    for (Goid triggerGoid : triggerGoids) {
+                        final TriggerState tstate = tstates.get(triggerGoid);
                         if (tstate == null) {
-                            logger.log(Level.FINE, "Trigger #{0} has been deleted; skipping", triggerOid);
+                            logger.log(Level.FINE, "Trigger #{0} has been deleted; skipping", triggerGoid);
                             continue;
                         }
 
@@ -607,11 +608,11 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                         final List<NotificationRule> rules = trigger.getNotificationRules();
                         for (final NotificationRule rule : rules) {
-                            final Long notificationOid = rule.getOid();
-                            NotificationState nstate = nstates.get(notificationOid);
+                            final Goid notificationGoid = rule.getGoid();
+                            NotificationState nstate = nstates.get(notificationGoid);
                             if (nstate == null) {
                                 nstate = new NotificationState(trigger, rule, 1, TimeUnit.MINUTES);
-                                nstates.put(notificationOid, nstate);
+                                nstates.put(notificationGoid, nstate);
                             } else {
                                 nstate.condition(got.getTimestamp());
                             }

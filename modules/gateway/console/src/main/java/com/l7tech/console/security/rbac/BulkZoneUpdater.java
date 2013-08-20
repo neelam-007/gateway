@@ -69,10 +69,8 @@ public class BulkZoneUpdater {
         final Map<EntityType, Collection<Serializable>> entitiesToUpdate = new HashMap<>();
         final List<Serializable> selectedIds = new ArrayList<>(entities.size());
         for (final EntityHeader selectedHeader : entities) {
-            if(GoidEntity.class.isAssignableFrom(selectedHeader.getType().getEntityClass()))
+            if(GoidEntity.class.isAssignableFrom(selectedHeader.getType().getEntityClass())) {
                 selectedIds.add(selectedHeader.getGoid());
-            else if(PersistentEntity.class.isAssignableFrom(selectedHeader.getType().getEntityClass())){
-                selectedIds.add(selectedHeader.getOid());
             } else {
                 selectedIds.add(selectedHeader.getStrId());
             }

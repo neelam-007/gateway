@@ -1,16 +1,9 @@
 package com.l7tech.gateway.common.transport.email;
 
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.imp.GoidEntityImp;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-
-import com.l7tech.objectmodel.imp.GoidEntityImp;
-import org.hibernate.annotations.*;
-
 import java.io.Serializable;
 
 /**

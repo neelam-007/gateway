@@ -69,8 +69,8 @@ public class SecuredMethodInterceptorTest {
     //These are different types of entities and headers used by the tests
     private static MyEntity allowedEntityNew = new MyEntity();
     private static MyEntity deniedEntityNew = new MyEntity();
-    private static MyEntity allowedEntityExisting = new MyEntity(123l);
-    private static MyEntity deniedEntityExisting = new MyEntity(456l);
+    private static MyEntity allowedEntityExisting = new MyEntity(new Goid(0,123l));
+    private static MyEntity deniedEntityExisting = new MyEntity(new Goid(0,456l));
     private static MyGoidEntity allowedGoidEntityNew = new MyGoidEntity();
     private static MyGoidEntity deniedGoidEntityNew = new MyGoidEntity();
     private static MyGoidEntity allowedGoidEntityExisting = new MyGoidEntity(new Goid(0,123l));
@@ -555,20 +555,20 @@ public class SecuredMethodInterceptorTest {
     /**
      * This is an entity that will be used for testing
      */
-    private static class MyEntity implements PersistentEntity {
+    private static class MyEntity implements GoidEntity {
         private int version = 0;
-        private long oid = PersistentEntity.DEFAULT_OID;
+        private Goid goid = GoidEntity.DEFAULT_GOID;
 
         public MyEntity() {
         }
 
-        public MyEntity(long oid) {
-            this.oid = oid;
+        public MyEntity(Goid goid) {
+            this.goid = goid;
         }
 
         @Override
         public String getId() {
-            return String.valueOf(oid);
+            return String.valueOf(goid);
         }
 
         @Override
@@ -582,13 +582,18 @@ public class SecuredMethodInterceptorTest {
         }
 
         @Override
-        public long getOid() {
-            return oid;
+        public Goid getGoid() {
+            return goid;
         }
 
         @Override
-        public void setOid(long oid) {
-            this.oid = oid;
+        public void setGoid(Goid goid) {
+            this.goid = goid;
+        }
+
+        @Override
+        public boolean isUnsaved() {
+            return Goid.isDefault(goid);
         }
     }
 

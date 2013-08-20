@@ -1,9 +1,9 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GoidEntityManager;
 
 import java.util.Collection;
 
@@ -15,7 +15,7 @@ import java.util.Collection;
  * @Date: Jan 20, 2009
  * @since Enterprise Manager 1.0
  */
-public interface StandardReportSettingsManager extends EntityManager<StandardReportSettings, EntityHeader> {
+public interface StandardReportSettingsManager extends GoidEntityManager<StandardReportSettings, EntityHeader> {
 
     /**
      * Find report settings for the given user.

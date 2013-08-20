@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Generic CRUD for persistent entities.  Reads delegated to {@link EntityFinderImpl} unless some {@link EntityManager}
+ * Generic CRUD for persistent entities.  Reads delegated to {@link EntityFinderImpl} unless some {@link GoidEntityManager}
  * actually needs to interfere.
  *
  * @author alex
@@ -89,14 +89,8 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public Entity find(@NotNull final EntityHeader header) throws FindException {
-        Entity ent;
-        if (GoidEntity.class.isAssignableFrom(header.getType().getEntityClass())) {
-            final GoidEntityManager manager = getGoidEntityManager(EntityTypeRegistry.getEntityClass(header.getType()));
-            ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
-        } else {
-            EntityManager manager = getEntityManager(EntityTypeRegistry.getEntityClass(header.getType()));
-            ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
-        }
+        final GoidEntityManager manager = getGoidEntityManager(EntityTypeRegistry.getEntityClass(header.getType()));
+        Entity ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
 
         if (ent instanceof IdentityProviderConfig)
             return new IdentityProviderConfig((IdentityProviderConfig)ent);
@@ -110,11 +104,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     public <ET extends Entity> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
         ReadOnlyEntityManager manager = getReadOnlyManager(clazz);
         if (manager != null) {
-            if (GoidEntity.class.isAssignableFrom(clazz)) {
                 return (ET) manager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : Goid.parseGoid(pk.toString()));
-            } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
-                return (ET) manager.findByPrimaryKey(Long.valueOf(pk.toString()));
-            }
         }
         ET ent = entityFinder.find(clazz, pk);
 
@@ -128,37 +118,21 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     public EntityHeader findHeader(final EntityType etype, final Serializable pk) throws FindException {
         ReadOnlyEntityManager manager = getReadOnlyManager(EntityTypeRegistry.getEntityClass(etype));
         if (manager != null) {
-            if (GoidEntity.class.isAssignableFrom(etype.getEntityClass())) {
-                Entity ent = manager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : Goid.parseGoid(pk.toString()));
-                return ent == null ? null : EntityHeaderUtils.fromEntity(ent);
-            } else if (PersistentEntity.class.isAssignableFrom(etype.getEntityClass())) {
-                Entity ent = manager.findByPrimaryKey(Long.valueOf(pk.toString()));
-                return ent == null ? null : EntityHeaderUtils.fromEntity(ent);
-            }
+            Entity ent = manager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : Goid.parseGoid(pk.toString()));
+            return ent == null ? null : EntityHeaderUtils.fromEntity(ent);
         }
         return entityFinder.findHeader(etype, pk);
     }
 
     @Override
     public Serializable save(final Entity e) throws SaveException {
-        if (e instanceof GoidEntity) {
-            final GoidEntityManager manager = getGoidEntityManager(e.getClass());
-            if (manager != null) {
-                Serializable key = manager.save((GoidEntity) e);
-                if (manager instanceof RoleAwareGoidEntityManager) {
-                    ((RoleAwareGoidEntityManager) manager).createRoles((GoidEntity) e);
-                }
-                return key;
+        final GoidEntityManager manager = getGoidEntityManager(e.getClass());
+        if (manager != null) {
+            Serializable key = manager.save((GoidEntity) e);
+            if (manager instanceof RoleAwareGoidEntityManager) {
+                ((RoleAwareGoidEntityManager) manager).createRoles((GoidEntity) e);
             }
-        } else {
-            EntityManager manager = getEntityManager(e.getClass());
-            if (manager != null) {
-                Serializable key = manager.save((PersistentEntity) e);
-                if (manager instanceof RoleAwareEntityManager) {
-                    ((RoleAwareEntityManager) manager).createRoles((PersistentEntity) e);
-                }
-                return key;
-            }
+            return key;
         }
 
         return (Serializable)getHibernateTemplate().execute(new HibernateCallback() {
@@ -171,23 +145,15 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public void update(final Entity e) throws UpdateException {
-        if (e instanceof GoidEntity) {
-            final GoidEntityManager manager = getGoidEntityManager(e.getClass());
-            if (manager != null) {
-                GoidEntity goidEntity = (GoidEntity) e;
-                if (goidEntity instanceof HasFolder && manager instanceof FolderedEntityManager) {
-                    ((FolderedEntityManager)manager).updateWithFolder(goidEntity);
-                } else {
-                    manager.update(goidEntity);
-                }
-                return;
+        final GoidEntityManager manager = getGoidEntityManager(e.getClass());
+        if (manager != null) {
+            GoidEntity goidEntity = (GoidEntity) e;
+            if (goidEntity instanceof HasFolder && manager instanceof FolderedEntityManager) {
+                ((FolderedEntityManager)manager).updateWithFolder(goidEntity);
+            } else {
+                manager.update(goidEntity);
             }
-        } else {
-            EntityManager manager = getEntityManager(e.getClass());
-            if (manager != null) {
-                manager.update((PersistentEntity) e);
-                return;
-            }
+            return;
         }
 
         getHibernateTemplate().execute(new HibernateCallback() {
@@ -201,24 +167,13 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public void delete(final Entity e) throws DeleteException {
-        if (e instanceof GoidEntity) {
-            final GoidEntityManager manager = getGoidEntityManager(e.getClass());
-            if (manager != null) {
-                manager.delete((GoidEntity)e);
-                if ( manager instanceof RoleAwareGoidEntityManager ) {
-                    ((RoleAwareGoidEntityManager)manager).deleteRoles( ((GoidEntity) e).getGoid() );
-                }
-                return;
+        final GoidEntityManager manager = getGoidEntityManager(e.getClass());
+        if (manager != null) {
+            manager.delete((GoidEntity)e);
+            if ( manager instanceof RoleAwareGoidEntityManager ) {
+                ((RoleAwareGoidEntityManager)manager).deleteRoles( ((GoidEntity) e).getGoid() );
             }
-        } else {
-            EntityManager manager = getEntityManager(e.getClass());
-            if (manager != null) {
-                manager.delete((PersistentEntity)e);
-                if ( manager instanceof RoleAwareEntityManager ) {
-                    ((RoleAwareEntityManager)manager).deleteRoles( ((PersistentEntity) e).getOid() );
-                }
-                return;
-            }
+            return;
         }
 
         getHibernateTemplate().execute(new HibernateCallback() {
@@ -232,7 +187,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public void evict( final Entity entity ) {
-        if ( entity instanceof GoidEntity || entity instanceof PersistentEntity ) {
+        if ( entity instanceof GoidEntity ) {
             getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
@@ -299,15 +254,6 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     private ReadOnlyEntityManager getReadOnlyManager(Class<? extends Entity> clazz) {
         return managersByClass.get(clazz);
-    }
-
-    private EntityManager getEntityManager(Class<? extends Entity> clazz) {
-        final ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader> manager = managersByClass.get(clazz);
-        if (manager != null && !(PersistentEntity.class.isAssignableFrom(clazz)))
-            return null;
-        if (!(manager instanceof EntityManager))
-            return null;
-        return (EntityManager)manager;
     }
 
     private GoidEntityManager getGoidEntityManager(Class<? extends Entity> clazz) {

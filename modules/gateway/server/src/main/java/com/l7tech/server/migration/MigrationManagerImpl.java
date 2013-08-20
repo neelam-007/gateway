@@ -387,10 +387,6 @@ public class MigrationManagerImpl implements MigrationManager {
             throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
 
         Entity onTarget = entitiesFromTarget.get(targetHeader);
-        if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity) {
-            ((PersistentEntity) entity).setOid(((PersistentEntity)onTarget).getOid());
-            ((PersistentEntity) entity).setVersion(((PersistentEntity)onTarget).getVersion());
-        }
         if (entity instanceof GoidEntity && onTarget instanceof GoidEntity) {
             ((GoidEntity) entity).setGoid(((GoidEntity)onTarget).getGoid());
             ((GoidEntity) entity).setVersion(((GoidEntity)onTarget).getVersion());
@@ -414,9 +410,7 @@ public class MigrationManagerImpl implements MigrationManager {
             entityCrud.update(entity);
             // todo: need more reliable method of retrieving the new version;
             // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different) 
-            if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity)
-                ((PersistentEntity) entity).setVersion(((PersistentEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
-            else if (entity instanceof GoidEntity && onTarget instanceof GoidEntity)
+            if (entity instanceof GoidEntity && onTarget instanceof GoidEntity)
                 ((GoidEntity) entity).setVersion(((GoidEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
         }
 
@@ -444,14 +438,10 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         if (!dryRun) {
-            if (entity instanceof PersistentEntity)
-                ((PersistentEntity) entity).setVersion(0);
-            else if (entity instanceof GoidEntity)
+            if (entity instanceof GoidEntity)
                 ((GoidEntity) entity).setVersion(0);
             Serializable id = entityCrud.save(entity);
-            if (entity instanceof PersistentEntity) {
-                ((PersistentEntity) entity).setOid((Long)id);
-            } else if(entity instanceof GoidEntity){
+            if(entity instanceof GoidEntity){
                 ((GoidEntity) entity).setGoid((Goid)id);
             }
         }

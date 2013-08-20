@@ -1,9 +1,9 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.server.ems.EsmConfigParams;
-import com.l7tech.util.TestTimeSource;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.MockSsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
@@ -12,13 +12,11 @@ import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.MockGatewayContextFactory;
 import com.l7tech.server.ems.gateway.MockProcessControllerContext;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
-import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.INITIAL_RETRY_DELAY;
-import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.MAX_RETRY_DELAY;
+import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.monitoring.MonitoringApiStub;
@@ -28,14 +26,20 @@ import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.MockTimer;
 import com.l7tech.util.Pair;
-import org.junit.*;
-import static org.junit.Assert.*;
+import com.l7tech.util.TestTimeSource;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 
 import javax.xml.ws.ProtocolException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.*;
+
+import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.INITIAL_RETRY_DELAY;
+import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.MAX_RETRY_DELAY;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -162,7 +166,7 @@ public class MonitoringConfigurationSynchronizerTest {
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
         EntityMonitoringPropertySetup setup = new EntityMonitoringPropertySetup(clusterA, BuiltinMonitorables.CPU_TEMPERATURE.getName());
         setup.setMonitoringEnabled(true);
-        Trigger trigger = mcs.convertTrigger(Collections.<String, Object>emptyMap(), Collections.<Long, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
+        Trigger trigger = mcs.convertTrigger(Collections.<String, Object>emptyMap(), Collections.<Goid, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
         assertNotNull(trigger);
         assertEquals(clusterA.getSslHostName(), trigger.getComponentId());
     }
@@ -309,7 +313,7 @@ public class MonitoringConfigurationSynchronizerTest {
             super(name, name + ".example.com", 8888, null);
             setGuid("cluster_" + name);
             this.baseIp = baseIp;
-            setOid(baseIp);
+            setGoid(new Goid(0,baseIp));
             testNodes = new ArrayList<TestNode>();
             ssgClusterNotificationSetup = new SsgClusterNotificationSetup(getGuid());
             Set<SsgNode> nodes = new LinkedHashSet<SsgNode>();
@@ -322,7 +326,7 @@ public class MonitoringConfigurationSynchronizerTest {
         }
 
         private TestNode createNode(int i) {
-            TestNode node = new TestNode(1000 * baseIp + i);
+            TestNode node = new TestNode(new Goid(0,1000 * baseIp + i));
             node.setName(getName() + i);
             node.setGuid("cluster_" + getName() + "_node_" + i);
             node.setSsgCluster(this);
@@ -368,8 +372,8 @@ public class MonitoringConfigurationSynchronizerTest {
             }
         };
 
-        private TestNode(int oid) {
-            setOid(oid);
+        private TestNode(Goid goid) {
+            setGoid(goid);
         }
 
         public void setSsgCluster(SsgCluster ssgCluster) {

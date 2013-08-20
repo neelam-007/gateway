@@ -21,7 +21,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderGoid;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -583,7 +583,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForNamedEntity() throws Exception {
-        assertEquals(NAME, resolver.getNameForEntity(new NamedEntityImp() {
+        assertEquals(NAME, resolver.getNameForEntity(new NamedGoidEntityImp() {
             @Override
             public String getName() {
                 return NAME;

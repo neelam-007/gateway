@@ -3,7 +3,7 @@ package com.l7tech.server.ems.standardreports;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.OidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +13,7 @@ import java.util.Collections;
  * @Author: ghuang
  * @Date: Jan 23, 2009
  */
-public class MockStandardReportSettingsManager extends OidEntityManagerStub<StandardReportSettings, EntityHeader> implements StandardReportSettingsManager {
+public class MockStandardReportSettingsManager extends EntityManagerStub<StandardReportSettings, EntityHeader> implements StandardReportSettingsManager {
 
     public Collection<StandardReportSettings> findByUser(User user) throws FindException {
         return Collections.emptyList();

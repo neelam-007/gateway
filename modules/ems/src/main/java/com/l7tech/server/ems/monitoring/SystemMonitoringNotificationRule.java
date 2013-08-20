@@ -5,12 +5,12 @@ package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.management.config.monitoring.*;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 import org.mortbay.util.ajax.JSON;
@@ -27,7 +27,7 @@ import java.util.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="system_monitoring_notification_rule")
-public class SystemMonitoringNotificationRule extends NamedEntityImp implements JSON.Convertible {
+public class SystemMonitoringNotificationRule extends NamedGoidEntityImp implements JSON.Convertible {
 
     private String guid;
     private String type;
@@ -90,7 +90,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     private HttpNotificationRule asHttpNotificationRule() {
         HttpNotificationRule ret = new HttpNotificationRule();
         ret.setName(getName());
-        ret.setOid(getOid());
+        ret.setGoid(getGoid());
         ret.setVersion(getVersion());
         ret.setAuthInfo(null); // todo: where to get username and password to create authInfo?
         ret.setContentType((String)getParamProp(JSONConstants.NotificationHttpRequestParams.CONTENT_TYPE));
@@ -103,7 +103,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     private SnmpTrapNotificationRule asSnmpTrapNotificationRule() {
         SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule();
         ret.setName(getName());
-        ret.setOid(getOid());
+        ret.setGoid(getGoid());
         ret.setVersion(getVersion());
         ret.setCommunity((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.COMMUNITY));
         ret.setOidSuffix(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.OIDSUFFIX).toString()));
@@ -117,7 +117,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     private EmailNotificationRule asEmailNotificationRule() {
         EmailNotificationRule ret = new EmailNotificationRule();
         ret.setName(getName());
-        ret.setOid(getOid());
+        ret.setGoid(getGoid());
         ret.setVersion(getVersion());
         ret.setAuthInfo(obtainAuthInfo());
         ret.setBcc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.BCC)));

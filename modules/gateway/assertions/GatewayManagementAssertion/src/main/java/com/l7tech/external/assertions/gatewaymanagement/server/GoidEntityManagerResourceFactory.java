@@ -706,7 +706,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
      * @param currentId The current identifier for the resource
      * @param updateId The incoming identifier for the resource (may be PersistentEntity.DEFAULT_OID)
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the identifier is present and does not match
-     * @see com.l7tech.objectmodel.PersistentEntity#DEFAULT_OID
+     * @see com.l7tech.objectmodel.GoidEntity#DEFAULT_GOID
      */
     protected final void verifyIdentifier( final Goid currentId,
                                            final Goid updateId ) throws InvalidResourceException {

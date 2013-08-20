@@ -14,18 +14,17 @@ import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
 import com.l7tech.gateway.common.uddi.UDDIProxiedService;
 import com.l7tech.identity.GroupMembership;
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
-import com.l7tech.identity.LogonInfo;
-import com.l7tech.server.wsdm.subscription.Subscription;
-import com.l7tech.server.uddi.UDDIRegistrySubscription;
 import com.l7tech.server.uddi.UDDIBusinessServiceStatus;
+import com.l7tech.server.uddi.UDDIRegistrySubscription;
+import com.l7tech.server.wsdm.subscription.Subscription;
 import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
 import org.hibernate.Interceptor;
@@ -42,7 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Notices when any persistent {@link com.l7tech.objectmodel.PersistentEntity} is saved, updated or deleted, and creates and
+ * Notices when any persistent {@link com.l7tech.objectmodel.GoidEntity} is saved, updated or deleted, and creates and
  * fires corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
  * if and when the current transaction commits.
  *
@@ -92,7 +91,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private final Set<String> noAuditClassNames; // fire an event, but mark it "system" so it doesn't get audited
 
     private boolean ignored(Object entity) {
-        return !(entity instanceof PersistentEntity || entity instanceof GoidEntity)  || ignoredClassNames.contains(entity.getClass().getName());
+        return !(entity instanceof GoidEntity)  || ignoredClassNames.contains(entity.getClass().getName());
     }
 
     public Set<String> getIgnoredClassNames() {

@@ -3,11 +3,14 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.util.Functions;
 
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlEnum;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -19,14 +22,14 @@ public abstract class MonitoredStatus {
     protected String monitorableId;
     protected String componentId;
     protected StatusType status;
-    protected Set<Long> triggerOids;
+    protected Set<Goid> triggerGoids;
 
-    protected MonitoredStatus(ComponentType type, final String monitorableId, String componentId, long timestamp, StatusType status, Set<Long> triggerOids) {
+    protected MonitoredStatus(ComponentType type, final String monitorableId, String componentId, long timestamp, StatusType status, Set<Goid> triggerGoids) {
         this.type = type;
         this.monitorableId = monitorableId;
         this.componentId = componentId;
         this.timestamp = timestamp;
-        this.triggerOids = triggerOids;
+        this.triggerGoids = triggerGoids;
         this.status = status;
     }
 
@@ -64,8 +67,8 @@ public abstract class MonitoredStatus {
      * for monitoring this property.
      */
     @XmlElementWrapper(name="triggerOids")
-    public Set<Long> getTriggerOids() {
-        return triggerOids;
+    public Set<Goid> getTriggerGoids() {
+        return triggerGoids;
     }
 
     @Deprecated // XML only
@@ -95,7 +98,17 @@ public abstract class MonitoredStatus {
 
     @Deprecated // XML only
     protected void setTriggerOids(Set<Long> triggerOids) {
-        this.triggerOids = triggerOids;
+        this.triggerGoids = new HashSet<>(Functions.map(triggerOids, new Functions.Unary<Goid, Long>() {
+            @Override
+            public Goid call(Long oid) {
+                return new Goid(0, oid);
+            }
+        }));
+    }
+
+    @Deprecated // XML only
+    protected void setTriggerGoids(Set<Goid> triggerGoids) {
+        this.triggerGoids = triggerGoids;
     }
 
     @XmlEnum(String.class)
@@ -125,7 +138,7 @@ public abstract class MonitoredStatus {
                 ", monitorableId='" + monitorableId + '\'' +
                 ", componentId='" + componentId + '\'' +
                 ", status=" + status +
-                ", triggerOids=" + triggerOids +
+                ", triggerGoids=" + triggerGoids +
                 '}';
     }
 }

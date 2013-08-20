@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.Monitorable;
 
 import java.io.Closeable;
@@ -14,7 +15,7 @@ import java.util.Set;
 abstract class MonitorState<MT extends Monitorable> implements Closeable {
     protected final MT monitorable;
     protected final String componentId;
-    protected volatile Set<Long> triggerOids;
+    protected volatile Set<Goid> triggerGoids;
 
     protected MonitorState(MT monitorable, String componentId) {
         this.monitorable = monitorable;
@@ -29,12 +30,12 @@ abstract class MonitorState<MT extends Monitorable> implements Closeable {
         return componentId;
     }
 
-    public Set<Long> getTriggerOids() {
-        return triggerOids;
+    public Set<Goid> getTriggerGoids() {
+        return triggerGoids;
     }
 
-    void setTriggerOids(Set<Long> triggerOids) {
-        this.triggerOids = triggerOids;
+    void setTriggerGoids(Set<Goid> triggerGoids) {
+        this.triggerGoids = triggerGoids;
     }
 
     /**

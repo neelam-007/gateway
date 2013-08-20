@@ -1,35 +1,34 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.management.migration.bundle.MigrationBundle;
-import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
-
-import java.util.*;
-import java.sql.SQLException;
-
 import com.l7tech.util.Pair;
-import org.hibernate.criterion.*;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.*;
 import org.hibernate.transform.Transformers;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author ghuang
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationRecordManagerImpl extends HibernateEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
+public class MigrationRecordManagerImpl extends HibernateGoidEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
     //- PUBLIC
 
@@ -57,8 +56,8 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                                    final MigrationBundle bundle ) throws SaveException {
 
         MigrationRecord result = new MigrationRecord( name, user, sourceCluster, targetCluster, summary, bundle );
-        long oid = super.save(result);
-        result.setOid( oid );
+        Goid goid = super.save(result);
+        result.setGoid(goid);
         return result;
     }
 
@@ -78,7 +77,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
         final Pair<SsgCluster,SsgCluster> clusterPair =
                 clusterCallback.call(record.getSourceClusterGuid(), record.getSourceClusterName(), record.getTargetClusterGuid());
 
-        record.setOid( MigrationRecord.DEFAULT_OID );
+        record.setGoid( MigrationRecord.DEFAULT_GOID );
         record.setVersion( 0 );
         record.setName( label );
         record.setSourceCluster( clusterPair.left );
@@ -90,8 +89,8 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
             record.setUserId( user.getId() );
         }
 
-        long oid = super.save(record);
-        record.setOid( oid );
+        Goid goid = super.save(record);
+        record.setGoid( goid );
         return record;
     }
 
@@ -120,7 +119,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     }
 
     @Override
-    public MigrationRecord findByPrimaryKeyNoBundle(final long oid) throws FindException {
+    public MigrationRecord findByPrimaryKeyNoBundle(final Goid goid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<MigrationRecord>() {
                 @SuppressWarnings({ "unchecked" })
@@ -128,7 +127,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                 public MigrationRecord doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass(), "m");
                     criteria.setProjection(getMigrationRecordNoBundleProjection());
-                    criteria.add( Restrictions.eq("oid", oid) );
+                    criteria.add( Restrictions.eq("goid", goid) );
 
                     criteria.setResultTransformer(Transformers.aliasToBean(MigrationRecord.class));
 

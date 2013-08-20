@@ -1,44 +1,43 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.migration.MigrationArtifactResource;
-import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.migration.MigrationRecordManager;
-import com.l7tech.server.ems.migration.MigrationRecord;
-import com.l7tech.server.ems.migration.MigrationSummary;
-import com.l7tech.server.ems.ui.SecureResource;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SizeUnit;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.identity.User;
-import org.apache.wicket.markup.html.form.*;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.basic.MultiLineLabel;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.model.PropertyModel;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ems.migration.MigrationArtifactResource;
+import com.l7tech.server.ems.migration.MigrationRecord;
+import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.migration.MigrationSummary;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.ui.SecureResource;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.SizeUnit;
+import com.l7tech.util.TimeUnit;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ResourceReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import javax.inject.Inject;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ResourceReference;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.basic.MultiLineLabel;
+import org.apache.wicket.markup.html.form.Button;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.*;
 import org.apache.wicket.util.value.ValueMap;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import javax.inject.Inject;
 import java.io.Serializable;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * todo: rename to PolicyHistory to be consistent with the UI
@@ -145,7 +144,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                                 try {
                                     logger.fine("Deleting the migration (OID = " + migrationId + ")");
 
-                                    migrationManager.delete(Long.parseLong(migrationId));
+                                    migrationManager.delete(Goid.parseGoid(migrationId));
                                     migrationSummaryContainer.setVisible(false);
 
                                     target.addComponent(migrationTableContainer);
@@ -375,7 +374,7 @@ public class PolicyMapping extends EsmStandardWebPage {
 
                 if (value != null && value.length() > 0) {
                     try {
-                        MigrationRecord migration = migrationManager.findByPrimaryKeyNoBundle(Long.parseLong(value));
+                        MigrationRecord migration = migrationManager.findByPrimaryKeyNoBundle(Goid.parseGoid(value));
                         if ( migration != null ) {
                             selected = true;
                             if ( migration.getSize() > 0 ) {

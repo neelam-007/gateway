@@ -3,7 +3,8 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.management.api.monitoring.Monitorable;
 
 import javax.persistence.CascadeType;
@@ -21,7 +22,7 @@ import java.util.List;
 @Entity
 @XmlRootElement
 @XmlSeeAlso({PropertyTrigger.class, EventTrigger.class})
-public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
+public abstract class Trigger<MT extends Monitorable> extends NamedGoidEntityImp {
     /** The type of the subject component */
     protected ComponentType componentType;
 
@@ -97,7 +98,7 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
      * Determines whether another trigger is a suitable replacement for this one.  If any of the following properties
      * of the other trigger are different from those of this, they are <em>incompatible</em>:
      * <ul>
-     * <li>the class or {@link #_oid OID} </li>
+     * <li>the class or {@link #getGoid() GOID} </li>
      * <li>the {@link #monitorableId}</li>
      * <li>the {@link #componentType type} or {@link #componentId ID} of the subject component</li>
      * </ul>
@@ -108,7 +109,7 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
      */
     public boolean isIncompatibleWith(Trigger that) {
         return that.getClass() != this.getClass() ||
-               that.getOid() != this.getOid() ||
+               !Goid.equals(that.getGoid(), this.getGoid()) ||
                that.getComponentType() != this.getComponentType() ||
                !that.getComponentId().equals(this.getComponentId()) ||
                !that.getMonitorableId().equals(this.getMonitorableId());

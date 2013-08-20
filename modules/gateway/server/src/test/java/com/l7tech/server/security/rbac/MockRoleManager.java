@@ -8,7 +8,6 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.GoidEntityManagerStub;
@@ -115,11 +114,6 @@ public class MockRoleManager extends GoidEntityManagerStub<Role,EntityHeader> im
 
     @Override
     public void deleteEntitySpecificRoles(EntityType etype, Goid entityGoid) throws DeleteException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 

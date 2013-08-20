@@ -108,14 +108,7 @@ public class SecurityZoneWidget extends JPanel {
         OperationType operation = OperationType.READ;
         if (entity instanceof GoidEntity) {
             final GoidEntity goidEntity = (GoidEntity) entity;
-            if (GoidEntity.DEFAULT_GOID.equals(goidEntity.getGoid())) {
-                operation = OperationType.CREATE;
-            } else if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(entityType, entity))) {
-                operation = OperationType.UPDATE;
-            }
-        } else if (entity instanceof PersistentEntity) {
-            final PersistentEntity persistentEntity = (PersistentEntity) entity;
-            if (PersistentEntity.DEFAULT_OID == persistentEntity.getOid()) {
+            if (Goid.isDefault(goidEntity.getGoid())) {
                 operation = OperationType.CREATE;
             } else if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(entityType, entity))) {
                 operation = OperationType.UPDATE;

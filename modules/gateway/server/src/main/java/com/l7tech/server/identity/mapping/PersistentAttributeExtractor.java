@@ -7,7 +7,6 @@ import com.l7tech.identity.mapping.PersistentAttributeMapping;
 import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.identity.Identity;
 import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.PersistentEntity;
 
 /**
  * @author alex

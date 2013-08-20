@@ -5,7 +5,6 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.imp.GoidEntityImp;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.*;
 import java.util.Arrays;

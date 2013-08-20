@@ -4,8 +4,6 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.GoidEntityImp;
@@ -13,9 +11,6 @@ import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-
-import org.hibernate.annotations.Proxy;
-import org.hibernate.annotations.Type;
 
 /**
  * Statically assigns a {@link Role} to a {@link User}.
