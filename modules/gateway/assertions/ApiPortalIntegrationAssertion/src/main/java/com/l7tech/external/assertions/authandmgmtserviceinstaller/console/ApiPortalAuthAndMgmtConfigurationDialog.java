@@ -87,7 +87,7 @@ public class ApiPortalAuthAndMgmtConfigurationDialog extends JDialog {
 
     private ApiPortalAuthenticationConfiguration auth1Config;
     private ApiPortalAuthenticationConfiguration auth2Config;
-    private long lastSelectedLdapId;
+    private Goid lastSelectedLdapId;
     private Pair<String, FolderNode> selectedFolder;
 
     public ApiPortalAuthAndMgmtConfigurationDialog(Frame owner) {
@@ -226,10 +226,10 @@ public class ApiPortalAuthAndMgmtConfigurationDialog extends JDialog {
         positiveIntegerLabel.setEnabled(mgmtConfigEnabled);
 
         // When loading a different LDAP from the list, then initialize the attribute values for the chosen LDAP.
-        long selectedLdapId = getSelectedLdapId(mgmtLdapComboBox);
-        if (isMsadLdapSelectedFromComboBox(mgmtLdapComboBox) && selectedLdapId != lastSelectedLdapId) {
+        Goid selectedLdapId = getSelectedLdapId(mgmtLdapComboBox);
+        if (isMsadLdapSelectedFromComboBox(mgmtLdapComboBox) && !selectedLdapId.equals(lastSelectedLdapId)) {
             initializeMgmtMSADLdapAttributes();
-        } else if (isOpenLdapSelectedFromComboBox(mgmtLdapComboBox) && selectedLdapId != lastSelectedLdapId) {
+        } else if (isOpenLdapSelectedFromComboBox(mgmtLdapComboBox) && !selectedLdapId.equals(lastSelectedLdapId)) {
             initializemMgmtOpenLdapAttributes();
         }
         lastSelectedLdapId = selectedLdapId;

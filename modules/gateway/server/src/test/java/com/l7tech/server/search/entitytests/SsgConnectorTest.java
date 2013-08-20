@@ -57,7 +57,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
         long ssgConnectorOid = idCount.getAndIncrement();
         connector.setGoid(new Goid(0L,ssgConnectorOid));
         connector.setScheme(myCustomConnectorScheme);
-        final EntityHeader entityHeader = new EntityHeader(ssgConnectorOid, EntityType.SSG_CONNECTOR, null, null);
+        final EntityHeader entityHeader = new EntityHeader(new Goid(0L,ssgConnectorOid), EntityType.SSG_CONNECTOR, null, null);
         mockEntity(connector, entityHeader);
 
         DependencySearchResults result = dependencyAnalyzer.getDependencies(entityHeader);

@@ -75,7 +75,7 @@ public class PolicyUtilTest {
     @Mock
     private Functions.BinaryVoid<EntityHeader, FindException> errorHandler;
 
-    private final EntityHeader encassHeader = new EntityHeader(10, EntityType.ENCAPSULATED_ASSERTION, "Foo Encass", "foo qwer");
+    private final EntityHeader encassHeader = new EntityHeader(new Goid(22,10), EntityType.ENCAPSULATED_ASSERTION, "Foo Encass", "foo qwer");
     private final EncapsulatedAssertionConfig encassEntity = new EncapsulatedAssertionConfig();
     private final EntityHeader genericHeader = new GenericEntityHeader("20", "Foo Generic", "generic thing", 33, "com.l7tech.blah.Blah");
     private final GenericEntity genericEntity = new GenericEntity();

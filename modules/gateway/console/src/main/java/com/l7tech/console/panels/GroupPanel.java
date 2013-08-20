@@ -163,7 +163,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
                 throw new RuntimeException("Group edit operation without specified identity provider.");
             }
 
-            boolean isNew = groupHeader.getOid() == 0;
+            boolean isNew = groupHeader.getGoid() == null;
             AttemptedOperation ao;
             if (isNew) {
                 group = newGroup(groupHeader);
@@ -174,7 +174,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
                 GT g = (GT) admin.findGroupByID(config.getGoid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
-                    throw new NoSuchElementException("User missing " + groupHeader.getOid());
+                    throw new NoSuchElementException("User missing " + groupHeader.getGoid());
                 } else {
                     ao = new AttemptedUpdate(GROUP, g);
                 }

@@ -200,7 +200,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                 return;
             }
         } catch (FindException e) {
-            throw new RuntimeException(MessageFormat.format("Unable to load Identity Provider #{0} ({1})", which.getOid(), which.getName()), e);
+            throw new RuntimeException(MessageFormat.format("Unable to load Identity Provider #{0} ({1})", which.getGoid(), which.getName()), e);
         }
 
         if (newProvider.getGoid().equals(previousProvider.getGoid())) return; // No change

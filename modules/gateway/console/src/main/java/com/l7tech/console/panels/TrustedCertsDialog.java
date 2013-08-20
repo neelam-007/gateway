@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,7 @@ public class TrustedCertsDialog extends JDialog {
 
     private SimpleTableModel<EntityHeader> certsTableModel;
     private List<EntityHeader> trustedCerts;
-    private Map<Long, String> missingCerts = new HashMap<Long, String>();
+    private Map<Goid, String> missingCerts = new HashMap<Goid, String>();
     private boolean confirmed = false;
     
     public TrustedCertsDialog(Window owner, String title, ModalityType modalityType, @Nullable Collection<EntityHeader> trustedCerts, boolean readOnly) {
@@ -61,7 +62,7 @@ public class TrustedCertsDialog extends JDialog {
                 try {
                     final TrustedCert found = trustedCertManager.findCertByPrimaryKey(trustedCert.getGoid());
                     if (found == null) {
-                        missingCerts.put(trustedCert.getOid(), trustedCert.getName());
+                        missingCerts.put(trustedCert.getGoid(), trustedCert.getName());
                     }
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Unable to determine if trusted cert exists: " + trustedCert.getName());
@@ -132,7 +133,7 @@ public class TrustedCertsDialog extends JDialog {
                             @Override
                             public String call(final EntityHeader entityHeader) {
                                 String name = entityHeader.getName();
-                                if (missingCerts.containsKey(entityHeader.getOid())) {
+                                if (missingCerts.containsKey(entityHeader.getGoid())) {
                                     name = name + MISSING_INDICATOR;
                                 }
                                 return name;

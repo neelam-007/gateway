@@ -517,13 +517,7 @@ public class EntityNameResolver {
     }
 
     private void validateFoundEntity(final EntityHeader header, final Entity foundEntity) throws FindException {
-        validateFoundEntity(header.getType(), header.getOid(), foundEntity);
-    }
-
-    private void validateFoundEntity(final EntityType type, final long oid, final Entity foundEntity) throws FindException {
-        if (foundEntity == null) {
-            throw new FindException("No entity found for type " + type + " and oid " + oid);
-        }
+        validateFoundEntity(header.getType(), header.getGoid(), foundEntity);
     }
 
     private void validateFoundEntity(final EntityType type, final Goid goid, final Entity foundEntity) throws FindException {

@@ -31,7 +31,7 @@ public @interface Dependency {
      * These are the different possible method return types for entities.
      */
     public enum MethodReturnType {
-        OID, NAME, GUID, VARIABLE, ENTITY_HEADER, GOID, ENTITY
+         NAME, GUID, VARIABLE, ENTITY_HEADER, GOID, ENTITY
     }
 
     /**

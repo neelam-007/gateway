@@ -231,7 +231,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
                     config(null);
                 }
             }
-            configHeader.setOid(newEntityHeader.getOid());
+            configHeader.setGoid(newEntityHeader.getGoid());
             configHeader.setGuid(newGuid);
             configHeader.setName(newEntityHeader.getName());
         }
@@ -385,7 +385,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             final EncapsulatedAssertionConfig config = other.config();
             this.config(config);
             if (config == null) {
-                this.configHeader.setOid(other.configHeader.getOid());
+                this.configHeader.setGoid(other.configHeader.getGoid());
                 this.configHeader.setGuid(other.configHeader.getGuid());
                 this.configHeader.setName(other.configHeader.getName());
             }

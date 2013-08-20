@@ -41,7 +41,6 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityNameResolverTest {
-    private static final long OID = 1234L;
     private static final Goid GOID = new Goid(0, 1234L);
     private static final String NAME = "test";
     private EntityNameResolver resolver;
@@ -169,7 +168,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void geNameForHeaderUnsupportedEntityType() throws Exception {
-        assertTrue(resolver.getNameForHeader(new EntityHeader(OID, EntityType.ANY, null, null)).isEmpty());
+        assertTrue(resolver.getNameForHeader(new EntityHeader(GOID, EntityType.ANY, null, null)).isEmpty());
     }
 
     @Test
@@ -311,7 +310,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForAssertionAccessHeader() throws Exception {
         final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
         assertEquals("All assertions must evaluate to true", resolver.getNameForHeader(assertionHeader, false));
     }
@@ -320,7 +319,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForAssertionAccessHeaderUsesPaletteName() throws Exception {
         final String className = "com.l7tech.policy.assertion.xmlsec.AddWssTimestamp";
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AddWssTimestamp());
         assertEquals("Add Timestamp", resolver.getNameForHeader(assertionHeader, false));
     }
@@ -328,14 +327,14 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForAssertionAccessHeaderNotFound() throws Exception {
         final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(null);
         assertEquals(className, resolver.getNameForHeader(assertionHeader));
     }
 
     @Test
     public void getNameForAssertionAccessHeaderMissingClassNameOnHeader() throws Exception {
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, null, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, null, null);
         assertTrue(resolver.getNameForHeader(assertionHeader).isEmpty());
     }
 
@@ -343,7 +342,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForCustomAssertionAccessHeader() throws Exception {
         final String className = CustomAssertionHolder.class.getName();
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new CustomAssertionHolder());
         assertEquals(CustomAssertionHolder.CUSTOM_ASSERTION, resolver.getNameForHeader(assertionHeader, false));
     }
@@ -351,7 +350,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForAssertionAccessHeaderWithPath() throws Exception {
         final String className = "com.l7tech.policy.assertion.composite.AllAssertion";
-        final EntityHeader assertionHeader = new EntityHeader(OID, EntityType.ASSERTION_ACCESS, className, null);
+        final EntityHeader assertionHeader = new EntityHeader(GOID, EntityType.ASSERTION_ACCESS, className, null);
         when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
         when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
         assertEquals("All assertions must evaluate to true (Policy Logic)", resolver.getNameForHeader(assertionHeader, true));

@@ -9,6 +9,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
@@ -41,7 +42,7 @@ public class ApiPortalAuthenticationConfiguration {
 
     private JDialog parent;
     private boolean enabled = true;
-    private long lastSelectedLdapId;
+    private Goid lastSelectedLdapId;
 
     /**
      * Constructor creates a configuration UI for LDAP Provider Authentication.
@@ -105,11 +106,11 @@ public class ApiPortalAuthenticationConfiguration {
             genericLdapAttributesPanel.setVisible(false);
         }
 
-        long selectedLdapId = getSelectedLdapId(ldapComboBox);
-        if (isMsadLdapSelectedFromComboBox(ldapComboBox) && selectedLdapId != lastSelectedLdapId) {
+        Goid selectedLdapId = getSelectedLdapId(ldapComboBox);
+        if (isMsadLdapSelectedFromComboBox(ldapComboBox) && !selectedLdapId.equals(lastSelectedLdapId)) {
             searchFilterTextField.setText(AUTH_MSAD_LDAP_DEFAULT_SEARCH_FILTER);
         }
-        else if (isOpenLdapSelectedFromComboBox(ldapComboBox) && selectedLdapId != lastSelectedLdapId) {
+        else if (isOpenLdapSelectedFromComboBox(ldapComboBox) && !selectedLdapId.equals(lastSelectedLdapId)) {
             userSearchFilterTextField.setText(AUTH_OPEN_LDAP_DEFAULT_USER_SEARCH_FILTER);
 
             LdapIdentityProviderConfig lipc = ((LdapRowInfo) ldapComboBox.getSelectedItem()).lipc;
@@ -168,10 +169,10 @@ public class ApiPortalAuthenticationConfiguration {
      * @param ldapComboBox: the combo box lists all configured LDAP Providers.
      * @return a long integer for the selected LDAP Provider ID
      */
-    public static long getSelectedLdapId(JComboBox ldapComboBox) {
+    public static Goid getSelectedLdapId(JComboBox ldapComboBox) {
         EntityHeader ldapSelected = ((LdapRowInfo) ldapComboBox.getSelectedItem()).entityHeader;
         if (ldapSelected == null) throw new IllegalArgumentException("Could not find any LDAP Providers.");
-        return ldapSelected.getOid();
+        return ldapSelected.getGoid();
     }
 
     /**
@@ -181,7 +182,7 @@ public class ApiPortalAuthenticationConfiguration {
      */
     public static LdapRowInfo[] populateLdapProviders() {
         Collection<LdapRowInfo> LdapRowInfoList = new ArrayList<LdapRowInfo>();
-        LdapRowInfoList.add(new LdapRowInfo(new EntityHeader(-1, EntityType.ANY, "Select LDAP", "First row in the ComboBox"), null));
+        LdapRowInfoList.add(new LdapRowInfo(new EntityHeader("", EntityType.ANY, "Select LDAP", "First row in the ComboBox"), null));
 
         final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         if (admin == null) {

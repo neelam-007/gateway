@@ -14,6 +14,7 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.FederatedIdProviderReference;
 import com.l7tech.policy.exporter.IdProviderReference;
 import com.l7tech.util.HexUtils;
@@ -71,13 +72,13 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (manualResolvRadio.isSelected()) {
-            Long newProviderId = getProviderIdFromName(providerSelector.getSelectedItem().toString());
+            Goid newProviderId = getProviderIdFromName(providerSelector.getSelectedItem().toString());
             if (newProviderId == null) {
                 // this cannot happen
                 logger.severe("could not get provider from name");
                 return false;
             }
-            unresolvedRef.setLocalizeReplace(newProviderId.longValue());
+            unresolvedRef.setLocalizeReplace(newProviderId);
         } else if (removeRadio.isSelected()) {
             unresolvedRef.setLocalizeDelete();
         } else if (ignoreRadio.isSelected()) {
@@ -317,10 +318,10 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         }
     }
 
-    private Long getProviderIdFromName(String name) {
+    private Goid getProviderIdFromName(String name) {
         for (EntityHeader entityHeader : providerHeaders) {
             if (entityHeader.getName().equals(name)) {
-                return entityHeader.getOid();
+                return entityHeader.getGoid();
             }
         }
         return null;

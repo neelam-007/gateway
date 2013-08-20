@@ -667,7 +667,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private String getDisplayId(EntityHeader header) {
         String id = header instanceof GuidEntityHeader ? ((GuidEntityHeader)header).getGuid() :
-                    header.getOid() != -1L ? Long.toString(header.getOid()) : null;
+                    !header.getGoid().equals(GoidEntity.DEFAULT_GOID) ? Goid.toString(header.getGoid()) : null;
         return id == null ? "" : " (#" + id + ")";
     }
 
@@ -691,7 +691,7 @@ public class MigrationManagerImpl implements MigrationManager {
             throw new MigrationApi.MigrationException("Error loading the entity for header: " + header, e);
         }
         if (ent == null)
-            throw new MigrationApi.MigrationException("Error loading the entity for header "+ header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getOid()+")");
+            throw new MigrationApi.MigrationException("Error loading the entity for header "+ header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getGoid()+")");
         return ent;
     }
 }

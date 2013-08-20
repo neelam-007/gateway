@@ -154,7 +154,7 @@ public class GenericUserPanel extends UserPanel {
                 throw new RuntimeException("User edit operation without specified identity provider.");
             }
 
-            boolean isNew = userHeader.getOid() == 0;
+            boolean isNew = userHeader.getGoid() == null;
             AttemptedOperation ao;
             if (isNew) {
                 if (config.type().equals(IdentityProviderType.INTERNAL)) {
@@ -173,7 +173,7 @@ public class GenericUserPanel extends UserPanel {
                 if (u == null) {
                     JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                             USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
-                    throw new NoSuchElementException("User missing " + userHeader.getOid());
+                    throw new NoSuchElementException("User missing " + userHeader.getGoid());
                 } else {
                     ao = new AttemptedUpdate(USER, u);
                 }
@@ -1014,7 +1014,7 @@ public class GenericUserPanel extends UserPanel {
 
         GenericUserPanel panel = new GenericUserPanel();
         EntityHeader eh = new EntityHeader();
-        eh.setOid(0);
+        eh.setGoid(null);
         eh.setName("Test user");
         eh.setType(EntityType.USER);
         IdentityHeader ih = new IdentityHeader(new Goid(0,-2), eh);

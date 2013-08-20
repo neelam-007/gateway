@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 
@@ -68,8 +69,8 @@ public class MarkEntityToAliasAction extends SecureAction {
         RootNode.setEntitiesToAlias(emptyNodes);
         if (tree != null) {
             List<AbstractTreeNode> abstractTreeNodes = tree.getSmartSelectedNodes();
-            long parentFolderOid;
-            long currentParentFolderOid = -1;
+            Goid parentFolderGoid;
+            Goid currentParentFolderGoid = null;
             boolean first = true;
             //parentFolderOid must be the same for all nodes and they can't be folder nodes
             for(AbstractTreeNode atn: abstractTreeNodes){
@@ -79,16 +80,16 @@ public class MarkEntityToAliasAction extends SecureAction {
                 }
                 AbstractTreeNode node = (AbstractTreeNode)atn.getParent();
                 FolderHeader folderHeader = (FolderHeader) node.getUserObject();
-                parentFolderOid = folderHeader.getOid();
+                parentFolderGoid = folderHeader.getGoid();
                 if(first){
                     first = false;
                 }else{
-                    if(parentFolderOid != currentParentFolderOid){
+                    if(!parentFolderGoid.equals(currentParentFolderGoid)){
                         DialogDisplayer.showMessageDialog(tree, "All entites must be within the same folder", "Cannot select from multiple folders", JOptionPane.ERROR_MESSAGE, null);                        
                         return;
                     }
                 }
-                currentParentFolderOid = parentFolderOid;
+                currentParentFolderGoid = parentFolderGoid;
             }
             RootNode.setEntitiesToAlias(abstractTreeNodes);
         }

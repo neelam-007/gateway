@@ -59,7 +59,7 @@ public final class EntityHeaderUtils {
             if (ANY == type || entityClass == null)
                 throw new IllegalArgumentException("Can't get reference to " + header.toString());
             else
-                return new AnonymousEntityReference(entityClass, header.getOid(), header.getName());
+                return new AnonymousEntityReference(entityClass, header.getGoid(), header.getName());
 
         }
     }

@@ -33,16 +33,6 @@ public class EntityHeader extends EntityHeaderRef {
         this.version = version;
     }
 
-    @Deprecated // oid's are being replaced by goids
-    public EntityHeader(long oid, EntityType type, String name, String description, Integer version) {
-        this(Long.toString(oid), type, name, description, version);
-    }
-
-    @Deprecated // oid's are being replaced by goids
-    public EntityHeader(long oid, EntityType type, String name, String description) {
-        this(Long.toString(oid), type, name, description, null);
-    }
-
     public EntityHeader(@NotNull Goid goid, EntityType type, String name, String description, Integer version) {
         this(goid.toString(), type, name, description, version);
     }
@@ -56,44 +46,12 @@ public class EntityHeader extends EntityHeaderRef {
         description = "";
     }
 
-    /**
-     * Create an ID string from the specified GOID hex string or OID.
-     *
-     * @param goid a GOID, or null.  If specified, oid is ignored.
-     * @param oid an OID, or null.  Ignored if goidStr is specified.
-     * @return an ID string to use for an entity reference, encoding the specified GOID or OID, or null.
-     */
-    @Nullable
-    public static String toIdStr( @Nullable Goid goid, @Nullable Long oid) {
-        if ( goid != null )
-            return goid.toString();
-        if ( oid != null )
-            return oid.toString();
-        return null;
-    }
-
     public String getName() {
         return name;
     }
 
     public void setName( String name ) {
         this.name = name;
-    }
-
-    @Deprecated // oid's are being replaced by goids
-    @XmlAttribute
-    public void setOid( long oid ) {
-        strId = Long.toString(oid);
-    }
-
-    @Deprecated // oid's are being replaced by goids
-    public long getOid() {
-        if (strId == null || strId.isEmpty()) return -1;
-        try {
-            return Long.parseLong(strId);
-        } catch (Exception e) {
-            return -1;
-        }
     }
 
     /**

@@ -249,7 +249,7 @@ public class ServerNtlmAuthenticationAssertionTest {
 /*                //Setup LdapIdentityProvider
                 LdapIdentityProviderConfig ldapIdentityProviderConfig = new LdapIdentityProviderConfig();
                 ldapIdentityProviderConfig.setLdapUrl(new String[]{"TEST"});
-                ldapIdentityProviderConfig.setOid(assertion.getLdapProviderOid());
+                ldapIdentityProviderConfig.setGoid(assertion.getLdapProviderOid());
 
                 TestIdentityProviderConfigManager identityProviderConfigManager = applicationContext.getBean("identityProviderConfigManager", TestIdentityProviderConfigManager.class);
                 identityProviderConfigManager.update(ldapIdentityProviderConfig);*/

@@ -101,7 +101,7 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
 
     private void invalidate( final EntityHeader entityHeader ) {
         if ( entityHeader.getType() == EntityType.POLICY ) {
-            Policy removed = cache.remove( entityHeader.getOid() );
+            Policy removed = cache.remove( entityHeader.getGoid() );
             if(removed != null) {
                 guidToOidMap.remove(removed.getGuid());
             }

@@ -35,6 +35,8 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "UnusedDeclaration"})
 @RunWith(MockitoJUnitRunner.class)
 public class GenericDependencyProcessorTest {
+    private static final Goid GOID = new Goid(123,456);
+    private static final String GOID_STR = Goid.toString(GOID);
 
     @Mock
     private EntityCrud entityCrud;
@@ -111,98 +113,96 @@ public class GenericDependencyProcessorTest {
     }
 
     @Test
-    public void testFindUsingLongOID() throws FindException {
-        final long oid = 123;
+    public void testFindUsingGOID() throws FindException {
         final EntityType type = EntityType.ANY;
 
         Mockito.when(entityCrud.find(Matchers.<EntityHeader>argThat(new BaseMatcher<EntityHeader>() {
             @Override
             public boolean matches(Object o) {
-                return o instanceof EntityHeader && ((EntityHeader) o).getOid() == oid && ((EntityHeader) o).getType().equals(type);
+                return o instanceof EntityHeader && ((EntityHeader) o).getGoid().equals(GOID) && ((EntityHeader) o).getType().equals(type);
             }
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("unexpected entity header. Expected Header with oid: " + oid + " and Type: " + type);
+                description.appendText("unexpected entity header. Expected Header with goid: " + GOID + " and Type: " + type);
             }
         }))).thenReturn(new Entity() {
             @Override
             public String getId() {
-                return String.valueOf(oid);
+                return String.valueOf(GOID);
             }
         });
 
-        List<Entity> entities = processor.find(oid, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
+        List<Entity> entities = processor.find(GOID, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(1, entities.size());
-        Assert.assertEquals(oid, Long.parseLong(entities.get(0).getId()));
+        Assert.assertEquals(GOID, Goid.parseGoid(entities.get(0).getId()));
     }
 
     @Test
-    public void testFindUsingStringOID() throws FindException {
-        final String oid = "123";
+    public void testFindUsingStringGOID() throws FindException {
         final EntityType type = EntityType.ANY;
 
         Mockito.when(entityCrud.find(Matchers.<EntityHeader>argThat(new BaseMatcher<EntityHeader>() {
             @Override
             public boolean matches(Object o) {
-                return o instanceof EntityHeader && ((EntityHeader) o).getOid() == Long.parseLong(oid) && ((EntityHeader) o).getType().equals(type);
+                return o instanceof EntityHeader && ((EntityHeader) o).getGoid().equals(GOID)&& ((EntityHeader) o).getType().equals(type);
             }
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("unexpected entity header. Expected Header with oid: " + oid + " and Type: " + type);
+                description.appendText("unexpected entity header. Expected Header with goid: " + GOID + " and Type: " + type);
             }
         }))).thenReturn(new Entity() {
             @Override
             public String getId() {
-                return String.valueOf(oid);
+                return String.valueOf(GOID);
             }
         });
 
-        List<Entity> entities = processor.find(oid, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
+        List<Entity> entities = processor.find(GOID_STR, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(1, entities.size());
-        Assert.assertEquals(oid, entities.get(0).getId());
+        Assert.assertEquals(GOID_STR, entities.get(0).getId());
     }
 
     @Test
     public void testFindUsingLongOIDArray() throws FindException {
-        final long[] oids = {123, 456, 789};
+        final Goid[] goids = {new Goid(11,123), new Goid(11,456), new Goid(11,789)};
         final EntityType type = EntityType.ANY;
 
-        for (int i = 0; i < oids.length; i++) {
+        for (int i = 0; i < goids.length; i++) {
             final int finalI = i;
             Mockito.when(entityCrud.find(Matchers.<EntityHeader>argThat(new BaseMatcher<EntityHeader>() {
                 @Override
                 public boolean matches(Object o) {
-                    return o instanceof EntityHeader && ((EntityHeader) o).getOid() == oids[finalI] && ((EntityHeader) o).getType().equals(type);
+                    return o instanceof EntityHeader && ((EntityHeader) o).getGoid().equals(goids[finalI]) && ((EntityHeader) o).getType().equals(type);
                 }
 
                 @Override
                 public void describeTo(Description description) {
-                    description.appendText("unexpected entity header. Expected Header with oid: " + oids[finalI] + " and Type: " + type);
+                    description.appendText("unexpected entity header. Expected Header with goid: " + goids[finalI] + " and Type: " + type);
                 }
             }))).thenReturn(new Entity() {
                 @Override
                 public String getId() {
-                    return String.valueOf(oids[finalI]);
+                    return String.valueOf(goids[finalI]);
                 }
             });
         }
 
-        List<Entity> entities = processor.find(oids, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.OID);
+        List<Entity> entities = processor.find(goids, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud, new Times(3)).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(3, entities.size());
-        Assert.assertEquals(oids[0], Long.parseLong(entities.get(0).getId()));
-        Assert.assertEquals(oids[1], Long.parseLong(entities.get(1).getId()));
-        Assert.assertEquals(oids[2], Long.parseLong(entities.get(2).getId()));
+        Assert.assertEquals(goids[0], Goid.parseGoid(entities.get(0).getId()));
+        Assert.assertEquals(goids[1], Goid.parseGoid(entities.get(1).getId()));
+        Assert.assertEquals(goids[2], Goid.parseGoid(entities.get(2).getId()));
     }
 
     @Test

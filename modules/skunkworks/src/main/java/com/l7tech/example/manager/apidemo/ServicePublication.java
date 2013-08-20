@@ -165,8 +165,8 @@ public class ServicePublication {
         String[] output = new String[res.length];
         for (int i = 0; i < res.length; i++) {
             ServiceHeader header = res[i];
-            PublishedService ps = serviceAdmin.findServiceByID(Long.toString(header.getOid()));
-            output[i] = "Service Name: " + header.getName() + " Service ID: " + header.getOid() + "\n\n" + ps.getPolicy().getXml() + "\n\n";
+            PublishedService ps = serviceAdmin.findServiceByID(Goid.toString(header.getGoid()));
+            output[i] = "Service Name: " + header.getName() + " Service ID: " + header.getGoid() + "\n\n" + ps.getPolicy().getXml() + "\n\n";
             
         }
         return output;

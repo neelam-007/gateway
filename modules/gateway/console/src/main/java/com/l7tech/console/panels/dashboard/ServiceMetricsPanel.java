@@ -556,8 +556,8 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
 
                         _latestServicesWithProblemListModel.clear();
                         for (EntityHeader svc : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
-                            final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getOid());
-                            final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getOid());
+                            final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getGoid());
+                            final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getGoid());
                             if (hasRF || hasPV) {
                                 ImageIcon icon;
                                 if (hasRF && hasPV) {
@@ -641,8 +641,8 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
 
             _selectionServicesWithProblemListModel.clear();
             for (EntityHeader publishedService : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
-                final boolean hasRF = bin.getServicesWithRoutingFailure().contains(publishedService.getOid());
-                final boolean hasPV = bin.getServicesWithPolicyViolation().contains(publishedService.getOid());
+                final boolean hasRF = bin.getServicesWithRoutingFailure().contains(publishedService.getGoid());
+                final boolean hasPV = bin.getServicesWithPolicyViolation().contains(publishedService.getGoid());
                 if (hasRF || hasPV) {
                     ImageIcon icon;
                     if (hasRF && hasPV) {

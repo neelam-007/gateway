@@ -153,29 +153,6 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     @Override
     public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
-            case OID: {
-                //used the entity crud to find the entity using its OID
-                List<EntityHeader> headers;
-                if (searchValue instanceof Long)
-                    headers = Arrays.asList(new EntityHeader((Long) searchValue, dependencyType.getEntityType(), null, null));
-                else if (searchValue instanceof String)
-                    headers = Arrays.asList(new EntityHeader((String) searchValue, dependencyType.getEntityType(), null, null));
-                else if (searchValue instanceof long[]) {
-                    long[] oids = (long[]) searchValue;
-                    headers = new ArrayList<>(oids.length);
-                    for (long oid : oids) {
-                        headers.add(new EntityHeader(oid, dependencyType.getEntityType(), null, null));
-                    }
-                } else
-                    throw new IllegalArgumentException("Unsupported OID value type: " + searchValue.getClass());
-                //noinspection ConstantConditions
-                return Functions.map(headers, new Functions.UnaryThrows<Entity, EntityHeader, FindException>() {
-                    @Override
-                    public Entity call(EntityHeader entityHeader) throws FindException {
-                        return loadEntity(entityHeader);
-                    }
-                });
-            }
             case GOID: {
                 //used the entity crud to find the entity using its GOID
                 List<EntityHeader> headers;

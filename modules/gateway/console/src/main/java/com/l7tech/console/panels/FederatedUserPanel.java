@@ -143,7 +143,7 @@ public class FederatedUserPanel extends UserPanel {
                 FederatedUser u = (FederatedUser) admin.findUserByID(config.getGoid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
-                    throw new NoSuchElementException("User missing " + userHeader.getOid());
+                    throw new NoSuchElementException("User missing " + userHeader.getGoid());
                 } else {
                     ao = new AttemptedUpdate(USER, u);
                 }
