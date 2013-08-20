@@ -63,7 +63,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      *                          {@link MetricsBin#RES_DAILY}); null = all
      * @param minPeriodStart    minimum bin period start time (milliseconds since epoch); null = as far back as available
      * @param maxPeriodStart    maximum bin period statt time (milliseconds since epoch); null = up to the latest available
-     * @param includeEmpty      whether to include empty uptime bins (same as include service OID -1)
+     * @param includeEmpty      whether to include empty uptime bins (same as include service GOID DEFAULT_GOID)
      *
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if failure to query database
@@ -106,7 +106,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         // Enforces RBAC permissions.
         final Set<Goid> filteredGoids = filterPermittedPublishedServices(serviceGoids);
         if (filteredGoids != null && includeEmpty) {
-            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service OID of -1.
+            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service GOID of DEFAULT_GOID.
         }
         if (filteredGoids != null && filteredGoids.isEmpty()) {
             return Collections.emptyList();     // No bins can possibly be found.
@@ -186,7 +186,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      * @param duration      time duration (milliseconds from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
-     * @param includeEmpty  whether to include empty uptime bins (same as include service OID -1)
+     * @param includeEmpty  whether to include empty uptime bins (same as include service OID of DEFAULT_GOID)
      *
      * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if failure to query database
@@ -202,7 +202,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         // Enforces RBAC permissions.
         final Set<Goid> filteredGoids = filterPermittedPublishedServices(serviceGoids);
         if (filteredGoids != null && includeEmpty) {
-            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service OID of -1.
+            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service OID of DEFAULT_GOID
         }
         if (filteredGoids != null && filteredGoids.isEmpty()) {
             return null;    // No bins can possibly be found.
@@ -409,7 +409,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
 
     private static final String SQL_INSERT_OR_UPDATE_DETAILS =
         "INSERT INTO service_metrics_details\n" +
-        "    (service_metrics_goid,mapping_values_oid,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
+        "    (service_metrics_goid,mapping_values_goid,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
         "SELECT\n" +
         "    (\n" +
         "        SELECT goid FROM service_metrics WHERE\n" +
@@ -418,7 +418,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "        resolution=? AND\n" +
         "        period_start=?\n" +
         "    ) as id,\n" +
-        "    smd.mapping_values_oid,\n" +
+        "    smd.mapping_values_goid,\n" +
         "    coalesce(sum(smd.attempted),0),\n" +
         "    coalesce(sum(smd.authorized),0),\n" +
         "    coalesce(sum(smd.completed),0),\n" +
@@ -436,7 +436,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "    sm.resolution=? AND\n" +
         "    sm.period_start>=?  AND\n" +
         "    sm.period_start+sm.interval_size<=?\n" +
-        "GROUP BY id, mapping_values_oid\n" +
+        "GROUP BY id, mapping_values_goid\n" +
         "ON DUPLICATE KEY UPDATE\n" +
         "    attempted=values(attempted),\n" +
         "    authorized=values(authorized),\n" +
@@ -581,7 +581,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     }
 
     /**
-     * Filters down the list of published service OID according to the user's RBAC permissions.
+     * Filters down the list of published service GOID according to the user's RBAC permissions.
      *
      * @param serviceGoids   <code>null</code> means all service permitted for user
      * @return list of services permitted; can be empty; <code>null</code> if all
