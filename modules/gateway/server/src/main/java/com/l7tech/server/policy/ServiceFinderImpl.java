@@ -1,6 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.assertion.ext.password.SecurePasswordServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 

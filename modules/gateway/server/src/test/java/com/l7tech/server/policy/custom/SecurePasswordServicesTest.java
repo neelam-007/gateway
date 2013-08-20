@@ -2,7 +2,7 @@ package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.assertion.ext.SecurePasswordServices;
+import com.l7tech.policy.assertion.ext.password.SecurePasswordServices;
 import com.l7tech.policy.assertion.ext.ServiceException;
 import com.l7tech.server.policy.SecurePasswordServicesImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;

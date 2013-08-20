@@ -1,4 +1,6 @@
-package com.l7tech.policy.assertion.ext;
+package com.l7tech.policy.assertion.ext.password;
+
+import com.l7tech.policy.assertion.ext.ServiceException;
 
 /**
  * Use this service to decrypt password or PEM private key selected in the CustomSecurePasswordPanel.
