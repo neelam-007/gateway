@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -317,7 +318,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         String name = UNAVAILABLE;
                         try {
                             name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, true);
-                        } catch (final FindException e) {
+                        } catch (final FindException | PermissionDeniedException e) {
                             logger.log(Level.WARNING, "Unable to resolve name for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                         return name;
@@ -438,7 +439,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         String name = UNAVAILABLE;
                         try {
                             name = Registry.getDefault().getEntityNameResolver().getNameForHeader(folder, false);
-                        } catch (final FindException e) {
+                        } catch (final FindException | PermissionDeniedException e) {
                             logger.log(Level.WARNING, "Unable to resolve name for folder: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                         return name;
@@ -450,7 +451,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         String path = UNAVAILABLE;
                         try {
                             path = Registry.getDefault().getEntityNameResolver().getPath(folder);
-                        } catch (final FindException e) {
+                        } catch (final FindException | PermissionDeniedException e) {
                             logger.log(Level.WARNING, "Unable to resolve path for folder header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                         return path;

@@ -13,6 +13,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfoHeader;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -163,10 +165,27 @@ public class EntityNameResolver {
                     if (header instanceof ServiceUsageHeader) {
                         final ServiceUsageHeader usageHeader = (ServiceUsageHeader) header;
                         final PublishedService usageService = serviceAdmin.findServiceByID(usageHeader.getServiceGoid().toHexString());
-                        if (usageService != null) {
-                            name = getNameForEntity(usageService, includePath) + " on node " + usageHeader.getNodeId();
-                        } else {
-                            name = "unknown service on node " + usageHeader.getNodeId();
+                        validateFoundEntity(EntityType.SERVICE, usageHeader.getServiceGoid(), usageService);
+                        name = getNameForEntity(usageService, includePath) + " on node " + usageHeader.getNodeId();
+                    }
+                    break;
+                case UDDI_SERVICE_CONTROL:
+                    if (header instanceof UDDIServiceControlHeader) {
+                        final UDDIServiceControlHeader uddiControlHeader = (UDDIServiceControlHeader) header;
+                        if (uddiControlHeader.getPublishedServiceGoid() != null) {
+                            final PublishedService controlService = serviceAdmin.findServiceByID(uddiControlHeader.getPublishedServiceGoid().toHexString());
+                            validateFoundEntity(EntityType.SERVICE, uddiControlHeader.getPublishedServiceGoid(), controlService);
+                            name = getNameForEntity(controlService, includePath);
+                        }
+                    }
+                    break;
+                case UDDI_PROXIED_SERVICE_INFO:
+                    if (header instanceof UDDIProxiedServiceInfoHeader) {
+                        final UDDIProxiedServiceInfoHeader proxiedServiceInfoHeader = (UDDIProxiedServiceInfoHeader) header;
+                        if (proxiedServiceInfoHeader.getPublishedServiceGoid() != null) {
+                            final PublishedService proxiedService = serviceAdmin.findServiceByID(proxiedServiceInfoHeader.getPublishedServiceGoid().toHexString());
+                            validateFoundEntity(EntityType.SERVICE, proxiedServiceInfoHeader.getPublishedServiceGoid(), proxiedService);
+                            name = getNameForEntity(proxiedService, includePath);
                         }
                     }
                     break;

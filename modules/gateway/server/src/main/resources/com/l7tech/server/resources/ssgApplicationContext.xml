@@ -2226,6 +2226,8 @@
                 <ref bean="sampleMessageManager"/>
                 <ref bean="securePasswordManager"/>
                 <ref bean="uddiRegistryManager"/>
+                <ref bean="uddiProxiedServiceInfoManager"/>
+                <ref bean="uddiServiceControlManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
             </list>
         </constructor-arg>

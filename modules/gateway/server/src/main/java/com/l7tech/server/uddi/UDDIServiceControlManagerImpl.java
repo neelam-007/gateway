@@ -1,6 +1,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -72,4 +73,14 @@ public class UDDIServiceControlManagerImpl extends HibernateGoidEntityManager<UD
         return Arrays.asList(serviceOidMap);
     }
 
+    @Override
+    protected EntityHeader newHeader(final UDDIServiceControl entity) {
+        EntityHeader header = super.newHeader(entity);
+        if (entity != null) {
+            header = new UDDIServiceControlHeader(entity.getGoid(), null, null, entity.getVersion(),
+                    entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid(),
+                    entity.getPublishedServiceGoid());
+        }
+        return header;
+    }
 }

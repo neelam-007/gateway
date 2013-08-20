@@ -5,6 +5,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfoHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -57,6 +58,16 @@ implements UDDIProxiedServiceInfoManager{
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
         serviceOidMap.put("publishedServiceGoid", proxiedServiceInfo.getPublishedServiceGoid());
         return Arrays.asList(serviceOidMap);
+    }
+
+    @Override
+    protected EntityHeader newHeader(final UDDIProxiedServiceInfo entity) {
+        EntityHeader header = super.newHeader(entity);
+        if (entity != null) {
+            header = new UDDIProxiedServiceInfoHeader(entity.getGoid(), null, null, entity.getVersion(),
+                    entity.getSecurityZone() ==  null ? null : entity.getSecurityZone().getGoid(), entity.getPublishedServiceGoid());
+        }
+        return header;
     }
 
     //- PRIVATE

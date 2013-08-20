@@ -13,6 +13,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfoHeader;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlHeader;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
@@ -34,8 +36,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -118,7 +119,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForKeyMetadataHeader() throws Exception {
-        when(trustedCertAdmin.findKeyMetadata(GOID)).thenReturn(new SsgKeyMetadata(new Goid(0,1), NAME, null));
+        when(trustedCertAdmin.findKeyMetadata(GOID)).thenReturn(new SsgKeyMetadata(new Goid(0, 1), NAME, null));
         assertEquals(NAME, resolver.getNameForHeader(new EntityHeader(GOID, EntityType.SSG_KEY_METADATA, null, null)));
     }
 
@@ -132,7 +133,7 @@ public class EntityNameResolverTest {
     @Test
     public void getNameForKeyMetadataHeaderNotYetPersisted() throws Exception {
         when(trustedCertAdmin.findKeyMetadata(any(Goid.class))).thenReturn(null);
-        assertEquals(NAME, resolver.getNameForHeader(new KeyMetadataHeaderWrapper(new SsgKeyMetadata(new Goid(0,1), NAME, null))));
+        assertEquals(NAME, resolver.getNameForHeader(new KeyMetadataHeaderWrapper(new SsgKeyMetadata(new Goid(0, 1), NAME, null))));
     }
 
     @Test
@@ -207,13 +208,12 @@ public class EntityNameResolverTest {
         assertEquals("test (/test) on node abc123", resolver.getNameForHeader(usageHeader, true));
     }
 
-    @Test
+    @Test(expected = FindException.class)
     public void getNameForServiceUsageHeaderServiceDoesNotExist() throws Exception {
         final Goid serviceGoid = new Goid(0, 1);
         final ServiceUsageHeader usageHeader = new ServiceUsageHeader(serviceGoid, "abc123");
         when(serviceAdmin.findServiceByID(serviceGoid.toHexString())).thenReturn(null);
-
-        assertEquals("unknown service on node abc123", resolver.getNameForHeader(usageHeader, true));
+        resolver.getNameForHeader(usageHeader, true);
     }
 
     @Test
@@ -355,6 +355,28 @@ public class EntityNameResolverTest {
         when(assertionRegistry.findByClassName(className)).thenReturn(new AllAssertion());
         when(folderRegistry.getPaletteFolderName("policyLogic")).thenReturn("Policy Logic");
         assertEquals("All assertions must evaluate to true (Policy Logic)", resolver.getNameForHeader(assertionHeader, true));
+    }
+
+    @BugId("SSG-6981")
+    @Test
+    public void getNameForUDDIServiceControlHeader() throws Exception {
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        final UDDIServiceControlHeader header = new UDDIServiceControlHeader(new Goid(0, 1), null, null, 0, null, publishedServiceGoid);
+        final PublishedService publishedService = new PublishedService();
+        publishedService.setName("test");
+        when(serviceAdmin.findServiceByID(publishedServiceGoid.toHexString())).thenReturn(publishedService);
+        assertEquals("test (/test)", resolver.getNameForHeader(header, true));
+    }
+
+    @BugId("SSG-6981")
+    @Test
+    public void getNameForUDDIProxiedServiceInfoHeader() throws Exception {
+        final Goid publishedServiceGoid = new Goid(1, 2);
+        final UDDIProxiedServiceInfoHeader header = new UDDIProxiedServiceInfoHeader(new Goid(0, 1), null, null, 0, null, publishedServiceGoid);
+        final PublishedService publishedService = new PublishedService();
+        publishedService.setName("test");
+        when(serviceAdmin.findServiceByID(publishedServiceGoid.toHexString())).thenReturn(publishedService);
+        assertEquals("test (/test)", resolver.getNameForHeader(header, true));
     }
 
     @Test
