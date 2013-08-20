@@ -125,9 +125,9 @@ public class SecurityZonePredicateTest {
     }
 
     @Test
-    public void nullRequiredZoneMatchNonZoneableEntity() {
+    public void nullRequiredZoneNoMatchNonZoneableEntity() {
         predicate = new SecurityZonePredicate(READ_ANY_PERMISSION, null);
         final SecurityZone notZoneable = new SecurityZone();
-        assertTrue(predicate.matches(notZoneable));
+        assertFalse(predicate.matches(notZoneable));
     }
 }
