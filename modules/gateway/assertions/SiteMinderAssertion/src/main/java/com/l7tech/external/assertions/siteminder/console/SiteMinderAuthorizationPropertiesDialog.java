@@ -14,6 +14,8 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -21,6 +23,7 @@ import java.awt.event.ActionListener;
  * Date: 6/25/13
  */
 public class SiteMinderAuthorizationPropertiesDialog extends AssertionPropertiesOkCancelSupport<SiteMinderAuthorizeAssertion> {
+    private static final Pattern SPACE_CHARS = Pattern.compile("(\\s)+");
 
     private JRadioButton useSSOTokenFromSmContextRadioButton;
     private JRadioButton useSSOTokenFromContextVariableRadioButton;
@@ -77,7 +80,21 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
                 enableDisableComponents();
             }
         });
+        inputValidator.constrainTextField(cookieNameTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(!cookieNameTextField.isEnabled()) return null;
 
+                Matcher m = SPACE_CHARS.matcher(cookieNameTextField.getText().trim());
+                if(m.find()) {
+                   return "Cookie Name cannot contain spaces!";
+                }
+                else if (cookieNameTextField.getText().trim().isEmpty()){
+                    return "Cookie Name is required!";
+                }
+                return null;
+            }
+        });
         inputValidator.constrainTextField(cookieMaxAgeTextField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -191,7 +208,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         assertion.setCookieSourceVar(useSSOTokenFromContextVariableRadioButton.isSelected()?ssoTokenVariablePanel.getVariable():null);
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
         assertion.setSetSMCookie(setSiteMinderCookieCheckBox.isSelected());
-        assertion.setCookieName(cookieNameTextField.getText());
+        assertion.setCookieName(cookieNameTextField.getText().trim());
         assertion.setCookieDomain(cookieDomainTextField.getText());
         assertion.setCookiePath(cookiePathTextField.getText());
         assertion.setCookieMaxAge(cookieMaxAgeTextField.getText());
