@@ -12,7 +12,7 @@ import java.util.Comparator;
 public enum EntityType implements Comparable<EntityType> {
     ANY("<any>", "Objects", true, false),
 
-    ID_PROVIDER_CONFIG("Identity Provider", true, false),
+    ID_PROVIDER_CONFIG("Identity Provider", true, true),
     USER("User", true, true), // TODO Don't change the string "User", it's in customer databases.
     GROUP("Group", true, true), // TODO Don't change the string "Group", it's in customer databases.
     SERVICE("Published Service", true, true),
@@ -24,7 +24,7 @@ public enum EntityType implements Comparable<EntityType> {
     REVOCATION_CHECK_POLICY("Revocation Check Policy", true, true),
     SSG_KEY_ENTRY("Private Key", "Private Keys", true, true),
     SSG_KEY_METADATA("Private Key Metadata", false, false),
-    SSG_KEYSTORE("Private Key Store", "Private Key Stores", true, true),
+    SSG_KEYSTORE("Private Key Store", "Private Key Stores", true, false),
     ALERT_TRIGGER("Alert Event", false, false),
     ALERT_ACTION("Alert Notification", false, false),
     SAMPLE_MESSAGE("Sample Message", true, true),
@@ -40,8 +40,8 @@ public enum EntityType implements Comparable<EntityType> {
     MAP_TOKEN("Security Token Attribute Mapping", false, true),
 
     CLUSTER_PROPERTY("Cluster Property", true, true),
-    CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true, false),
-    SERVICE_USAGE("Service Usage Record", true, false),
+    CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true, true),
+    SERVICE_USAGE("Service Usage Record", true, true),
     METRICS_BIN("Service Metrics Bin", true, false),
 
     RBAC_ROLE("Access Control Role", true, true),
@@ -87,14 +87,14 @@ public enum EntityType implements Comparable<EntityType> {
 
     HTTP_CONFIGURATION("HTTP Options", "HTTP Options", true, true),
     RESOURCE_ENTRY("Global Resource", true, true),
-    RESOLUTION_CONFIGURATION("Service Resolution Configuration", true, true),
-    PASSWORD_POLICY("Password Policy", true, true),
+    RESOLUTION_CONFIGURATION("Service Resolution Configuration", true, false),
+    PASSWORD_POLICY("Password Policy", true, false),
 
-    GENERIC("Generic Entity", "Generic Entities", true, true),
-    FIREWALL_RULE("Firewall Rules Entity", "Firewall Rules Entities", true, false),
+    GENERIC("Generic Entity", "Generic Entities", true, false),
+    FIREWALL_RULE("Firewall Rules Entity", "Firewall Rules Entities", true, true),
     ASSERTION_ACCESS("Assertion", "Assertions", true, true),
     SECURITY_ZONE("Security Zone", "Security Zones", true, true),
-    CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, true),
+    CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, false),
     LICENSE_DOCUMENT("License Document", false, false),
     ;
 
@@ -111,6 +111,9 @@ public enum EntityType implements Comparable<EntityType> {
         return pluralName;
     }
 
+    /**
+     * @return true if the user should be allowed to specify specific objects of this type when defining permission scope.
+     */
     public boolean isAllowSpecificScope() {
         return allowSpecificScope;
     }

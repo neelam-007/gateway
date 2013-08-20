@@ -223,13 +223,14 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         final Object selectedItem = typeComboBox.getSelectedItem();
         final boolean enableRadiosAndBoxes = allTypesRadio.isSelected() || selectedItem != null;
         Set<OperationType> invalidOps = null;
+        EntityType selectedType = null;
         if (selectedItem instanceof EntityType) {
-            final EntityType selected = (EntityType) selectedItem;
-            invalidOps = ENTITY_TYPES.get(selected);
+            selectedType = (EntityType) selectedItem;
+            invalidOps = ENTITY_TYPES.get(selectedType);
         }
         allObjectsRadio.setEnabled(enableRadiosAndBoxes);
         conditionRadio.setEnabled(allTypesRadio.isSelected() || (selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem)));
-        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem) && !LARGE_ENTITY_TYPES.contains(selectedItem));
+        specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedType != null && !SINGULAR_ENTITY_TYPES.contains(selectedType) && !LARGE_ENTITY_TYPES.contains(selectedType) && selectedType.isAllowSpecificScope());
         createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
         readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
         updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
