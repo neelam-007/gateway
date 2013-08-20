@@ -536,6 +536,15 @@ public class CertUtilsTest {
             }
         }
     }
+
+    @Test
+    public void testParsePemCertNoLineBreaks() throws Exception {
+        String nolf = GOOGLE_PEM.replace("\n", "");
+        byte[] got = CertUtils.decodeCertBytesFromPEM(nolf, true);
+        final X509Certificate cert = CertUtils.decodeCert(got);
+        assertNotNull(cert);
+    }
+
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
