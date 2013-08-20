@@ -19,7 +19,10 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 public class GoidUpgradeMapper {
+    @NonObfuscatable
     private static final Map<String, Long> tableNamePrefixMap = new HashMap<>();
+
+    @NonObfuscatable
     private static boolean hasPrefixes = false;
 
     /**
