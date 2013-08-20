@@ -145,17 +145,29 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
             //certificate is a different case
-            HttpRequestKnob httpRequestKnob = pec.getRequest().getHttpRequestKnob();
-            if(httpRequestKnob != null) {
+            if(loginCredentials.getFormat() == CredentialFormat.CLIENTCERT) {
                 try {
-                    X509Certificate[] clientCerts = httpRequestKnob.getClientCertificate();
-                    return  new SiteMinderCredentials(clientCerts);
-                } catch (IOException ie) {
-                    //TODO: logAndAudit this case
-                    logger.log(Level.WARNING, "Client certificate is not X509 type!", ExceptionUtils.getDebugException(ie));
+                    return  new SiteMinderCredentials(loginCredentials.getClientCert());
                 } catch (CertificateEncodingException e) {
-                    //TODO: logAndAudit this case
+                    logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate for login credentials:" + loginCredentials.getName());
                     logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
+                }
+            }
+            else {
+                //now try to extract from httpRequestKnob. This is a legacy compatibility piece
+                //TODO: I don't know if anyone was using this functionality in Site Minder R12 custom assertion. Might need to remove it
+                HttpRequestKnob httpRequestKnob = pec.getRequest().getHttpRequestKnob();
+                if(httpRequestKnob != null) {
+                    try {
+                        X509Certificate[] clientCerts = httpRequestKnob.getClientCertificate();
+                        return  new SiteMinderCredentials(clientCerts);
+                    } catch (IOException ie) {
+                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),"Client certificate is not X509 type!");
+                        logger.log(Level.WARNING, "Client certificate is not X509 type!", ExceptionUtils.getDebugException(ie));
+                    } catch (CertificateEncodingException e) {
+                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate");
+                        logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
+                    }
                 }
             }
         }

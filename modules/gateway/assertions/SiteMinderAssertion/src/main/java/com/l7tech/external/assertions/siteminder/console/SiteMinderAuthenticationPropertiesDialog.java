@@ -15,7 +15,6 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -166,10 +165,10 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setUseCustomCookieName(useCookieFromRequestRadioButton.isSelected());
         assertion.setCookieName(smCookieNameTextField.getText());
         assertion.setUseVarAsCookieSource(useCookieFromContextRadioButton.isSelected());
-        assertion.setCookieSourceVar(cookieVariablePanel.getVariable());
+        assertion.setCookieSourceVar(useCookieFromContextRadioButton.isSelected()?cookieVariablePanel.getVariable():null);
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
         assertion.setLastCredential(useLastCredentialsRadioButton.isSelected());
-        assertion.setLogin(credentialsTextField.getText());
+        assertion.setLogin(specifyCredentialsRadioButton.isSelected()?credentialsTextField.getText():null);
         //set user credentials
         return assertion;
     }

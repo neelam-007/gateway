@@ -38,6 +38,14 @@ public final class SiteMinderCredentials {
 
     }
 
+    public SiteMinderCredentials(X509Certificate certificate) throws CertificateEncodingException{
+        credentials = new UserCredentials();
+        if(certificate != null ) {
+            SiteMinderUtil.handleCertificate(certificate, credentials);
+        }
+
+    }
+
     public SiteMinderCredentials(final String login, final String password, final X509Certificate[] certificates) throws CertificateEncodingException {
         credentials = new UserCredentials(login, password);
         if(certificates != null && certificates.length > 0) {
