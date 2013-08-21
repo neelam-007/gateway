@@ -620,7 +620,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         if(method != null) methodType = method;
         URI uri = null;
         try {
-            uri = new URI(targetUrl.getProtocol(), targetUrl.getAuthority(), targetUrl.getPath(), targetUrl.getQuery(), null);
+            uri = targetUrl.toURI();
         } catch (URISyntaxException e) {
             logger.log(Level.WARNING, "Invalid URI " + e.getMessage());
             throw new GenericHttpException("Invalid URI " + targetUrl, e);

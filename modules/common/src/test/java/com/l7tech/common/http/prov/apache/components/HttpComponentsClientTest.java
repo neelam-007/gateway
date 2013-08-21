@@ -195,4 +195,22 @@ public class HttpComponentsClientTest {
 
         assertEquals(sawRequestMethod[0], "MyCustomFancyHttpVerb");
     }
+
+    @Ignore
+    @Test
+    public void testCreateRequestWithSpecialCharacter() throws Exception {
+        GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+        requestParams.setTargetUrl(new URL("http://amaux/schema/simple%20addition/addition_schema2.xsd"));
+        GenericHttpRequest request = null;
+        try {
+            request = fixture.createRequest(HttpMethod.GET, requestParams);
+            GenericHttpResponse response = request.getResponse();
+            assertEquals(200, response.getStatus());
+            IOUtils.copyStream(response.getInputStream(), System.out);
+        } finally {
+            if (request != null) {
+                request.close();
+            }
+        }
+    }
 }
