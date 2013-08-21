@@ -10,7 +10,6 @@ import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.secureconversation.StoredSecureConversationSession;
 import com.l7tech.server.util.ServerGoidUpgradeMapper;
 import org.hibernate.Criteria;
@@ -22,8 +21,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 
-import java.io.IOException;
-import java.security.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -160,10 +157,10 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
                             Goid providerId = mappingValues.getAuthUserProviderId();
                             boolean updated = false;
                             if(isInternal(providerId) ){
-                                mappingValues.setAuthUserId(getInternalUserId(internal_user_prefix, mappingValues.getAuthUserId()));
+                                mappingValues.setAuthUserUniqueId(getInternalUserId(internal_user_prefix, mappingValues.getAuthUserUniqueId()));
                             }
                             else if(isFederated(providerId)){
-                                mappingValues.setAuthUserId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(mappingValues.getAuthUserId()))));
+                                mappingValues.setAuthUserUniqueId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(mappingValues.getAuthUserUniqueId()))));
                             }
                             if(updated){
                                 mappingValues.setDigested(mappingValues.generateDigest());
@@ -216,7 +213,7 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
         return isDefaultAdministrator(userIdStr)? DEFAULT_ADMIN_USER_ID: Goid.toString(new Goid(internal_user_prefix, Long.parseLong(userIdStr)));
     }
     private boolean isDefaultAdministrator(String userId) {
-        return userId.equals(DEFAULT_ADMIN_USER_ID);
+        return userId.equals(DEFAULT_ADMIN_USER_ID) || "3".equals(userId);
     }
 
     /**
