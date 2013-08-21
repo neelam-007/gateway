@@ -65,7 +65,8 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
      */
     @Transient
     public Goid getKeystoreId() {
-        return GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, this.<String>getProperty(KEYSTORE_ID));
+        Object id = this.getProperty(KEYSTORE_ID);
+        return GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id != null ? String.valueOf(id) : null);
     }
 
     public void setKeystoreId(@Nullable Goid keystoreId) {
