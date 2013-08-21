@@ -69,10 +69,6 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
             setFont(isRoutingAssertionNode(node) ? boldFont : plainFont);
         }
 
-        int labelHeight = this.getPreferredSize().height;
-        int treeRowHeight = tree.getRowHeight();
-        if (labelHeight > treeRowHeight) tree.setRowHeight(labelHeight);
-
         return this;
     }
 

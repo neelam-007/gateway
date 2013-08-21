@@ -1,8 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.gui.MaxLengthDocument;
@@ -47,15 +45,12 @@ public class PreferencesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JButton helpButton;
-    private JTextField fontScaleTextField;
 
     /** preferences instance */
     private Properties props;
     private int previousMaxLeft;
     private int previousMaxRight;
     private boolean commentSizeChanged;
-    private boolean fontScaleChanged;
-    private float prevFontScale;
 
 
     /**
@@ -66,7 +61,7 @@ public class PreferencesDialog extends JDialog {
         initResources();
         initComponents(isApplet);
         loadPreferences();
-        DialogDisplayer.pack(this);
+        pack();
     }
 
     /**
@@ -305,26 +300,6 @@ public class PreferencesDialog extends JDialog {
 
             getPreferences().setProperty(SsmPreferences.NUM_SSG_MAX_RIGHT_COMMENT, Integer.toString(maxRightComment));
 
-            final float fontScale;
-            try {
-                fontScale = Float.parseFloat(fontScaleTextField.getText());
-
-                // Must be a positive number
-                if (fontScale <= 0) {
-                    throw new NumberFormatException();
-                }
-
-                fontScaleChanged = prevFontScale != fontScale;
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null,
-                    "The value for Policy Manager UI Font Size Scale must be a positive float number.",
-                    "Bad Policy Manager UI Font Size Scale",
-                    JOptionPane.ERROR_MESSAGE
-                );
-                return false;
-            }
-            getPreferences().setProperty(SsmPreferences.POLICY_MANAGER_UI_FONT_SIZE_SCALE, Float.toString(fontScale));
-
             return true;
         } catch (IOException e) {
             log.log(Level.SEVERE, "preferences", e);
@@ -356,12 +331,6 @@ public class PreferencesDialog extends JDialog {
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }
-            }
-
-            // If the value of the font size scale is changed, then set new font size in the UI.
-            if (fontScaleChanged) {
-                float fontSizeScale = Float.parseFloat(fontScaleTextField.getText());
-                ((MainWindow) TopComponents.getInstance().getComponent("mainWindow")).setFontSizeAndUpdateUI(fontSizeScale);
             }
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error saving Preferences", e);
@@ -409,15 +378,6 @@ public class PreferencesDialog extends JDialog {
             maxRightCommentTextField.setText(Integer.toString(maxRightComment));
             previousMaxRight = maxRightComment;
 
-            String fontScaleStr = getPreferences().getProperty(SsmPreferences.POLICY_MANAGER_UI_FONT_SIZE_SCALE);
-            float fontScale = SsmPreferences.DEFAULT_POLICY_MANAGER_FONT_SIZE_SCALE;
-            try {
-                if (fontScaleStr != null) fontScale = Float.parseFloat(fontScaleStr);
-            } catch (NumberFormatException e) {
-                // swallow; bad property value
-            }
-            fontScaleTextField.setText(Float.toString(fontScale));
-            prevFontScale = fontScale;
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);
         }

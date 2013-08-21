@@ -252,7 +252,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem saveAndActivateMenuItem;
     private JMenuItem saveOnlyMenuItem;
     private JMenuItem migrateNamespacesMenuItem;
-    private boolean disconnected = true;
+    private boolean disconnected = false;
     private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
     private JTextPane descriptionText;
@@ -280,8 +280,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String L7_F3 = "l7f3";
     public static final String L7_SHIFT_F3 = "l7shiftf3";
     private final ActiveKeypairJob activeKeypairJob = new ActiveKeypairJob();
-    private final Map<String, Float> defaultFontSizeMap = new Hashtable<>();
-    private boolean initialized;  // Indicate if MainWindow has been already initialized.  It is used to prevent initialize() from being called twice in setFontSizeAndUpdateUI(...).
 
     private static final String PATH_SEPARATOR = "/";
     private static final String ELLIPSIS = "...";
@@ -297,11 +295,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         this.preferences = (SsmPreferences) app.getApplicationContext().getBean("preferences");
         if (preferences == null) throw new IllegalStateException("Internal error: no preferences bean");
 
-        preserveDefaultFontSize();
-        setFontSizeAndUpdateUI(getFontSizeScaleFromPreferences());
-
         initialize();
-        initialized = true;
     }
 
     public ActiveKeypairJob getActiveKeypairJob() {
@@ -1701,6 +1695,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                                 PreferencesDialog dialog = new PreferencesDialog(TopComponents.getInstance().getTopParent(), true, isApplet());
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
+                                dialog.setResizable(false);
                                 DialogDisplayer.display(dialog);
                             }
                         });
@@ -2541,8 +2536,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private JButton tbadd(JToolBar tb, Action a) {
         JButton b = tb.add(a);
-        int fontSize = (int) (10 * getFontSizeScaleFromPreferences());
-        b.setFont(new Font("Dialog", 1, fontSize));
+        b.setFont(new Font("Dialog", 1, 10));
         b.setText((String) a.getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
@@ -4453,207 +4447,5 @@ public class MainWindow extends JFrame implements SheetHolder {
             TopComponents.getInstance().updateLastRemoteActivityTime();
             return null;
         }
-    }
-
-    /**
-     * Preserve the default font size used by the Policy Manager UI
-     */
-    private void preserveDefaultFontSize() {
-        UIDefaults defaults = UIManager.getDefaults();
-        Enumeration keys = defaults.keys();
-
-        while(keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            Object value = defaults.get(key);
-            if (value != null && value instanceof Font) {
-                FontUIResource resource = (FontUIResource) UIManager.get(key);
-                defaultFontSizeMap.put(key.toString(), resource.getSize2D());
-            }
-        }
-    }
-
-    /**
-     * Get the font size saved in the policy manager preference.
-     * @return
-     */
-    private float getFontSizeScaleFromPreferences() {
-        String scaleStr = preferences.asProperties().getProperty(SsmPreferences.POLICY_MANAGER_UI_FONT_SIZE_SCALE);
-        float fontSizeScale;
-
-        if (scaleStr == null) {
-            fontSizeScale = SsmPreferences.DEFAULT_POLICY_MANAGER_FONT_SIZE_SCALE;
-        } else {
-            try {
-                fontSizeScale = Float.parseFloat(scaleStr);
-            } catch (NumberFormatException e) {
-                fontSizeScale = SsmPreferences.DEFAULT_POLICY_MANAGER_FONT_SIZE_SCALE;
-            }
-        }
-        return fontSizeScale;
-    }
-
-    /**
-     * Set the font size of the policy manager UI by given fontSizeScale (new font size = current font size * font size scale),
-     * and also update the UI after the fond size is changed.
-     *
-     * @param fontSizeScale: a float size scale, which is a positive float number.
-     */
-    public void setFontSizeAndUpdateUI(float fontSizeScale) {
-        UIDefaults defaults = UIManager.getDefaults();
-        Enumeration keys = defaults.keys();
-
-        while(keys.hasMoreElements()) {
-            Object key = keys.nextElement();
-            Object value = defaults.get(key);
-            if (value != null && value instanceof Font) {
-                FontUIResource resource = (FontUIResource) UIManager.get(key);
-                // Change font based on the given font size scale
-                defaults.put(key, new FontUIResource(resource.deriveFont(defaultFontSizeMap.get(key) * fontSizeScale)));
-            }
-        }
-
-        // If MainWindow has not been initialized, then return this method to avoid to call initialize(),
-        // since MainWindow constructor will continue to perform initialization.
-        if (isDisconnected() && !initialized) {
-            SwingUtilities.updateComponentTreeUI(this);
-            return;
-        }
-
-        // Backup some information such as selected node (service, policy, or folder), policy editor pane status, etc, before the UI is updated.
-        final AbstractTreeNode selectedNode = (servicesAndPoliciesTree.getSmartSelectedNodes().size() == 1)?
-            (AbstractTreeNode) servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent() :
-            null;
-        final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-        final JComponent workspaceComponent = cw.getComponent();
-
-        TopComponents.getInstance().unregisterComponent(AssertionsTree.NAME);
-        TopComponents.getInstance().unregisterComponent(IdentityProvidersTree.NAME);
-        TopComponents.getInstance().unregisterComponent(ServicesAndPoliciesTree.NAME);
-        TopComponents.getInstance().unregisterComponent(ProgressBar.NAME);
-
-        getContentPane().removeAll();
-
-        frameContentPane = null;
-        mainPane = null;
-        mainSplitPane = null;
-        mainSplitPaneRight = null;
-        mainLeftPanel = null;
-
-        toolBarPane = null;
-        auditAlertBar = null;
-        paletteTabbedPane = null;
-
-        if (isApplet()) {
-            editMenu = null;
-            appletManagePopUpMenu = null;
-
-            // Reset Menu Manage...
-            manageAdminUsersSubMenu = null;
-            menuItemPref = null;
-            manageCertificatesMenuItem = null;
-            managePrivateKeysMenuItem = null;
-            manageSecurePasswordsMenuItem = null;
-            manageGlobalResourcesMenuItem = null;
-            manageClusterPropertiesMenuItem = null;
-            manageJmsEndpointsMenuItem = null;
-            manageKerberosMenuItem = null;
-            manageRolesMenuItem = null;
-            manageAuditAlertsMenuItem = null;
-            manageClusterLicensesMenuItem = null;
-            configureFtpAuditArchiver = null;
-            manageServiceResolutionMenuItem = null;
-            customGlobalActionsMenu = null;
-
-            // Reset Menu Monitor...
-            dashboardMenuItem = null;
-            auditMenuItem = null;
-            viewLogMenuItem = null;
-            fromFileMenuItem = null;
-
-            // Reset Menu Edit
-            migrateNamespacesMenuItem = null;
-
-            // Reset Menu Help...
-            helpTopicsMenuItem = null;
-        }
-
-        initialize();
-
-        // If the policy manager is disconnected, then do not call the following method to initialize the workspace.
-        if (isDisconnected()) {
-            SwingUtilities.updateComponentTreeUI(this);
-            return;
-        }
-
-        initializeWorkspace();
-        toggleConnectedMenus(true);
-
-        // If there is a node such as service, policy, or folder selected before font changed,
-        // then make the selected node visible by scroll to it in the services and policies tree.
-        AbstractTreeNode matchedNode = null;
-        if (selectedNode != null) {
-            AbstractTreeNode root = (AbstractTreeNode) getServicesAndPoliciesTree().getModel().getRoot();
-            matchedNode = findTreeNodeByName(root, selectedNode.getName());
-
-            if (matchedNode != null) {
-                TreePath path = new TreePath(matchedNode.getPath());
-                getServicesAndPoliciesTree().scrollPathToVisible(path);
-                getServicesAndPoliciesTree().setSelectionPath(path);
-                getServicesAndPoliciesTree().requestFocus();
-            }
-        }
-
-        // If the policy editor is opened before font changed, then invoke the edit policy action
-        // to open the policy editor. Otherwise, load the home page.
-        if (workspaceComponent != null && workspaceComponent instanceof PolicyEditorPanel && matchedNode instanceof EntityWithPolicyNode) {
-            for (Action action : matchedNode.getActions()) {
-                if (action instanceof EditPolicyAction) {
-                    ((EditPolicyAction) action).invoke();
-                }
-            }
-        }  else {
-            new HomeAction().actionPerformed(null);
-        }
-
-        // Recheck Audit Alert Bar
-        getAuditAlertBar().onLogon(null);
-
-        // Re-enable search combo boxes in the palette tree and the services and policies tree.
-        getSearchComboBox().setEnabled(true);
-        getAssertionSearchComboBox().setEnabled(true);
-        searchLabel.setEnabled(true);
-        assertionSearchLabel.setEnabled(true);
-
-        if (isApplet()) {
-            AppletMain applet = (AppletMain) TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
-            applet.updateUIAfterFontSizeChanged();
-        }
-
-        SwingUtilities.updateComponentTreeUI(this);
-    }
-
-    /**
-     * Find the current tree node (maybe a service, policy or folder) by a given node name.
-     *
-     * @param parent: the parent node to start searching
-     * @param nodeName: the given node name for matching
-     * @return a tree node, which has a name same as nodeName.
-     */
-    private AbstractTreeNode findTreeNodeByName(AbstractTreeNode parent, String nodeName) {
-        if (nodeName == null || nodeName.trim().isEmpty()) return null;
-
-        if (nodeName.equals(parent.getName())) {
-            return parent;
-        }
-
-        if (! (parent instanceof FolderNode)) return null;
-
-        AbstractTreeNode foundNode = null;
-        for (AbstractTreeNode node: ((FolderNode) parent).getChildNodes()) {
-            foundNode = findTreeNodeByName(node, nodeName);
-            if (foundNode != null) break;
-        }
-
-        return foundNode;
     }
 }

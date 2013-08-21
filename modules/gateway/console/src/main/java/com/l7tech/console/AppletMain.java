@@ -479,48 +479,4 @@ public class AppletMain extends JApplet implements SheetHolder {
             application.setTrusted(false);                        
         }
     }
-
-    public synchronized void updateUIAfterFontSizeChanged() {
-        appletRootPane = null;
-
-        try {
-            String feelName = looksLikeWindows()
-                ? UIManager.getSystemLookAndFeelClassName()
-                : UIManager.getCrossPlatformLookAndFeelClassName();
-            UIManager.setLookAndFeel(feelName);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to set system look and feel: " + ExceptionUtils.getMessage(e), e);
-        }
-
-        SsmApplication application = getApplication();
-        synchronized( application ) {
-            // Get existing applet instance (if any)
-            AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );
-
-            initMainWindowContent();
-
-            if ( otherMain != null && otherMain != this ) {
-                notifyContentPaneStolen();
-                otherSessionId = otherMain.getSessionID();
-            }
-
-            setRootPane(appletRootPane);
-            placeholderRootPane = null;
-
-            final Frame appletContainer = findAppletContainerFrame();
-            if (appletContainer != null) {
-                TopComponents.getInstance().unregisterComponent("topLevelParent");
-                TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
-            }
-
-            TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
-            TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
-
-            // Help DialogDisplayer find the right applet instance
-            DialogDisplayer.putDefaultSheetHolder(appletContainer, this);
-
-            getLayeredPane().updateUI();
-            validate();
-        }
-    }
 }
