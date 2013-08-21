@@ -2,6 +2,7 @@ package com.l7tech.gateway.api.impl;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -96,6 +97,25 @@ public class PrivateKeyImportContext extends ElementExtendableManagedObject {
         this.properties = properties;
     }
 
+    /**
+     * Get the security zone id for the context.
+     *
+     * @return the security zone id or null.
+     */
+    @XmlAttribute(name="securityZoneId", required=false)
+    public String getSecurityZoneId() {
+        return securityZoneId;
+    }
+
+    /**
+    * Set the properties for the context.
+    *
+    * @param securityZoneId The security zone Id to reference.
+    */
+    public void setSecurityZoneId(String securityZoneId) {
+        this.securityZoneId = securityZoneId;
+    }
+
     //- PROTECTED
 
     @XmlElement(name="Alias")
@@ -131,5 +151,6 @@ public class PrivateKeyImportContext extends ElementExtendableManagedObject {
     private AttributeExtensibleString password;
     private AttributeExtensibleByteArray pkcs12Data;
     private Map<String,Object> properties;
+    private String securityZoneId;
 
 }

@@ -82,7 +82,7 @@ import java.util.Map;
 @XmlRootElement(name="IdentityProvider")
 @XmlType(name="IdentityProviderType", propOrder={"nameValue","identityProviderTypeValue","properties","identityProviderExtension","extensions"})
 @AccessorSupport.AccessibleResource(name ="identityProviders")
-public class IdentityProviderMO extends AccessibleObject {
+public class IdentityProviderMO extends SecurityZoneableObject {
 
     //- PUBLIC
 

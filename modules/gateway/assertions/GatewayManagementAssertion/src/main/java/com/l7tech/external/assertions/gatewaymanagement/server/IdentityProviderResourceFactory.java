@@ -14,6 +14,7 @@ import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.*;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -28,7 +29,7 @@ import static com.l7tech.gateway.api.IdentityProviderMO.*;
  * 
  */
 @ResourceFactory.ResourceType(type=IdentityProviderMO.class)
-public class IdentityProviderResourceFactory extends EntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader> {
+public class IdentityProviderResourceFactory extends SecurityZoneableEntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader> {
 
     //- PUBLIC
 
@@ -36,8 +37,9 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                                             final SecurityFilter securityFilter,
                                             final PlatformTransactionManager transactionManager,
                                             final IdentityProviderConfigManager identityProviderConfigManager,
-                                            final LdapConfigTemplateManager ldapConfigTemplateManager ) {
-        super( false, true, services, securityFilter, transactionManager, identityProviderConfigManager );
+                                            final LdapConfigTemplateManager ldapConfigTemplateManager,
+                                            final SecurityZoneManager securityZoneManager ) {
+        super( false, true, services, securityFilter, transactionManager, identityProviderConfigManager, securityZoneManager );
         this.ldapConfigTemplateManager = ldapConfigTemplateManager;
     }
 
@@ -80,6 +82,9 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                     EntityPropertiesHelper.getEnumText(identityProviderConfig.getCertificateValidationType()) );
         }
 
+        // handle SecurityZone
+        doSecurityZoneAsResource( identityProvider, identityProviderConfig );
+
         return identityProvider;
     }
 
@@ -112,6 +117,9 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         setProperties( identityProvider, identityProviderResource.getProperties(), identityProvider.getClass() );
         identityProvider.setCertificateValidationType( certificateValidationTypeFromProperties( identityProviderResource.getProperties() ) );
 
+        // handle SecurityZone
+        doSecurityZoneFromResource( identityProviderResource, identityProvider );
+
         return identityProvider;
     }
 
@@ -135,6 +143,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         } else {
             throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "cannot change provider type");
         }
+        oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     //- PRIVATE

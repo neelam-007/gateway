@@ -5,16 +5,14 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
-import com.l7tech.gateway.api.CertificateData;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PrivateKeyCreationContext;
-import com.l7tech.gateway.api.PrivateKeyMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
@@ -29,6 +27,7 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.*;
 import com.l7tech.util.Eithers.*;
 import com.l7tech.util.Functions.Nullary;
@@ -84,7 +83,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                       final ClusterPropertyCache clusterPropertyCache,
                                       final ClusterPropertyManager clusterPropertyManager,
                                       final DefaultKey defaultKey,
-                                      final ApplicationEventPublisher applicationEventPublisher ) {
+                                      final ApplicationEventPublisher applicationEventPublisher,
+                                      final SecurityZoneManager securityZoneManager ) {
         super( rbacServices, securityFilter, transactionManager );
         this.config = config;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
@@ -92,6 +92,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         this.clusterPropertyManager = clusterPropertyManager;
         this.defaultKey = defaultKey;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.securityZoneManager = securityZoneManager;
+
     }
 
     @Override
@@ -141,6 +143,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected private key");
 
         final PrivateKeyMO privateKeyResource = (PrivateKeyMO) resource;
+        final SecurityZone securityZone = getSecurityZone( privateKeyResource.getSecurityZoneId() );
 
         return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException,InvalidResourceException,PrivateKeyMO>>() {
             @Override
@@ -164,6 +167,23 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                 certificates );
                     } catch ( final Exception e ) {
                         throw new UpdateException( "Error setting new cert: " + ExceptionUtils.getMessage( e ), e );
+                    }
+
+                    // handle SecurityZone
+                    try {
+                        SsgKeyMetadata keyMetadata = null;
+                        if (securityZone != null)
+                            keyMetadata = new SsgKeyMetadata(ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias(), securityZone);
+
+                        final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                        helper.doUpdateKeyMetadata(
+                                ssgKeyEntry.getKeystoreId(),
+                                ssgKeyEntry.getAlias(),
+                                keyMetadata
+                        );
+
+                    } catch ( final Exception e ) {
+                        throw new UpdateException( "Error updating security zone reference: " + ExceptionUtils.getMessage( e ), e );
                     }
 
                     return right2( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );
@@ -342,6 +362,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     public PrivateKeyMO createPrivateKey( final Map<String,String> selectorMap,
                                           final PrivateKeyCreationContext resource ) throws InvalidResourceException, InvalidResourceSelectors {
         final Pair<Goid,String> keyId = getKeyId( selectorMap );
+        final SecurityZone securityZone = getSecurityZone( resource.getSecurityZoneId() );
+
         return extract( transactional( new TransactionalCallback<Either<InvalidResourceException,PrivateKeyMO>>(){
             @Override
             public Either<InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
@@ -359,6 +381,11 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     final int expiryDays = getProperty( properties, PROP_DAYS_UNTIL_EXPIRY, some( DEFAULT_CERTIFICATE_EXPIRY_DAYS ), Integer.class ).some();
                     final boolean makeCaCert = getProperty( properties, PROP_CA_CAPABLE, some( false ), Boolean.class).some();
                     final Option<String> signatureHashAlgorithm = getProperty( properties, PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
+                    // handle SecurityZone
+                    SsgKeyMetadata keyMetadata = null;
+                    if (securityZone != null) {
+                        keyMetadata = new SsgKeyMetadata( keystoreId, alias, securityZone );
+                    }
 
                     try {
                         final KeyGenParams keyGenParams = curveName.isSome() ?
@@ -368,7 +395,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         helper.doGenerateKeyPair(
                                 keystoreId,
                                 alias,
-                                null, // TODO metadata for security zone
+                                keyMetadata, // set metadata for security zone
                                 new X500Principal(dn, ValidationUtils.getOidKeywordMap()),
                                 keyGenParams,
                                 expiryDays,
@@ -397,6 +424,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     public PrivateKeyMO importPrivateKey( final Map<String,String> selectorMap,
                                           final PrivateKeyImportContext resource ) throws InvalidResourceException, InvalidResourceSelectors {
         final Pair<Goid,String> keyId = getKeyId( selectorMap );
+        final SecurityZone securityZone = getSecurityZone( resource.getSecurityZoneId() );
+
+
         return extract( transactional( new TransactionalCallback<Either<InvalidResourceException, PrivateKeyMO>>() {
             @Override
             public Either<InvalidResourceException, PrivateKeyMO> execute() throws ObjectModelException {
@@ -407,11 +437,16 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 final byte[] pkcs12bytes = resource.getPkcs12Data();
                 final char[] pkcs12pass = resource.getPassword().toCharArray();
                 String pkcs12alias = resource.getAlias();
+                // handle SecurityZone
+                SsgKeyMetadata keyMetadata = null;
+                if (securityZone != null) {
+                    keyMetadata = new SsgKeyMetadata( keystoreId, alias, securityZone );
+                }
 
                 try {
                     final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
                     return right( buildPrivateKeyResource(
-                            helper.doImportKeyFromKeyStoreFile(keystoreId, alias, null, pkcs12bytes, "PKCS12", pkcs12pass, pkcs12pass, pkcs12alias),  // TODO metadata for security zone
+                            helper.doImportKeyFromKeyStoreFile(keystoreId, alias, keyMetadata, pkcs12bytes, "PKCS12", pkcs12pass, pkcs12pass, pkcs12alias),
                             Option.<Collection<SpecialKeyType>>none() ) );
                 } catch ( AliasNotFoundException e ) {
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Aliases not found : " + pkcs12alias ) );
@@ -558,6 +593,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private final ClusterPropertyManager clusterPropertyManager;
     private final DefaultKey defaultKey;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final SecurityZoneManager securityZoneManager;
 
     private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
         return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
@@ -613,6 +649,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         privateKey.setAlias( ssgKeyEntry.getAlias() );
         privateKey.setCertificateChain( buildCertificateChain( ssgKeyEntry ) );
         privateKey.setProperties( buildProperties( ssgKeyEntry, keyTypes ) );
+
+        // handle SecurityZone
+        doSecurityZoneAsResource( privateKey, ssgKeyEntry );
 
         return privateKey;
     }
@@ -815,4 +854,34 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         } );
     }
 
+    private void doSecurityZoneAsResource(PrivateKeyMO resource, final SsgKeyEntry zoneable) {
+        if (zoneable.getSecurityZone() != null) {
+            resource.setSecurityZoneId( zoneable.getSecurityZone().getId() );
+            resource.setSecurityZone( zoneable.getSecurityZone().getName() );
+        }
+    }
+
+    private SecurityZone getSecurityZone(final String zoneId) throws InvalidResourceException {
+        if (zoneId != null && !zoneId.isEmpty()) {
+            final Goid securityZoneGoid;
+            try {
+                securityZoneGoid = Goid.parseGoid( zoneId );
+            } catch( IllegalArgumentException nfe ) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
+            }
+            try {
+                SecurityZone zone = securityZoneManager.findByPrimaryKey( securityZoneGoid );
+                if ( zone == null )
+                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
+                if ( !zone.permitsEntityType(EntityType.SSG_KEY_METADATA) )
+                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "entity type not permitted for referenced security zone");
+
+                return zone;
+
+            } catch (FindException e) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
+            }
+        }
+        return null;
+    }
 }

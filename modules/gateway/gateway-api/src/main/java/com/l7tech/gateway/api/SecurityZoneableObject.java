@@ -31,6 +31,7 @@ public abstract class SecurityZoneableObject extends AccessibleObject {
         set(this.securityZone, securityZone);
     }
 
+//    Omit from message for backwards compatibility
 //    @XmlElement(name="SecurityZone", required=false)
     protected AttributeExtensibleString getSecurityZoneValue() {
         return securityZone;

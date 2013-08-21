@@ -66,22 +66,26 @@ public class SecurityZoneResourceFactory extends EntityManagerResourceFactory<Se
         securityZoneEntity.setName(zoneResource.getName());
         securityZoneEntity.setDescription( zoneResource.getDescription() );
 
-        List<EntityType> entityList = new ArrayList<EntityType>();
-        for (String en : zoneResource.getPermittedEntityTypes()) {
-            // Possible exception due to invalid input
-            final EntityType et;
-            try {
-                et = EntityType.valueOf( en );
-            } catch (IllegalArgumentException iae) {
-                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid security zoneable entity " + en);
-            }
+        if (zoneResource.getPermittedEntityTypes() != null && zoneResource.getPermittedEntityTypes().size() > 0) {
+            List<EntityType> entityList = new ArrayList<EntityType>();
+            for (String en : zoneResource.getPermittedEntityTypes()) {
+                // Possible exception due to invalid input
+                final EntityType et;
+                try {
+                    et = EntityType.valueOf( en );
+                } catch (IllegalArgumentException iae) {
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid security zoneable entity " + en);
+                }
 
-            if (et.isSecurityZoneable() || EntityType.ANY.equals( et ))
-                entityList.add( et );
-            else
-                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid security zoneable entity " + en );
+                if (et.isSecurityZoneable() || EntityType.ANY.equals( et ))
+                    entityList.add( et );
+                else
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid security zoneable entity " + en );
+            }
+            securityZoneEntity.getPermittedEntityTypes().addAll(entityList);
+        } else {
+            throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "empty permitted entity types" );
         }
-        securityZoneEntity.getPermittedEntityTypes().addAll(entityList);
 
         return securityZoneEntity;
     }

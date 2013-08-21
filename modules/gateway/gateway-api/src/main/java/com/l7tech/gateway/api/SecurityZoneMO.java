@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
@@ -39,7 +40,7 @@ public class SecurityZoneMO extends AccessibleObject {
     }
 
     public List<String> getPermittedEntityTypes() {
-        return unwrap(get( permittedEntityTypes ));
+        return unwrap(get( permittedEntityTypes, new ArrayList<AttributeExtensibleString>() ));
     }
 
     public void setPermittedEntityTypes(List<String> permittedEntityTypes) {

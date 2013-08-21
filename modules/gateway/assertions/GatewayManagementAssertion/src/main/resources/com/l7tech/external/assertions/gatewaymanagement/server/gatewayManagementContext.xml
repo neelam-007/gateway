@@ -102,6 +102,7 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="identityProviderConfigManager"/>
                     <constructor-arg index="4" ref="ldapTemplateManager"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="clusterPropertyManager"/>
@@ -137,6 +138,7 @@
                     <constructor-arg index="6" ref="clusterPropertyManager"/>
                     <constructor-arg index="7" ref="defaultKey"/>
                     <constructor-arg index="8" ref="applicationEventProxy"/>
+                    <constructor-arg index="9" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.RevocationCheckingPolicyResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="revocationCheckPolicyManager"/>
