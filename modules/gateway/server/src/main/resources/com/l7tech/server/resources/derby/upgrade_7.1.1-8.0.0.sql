@@ -10,7 +10,9 @@ UPDATE ssg_version SET current_version = '8.0.0';
 -- ********************************* OID'S NO LONGER EXIST AFTER THIS POINT ***************************************** --
 -- ****************************************************************************************************************** --
 
--- TODO fix FR-473 by renumbering rbac_permission -440 to -441 and inserting CREATE ANY POLICY as new -440
+-- FR-473 renumber rbac_permission -440 to -441 and insert CREATE ANY POLICY as new -440
+update rbac_permission set objectid = -441 where objectid = -440;
+insert into rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-440,0,-400,'CREATE',NULL,'POLICY');
 
 --
 -- Security Zones

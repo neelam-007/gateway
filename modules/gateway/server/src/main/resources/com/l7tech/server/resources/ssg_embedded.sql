@@ -1386,8 +1386,8 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -437),0, toGoid(0, -400),'CREATE',NULL,'UDDI_SERVICE_CONTROL');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -438),0, toGoid(0, -400),'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -439),0, toGoid(0, -400),'READ',NULL,'HTTP_CONFIGURATION');
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -440),0, toGoid(0, -400),'READ',NULL,'ENCAPSULATED_ASSERTION');
--- TODO Leaving hole here for fix to FR-473 mess-up (missing CREATE POLICY permission that is in the MySQL ssg.sql)
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -440),0, toGoid(0, -400),'CREATE',NULL,'POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -441),0, toGoid(0, -400),'READ',NULL,'ENCAPSULATED_ASSERTION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -442),0, toGoid(0, -400),'CREATE',NULL,'ASSERTION_ACCESS');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'READ',NULL,'ASSERTION_ACCESS');
 
