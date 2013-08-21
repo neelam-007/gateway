@@ -39,12 +39,12 @@ public class SiteMinderExternalReference extends ExternalReference {
         siteMinderConfiguration = config;
     }
 
-    protected SiteMinderExternalReference(final ExternalReferenceFinder finder, String name) {
+    protected SiteMinderExternalReference(final ExternalReferenceFinder finder, Goid agentGoid) {
         super(finder);
         try {
-            siteMinderConfiguration = getFinder().findSiteMinderConfigurationByName(name);
+            siteMinderConfiguration = getFinder().findSiteMinderConfigurationByID(agentGoid);
         } catch (FindException e) {
-            logger.warning("Cannot find the SiteMinder Configuration entity (name = " + name + ").");
+            logger.warning("Cannot find the SiteMinder Configuration entity (Goid = " + agentGoid + ").");
         }
     }
 
@@ -85,7 +85,6 @@ public class SiteMinderExternalReference extends ExternalReference {
             copy.copyFrom(siteMinderConfiguration);
             copy.setSecret(null);
             copy.setPasswordGoid(null);
-            copy.setGoid(PersistentEntity.DEFAULT_GOID);
             marshaller.marshal(copy, referenceElement);
 
         } catch (JAXBException e) {
@@ -98,9 +97,9 @@ public class SiteMinderExternalReference extends ExternalReference {
     protected boolean verifyReference() throws InvalidPolicyStreamException {
         if (siteMinderConfiguration != null) {
             try {
-                SiteMinderConfiguration localSiteMinderConfig = getFinder().findSiteMinderConfigurationByName(siteMinderConfiguration.getName());
+                SiteMinderConfiguration localSiteMinderConfig = getFinder().findSiteMinderConfigurationByID(siteMinderConfiguration.getGoid());
                 if (localSiteMinderConfig != null) {
-                    if (localSiteMinderConfig.equalsConfiguration(siteMinderConfiguration)) {
+                    if (localSiteMinderConfig.getGoid().equals(siteMinderConfiguration.getGoid())) {
                         return true;
                     }
                 }
@@ -116,11 +115,12 @@ public class SiteMinderExternalReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof SiteMinderCheckProtectedAssertion) {
                 final SiteMinderCheckProtectedAssertion assertion = (SiteMinderCheckProtectedAssertion) assertionToLocalize;
-                if (assertion.getAgentID().equalsIgnoreCase(siteMinderConfiguration.getName())) { // The purpose of "equals" is to find the right assertion and update it using localized value.
+                if (assertion.getAgentGoid().equals(siteMinderConfiguration.getGoid())) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {
                         try {
                             SiteMinderConfiguration config = getFinder().findSiteMinderConfigurationByID(identifier);
-                            assertion.setAgentID(config.getName());
+                            assertion.setAgentGoid(config.getGoid());
+                            assertion.setAgentId(config.getName());
                         } catch (FindException e) {
                             logger.info("Unable to find SiteMinder Configuration.");
                         }
@@ -148,7 +148,6 @@ public class SiteMinderExternalReference extends ExternalReference {
                     JAXBContext context = JAXBContext.newInstance(SiteMinderConfiguration.class);
                     Unmarshaller unmarshaller = context.createUnmarshaller();
                     SiteMinderConfiguration siteMinderConfiguration = (SiteMinderConfiguration) unmarshaller.unmarshal(child);
-                    siteMinderConfiguration.setGoid(PersistentEntity.DEFAULT_GOID);
                     siteMinderConfiguration.setPasswordGoid(null);
                     return new SiteMinderExternalReference(finder, siteMinderConfiguration);
 

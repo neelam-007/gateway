@@ -5,6 +5,7 @@ import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.EntityManagerStub;
 import org.springframework.context.ApplicationEvent;
 
@@ -16,7 +17,7 @@ public class SiteMinderConfigurationManagerStub extends EntityManagerStub<SiteMi
     }
 
     @Override
-    public SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(String name) throws FindException, SiteMinderApiClassException {
+    public SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(Goid goid) throws FindException, SiteMinderApiClassException {
         return null;
     }
 

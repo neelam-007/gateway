@@ -297,24 +297,4 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.setSecurityZone(other.getSecurityZone());
         this.setProperties(other.getProperties());
     }
-
-    public boolean equalsConfiguration(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SiteMinderConfiguration)) return false;
-
-        SiteMinderConfiguration that = (SiteMinderConfiguration) o;
-
-        if (cluster_threshold != that.cluster_threshold) return false;
-        if (enabled != that.enabled) return false;
-        if (fipsmode != that.fipsmode) return false;
-        if (noncluster_failover != that.noncluster_failover) return false;
-        if (updateSSOToken != that.updateSSOToken) return false;
-        if (address != null ? !address.equals(that.address) : that.address != null) return false;
-        if (agent_name != null ? !agent_name.equals(that.agent_name) : that.agent_name != null) return false;
-        if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
-        if (ipcheck != null ? !ipcheck.equals(that.ipcheck) : that.ipcheck != null) return false;
-        if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
-
-        return true;
-    }
 }

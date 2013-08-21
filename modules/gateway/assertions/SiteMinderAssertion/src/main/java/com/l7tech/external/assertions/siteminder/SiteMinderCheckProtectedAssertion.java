@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.siteminder;
 
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -25,18 +26,27 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
 
     public static final String DEFAULT_PREFIX = "siteminder";
 
-    private String agentID;
+    private Goid agentGoid;
 
+    private String agentId;
     private String protectedResource;
     private String action;
     private String prefix;
 
-    public String getAgentID() {
-        return agentID;
+    public Goid getAgentGoid() {
+        return agentGoid;
     }
 
-    public void setAgentID(String agentID) {
-        this.agentID = agentID;
+    public void setAgentGoid(Goid agentID) {
+        this.agentGoid = agentID;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
     }
 
     public String getProtectedResource() {
@@ -96,6 +106,8 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
@@ -148,4 +160,18 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
+
+    private final static String baseName = "Check Protected Resource with SiteMinder Policy Server";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderCheckProtectedAssertion>(){
+        @Override
+        public String getAssertionName( final SiteMinderCheckProtectedAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuffer name = new StringBuffer(baseName + ": ");
+            name.append(assertion.getAgentId());
+
+            return name.toString();
+        }
+    };
 }

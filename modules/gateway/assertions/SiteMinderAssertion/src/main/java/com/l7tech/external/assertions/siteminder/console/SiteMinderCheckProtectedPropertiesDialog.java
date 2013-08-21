@@ -7,9 +7,11 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -30,7 +32,7 @@ import java.util.regex.Pattern;
  */
 public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertiesOkCancelSupport<SiteMinderCheckProtectedAssertion> {
 
-    private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=",Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+    private static final Pattern AGENTID_PATTERN = Pattern.compile("^\\s*([a-zA-Z0-9]+).name\\s*=", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     private JPanel propertyPanel;
     private JComboBox agentComboBox;
@@ -51,11 +53,11 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         super.initComponents();
         prefixTargetVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         prefixTargetVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
-        DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<SiteMinderConfigurationKey> agentComboBoxModel = new DefaultComboBoxModel<>();
         populateAgentComboBoxModel(agentComboBoxModel);
         agentComboBox.setModel(agentComboBoxModel);
 
-        DefaultComboBoxModel<String> actionComboBoxModel = new DefaultComboBoxModel<>(new String[]{"GET","POST","PUT"});
+        DefaultComboBoxModel<String> actionComboBoxModel = new DefaultComboBoxModel<>(new String[]{"GET", "POST", "PUT"});
         actionComboBox.setModel(actionComboBoxModel);
 
         prefixTargetVariablePanel.addChangeListener(new ChangeListener() {
@@ -110,7 +112,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-               enableDisableComponents();
+                enableDisableComponents();
             }
         });
 
@@ -122,14 +124,15 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
     /**
      * populates agent combo box with agent IDs
+     *
      * @param agentComboBoxModel
      */
-    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
+    private void populateAgentComboBoxModel(DefaultComboBoxModel<SiteMinderConfigurationKey> agentComboBoxModel) {
 
         try {
-            java.util.List<String> agents = getSiteMinderAdmin().getAllSiteMinderConfigurationNames();
-            for (String agent: agents) {
-                agentComboBoxModel.addElement(agent);
+            java.util.List<SiteMinderConfiguration> agents = getSiteMinderAdmin().getAllSiteMinderConfigurations();
+            for (SiteMinderConfiguration agent : agents) {
+                agentComboBoxModel.addElement(new SiteMinderConfigurationKey(agent));
             }
 
         } catch (FindException e) {
@@ -146,6 +149,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
                 agentComboBox.getSelectedIndex() > -1
         );
     }
+
     /**
      * Configure the view with the data from the specified assertion bean.
      * This call should immediately configure all the editor widgets, before returning.
@@ -154,14 +158,22 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
      */
     @Override
     public void setData(SiteMinderCheckProtectedAssertion assertion) {
-        agentComboBox.setSelectedItem(assertion.getAgentID());
+        SiteMinderConfiguration config;
+        try {
+            if (assertion.getAgentGoid() != null) {
+                config = getSiteMinderAdmin().getSiteMinderConfiguration(assertion.getAgentGoid());
+                if (config != null) {
+                    agentComboBox.setSelectedItem(new SiteMinderConfigurationKey(config));
+                }
+            }
+        } catch (FindException e) {
+        }
         resourceTextField.setText(assertion.getProtectedResource());
         actionComboBox.getModel().setSelectedItem(assertion.getAction());
 
-        if(assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
+        if (assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
             prefixTargetVariablePanel.setVariable(assertion.getPrefix());
-        }
-        else {
+        } else {
             prefixTargetVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         }
     }
@@ -179,7 +191,8 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
      */
     @Override
     public SiteMinderCheckProtectedAssertion getData(SiteMinderCheckProtectedAssertion assertion) throws ValidationException {
-        assertion.setAgentID((String)agentComboBox.getSelectedItem());
+        assertion.setAgentGoid(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getGoid());
+        assertion.setAgentId(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getAgentId());
         assertion.setProtectedResource(resourceTextField.getText());
         assertion.setAction((String) actionComboBox.getSelectedItem());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
@@ -204,8 +217,48 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     }
 
 
-    private SiteMinderAdmin getSiteMinderAdmin(){
+    private SiteMinderAdmin getSiteMinderAdmin() {
         return Registry.getDefault().getSiteMinderConfigurationAdmin();
+    }
+
+    private static class SiteMinderConfigurationKey {
+        private String agentId;
+        private Goid goid;
+
+        private SiteMinderConfigurationKey(SiteMinderConfiguration config) {
+            agentId = config.getName();
+            goid = config.getGoid();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SiteMinderConfigurationKey)) return false;
+
+            SiteMinderConfigurationKey that = (SiteMinderConfigurationKey) o;
+
+            if (agentId != null ? !agentId.equals(that.agentId) : that.agentId != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return agentId != null ? agentId.hashCode() : 0;
+        }
+
+        @Override
+        public String toString() {
+            return agentId;
+        }
+
+        public Goid getGoid() {
+            return goid;
+        }
+
+        public String getAgentId() {
+            return agentId;
+        }
     }
 
 

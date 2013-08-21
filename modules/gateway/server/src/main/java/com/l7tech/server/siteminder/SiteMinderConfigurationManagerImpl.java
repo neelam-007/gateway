@@ -27,7 +27,7 @@ public class SiteMinderConfigurationManagerImpl
     extends HibernateEntityManager<SiteMinderConfiguration, EntityHeader>
     implements SiteMinderConfigurationManager {
 
-    protected final ConcurrentMap<String, SiteMinderLowLevelAgent> cache = new ConcurrentHashMap<String, SiteMinderLowLevelAgent>();
+    protected final ConcurrentMap<Goid, SiteMinderLowLevelAgent> cache = new ConcurrentHashMap<Goid, SiteMinderLowLevelAgent>();
 
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
@@ -45,11 +45,14 @@ public class SiteMinderConfigurationManagerImpl
     }
 
     @Override
-    public SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(String name) throws FindException, SiteMinderApiClassException {
-        SiteMinderLowLevelAgent agent = cache.get(name);
+    public SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(Goid goid) throws FindException, SiteMinderApiClassException {
+        SiteMinderLowLevelAgent agent = cache.get(goid);
         if (agent == null) {
-            agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(getSiteMinderConfiguration(name)));
-            cache.put(name, agent);
+            SiteMinderConfiguration c = findByPrimaryKey(goid);
+            if (c != null) {
+                agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(c));
+                cache.put(goid, agent);
+            }
         }
         return agent;
     }
@@ -67,11 +70,7 @@ public class SiteMinderConfigurationManagerImpl
             if (SiteMinderConfiguration.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final Goid[] ids = entityInvalidationEvent.getEntityIds();
                 for (final Goid id : ids) {
-                    try {
-                        SiteMinderConfiguration c = findByPrimaryKey(id);
-                        cache.remove(c.getName());
-                    } catch (FindException e) {
-                    }
+                    cache.remove(id);
                 }
             }
         }

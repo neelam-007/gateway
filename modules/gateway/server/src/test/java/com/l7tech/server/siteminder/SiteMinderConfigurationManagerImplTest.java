@@ -3,6 +3,7 @@ package com.l7tech.server.siteminder;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistentEntity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -23,6 +24,7 @@ public class SiteMinderConfigurationManagerImplTest {
             @Override
             public SiteMinderConfiguration findByUniqueName(String name) throws FindException {
                 SiteMinderConfiguration config = new SiteMinderConfiguration();
+                config.setGoid(PersistentEntity.DEFAULT_GOID);
                 config.setName("aw80");
                 config.setAddress("127.0.0.1");
                 config.setAgent_name("layer7-agent");
@@ -68,7 +70,7 @@ public class SiteMinderConfigurationManagerImplTest {
     @Ignore("Require siteminder connection")
     @Test
     public void testGetSiteMinderLowLevelAgent() throws Exception {
-        SiteMinderLowLevelAgent agent = manager.getSiteMinderLowLevelAgent("aw80");
+        SiteMinderLowLevelAgent agent = manager.getSiteMinderLowLevelAgent(PersistentEntity.DEFAULT_GOID);
         assertTrue(agent.isInitialized());
     }
 

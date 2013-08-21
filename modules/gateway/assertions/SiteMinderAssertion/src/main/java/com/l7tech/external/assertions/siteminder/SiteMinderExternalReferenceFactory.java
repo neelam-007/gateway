@@ -24,7 +24,7 @@ public class SiteMinderExternalReferenceFactory extends ExternalReferenceFactory
         if (!(assertion instanceof SiteMinderCheckProtectedAssertion)) {
             throw new IllegalArgumentException("The assertion is not a SiteMinder Check Protected Assertion.");
         }
-        return new SiteMinderExternalReference(finder, ((SiteMinderCheckProtectedAssertion) assertion).getAgentID());
+        return new SiteMinderExternalReference(finder, ((SiteMinderCheckProtectedAssertion) assertion).getAgentGoid());
     }
 
     @Override

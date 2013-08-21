@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import org.springframework.context.ApplicationListener;
 
 /**
@@ -29,12 +30,12 @@ public interface SiteMinderConfigurationManager extends EntityManager<SiteMinder
     /**
      * Retrieve SiteMinderLowLevelAgent by using a configuration name.
      *
-     * @param name The name of a SiteMinder configuration
+     * @param goid Unique identifier of a SiteMinder configuration
      * @return SiteMinderLowLevelAgent
      * @throws FindException thrown when errors finding the SiteMinder configuration entity
      * @throws SiteMinderApiClassException Thrown when failed to initialize SiteMinderLowLevelAgent.
      */
-    SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(String name) throws FindException, SiteMinderApiClassException;
+    SiteMinderLowLevelAgent getSiteMinderLowLevelAgent(Goid goid) throws FindException, SiteMinderApiClassException;
 
     /**
      * Validate the SiteMinderConfiguration with the provided configuration detail.

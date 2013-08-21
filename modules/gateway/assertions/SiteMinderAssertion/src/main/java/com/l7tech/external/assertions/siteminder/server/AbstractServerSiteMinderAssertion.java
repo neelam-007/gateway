@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -40,16 +41,16 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         this.manager = applicationContext.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class);
     }
 
-    protected void initSmAgentFromContext(String agentId, SiteMinderContext context) throws PolicyAssertionException {
+    protected void initSmAgentFromContext(Goid agentGoid, SiteMinderContext context) throws PolicyAssertionException {
         try {
             if (context.getAgent() == null) {
-                context.setAgent(manager.getSiteMinderLowLevelAgent(agentId));
+                context.setAgent(manager.getSiteMinderLowLevelAgent(agentGoid));
             }
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder agent API exception occurred, agentID=" + agentId);
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder agent API exception occurred, agent Goid=" + agentGoid);
             throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", ExceptionUtils.getDebugException(e));
         } catch (FindException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agentID=" + agentId);
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agent Goid=" + agentGoid);
             throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
         }
     }
