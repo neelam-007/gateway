@@ -471,8 +471,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     @Override
                     public String call(final FolderHeader folder) {
                         SecurityZone zone = null;
-                        if (folder.getSecurityZoneGoid() != null) {
-                            zone = SecurityZoneUtil.getSecurityZoneByGoid(folder.getSecurityZoneGoid());
+                        if (folder.getSecurityZoneId() != null) {
+                            zone = SecurityZoneUtil.getSecurityZoneByGoid(folder.getSecurityZoneId());
                         }
                         return zone == null ? NO_SECURITY_ZONE : zone.getName();
                     }

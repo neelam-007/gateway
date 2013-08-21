@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
@@ -16,7 +16,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="http_configuration")
-public class HttpConfiguration extends ZoneableGoidEntityImp implements UsesPrivateKeys {
+public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateKeys {
 
     //- PUBLIC
 

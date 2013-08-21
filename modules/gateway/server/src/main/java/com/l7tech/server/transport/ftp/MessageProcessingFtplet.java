@@ -4,8 +4,8 @@ import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HasServiceGoid;
-import com.l7tech.message.HasServiceGoidImpl;
+import com.l7tech.message.HasServiceId;
+import com.l7tech.message.HasServiceIdImpl;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -278,7 +278,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         request = requestMessage;
 
         if (!Goid.isDefault(hardwiredServiceGoid)) {
-            requestMessage.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
+            requestMessage.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
         }
 
         // process request message

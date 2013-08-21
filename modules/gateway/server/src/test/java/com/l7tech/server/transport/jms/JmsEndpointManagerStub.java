@@ -7,13 +7,13 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.JmsEndpointHeader;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 
 import java.util.Collection;
 
 /** @author alex */
-public class JmsEndpointManagerStub extends GoidEntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
+public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
 
     public JmsEndpointManagerStub() {
         super();

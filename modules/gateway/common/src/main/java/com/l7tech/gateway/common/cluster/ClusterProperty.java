@@ -6,7 +6,7 @@
  */
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityWithPropertiesImp;
+import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 @Proxy(lazy=false)
 @Table(name="cluster_properties")
 @AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
-public class ClusterProperty extends NamedGoidEntityWithPropertiesImp implements Comparable {
+public class ClusterProperty extends NamedEntityWithPropertiesImp implements Comparable {
     private static final long serialVersionUID = 1L;
     public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
     public static final String DESCRIPTION_PROPERTY_KEY = "description";

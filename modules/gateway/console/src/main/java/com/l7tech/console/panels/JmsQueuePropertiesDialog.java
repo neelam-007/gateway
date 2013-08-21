@@ -19,7 +19,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -949,7 +949,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void initializeView() {
         boolean isHardWired = false;
-        Goid hardWiredId = GoidEntity.DEFAULT_GOID;
+        Goid hardWiredId = PersistentEntity.DEFAULT_GOID;
         loadContentTypesModel();
         if ( connection != null ) {
             isTemplateQueue.setSelected(connection.isTemplate());

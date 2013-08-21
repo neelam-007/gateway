@@ -5,7 +5,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Charsets;
@@ -33,7 +33,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     InterfaceTagResourceFactory( final RbacServices rbacServices,
                                  final SecurityFilter securityFilter,
                                  final PlatformTransactionManager transactionManager,
-                                 final GoidEntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager ) {
+                                 final EntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager ) {
         super( false, rbacServices, securityFilter, transactionManager, clusterPropertyEntityHeaderEntityManager, "interfaceTags" );
     }
 

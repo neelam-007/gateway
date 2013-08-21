@@ -27,7 +27,7 @@ import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class TrustedEsmManagerImpl extends HibernateGoidEntityManager<TrustedEsm, EntityHeader> implements TrustedEsmManager {
+public class TrustedEsmManagerImpl extends HibernateEntityManager<TrustedEsm, EntityHeader> implements TrustedEsmManager {
     @Inject
     private RoleManager roleManager;
 

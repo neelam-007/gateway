@@ -10,7 +10,7 @@ import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -669,7 +669,7 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient( mockClient );
 
-        processJmsMessage( requestMessage1, 0, GoidEntity.DEFAULT_GOID );
+        processJmsMessage( requestMessage1, 0, PersistentEntity.DEFAULT_GOID );
     }
 
     /**

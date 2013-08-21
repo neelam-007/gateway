@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.*;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -276,7 +276,7 @@ public class FtpServerManager extends TransportModule {
      * @throws com.l7tech.server.transport.ListenerException if there is a problem creating the specified FTP server
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
-        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
+        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
         long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L);
         String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader overrideContentType = null;

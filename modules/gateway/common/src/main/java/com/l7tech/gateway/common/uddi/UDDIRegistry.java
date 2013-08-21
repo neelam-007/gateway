@@ -6,7 +6,7 @@ package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
@@ -21,7 +21,7 @@ import javax.persistence.Transient;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_registries")
-public class UDDIRegistry extends ZoneableNamedGoidEntityImp implements UsesPrivateKeys {
+public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateKeys {
 
     public enum UDDIRegistryType{
         CENTRASITE_ACTIVE_SOA("CentraSite ActiveSOA"),

@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -89,8 +89,8 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         updateListener = new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
-                if (event instanceof GoidEntityInvalidationEvent) {
-                    final GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) event;
+                if (event instanceof EntityInvalidationEvent) {
+                    final EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
                     if (eie.getEntityClass().equals(EncapsulatedAssertionConfig.class)) {
                         if (configOrError.isLeft()) {
                             // error may have been fixed through an import, so try to reload the config

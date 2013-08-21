@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * TODO ensure user mappings get delete when the corresponding user is deleted.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class TrustedEsmUserManagerImpl extends HibernateGoidEntityManager<TrustedEsmUser, EntityHeader> implements TrustedEsmUserManager {
+public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsmUser, EntityHeader> implements TrustedEsmUserManager {
     private static final Logger logger = Logger.getLogger(TrustedEsmUserManagerImpl.class.getName());
     private static final boolean PERMIT_MAPPING_UPDATE = ConfigFactory.getBooleanProperty("com.l7tech.server.remotetrust.permitMappingUpdate", true);
 

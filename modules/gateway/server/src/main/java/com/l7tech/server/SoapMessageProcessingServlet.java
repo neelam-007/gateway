@@ -15,7 +15,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
@@ -199,9 +199,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
 
-            final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
+            final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {
-                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
+                request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
             }
 
             final MimeKnob mk = request.getMimeKnob();

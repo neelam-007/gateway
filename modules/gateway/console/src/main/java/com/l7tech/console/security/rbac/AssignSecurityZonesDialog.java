@@ -15,7 +15,7 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.HasFolderGoid;
+import com.l7tech.objectmodel.folder.HasFolderId;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -171,9 +171,9 @@ public class AssignSecurityZonesDialog extends JDialog {
                     @Override
                     public String call(final EntityHeader header) {
                         String zoneName = StringUtils.EMPTY;
-                        if (header instanceof HasSecurityZoneGoid) {
-                            final HasSecurityZoneGoid zoneable = (HasSecurityZoneGoid) header;
-                            final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneGoid());
+                        if (header instanceof HasSecurityZoneId) {
+                            final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
+                            final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneId());
                             if (zone != null) {
                                 zoneName = zone.getName();
                             } else {
@@ -251,7 +251,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     headers.add(header);
                 }
                 dataModel.setSelectableObjects(headers);
-                boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderGoid || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
+                boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderId || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
                 showHidePathColumn(showPath);
             } catch (final FindException ex) {
                 final String error = "Error retrieving entities of type " + selected;
@@ -266,8 +266,8 @@ public class AssignSecurityZonesDialog extends JDialog {
         final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
         final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
         try {
-            if (header instanceof HasFolderGoid) {
-                path = entityNameResolver.getPath((HasFolderGoid) header);
+            if (header instanceof HasFolderId) {
+                path = entityNameResolver.getPath((HasFolderId) header);
             } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
                 final String assname = assertionNames.get(header.getGoid());
                 final Assertion assertion = assname == null ? null : assertionRegistry.findByClassName(assname);
@@ -318,7 +318,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 try {
                     final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                     for (final EntityHeader header : selectedEntities) {
-                        if (GoidEntity.DEFAULT_GOID.equals(header.getGoid()) || GoidRange.WRAPPED_OID.isInRange(header.getGoid())) {
+                        if (PersistentEntity.DEFAULT_GOID.equals(header.getGoid()) || GoidRange.WRAPPED_OID.isInRange(header.getGoid())) {
                             final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
                             // save a new assertion access
                             final String assertionClassName = assertionNames.get(header.getGoid());
@@ -420,9 +420,9 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
 
         private void setZoneOnHeader(final SecurityZone selectedZone, final EntityHeader header) {
-            if (header instanceof HasSecurityZoneGoid) {
-                final HasSecurityZoneGoid zoneable = (HasSecurityZoneGoid) header;
-                zoneable.setSecurityZoneGoid(selectedZone == null ? null : selectedZone.getGoid());
+            if (header instanceof HasSecurityZoneId) {
+                final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
+                zoneable.setSecurityZoneId(selectedZone == null ? null : selectedZone.getGoid());
             }
         }
     }

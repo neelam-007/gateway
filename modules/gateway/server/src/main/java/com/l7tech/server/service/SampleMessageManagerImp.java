@@ -2,7 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -21,7 +21,7 @@ import java.util.List;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SampleMessageManagerImp
-        extends HibernateGoidEntityManager<SampleMessage, EntityHeader>
+        extends HibernateEntityManager<SampleMessage, EntityHeader>
         implements SampleMessageManager
 {
     private static final String PROP_SERVICE_GOID = "serviceGoid";

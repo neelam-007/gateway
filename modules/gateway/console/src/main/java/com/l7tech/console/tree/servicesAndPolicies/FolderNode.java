@@ -43,7 +43,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         folder.setGoid(folderHeader.getGoid());
         folder.setVersion(folderHeader.getVersion());
         SecurityZone zone = null;
-        final Goid securityZoneGoid = folderHeader.getSecurityZoneGoid();
+        final Goid securityZoneGoid = folderHeader.getSecurityZoneId();
         if (securityZoneGoid != null) {
             zone = SecurityZoneUtil.getSecurityZoneByGoid(securityZoneGoid);
             if (zone == null) {

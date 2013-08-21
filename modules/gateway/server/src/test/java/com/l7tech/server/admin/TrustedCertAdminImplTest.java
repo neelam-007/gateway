@@ -185,7 +185,7 @@ public class TrustedCertAdminImplTest {
 
     @Test
     public void saveOrUpdateMetadataCreate() throws Exception {
-        metadata.setGoid(GoidEntity.DEFAULT_GOID);
+        metadata.setGoid(PersistentEntity.DEFAULT_GOID);
         admin.saveOrUpdateMetadata(metadata);
         verify(ssgKeyMetadataManager).save(metadata);
     }

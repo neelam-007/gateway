@@ -19,7 +19,7 @@ public class SslSsgConnectorDependencyProcessor extends BaseDependencyProcessor<
         String keyAlias = connector.getKeyAlias();
         Goid keyStoreId = connector.getKeystoreGoid();
         //add the ssg private key as a dependency
-        List<Entity> dependentEntities = finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, keyStoreId == null ? GoidEntity.DEFAULT_GOID : keyStoreId, keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
+        List<Entity> dependentEntities = finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, keyStoreId == null ? PersistentEntity.DEFAULT_GOID : keyStoreId, keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
         return finder.getDependenciesFromEntities(connector, finder, dependentEntities);
     }
 }

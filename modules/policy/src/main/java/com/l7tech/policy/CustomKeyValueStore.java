@@ -1,11 +1,10 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
@@ -16,7 +15,7 @@ import javax.xml.bind.annotation.XmlType;
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="custom_key_value_store")
-public class CustomKeyValueStore extends NamedGoidEntityImp {
+public class CustomKeyValueStore extends NamedEntityImp {
 
     private byte[] value;
 

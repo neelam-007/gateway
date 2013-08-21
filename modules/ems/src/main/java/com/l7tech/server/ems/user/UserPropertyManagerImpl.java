@@ -4,7 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -24,7 +24,7 @@ import java.util.Map;
  */
 @Transactional(propagation=Propagation.REQUIRED)
 public class UserPropertyManagerImpl
-        extends HibernateGoidEntityManager<UserProperty, EntityHeader>
+        extends HibernateEntityManager<UserProperty, EntityHeader>
         implements UserPropertyManager {
 
     @Override

@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.message.HasServiceGoid;
+import com.l7tech.message.HasServiceId;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.EntityType;
@@ -23,11 +23,11 @@ import java.util.regex.Pattern;
  * Resolves services based on the Service OID that is passed in the original
  * url or at the end of uri. The format expected is <i>/service/3145729</i>.
  *
- * Also resolves using the HasServiceGoid message facet.
+ * Also resolves using the HasServiceId message facet.
  */
 public class ServiceIdResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
-    // when disabled we still support HasServiceGoid for hard coded service resolution
+    // when disabled we still support HasServiceId for hard coded service resolution
     private final AtomicBoolean enabled = new AtomicBoolean(true);
     private final AtomicBoolean enableOriginalUrlHeader = new AtomicBoolean(true);
 
@@ -73,7 +73,7 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
      */
     @Override
     protected String getRequestValue(Message request) throws ServiceResolutionException {
-        HasServiceGoid hso = request.getKnob( HasServiceGoid.class );
+        HasServiceId hso = request.getKnob( HasServiceId.class );
         if ( hso != null && !Goid.isDefault(hso.getServiceGoid()) ) return Goid.toString( hso.getServiceGoid() );
 
         if ( !enabled.get() || regexPatterns == null) { // compile failed

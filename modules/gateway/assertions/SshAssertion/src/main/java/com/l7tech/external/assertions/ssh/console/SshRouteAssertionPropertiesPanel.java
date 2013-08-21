@@ -13,7 +13,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.message.CommandKnob;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityUtil;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -133,8 +133,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 // save selection
-                final Option<Goid> selectedPasswordGoid = optional(passwordField.getSelectedSecurePassword()).map(GoidEntityUtil.goid());
-                final Option<Goid> selectedPrivateKeyGoid = optional( privateKeyField.getSelectedSecurePassword() ).map( GoidEntityUtil.goid() );
+                final Option<Goid> selectedPasswordGoid = optional(passwordField.getSelectedSecurePassword()).map(PersistentEntityUtil.goid());
+                final Option<Goid> selectedPrivateKeyGoid = optional( privateKeyField.getSelectedSecurePassword() ).map( PersistentEntityUtil.goid() );
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {

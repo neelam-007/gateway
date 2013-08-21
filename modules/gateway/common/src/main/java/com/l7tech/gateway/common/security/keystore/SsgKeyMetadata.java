@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.security.keystore;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="keystore_key_metadata")
-public class SsgKeyMetadata extends ZoneableGoidEntityImp {
+public class SsgKeyMetadata extends ZoneableEntityImp {
 
     Goid keystoreGoid;
     String alias;

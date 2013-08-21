@@ -2,8 +2,8 @@ package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.objectmodel.SaveException;
 
 /**
@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.SaveException;
  *
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
-public interface LicenseDocumentManager extends GoidEntityManager<LicenseDocument, EntityHeader> {
+public interface LicenseDocumentManager extends EntityManager<LicenseDocument, EntityHeader> {
 
     // TODO jwilliams: find a better way to handle the problem with the read only findAll() implementation
 

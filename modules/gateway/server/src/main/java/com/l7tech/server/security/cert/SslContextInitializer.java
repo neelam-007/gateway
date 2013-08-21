@@ -4,7 +4,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.event.EntityClassEvent;
@@ -229,7 +229,7 @@ public class SslContextInitializer {
             }
 
             try {
-                return ssgKeyStoreManager.lookupKeyByKeyAlias( alias, GoidEntity.DEFAULT_GOID).getCertificateChain();
+                return ssgKeyStoreManager.lookupKeyByKeyAlias( alias, PersistentEntity.DEFAULT_GOID).getCertificateChain();
             } catch ( ObjectNotFoundException e ) {
                 logger.log( Level.INFO, "Error getting certificate chain (not found for alias '"+alias+"').");
             } catch ( FindException e ) {
@@ -248,7 +248,7 @@ public class SslContextInitializer {
             }
 
             try {
-                return ssgKeyStoreManager.lookupKeyByKeyAlias( alias, GoidEntity.DEFAULT_GOID ).getPrivateKey();
+                return ssgKeyStoreManager.lookupKeyByKeyAlias( alias, PersistentEntity.DEFAULT_GOID ).getPrivateKey();
             } catch ( ObjectNotFoundException e ) {
                 logger.log( Level.INFO, "Error getting private key (not found for alias '"+alias+"').");
             } catch ( UnrecoverableKeyException e ) {

@@ -52,7 +52,7 @@ public class MemberOfGroup extends IdentityAssertion {
 
     private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
     private void mapGroupId(){
-        if(getGroupId()!=null && getGroupId().length()!=32 && getIdentityProviderOid()!=null && !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+        if(getGroupId()!=null && getGroupId().length()!=32 && getIdentityProviderOid()!=null && !getIdentityProviderOid().equals(PersistentEntity.DEFAULT_GOID)){
             try{
                 Long groupOidId = Long.parseLong(getGroupId());
                 if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){

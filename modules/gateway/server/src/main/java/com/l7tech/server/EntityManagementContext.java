@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +19,7 @@ public class EntityManagementContext {
         this.entityManagerProviders = entityManagerProviders;
     }
 
-    public <EM extends GoidEntityManager> EM getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
+    public <EM extends EntityManager> EM getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
         for ( final EntityManagerProvider provider : entityManagerProviders ) {
             final Option<EM> manager = provider.getEntityManager( entityManager );
             if ( manager.isSome() ) {
@@ -46,7 +46,7 @@ public class EntityManagementContext {
          * @see Option#none
          */
         @NotNull
-        <EM extends GoidEntityManager> Option<EM> getEntityManager( @NotNull Class<EM> entityManager ) throws EntityManagerException;
+        <EM extends EntityManager> Option<EM> getEntityManager( @NotNull Class<EM> entityManager ) throws EntityManagerException;
     }
 
     public static class EntityManagerException extends Exception {

@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 
@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class TestTrustedCertManager extends GoidEntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager, TrustedCertCache {
+public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager, TrustedCertCache {
 
     private final DefaultKey defaultKey;
 

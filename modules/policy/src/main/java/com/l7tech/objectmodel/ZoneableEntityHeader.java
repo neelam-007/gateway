@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * EntityHeader for an entity that has a SecurityZone.
  */
-public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZoneGoid {
+public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZoneId {
     protected Goid securityZoneGoid;
 
     public ZoneableEntityHeader() {
@@ -26,11 +26,11 @@ public class ZoneableEntityHeader extends EntityHeader implements HasSecurityZon
     }
 
     @Nullable
-    public Goid getSecurityZoneGoid() {
+    public Goid getSecurityZoneId() {
         return securityZoneGoid;
     }
 
-    public void setSecurityZoneGoid(@Nullable Goid securityZoneGoid) {
+    public void setSecurityZoneId(@Nullable Goid securityZoneGoid) {
         this.securityZoneGoid = securityZoneGoid;
     }
 }

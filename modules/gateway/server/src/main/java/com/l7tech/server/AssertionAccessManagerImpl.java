@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * Entity manager for AssertionAccess entities.
  */
-public class AssertionAccessManagerImpl extends HibernateGoidEntityManager<AssertionAccess, EntityHeader> implements AssertionAccessManager {
+public class AssertionAccessManagerImpl extends HibernateEntityManager<AssertionAccess, EntityHeader> implements AssertionAccessManager {
     private static final Logger logger = Logger.getLogger(AssertionAccessManagerImpl.class.getName());
     private static final long CACHE_TIME = 3000L;
 

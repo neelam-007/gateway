@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Entity manager for persistent {@link SsgKeyMetadata} instances.
  */
-public interface SsgKeyMetadataManager extends GoidEntityManager<SsgKeyMetadata, EntityHeader> {
+public interface SsgKeyMetadataManager extends EntityManager<SsgKeyMetadata, EntityHeader> {
     /**
      * Finds (but does not attach) metadata for the specified key entry.
      *

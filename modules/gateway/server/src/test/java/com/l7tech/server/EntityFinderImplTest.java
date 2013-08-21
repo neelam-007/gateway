@@ -82,7 +82,7 @@ public class EntityFinderImplTest {
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneId)header).getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.SERVICE, header.getType());
@@ -102,7 +102,7 @@ public class EntityFinderImplTest {
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneId)header).getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertEquals(EntityType.JDBC_CONNECTION, header.getType());
@@ -120,7 +120,7 @@ public class EntityFinderImplTest {
 
         assertEquals(1, found.size());
         final EntityHeader header = found.iterator().next();
-        assertEquals(ZONE_GOID, ((HasSecurityZoneGoid)header).getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, ((HasSecurityZoneId)header).getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertNull(header.getName());
         assertEquals(EntityType.SERVICE_ALIAS, header.getType());

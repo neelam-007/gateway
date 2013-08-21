@@ -8,7 +8,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
@@ -39,7 +39,7 @@ public class ApiPlanManagerTest {
     @Mock
     private GenericEntityManager genericEntityManager;
     @Mock
-    private GoidEntityManager<ApiPlan, GenericEntityHeader> entityManager;
+    private EntityManager<ApiPlan, GenericEntityHeader> entityManager;
     @Mock
     private ApplicationEventProxy applicationEventProxy;
 
@@ -575,7 +575,7 @@ public class ApiPlanManagerTest {
         final ApiPlan plan = createApiPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML);
         manager.getCache().put("p1", plan);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 
@@ -587,7 +587,7 @@ public class ApiPlanManagerTest {
     public void onApplicationEventNotGenericEntity() throws Exception {
         manager.getCache().put("p1", createApiPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML));
         manager.getNameCache().put(new Goid(0,1234L), "p1");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});;
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});;
 
         manager.onApplicationEvent(event);
 
@@ -612,7 +612,7 @@ public class ApiPlanManagerTest {
         final ApiPlan plan = createApiPlan(new Goid(0,1234L), "p1", PLAN_NAME, DATE, POLICY_XML);
         manager.getCache().put("p1", plan);
         manager.getNameCache().put(new Goid(0,1234L), "p1");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(plan, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{EntityInvalidationEvent.CREATE});
 
         manager.onApplicationEvent(event);
 

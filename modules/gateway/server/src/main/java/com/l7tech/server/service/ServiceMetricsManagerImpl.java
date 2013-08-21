@@ -106,7 +106,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         // Enforces RBAC permissions.
         final Set<Goid> filteredGoids = filterPermittedPublishedServices(serviceGoids);
         if (filteredGoids != null && includeEmpty) {
-            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service GOID of DEFAULT_GOID.
+            filteredGoids.add(PersistentEntity.DEFAULT_GOID);      // Empty uptime bins have service GOID of DEFAULT_GOID.
         }
         if (filteredGoids != null && filteredGoids.isEmpty()) {
             return Collections.emptyList();     // No bins can possibly be found.
@@ -202,7 +202,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         // Enforces RBAC permissions.
         final Set<Goid> filteredGoids = filterPermittedPublishedServices(serviceGoids);
         if (filteredGoids != null && includeEmpty) {
-            filteredGoids.add(GoidEntity.DEFAULT_GOID);      // Empty uptime bins have service OID of DEFAULT_GOID
+            filteredGoids.add(PersistentEntity.DEFAULT_GOID);      // Empty uptime bins have service OID of DEFAULT_GOID
         }
         if (filteredGoids != null && filteredGoids.isEmpty()) {
             return null;    // No bins can possibly be found.

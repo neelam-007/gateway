@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.security.password;
 
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -15,7 +15,7 @@ import java.util.Date;
 @Entity
 @Proxy(lazy=false)
 @Table(name="secure_password")
-public class SecurePassword extends ZoneableNamedGoidEntityImp {
+public class SecurePassword extends ZoneableNamedEntityImp {
 
     public static enum SecurePasswordType {
         @XmlEnumValue("Password")

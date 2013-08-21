@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.*;
  *
  * @author Steve Jones
  */
-public interface RevocationCheckPolicyManager extends GoidEntityManager<RevocationCheckPolicy, EntityHeader> {
+public interface RevocationCheckPolicyManager extends EntityManager<RevocationCheckPolicy, EntityHeader> {
     /**
      * Update any policies flagged as default.
      */

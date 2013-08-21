@@ -20,8 +20,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderGoid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.folder.HasFolderId;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -582,7 +582,7 @@ public class EntityNameResolverTest {
 
     @Test
     public void getNameForNamedEntity() throws Exception {
-        assertEquals(NAME, resolver.getNameForEntity(new NamedGoidEntityImp() {
+        assertEquals(NAME, resolver.getNameForEntity(new NamedEntityImp() {
             @Override
             public String getName() {
                 return NAME;
@@ -833,7 +833,7 @@ public class EntityNameResolverTest {
         }
     }
 
-    private class HasFolderOidStub extends EntityHeader implements HasFolderGoid {
+    private class HasFolderOidStub extends EntityHeader implements HasFolderId {
         private Goid folderGoid;
 
         private HasFolderOidStub(final Goid folderGoid) {
@@ -841,13 +841,13 @@ public class EntityNameResolverTest {
         }
 
         @Override
-        public Goid getFolderGoid() {
+        public Goid getFolderId() {
             return folderGoid;
         }
 
         @Override
-        public void setFolderGoid(final Goid folderGoid) {
-            this.folderGoid = folderGoid;
+        public void setFolderId(final Goid folderId) {
+            this.folderGoid = folderId;
         }
     }
 }

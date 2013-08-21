@@ -3,8 +3,8 @@ package com.l7tech.server.jdbc;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,11 +21,11 @@ import java.util.StringTokenizer;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class JdbcConnectionManagerImpl
-    extends HibernateGoidEntityManager<JdbcConnection, EntityHeader>
+    extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
 
     @Override
-    public Class<? extends GoidEntity> getImpClass() {
+    public Class<? extends PersistentEntity> getImpClass() {
         return JdbcConnection.class;
     }
 

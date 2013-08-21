@@ -17,7 +17,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -717,7 +717,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testSystemAuditRecordFields() throws Exception {
-        SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, GoidEntity.DEFAULT_GOID, null, null, "Dancing", "1.2.3.4");
+        SystemAuditRecord rec = new SystemAuditRecord(Level.WARNING, "node1", Component.GW_CSR_SERVLET, "CSR servlet is dancing!", true, PersistentEntity.DEFAULT_GOID, null, null, "Dancing", "1.2.3.4");
         final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "system");
         expandAndCheck(c, "${audit.levelStr}", "WARNING");

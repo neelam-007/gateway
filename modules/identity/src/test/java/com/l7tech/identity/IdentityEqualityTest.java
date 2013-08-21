@@ -73,7 +73,7 @@ public class IdentityEqualityTest {
     }
 
     /**
-     * Test that {@link com.l7tech.objectmodel.GoidEntity#getVersion} is not con
+     * Test that {@link com.l7tech.objectmodel.PersistentEntity#getVersion} is not con
      * @throws Exception
      */
     @Test
@@ -88,7 +88,7 @@ public class IdentityEqualityTest {
     }
 
     /**
-     * Test that {@link com.l7tech.objectmodel.GoidEntity#getVersion} is not con
+     * Test that {@link com.l7tech.objectmodel.PersistentEntity#getVersion} is not con
      * @throws Exception
      */
     @Test

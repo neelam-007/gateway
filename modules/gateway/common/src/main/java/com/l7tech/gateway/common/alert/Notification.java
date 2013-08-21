@@ -5,14 +5,14 @@
  */
 package com.l7tech.gateway.common.alert;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.Set;
 
 /**
  * A configuration record for an audit alert action.
  */
-public abstract class Notification extends NamedGoidEntityImp {
+public abstract class Notification extends NamedEntityImp {
     private Set events;
 
     public Set getEvents() {

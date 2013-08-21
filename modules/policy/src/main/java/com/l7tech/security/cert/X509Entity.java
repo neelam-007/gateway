@@ -1,7 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Type;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * and {@link TrustedCert}.
  */
 @MappedSuperclass
-public abstract class X509Entity extends GoidEntityImp {
+public abstract class X509Entity extends PersistentEntityImp {
     private static final Logger logger = Logger.getLogger(X509Entity.class.getName());
 
     private X509Certificate cachedCert;

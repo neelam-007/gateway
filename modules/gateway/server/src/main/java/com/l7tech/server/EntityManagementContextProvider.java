@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.server.EntityManagementContext.EntityManagerException;
 import com.l7tech.server.EntityManagementContext.EntityManagerProvider;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
@@ -86,7 +86,7 @@ public class EntityManagementContextProvider {
 
         @NotNull
         @Override
-        public <EM extends GoidEntityManager> Option<EM> getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
+        public <EM extends EntityManager> Option<EM> getEntityManager( @NotNull final Class<EM> entityManager ) throws EntityManagerException {
             try {
                 return some( beanFactory.getBean( entityManager ) );
             } catch ( final BeansException e ) {

@@ -78,7 +78,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Inject
     private Config config;
 
-    private static final String DEFAULT_ID = Goid.toString(GoidEntity.DEFAULT_GOID);
+    private static final String DEFAULT_ID = Goid.toString(PersistentEntity.DEFAULT_GOID);
 
     public IdentityAdminImpl(final RoleManager roleManager,
                              final IdentityProviderPasswordPolicyManager passwordPolicyManger,

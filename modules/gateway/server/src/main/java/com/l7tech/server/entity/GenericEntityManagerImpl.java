@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -35,7 +35,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * Implementation of GenericEntityManager.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class GenericEntityManagerImpl extends HibernateGoidEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager, ApplicationContextAware {
+public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(GenericEntityManagerImpl.class.getName());
 
     public static final String F_CLASSNAME = "entityClassName";
@@ -96,10 +96,10 @@ public class GenericEntityManagerImpl extends HibernateGoidEntityManager<Generic
 
     @Override
     @Transactional(readOnly=true)
-    public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull final Class<ET> entityClass) {
+    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull final Class<ET> entityClass) {
         // Get delegate from Spring so it has tx wrappers
         final GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
-        return new GoidEntityManager<ET, GenericEntityHeader>() {
+        return new EntityManager<ET, GenericEntityHeader>() {
             @Override
             public ET findByPrimaryKey(long oid) throws FindException {
                 throw new UnsupportedOperationException("Generic entities do not support oids anymore.");
@@ -318,7 +318,7 @@ public class GenericEntityManagerImpl extends HibernateGoidEntityManager<Generic
             throw new FindException(regmsg(entityClass));
 
         Map<Goid, Integer> result = new HashMap<Goid, Integer>();
-        if (!GoidEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
+        if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
         FlushMode old = null;

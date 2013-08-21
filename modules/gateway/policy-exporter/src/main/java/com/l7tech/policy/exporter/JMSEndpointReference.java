@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.util.*;
@@ -74,7 +74,7 @@ public class JMSEndpointReference extends ExternalReference {
             try {
                 output.goid = GoidUpgradeMapper.mapOid(EntityType.JMS_ENDPOINT, Long.parseLong(val));
             } catch (NumberFormatException nfe) {
-                output.goid = GoidEntity.DEFAULT_GOID;
+                output.goid = PersistentEntity.DEFAULT_GOID;
             }
         }
 

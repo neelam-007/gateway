@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.folder.HasFolderGoid;
+import com.l7tech.objectmodel.folder.HasFolderId;
 
 /**
  * When dealing with Services and Policies they have a lot in common - they can be put into folders and they
@@ -11,19 +11,19 @@ import com.l7tech.objectmodel.folder.HasFolderGoid;
  *
  * @author darmstrong
  */
-public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implements Aliasable, HasFolderGoid {
+public abstract class OrganizationHeader extends ZoneableGuidEntityHeader implements Aliasable, HasFolderId {
     protected OrganizationHeader(Goid goid, EntityType type, String name, String description, int version) {
         super(goid, type, name, description, version);
     }
 
     @Override
-    public Goid getFolderGoid() {
+    public Goid getFolderId() {
         return folderGoid;
     }
 
     @Override
-    public void setFolderGoid(Goid folderGoid) {
-        this.folderGoid = folderGoid;
+    public void setFolderId(Goid folderId) {
+        this.folderGoid = folderId;
     }
 
     @Override

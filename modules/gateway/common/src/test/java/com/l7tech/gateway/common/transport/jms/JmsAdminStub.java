@@ -57,7 +57,7 @@ public class JmsAdminStub implements JmsAdmin {
     @Override
     public synchronized Goid saveConnection(JmsConnection connection) throws SaveException, VersionException {
         Goid goid = connection.getGoid();
-        if (goid == null || goid.equals(GoidEntity.DEFAULT_GOID)) {
+        if (goid == null || goid.equals(PersistentEntity.DEFAULT_GOID)) {
             goid = new Goid(0,StubDataStore.defaultStore().nextObjectId());
         }
         connection.setGoid(goid);

@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.folder.HasFolderGoid;
+import com.l7tech.objectmodel.folder.HasFolderId;
 
 /**
  * EntityHeader for Aliases.
@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.folder.HasFolderGoid;
  * <p>Extension of entity header with additional data for the target of the
  * alias and for the containing Folder.</p>
  */
-public class AliasHeader<ET extends GoidEntity> extends ZoneableEntityHeader implements HasFolderGoid {
+public class AliasHeader<ET extends PersistentEntity> extends ZoneableEntityHeader implements HasFolderId {
 
     //- PUBLIC
 
@@ -40,12 +40,12 @@ public class AliasHeader<ET extends GoidEntity> extends ZoneableEntityHeader imp
         this.aliasedEntityId = aliasedEntityId;
     }
 
-    public Goid getFolderGoid() {
+    public Goid getFolderId() {
         return folderGoid;
     }
 
-    public void setFolderGoid(Goid folderGoid) {
-        this.folderGoid = folderGoid;
+    public void setFolderId(Goid folderId) {
+        this.folderGoid = folderId;
     }
 
     //- PRIVATE

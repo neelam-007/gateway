@@ -63,7 +63,7 @@ public class EntityHeader extends EntityHeaderRef {
      * @return true if this entity header contains a non-null non-default ID matching the specified GOID (if provided) or OID.
      */
     public boolean equalsId( @Nullable Goid goid ) {
-        if(goid!=null && !goid.equals(GoidEntity.DEFAULT_GOID)){
+        if(goid!=null && !goid.equals(PersistentEntity.DEFAULT_GOID)){
             return Goid.equals(goid,getGoid());
         }
         return false;
@@ -76,11 +76,11 @@ public class EntityHeader extends EntityHeaderRef {
     }
 
     public Goid getGoid() {
-        if (strId == null || strId.isEmpty()) return GoidEntity.DEFAULT_GOID;
+        if (strId == null || strId.isEmpty()) return PersistentEntity.DEFAULT_GOID;
         try {
             return new Goid(strId);
         } catch (Exception e) {
-            return GoidEntity.DEFAULT_GOID;
+            return PersistentEntity.DEFAULT_GOID;
         }
     }
 

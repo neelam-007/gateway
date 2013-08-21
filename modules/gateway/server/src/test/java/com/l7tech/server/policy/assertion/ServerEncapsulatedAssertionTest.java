@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -139,8 +139,8 @@ public class ServerEncapsulatedAssertionTest {
         updatedConfig.setName("updatedEncapsulatedAssertion");
         when(configManager.findByGuid(CONFIG_GUID)).thenReturn(updatedConfig);
 
-        applicationEventProxy.publishEvent(new GoidEntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
-                new Goid[]{CONFIG_GOID}, new char[]{GoidEntityInvalidationEvent.UPDATE}));
+        applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
+                new Goid[]{CONFIG_GOID}, new char[]{EntityInvalidationEvent.UPDATE}));
 
         assertEquals("updatedEncapsulatedAssertion", serverAssertion.getConfigOrErrorRef().get().right().getName());
         // once during init and another for entity invalidation event
@@ -157,8 +157,8 @@ public class ServerEncapsulatedAssertionTest {
 
         // simulate import of config
         when(configManager.findByGuid("doesNotExistYet")).thenReturn(config);
-        applicationEventProxy.publishEvent(new GoidEntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
-                new Goid[]{CONFIG_GOID}, new char[]{GoidEntityInvalidationEvent.UPDATE}));
+        applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
+                new Goid[]{CONFIG_GOID}, new char[]{EntityInvalidationEvent.UPDATE}));
 
         // config should now be loaded
         assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
@@ -184,8 +184,8 @@ public class ServerEncapsulatedAssertionTest {
         final EncapsulatedAssertionConfig beforeEvent = serverAssertion.getConfigOrErrorRef().get().right();
         assertEquals(ENCAPSULATED_ASSERTION_NAME, beforeEvent.getName());
 
-        applicationEventProxy.publishEvent(new GoidEntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
-                new Goid[]{new Goid(1,1)}, new char[]{GoidEntityInvalidationEvent.UPDATE}));
+        applicationEventProxy.publishEvent(new EntityInvalidationEvent("source", EncapsulatedAssertionConfig.class,
+                new Goid[]{new Goid(1,1)}, new char[]{EntityInvalidationEvent.UPDATE}));
 
         assertEquals(ENCAPSULATED_ASSERTION_NAME, serverAssertion.getConfigOrErrorRef().get().right().getName());
         // once during init but should not be called for entity invalidation event

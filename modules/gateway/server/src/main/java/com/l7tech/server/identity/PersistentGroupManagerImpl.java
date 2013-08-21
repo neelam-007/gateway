@@ -8,7 +8,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
-        extends HibernateGoidEntityManager<GT, IdentityHeader>
+        extends HibernateEntityManager<GT, IdentityHeader>
         implements PersistentGroupManager<UT, GT>
 {
     private final String HQL_DELETE_BY_PROVIDEROID =

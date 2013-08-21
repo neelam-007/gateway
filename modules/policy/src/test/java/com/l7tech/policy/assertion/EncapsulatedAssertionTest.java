@@ -295,7 +295,7 @@ public class EncapsulatedAssertionTest {
         assertEquals(1, assertion.getEntitiesUsedAtDesignTime().length);
         assertArrayEquals(assertion.getEntitiesUsed(), assertion.getEntitiesUsedAtDesignTime());
         final EntityHeader header = assertion.getEntitiesUsedAtDesignTime()[0];
-        assertEquals(GoidEntity.DEFAULT_GOID.toString(), header.getStrId());
+        assertEquals(PersistentEntity.DEFAULT_GOID.toString(), header.getStrId());
         assertEquals(CONFIG_GUID, ((GuidEntityHeader) header).getGuid());
         assertEquals(EntityType.ENCAPSULATED_ASSERTION, header.getType());
         assertNull(header.getName());

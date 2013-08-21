@@ -4,7 +4,7 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -106,8 +106,8 @@ public class IdentityProviderFactory implements ApplicationContextAware, PostSta
 
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
-        if (event instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent iev = (GoidEntityInvalidationEvent)event;
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent iev = (EntityInvalidationEvent)event;
             if (IdentityProviderConfig.class.isAssignableFrom(iev.getEntityClass())) {
                 // Throw them out of the cache so they get reloaded next time they are needed
                 Goid[] oids = iev.getEntityIds();

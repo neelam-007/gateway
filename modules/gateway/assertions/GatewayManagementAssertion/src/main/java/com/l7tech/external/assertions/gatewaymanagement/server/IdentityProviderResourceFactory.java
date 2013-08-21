@@ -9,7 +9,7 @@ import com.l7tech.identity.ldap.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -28,7 +28,7 @@ import static com.l7tech.gateway.api.IdentityProviderMO.*;
  * 
  */
 @ResourceFactory.ResourceType(type=IdentityProviderMO.class)
-public class IdentityProviderResourceFactory extends GoidEntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader>{
+public class IdentityProviderResourceFactory extends EntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader> {
 
     //- PUBLIC
 
@@ -188,7 +188,7 @@ public class IdentityProviderResourceFactory extends GoidEntityManagerResourceFa
                         try {
                             return new Goid(s);
                         } catch ( IllegalArgumentException nfe ) {
-                            return GoidEntity.DEFAULT_GOID; // will not match any certificate
+                            return PersistentEntity.DEFAULT_GOID; // will not match any certificate
                         }
                     }
                 });

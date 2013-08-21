@@ -430,7 +430,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
                 List<ConflictInfo> conflictList = Arrays.asList( conflicts );
                 Collections.sort( conflictList );
-                Goid lastServiceId = GoidEntity.DEFAULT_GOID;
+                Goid lastServiceId = PersistentEntity.DEFAULT_GOID;
                 for ( final ConflictInfo conflict : conflicts ) {
                     if ( !Goid.equals(conflict.getServiceGoid(), lastServiceId) ) {
                         lastServiceId = conflict.getServiceGoid();

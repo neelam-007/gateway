@@ -163,7 +163,7 @@ public class SecurityZoneManagerWindow extends JDialog {
         ecc.setEntityEditor(new EntityEditor<SecurityZone>() {
             @Override
             public void displayEditDialog(final SecurityZone zone, final Functions.UnaryVoidThrows<SecurityZone, SaveException> afterEditListener) {
-                boolean create = GoidEntity.DEFAULT_GOID.equals(zone.getGoid());
+                boolean create = PersistentEntity.DEFAULT_GOID.equals(zone.getGoid());
                 AttemptedOperation operation = create
                         ? new AttemptedCreateSpecific(EntityType.SECURITY_ZONE, zone)
                         : new AttemptedUpdate(EntityType.SECURITY_ZONE, zone);

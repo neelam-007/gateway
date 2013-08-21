@@ -3,8 +3,8 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.message.HasServiceGoid;
-import com.l7tech.message.HasServiceGoidImpl;
+import com.l7tech.message.HasServiceId;
+import com.l7tech.message.HasServiceIdImpl;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -48,7 +48,7 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
             return AssertionStatus.SERVER_ERROR;
         }
 
-        if (context.getRequest().getKnob(HasServiceGoid.class) != null) {
+        if (context.getRequest().getKnob(HasServiceId.class) != null) {
             getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_ALREADY_HARDWIRED);
             return AssertionStatus.SERVER_ERROR;
         }
@@ -76,7 +76,7 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
         }
 
         final Goid serviceGoid = service.getGoid();
-        context.getRequest().attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(serviceGoid));
+        context.getRequest().attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
         getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_SUCCEEDED, "Resolved to service GOID " + serviceGoid);
         return AssertionStatus.NONE;
     }

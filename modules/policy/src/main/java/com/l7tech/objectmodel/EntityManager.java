@@ -6,13 +6,13 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Interface for DAOs that provide CRUD services for {@link com.l7tech.objectmodel.GoidEntity} instances.
+ * Interface for DAOs that provide CRUD services for {@link PersistentEntity} instances.
  *
- * @param <ET> is the GoidEntity type
+ * @param <ET> is the PersistentEntity type
  * @param <HT> is the EntityHeader type
  * @author Victor Kazakov
  */
-public interface GoidEntityManager<ET extends GoidEntity, HT extends EntityHeader>
+public interface EntityManager<ET extends PersistentEntity, HT extends EntityHeader>
         extends ReadOnlyEntityManager<ET,HT>
 {
     @Override
@@ -37,7 +37,7 @@ public interface GoidEntityManager<ET extends GoidEntity, HT extends EntityHeade
     void delete(ET entity) throws DeleteException;
 
     /**
-     * Returns the {@link com.l7tech.objectmodel.GoidEntity} with the specified OID. If the entity's version was last checked more than
+     * Returns the {@link PersistentEntity} with the specified OID. If the entity's version was last checked more than
      * <code>maxAge</code> milliseconds ago, check for an updated version in the database.  If the entity has been
      * updated, refresh it in the cache if the implementation doesn't complain.
      *

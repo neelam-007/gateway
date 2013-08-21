@@ -6,14 +6,14 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 
 import java.util.*;
 
 /**
  *
  */
-public class UDDIServiceControlManagerImpl extends HibernateGoidEntityManager<UDDIServiceControl,EntityHeader> implements UDDIServiceControlManager {
+public class UDDIServiceControlManagerImpl extends HibernateEntityManager<UDDIServiceControl,EntityHeader> implements UDDIServiceControlManager {
 
     //- PUBLIC
 

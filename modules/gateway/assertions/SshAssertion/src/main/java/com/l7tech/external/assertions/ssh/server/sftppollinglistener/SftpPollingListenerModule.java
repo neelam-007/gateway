@@ -267,7 +267,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
 
             final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
             if ( hardwiredServiceGoid != null ) {
-                request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
+                request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
             }
 
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, null, replyExpected );

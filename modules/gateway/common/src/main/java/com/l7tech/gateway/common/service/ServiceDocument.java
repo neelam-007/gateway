@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 
@@ -19,7 +19,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author Steve Jones
  */
 @XmlRootElement
-public class ServiceDocument extends GoidEntityImp {
+public class ServiceDocument extends PersistentEntityImp {
 
     //- PUBLIC
 

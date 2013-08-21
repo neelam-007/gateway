@@ -84,7 +84,7 @@ public class SpecificUser extends IdentityAssertion {
 
     private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
     private void mapUserId(){
-        if(getUserUid()!=null && getUserUid().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+        if(getUserUid()!=null && getUserUid().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(PersistentEntity.DEFAULT_GOID)){
             try{
                 Long groupOidId = Long.parseLong(getUserUid());
                 if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){

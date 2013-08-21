@@ -9,7 +9,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityUtil;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
@@ -250,7 +250,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(ownerJDialog);
                 dialog.pack();
                 Utilities.centerOnParentWindow(dialog);
-                final Option<Goid> selectedPrivateKeyGoid = optional(privateKeyField.getSelectedSecurePassword()).map(GoidEntityUtil.goid());
+                final Option<Goid> selectedPrivateKeyGoid = optional(privateKeyField.getSelectedSecurePassword()).map(PersistentEntityUtil.goid());
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {

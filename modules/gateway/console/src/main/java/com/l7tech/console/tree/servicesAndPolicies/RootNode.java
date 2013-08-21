@@ -346,7 +346,7 @@ public final class RootNode extends FolderNode {
 
             for (Iterator<OrganizationHeader> it = allFolderEntities.iterator();it.hasNext();) {
                 OrganizationHeader header = it.next();
-                final Goid fGoid = header.getFolderGoid();
+                final Goid fGoid = header.getFolderId();
                 if(fGoid != null && Goid.equals(fGoid, root.getGoid())) {
                     AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
                     insert(child, getInsertPosition(child, RootNode.getComparator()));
@@ -414,7 +414,7 @@ public final class RootNode extends FolderNode {
         FolderNode node = new FolderNode(root, null);
         for(Iterator<OrganizationHeader> it = organizationHeaders.iterator();it.hasNext();) {
             OrganizationHeader header = it.next();
-            if(header.getFolderGoid() != null && Goid.equals(header.getFolderGoid(), root.getGoid())) {
+            if(header.getFolderId() != null && Goid.equals(header.getFolderId(), root.getGoid())) {
                 AbstractTreeNode child = node.addEntityNode(header);
                 it.remove();
                 if(header.isAlias()){

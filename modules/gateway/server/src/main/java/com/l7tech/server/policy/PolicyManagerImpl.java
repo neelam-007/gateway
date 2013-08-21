@@ -145,7 +145,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
                 for(PolicyAlias pa: aliases){
                     PolicyHeader newSH = new PolicyHeader(ph);
                     newSH.setAliasGoid(pa.getGoid());
-                    newSH.setFolderGoid(pa.getFolder().getGoid());
+                    newSH.setFolderId(pa.getFolder().getGoid());
                     returnHeaders.add(newSH);
                 }
             }

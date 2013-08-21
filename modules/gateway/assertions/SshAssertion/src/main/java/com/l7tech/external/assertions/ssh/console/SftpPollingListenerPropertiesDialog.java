@@ -20,7 +20,7 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -180,7 +180,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
         serviceNameComboBox.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
-        ServiceComboBox.populateAndSelect(serviceNameComboBox, false, GoidEntity.DEFAULT_GOID);
+        ServiceComboBox.populateAndSelect(serviceNameComboBox, false, PersistentEntity.DEFAULT_GOID);
         hardwiredServiceCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

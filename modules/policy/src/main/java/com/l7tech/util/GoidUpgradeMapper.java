@@ -2,7 +2,7 @@ package com.l7tech.util;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.GoidRange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -184,7 +184,7 @@ public class GoidUpgradeMapper {
         if(oid == null)
             return null;
         else if(oid == -1)
-            return GoidEntity.DEFAULT_GOID;
+            return PersistentEntity.DEFAULT_GOID;
         Long prefix = entityType == null ? null : getPrefix(entityType);
         if (prefix == null)
             prefix = GoidRange.WRAPPED_OID.getFirstHi();
@@ -292,7 +292,7 @@ public class GoidUpgradeMapper {
             if(oid == null)
                 goid = null;
             else if(oid == -1)
-                goid = GoidEntity.DEFAULT_GOID;
+                goid = PersistentEntity.DEFAULT_GOID;
             else
                 goid = new Goid( prefix, oid );
             goids[i] = goid;

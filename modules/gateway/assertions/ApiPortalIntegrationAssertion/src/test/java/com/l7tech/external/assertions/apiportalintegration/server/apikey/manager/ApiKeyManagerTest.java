@@ -7,7 +7,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.entity.GenericEntityManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugNumber;
 import org.junit.Before;
@@ -36,7 +36,7 @@ public class ApiKeyManagerTest {
     @Mock
     private GenericEntityManager genericEntityManager;
     @Mock
-    private GoidEntityManager<ApiKey, GenericEntityHeader> entityManager;
+    private EntityManager<ApiKey, GenericEntityHeader> entityManager;
     @Mock
     private ApplicationEventProxy applicationEventProxy;
 
@@ -307,12 +307,12 @@ public class ApiKeyManagerTest {
         apiKeyManager.getNameCache().put(decoy.getGoid(), decoy.getName());
 
         // Event should be ignored (oid doesn't match anything in cache)
-        apiKeyManagerEventListener.onApplicationEvent(new GoidEntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{new Goid(0,222L)}, new char[]{'U'}));
+        apiKeyManagerEventListener.onApplicationEvent(new EntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{new Goid(0,222L)}, new char[]{'U'}));
         assertCacheContains(existing);
         assertCacheContains(decoy);
 
         // Event should cause cache entry to be removed (matches)
-        apiKeyManagerEventListener.onApplicationEvent(new GoidEntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{existing.getGoid()}, new char[]{'U'}));
+        apiKeyManagerEventListener.onApplicationEvent(new EntityInvalidationEvent(new Object(), GenericEntity.class, new Goid[]{existing.getGoid()}, new char[]{'U'}));
         assertCacheDoesNotContain(existing, false);
         assertCacheContains(decoy);
     }
@@ -322,7 +322,7 @@ public class ApiKeyManagerTest {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put("fookey", existing);
         apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});
 
         apiKeyManager.onApplicationEvent(event);
 
@@ -334,7 +334,7 @@ public class ApiKeyManagerTest {
     public void onApplicationEventNotGenericEntity() throws Exception {
         apiKeyManager.getCache().put("fookey", makeExisting());
         apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{GoidEntityInvalidationEvent.CREATE});;
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(new PublishedService(), PublishedService.class, new Goid[]{new Goid(0,1234L)}, new char[]{EntityInvalidationEvent.CREATE});;
 
         apiKeyManager.onApplicationEvent(event);
 
@@ -359,7 +359,7 @@ public class ApiKeyManagerTest {
         ApiKey existing = makeExisting();
         apiKeyManager.getCache().put("fookey", existing);
         apiKeyManager.getNameCache().put(new Goid(0,1234L), "fookey");
-        final GoidEntityInvalidationEvent event = new GoidEntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{GoidEntityInvalidationEvent.CREATE});
+        final EntityInvalidationEvent event = new EntityInvalidationEvent(existing, GenericEntity.class, new Goid[]{new Goid(0,5678L)}, new char[]{EntityInvalidationEvent.CREATE});
 
         apiKeyManager.onApplicationEvent(event);
 

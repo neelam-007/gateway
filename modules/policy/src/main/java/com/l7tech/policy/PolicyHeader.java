@@ -51,12 +51,12 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getName(),
              policyHeader.getDescription(),
              policyHeader.getGuid(),
-             policyHeader.getFolderGoid(),
+             policyHeader.getFolderId(),
              policyHeader.getAliasGoid(),
              policyHeader.getPolicyRevision(),
              policyHeader.getVersion(),
              policyHeader.isPolicyDisabled(),
-             policyHeader.getSecurityZoneGoid());
+             policyHeader.getSecurityZoneId());
     }
 
     public PolicyHeader(final Goid goid,

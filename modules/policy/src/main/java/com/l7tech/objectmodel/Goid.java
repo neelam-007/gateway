@@ -213,7 +213,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return true if the goid is equal to the default goid, false otherwise.
      */
     public static boolean isDefault(@Nullable Goid goid) {
-        return GoidEntity.DEFAULT_GOID.equals(goid);
+        return PersistentEntity.DEFAULT_GOID.equals(goid);
     }
 
     /**

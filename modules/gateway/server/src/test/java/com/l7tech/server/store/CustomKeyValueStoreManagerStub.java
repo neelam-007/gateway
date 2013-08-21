@@ -3,9 +3,9 @@ package com.l7tech.server.store;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.CustomKeyValueStore;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class CustomKeyValueStoreManagerStub extends GoidEntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
+public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
     public CustomKeyValueStoreManagerStub(CustomKeyValueStore... customKeyValueStoresIn) {
         super(customKeyValueStoresIn);
@@ -47,7 +47,7 @@ public class CustomKeyValueStoreManagerStub extends GoidEntityManagerStub<Custom
     }
 
     @Override
-    public Class<? extends GoidEntityImp> getImpClass() {
+    public Class<? extends PersistentEntityImp> getImpClass() {
         return CustomKeyValueStore.class;
     }
 }

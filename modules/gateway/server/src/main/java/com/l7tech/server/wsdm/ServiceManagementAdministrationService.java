@@ -4,7 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -187,21 +187,21 @@ public class ServiceManagementAdministrationService implements PostStartupApplic
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (!(event instanceof GoidEntityInvalidationEvent)) return;
+        if (!(event instanceof EntityInvalidationEvent)) return;
         try {
-            GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent)event;
+            EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
             if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) return;
 
             for (int i = 0; i < eie.getEntityIds().length; i++) {
                 Goid goid = eie.getEntityIds()[i];
                 char op = eie.getEntityOperations()[i];
                 switch (op) {
-                    case GoidEntityInvalidationEvent.CREATE:
+                    case EntityInvalidationEvent.CREATE:
                         for (ServiceStateMonitor ssm : serviceStateMonitors) {
                             ssm.onServiceCreated(goid);
                         }
                         break;
-                    case GoidEntityInvalidationEvent.UPDATE:
+                    case EntityInvalidationEvent.UPDATE:
                         if (eie instanceof ServiceEnablementEvent) {
                             ServiceEnablementEvent see = (ServiceEnablementEvent)eie;
                             for (ServiceStateMonitor ssm : serviceStateMonitors) {
@@ -212,7 +212,7 @@ public class ServiceManagementAdministrationService implements PostStartupApplic
                             }
                         } // else other kinds of updates are irrelevant to metrics
                         break;
-                    case GoidEntityInvalidationEvent.DELETE:
+                    case EntityInvalidationEvent.DELETE:
                         for (ServiceStateMonitor ssm : serviceStateMonitors) {
                             ssm.onServiceDeleted(goid);
                         }

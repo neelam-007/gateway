@@ -42,7 +42,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     private final RbacServices rbacServices;
     private final EntityFinder entityFinder;
     private static final String DEFAULT_ID = Long.toString(-1);
-    private static final String DEFAULT_GOID = GoidEntity.DEFAULT_GOID.toString();
+    private static final String DEFAULT_GOID = PersistentEntity.DEFAULT_GOID.toString();
 
     private ApplicationContext applicationContext;
 

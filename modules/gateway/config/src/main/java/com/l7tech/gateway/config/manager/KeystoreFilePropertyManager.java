@@ -3,7 +3,7 @@ package com.l7tech.gateway.config.manager;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
@@ -49,7 +49,7 @@ public class KeystoreFilePropertyManager {
 
     public static void main(final String[] argsArray) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
-        Goid goid = GoidEntity.DEFAULT_GOID;
+        Goid goid = PersistentEntity.DEFAULT_GOID;
         String action = "process";
         String propertyName = null;
         String propertyValue = null;

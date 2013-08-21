@@ -607,7 +607,7 @@ public class PolicyHelper {
 
 
         @Override
-        public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
+        public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
             return genericEntityManager.getEntityManager(entityClass);
         }
 

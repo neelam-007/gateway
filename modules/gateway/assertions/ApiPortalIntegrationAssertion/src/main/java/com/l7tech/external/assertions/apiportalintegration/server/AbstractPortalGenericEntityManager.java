@@ -5,7 +5,7 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
@@ -34,7 +34,7 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
     /**
      * @return the EntityManager to use for CRUD operations.
      */
-    public abstract GoidEntityManager<T, GenericEntityHeader> getEntityManager();
+    public abstract EntityManager<T, GenericEntityHeader> getEntityManager();
 
     /**
      * @return an array of objects to use for update locking (minimize race conditions when updating a generic entity).
@@ -202,8 +202,8 @@ public abstract class AbstractPortalGenericEntityManager<T extends AbstractPorta
     @Override
     public void onApplicationEvent(final ApplicationEvent event) {
         // if a PortalManagedService has been modified, remove it from the cache
-        if (event instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) event;
+        if (event instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
             if (GenericEntity.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final Goid[] ids = entityInvalidationEvent.getEntityIds();
                 for (final Goid id : ids) {

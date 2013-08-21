@@ -18,8 +18,8 @@ import com.l7tech.gateway.common.uddi.UDDIServiceControlHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderGoid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.folder.HasFolderId;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
@@ -205,8 +205,8 @@ public class EntityNameResolver {
             name = getNameForEntity(entity, includePath);
         } else if (entity == null) {
             if (includePath) {
-                if (header instanceof HasFolderGoid) {
-                    path = getPath((HasFolderGoid) header);
+                if (header instanceof HasFolderId) {
+                    path = getPath((HasFolderId) header);
                 } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
                     final Assertion assertion = assertionRegistry.findByClassName(header.getName());
                     if (assertion != null) {
@@ -334,8 +334,8 @@ public class EntityNameResolver {
             } else {
                 logger.log(Level.WARNING, "Unable to determine name for EntityFolderAncestryPredicate because it is missing entity type and/or entity id.");
             }
-        } else if (entity instanceof NamedGoidEntityImp) {
-            final NamedGoidEntityImp named = (NamedGoidEntityImp) entity;
+        } else if (entity instanceof NamedEntityImp) {
+            final NamedEntityImp named = (NamedEntityImp) entity;
             name = named.getName();
         }
         String path = null;
@@ -358,25 +358,25 @@ public class EntityNameResolver {
     }
 
     /**
-     * Get the folder path for a HasFolderGoid which can have a reference to a Folder.
+     * Get the folder path for a HasFolderId which can have a reference to a Folder.
      * <p/>
-     * The path will always start with '/' to represent the root folder (even if the given HasFolderGoid does not reference any Folder).
+     * The path will always start with '/' to represent the root folder (even if the given HasFolderId does not reference any Folder).
      *
-     * @param hasFolder the HasFolderGoid which can have a reference to a Folder (most likely a header).
-     * @return the folder path for the HasFolderGoid or '/' if no Folder is referenced.
-     * @throws FindException if there is an error looking up the Folder referenced by the HasFolderGoid.
+     * @param hasFolder the HasFolderId which can have a reference to a Folder (most likely a header).
+     * @return the folder path for the HasFolderId or '/' if no Folder is referenced.
+     * @throws FindException if there is an error looking up the Folder referenced by the HasFolderId.
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException
      *                       if the user does not have permission to access an entity required to resolve the path
      */
     @NotNull
-    public String getPath(@NotNull final HasFolderGoid hasFolder) throws FindException {
+    public String getPath(@NotNull final HasFolderId hasFolder) throws FindException {
         final String path;
         if (hasFolder instanceof EntityHeader && isRootFolder((EntityHeader) hasFolder)) {
             path = ROOT;
         } else {
             Folder folder = null;
-            if (hasFolder.getFolderGoid() != null) {
-                folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderGoid());
+            if (hasFolder.getFolderId() != null) {
+                folder = folderAdmin.findByPrimaryKey(hasFolder.getFolderId());
             }
             path = getPathForFolder(folder);
         }

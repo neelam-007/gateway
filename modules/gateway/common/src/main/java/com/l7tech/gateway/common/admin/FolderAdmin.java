@@ -62,7 +62,7 @@ public interface FolderAdmin {
      * @throws ConstraintViolationException if the move causes a contraint violation (e.g. duplicate folder name)
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException if the user does not have update permission on the entity as well as both the target and desination folders.
      */
-    void moveEntityToFolder( Folder folder, GoidEntity entity ) throws UpdateException, ConstraintViolationException;
+    void moveEntityToFolder( Folder folder, PersistentEntity entity ) throws UpdateException, ConstraintViolationException;
 
     /**
      * Delete a {@link com.l7tech.objectmodel.folder.Folder} by its unique identifier.

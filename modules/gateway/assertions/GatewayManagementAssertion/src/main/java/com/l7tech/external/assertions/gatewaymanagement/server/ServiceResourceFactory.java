@@ -377,8 +377,8 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         }
 
         @Override
-        public Iterator<GoidEntity> iterator() {
-            final List<GoidEntity> entities = new ArrayList<GoidEntity>();
+        public Iterator<PersistentEntity> iterator() {
+            final List<PersistentEntity> entities = new ArrayList<PersistentEntity>();
             entities.add( getPublishedService() );
             entities.addAll( getServiceDocuments() );
             return entities.iterator();

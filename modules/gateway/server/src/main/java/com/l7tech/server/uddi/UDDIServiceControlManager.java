@@ -4,14 +4,14 @@ import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 
 import java.util.Collection;
 
 /**
  * EntityManager for UDDIServiceControl
  */
-public interface UDDIServiceControlManager extends GoidEntityManager<UDDIServiceControl,EntityHeader> {
+public interface UDDIServiceControlManager extends EntityManager<UDDIServiceControl,EntityHeader> {
 
     /**
      * Find a UDDIServiceControl by published service goid.

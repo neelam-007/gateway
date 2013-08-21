@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
@@ -50,7 +50,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedCertManagerImp
-        extends HibernateGoidEntityManager<TrustedCert, EntityHeader>
+        extends HibernateEntityManager<TrustedCert, EntityHeader>
         implements TrustedCertManager, ApplicationContextAware, InitializingBean, PropertyChangeListener
 {
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());

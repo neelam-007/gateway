@@ -9,7 +9,7 @@ import java.util.Collection;
 /**
  * Entity manager for {@link com.l7tech.policy.CustomKeyValueStore}.
  */
-public interface CustomKeyValueStoreManager extends GoidEntityManager<CustomKeyValueStore,EntityHeader> {
+public interface CustomKeyValueStoreManager extends EntityManager<CustomKeyValueStore,EntityHeader> {
 
     /**
      * Finds all {@link CustomKeyValueStore} with specified key prefix.

@@ -2,7 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * Gateway's production implementation of {@link PolicyVersionManager}.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class PolicyVersionManagerImpl extends HibernateGoidEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
+public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     protected static final Logger logger = Logger.getLogger(PolicyVersionManagerImpl.class.getName());
 

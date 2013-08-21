@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface JmsEndpointManager extends PropertySearchableEntityManager<JmsEndpointHeader>, GoidEntityManager<JmsEndpoint, JmsEndpointHeader>  {
+public interface JmsEndpointManager extends PropertySearchableEntityManager<JmsEndpointHeader>, EntityManager<JmsEndpoint, JmsEndpointHeader> {
     Collection findMessageSourceEndpoints() throws FindException;
     JmsEndpoint[] findEndpointsForConnection(Goid connectionGoid) throws FindException;
     JmsEndpointHeader[] findEndpointHeadersForConnection(Goid connectionGoid) throws FindException;

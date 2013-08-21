@@ -10,7 +10,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.XmlElementVerifierConfig;
@@ -197,18 +197,18 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
 
         } else if (model.getVerifyCertificateName() != null && model.getVerifyCertificateName().length() > 0) {
             certLookupRadioButton.setSelected(true);
-            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
+            selectedVerifyCertificateOid = PersistentEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(model.getVerifyCertificateName());
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
         } else if (model.getVerifyCertificateVariableName() != null && !model.getVerifyCertificateVariableName().isEmpty()) {
             certVariableRadioButton.setSelected(true);
             certVariableNameField.setVariable(model.getVerifyCertificateVariableName());
-            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
+            selectedVerifyCertificateOid = PersistentEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(null);
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
         } else {
             certExpectKeyInfoRadioButton.setSelected(true);
-            selectedVerifyCertificateOid = GoidEntity.DEFAULT_GOID;
+            selectedVerifyCertificateOid = PersistentEntity.DEFAULT_GOID;
             lookupCertificateTextField.setText(null);
             keyInfoOverrideCheckBox.setSelected(false);
         }
@@ -237,7 +237,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     protected void doUpdateModel() {
         model.setVerifyCertificateName(null);
         model.setVerifyCertificateVariableName(null);
-        model.setVerifyCertificateGoid(GoidEntity.DEFAULT_GOID);
+        model.setVerifyCertificateGoid(PersistentEntity.DEFAULT_GOID);
         model.setIgnoreKeyInfo(keyInfoOverrideCheckBox.isSelected());
 
         if (certSelectRadioButton.isSelected()) {

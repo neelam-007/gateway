@@ -4,8 +4,8 @@ import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntityManager;
 import org.springframework.context.ApplicationListener;
 
 /**
@@ -16,7 +16,7 @@ import org.springframework.context.ApplicationListener;
  * Time: 10:53 AM
  * To change this template use File | Settings | File Templates.
  */
-public interface SiteMinderConfigurationManager extends GoidEntityManager<SiteMinderConfiguration, EntityHeader>, ApplicationListener {
+public interface SiteMinderConfigurationManager extends EntityManager<SiteMinderConfiguration, EntityHeader>, ApplicationListener {
 
     /**
      * Retrieve a SiteMinder configuration entity from the database by using a configuration name.

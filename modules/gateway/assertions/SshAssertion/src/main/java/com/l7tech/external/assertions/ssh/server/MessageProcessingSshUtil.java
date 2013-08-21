@@ -11,7 +11,7 @@ import com.l7tech.message.*;
 import com.l7tech.message.SshKnob.FileMetadata;
 import com.l7tech.message.SshKnob.PublicKeyAuthentication;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -130,9 +130,9 @@ public class MessageProcessingSshUtil {
                 passwordAuthentication, fileMetadata, parameters);
         request.attachKnob(knob, SshKnob.class, UriKnob.class, TcpKnob.class, CommandKnob.class);
 
-        final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidEntity.DEFAULT_GOID);
+        final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
         if (!Goid.isDefault(hardwiredServiceGoid)) {
-            request.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
+            request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
         }
 
         return context;

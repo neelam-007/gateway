@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * Bean representation of a row in the service_usage table.
@@ -16,7 +16,7 @@ import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
  * $Id$<br/>
  *
  */
-public class ServiceUsage extends NamedGoidEntityImp {
+public class ServiceUsage extends NamedEntityImp {
     public static final String ATTR_SERVICE_GOID = "serviceid";
 
     /**

@@ -86,6 +86,6 @@ public interface ExternalReferenceFinder {
     SiteMinderConfiguration findSiteMinderConfigurationByID(final Goid id) throws FindException;
 
     <ET extends GenericEntity>
-    GoidEntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException;
+    EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException;
 
 }

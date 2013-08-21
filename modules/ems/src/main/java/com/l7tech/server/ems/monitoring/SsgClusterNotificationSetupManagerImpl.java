@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -22,7 +22,7 @@ import java.sql.SQLException;
  * @Date: Feb 7, 2009
  * @since Enterprise Manager 1.0
  */
-public class SsgClusterNotificationSetupManagerImpl extends HibernateGoidEntityManager<SsgClusterNotificationSetup, EntityHeader> implements SsgClusterNotificationSetupManager {
+public class SsgClusterNotificationSetupManagerImpl extends HibernateEntityManager<SsgClusterNotificationSetup, EntityHeader> implements SsgClusterNotificationSetupManager {
     @Override
     public Class<? extends Entity> getInterfaceClass() {
         return SsgClusterNotificationSetup.class;

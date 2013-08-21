@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.*;
  * User: dlee
  * Date: Jun 27, 2008
  */
-public interface LogonInfoManager extends GoidEntityManager<LogonInfo, EntityHeader> {
+public interface LogonInfoManager extends EntityManager<LogonInfo, EntityHeader> {
 
     /**
      * Finds a the logon information object based on the composite keys.

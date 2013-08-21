@@ -9,7 +9,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.imp.GoidEntityUtil;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -17,7 +17,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ServiceUsageManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
 import com.l7tech.server.event.system.ServiceCacheEvent;
@@ -219,8 +219,8 @@ public class ServiceCache
 
         if (publishedService != null) {
             try {
-                GoidEntityUtil.lock(publishedService);
-                GoidEntityUtil.lock(publishedService.getPolicy());
+                PersistentEntityUtil.lock(publishedService);
+                PersistentEntityUtil.lock(publishedService.getPolicy());
                 cache(publishedService);
                 TarariLoader.compile();
             } catch (Exception e) {
@@ -572,11 +572,11 @@ public class ServiceCache
                     switch(type) {
                         case CREATED:
                             goids.add(goid);
-                            ops.add(GoidEntityInvalidationEvent.CREATE);
+                            ops.add(EntityInvalidationEvent.CREATE);
                             break;
                         case UPDATED:
                             goids.add(goid);
-                            ops.add(GoidEntityInvalidationEvent.UPDATE);
+                            ops.add(EntityInvalidationEvent.UPDATE);
                             break;
                         case DISABLED:
                             disabled.add(goid);
@@ -586,14 +586,14 @@ public class ServiceCache
                             break;
                         case DELETED:
                             goids.add(goid);
-                            ops.add(GoidEntityInvalidationEvent.DELETE);
+                            ops.add(EntityInvalidationEvent.DELETE);
                             break;
                     }
                 }
 
                 if (!goids.isEmpty()) {
                     logger.log(Level.INFO, "Created/Updated/Deleted: " + goids);
-                    getApplicationContext().publishEvent(new GoidEntityInvalidationEvent(ServiceCache.this, PublishedService.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.unboxChars(ops)));
+                    getApplicationContext().publishEvent(new EntityInvalidationEvent(ServiceCache.this, PublishedService.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.unboxChars(ops)));
                 }
                 
                 if (!enabled.isEmpty()) notifyEnablements(enabled, true);
@@ -639,7 +639,7 @@ public class ServiceCache
         }
 
         // cache the service
-        if (!GoidEntityUtil.isLocked(service))
+        if (!PersistentEntityUtil.isLocked(service))
             throw new IllegalArgumentException("Unlocked service may not be placed into the service cache");
         services.put(goid, service);
 
@@ -647,7 +647,7 @@ public class ServiceCache
         final Policy policy = service.getPolicy();
         if (policy == null)
             throw new ServerPolicyException(null, "Service #" + service.getGoid() + " (" + service.getName() + ") has no policy");
-        if (!GoidEntityUtil.isLocked(policy))
+        if (!PersistentEntityUtil.isLocked(policy))
             throw new IllegalArgumentException("Unlocked service policy may not be placed into the service cache");
         policyCache.update(policy);
     }

@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +17,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author darmstrong
  */
 @XmlRootElement
-public abstract class Alias<ET extends GoidEntity> extends ZoneableGoidEntityImp implements EntityAlias {
+public abstract class Alias<ET extends PersistentEntity> extends ZoneableEntityImp implements EntityAlias {
     protected Goid entityGoid;
     private Folder folder;
 

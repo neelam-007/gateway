@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 
 import java.util.Collection;
@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  *
  */
-public class ResourceEntryManagerStub extends GoidEntityManagerStub<ResourceEntry, ResourceEntryHeader> implements ResourceEntryManager {
+public class ResourceEntryManagerStub extends EntityManagerStub<ResourceEntry, ResourceEntryHeader> implements ResourceEntryManager {
 
     public ResourceEntryManagerStub() {
     }

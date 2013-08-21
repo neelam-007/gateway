@@ -194,7 +194,7 @@ public class EmailListenerManagerWindow extends JDialog {
     }
 
     private void editAndSave(final EmailListener emailListener, final boolean selectNameField) {
-        boolean create = GoidEntity.DEFAULT_GOID.equals(emailListener.getGoid());
+        boolean create = PersistentEntity.DEFAULT_GOID.equals(emailListener.getGoid());
         final AttemptedOperation operation = create
                 ? new AttemptedCreateSpecific(EntityType.EMAIL_LISTENER, emailListener)
                 : new AttemptedUpdate(EntityType.EMAIL_LISTENER, emailListener);

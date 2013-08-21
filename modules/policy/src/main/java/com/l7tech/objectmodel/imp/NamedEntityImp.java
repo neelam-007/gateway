@@ -9,13 +9,13 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
-public abstract class NamedGoidEntityImp extends GoidEntityImp implements NamedEntity {
+public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
 
-    public NamedGoidEntityImp() {
+    public NamedEntityImp() {
         super();
     }
 
-    protected NamedGoidEntityImp(final NamedGoidEntityImp entity) {
+    protected NamedEntityImp(final NamedEntityImp entity) {
         super(entity);
         setName(entity.getName());
     }
@@ -55,7 +55,7 @@ public abstract class NamedGoidEntityImp extends GoidEntityImp implements NamedE
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        final NamedGoidEntityImp that = (NamedGoidEntityImp)o;
+        final NamedEntityImp that = (NamedEntityImp)o;
 
         if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
 

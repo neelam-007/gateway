@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.*;
@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
-        extends HibernateGoidEntityManager<AuditRecord, AuditRecordHeader>
+        extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
         implements AuditRecordManager, ApplicationContextAware, PropertyChangeListener
 {
     private static final String SQL_GET_MIN_MILLS = "SELECT MIN(time) FROM audit_main WHERE time > ?";

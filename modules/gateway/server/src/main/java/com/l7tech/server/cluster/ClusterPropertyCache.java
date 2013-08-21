@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -87,8 +87,8 @@ public class ClusterPropertyCache implements PostStartupApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent eiEvent = (GoidEntityInvalidationEvent) event;
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
             if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
                 ClusterPropertyManager cpm;
                 ClusterPropertyListener cpl;

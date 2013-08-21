@@ -18,7 +18,7 @@ import java.util.Collections;
 public class GenericEntityManagerDemoServerSupport {
     private static GenericEntityManagerDemoServerSupport instance;
 
-    private GoidEntityManager<DemoGenericEntity, GenericEntityHeader> demoGenericEntityManager;
+    private EntityManager<DemoGenericEntity, GenericEntityHeader> demoGenericEntityManager;
 
     public static synchronized GenericEntityManagerDemoServerSupport getInstance(final ApplicationContext context) {
         if (instance == null) {

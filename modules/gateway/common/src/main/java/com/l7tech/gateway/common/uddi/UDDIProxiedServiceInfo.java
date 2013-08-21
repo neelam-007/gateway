@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.ExceptionUtils;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service_info")
-public class UDDIProxiedServiceInfo extends ZoneableGoidEntityImp {
+public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
 
     public static final String ATTR_SERVICE_GOID = "publishedServiceGoid";
 

@@ -126,7 +126,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
 
     private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
     private void mapUserId(){
-        if(getIdentityId()!=null && getIdentityId().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(GoidEntity.DEFAULT_GOID)){
+        if(getIdentityId()!=null && getIdentityId().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(PersistentEntity.DEFAULT_GOID)){
             try{
                 Long groupOidId = Long.parseLong(getIdentityId());
                 if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){

@@ -36,7 +36,7 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
 import static com.l7tech.objectmodel.EntityUtil.name;
-import static com.l7tech.objectmodel.imp.GoidEntityUtil.goid;
+import static com.l7tech.objectmodel.imp.PersistentEntityUtil.goid;
 import static com.l7tech.policy.variable.Syntax.getReferencedNames;
 import static com.l7tech.util.TextUtils.truncStringMiddleExact;
 import static com.l7tech.util.ValidationUtils.isValidInteger;

@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import org.hibernate.annotations.*;
 
@@ -18,7 +18,7 @@ import java.util.Set;
 @Entity
 @Proxy(lazy=false)
 @Table(name="report")
-public class StandardReport extends NamedGoidEntityImp {
+public class StandardReport extends NamedEntityImp {
 
     //- PUBLIC
 

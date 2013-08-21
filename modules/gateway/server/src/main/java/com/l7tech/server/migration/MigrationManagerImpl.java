@@ -366,7 +366,7 @@ public class MigrationManagerImpl implements MigrationManager {
      * @return The corrected property name, or the original if it didn't need to be corrected.
      */
     private static String correctPropName(Entity entity, String propertyName) {
-        if(entity instanceof GoidEntity){
+        if(entity instanceof PersistentEntity){
             switch(propertyName){
                 case "EntityOid":
                     return "EntityGoid";
@@ -387,9 +387,9 @@ public class MigrationManagerImpl implements MigrationManager {
             throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
 
         Entity onTarget = entitiesFromTarget.get(targetHeader);
-        if (entity instanceof GoidEntity && onTarget instanceof GoidEntity) {
-            ((GoidEntity) entity).setGoid(((GoidEntity)onTarget).getGoid());
-            ((GoidEntity) entity).setVersion(((GoidEntity)onTarget).getVersion());
+        if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity) {
+            ((PersistentEntity) entity).setGoid(((PersistentEntity)onTarget).getGoid());
+            ((PersistentEntity) entity).setVersion(((PersistentEntity)onTarget).getVersion());
         }
         if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
             ((PublishedService)entity).getPolicy().setGoid(((PublishedService)onTarget).getPolicy().getGoid());
@@ -410,8 +410,8 @@ public class MigrationManagerImpl implements MigrationManager {
             entityCrud.update(entity);
             // todo: need more reliable method of retrieving the new version;
             // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different) 
-            if (entity instanceof GoidEntity && onTarget instanceof GoidEntity)
-                ((GoidEntity) entity).setVersion(((GoidEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
+            if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity)
+                ((PersistentEntity) entity).setVersion(((PersistentEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
         }
 
         return entity;
@@ -438,11 +438,11 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         if (!dryRun) {
-            if (entity instanceof GoidEntity)
-                ((GoidEntity) entity).setVersion(0);
+            if (entity instanceof PersistentEntity)
+                ((PersistentEntity) entity).setVersion(0);
             Serializable id = entityCrud.save(entity);
-            if(entity instanceof GoidEntity){
-                ((GoidEntity) entity).setGoid((Goid)id);
+            if(entity instanceof PersistentEntity){
+                ((PersistentEntity) entity).setGoid((Goid)id);
             }
         }
         return entity;
@@ -667,7 +667,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private String getDisplayId(EntityHeader header) {
         String id = header instanceof GuidEntityHeader ? ((GuidEntityHeader)header).getGuid() :
-                    !header.getGoid().equals(GoidEntity.DEFAULT_GOID) ? Goid.toString(header.getGoid()) : null;
+                    !header.getGoid().equals(PersistentEntity.DEFAULT_GOID) ? Goid.toString(header.getGoid()) : null;
         return id == null ? "" : " (#" + id + ")";
     }
 

@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -324,10 +324,10 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (!(event instanceof GoidEntityInvalidationEvent))
+        if (!(event instanceof EntityInvalidationEvent))
             return;
 
-        final GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent)event;
+        final EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
         if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) {
             return;
         }
@@ -336,8 +336,8 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
             final char op = eie.getEntityOperations()[i];
             final Goid goid = eie.getEntityIds()[i];
             switch (op) {
-                case GoidEntityInvalidationEvent.CREATE: // Intentional fallthrough
-                case GoidEntityInvalidationEvent.UPDATE:
+                case EntityInvalidationEvent.CREATE: // Intentional fallthrough
+                case EntityInvalidationEvent.UPDATE:
                     try {
                         serviceStates.put(goid, serviceMetricsManager.getCreatedOrUpdatedServiceState(goid));
                         break;
@@ -347,7 +347,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, PostS
                         }
                         continue;
                     }
-                case GoidEntityInvalidationEvent.DELETE:
+                case EntityInvalidationEvent.DELETE:
                     serviceStates.put(goid, ServiceState.DELETED);
                     break;
             }

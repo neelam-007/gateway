@@ -2,7 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -25,7 +25,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
  * @author Steve Jones
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class ServiceDocumentManagerImpl extends HibernateGoidEntityManager<ServiceDocument, EntityHeader> implements ServiceDocumentManager {
+public class ServiceDocumentManagerImpl extends HibernateEntityManager<ServiceDocument, EntityHeader> implements ServiceDocumentManager {
 
     //- PUBLIC
 

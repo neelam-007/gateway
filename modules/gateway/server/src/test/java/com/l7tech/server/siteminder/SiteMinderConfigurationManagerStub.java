@@ -5,10 +5,10 @@ import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import org.springframework.context.ApplicationEvent;
 
-public class SiteMinderConfigurationManagerStub extends GoidEntityManagerStub<SiteMinderConfiguration, EntityHeader> implements SiteMinderConfigurationManager {
+public class SiteMinderConfigurationManagerStub extends EntityManagerStub<SiteMinderConfiguration, EntityHeader> implements SiteMinderConfigurationManager {
 
     @Override
     public SiteMinderConfiguration getSiteMinderConfiguration(String configurationName) throws FindException {

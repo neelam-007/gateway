@@ -39,7 +39,7 @@ public class PolicyAliasManagerImpl extends AliasManagerImpl<PolicyAlias, Policy
     @Override
     protected AliasHeader<Policy> newHeader( final PolicyAlias entity ) {
         final AliasHeader<Policy> header = new AliasHeader<>(entity);
-        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
+        header.setSecurityZoneId(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 

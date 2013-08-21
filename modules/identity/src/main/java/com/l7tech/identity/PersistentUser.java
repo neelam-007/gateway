@@ -4,7 +4,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -14,7 +14,7 @@ import javax.persistence.Transient;
  * @author alex
  */
 @MappedSuperclass
-public abstract class PersistentUser extends NamedGoidEntityImp implements User {
+public abstract class PersistentUser extends NamedEntityImp implements User {
     protected String login;
     protected Goid providerGoid;
     protected String subjectDn;

@@ -3,7 +3,7 @@ package com.l7tech.server.mapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class MessageContextMappingValueManagerImpl
-    extends HibernateGoidEntityManager<MessageContextMappingValues, EntityHeader>
+    extends HibernateEntityManager<MessageContextMappingValues, EntityHeader>
     implements MessageContextMappingValueManager {
 
     private final Logger logger = Logger.getLogger(MessageContextMappingKeyManagerImpl.class.getName());

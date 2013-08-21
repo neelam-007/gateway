@@ -10,7 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory
 import com.l7tech.server.service.ServiceCache
 import java.util.ArrayList
 import com.l7tech.server.service.resolution.ServiceResolutionException
-import com.l7tech.message.{HasServiceGoidImpl, HasServiceGoid, Message}
+import com.l7tech.message.{HasServiceIdImpl, HasServiceId, Message}
 import java.util.logging.Logger
 import org.specs2.specification.Scope
 import com.l7tech.gateway.common.audit.{Audit, AuditFactory}
@@ -33,8 +33,8 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       there was one(audit).logAndAudit(RESOLVE_SERVICE_ALREADY_RESOLVED)
     }
 
-    "fail if HasServiceGoid knob already present on default request" in new DefaultScope {
-      pec.getRequest.attachKnob(classOf[HasServiceGoid], new HasServiceGoidImpl(new Goid(0,123)))
+    "fail if HasServiceId knob already present on default request" in new DefaultScope {
+      pec.getRequest.attachKnob(classOf[HasServiceId], new HasServiceIdImpl(new Goid(0,123)))
 
       sass.checkRequest(pec) must be equalTo SERVER_ERROR
 
@@ -48,7 +48,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo NONE
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      val hasServiceOid = pec.getRequest.getKnob(classOf[HasServiceGoid])
+      val hasServiceOid = pec.getRequest.getKnob(classOf[HasServiceId])
       hasServiceOid must not beTheSameAs null
       hasServiceOid.getServiceGoid must be equalTo service.getGoid
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_SUCCEEDED), any)
@@ -60,7 +60,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceId]) must be equalTo null
       there was one(audit).logAndAudit(RESOLVE_SERVICE_NOT_FOUND)
     }
 
@@ -70,7 +70,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceId]) must be equalTo null
       there was one(audit).logAndAudit(RESOLVE_SERVICE_FOUND_MULTI)
     }
 
@@ -80,7 +80,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       sass.checkRequest(pec) must be equalTo FAILED
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
-      pec.getRequest.getKnob(classOf[HasServiceGoid]) must be equalTo null
+      pec.getRequest.getKnob(classOf[HasServiceId]) must be equalTo null
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_FAILED), Matchers.any(classOf[Array[String]]), Matchers.any(classOf[Throwable]))
       there was no(audit).logAndAudit(any, Matchers.anyVararg[String]())
     }

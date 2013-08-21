@@ -39,7 +39,7 @@ public class ServiceAliasManagerImpl
     @Override
     protected AliasHeader<PublishedService> newHeader( final PublishedServiceAlias entity ) {
         final AliasHeader<PublishedService> header = new AliasHeader<>(entity);
-        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
+        header.setSecurityZoneId(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 }

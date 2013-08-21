@@ -2,7 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Entity manager for persistent {@link SsgKeyMetadata} instances.
  */
-public class SsgKeyMetadataManagerImpl extends HibernateGoidEntityManager<SsgKeyMetadata, EntityHeader> implements SsgKeyMetadataManager {
+public class SsgKeyMetadataManagerImpl extends HibernateEntityManager<SsgKeyMetadata, EntityHeader> implements SsgKeyMetadataManager {
     @Override
     @Transactional(readOnly=true)
     public Class<? extends Entity> getImpClass() {

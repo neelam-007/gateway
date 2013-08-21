@@ -1646,7 +1646,7 @@
         <constructor-arg value="EntityVersionChecker"/>
     </bean>
 
-    <bean id="goidEntityInvalidator" class="com.l7tech.server.GoidEntityVersionChecker" depends-on="ssgBoot">
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>

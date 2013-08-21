@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Provides CRUD services for PolicyVersion instances.
  */
-public interface PolicyVersionManager extends GoidEntityManager<PolicyVersion, EntityHeader> {
+public interface PolicyVersionManager extends EntityManager<PolicyVersion, EntityHeader> {
     /**
      * Find a specific revision of the specified policy by its GOID.
      *

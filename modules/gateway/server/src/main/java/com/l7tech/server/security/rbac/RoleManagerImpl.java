@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
-public class RoleManagerImpl extends HibernateGoidEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
+public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
     private static final String IDENTITY_ID = "identityId";
@@ -601,7 +601,7 @@ public class RoleManagerImpl extends HibernateGoidEntityManager<Role, EntityHead
     }
 
     @Override
-    public void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+    public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         Collection<Role> roles = findEntitySpecificRoles(entityType, entity.getGoid());
         if (roles == null) {
             logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getGoid()));

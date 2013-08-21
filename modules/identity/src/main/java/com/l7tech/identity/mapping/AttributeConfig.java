@@ -1,14 +1,14 @@
 package com.l7tech.identity.mapping;
 
 import com.l7tech.objectmodel.AttributeHeader;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.variable.DataType;
 
 /**
  * A description of a generic attribute that users and/or credentials might have.
  * (e.g. email address, membership status, account balance...)
  */
-public class AttributeConfig extends NamedGoidEntityImp {
+public class AttributeConfig extends NamedEntityImp {
     private AttributeHeader header;
     private String description;
 

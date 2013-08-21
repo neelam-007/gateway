@@ -1,8 +1,8 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntityManager;
 
 /**
  * This class manages the ssg_node table.
@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.GoidEntityManager;
  * @Author: ghuang
  * @Date: Nov 14, 2008
  */
-public interface SsgNodeManager extends GoidEntityManager<SsgNode, EntityHeader> {
+public interface SsgNodeManager extends EntityManager<SsgNode, EntityHeader> {
 
     SsgNode findByGuid(String guid) throws FindException;
 }

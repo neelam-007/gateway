@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.transport.ftp;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.GoidUpgradeMapper;
 
 import java.io.PrintStream;
@@ -43,7 +43,7 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     // The long clientCertKeystoreId needs to be here for backwards compatibility serialization purposes.
     @SuppressWarnings("UnusedDeclaration")
     private long clientCertKeystoreId = -1;
-    private Goid clientCertKeystoreGoid = GoidEntity.DEFAULT_GOID;
+    private Goid clientCertKeystoreGoid = PersistentEntity.DEFAULT_GOID;
     private String clientCertKeyAlias;
 
     private FtpFileNameSource fileNameSource;

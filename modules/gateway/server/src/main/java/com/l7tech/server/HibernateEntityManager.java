@@ -39,16 +39,16 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
- * The default {@link com.l7tech.objectmodel.GoidEntityManager} implementation for Hibernate-managed
- * {@link com.l7tech.objectmodel.GoidEntityManager persistent entities}.
+ * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed
+ * {@link com.l7tech.objectmodel.EntityManager persistent entities}.
  *
  * Implementations only need to implement {@link #getInterfaceClass()}, {@link #getImpClass()} and
  * {@link #getTableName()}, although two of those are only for historical reasons.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT extends EntityHeader>
+public abstract class HibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader>
         extends HibernateDaoSupport
-        implements GoidEntityManager<ET, HT>
+        implements EntityManager<ET, HT>
 {
     public static final String EMPTY_STRING = "";
     public static final String F_GOID = "goid";
@@ -504,7 +504,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
     @Transactional(readOnly=true)
     public Map<Goid,Integer> findVersionMap() throws FindException {
         Map<Goid, Integer> result = new HashMap<Goid, Integer>();
-        if (!GoidEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
+        if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
         FlushMode old = null;
@@ -640,7 +640,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
      * Override this method to customize how EntityHeaders get created
      * (if {@link HT} is a subclass of {@link com.l7tech.objectmodel.EntityHeader} it's mandatory)
      *
-     * @param entity the GoidEntity
+     * @param entity the PersistentEntity
      * @return a new EntityHeader based on the provided Entity ID and name
      */
     @SuppressWarnings({ "unchecked" })
@@ -660,7 +660,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
             final ZoneableEntity zoneableEntity = (ZoneableEntity) entity;
             final SecurityZone zone = zoneableEntity.getSecurityZone();
             final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(ht);
-            zoneableHeader.setSecurityZoneGoid(zone == null ? null : zone.getGoid());
+            zoneableHeader.setSecurityZoneId(zone == null ? null : zone.getGoid());
             ht = (HT) zoneableHeader;
         }
 
@@ -841,10 +841,10 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
     }
 
     /**
-     * Gets the {@link com.l7tech.objectmodel.GoidEntity} with the specified name from a cache where possible.  If the
+     * Gets the {@link com.l7tech.objectmodel.PersistentEntity} with the specified name from a cache where possible.  If the
      * entity is not present in the cache, it will be retrieved from the database.  If the entity
      * is present in the cache but was cached too long ago, checks whether the cached entity
-     * is stale by looking up its {@link com.l7tech.objectmodel.GoidEntity#getVersion}.  If the cached entity has the same
+     * is stale by looking up its {@link com.l7tech.objectmodel.PersistentEntity#getVersion}.  If the cached entity has the same
      * version as the database, the cached version is marked fresh.
      *
      * @param goid the OID of the object to get
@@ -908,7 +908,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
         return cacheInfo.entity;
     }
 
-    protected void cacheRemove(GoidEntity thing) {
+    protected void cacheRemove(PersistentEntity thing) {
         final Lock write = cacheLock.writeLock();
         write.lock();
         try {
@@ -930,7 +930,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
      * @param ent the Entity that has been removed
      */
     @SuppressWarnings({ "UnusedDeclaration" })
-    protected void removedFromCache(GoidEntity ent) { }
+    protected void removedFromCache(PersistentEntity ent) { }
 
     /**
      * Override this method to be notified when an Entity has been added to the cache.
@@ -940,7 +940,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
      * @param ent the Entity that has been added to the cache
      */
     @SuppressWarnings({ "UnusedDeclaration" })
-    protected void addedToCache(GoidEntity ent) { }
+    protected void addedToCache(PersistentEntity ent) { }
 
     /**
      * Perform some action while holding the cache write lock.
@@ -1166,7 +1166,7 @@ public abstract class HibernateGoidEntityManager<ET extends GoidEntity, HT exten
     }
 
     /** Holds information about a cached Entity. */
-    static class CacheInfo<ET extends GoidEntity> {
+    static class CacheInfo<ET extends PersistentEntity> {
         ET entity;
         long timestamp;
         int version;

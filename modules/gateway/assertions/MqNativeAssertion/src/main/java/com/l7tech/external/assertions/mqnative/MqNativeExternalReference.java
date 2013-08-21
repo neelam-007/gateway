@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
@@ -215,7 +215,7 @@ public class MqNativeExternalReference extends ExternalReference {
             try {
                 output.goid = GoidUpgradeMapper.mapOid(EntityType.SSG_ACTIVE_CONNECTOR, Long.parseLong(val));
             } catch (NumberFormatException nfe) {
-                output.goid = GoidEntity.DEFAULT_GOID;
+                output.goid = PersistentEntity.DEFAULT_GOID;
             }
         }
 

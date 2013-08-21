@@ -11,7 +11,7 @@ import java.util.Collection;
 /**
  * Provides the ability to do CRUD operations on SinkConfiguration rows in the database.
  */
-public interface SinkManager extends GoidEntityManager<SinkConfiguration, EntityHeader>, RoleAwareGoidEntityManager<SinkConfiguration> {
+public interface SinkManager extends EntityManager<SinkConfiguration, EntityHeader>, RoleAwareEntityManager<SinkConfiguration> {
 
     /**
      * Get the file storage allocation for logs.

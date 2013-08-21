@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ArrayUtils;
 
 /** @author alex */
-public class ServiceEnablementEvent extends GoidEntityInvalidationEvent {
+public class ServiceEnablementEvent extends EntityInvalidationEvent {
     private final boolean enabled;
 
     /**

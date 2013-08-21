@@ -128,7 +128,7 @@ public class FolderAdminImpl implements FolderAdmin {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void moveEntityToFolder( final Folder folder, GoidEntity entity ) throws UpdateException {
+    public void moveEntityToFolder( final Folder folder, PersistentEntity entity ) throws UpdateException {
         if ( entity == null ) throw new UpdateException( "Entity is required." );
         Folder rootFolder;
         try {
@@ -170,7 +170,7 @@ public class FolderAdminImpl implements FolderAdmin {
         manager.updateFolder( entity, destinationFolder );
     }
 
-    private void checkMoveEntityPermissions(@NotNull final GoidEntity entity, @NotNull final Folder targetFolder) throws UpdateException {
+    private void checkMoveEntityPermissions(@NotNull final PersistentEntity entity, @NotNull final Folder targetFolder) throws UpdateException {
         final User user = JaasUtils.getCurrentUser();
         try {
             if (!rbacServices.isPermittedForEntity(user, targetFolder, OperationType.UPDATE, null)) {

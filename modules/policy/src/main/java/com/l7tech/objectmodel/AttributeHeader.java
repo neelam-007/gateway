@@ -3,7 +3,7 @@
  */
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.variable.DataType;
 
 import java.io.ObjectStreamException;
@@ -22,7 +22,7 @@ import static com.l7tech.policy.variable.DataType.STRING;
  *
  * @author alex
  */
-public class AttributeHeader extends NamedGoidEntityImp implements Serializable {
+public class AttributeHeader extends NamedEntityImp implements Serializable {
     /**
      * Only classes in this package can declare whether a variable is built-in (any header created by "outsiders" 
      * is considered "custom.")

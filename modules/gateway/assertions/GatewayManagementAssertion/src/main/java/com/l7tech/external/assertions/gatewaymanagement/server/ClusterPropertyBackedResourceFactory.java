@@ -23,7 +23,7 @@ import static com.l7tech.util.Option.optional;
  * @param <R> The "user visible" resource type
  * @param <RI> The internal representation for the resource type
  */
-abstract class ClusterPropertyBackedResourceFactory<R,RI> extends GoidEntityManagerResourceFactory<R, ClusterProperty, EntityHeader> {
+abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerResourceFactory<R, ClusterProperty, EntityHeader> {
 
     //- PUBLIC
 
@@ -138,7 +138,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends GoidEntityMana
                                           final RbacServices rbacServices,
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
-                                          final GoidEntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager,
+                                          final EntityManager<ClusterProperty, EntityHeader> clusterPropertyEntityHeaderEntityManager,
                                           final String propertyName ) {
         super(readOnly, true, rbacServices, securityFilter, transactionManager, clusterPropertyEntityHeaderEntityManager);
         this.propertyName = propertyName;
@@ -424,7 +424,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends GoidEntityMana
             }
         }
 
-        if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
+        if ( PersistentEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
             checkPermitted( OperationType.CREATE, null, property );
         } else {
             checkPermitted( OperationType.UPDATE, null, property );
@@ -445,10 +445,10 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends GoidEntityMana
             throw new ResourceAccessException( "Updated cluster property value is invalid", e);
         }
 
-        final Goid id = doWithManager(new UnaryThrows<Goid, GoidEntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
+        final Goid id = doWithManager(new UnaryThrows<Goid, EntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
             @Override
-            public Goid call(final GoidEntityManager<ClusterProperty, EntityHeader> manager) throws ObjectModelException {
-                if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
+            public Goid call(final EntityManager<ClusterProperty, EntityHeader> manager) throws ObjectModelException {
+                if ( PersistentEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
                     return manager.save(property);
                 } else {
                     manager.update(property);

@@ -2,7 +2,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.util.ConfigFactory;
@@ -95,7 +95,7 @@ public class JmsSslCustomizerSupport {
 
         final Pair<Goid,String> keyId;
         if ( keystoreIdStr==null && alias == null ) {
-            keyId = new Pair<Goid,String>(GoidEntity.DEFAULT_GOID, "");
+            keyId = new Pair<Goid,String>(PersistentEntity.DEFAULT_GOID, "");
         } else {
             // process keystore
             Goid keystoreId;

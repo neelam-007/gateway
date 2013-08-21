@@ -11,7 +11,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @ResourceFactory.ResourceType(type=CustomKeyValueStoreMO.class)
-public class CustomKeyValueStoreResourceFactory extends GoidEntityManagerResourceFactory<CustomKeyValueStoreMO, CustomKeyValueStore,EntityHeader>{
+public class CustomKeyValueStoreResourceFactory extends EntityManagerResourceFactory<CustomKeyValueStoreMO, CustomKeyValueStore,EntityHeader> {
 
     //- PUBLIC
 

@@ -15,7 +15,7 @@ import java.util.Date;
  *
  * @author ghuang
  */
-public interface MigrationRecordManager extends GoidEntityManager<MigrationRecord, EntityHeader> {
+public interface MigrationRecordManager extends EntityManager<MigrationRecord, EntityHeader> {
 
     enum SortProperty {
         NAME("name"), TIME("timeCreated");

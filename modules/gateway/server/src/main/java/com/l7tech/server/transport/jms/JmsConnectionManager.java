@@ -6,14 +6,12 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsProvider;
 
-import java.util.Collection;
 import java.util.EnumSet;
 
 /**
  * @author alex
  */
-public interface JmsConnectionManager extends GoidEntityManager<JmsConnection, EntityHeader> {
+public interface JmsConnectionManager extends EntityManager<JmsConnection, EntityHeader> {
     EnumSet<JmsProviderType> findAllProviders() throws FindException;
 }

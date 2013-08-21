@@ -7,14 +7,14 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.imp.GoidEntityUtil;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.PolicyReloadEvent;
@@ -538,8 +538,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                     resetAllForModuleUnload();
                 }
             });
-        } else if( applicationEvent instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent) applicationEvent;
+        } else if( applicationEvent instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
             final PolicyVersionManager policyVersionManager = this.policyVersionManager;
 
             if( Policy.class.isAssignableFrom( event.getEntityClass() ) ) {
@@ -569,8 +569,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 Goid policyGoid = PolicyVersion.DEFAULT_GOID;
                 try {
                     for( final Pair<Goid,Character> entityInfo : zipI( event.getEntityIds(), box(event.getEntityOperations())) ) {
-                        if ( ((int) GoidEntityInvalidationEvent.CREATE) != entityInfo.right &&
-                             ((int) GoidEntityInvalidationEvent.UPDATE) != entityInfo.right) continue;
+                        if ( ((int) EntityInvalidationEvent.CREATE) != entityInfo.right &&
+                             ((int) EntityInvalidationEvent.UPDATE) != entityInfo.right) continue;
                         final Goid goid = entityInfo.left;
                         final PolicyVersion version = policyVersionManager.findByPrimaryKey( goid );
                         if ( version == null || !version.isActive() ) continue;
@@ -822,7 +822,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      * Add an item to the cache, update the usage structure (usedBy)
      */
     private void cacheReplace( final PolicyCacheEntry pce ) {
-        if (!GoidEntityUtil.isLocked(pce.policy))
+        if (!PersistentEntityUtil.isLocked(pce.policy))
             throw new IllegalArgumentException("Unlocked policy may not be placed into the policy cache");
         PolicyCacheEntry replaced = policyCache.put( pce.policyId, pce );
         if ( replaced != null ) {

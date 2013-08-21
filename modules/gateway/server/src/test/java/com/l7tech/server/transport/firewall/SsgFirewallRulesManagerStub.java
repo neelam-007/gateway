@@ -2,7 +2,7 @@ package com.l7tech.server.transport.firewall;
 
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 
 /**
  * <p>
@@ -10,7 +10,7 @@ import com.l7tech.server.GoidEntityManagerStub;
  * </p>
  * @author K.Diep
  */
-public class SsgFirewallRulesManagerStub extends GoidEntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRuleManager {
+public class SsgFirewallRulesManagerStub extends EntityManagerStub<SsgFirewallRule, EntityHeader> implements SsgFirewallRuleManager {
 
     public SsgFirewallRulesManagerStub(final SsgFirewallRule ... entitiesIn){
         super(entitiesIn);

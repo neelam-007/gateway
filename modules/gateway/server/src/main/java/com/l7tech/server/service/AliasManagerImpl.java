@@ -20,7 +20,7 @@ import java.util.*;
  *
  * @author darmstrong
  */
-public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends GoidEntity, HT extends OrganizationHeader>
+public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
     extends FolderSupportHibernateEntityManager<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
@@ -33,7 +33,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends GoidEnti
     @Override
     public AT findAliasByEntityAndFolder(final Goid serviceGoid, final Goid folderGoid) throws FindException {
         if (serviceGoid == null || folderGoid == null) throw new NullPointerException();
-        if (!(GoidEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not GoidEntity!");
+        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked
@@ -54,7 +54,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends GoidEnti
     @Override
     public Collection<AT> findAllAliasesForEntity(final Goid serviceGoid) throws FindException {
         if (serviceGoid == null) throw new NullPointerException();
-        if (!(GoidEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not GoidEntity!");
+        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked
@@ -103,7 +103,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends GoidEnti
                 for(AT pa: aliases){
                     HT newHT = getNewEntityHeader(ht);
                     newHT.setAliasGoid(pa.getGoid());
-                    newHT.setFolderGoid(pa.getFolder().getGoid());
+                    newHT.setFolderId(pa.getFolder().getGoid());
                     returnHeaders.add(newHT);
                 }
             }

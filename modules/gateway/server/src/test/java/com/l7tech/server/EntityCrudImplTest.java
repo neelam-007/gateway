@@ -25,13 +25,13 @@ public class EntityCrudImplTest {
     @Mock
     private EntityFinder entityFinder;
     @Mock
-    private GoidEntityManager<Policy, EntityHeader> policyEntityManager;
+    private EntityManager<Policy, EntityHeader> policyEntityManager;
     @Mock
-    private GoidEntityManager<SecurityZone, EntityHeader> zoneEntityManager;
+    private EntityManager<SecurityZone, EntityHeader> zoneEntityManager;
     @Mock
-    private GoidEntityManager<PublishedService, EntityHeader> serviceEntityManager;
+    private EntityManager<PublishedService, EntityHeader> serviceEntityManager;
     @Mock
-    private GoidEntityManager<JdbcConnection, EntityHeader> jdbcConnectionEntityManager;
+    private EntityManager<JdbcConnection, EntityHeader> jdbcConnectionEntityManager;
     private List<Serializable> ids;
     private SecurityZone zone;
     private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
@@ -217,7 +217,7 @@ public class EntityCrudImplTest {
     /**
      * Delegates to the mock.
      */
-    private class StubPolicyEntityManager implements ReadOnlyEntityManager<Policy, EntityHeader>, GoidEntityManager<Policy, EntityHeader> {
+    private class StubPolicyEntityManager implements ReadOnlyEntityManager<Policy, EntityHeader>, EntityManager<Policy, EntityHeader> {
         @Override
         public Goid save(Policy entity) throws SaveException {
             return policyEntityManager.save(entity);
@@ -309,7 +309,7 @@ public class EntityCrudImplTest {
         }
     }
 
-    private class StubSecurityZoneEntityManager implements ReadOnlyEntityManager<SecurityZone, EntityHeader>, GoidEntityManager<SecurityZone, EntityHeader> {
+    private class StubSecurityZoneEntityManager implements ReadOnlyEntityManager<SecurityZone, EntityHeader>, EntityManager<SecurityZone, EntityHeader> {
 
         @Override
         public Goid save(SecurityZone entity) throws SaveException {
@@ -402,7 +402,7 @@ public class EntityCrudImplTest {
         }
     }
 
-    private class StubServiceManager implements ReadOnlyEntityManager<PublishedService, EntityHeader>, GoidEntityManager<PublishedService, EntityHeader> {
+    private class StubServiceManager implements ReadOnlyEntityManager<PublishedService, EntityHeader>, EntityManager<PublishedService, EntityHeader> {
 
         @Override
         public Goid save(PublishedService entity) throws SaveException {
@@ -495,7 +495,7 @@ public class EntityCrudImplTest {
         }
     }
 
-    private class StudJdbcConnectionManager implements ReadOnlyEntityManager<JdbcConnection, EntityHeader>, GoidEntityManager<JdbcConnection, EntityHeader>{
+    private class StudJdbcConnectionManager implements ReadOnlyEntityManager<JdbcConnection, EntityHeader>, EntityManager<JdbcConnection, EntityHeader> {
 
         @Override
         public Goid save(JdbcConnection entity) throws SaveException {

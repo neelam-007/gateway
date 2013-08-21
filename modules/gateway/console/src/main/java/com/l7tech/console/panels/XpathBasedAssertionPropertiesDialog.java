@@ -400,7 +400,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                         log.log(Level.WARNING, "Invalid XML", e1);
                     }
                     String name = currentOperation == null ? null : currentOperation.getName();
-                    Goid objectId = (serviceNode == null)? GoidEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
+                    Goid objectId = (serviceNode == null)? PersistentEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
                     sm = new SampleMessage(objectId, name, name, xml);
                 } catch (Exception ex) {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
@@ -533,7 +533,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            Goid objectId = (serviceNode == null)? GoidEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
+            Goid objectId = (serviceNode == null)? PersistentEntity.DEFAULT_GOID : serviceNode.getEntity().getGoid();
             sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
                 Goid thisGoid = sampleMessage.getGoid();

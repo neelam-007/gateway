@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.siteminder;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -30,7 +30,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="siteminder_configuration")
-public class SiteMinderConfiguration extends ZoneableNamedGoidEntityImp implements Comparable {
+public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements Comparable {
 
     private String agent_name;
     private String address;

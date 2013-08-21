@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.licensing;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.apache.commons.lang.ObjectUtils;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +19,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="license_document")
-public class LicenseDocument extends GoidEntityImp {
+public class LicenseDocument extends PersistentEntityImp {
     @Lob
     @Column(name = "contents", unique = true, nullable = false)
     private String contents;

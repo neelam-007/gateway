@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -16,7 +16,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
-public class UDDIServiceControl extends ZoneableGoidEntityImp {
+public class UDDIServiceControl extends ZoneableEntityImp {
     public static final String ATTR_SERVICE_GOID = "publishedServiceGoid";
 
     //- PUBLIC

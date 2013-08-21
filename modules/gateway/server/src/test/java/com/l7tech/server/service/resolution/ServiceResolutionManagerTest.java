@@ -13,7 +13,7 @@ import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
@@ -146,7 +146,7 @@ public class ServiceResolutionManagerTest {
     public void testResolutionSoapAction() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
-        message.attachJmsKnob( new JmsKnobStub(GoidEntity.DEFAULT_GOID, true, "http://warehouse.acme.com/ws/listProducts" ) );
+        message.attachJmsKnob( new JmsKnobStub(PersistentEntity.DEFAULT_GOID, true, "http://warehouse.acme.com/ws/listProducts" ) );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
         assertEquals( "Service id", new Goid(serviceUpgradePrefix,2L), service.getGoid() );

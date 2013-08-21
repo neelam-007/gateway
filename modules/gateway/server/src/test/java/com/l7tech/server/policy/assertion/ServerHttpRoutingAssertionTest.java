@@ -18,7 +18,7 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.log.TestHandler;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.message.*;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
@@ -894,7 +894,7 @@ public class ServerHttpRoutingAssertionTest {
         final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
         final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
 
-        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry(GoidEntity.DEFAULT_GOID, "alias", chain, key));
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry(PersistentEntity.DEFAULT_GOID, "alias", chain, key));
 
         TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
         TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);
@@ -1006,7 +1006,7 @@ public class ServerHttpRoutingAssertionTest {
         final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
         final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
 
-        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( GoidEntity.DEFAULT_GOID, "alias", chain, key));
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( PersistentEntity.DEFAULT_GOID, "alias", chain, key));
 
         TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
         TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);

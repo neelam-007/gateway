@@ -3,7 +3,7 @@ package com.l7tech.server.ems.enterprise;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Functions;
@@ -36,7 +36,7 @@ import static com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER;
  * @author rmak
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class SsgClusterManagerImpl extends HibernateGoidEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
+public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
     private static final Logger logger = Logger.getLogger(SsgClusterManagerImpl.class.getName());
 
     private static final String ROLE_NAME_TYPE_SUFFIX = "Gateway Cluster Nodes";

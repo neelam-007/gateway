@@ -3,7 +3,7 @@ package com.l7tech.server.transport;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -11,7 +11,7 @@ import java.util.Collection;
 /**
  * @author ghuang
  */
-public class SsgActiveConnectorManagerStub extends GoidEntityManagerStub<SsgActiveConnector, SsgActiveConnectorHeader> implements SsgActiveConnectorManager {
+public class SsgActiveConnectorManagerStub extends EntityManagerStub<SsgActiveConnector, SsgActiveConnectorHeader> implements SsgActiveConnectorManager {
 
     public SsgActiveConnectorManagerStub() {
         super();

@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * A statistical bin for collected service metrics.
@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.imp.GoidEntityImp;
  * Each bin contains details that break down the higher level information
  * contained in the parent metrics bin.
  */
-public class MetricsBinDetail extends GoidEntityImp {
+public class MetricsBinDetail extends PersistentEntityImp {
 
     //- PUBLIC
 

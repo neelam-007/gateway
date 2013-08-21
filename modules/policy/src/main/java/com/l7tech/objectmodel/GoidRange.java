@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum GoidRange {
     /**
-     * Represents a new, not-yet-saved entity.  Equivalent to GoidEntity.DEFAULT_GOID and
+     * Represents a new, not-yet-saved entity.  Equivalent to PersistentEntity.DEFAULT_GOID and
      * analagous to the old PersistentEntity.DEFAULT_OID.
      */
     DEFAULT(0, -1, 0, -1),

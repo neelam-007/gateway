@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.mapping;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
 
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="message_context_mapping_keys")
-public class MessageContextMappingKeys extends GoidEntityImp {
+public class MessageContextMappingKeys extends PersistentEntityImp {
     private static final Logger logger = Logger.getLogger(MessageContextMappingKeys.class.getName());
     private static final int MAX_MAPPING_TYPE_LENGTH = 36;
     private static final int MAX_KEY_LENGTH = 128;

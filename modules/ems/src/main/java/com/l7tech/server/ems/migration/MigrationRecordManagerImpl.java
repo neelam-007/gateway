@@ -2,7 +2,7 @@ package com.l7tech.server.ems.migration;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -28,7 +28,7 @@ import java.util.List;
  * @author ghuang
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationRecordManagerImpl extends HibernateGoidEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
+public class MigrationRecordManagerImpl extends HibernateEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
     //- PUBLIC
 

@@ -7,12 +7,12 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 
 import java.util.EnumSet;
 
 /** @author alex */
-public class JmsConnectionManagerStub extends GoidEntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
+public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
 
     public JmsConnectionManagerStub() {
         super();

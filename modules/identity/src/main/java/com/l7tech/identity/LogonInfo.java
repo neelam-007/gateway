@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
@@ -24,7 +24,7 @@ import org.hibernate.annotations.Type;
 @Proxy(lazy=false)
 @Entity
 @Table(name="logon_info")
-public class LogonInfo extends GoidEntityImp {
+public class LogonInfo extends PersistentEntityImp {
 
 
     private String login;

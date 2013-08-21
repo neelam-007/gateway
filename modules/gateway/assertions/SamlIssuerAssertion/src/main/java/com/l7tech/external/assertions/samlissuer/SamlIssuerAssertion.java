@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.samlissuer;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -49,7 +49,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
     private boolean usesDefaultKeyStore = true;
-    private Goid nonDefaultKeystoreId = GoidEntity.DEFAULT_GOID;
+    private Goid nonDefaultKeystoreId = PersistentEntity.DEFAULT_GOID;
     private String keyAlias = "SSL";
     private String customIssuerValue;
     private String customIssuerFormat;

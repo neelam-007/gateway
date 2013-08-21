@@ -17,7 +17,7 @@ import com.l7tech.util.GoidUpgradeMapper;
  */
 public abstract class IdentityAssertion extends MessageTargetableAssertion implements UsesEntities, IdentityTagable {
 
-    protected Goid _identityProviderOid = GoidEntity.DEFAULT_GOID;
+    protected Goid _identityProviderOid = PersistentEntity.DEFAULT_GOID;
     protected String identityTag;
 
     protected IdentityAssertion() {

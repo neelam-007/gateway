@@ -74,7 +74,7 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         PolicyAlias alias = null;
         final PolicyHeader header = getEntityHeader();
         try {
-            alias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(header.getGoid(), header.getFolderGoid());
+            alias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(header.getGoid(), header.getFolderId());
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve policy alias: " + e.getMessage(), ExceptionUtils.getDebugException(e));
         }

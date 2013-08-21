@@ -6,11 +6,11 @@ package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
 
-public interface UDDIPublishStatusManager extends GoidEntityManager<UDDIPublishStatus, EntityHeader> {
+public interface UDDIPublishStatusManager extends EntityManager<UDDIPublishStatus, EntityHeader> {
 
     /**
      * Find a UDDIProxiedService by published service identifier (GOID)

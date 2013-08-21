@@ -1,7 +1,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -16,7 +16,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_registry_subscription")
-public class UDDIRegistrySubscription extends GoidEntityImp {
+public class UDDIRegistrySubscription extends PersistentEntityImp {
 
    //- PUBLIC
 

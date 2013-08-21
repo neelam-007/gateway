@@ -5,17 +5,17 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Indicates that the implementing class can have a reference to a SecurityZone by its goid.
  */
-public interface HasSecurityZoneGoid {
+public interface HasSecurityZoneId {
     /**
      * @return the goid of the referenced SecurityZone.
      */
     @Nullable
-    public Goid getSecurityZoneGoid();
+    public Goid getSecurityZoneId();
 
     /**
      * Set the goid of the referenced SecurityZone.
      *
      * @param securityZoneGoid the goid of the referenced SecurityZone.
      */
-    public void setSecurityZoneGoid(@Nullable final Goid securityZoneGoid);
+    public void setSecurityZoneId(@Nullable final Goid securityZoneGoid);
 }

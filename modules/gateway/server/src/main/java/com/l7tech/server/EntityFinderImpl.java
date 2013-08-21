@@ -102,7 +102,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
                     final Criteria criteria = session.createCriteria(entityClass);
                     final ProjectionList pl = Projections.projectionList();
-                    if(GoidEntity.class.isAssignableFrom(entityClass)){
+                    if(PersistentEntity.class.isAssignableFrom(entityClass)){
                         pl.add(Projections.property("goid"));
                     } else {
                         pl.add(Projections.property("oid"));
@@ -242,7 +242,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id.substring(0, sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
-            } else if (GoidEntity.class.isAssignableFrom(clazz)) {
+            } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
                 try {
                     tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
                 } catch (IllegalArgumentException iae) {

@@ -207,7 +207,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
-            Goid goid = GoidEntity.DEFAULT_GOID;
+            Goid goid = PersistentEntity.DEFAULT_GOID;
             try {
                 goid = Goid.parseGoid(entityId);
             } catch (IllegalArgumentException iae) {

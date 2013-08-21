@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.junit.Test;
 
 import javax.persistence.Column;
@@ -57,7 +57,7 @@ public class EntityUtilTest {
         assertEquals("Must fail and return default", -7, EntityUtil.getMaxFieldLength(AnnotationTestEntitySubclass.class, "privateField", -7));
     }
 
-    public static class AnnotationTestEntity extends NamedGoidEntityImp {
+    public static class AnnotationTestEntity extends NamedEntityImp {
         @SuppressWarnings({"UnusedDeclaration"})
         @Column(name="publicField", length=821)
         private String publicField;

@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.UDDISystemEvent;
 import com.l7tech.server.service.ServiceCache;
@@ -114,8 +114,8 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     }
 
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-        if ( applicationEvent instanceof GoidEntityInvalidationEvent ) {
-            GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
+        if ( applicationEvent instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if ( UDDIRegistry.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 loadUDDIRegistries(true);
             } else if (
@@ -127,7 +127,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 for ( int i=0; i<entityIds.length; i++ ) {
                     Goid id = entityIds[i];
                     char op = entityOps[i];
-                    if(GoidEntityInvalidationEvent.CREATE == op || GoidEntityInvalidationEvent.UPDATE == op){
+                    if(EntityInvalidationEvent.CREATE == op || EntityInvalidationEvent.UPDATE == op){
                         try {
                             final UDDIPublishStatus uddiPublishStatus = uddiPublishStatusManager.findByPrimaryKey(id);
                             if(uddiPublishStatus == null){
@@ -170,7 +170,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 for ( int i=0; i<entityIds.length; i++ ) {
                     Goid id = entityIds[i];
                     char op = entityOps[i];
-                    if(GoidEntityInvalidationEvent.UPDATE == op){
+                    if(EntityInvalidationEvent.UPDATE == op){
                         final PublishedService service = serviceCache.getCachedService(id);
                         if(service == null) return;
                         final UDDIProxiedServiceInfo uddiProxiedServiceInfo;

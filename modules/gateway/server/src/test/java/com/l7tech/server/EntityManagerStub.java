@@ -12,7 +12,7 @@ import java.util.*;
 /**
  * Stub Entity Manager
  */
-public abstract class EntityManagerStub<ET extends GoidEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH>, RoleAwareGoidEntityManager<ET> {
+public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH>, RoleAwareEntityManager<ET> {
     protected final Map<Goid, ET> entities;
     protected final Map<Goid, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
@@ -62,7 +62,7 @@ public abstract class EntityManagerStub<ET extends GoidEntity, EH extends Entity
 
     @Override
     public synchronized void update(ET entity) throws UpdateException {
-        if (GoidEntity.DEFAULT_GOID.equals(entity.getGoid()) || entity.getId() == null) throw new IllegalArgumentException();
+        if (PersistentEntity.DEFAULT_GOID.equals(entity.getGoid()) || entity.getId() == null) throw new IllegalArgumentException();
         entity.setVersion( entity.getVersion() + 1 );
         entities.put(entity.getGoid(), entity);
         headers.put(entity.getGoid(), header(entity));
@@ -171,7 +171,7 @@ public abstract class EntityManagerStub<ET extends GoidEntity, EH extends Entity
 
     @Override
     public Class<? extends Entity> getImpClass() {
-        return GoidEntity.class;
+        return PersistentEntity.class;
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.transport;
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.BeanUtils;
@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 @Entity
 @Proxy(lazy=false)
 @Table(name="connector")
-public class SsgConnector extends ZoneableNamedGoidEntityImp implements PortOwner {
+public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
     /** Indicates that a client certificate challenge will never be sent. */

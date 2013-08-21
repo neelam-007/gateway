@@ -100,7 +100,7 @@ public final class EntityHeaderUtils {
         } else if (e instanceof JmsEndpoint) {
             JmsEndpoint endpoint = (JmsEndpoint) e;
             final JmsEndpointHeader header = new JmsEndpointHeader(endpoint.getId(), endpoint.getName(), endpoint.getDestinationName(), endpoint.getVersion(), endpoint.isMessageSource());
-            header.setSecurityZoneGoid(endpoint.getSecurityZone() == null ? null : endpoint.getSecurityZone().getGoid());
+            header.setSecurityZoneId(endpoint.getSecurityZone() == null ? null : endpoint.getSecurityZone().getGoid());
             header.setConnectionGoid(endpoint.getConnectionGoid());
             return header;
         } else if (e instanceof SsgActiveConnector) {
@@ -109,10 +109,10 @@ public final class EntityHeaderUtils {
             final EncapsulatedAssertionConfig config = (EncapsulatedAssertionConfig) e;
             final ZoneableGuidEntityHeader guidEntityHeader = new ZoneableGuidEntityHeader(config.getGoid().toString(), ENCAPSULATED_ASSERTION, config.getName(), null, config.getVersion());
             guidEntityHeader.setGuid(config.getGuid());
-            guidEntityHeader.setSecurityZoneGoid(config.getSecurityZone() == null ? null : config.getSecurityZone().getGoid());
+            guidEntityHeader.setSecurityZoneId(config.getSecurityZone() == null ? null : config.getSecurityZone().getGoid());
             return guidEntityHeader;
-        } else if (e instanceof GoidEntity) {
-            GoidEntity entity = (GoidEntity) e;
+        } else if (e instanceof PersistentEntity) {
+            PersistentEntity entity = (PersistentEntity) e;
             EntityHeader entityHeader = new EntityHeader(entity.getGoid(),
                     EntityTypeRegistry.getEntityType(entity.getClass()),
                     entity instanceof NamedEntity ? ((NamedEntity) entity).getName() : null,
@@ -139,7 +139,7 @@ public final class EntityHeaderUtils {
         if (entity instanceof ZoneableEntity) {
             final ZoneableEntity zoneable = (ZoneableEntity) entity;
             final ZoneableEntityHeader zoneableHeader = new ZoneableEntityHeader(entityHeader);
-            zoneableHeader.setSecurityZoneGoid(zoneable.getSecurityZone() == null ? null : zoneable.getSecurityZone().getGoid());
+            zoneableHeader.setSecurityZoneId(zoneable.getSecurityZone() == null ? null : zoneable.getSecurityZone().getGoid());
             return zoneableHeader;
         }
         return entityHeader;

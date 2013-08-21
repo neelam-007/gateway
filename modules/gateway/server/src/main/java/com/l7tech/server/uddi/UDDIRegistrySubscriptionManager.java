@@ -3,14 +3,14 @@ package com.l7tech.server.uddi;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 
 import java.util.Collection;
 
 /**
  * Entity manager for UDDIRegistrySubscriptions
  */
-public interface UDDIRegistrySubscriptionManager extends GoidEntityManager<UDDIRegistrySubscription, EntityHeader> {
+public interface UDDIRegistrySubscriptionManager extends EntityManager<UDDIRegistrySubscription, EntityHeader> {
 
     /**
      * Find the UDDIRuntimeServiceInfos for a UDDI registry.

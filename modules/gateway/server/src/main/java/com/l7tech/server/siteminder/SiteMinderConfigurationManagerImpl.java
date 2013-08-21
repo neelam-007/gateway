@@ -6,9 +6,9 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.server.HibernateGoidEntityManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +24,13 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SiteMinderConfigurationManagerImpl
-    extends HibernateGoidEntityManager<SiteMinderConfiguration, EntityHeader>
+    extends HibernateEntityManager<SiteMinderConfiguration, EntityHeader>
     implements SiteMinderConfigurationManager {
 
     protected final ConcurrentMap<String, SiteMinderLowLevelAgent> cache = new ConcurrentHashMap<String, SiteMinderLowLevelAgent>();
 
     @Override
-    public Class<? extends GoidEntity> getImpClass() {
+    public Class<? extends PersistentEntity> getImpClass() {
         return SiteMinderConfiguration.class;
     }
 
@@ -62,8 +62,8 @@ public class SiteMinderConfigurationManagerImpl
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         // if a SiteMinderConfiguration has been modified, remove it from the cache
-        if (event instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) event;
+        if (event instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
             if (SiteMinderConfiguration.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final Goid[] ids = entityInvalidationEvent.getEntityIds();
                 for (final Goid id : ids) {

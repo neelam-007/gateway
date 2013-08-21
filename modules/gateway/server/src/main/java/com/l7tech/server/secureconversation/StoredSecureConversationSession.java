@@ -1,7 +1,7 @@
 package com.l7tech.server.secureconversation;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
@@ -17,7 +17,7 @@ import javax.persistence.Table;
 @Entity
 @Proxy(lazy=false)
 @Table(name="wssc_session")
-public class StoredSecureConversationSession extends GoidEntityImp {
+public class StoredSecureConversationSession extends PersistentEntityImp {
 
     //- PUBLIC
 

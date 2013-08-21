@@ -397,7 +397,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
             final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
             if ( hardwiredServiceGoid != null ) {
-                gatewayRequestMessage.attachKnob(HasServiceGoid.class, new HasServiceGoidImpl(hardwiredServiceGoid));
+                gatewayRequestMessage.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
             }
 
             final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=

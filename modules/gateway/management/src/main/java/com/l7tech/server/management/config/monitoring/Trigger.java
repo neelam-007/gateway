@@ -4,7 +4,7 @@
 package com.l7tech.server.management.config.monitoring;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.management.api.monitoring.Monitorable;
 
 import javax.persistence.CascadeType;
@@ -22,7 +22,7 @@ import java.util.List;
 @Entity
 @XmlRootElement
 @XmlSeeAlso({PropertyTrigger.class, EventTrigger.class})
-public abstract class Trigger<MT extends Monitorable> extends NamedGoidEntityImp {
+public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     /** The type of the subject component */
     protected ComponentType componentType;
 

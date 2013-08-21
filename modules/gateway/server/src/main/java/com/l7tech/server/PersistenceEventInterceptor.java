@@ -17,7 +17,7 @@ import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.*;
@@ -41,7 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Notices when any persistent {@link com.l7tech.objectmodel.GoidEntity} is saved, updated or deleted, and creates and
+ * Notices when any persistent {@link com.l7tech.objectmodel.PersistentEntity} is saved, updated or deleted, and creates and
  * fires corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
  * if and when the current transaction commits.
  *
@@ -91,7 +91,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private final Set<String> noAuditClassNames; // fire an event, but mark it "system" so it doesn't get audited
 
     private boolean ignored(Object entity) {
-        return !(entity instanceof GoidEntity)  || ignoredClassNames.contains(entity.getClass().getName());
+        return !(entity instanceof PersistentEntity)  || ignoredClassNames.contains(entity.getClass().getName());
     }
 
     public Set<String> getIgnoredClassNames() {

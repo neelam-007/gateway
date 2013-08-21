@@ -1,6 +1,6 @@
 package com.l7tech.server.sla;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -15,7 +15,7 @@ import javax.persistence.Table;
 @Entity
 @Proxy(lazy=false)
 @Table(name="counters")
-public class CounterRecord extends GoidEntityImp {
+public class CounterRecord extends PersistentEntityImp {
     public String counterName;
 
     @Column(name="countername", nullable=false, length=255)

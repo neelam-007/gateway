@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * @author alex, $Author$
  * @version $Revision$
  */
-public abstract class PeriodicGoidVersionCheck extends TimerTask {
+public abstract class PeriodicVersionCheck extends TimerTask {
 
     /**
      * Loads an initial version map automatically.
@@ -30,7 +30,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
      * @param manager
      * @throws com.l7tech.objectmodel.FindException
      */
-    public PeriodicGoidVersionCheck(GoidEntityManager manager) throws FindException {
+    public PeriodicVersionCheck(EntityManager manager) throws FindException {
         this.manager = manager;
         cachedVersionMap = manager.findVersionMap();
     }
@@ -89,7 +89,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
             } else {
                 for (Goid createdGoid : creates) {
                     if (checkAddOrUpdate(createdGoid, 0)) {
-                        GoidEntity createdEntity;
+                        PersistentEntity createdEntity;
                         try {
                             createdEntity = manager.findByPrimaryKey(createdGoid);
                         } catch (FindException e) {
@@ -105,7 +105,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
                 for (Goid updatedGoid : updates) {
                     Integer newVersion = dbversions.get(updatedGoid);
                     if (checkAddOrUpdate(updatedGoid, newVersion)) {
-                        GoidEntity updatedEntity;
+                        PersistentEntity updatedEntity;
                         try {
                             updatedEntity = manager.findByPrimaryKey(updatedGoid);
                         } catch (FindException e) {
@@ -145,12 +145,12 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
         return loadEntity;
     }
 
-    private void update(GoidEntity updatedEntity) {
+    private void update(PersistentEntity updatedEntity) {
         cachedVersionMap.put(updatedEntity.getGoid(), new Integer(updatedEntity.getVersion()));
         onUpdate(updatedEntity);
     }
 
-    private void create(GoidEntity createdEntity) {
+    private void create(PersistentEntity createdEntity) {
         cachedVersionMap.put(createdEntity.getGoid(), createdEntity.getVersion());
         onCreate(createdEntity);
     }
@@ -187,7 +187,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
      *
      * @param updatedEntity the updated Entity
      */
-    protected void onUpdate(GoidEntity updatedEntity) {}
+    protected void onUpdate(PersistentEntity updatedEntity) {}
 
     /**
      * Override to be passed created entities.
@@ -196,7 +196,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
      *
      * @param createdEntity the created Entity
      */
-    protected void onCreate(GoidEntity createdEntity) {}
+    protected void onCreate(PersistentEntity createdEntity) {}
 
 
     /**
@@ -230,7 +230,7 @@ public abstract class PeriodicGoidVersionCheck extends TimerTask {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private GoidEntityManager manager;
+    private EntityManager manager;
     private Map<Goid, Integer> cachedVersionMap;
     private static final long DEFAULT_FREQUENCY = 4 * 1000;
 }

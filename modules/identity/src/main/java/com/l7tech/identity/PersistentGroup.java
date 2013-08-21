@@ -6,7 +6,7 @@ package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -31,7 +31,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @MappedSuperclass
-public abstract class PersistentGroup extends NamedGoidEntityImp implements Group {
+public abstract class PersistentGroup extends NamedEntityImp implements Group {
     public static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     private Goid providerGoid;

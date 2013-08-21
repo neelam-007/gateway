@@ -8,7 +8,7 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.admin.AuditSigningStatusChange;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClusterPropertyManagerImpl
-        extends HibernateGoidEntityManager<ClusterProperty, EntityHeader>
+        extends HibernateEntityManager<ClusterProperty, EntityHeader>
         implements ClusterPropertyManager, ApplicationContextAware {
     private final Logger logger = Logger.getLogger(ClusterPropertyManagerImpl.class.getName());
     private ApplicationContext applicationContext;

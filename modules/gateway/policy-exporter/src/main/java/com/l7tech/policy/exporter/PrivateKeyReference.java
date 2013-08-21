@@ -3,7 +3,7 @@ package com.l7tech.policy.exporter;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PrivateKeyable;
@@ -89,7 +89,7 @@ public class PrivateKeyReference extends ExternalReference {
         boolean ok = false;
 
         if ( identifier == null ) {
-            setLocalizeReplace( true, null, GoidEntity.DEFAULT_GOID);
+            setLocalizeReplace( true, null, PersistentEntity.DEFAULT_GOID);
             ok = true;
         } else {
             String[] keystoreAndAlias = identifier.split( ":", 2 );

@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.communityschemas.SchemaSourceResolver;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Functions;
@@ -166,8 +166,8 @@ public class ResourceEntrySchemaSourceResolver implements PostStartupApplication
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent invalidationEvent = (GoidEntityInvalidationEvent) event;
+        if ( event instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
             if ( ResourceEntry.class.isAssignableFrom(invalidationEvent.getEntityClass()) ) {
                 invalidateSchemas( invalidationEvent.getEntityIds() );
             }

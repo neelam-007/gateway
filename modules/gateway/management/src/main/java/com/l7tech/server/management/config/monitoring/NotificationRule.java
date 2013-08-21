@@ -4,7 +4,7 @@
 package com.l7tech.server.management.config.monitoring;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Entity;
 
@@ -14,7 +14,7 @@ import javax.persistence.Entity;
  * @author alex
  */
 @Entity
-public abstract class NotificationRule extends NamedGoidEntityImp {
+public abstract class NotificationRule extends NamedEntityImp {
     private Type type;
 
     @Deprecated

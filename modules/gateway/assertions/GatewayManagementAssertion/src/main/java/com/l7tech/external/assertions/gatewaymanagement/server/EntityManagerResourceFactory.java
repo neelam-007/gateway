@@ -27,7 +27,7 @@ import static com.l7tech.util.Option.optional;
  * Custom methods should call <code>checkPermitted</code> or <code>accessFilter</code>
  * to enforce access controls.</p>
  */
-abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH extends EntityHeader> extends ResourceFactorySupport<R> {
+abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R> {
 
     //- PUBLIC
 
@@ -65,12 +65,12 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
             public Either<InvalidResourceException, Goid> execute() throws ObjectModelException {
                 try {
                     final EntityBag<E> entityBag = fromResourceAsBag(resource);
-                    for (GoidEntity entity : entityBag) {
+                    for (PersistentEntity entity : entityBag) {
                         if (entity.getVersion() == VERSION_NOT_PRESENT) {
                             entity.setVersion(0);
                         }
 
-                        if (!entity.getGoid().equals(GoidEntity.DEFAULT_GOID) ||
+                        if (!entity.getGoid().equals(PersistentEntity.DEFAULT_GOID) ||
                                 (entity.getVersion() != 0 && entity.getVersion() != 1)) { // some entities initialize the version to 1
                             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identity or version");
                         }
@@ -80,15 +80,15 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
 
                     beforeCreateEntity(entityBag);
 
-                    for (GoidEntity entity : entityBag) {
+                    for (PersistentEntity entity : entityBag) {
                         validate(entity);
                     }
 
                     final Goid goid = manager.save(entityBag.getEntity());
                     afterCreateEntity(entityBag, goid);
 
-                    if (manager instanceof RoleAwareGoidEntityManager) {
-                        ((RoleAwareGoidEntityManager<E>) manager).createRoles(entityBag.getEntity());
+                    if (manager instanceof RoleAwareEntityManager) {
+                        ((RoleAwareEntityManager<E>) manager).createRoles(entityBag.getEntity());
                     }
 
                     EntityContext.setEntityInfo(getType(), goid.toString());
@@ -170,12 +170,12 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
 
                     beforeUpdateEntity( oldEntityBag );
 
-                    for ( GoidEntity entity : oldEntityBag ) {
+                    for ( PersistentEntity entity : oldEntityBag ) {
                         validate( entity );
                     }
 
-                    if ( manager instanceof RoleAwareGoidEntityManager ) {
-                        ((RoleAwareGoidEntityManager<E>)manager).updateRoles( oldEntityBag.getEntity() );
+                    if ( manager instanceof RoleAwareEntityManager) {
+                        ((RoleAwareEntityManager<E>)manager).updateRoles( oldEntityBag.getEntity() );
                     }
                     manager.update( oldEntityBag.getEntity() );
                     afterUpdateEntity( oldEntityBag );
@@ -206,8 +206,8 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
                     checkPermitted( OperationType.DELETE, null, entityBag.getEntity() );
 
                     beforeDeleteEntity( entityBag );
-                    if ( manager instanceof RoleAwareGoidEntityManager ) {
-                        ((RoleAwareGoidEntityManager<E>) manager).deleteRoles( entityBag.getEntity().getGoid() );
+                    if ( manager instanceof RoleAwareEntityManager) {
+                        ((RoleAwareEntityManager<E>) manager).deleteRoles( entityBag.getEntity().getGoid() );
                     }
                     manager.delete( entityBag.getEntity() );
                     afterDeleteEntity( entityBag );
@@ -675,7 +675,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
      * @param identifier The resource identifier
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the given identifier is not valid
      */
-    protected final void setIdentifier( final GoidEntity entity,
+    protected final void setIdentifier( final PersistentEntity entity,
                                         final String identifier ) throws InvalidResourceException {
         setIdentifier( entity, identifier, true );
     }
@@ -688,7 +688,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
      * @param required Is the identifier required
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the given identifier is not valid
      */
-    protected final void setIdentifier( final GoidEntity entity,
+    protected final void setIdentifier( final PersistentEntity entity,
                                         final String identifier,
                                         final boolean required ) throws InvalidResourceException {
         if ( identifier!=null || required ) {
@@ -706,12 +706,12 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
      * @param currentId The current identifier for the resource
      * @param updateId The incoming identifier for the resource (may be PersistentEntity.DEFAULT_OID)
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the identifier is present and does not match
-     * @see com.l7tech.objectmodel.GoidEntity#DEFAULT_GOID
+     * @see com.l7tech.objectmodel.PersistentEntity#DEFAULT_GOID
      */
     protected final void verifyIdentifier( final Goid currentId,
                                            final Goid updateId ) throws InvalidResourceException {
-        if ( !GoidEntity.DEFAULT_GOID.equals(currentId) &&
-             !GoidEntity.DEFAULT_GOID.equals(updateId) &&
+        if ( !PersistentEntity.DEFAULT_GOID.equals(currentId) &&
+             !PersistentEntity.DEFAULT_GOID.equals(updateId) &&
              !currentId.equals(updateId) ) {
             throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch" );
         }
@@ -724,7 +724,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
      * @param version The resource identifier (may be null)
      * @see #VERSION_NOT_PRESENT
      */
-    protected final void setVersion( final GoidEntity entity,
+    protected final void setVersion( final PersistentEntity entity,
                                      final Integer version ) {
         entity.setVersion( optional(version).orSome(VERSION_NOT_PRESENT) );
     }
@@ -758,7 +758,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
         return (T) object;
     }
 
-    protected static class EntityBag<BE extends GoidEntity> implements Iterable<GoidEntity> {
+    protected static class EntityBag<BE extends PersistentEntity> implements Iterable<PersistentEntity> {
         private final BE entity;
 
         protected EntityBag( final BE entity ) {
@@ -773,8 +773,8 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
         }
 
         @Override
-        public Iterator<GoidEntity> iterator() {
-            return Collections.<GoidEntity>singletonList( entity ).iterator();
+        public Iterator<PersistentEntity> iterator() {
+            return Collections.<PersistentEntity>singletonList( entity ).iterator();
         }
     }
 
@@ -785,22 +785,22 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
     static final String NAME_SELECTOR = "name";
     static final String VERSION_SELECTOR = "version";
 
-    GoidEntityManagerResourceFactory(final boolean readOnly,
-                                     final boolean allowNameSelection,
-                                     final RbacServices rbacServices,
-                                     final SecurityFilter securityFilter,
-                                     final PlatformTransactionManager transactionManager,
-                                     final GoidEntityManager<E, EH> manager) {
+    EntityManagerResourceFactory(final boolean readOnly,
+                                 final boolean allowNameSelection,
+                                 final RbacServices rbacServices,
+                                 final SecurityFilter securityFilter,
+                                 final PlatformTransactionManager transactionManager,
+                                 final EntityManager<E, EH> manager) {
         this(readOnly, allowNameSelection, false, rbacServices, securityFilter, transactionManager, manager);
     }
 
-    GoidEntityManagerResourceFactory(final boolean readOnly,
-                                     final boolean allowNameSelection,
-                                     final boolean allowGuidSelection,
-                                     final RbacServices rbacServices,
-                                     final SecurityFilter securityFilter,
-                                     final PlatformTransactionManager transactionManager,
-                                     final GoidEntityManager<E, EH> manager) {
+    EntityManagerResourceFactory(final boolean readOnly,
+                                 final boolean allowNameSelection,
+                                 final boolean allowGuidSelection,
+                                 final RbacServices rbacServices,
+                                 final SecurityFilter securityFilter,
+                                 final PlatformTransactionManager transactionManager,
+                                 final EntityManager<E, EH> manager) {
         super( rbacServices, securityFilter, transactionManager );
         this.readOnly = readOnly;
         this.allowNameSelection = allowNameSelection;
@@ -808,7 +808,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
         this.manager = manager;
     }
 
-    final <R> R doWithManager( final Functions.UnaryThrows<R,GoidEntityManager<E,EH>,ObjectModelException> callback ) throws ObjectModelException {
+    final <R> R doWithManager( final Functions.UnaryThrows<R,EntityManager<E,EH>,ObjectModelException> callback ) throws ObjectModelException {
         return callback.call( manager );
     }
 
@@ -817,7 +817,7 @@ abstract class GoidEntityManagerResourceFactory<R, E extends GoidEntity, EH exte
     private final boolean readOnly;
     private final boolean allowNameSelection;
     private final boolean allowGuidSelection;
-    private final GoidEntityManager<E,EH> manager;
+    private final EntityManager<E,EH> manager;
 
     private void checkReadOnly() {
         if ( isReadOnly() ) throw new IllegalStateException("Read only");

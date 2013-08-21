@@ -1,14 +1,14 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import java.io.Serializable;
 
 /**
  * Abstract superclass of all group memberships.
  */
-public abstract class GroupMembership implements GoidEntity, Serializable {
+public abstract class GroupMembership implements PersistentEntity, Serializable {
     protected Goid thisGroupProviderGoid;
     protected Goid memberUserId;
 

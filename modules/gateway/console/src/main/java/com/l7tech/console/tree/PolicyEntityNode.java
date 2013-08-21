@@ -67,7 +67,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
         newEh.setAliasGoid(eh.getAliasGoid());
-        newEh.setFolderGoid(eh.getFolderGoid());
+        newEh.setFolderId(eh.getFolderId());
         newEh.setPolicyDisabled(updatedPolicy.isDisabled());
 
         setUserObject(newEh);

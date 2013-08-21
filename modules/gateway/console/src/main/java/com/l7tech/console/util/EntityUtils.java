@@ -11,7 +11,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,7 @@ public class EntityUtils {
      *
      * @param entity The entity to update
      */
-    public static void updateCopy(final NamedGoidEntityImp entity) {
+    public static void updateCopy(final NamedEntityImp entity) {
         resetIdentity(entity);
         entity.setName(getNameForCopy(entity.getName()));
     }
@@ -43,8 +43,8 @@ public class EntityUtils {
      *
      * @param entity The entity to update.
      */
-    public static void resetIdentity(final GoidEntity entity) {
-        entity.setGoid(GoidEntity.DEFAULT_GOID);
+    public static void resetIdentity(final PersistentEntity entity) {
+        entity.setGoid(PersistentEntity.DEFAULT_GOID);
         entity.setVersion(0);
     }
 
@@ -89,7 +89,7 @@ public class EntityUtils {
                     goid = new Goid(GoidRange.WRAPPED_OID.getFirstHi(), --nonPersistedAssertions);
                 }
                 final ZoneableEntityHeader assertionHeader = new ZoneableEntityHeader(goid, EntityType.ASSERTION_ACCESS, assertionAccess.getName(), null, assertionAccess.getVersion());
-                assertionHeader.setSecurityZoneGoid(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getGoid());
+                assertionHeader.setSecurityZoneId(assertionAccess.getSecurityZone() == null ? null : assertionAccess.getSecurityZone().getGoid());
                 entities.add(assertionHeader);
             }
         } else if (type == EntityType.SSG_KEY_METADATA) {

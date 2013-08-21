@@ -3,7 +3,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -29,15 +29,15 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent)applicationEvent;
+        if (applicationEvent instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
             if (JdbcConnection.class.equals(event.getEntityClass())) {
                 for (int i = 0; i < event.getEntityOperations().length; i++) {
                     final char op = event.getEntityOperations()[i];
                     final Goid goid = event.getEntityIds()[i];
                     switch (op) {
-                        case GoidEntityInvalidationEvent.CREATE: // Intentional fallthrough
-                        case GoidEntityInvalidationEvent.UPDATE:
+                        case EntityInvalidationEvent.CREATE: // Intentional fallthrough
+                        case EntityInvalidationEvent.UPDATE:
                             try {
                                 JdbcConnection conn = jdbcConnectionManager.findByPrimaryKey(goid);
                                 jdbcConnectionPoolManager.updateConnectionPool(conn, false);
@@ -48,7 +48,7 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
                                 }
                                 continue;
                             }
-                        case GoidEntityInvalidationEvent.DELETE:
+                        case EntityInvalidationEvent.DELETE:
                             String name = jdbcConnectionPoolManager.getConnectionName(goid);
                             jdbcConnectionPoolManager.deleteConnectionPool(name);
                             break;

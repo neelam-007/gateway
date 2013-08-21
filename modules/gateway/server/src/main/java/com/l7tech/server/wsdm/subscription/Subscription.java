@@ -1,7 +1,7 @@
 package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.wsdm.faults.TopicNotSupportedFaultException;
 import com.l7tech.server.wsdm.method.Subscribe;
 import org.hibernate.annotations.Proxy;
@@ -24,7 +24,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="wsdm_subscription")
-public class Subscription extends GoidEntityImp {
+public class Subscription extends PersistentEntityImp {
     //public static final String POLICY_TAG_ESM_NOTIFICATION = "esm-notification";
     public static final int TOPIC_METRICS_CAPABILITY = 1;
     public static final int TOPIC_OPERATIONAL_STATUS = 2;

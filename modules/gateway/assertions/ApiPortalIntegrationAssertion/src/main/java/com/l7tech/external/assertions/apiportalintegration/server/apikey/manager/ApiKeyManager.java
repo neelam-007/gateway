@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.apiportalintegration.server.apikey.manage
 
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.util.ConfigFactory;
@@ -27,7 +27,7 @@ public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
     }
 
     @Override
-    public GoidEntityManager<ApiKey, GenericEntityHeader> getEntityManager() {
+    public EntityManager<ApiKey, GenericEntityHeader> getEntityManager() {
         return entityManager;
     }
 
@@ -62,7 +62,7 @@ public class ApiKeyManager extends AbstractPortalGenericEntityManager<ApiKey> {
         return cache;
     }
 
-    private final GoidEntityManager<ApiKey, GenericEntityHeader> entityManager;
+    private final EntityManager<ApiKey, GenericEntityHeader> entityManager;
     private static ApiKeyManager instance;
     private static final int NUM_UPDATE_LOCKS = ConfigFactory.getIntProperty("com.l7tech.apiportal.ApiKeyManager.numUpdateLocks", DEFAULT_NUM_UPDATE_LOCKS);
 

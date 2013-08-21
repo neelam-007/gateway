@@ -3,7 +3,7 @@ package com.l7tech.server.identity.ldap;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
@@ -211,7 +211,7 @@ public class LdapSslCustomizerSupport {
 
         final Pair<Goid,String> keyId;
         if ( keystoreIdStr==null && alias == null ) {
-            keyId = new Pair<Goid,String>(GoidEntity.DEFAULT_GOID, "");
+            keyId = new Pair<Goid,String>(PersistentEntity.DEFAULT_GOID, "");
         } else {
             // process keystore
             Goid keystoreId;

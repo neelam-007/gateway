@@ -8,16 +8,16 @@ import com.l7tech.objectmodel.Goid;
  *
  * @author darmstrong
  */
-public interface HasFolderGoid {
+public interface HasFolderId {
     /**
      * @return Goid the folder goid. Can be null as some implementations may have entity instances which are not
      * associated with a folder
      */
-    public Goid getFolderGoid();
+    public Goid getFolderId();
 
     /**
-     * @param folderGoid the folder goid to associate with an entity. May be null.
+     * @param folderId the folder goid to associate with an entity. May be null.
      */
-    public void setFolderGoid(Goid folderGoid);
+    public void setFolderId(Goid folderId);
 }
 

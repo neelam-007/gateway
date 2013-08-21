@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -27,11 +27,11 @@ import java.util.logging.Logger;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class GoidEntityVersionChecker implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class EntityVersionChecker implements ApplicationContextAware, InitializingBean, DisposableBean {
 
     //- PUBLIC
 
-    public GoidEntityVersionChecker() {
+    public EntityVersionChecker() {
         eventListener = new ApplicationListener() {
             @Override
             public void onApplicationEvent(final ApplicationEvent applicationEvent) {
@@ -57,11 +57,11 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
      * @throws IllegalStateException if the managers are already set
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
-    public void setEntityManagers(List<GoidEntityManager<? extends Entity,? extends EntityHeader>> managers) {
+    public void setEntityManagers(List<EntityManager<? extends Entity,? extends EntityHeader>> managers) {
         if(btt!=null) throw new IllegalStateException("manager already set");
         if(managers!=null && !managers.isEmpty()) {
             List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
-            for (GoidEntityManager<? extends Entity,? extends EntityHeader> manager : managers) {
+            for (EntityManager<? extends Entity,? extends EntityHeader> manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
                 } catch (Exception e) {
@@ -133,7 +133,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(GoidEntityVersionChecker.class.getName());
+    private static final Logger logger = Logger.getLogger(EntityVersionChecker.class.getName());
 
     private final ApplicationListener eventListener;
     private ApplicationEventPublisher eventSink;
@@ -145,26 +145,26 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
     private void handleAdminInvalidation(final PersistenceEvent event, final char operation) {
         Entity entity = event.getEntity();
 
-        if ( entity instanceof GoidEntity ) {
-            GoidEntity goidEntity = (GoidEntity) entity;
+        if ( entity instanceof PersistentEntity) {
+            PersistentEntity persistentEntity = (PersistentEntity) entity;
             EntityInvalidationVersionCheck checker = null;
 
             for ( EntityInvalidationVersionCheck check : btt.tasks ) {
-                if ( check.isOfInterest( goidEntity ) ) {
+                if ( check.isOfInterest(persistentEntity) ) {
                     checker = check;
                     break;
                 }
             }
 
             if ( checker != null ) {
-                enqueueInvalidation( event.getSource(), goidEntity, operation, checker );
+                enqueueInvalidation( event.getSource(), persistentEntity, operation, checker );
             }
 
         }
     }
 
     private void enqueueInvalidation( final Object source,
-                                      final GoidEntity entity,
+                                      final PersistentEntity entity,
                                       final char operation,
                                       final EntityInvalidationVersionCheck checker ) {
         if ( logger.isLoggable( Level.FINE ))
@@ -186,9 +186,9 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
             TransactionSynchronizationManager.registerSynchronization( dts );
         }
 
-        GoidEntityInvalidationEvent eie = new GoidEntityInvalidationEvent( source, checker.entityType, new Goid[]{entity.getGoid()}, new char[]{operation});
+        EntityInvalidationEvent eie = new EntityInvalidationEvent( source, checker.entityType, new Goid[]{entity.getGoid()}, new char[]{operation});
 
-        dts.events.add( new Pair<GoidEntityInvalidationEvent,Functions.Nullary<Boolean>>(eie, new Functions.Nullary<Boolean>(){
+        dts.events.add( new Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>(eie, new Functions.Nullary<Boolean>(){
             public Boolean call() {
                 return checker.isInvalidationRequired( entity, operation );
             }
@@ -208,7 +208,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
                 opsArray[i] = ops.get(i);
             }
 
-            dispatchInvalidation(new GoidEntityInvalidationEvent(this, entityType, goidArray, opsArray));
+            dispatchInvalidation(new EntityInvalidationEvent(this, entityType, goidArray, opsArray));
         }
     }
 
@@ -217,7 +217,7 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
      *
      * WARNING: only dispatch on a callback to ensure single threaded for any listeners that expect that
      */
-    private void dispatchInvalidation( final GoidEntityInvalidationEvent eie ) {
+    private void dispatchInvalidation( final EntityInvalidationEvent eie ) {
 
         if(logger.isLoggable(Level.FINE))
             logger.fine("Invalidating entities of type '"+eie.getEntityClass().getName()+"'; ids are "+asList(eie.getEntityIds())+".");
@@ -241,11 +241,11 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
      */
     private void handleApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof Created ) {
-            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.CREATE);
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.CREATE);
         } else if ( event instanceof Updated ) {
-            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.UPDATE);
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.UPDATE);
         } else if ( event instanceof Deleted ) {
-            handleAdminInvalidation((PersistenceEvent) event, GoidEntityInvalidationEvent.DELETE);
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.DELETE);
         }
     }
 
@@ -287,12 +287,12 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
     /**
      * Version check task for an EntityManager
      */
-    private class EntityInvalidationVersionCheck extends PeriodicGoidVersionCheck {
+    private class EntityInvalidationVersionCheck extends PeriodicVersionCheck {
         private final Class<? extends Entity> entityType;
         private List<Goid> invalidationGoids;
         private List<Character> invalidationOps;
 
-        private EntityInvalidationVersionCheck(GoidEntityManager<? extends GoidEntity, ? extends EntityHeader> manager) throws Exception {
+        private EntityInvalidationVersionCheck(EntityManager<? extends PersistentEntity, ? extends EntityHeader> manager) throws Exception {
             super(manager);
             entityType = manager.getInterfaceClass();
         }
@@ -301,10 +301,10 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
             return entityType.isInstance( entity );
         }
 
-        public boolean isInvalidationRequired( GoidEntity entity, char operation ) {
+        public boolean isInvalidationRequired( PersistentEntity entity, char operation ) {
             boolean invalidationRequired;
 
-            if ( operation == GoidEntityInvalidationEvent.DELETE ) {
+            if ( operation == EntityInvalidationEvent.DELETE ) {
                 invalidationRequired = notifyDelete( entity.getGoid() );
             } else {
                 invalidationRequired = notifyUpdate( entity.getGoid(), entity.getVersion() );
@@ -327,23 +327,23 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
         protected void onDelete(Goid removedGoid) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(removedGoid);
-                invalidationOps.add(GoidEntityInvalidationEvent.DELETE);
+                invalidationOps.add(EntityInvalidationEvent.DELETE);
             }
         }
 
         @Override
-        protected void onUpdate(GoidEntity updatedEntity) {
+        protected void onUpdate(PersistentEntity updatedEntity) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(updatedEntity.getGoid());
-                invalidationOps.add(GoidEntityInvalidationEvent.UPDATE);
+                invalidationOps.add(EntityInvalidationEvent.UPDATE);
             }
         }
 
         @Override
-        protected void onCreate(GoidEntity createdEntity) {
+        protected void onCreate(PersistentEntity createdEntity) {
             if(invalidationGoids !=null) {
                 invalidationGoids.add(createdEntity.getGoid());
-                invalidationOps.add(GoidEntityInvalidationEvent.CREATE);
+                invalidationOps.add(EntityInvalidationEvent.CREATE);
             }
         }
     }
@@ -352,8 +352,8 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
      * Dispatch invalidations for entity events on commit
      */
     private class DispatchingTransactionSynchronization extends TransactionSynchronizationAdapter {
-        final List<Pair<GoidEntityInvalidationEvent,Functions.Nullary<Boolean>>> events
-                = new ArrayList<Pair<GoidEntityInvalidationEvent, Functions.Nullary<Boolean>>>();
+        final List<Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>> events
+                = new ArrayList<Pair<EntityInvalidationEvent, Functions.Nullary<Boolean>>>();
 
         @Override
         public void afterCompletion( final int status ) {
@@ -361,8 +361,8 @@ public class GoidEntityVersionChecker implements ApplicationContextAware, Initia
                 timer.schedule( new TimerTask() {
                     @Override
                     public void run() {
-                        for ( Pair<GoidEntityInvalidationEvent,Functions.Nullary<Boolean>> eventAndChecker : events ) {
-                            GoidEntityInvalidationEvent eie = eventAndChecker.left;
+                        for ( Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>> eventAndChecker : events ) {
+                            EntityInvalidationEvent eie = eventAndChecker.left;
                             Functions.Nullary<Boolean> requiredCallback = eventAndChecker.right;
 
                             if ( requiredCallback.call() ) {

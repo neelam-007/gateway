@@ -1,18 +1,18 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 
 /**
  * Holds a sample message for a {@link PublishedService}.
  */
-public class SampleMessage extends ZoneableNamedGoidEntityImp {
+public class SampleMessage extends ZoneableNamedEntityImp {
     public static final String ATTR_SERVICE_GOID = "serviceGoid";
 
     public SampleMessage(Goid serviceGoid, String name, String operationName, String xml) {
         // If the serviceGoid is the default, it means that sample messages are created for a policy.
-        if (!GoidEntity.DEFAULT_GOID.equals(serviceGoid)) {
+        if (!PersistentEntity.DEFAULT_GOID.equals(serviceGoid)) {
             this.serviceGoid = serviceGoid;
         }
         this._name = name;

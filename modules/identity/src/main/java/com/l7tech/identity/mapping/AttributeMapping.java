@@ -3,12 +3,12 @@
  */
 package com.l7tech.identity.mapping;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * Abstract superclass of {@link IdentityMapping} and {@link SecurityTokenMapping}. 
  */
-public abstract class AttributeMapping extends NamedGoidEntityImp {
+public abstract class AttributeMapping extends NamedEntityImp {
     protected AttributeConfig attributeConfig;
     private boolean multivalued = false;
 

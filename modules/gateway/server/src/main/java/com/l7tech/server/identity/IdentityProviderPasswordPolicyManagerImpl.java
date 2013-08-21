@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * @author flascelles
  */
 public class IdentityProviderPasswordPolicyManagerImpl
-    extends HibernateGoidEntityManager<IdentityProviderPasswordPolicy, EntityHeader>
+    extends HibernateEntityManager<IdentityProviderPasswordPolicy, EntityHeader>
     implements IdentityProviderPasswordPolicyManager
 {
     private static final Logger logger = Logger.getLogger(IdentityProviderPasswordPolicyManagerImpl.class.getName());

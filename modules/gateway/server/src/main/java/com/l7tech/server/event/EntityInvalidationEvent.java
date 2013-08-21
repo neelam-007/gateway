@@ -2,7 +2,7 @@ package com.l7tech.server.event;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 /**
  * Event raised when a database change is detected.
@@ -14,7 +14,7 @@ import com.l7tech.objectmodel.GoidEntity;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class GoidEntityInvalidationEvent extends EntityClassEvent {
+public class EntityInvalidationEvent extends EntityClassEvent {
     public static final char DELETE = 'D';
     public static final char UPDATE = 'U';
     public static final char CREATE = 'C';
@@ -29,14 +29,14 @@ public class GoidEntityInvalidationEvent extends EntityClassEvent {
      * @param entityGoids   The ids of the invalidated entities
      * @param entityOps   The operations that were detected against the entities whose OIDs are in entityIds; 'C' = created, 'U' = updated, 'D' = deleted
      */
-    public GoidEntityInvalidationEvent(final Object source,
-                                       final Class<? extends Entity> entityClass,
-                                       final Goid[] entityGoids,
-                                       final char[] entityOps)
+    public EntityInvalidationEvent(final Object source,
+                                   final Class<? extends Entity> entityClass,
+                                   final Goid[] entityGoids,
+                                   final char[] entityOps)
     {
         super(source);
         if(entityClass==null) throw new IllegalArgumentException("entityClass must not be null");
-        if(!GoidEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("GoidEntity must be assignable from entityClass");
+        if(!PersistentEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("PersistentEntity must be assignable from entityClass");
         if(entityGoids==null) throw new IllegalArgumentException("entityIds must not be null");
         if (entityOps.length != entityGoids.length) throw new IllegalArgumentException("entityIds must have the same length as entityOps");
 

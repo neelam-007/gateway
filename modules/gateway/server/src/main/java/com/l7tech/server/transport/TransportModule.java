@@ -12,8 +12,8 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -166,8 +166,8 @@ public abstract class TransportModule extends LifecycleBean {
         if (!isStarted())
             return;
 
-        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent)applicationEvent;
+        if (applicationEvent instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
             if (SsgConnector.class.equals(event.getEntityClass())) {
                 Background.scheduleOneShot( new TimerTask() {
                     @Override
@@ -181,7 +181,7 @@ public abstract class TransportModule extends LifecycleBean {
         }
     }
 
-    private void handleSsgConnectorInvalidationEvent(GoidEntityInvalidationEvent event) {
+    private void handleSsgConnectorInvalidationEvent(EntityInvalidationEvent event) {
         synchronized ( invalidationSync ) {
             Goid[] ids = event.getEntityIds();
             char[] operations = event.getEntityOperations();
@@ -194,11 +194,11 @@ public abstract class TransportModule extends LifecycleBean {
     private void handleSsgConnectorOperation(char operation, Goid connectorGoid) {
         try {
             switch (operation) {
-                case GoidEntityInvalidationEvent.CREATE:
-                case GoidEntityInvalidationEvent.UPDATE:
+                case EntityInvalidationEvent.CREATE:
+                case EntityInvalidationEvent.UPDATE:
                     createOrUpdateConnector(connectorGoid);
                     break;
-                case GoidEntityInvalidationEvent.DELETE:
+                case EntityInvalidationEvent.DELETE:
                     removeConnector(connectorGoid);
                     break;
                 default:

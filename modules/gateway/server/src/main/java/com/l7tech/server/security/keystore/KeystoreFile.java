@@ -1,7 +1,7 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.hibernate.annotations.Proxy;
@@ -28,7 +28,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="keystore_file")
-public class KeystoreFile extends NamedGoidEntityImp {
+public class KeystoreFile extends NamedEntityImp {
     private static final long serialVersionUID = 7293792837442132345L;
     private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 

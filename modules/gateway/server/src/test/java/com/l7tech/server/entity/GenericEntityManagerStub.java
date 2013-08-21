@@ -3,7 +3,7 @@ package com.l7tech.server.entity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import java.util.*;
 /**
  *
  */
-public class GenericEntityManagerStub extends GoidEntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
+public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
 
     private List<GenericEntity> entities;
 
@@ -41,7 +41,7 @@ public class GenericEntityManagerStub extends GoidEntityManagerStub<GenericEntit
     }
 
     @Override
-    public <ET extends GenericEntity> GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass) {
+    public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass) {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 

@@ -14,7 +14,7 @@ import java.util.Map;
  * Users should not use this manager directly except to call {@link #getEntityManager(Class)}
  * to get a more-specific entity manager for concrete generic entity class they are working with.
  */
-public interface GenericEntityManager extends GoidEntityManager<GenericEntity, GenericEntityHeader> {
+public interface GenericEntityManager extends EntityManager<GenericEntity, GenericEntityHeader> {
     /**
      * Register a generic entity class with the generic entity manager subsystem.
      * <p/>
@@ -51,7 +51,7 @@ public interface GenericEntityManager extends GoidEntityManager<GenericEntity, G
      * @return an EntityManager that provides access to the specified concrete entity type.
      */
     <ET extends GenericEntity>
-    GoidEntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass);
+    EntityManager<ET, GenericEntityHeader> getEntityManager(@NotNull Class<ET> entityClass);
 
     <ET extends GenericEntity>
     ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, Goid goid) throws FindException;

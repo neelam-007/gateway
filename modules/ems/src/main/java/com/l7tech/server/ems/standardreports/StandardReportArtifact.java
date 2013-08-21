@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 @Entity
 @Proxy(lazy=false)
 @Table(name="report_artifact")
-public class StandardReportArtifact extends GoidEntityImp {
+public class StandardReportArtifact extends PersistentEntityImp {
 
     //- PUBLIC
 

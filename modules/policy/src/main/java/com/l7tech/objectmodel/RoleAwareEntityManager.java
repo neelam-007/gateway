@@ -5,7 +5,7 @@ package com.l7tech.objectmodel;
  *
  * TODO this should probably just be a side effect of saving an Entity
  */
-public interface RoleAwareGoidEntityManager<PET extends GoidEntity> {
+public interface RoleAwareEntityManager<PET extends PersistentEntity> {
 
     /**
      * Create any required roles for the given entity.

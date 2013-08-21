@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -14,7 +14,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="migration_mapping")
-public class MigrationMappingRecord extends GoidEntityImp {
+public class MigrationMappingRecord extends PersistentEntityImp {
 
     //- PUBLIC
 

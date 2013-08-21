@@ -5,7 +5,7 @@ package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.Charsets;
@@ -27,7 +27,7 @@ import java.util.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="system_monitoring_notification_rule")
-public class SystemMonitoringNotificationRule extends NamedGoidEntityImp implements JSON.Convertible {
+public class SystemMonitoringNotificationRule extends NamedEntityImp implements JSON.Convertible {
 
     private String guid;
     private String type;

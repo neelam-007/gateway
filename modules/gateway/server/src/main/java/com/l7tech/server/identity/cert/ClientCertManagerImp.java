@@ -40,7 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Not a {@link com.l7tech.server.HibernateGoidEntityManager} for historical reasons.
+ * Not a {@link com.l7tech.server.HibernateEntityManager} for historical reasons.
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {

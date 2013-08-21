@@ -10,7 +10,7 @@ import com.l7tech.server.EntityManagerStub;
 import java.util.*;
 
 /** @author alex */
-public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends GoidEntity, HT extends OrganizationHeader>
+public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
     extends EntityManagerStub<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
@@ -61,7 +61,7 @@ public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends GoidEnti
                 for (AT pa : aliases) {
                     HT newHT = getNewEntityHeader(ht);
                     newHT.setAliasGoid(pa.getGoid());
-                    newHT.setFolderGoid(pa.getFolder().getGoid());
+                    newHT.setFolderId(pa.getFolder().getGoid());
                     returnHeaders.add(newHT);
                 }
             }

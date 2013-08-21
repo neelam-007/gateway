@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.esmtrust;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -13,7 +13,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="trusted_esm_user")
-public class TrustedEsmUser extends GoidEntityImp {
+public class TrustedEsmUser extends PersistentEntityImp {
     private transient TrustedEsm trustedEsm;
     private Goid providerGoid;
     private String ssgUserId;

@@ -116,7 +116,7 @@ public class RbacAdminImpl implements RbacAdmin {
         Long entityOid = theRole.getEntityOid();
         Goid entityGoid = theRole.getEntityGoid();
         EntityType entityType = theRole.getEntityType();
-        if (entityType != null && GoidEntity.class.isAssignableFrom(entityType.getEntityClass())) {
+        if (entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
             if(entityGoid != null) {
                 try {
                     theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityGoid));

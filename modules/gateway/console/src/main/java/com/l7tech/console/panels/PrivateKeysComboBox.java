@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
-    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(GoidEntity.DEFAULT_GOID, null, null, "NONE") {
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(PersistentEntity.DEFAULT_GOID, null, null, "NONE") {
         @Override
         public String toString() {
             return "<Default SSL Key>";
@@ -191,7 +191,7 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public Goid getSelectedKeystoreId() {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
-        if (item == null) return GoidEntity.DEFAULT_GOID;
+        if (item == null) return PersistentEntity.DEFAULT_GOID;
         return item.keystoreId;
     }
 

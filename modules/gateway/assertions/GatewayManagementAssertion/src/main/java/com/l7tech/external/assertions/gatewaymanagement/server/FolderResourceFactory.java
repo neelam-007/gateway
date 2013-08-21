@@ -219,7 +219,7 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
                 try {
                     return Goid.parseGoid( handleRootFolderOid(value) );
                 } catch( IllegalArgumentException nfe ) {
-                    return GoidEntity.DEFAULT_GOID; // will not match any folder
+                    return PersistentEntity.DEFAULT_GOID; // will not match any folder
                 }
             }
         } ).orSome( Folder.ROOT_FOLDER_ID );

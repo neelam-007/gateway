@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterContextFactory;
@@ -64,7 +64,7 @@ import static java.util.Collections.singletonList;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManagerImpl
-        extends HibernateGoidEntityManager<SinkConfiguration, EntityHeader>
+        extends HibernateEntityManager<SinkConfiguration, EntityHeader>
         implements SinkManager, ApplicationContextAware, PropertyChangeListener {
 
     //- PUBLIC

@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="active_connector")
-public class SsgActiveConnector extends ZoneableNamedGoidEntityImp {
+public class SsgActiveConnector extends ZoneableNamedEntityImp {
     private static final Logger logger = Logger.getLogger(SsgActiveConnector.class.getName());
 
     /** If specified, incoming messages should be assumed to use the specified content type. */

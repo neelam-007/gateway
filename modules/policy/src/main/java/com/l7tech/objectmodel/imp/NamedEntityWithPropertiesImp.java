@@ -21,7 +21,7 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 @MappedSuperclass
-public abstract class NamedGoidEntityWithPropertiesImp extends NamedGoidEntityImp implements NamedEntityWithProperties {
+public abstract class NamedEntityWithPropertiesImp extends NamedEntityImp implements NamedEntityWithProperties {
     private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
     private transient String xmlProperties;
     private Map<String, String> properties;

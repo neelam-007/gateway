@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.OrganizationHeader;
 
 /**
@@ -39,14 +39,14 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getGoid(),
              serviceHeader.getName(),
              serviceHeader.getDescription(),
-             serviceHeader.getFolderGoid(),
+             serviceHeader.getFolderId(),
              serviceHeader.getAliasGoid(),
              serviceHeader.getPolicyRevision(),
              serviceHeader.getVersion(),
              serviceHeader.getRoutingUri(),
              serviceHeader.isTracingEnabled(),
              serviceHeader.isPolicyDisabled(),
-             serviceHeader.getSecurityZoneGoid(),
+             serviceHeader.getSecurityZoneId(),
              serviceHeader.getPolicyGoid());
     }
     
@@ -65,7 +65,7 @@ public class ServiceHeader extends OrganizationHeader {
                          final boolean isPolicyDisabled,
                          final Goid securityZoneGoid,
                          final Goid policyGoid) {
-        super(serviceGoid == null ? GoidEntity.DEFAULT_GOID : serviceGoid, EntityType.SERVICE, name, description, version);
+        super(serviceGoid == null ? PersistentEntity.DEFAULT_GOID : serviceGoid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;

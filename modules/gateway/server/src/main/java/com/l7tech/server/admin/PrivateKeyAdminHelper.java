@@ -137,7 +137,7 @@ public class PrivateKeyAdminHelper {
         }
 
         try {
-            SsgKeyEntry portEntry = doFindKeyEntry( connector.getKeyAlias(), portStoreGoid != null ? portStoreGoid : GoidEntity.DEFAULT_GOID );
+            SsgKeyEntry portEntry = doFindKeyEntry( connector.getKeyAlias(), portStoreGoid != null ? portStoreGoid : PersistentEntity.DEFAULT_GOID );
             return CertUtils.certsAreEqual(portEntry.getCertificate(), entry.getCertificate());
         } catch (FindException e) {
             return false;

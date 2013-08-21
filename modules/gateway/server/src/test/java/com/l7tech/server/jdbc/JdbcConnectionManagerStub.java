@@ -3,8 +3,8 @@ package com.l7tech.server.jdbc;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 
@@ -15,7 +15,7 @@ import java.util.StringTokenizer;
 /**
  *
  */
-public class JdbcConnectionManagerStub extends GoidEntityManagerStub<JdbcConnection, EntityHeader> implements JdbcConnectionManager {
+public class JdbcConnectionManagerStub extends EntityManagerStub<JdbcConnection, EntityHeader> implements JdbcConnectionManager {
 
     public JdbcConnectionManagerStub( final JdbcConnection... entitiesIn ) {
         super( entitiesIn );
@@ -58,7 +58,7 @@ public class JdbcConnectionManagerStub extends GoidEntityManagerStub<JdbcConnect
     }
 
     @Override
-    public Class<? extends GoidEntityImp> getImpClass() {
+    public Class<? extends PersistentEntityImp> getImpClass() {
         return JdbcConnection.class;
     }
 

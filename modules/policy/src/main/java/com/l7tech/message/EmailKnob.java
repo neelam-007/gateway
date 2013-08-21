@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Message knob for messages received from an email listener.
  */
-public interface EmailKnob extends MessageKnob, HasSoapAction, HasServiceGoid {
+public interface EmailKnob extends MessageKnob, HasSoapAction, HasServiceId {
     /**
      * @return a map of JMS message properties
      */

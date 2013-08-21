@@ -1,14 +1,14 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * Represents a revision of some policy XML.
  * This is used only by the SSM GUI to provide a versioning service to admins.
  * This class is not used at all by the Gateway runtime.
  */
-public class PolicyVersion extends NamedGoidEntityImp {
+public class PolicyVersion extends NamedEntityImp {
     private long ordinal;
     private long time;
     private Goid userProviderGoid;

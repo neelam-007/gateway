@@ -9,7 +9,7 @@ package com.l7tech.gateway.common.transport.jms;
 import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
@@ -30,7 +30,7 @@ import java.net.PasswordAuthentication;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jms_endpoint")
-public class JmsEndpoint extends ZoneableNamedGoidEntityImp implements Serializable {
+public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
     private Goid _connectionGoid;

@@ -6,7 +6,7 @@ package com.l7tech.objectmodel;
  *
  * @author Victor Kazakov
  */
-public interface GoidEntity extends Entity {
+public interface PersistentEntity extends Entity {
     //This is the default Goid
     public static final Goid DEFAULT_GOID = new Goid(0, -1);
 

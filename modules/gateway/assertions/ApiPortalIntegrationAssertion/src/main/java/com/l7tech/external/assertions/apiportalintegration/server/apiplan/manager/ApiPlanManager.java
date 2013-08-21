@@ -3,9 +3,9 @@ package com.l7tech.external.assertions.apiportalintegration.server.apiplan.manag
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntity;
 import com.l7tech.external.assertions.apiportalintegration.server.AbstractPortalGenericEntityManager;
 import com.l7tech.external.assertions.apiportalintegration.server.apiplan.ApiPlan;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.util.ConfigFactory;
@@ -35,7 +35,7 @@ public class ApiPlanManager extends AbstractPortalGenericEntityManager<ApiPlan> 
     }
 
     @Override
-    public GoidEntityManager<ApiPlan, GenericEntityHeader> getEntityManager() {
+    public EntityManager<ApiPlan, GenericEntityHeader> getEntityManager() {
         return entityManager;
     }
 
@@ -63,7 +63,7 @@ public class ApiPlanManager extends AbstractPortalGenericEntityManager<ApiPlan> 
         return nameCache;
     }
     private static ApiPlanManager instance;
-    private final GoidEntityManager<ApiPlan, GenericEntityHeader> entityManager;
+    private final EntityManager<ApiPlan, GenericEntityHeader> entityManager;
     private static final int NUM_UPDATE_LOCKS = ConfigFactory.getIntProperty("apiPlanManager.numUpdateLocks", DEFAULT_NUM_UPDATE_LOCKS);
     private static final Object[] updateLocks = new Object[NUM_UPDATE_LOCKS];
 

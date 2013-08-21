@@ -6,8 +6,8 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.GoidEntity;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -26,7 +26,7 @@ import java.util.Set;
 @javax.persistence.Entity
 @Proxy(lazy=false)
 @Table(name="rbac_permission")
-public class Permission extends GoidEntityImp implements Cloneable {
+public class Permission extends PersistentEntityImp implements Cloneable {
     private Role role;
     private OperationType operation;
     private String otherOperationName;
@@ -220,7 +220,7 @@ public class Permission extends GoidEntityImp implements Cloneable {
     public void copyFrom(Permission perm) {
         if (perm.role != null)
             this.role = perm.role;
-        if (!GoidEntity.DEFAULT_GOID.equals(perm.getGoid()))
+        if (!PersistentEntity.DEFAULT_GOID.equals(perm.getGoid()))
             this.setGoid(perm.getGoid());
         this.operation = perm.getOperation();
         this.entityType = perm.getEntityType();

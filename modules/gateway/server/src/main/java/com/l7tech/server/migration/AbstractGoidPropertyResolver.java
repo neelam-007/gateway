@@ -73,13 +73,13 @@ public abstract class AbstractGoidPropertyResolver extends AbstractPropertyResol
 
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity((Entity) sourceEntity), propName});
 
-        if ( ! (targetValue instanceof GoidEntity) )
+        if ( ! (targetValue instanceof PersistentEntity) )
             throw new PropertyResolverException("Error applying mapping for property name; invalid target value:" + targetValue);
 
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, Goid.class);
         if (method != null) {
             try {
-                method.invoke(sourceEntity, ((GoidEntity)targetValue).getGoid());
+                method.invoke(sourceEntity, ((PersistentEntity)targetValue).getGoid());
             } catch (Exception e) {
                 throw new PropertyResolverException("Error applying mapping for property name: " + propName, e);
             }

@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Information about a message that was received or will be sent via JMS.
  */
-public interface JmsKnob extends MessageKnob, HasSoapAction, HasServiceGoid, HasHeaders {
+public interface JmsKnob extends MessageKnob, HasSoapAction, HasServiceId, HasHeaders {
     boolean isBytesMessage();
 
     /**

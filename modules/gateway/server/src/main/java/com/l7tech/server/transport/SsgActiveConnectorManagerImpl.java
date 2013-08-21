@@ -3,10 +3,8 @@ package com.l7tech.server.transport;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.MapRestriction;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -15,7 +13,7 @@ import java.util.*;
  * Hibernate entity manager for SSG active connectors.
  */
 public class SsgActiveConnectorManagerImpl
-        extends HibernateGoidEntityManager<SsgActiveConnector, SsgActiveConnectorHeader>
+        extends HibernateEntityManager<SsgActiveConnector, SsgActiveConnectorHeader>
         implements SsgActiveConnectorManager
 {
 
@@ -60,7 +58,7 @@ public class SsgActiveConnectorManagerImpl
     @Override
     protected SsgActiveConnectorHeader newHeader( final SsgActiveConnector entity ) {
         final SsgActiveConnectorHeader header = new SsgActiveConnectorHeader(entity);
-        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
+        header.setSecurityZoneId(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 

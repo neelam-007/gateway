@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
 import org.springframework.context.ApplicationListener;
@@ -20,7 +20,7 @@ import static com.l7tech.util.Option.optional;
 /**
  * Support for implementing entity caches
  */
-public abstract class EntityCacheSupport<ET extends GoidEntity, HT extends EntityHeader, EM extends GoidEntityManager<ET,HT>> implements ApplicationListener<GoidEntityInvalidationEvent> {
+public abstract class EntityCacheSupport<ET extends PersistentEntity, HT extends EntityHeader, EM extends EntityManager<ET,HT>> implements ApplicationListener<EntityInvalidationEvent> {
 
     //- PUBLIC
 
@@ -34,11 +34,11 @@ public abstract class EntityCacheSupport<ET extends GoidEntity, HT extends Entit
     }
 
     @Override
-    public final void onApplicationEvent( final GoidEntityInvalidationEvent event ) {
+    public final void onApplicationEvent( final EntityInvalidationEvent event ) {
         if( getEntityClass().isAssignableFrom( event.getEntityClass() ) ) {
             ensureCacheValid();
 
-            Goid entityOid = GoidEntity.DEFAULT_GOID;
+            Goid entityOid = PersistentEntity.DEFAULT_GOID;
             try {
                 for( final Goid goid : event.getEntityIds() ) {
                     entityOid = goid;

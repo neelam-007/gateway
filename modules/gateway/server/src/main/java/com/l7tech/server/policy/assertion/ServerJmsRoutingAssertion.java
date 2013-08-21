@@ -23,7 +23,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.jms.*;
@@ -995,8 +995,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         @Override
         public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-            if (applicationEvent instanceof GoidEntityInvalidationEvent) {
-                GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) applicationEvent;
+            if (applicationEvent instanceof EntityInvalidationEvent) {
+                EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
 
                 JmsConnection connection;
                 JmsEndpoint endpoint;

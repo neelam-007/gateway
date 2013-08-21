@@ -93,7 +93,7 @@ public class ServiceNodeAlias extends ServiceNode{
         PublishedServiceAlias alias = null;
         final ServiceHeader header = getEntityHeader();
         try {
-            alias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(header.getGoid(), header.getFolderGoid());
+            alias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(header.getGoid(), header.getFolderId());
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve service alias: " + e.getMessage(), ExceptionUtils.getDebugException(e));
         }

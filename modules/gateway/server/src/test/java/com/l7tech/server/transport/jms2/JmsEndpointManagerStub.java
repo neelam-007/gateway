@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.JmsEndpointHeader;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 
 import java.util.Collection;
@@ -19,7 +19,7 @@ import java.util.Collection;
  *
  * @author: vchan
  */
-public class JmsEndpointManagerStub extends GoidEntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
+public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
 
     JmsConnectionManagerStub cnxMgr;
 

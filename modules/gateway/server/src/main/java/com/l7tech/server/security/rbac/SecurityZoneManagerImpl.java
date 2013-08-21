@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.util.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 /**
  * Gateway server implementation of Hibernate entity manager for the entities representing Security Zones.
  */
-public class SecurityZoneManagerImpl extends HibernateGoidEntityManager<SecurityZone, EntityHeader> implements SecurityZoneManager {
+public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone, EntityHeader> implements SecurityZoneManager {
     @Override
     public Class<? extends Entity> getImpClass() {
         return SecurityZone.class;

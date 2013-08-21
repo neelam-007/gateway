@@ -3,7 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -126,7 +126,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
 
-        if ( recipientTrustedCertificateGoid != null && !GoidEntity.DEFAULT_GOID.equals(recipientTrustedCertificateGoid) ) {
+        if ( recipientTrustedCertificateGoid != null && !PersistentEntity.DEFAULT_GOID.equals(recipientTrustedCertificateGoid) ) {
             headers = new EntityHeader[]{ new EntityHeader(recipientTrustedCertificateGoid, EntityType.TRUSTED_CERT, null, null) };
         }
 

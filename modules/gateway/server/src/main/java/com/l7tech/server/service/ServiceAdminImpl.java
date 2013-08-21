@@ -249,7 +249,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         }
     }
 
-    private static boolean isDefaultGoid(GoidEntity entity) {
+    private static boolean isDefaultGoid(PersistentEntity entity) {
         return Goid.isDefault(entity.getGoid());
     }
 

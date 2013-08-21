@@ -4,7 +4,7 @@
  */
 package com.l7tech.gateway.common.audit;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.*;
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.text.FieldPosition;
 /**
  * An audit detail record.
  */
-public class AuditDetail extends GoidEntityImp implements Serializable, Comparable {
+public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
     private String auditGuid;
     private long time;

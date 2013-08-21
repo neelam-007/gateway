@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.Goid;
  * <p>It is expected that the service GOID is provided by internal configuration,
  * this should not be used for service GOIDs provided in a request.</p>
  */
-public interface HasServiceGoid extends MessageKnob {
+public interface HasServiceId extends MessageKnob {
 
     /**
      * Get the service GOID.

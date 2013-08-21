@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +15,7 @@ import java.util.*;
  * Resource entry manager implementation.
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
-public class ResourceEntryManagerImpl extends HibernateGoidEntityManager<ResourceEntry, ResourceEntryHeader> implements ResourceEntryManager
+public class ResourceEntryManagerImpl extends HibernateEntityManager<ResourceEntry, ResourceEntryHeader> implements ResourceEntryManager
 {
     //- PUBLIC
 
@@ -90,7 +90,7 @@ public class ResourceEntryManagerImpl extends HibernateGoidEntityManager<Resourc
     @Override
     protected ResourceEntryHeader newHeader( final ResourceEntry entity ) {
         final ResourceEntryHeader header = new ResourceEntryHeader(entity);
-        header.setSecurityZoneGoid(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
+        header.setSecurityZoneId(entity.getSecurityZone() == null ? null : entity.getSecurityZone().getGoid());
         return header;
     }
 

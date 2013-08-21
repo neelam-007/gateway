@@ -13,7 +13,7 @@ public interface HasAuditDetails {
      * Get the audit details.
      * <p/>
      * Depending on the implementor of this interface, the details may always be not-yet-saved details
-     * with object id {@link com.l7tech.objectmodel.GoidEntity#DEFAULT_GOID}, or they may always be
+     * with object id {@link com.l7tech.objectmodel.PersistentEntity#DEFAULT_GOID}, or they may always be
      * already-persisted details with a new OID.
      * <p/>
      * Callers should not attempt to modify the details returned by this method unless a more-specific

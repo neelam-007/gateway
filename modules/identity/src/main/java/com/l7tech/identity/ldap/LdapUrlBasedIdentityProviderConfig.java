@@ -4,7 +4,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.util.GoidUpgradeMapper;
@@ -87,7 +87,7 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
     @Override
     public SsgKeyHeader[] getPrivateKeysUsed() {
         if (isClientAuthEnabled()) {
-            final Goid keystoreId = getKeystoreId() == null ? GoidEntity.DEFAULT_GOID : getKeystoreId();
+            final Goid keystoreId = getKeystoreId() == null ? PersistentEntity.DEFAULT_GOID : getKeystoreId();
             return new SsgKeyHeader[]{new SsgKeyHeader(keystoreId + ":" + getKeyAlias(), keystoreId, getKeyAlias(), getKeyAlias())};
         }
         return null;

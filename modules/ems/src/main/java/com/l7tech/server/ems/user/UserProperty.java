@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.user;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -17,7 +17,7 @@ import javax.persistence.UniqueConstraint;
 @Proxy(lazy=false)
 @Table(name="user_property",
        uniqueConstraints=@UniqueConstraint(columnNames={"provider", "user_id", "propkey"}))
-public class UserProperty extends GoidEntityImp {
+public class UserProperty extends PersistentEntityImp {
 
     //- PUBLIC
     

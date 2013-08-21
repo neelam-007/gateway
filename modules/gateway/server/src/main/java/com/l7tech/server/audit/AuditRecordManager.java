@@ -21,7 +21,7 @@ import java.util.Map;
  * @author alex
  * @version $Revision$
  */
-public interface AuditRecordManager extends GoidEntityManager<AuditRecord, AuditRecordHeader> {
+public interface AuditRecordManager extends EntityManager<AuditRecord, AuditRecordHeader> {
     public static final String PROP_NAME = "name";
     public static final String PROP_MSG = "message";
 

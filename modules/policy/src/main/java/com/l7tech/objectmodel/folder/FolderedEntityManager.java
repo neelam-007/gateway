@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 /**
  * Extension of EntityManager interface with Folder specific methods.
  */
-public interface FolderedEntityManager<ET extends GoidEntity, HT extends EntityHeader> extends GoidEntityManager<ET,HT> {
+public interface FolderedEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends EntityManager<ET,HT> {
 
     void updateFolder(Goid goid, Folder folder) throws UpdateException;
 

@@ -7,7 +7,7 @@ import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.custom.*;
 import com.l7tech.gateway.common.custom.ContentTypeHeaderToCustomConverter;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory;
 import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
 import com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob;
@@ -222,7 +222,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     if (principalCredentials != null) {
                         authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), principalCredentials.getSecurityTokens(),  null, false));
                     } else {
-                        authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", GoidEntity.DEFAULT_GOID, "<unknown>"), new OpaqueSecurityToken()));
+                        authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", PersistentEntity.DEFAULT_GOID, "<unknown>"), new OpaqueSecurityToken()));
                     }
                 }
 

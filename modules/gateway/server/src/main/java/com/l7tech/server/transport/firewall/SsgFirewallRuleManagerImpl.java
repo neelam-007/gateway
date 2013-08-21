@@ -3,10 +3,10 @@ package com.l7tech.server.transport.firewall;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * <p>An implementation of the {@link SsgFirewallRuleManager}.</p>
  * @author K.Diep
  */
-public class SsgFirewallRuleManagerImpl extends HibernateGoidEntityManager<SsgFirewallRule, EntityHeader>
+public class SsgFirewallRuleManagerImpl extends HibernateEntityManager<SsgFirewallRule, EntityHeader>
         implements SsgFirewallRuleManager, DisposableBean {
 
     private static final Logger logger = Logger.getLogger(SsgFirewallRuleManagerImpl.class.getName());
@@ -79,9 +79,9 @@ public class SsgFirewallRuleManagerImpl extends HibernateGoidEntityManager<SsgFi
     }
 
     private void handleEvent(ApplicationEvent event) {
-        if (!(event instanceof GoidEntityInvalidationEvent))
+        if (!(event instanceof EntityInvalidationEvent))
             return;
-        GoidEntityInvalidationEvent evt = (GoidEntityInvalidationEvent)event;
+        EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
         if (!SsgFirewallRule.class.isAssignableFrom(evt.getEntityClass()))
             return;
         Goid[] ids = evt.getEntityIds();
@@ -91,7 +91,7 @@ public class SsgFirewallRuleManagerImpl extends HibernateGoidEntityManager<SsgFi
             Goid goid = ids[i];
 
             switch (op) {
-                case GoidEntityInvalidationEvent.DELETE:
+                case EntityInvalidationEvent.DELETE:
                     logger.warning("deleting firewall rule");
                     knownFirewallRules.remove(goid);
                     break;

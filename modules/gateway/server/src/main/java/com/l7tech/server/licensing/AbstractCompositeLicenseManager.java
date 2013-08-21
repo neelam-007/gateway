@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.*;
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public abstract class AbstractCompositeLicenseManager extends ApplicationObjectSupport implements UpdatableCompositeLicenseManager, Lifecycle, Phased,
-        ApplicationListener<GoidEntityInvalidationEvent>, ApplicationEventPublisherAware {
+        ApplicationListener<EntityInvalidationEvent>, ApplicationEventPublisherAware {
 
     /* ---- Issuer Certificate(s) ---- */
     private static final X509Certificate[] TRUSTED_ISSUERS_X509_CERTIFICATES = generateTrustedIssuerCertificates();
@@ -275,7 +275,7 @@ public abstract class AbstractCompositeLicenseManager extends ApplicationObjectS
     // --- LicenseDocument change event handling: reload LicenseDocuments, regenerate CompositeLicense --- ///
 
     @Override
-    public void onApplicationEvent(GoidEntityInvalidationEvent event) {
+    public void onApplicationEvent(EntityInvalidationEvent event) {
         if (LicenseDocument.class.equals(event.getEntityClass())) {
             requestReload();
         }

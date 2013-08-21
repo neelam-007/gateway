@@ -16,21 +16,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Stub implementation of {@link EntityFinder} that delegates to an {@link GoidEntityManager} selected based on the
- * manager's declared {@link GoidEntityManager#getImpClass}.
+ * Stub implementation of {@link EntityFinder} that delegates to an {@link com.l7tech.objectmodel.EntityManager} selected based on the
+ * manager's declared {@link com.l7tech.objectmodel.EntityManager#getImpClass}.
  *  
  * @author alex
  */
 public class EntityFinderStub implements EntityFinder, DesignTimeEntityProvider {
-    private final Map<Class<? extends Entity>, GoidEntityManager> entityManagers;
+    private final Map<Class<? extends Entity>, EntityManager> entityManagers;
 
     public EntityFinderStub() {
-        this.entityManagers = new HashMap<Class<? extends Entity>, GoidEntityManager>();
+        this.entityManagers = new HashMap<Class<? extends Entity>, EntityManager>();
     }
 
-    public EntityFinderStub(GoidEntityManager... entityManagers) {
-        Map<Class<? extends Entity>, GoidEntityManager> managerMap = new HashMap<Class<? extends Entity>, GoidEntityManager>();
-        for (GoidEntityManager entityManager : entityManagers) {
+    public EntityFinderStub(EntityManager... entityManagers) {
+        Map<Class<? extends Entity>, EntityManager> managerMap = new HashMap<Class<? extends Entity>, EntityManager>();
+        for (EntityManager entityManager : entityManagers) {
             managerMap.put(entityManager.getImpClass(), entityManager);
         }
         this.entityManagers = managerMap;

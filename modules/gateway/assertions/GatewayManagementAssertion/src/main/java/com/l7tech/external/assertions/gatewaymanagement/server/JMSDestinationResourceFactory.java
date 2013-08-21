@@ -232,8 +232,8 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         }
 
         @Override
-        public Iterator<GoidEntity> iterator() {
-            return Arrays.<GoidEntity>asList( getJmsEndpoint(), getJmsConnection() ).iterator();
+        public Iterator<PersistentEntity> iterator() {
+            return Arrays.<PersistentEntity>asList( getJmsEndpoint(), getJmsConnection() ).iterator();
         }
     }
 

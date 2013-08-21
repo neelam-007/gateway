@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel.encass;
 
 import com.l7tech.objectmodel.JaxbMapType;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.BeanUtils;
@@ -34,7 +34,7 @@ import java.util.*;
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
-public class EncapsulatedAssertionConfig extends ZoneableNamedGoidEntityImp {
+public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     /** ID of palette folder in which to offer the encapsulated assertion. */
     public static final String PROP_PALETTE_FOLDER = "paletteFolder";
 

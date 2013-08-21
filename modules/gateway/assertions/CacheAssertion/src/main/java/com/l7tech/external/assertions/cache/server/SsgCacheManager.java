@@ -7,7 +7,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
@@ -67,8 +67,8 @@ public class SsgCacheManager {
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof Stopping) {
                     close();
-                } else if (event instanceof GoidEntityInvalidationEvent) {
-                    GoidEntityInvalidationEvent eiEvent = (GoidEntityInvalidationEvent) event;
+                } else if (event instanceof EntityInvalidationEvent) {
+                    EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
                     if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
                         handleClusterPropertyChange(eiEvent);
                     }
@@ -77,7 +77,7 @@ public class SsgCacheManager {
         };
     }
 
-    private void handleClusterPropertyChange(GoidEntityInvalidationEvent eiEvent) {
+    private void handleClusterPropertyChange(EntityInvalidationEvent eiEvent) {
         for (Goid goid : eiEvent.getEntityIds()) {
             try {
                 ClusterProperty cp = cpManager.findByPrimaryKey(goid);

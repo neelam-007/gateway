@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import java.util.logging.Logger;
 import java.util.List;
@@ -153,7 +153,7 @@ class ServiceMetrics {
 
     static MetricsCollectorSet getEmptyMetricsSet( final long startTime, final long endTime ) {
         MetricsCollector collector = new MetricsCollector( -1L );
-        return new MetricsCollectorSet( GoidEntity.DEFAULT_GOID, startTime, endTime, collector, Collections.<MetricsDetailKey,MetricsCollector>emptyMap() );
+        return new MetricsCollectorSet( PersistentEntity.DEFAULT_GOID, startTime, endTime, collector, Collections.<MetricsDetailKey,MetricsCollector>emptyMap() );
     }
 
     static class MetricsDetailKey {

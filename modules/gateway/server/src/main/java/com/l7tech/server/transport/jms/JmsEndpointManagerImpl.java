@@ -10,8 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.HibernateGoidEntityManager;
-import org.apache.http.util.EntityUtils;
+import com.l7tech.server.HibernateEntityManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.*;
@@ -21,7 +20,7 @@ import java.util.*;
  * @version $Revision$
  */
 public class JmsEndpointManagerImpl
-        extends HibernateGoidEntityManager<JmsEndpoint, JmsEndpointHeader>
+        extends HibernateEntityManager<JmsEndpoint, JmsEndpointHeader>
         implements JmsEndpointManager
 {
     public Collection findMessageSourceEndpoints() throws FindException {

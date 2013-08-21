@@ -60,7 +60,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     }
 
     @Override
-    public GoidEntityManager<PortalManagedService, GenericEntityHeader> getEntityManager() {
+    public EntityManager<PortalManagedService, GenericEntityHeader> getEntityManager() {
         return entityManager;
     }
 
@@ -150,7 +150,7 @@ public class PortalManagedServiceManagerImpl extends AbstractPortalGenericEntity
     private static final String L7P_ENABLED = "L7p:Enabled";
     private static final String STRING_VALUE = "stringValue";
     private static final String BOOLEAN_VALUE = "booleanValue";
-    private final GoidEntityManager<PortalManagedService, GenericEntityHeader> entityManager;
+    private final EntityManager<PortalManagedService, GenericEntityHeader> entityManager;
     private final ServiceManager serviceManager;
     private final ApplicationEventProxy applicationEventProxy;
     private static PortalManagedServiceManager instance;

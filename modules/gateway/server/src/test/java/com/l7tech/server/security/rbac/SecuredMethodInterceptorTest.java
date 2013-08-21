@@ -71,10 +71,10 @@ public class SecuredMethodInterceptorTest {
     private static MyEntity deniedEntityNew = new MyEntity();
     private static MyEntity allowedEntityExisting = new MyEntity(new Goid(0,123l));
     private static MyEntity deniedEntityExisting = new MyEntity(new Goid(0,456l));
-    private static MyGoidEntity allowedGoidEntityNew = new MyGoidEntity();
-    private static MyGoidEntity deniedGoidEntityNew = new MyGoidEntity();
-    private static MyGoidEntity allowedGoidEntityExisting = new MyGoidEntity(new Goid(0,123l));
-    private static MyGoidEntity deniedGoidEntityExisting = new MyGoidEntity(new Goid(0,456l));
+    private static MyPersistentEntity allowedGoidEntityNew = new MyPersistentEntity();
+    private static MyPersistentEntity deniedGoidEntityNew = new MyPersistentEntity();
+    private static MyPersistentEntity allowedGoidEntityExisting = new MyPersistentEntity(new Goid(0,123l));
+    private static MyPersistentEntity deniedGoidEntityExisting = new MyPersistentEntity(new Goid(0,456l));
     private static EntityHeader allowedEntityHeader = new EntityHeader(allowedEntityExisting.getId(), GENERIC, "allowedTest", "test");
     private static EntityHeader deniedEntityHeader = new EntityHeader(deniedEntityExisting.getId(), GENERIC, "deniedTest", "test");
     private static IdentityHeader allowedIdentityHeaderUserType = new IdentityHeader(allowedGoidEntityExisting.getGoid(), allowedEntityExisting.getId(), USER, null, null, null, null);
@@ -470,7 +470,7 @@ public class SecuredMethodInterceptorTest {
         void save(MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.SAVE)
-        void save(MyGoidEntity entity);
+        void save(MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.SAVE)
         void save();
@@ -479,13 +479,13 @@ public class SecuredMethodInterceptorTest {
         void update(MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.UPDATE)
-        void update(MyGoidEntity entity);
+        void update(MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
         void saveOrUpdate(MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
-        void saveOrUpdate(MyGoidEntity entity);
+        void saveOrUpdate(MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
         void saveOrUpdate();
@@ -506,7 +506,7 @@ public class SecuredMethodInterceptorTest {
         void deleteEntity(MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.DELETE_ENTITY)
-        void deleteEntity(MyGoidEntity entity);
+        void deleteEntity(MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.DELETE_MULTI)
         void deleteMulti();
@@ -515,7 +515,7 @@ public class SecuredMethodInterceptorTest {
         String getPropertyOfEntity(MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.GET_PROPERTY_OF_ENTITY)
-        String getPropertyOfEntity(MyGoidEntity entity);
+        String getPropertyOfEntity(MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.GET_PROPERTY_BY_ID)
         String getPropertyById(String id);
@@ -530,7 +530,7 @@ public class SecuredMethodInterceptorTest {
         void setPropertyOfEntity(String value, MyEntity entity);
 
         @Secured(stereotype = MethodStereotype.SET_PROPERTY_OF_ENTITY, relevantArg = 1)
-        void setPropertyOfEntity(String value, MyGoidEntity entity);
+        void setPropertyOfEntity(String value, MyPersistentEntity entity);
 
         @Secured(stereotype = MethodStereotype.SET_PROPERTY_BY_ID)
         void setPropertyById(String id);
@@ -555,9 +555,9 @@ public class SecuredMethodInterceptorTest {
     /**
      * This is an entity that will be used for testing
      */
-    private static class MyEntity implements GoidEntity {
+    private static class MyEntity implements PersistentEntity {
         private int version = 0;
-        private Goid goid = GoidEntity.DEFAULT_GOID;
+        private Goid goid = PersistentEntity.DEFAULT_GOID;
 
         public MyEntity() {
         }
@@ -600,14 +600,14 @@ public class SecuredMethodInterceptorTest {
     /**
      * This is an entity that will be used for testing
      */
-    private static class MyGoidEntity implements GoidEntity {
+    private static class MyPersistentEntity implements PersistentEntity {
         private int version = 0;
-        private Goid goid = GoidEntity.DEFAULT_GOID;
+        private Goid goid = PersistentEntity.DEFAULT_GOID;
 
-        public MyGoidEntity() {
+        public MyPersistentEntity() {
         }
 
-        public MyGoidEntity(Goid goid) {
+        public MyPersistentEntity(Goid goid) {
             this.goid = goid;
         }
 
@@ -638,7 +638,7 @@ public class SecuredMethodInterceptorTest {
 
         @Override
         public boolean isUnsaved() {
-            return GoidEntity.DEFAULT_GOID.equals(goid);
+            return PersistentEntity.DEFAULT_GOID.equals(goid);
         }
     }
 }

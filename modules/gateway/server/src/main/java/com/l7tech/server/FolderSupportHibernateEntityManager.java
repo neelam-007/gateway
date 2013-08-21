@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
 /**
  * Extension of HibernateEntityManager that supports use of Folders.
  */
-public abstract class FolderSupportHibernateEntityManager<ET extends GoidEntity, HT extends EntityHeader> extends HibernateGoidEntityManager<ET,HT> {
+public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends HibernateEntityManager<ET,HT> {
 
     //- PUBLIC
 

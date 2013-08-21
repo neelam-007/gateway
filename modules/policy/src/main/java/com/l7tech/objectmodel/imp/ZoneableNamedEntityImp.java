@@ -13,13 +13,13 @@ import javax.xml.bind.annotation.XmlTransient;
  * Convenience superclass for named entities that can be placed into security zones.
  */
 @MappedSuperclass
-public abstract class ZoneableNamedGoidEntityImp extends NamedGoidEntityImp implements ZoneableEntity {
+public abstract class ZoneableNamedEntityImp extends NamedEntityImp implements ZoneableEntity {
     protected SecurityZone securityZone;
 
-    protected ZoneableNamedGoidEntityImp() {
+    protected ZoneableNamedEntityImp() {
     }
 
-    protected ZoneableNamedGoidEntityImp(NamedGoidEntityImp entity) {
+    protected ZoneableNamedEntityImp(NamedEntityImp entity) {
         super(entity);
     }
 

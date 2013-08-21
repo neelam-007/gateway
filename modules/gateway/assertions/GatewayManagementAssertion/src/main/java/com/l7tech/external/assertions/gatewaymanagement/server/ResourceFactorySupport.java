@@ -116,7 +116,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
      * @return The map of property names to values (not null)
      * @throws ResourceAccessException if the type of a property is not supported or an unknown property is found.
      */
-    protected final <B extends GoidEntity> Map<String,Object> getProperties( final B bean, final Class<B> beanClass ) {
+    protected final <B extends PersistentEntity> Map<String,Object> getProperties( final B bean, final Class<B> beanClass ) {
         return getProperties( null, bean, beanClass );
     }
 
@@ -129,7 +129,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
      * @return The map of property names to values (not null)
      * @throws ResourceAccessException if the type of a property is not supported or an unknown property is found.
      */
-    protected final <B extends GoidEntity> Map<String,Object> getProperties( @Nullable final Map<String,Object> initialProperties,
+    protected final <B extends PersistentEntity> Map<String,Object> getProperties( @Nullable final Map<String,Object> initialProperties,
                                                                                    @NotNull  final B bean,
                                                                                    @NotNull  final Class<B> beanClass ) {
         final Map<String,Object> propertyMap = new HashMap<String,Object>();
@@ -193,7 +193,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
      * @throws InvalidResourceException if a property is invalid or required but missing
      */
     @SuppressWarnings({ "unchecked" })
-    protected final <B extends GoidEntity> void setProperties( final B bean,
+    protected final <B extends PersistentEntity> void setProperties( final B bean,
                                                                      final Map<String,Object> propertiesMap,
                                                                      final Class<? extends B> beanClass ) throws InvalidResourceException {
         try {

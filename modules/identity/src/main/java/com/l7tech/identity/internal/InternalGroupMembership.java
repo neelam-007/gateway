@@ -14,7 +14,7 @@ import javax.persistence.*;
  *
  * Each row constitutes an edge in the many-to-many relationship between Users and Groups.
  *
- * The inherited {@link com.l7tech.objectmodel.imp.GoidEntityImp#getGoid()} ()} property is
+ * The inherited {@link com.l7tech.objectmodel.imp.PersistentEntityImp#getGoid()} ()} property is
  * a generated GOID in this class.
  *
  * @author alex

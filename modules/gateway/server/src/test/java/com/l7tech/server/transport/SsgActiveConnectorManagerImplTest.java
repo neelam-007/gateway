@@ -22,12 +22,12 @@ public class SsgActiveConnectorManagerImplTest {
 
     @Test
     public void newHeaderSetsSecurityZoneOid() {
-        assertEquals(ZONE_GOID, manager.newHeader(create(zone)).getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, manager.newHeader(create(zone)).getSecurityZoneId());
     }
 
     @Test
     public void newHeaderSetsNullSecurityZoneOid() {
-        assertNull(manager.newHeader(create(null)).getSecurityZoneGoid());
+        assertNull(manager.newHeader(create(null)).getSecurityZoneId());
     }
 
     private SsgActiveConnector create(final SecurityZone zone) {

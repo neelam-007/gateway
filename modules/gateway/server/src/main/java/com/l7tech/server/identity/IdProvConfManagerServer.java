@@ -9,7 +9,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ConfigFactory;
@@ -28,7 +28,7 @@ import static com.l7tech.objectmodel.EntityType.*;
  * @author flascelles
  */
 public class IdProvConfManagerServer
-    extends HibernateGoidEntityManager<IdentityProviderConfig, EntityHeader>
+    extends HibernateEntityManager<IdentityProviderConfig, EntityHeader>
     implements IdentityProviderConfigManager
 {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })

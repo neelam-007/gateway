@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 
 import javax.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * Represents a service/policy folder.
  */
 @XmlRootElement
-public class Folder extends ZoneableNamedGoidEntityImp implements HasFolder {
+public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     private Folder parentFolder;
     private static final int MAX_NESTING_CHECK_LEVEL = 1000;
     public static final Goid ROOT_FOLDER_ID = new Goid(0,-5002);

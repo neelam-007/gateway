@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * Manages EmailListener objects. Can persist them and look them up.
  */
 public class EmailListenerManagerImpl
-        extends HibernateGoidEntityManager<EmailListener, EntityHeader>
+        extends HibernateEntityManager<EmailListener, EntityHeader>
         implements EmailListenerManager, InitializingBean
 {
     protected static final Logger logger = Logger.getLogger(EmailListenerManagerImpl.class.getName());

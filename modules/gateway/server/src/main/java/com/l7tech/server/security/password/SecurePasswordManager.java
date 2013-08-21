@@ -8,7 +8,7 @@ import java.text.ParseException;
 /**
  * Entity manager for the {@link SecurePassword} entity.
  */
-public interface SecurePasswordManager extends GoidEntityManager<SecurePassword, EntityHeader> {
+public interface SecurePasswordManager extends EntityManager<SecurePassword, EntityHeader> {
 
     /**
      * Encrypt the specified plaintext password so to produce a value suitable for use as a SecurePassword's encodedPassword field.

@@ -25,12 +25,12 @@ public class PolicyAliasManagerImplTest {
 
     @Test
     public void newHeaderSetsSecurityZoneOid() {
-        assertEquals(ZONE_GOID, manager.newHeader(createAlias(zone)).getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, manager.newHeader(createAlias(zone)).getSecurityZoneId());
     }
 
     @Test
     public void newHeaderSetsNullSecurityZoneOid() {
-        assertNull(manager.newHeader(createAlias(null)).getSecurityZoneGoid());
+        assertNull(manager.newHeader(createAlias(null)).getSecurityZoneId());
     }
 
     private PolicyAlias createAlias(final SecurityZone zone) {

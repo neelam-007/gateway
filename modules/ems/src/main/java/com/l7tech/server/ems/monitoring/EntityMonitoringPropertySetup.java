@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
@@ -23,7 +23,7 @@ import java.util.Map;
 @Entity
 @Proxy(lazy=false)
 @Table(name="entity_monitoring_property_setup")
-public class EntityMonitoringPropertySetup extends GoidEntityImp implements JSON.Convertible {
+public class EntityMonitoringPropertySetup extends PersistentEntityImp implements JSON.Convertible {
     private NamedEntity entity;
     private String entityGuid;
     private String propertyType;

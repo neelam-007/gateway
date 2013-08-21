@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import java.util.EnumSet;
  *
  * @author: vchan
  */
-public class JmsConnectionManagerStub extends GoidEntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
+public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
 
     public static final int TEST_CONFIG_AMQ_IN  = 1000;
     public static final int TEST_CONFIG_AMQ_OUT = 1001;

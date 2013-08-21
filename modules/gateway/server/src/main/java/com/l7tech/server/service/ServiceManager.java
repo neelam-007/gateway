@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * Service API. Get instance of this through the Locator class.
  */
-public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareGoidEntityManager<PublishedService> {
+public interface ServiceManager extends PropertySearchableEntityManager<ServiceHeader>, FolderedEntityManager<PublishedService, ServiceHeader>, RoleAwareEntityManager<PublishedService> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.

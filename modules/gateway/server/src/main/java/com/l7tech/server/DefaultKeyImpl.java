@@ -221,7 +221,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     private boolean aliasAlreadyUsed(String alias) throws IOException {
         try {
-            keyStoreManager.lookupKeyByKeyAlias(alias, GoidEntity.DEFAULT_GOID);
+            keyStoreManager.lookupKeyByKeyAlias(alias, PersistentEntity.DEFAULT_GOID);
             return true;
         } catch (ObjectNotFoundException e) {
             return false;

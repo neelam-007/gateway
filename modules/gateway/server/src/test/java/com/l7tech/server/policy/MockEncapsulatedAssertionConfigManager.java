@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -14,7 +14,7 @@ import java.util.Collections;
 /**
  *
  */
-public class MockEncapsulatedAssertionConfigManager extends GoidEntityManagerStub<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
+public class MockEncapsulatedAssertionConfigManager extends EntityManagerStub<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
     @NotNull
     @Override
     public Collection<EncapsulatedAssertionConfig> findByPolicyGoid(Goid policyOid) throws FindException {

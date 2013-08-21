@@ -10,7 +10,7 @@ public class HibernateEntityManagerTest {
     private static final Goid GOID = new Goid(0,1234L);
     private static final Integer VER = 1;
     private static final Goid ZONE_GOID = new Goid(0,1111L);
-    private HibernateGoidEntityManager<GoidEntity, EntityHeader> genericHeaderManager;
+    private HibernateEntityManager<PersistentEntity, EntityHeader> genericHeaderManager;
     private SecurityZone zone;
 
     @Before
@@ -33,7 +33,7 @@ public class HibernateEntityManagerTest {
     @Test
     public void newHeaderEntityZoneable() {
         final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, zone));
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertEquals(VER, header.getVersion());
         assertTrue(header.getDescription().isEmpty());
@@ -43,10 +43,10 @@ public class HibernateEntityManagerTest {
     @Test
     public void newHeaderEntityZoneableNullZone() {
         final ZoneableEntityHeader header = (ZoneableEntityHeader) genericHeaderManager.newHeader(new StubZoneableEntity(GOID, VER, null));
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
-    private class TestableHibernateEntityManager extends HibernateGoidEntityManager<GoidEntity, EntityHeader> {
+    private class TestableHibernateEntityManager extends HibernateEntityManager<PersistentEntity, EntityHeader> {
         @Override
         public Class<? extends Entity> getImpClass() {
             return StubPersistentEntity.class;
@@ -58,7 +58,7 @@ public class HibernateEntityManagerTest {
         }
     }
 
-    private class StubPersistentEntity implements GoidEntity {
+    private class StubPersistentEntity implements PersistentEntity {
         private Goid goid;
         private int version;
 

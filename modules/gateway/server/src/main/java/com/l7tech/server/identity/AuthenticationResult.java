@@ -4,7 +4,7 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.CollectionUtils;
@@ -223,7 +223,7 @@ public final class AuthenticationResult {
     }
 
     private static class CacheKey {
-        private static final Set<String> IGNORE_USER_ID = CollectionUtils.set("-1", Goid.toString( GoidEntity.DEFAULT_GOID ));
+        private static final Set<String> IGNORE_USER_ID = CollectionUtils.set("-1", Goid.toString( PersistentEntity.DEFAULT_GOID ));
 
         private final Goid userProviderOid;
         private final String userId;
@@ -241,7 +241,7 @@ public final class AuthenticationResult {
         }
 
         private boolean isValid() {
-            return !userId.isEmpty() && !IGNORE_USER_ID.contains( userId );
+            return !userId.isEmpty() && !IGNORE_USER_ID.contains(userId);
         }
 
         /** @noinspection RedundantIfStatement*/

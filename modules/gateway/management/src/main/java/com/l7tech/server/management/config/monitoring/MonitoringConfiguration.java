@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Entity;
 import javax.xml.bind.annotation.*;
@@ -21,7 +21,7 @@ import java.util.Set;
 @Entity
 @XmlRootElement(namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
 @XmlSeeAlso({PropertyTrigger.class, EventTrigger.class, EmailNotificationRule.class, SnmpTrapNotificationRule.class, HttpNotificationRule.class})
-public final class MonitoringConfiguration extends NamedGoidEntityImp {
+public final class MonitoringConfiguration extends NamedEntityImp {
     private Set<Trigger> triggers = new LinkedHashSet<Trigger>();
     private Set<NotificationRule> notificationRules = new LinkedHashSet<NotificationRule>();
     private boolean responsibleForClusterMonitoring;

@@ -3,7 +3,7 @@ package com.l7tech.server.ems.monitoring;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @since Enterprise Manager 1.0
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public interface SystemMonitoringNotificationRulesManager extends GoidEntityManager<SystemMonitoringNotificationRule, EntityHeader> {
+public interface SystemMonitoringNotificationRulesManager extends EntityManager<SystemMonitoringNotificationRule, EntityHeader> {
     /**
      * Find a notification rule by the given guid.
      * @param guid: the guid of a notification rule to be found.

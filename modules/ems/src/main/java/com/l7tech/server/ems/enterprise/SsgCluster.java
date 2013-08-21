@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.management.api.node.GatewayApi;
 import org.hibernate.annotations.*;
 import org.mortbay.util.ajax.JSON;
@@ -20,7 +20,7 @@ import java.util.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="ssg_cluster")
-public class SsgCluster extends NamedGoidEntityImp implements JSON.Convertible {
+public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 
     public static final int MAX_NAME_LENGTH = 128;
     public static final String ILLEGAL_CHARACTERS = "/";

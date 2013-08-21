@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.transport.email;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -12,7 +12,7 @@ import java.io.Serializable;
 @Entity
 @Proxy(lazy=false)
 @Table(name="email_listener_state")
-public class EmailListenerState  extends GoidEntityImp implements  Serializable{
+public class EmailListenerState  extends PersistentEntityImp implements  Serializable{
     private String ownerNodeId;
     private long lastPollTime;
     private Long lastMessageId;

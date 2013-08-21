@@ -507,11 +507,11 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 keyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreAndAlias[0]);
             } catch ( NumberFormatException nfe ) {
                 validationThrower.call();
-                keyStoreId = GoidEntity.DEFAULT_GOID;
+                keyStoreId = PersistentEntity.DEFAULT_GOID;
             }
             alias = keystoreAndAlias[1];
         }else{
-            keyStoreId = GoidEntity.DEFAULT_GOID;
+            keyStoreId = PersistentEntity.DEFAULT_GOID;
             alias = identifier;
         }
 
@@ -638,7 +638,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         SsgKeyEntry ssgKeyEntry = null;
         try {
             if ( Goid.isDefault(keyStoreId) ) {
-                ssgKeyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( alias, GoidEntity.DEFAULT_GOID );
+                ssgKeyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( alias, PersistentEntity.DEFAULT_GOID );
             } else {
                 final SsgKeyFinder ssgKeyFinder = ssgKeyStoreManager.findByPrimaryKey( keyStoreId );
                 ssgKeyEntry = ssgKeyFinder.getCertificateChain( alias );
@@ -740,7 +740,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             throw new ResourceAccessException( "Updated cluster property value is invalid", e);
         }
 
-        if ( GoidEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
+        if ( PersistentEntity.DEFAULT_GOID.equals(property.getGoid()) ) {
             checkPermitted( OperationType.CREATE, null, property );
             clusterPropertyManager.save(property);
         } else {

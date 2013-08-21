@@ -1,6 +1,6 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
@@ -27,7 +27,7 @@ import java.io.Serializable;
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="assertion_access")
-public class AssertionAccess extends ZoneableNamedGoidEntityImp implements Serializable {
+public class AssertionAccess extends ZoneableNamedEntityImp implements Serializable {
 
     public AssertionAccess() {
     }

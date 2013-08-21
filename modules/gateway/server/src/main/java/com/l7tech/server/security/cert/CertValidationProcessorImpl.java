@@ -13,7 +13,7 @@ import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
@@ -462,7 +462,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof GoidEntityInvalidationEvent) {
+        if (applicationEvent instanceof EntityInvalidationEvent) {
             boolean isDirty = false;
             lock.readLock().lock();
             try {
@@ -473,7 +473,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
 
             if ( !isDirty ) {
                 // incremental update
-                processEntityInvalidationEvent((GoidEntityInvalidationEvent) applicationEvent);
+                processEntityInvalidationEvent((EntityInvalidationEvent) applicationEvent);
             } else {
                 // full reload
                 lock.writeLock().lock();
@@ -552,7 +552,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
         cacheIsDirty = false;
     }
 
-    private void processEntityInvalidationEvent(final GoidEntityInvalidationEvent eie) {
+    private void processEntityInvalidationEvent(final EntityInvalidationEvent eie) {
         if (TrustedCert.class.isAssignableFrom(eie.getEntityClass())) {
             final Goid[] ids = eie.getEntityIds();
             final char[] ops = eie.getEntityOperations();
@@ -562,8 +562,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                     Goid oid = ids[i];
                     char op = ops[i];
                     switch(op) {
-                        case GoidEntityInvalidationEvent.CREATE:
-                        case GoidEntityInvalidationEvent.UPDATE:
+                        case EntityInvalidationEvent.CREATE:
+                        case EntityInvalidationEvent.UPDATE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to trusted certificate add/update, OID is {0}.", oid);
                             }
@@ -575,7 +575,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                                 logger.log(Level.WARNING, "Couldn't load recently created or updated TrustedCert #" + oid, e);
                                 continue nextOid;
                             }
-                        case GoidEntityInvalidationEvent.DELETE:
+                        case EntityInvalidationEvent.DELETE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to trusted certificate deletion, OID is {0}.", oid);
                             }
@@ -597,8 +597,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                     Goid oid = ids[i];
                     char op = ops[i];
                     switch(op) {
-                        case GoidEntityInvalidationEvent.CREATE:
-                        case GoidEntityInvalidationEvent.UPDATE:
+                        case EntityInvalidationEvent.CREATE:
+                        case EntityInvalidationEvent.UPDATE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to revocation check policy add/update, OID is {0}.", oid);
                             }
@@ -610,7 +610,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                                 logger.log(Level.WARNING, "Couldn't load recently created or updated RevocationCheckPolicy #" + oid, e);
                                 continue nextOid;
                             }
-                        case GoidEntityInvalidationEvent.DELETE:
+                        case EntityInvalidationEvent.DELETE:
                             if (logger.isLoggable(Level.FINE) ) {
                                 logger.log(Level.FINE, "Updating cache due to revocation check policy deletion, OID is {0}.", oid);
                             }

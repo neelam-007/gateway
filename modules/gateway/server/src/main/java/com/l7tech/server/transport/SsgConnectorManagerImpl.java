@@ -7,10 +7,10 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.util.*;
@@ -39,7 +39,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
  * Implementation of {@link SsgConnectorManager}.
  */
 public class SsgConnectorManagerImpl
-        extends HibernateGoidEntityManager<SsgConnector, EntityHeader>
+        extends HibernateEntityManager<SsgConnector, EntityHeader>
         implements SsgConnectorManager, InitializingBean, DisposableBean, PropertyChangeListener, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
@@ -317,7 +317,7 @@ public class SsgConnectorManagerImpl
             logger.log(Level.WARNING, "Unable to update connectors using interface definitions: unable to fetch list of connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getMessage(e));
         }
 
-        GoidEntityInvalidationEvent eie = new GoidEntityInvalidationEvent(this, SsgConnector.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.fill(new char[goids.size()], 'U'));
+        EntityInvalidationEvent eie = new EntityInvalidationEvent(this, SsgConnector.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.fill(new char[goids.size()], 'U'));
         applicationEventPublisher.publishEvent(eie);
     }
 
@@ -376,9 +376,9 @@ public class SsgConnectorManagerImpl
     }
 
     private void handleEvent(ApplicationEvent event) {
-        if (!(event instanceof GoidEntityInvalidationEvent))
+        if (!(event instanceof EntityInvalidationEvent))
             return;
-        GoidEntityInvalidationEvent evt = (GoidEntityInvalidationEvent)event;
+        EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
         if (!SsgConnector.class.isAssignableFrom(evt.getEntityClass()))
             return;
         Goid[] ids = evt.getEntityIds();
@@ -388,7 +388,7 @@ public class SsgConnectorManagerImpl
             Goid goid = ids[i];
 
             switch (op) {
-                case GoidEntityInvalidationEvent.DELETE:
+                case EntityInvalidationEvent.DELETE:
                     knownConnectors.remove(goid);
                     break;
                 default:

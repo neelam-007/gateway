@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -266,8 +266,8 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent eie = (GoidEntityInvalidationEvent) event;
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
             if (Role.class.isAssignableFrom(eie.getEntityClass())) {
                 for (Goid oid : eie.getEntityIds()) {
                     try {

@@ -24,20 +24,20 @@ public class PolicyHeaderTest {
     public void constructorFromPolicySetsSecurityZone() {
         policy.setSecurityZone(zone);
         header = new PolicyHeader(policy, 0);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
     }
 
     @Test
     public void constructorFromPolicySetsNullSecurityZone() {
         policy.setSecurityZone(null);
         header = new PolicyHeader(policy, 0);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @Test
     public void copyConstructorSetsSecurityZone() {
         header = new PolicyHeader(new Goid(0,1234L), false, PolicyType.INCLUDE_FRAGMENT, "test", "test", "test", new Goid(0,1234L), new Goid(0,1234L), 0, 0, false, ZONE_GOID);
         final PolicyHeader copy = new PolicyHeader(header);
-        assertEquals(ZONE_GOID, copy.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, copy.getSecurityZoneId());
     }
 }

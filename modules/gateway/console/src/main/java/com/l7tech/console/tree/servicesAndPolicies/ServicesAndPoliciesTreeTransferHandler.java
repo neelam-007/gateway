@@ -18,8 +18,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderGoid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.folder.HasFolderId;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -225,7 +225,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
         EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
         Entity entity = childTransferNode.getEntity();
-        if (!(entity instanceof HasFolderGoid || entity instanceof HasFolder)) return false;
+        if (!(entity instanceof HasFolderId || entity instanceof HasFolder)) return false;
 
         Object childObj = childTransferNode.getUserObject();
         if(!(childObj instanceof OrganizationHeader)) return false;
@@ -248,7 +248,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         return false;
     }
 
-    private <FE extends NamedGoidEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
+    private <FE extends NamedEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
                                                                        final ServicesAndPoliciesTree tree,
                                                                        final FE entity) {
 
@@ -318,7 +318,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         }
 
         header.setAliasGoid(aliasGoid);
-        header.setFolderGoid(parentFolderGoid);
+        header.setFolderId(parentFolderGoid);
         EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
         int insertPosition = newParent.getInsertPosition(childNode, RootNode.getComparator());
@@ -536,7 +536,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             }
 
             Entity entity = childTransferNode.getEntity();
-            if (!(entity instanceof HasFolderGoid || entity instanceof HasFolder)) return false;
+            if (!(entity instanceof HasFolderId || entity instanceof HasFolder)) return false;
 
             if (childTransferNode instanceof ServiceNodeAlias || childTransferNode instanceof PolicyEntityNodeAlias) {
                 //With the entity oid and the old folder oid we can find the actual alias
@@ -564,9 +564,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 //after it downloads the entity it will use the OrganizationHeader to update the aliases
                 //folder and alias properties
                 OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
-                header.setFolderGoid(newParent.getGoid());
-            } else if ( entity instanceof GoidEntity ) {
-                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, (GoidEntity)entity );
+                header.setFolderId(newParent.getGoid());
+            } else if ( entity instanceof PersistentEntity) {
+                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, (PersistentEntity)entity );
 
             }
             childTransferNode.updateUserObject();

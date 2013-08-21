@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.mapping;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -18,7 +18,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="message_context_mapping_values")
-public class MessageContextMappingValues extends GoidEntityImp {
+public class MessageContextMappingValues extends PersistentEntityImp {
     private static final int MAX_VALUE_LENGTH = 255;
 
     private Goid mappingKeysGoid;

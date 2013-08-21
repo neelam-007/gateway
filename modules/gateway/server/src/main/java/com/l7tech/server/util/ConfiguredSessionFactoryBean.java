@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.RandomUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -85,10 +85,10 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
             // Also it is extremely unlikely a gateway will create 2^64 entities without restarting.
 
             // use an existing goid if one is given.
-            if (o instanceof GoidEntity &&
-                    (((GoidEntity) o).getGoid()!=null &&
-                    !GoidEntity.DEFAULT_GOID.equals(((GoidEntity) o).getGoid()))) {
-                return ((GoidEntity) o).getGoid();
+            if (o instanceof PersistentEntity &&
+                    (((PersistentEntity) o).getGoid()!=null &&
+                    !PersistentEntity.DEFAULT_GOID.equals(((PersistentEntity) o).getGoid()))) {
+                return ((PersistentEntity) o).getGoid();
             }
             //TODO: is there a more efficient way of creating a new goid?
             return new Goid(hi.get(), low.getAndIncrement());

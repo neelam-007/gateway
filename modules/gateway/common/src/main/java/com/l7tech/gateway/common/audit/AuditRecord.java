@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.util.TextUtils;
 
@@ -29,7 +29,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author alex
  */
-public abstract class AuditRecord implements NamedEntity, GoidEntity, Serializable {
+public abstract class AuditRecord implements NamedEntity, PersistentEntity, Serializable {
     private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
     private static AtomicLong globalSequenceNumber = new AtomicLong(0L);
 

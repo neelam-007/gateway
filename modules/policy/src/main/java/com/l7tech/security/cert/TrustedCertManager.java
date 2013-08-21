@@ -4,8 +4,8 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntityManager;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
  */
-public interface TrustedCertManager extends GoidEntityManager<TrustedCert, EntityHeader> {
+public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHeader> {
     /**
      * Retrieves every {@link TrustedCert} with the specified DN.
      *

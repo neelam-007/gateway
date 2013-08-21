@@ -10,7 +10,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 /**
  * Abstract base class for Security Zone aware entity manager resource factory.
  */
-public abstract class SecurityZoneableEntityManagerResourceFactory<R extends SecurityZoneableObject, E extends GoidEntity, EH extends EntityHeader> extends GoidEntityManagerResourceFactory<R, E, EH> {
+public abstract class SecurityZoneableEntityManagerResourceFactory<R extends SecurityZoneableObject, E extends PersistentEntity, EH extends EntityHeader> extends EntityManagerResourceFactory<R, E, EH> {
 
     //- PROTECTED
 
@@ -59,7 +59,7 @@ public abstract class SecurityZoneableEntityManagerResourceFactory<R extends Sec
                                                            final RbacServices rbacServices,
                                                            final SecurityFilter securityFilter,
                                                            final PlatformTransactionManager transactionManager,
-                                                           final GoidEntityManager<E, EH> manager,
+                                                           final EntityManager<E, EH> manager,
                                                            final SecurityZoneManager securityZoneManager) {
         this(readOnly, allowNameSelection, false, rbacServices, securityFilter, transactionManager, manager, securityZoneManager);
     }
@@ -70,7 +70,7 @@ public abstract class SecurityZoneableEntityManagerResourceFactory<R extends Sec
                                                            final RbacServices rbacServices,
                                                            final SecurityFilter securityFilter,
                                                            final PlatformTransactionManager transactionManager,
-                                                           final GoidEntityManager<E, EH> manager,
+                                                           final EntityManager<E, EH> manager,
                                                            final SecurityZoneManager securityZoneManager) {
         super(readOnly, allowNameSelection, allowGuidSelection, rbacServices, securityFilter, transactionManager, manager);
         this.securityZoneManager = securityZoneManager;

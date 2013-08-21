@@ -16,7 +16,7 @@ import com.l7tech.message.OutboundHeaderSupport;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -309,7 +309,7 @@ public class MqNativeUtils {
 
             @Override
             public Goid getServiceGoid() {
-                return GoidEntity.DEFAULT_GOID;
+                return PersistentEntity.DEFAULT_GOID;
             }
 
             @Override

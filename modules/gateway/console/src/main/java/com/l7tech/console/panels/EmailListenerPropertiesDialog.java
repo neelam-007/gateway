@@ -501,7 +501,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	}
 
         boolean isHardWired = false;
-        Goid hardWiredId = GoidEntity.DEFAULT_GOID;
+        Goid hardWiredId = PersistentEntity.DEFAULT_GOID;
 
         Properties props = emailListener.properties();
  	 	String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);

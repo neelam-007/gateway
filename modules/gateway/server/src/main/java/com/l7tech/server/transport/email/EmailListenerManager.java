@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * the interface for objects that manage EmailListener objects.
  */
-public interface EmailListenerManager extends GoidEntityManager<EmailListener, EntityHeader> {
+public interface EmailListenerManager extends EntityManager<EmailListener, EntityHeader> {
     public List<EmailListener> getEmailListenersForNode(final String clusterNodeId) throws FindException;
 
     public List<EmailListener> stealSubscriptionsFromDeadNodes(final String clusterNodeId);

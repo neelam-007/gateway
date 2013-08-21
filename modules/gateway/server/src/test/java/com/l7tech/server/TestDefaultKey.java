@@ -3,7 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.Pair;
 
 import java.security.PrivateKey;
@@ -80,6 +80,6 @@ public class TestDefaultKey extends DefaultKeyImpl {
     }
 
     private SsgKeyEntry makeFakeKeyEntry(X509Certificate cert, PrivateKey key) {
-        return new SsgKeyEntry(GoidEntity.DEFAULT_GOID, "SSL", new X509Certificate[] {cert}, key);
+        return new SsgKeyEntry(PersistentEntity.DEFAULT_GOID, "SSL", new X509Certificate[] {cert}, key);
     }
 }

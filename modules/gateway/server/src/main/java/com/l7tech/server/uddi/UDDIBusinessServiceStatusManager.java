@@ -7,7 +7,7 @@ import java.util.Collection;
 /**
  *
  */
-public interface UDDIBusinessServiceStatusManager extends GoidEntityManager<UDDIBusinessServiceStatus, EntityHeader> {
+public interface UDDIBusinessServiceStatusManager extends EntityManager<UDDIBusinessServiceStatus, EntityHeader> {
 
     /**
      * Find the business services for a registry with metrics status.

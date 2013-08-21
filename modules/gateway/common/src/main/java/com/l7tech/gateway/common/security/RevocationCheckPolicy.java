@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import org.hibernate.annotations.Proxy;
@@ -23,7 +23,7 @@ import java.util.List;
 @Entity
 @Proxy(lazy=false)
 @Table(name="revocation_check_policy")
-public class RevocationCheckPolicy extends ZoneableNamedGoidEntityImp implements Cloneable {
+public class RevocationCheckPolicy extends ZoneableNamedEntityImp implements Cloneable {
 
     //- PUBLIC
 

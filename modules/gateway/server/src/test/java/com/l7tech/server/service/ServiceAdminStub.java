@@ -275,7 +275,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     @Override
     public Goid saveSampleMessage(SampleMessage sm) throws SaveException {
-        return GoidEntity.DEFAULT_GOID;
+        return PersistentEntity.DEFAULT_GOID;
     }
 
     @Override

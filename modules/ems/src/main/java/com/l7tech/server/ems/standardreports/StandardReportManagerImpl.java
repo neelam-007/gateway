@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
@@ -30,7 +30,7 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
  * TODO re-enable role creation for standard reports (once viewing is role, not ownership, based)
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class StandardReportManagerImpl  extends HibernateGoidEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
+public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
 
     //- PUBLIC
 

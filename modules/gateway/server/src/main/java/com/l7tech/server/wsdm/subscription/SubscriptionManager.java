@@ -16,7 +16,7 @@ import java.util.Map;
 
 /** @author alex */
 @Transactional(rollbackFor = Throwable.class)
-public interface SubscriptionManager extends GoidEntityManager<Subscription, EntityHeader> {
+public interface SubscriptionManager extends EntityManager<Subscription, EntityHeader> {
     @Transactional(readOnly = true, rollbackFor = Throwable.class)
     Subscription findByUuid(String uuid) throws FindException;
 

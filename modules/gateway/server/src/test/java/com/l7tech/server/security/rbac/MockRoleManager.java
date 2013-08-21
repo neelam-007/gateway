@@ -7,17 +7,17 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.GoidEntityManagerStub;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class MockRoleManager extends GoidEntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
+public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
     private GroupManager groupManager;
 
     public MockRoleManager(EntityFinder entityFinder) {
@@ -118,7 +118,7 @@ public class MockRoleManager extends GoidEntityManagerStub<Role,EntityHeader> im
     }
 
     @Override
-    public void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+    public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
@@ -157,7 +157,7 @@ public class MockRoleManager extends GoidEntityManagerStub<Role,EntityHeader> im
     }
 
     @Override
-    public Class<? extends GoidEntityImp> getImpClass() {
+    public Class<? extends PersistentEntityImp> getImpClass() {
         return Role.class;
     }
 

@@ -1,7 +1,7 @@
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Type;
 
@@ -17,19 +17,19 @@ import java.io.Serializable;
  * @author Victor Kazakov
  */
 @MappedSuperclass
-public abstract class GoidEntityImp implements GoidEntity, Serializable {
+public abstract class PersistentEntityImp implements PersistentEntity, Serializable {
     private Goid goid;
     private int version;
     protected final transient long loadTime;
     protected transient boolean locked; // read-only when locked
 
-    protected GoidEntityImp() {
+    protected PersistentEntityImp() {
         goid = DEFAULT_GOID;
         loadTime = System.currentTimeMillis();
         locked = false;
     }
 
-    protected GoidEntityImp(final GoidEntity entity) {
+    protected PersistentEntityImp(final PersistentEntity entity) {
         this();
         setGoid(entity.getGoid());
         setVersion(entity.getVersion());
@@ -116,7 +116,7 @@ public abstract class GoidEntityImp implements GoidEntity, Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        GoidEntityImp that = (GoidEntityImp) o;
+        PersistentEntityImp that = (PersistentEntityImp) o;
 
         //noinspection RedundantIfStatement
         if (goid != null ? !goid.equals(that.goid) : that.goid != null) return false;

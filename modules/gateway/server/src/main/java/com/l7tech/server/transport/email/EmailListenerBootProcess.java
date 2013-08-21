@@ -5,11 +5,11 @@ import com.l7tech.gateway.common.audit.AuditDetailEvent;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.PeriodicGoidVersionCheck;
+import com.l7tech.server.PeriodicVersionCheck;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -299,7 +299,7 @@ public class EmailListenerBootProcess extends LifecycleBean{
     /**
      * Periodically checks for new, updated or deleted email listener configurations
      */
-    private class EmailListenerVersionChecker extends PeriodicGoidVersionCheck {
+    private class EmailListenerVersionChecker extends PeriodicVersionCheck {
         EmailListenerVersionChecker(EmailListenerManager mgr ) throws FindException {
             super(mgr);
         }
@@ -311,13 +311,13 @@ public class EmailListenerBootProcess extends LifecycleBean{
         }
 
         @Override
-        protected void onUpdate( GoidEntity updatedEntity ) {
+        protected void onUpdate( PersistentEntity updatedEntity ) {
             logger.info( "EmailListener " + updatedEntity.getGoid() + " updated!" );
             emailListenerUpdated( (EmailListener)updatedEntity, true );
         }
 
         @Override
-        protected void onCreate(GoidEntity createdEntity) {
+        protected void onCreate(PersistentEntity createdEntity) {
             logger.info( "Email Listener " + createdEntity.getGoid() + " created!" );
             emailListenerUpdated( (EmailListener)createdEntity, true );
         }

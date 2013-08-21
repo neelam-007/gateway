@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEvent;
 import java.util.logging.Level;
 
 /**
- * Implementations are events in the lifecycle of a {@link com.l7tech.objectmodel.GoidEntity}.
+ * Implementations are events in the lifecycle of a {@link com.l7tech.objectmodel.PersistentEntity}.
  *
  * @author alex
  */

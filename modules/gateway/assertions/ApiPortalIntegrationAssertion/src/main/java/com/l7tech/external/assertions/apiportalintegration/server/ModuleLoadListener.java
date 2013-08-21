@@ -16,7 +16,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
@@ -87,8 +87,8 @@ public class ModuleLoadListener implements ApplicationListener {
             refreshAllPortalManagedServices();
         } else if (applicationEvent instanceof LicenseChangeEvent) {
             registerServiceTemplates();
-        } else if (applicationEvent instanceof GoidEntityInvalidationEvent) {
-            final GoidEntityInvalidationEvent event = (GoidEntityInvalidationEvent) applicationEvent;
+        } else if (applicationEvent instanceof EntityInvalidationEvent) {
+            final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
             if (PublishedService.class.equals(event.getEntityClass())) {
                 handlePublishedServiceInvalidationEvent(event);
             }
@@ -157,7 +157,7 @@ public class ModuleLoadListener implements ApplicationListener {
     private final ServiceTemplate apiPortalIntegrationServiceTemplate;
 
 
-    private void handlePublishedServiceInvalidationEvent(final GoidEntityInvalidationEvent event) {
+    private void handlePublishedServiceInvalidationEvent(final EntityInvalidationEvent event) {
         final Goid[] entityIds = event.getEntityIds();
         final char[] entityOperations = event.getEntityOperations();
         for (int i = 0; i < entityIds.length; i++) {
@@ -165,15 +165,15 @@ public class ModuleLoadListener implements ApplicationListener {
             final char entityOperation = entityOperations[i];
             try {
                 switch (entityOperation) {
-                    case GoidEntityInvalidationEvent.CREATE: {
+                    case EntityInvalidationEvent.CREATE: {
                         handleCreate(entityId);
                         break;
                     }
-                    case GoidEntityInvalidationEvent.UPDATE: {
+                    case EntityInvalidationEvent.UPDATE: {
                         handleUpdate(entityId);
                         break;
                     }
-                    case GoidEntityInvalidationEvent.DELETE: {
+                    case EntityInvalidationEvent.DELETE: {
                         deletePortalManagedServiceIfFound(entityId);
                         break;
                     }

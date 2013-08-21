@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.EsmMessages;
@@ -1294,7 +1294,7 @@ public class Monitor extends EsmStandardWebPage {
         for (EntityMonitoringPropertyValues newEntity: newEntitiesList) {
             String newGuid = newEntity.getEntityGuid();
             EntityMonitoringPropertyValues.EntityType entityType = newEntity.getEntityType();
-            NamedGoidEntityImp entity;
+            NamedEntityImp entity;
             boolean isSsgCluster;
             String host;
             try {

@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
@@ -71,7 +71,7 @@ public class JmsPropertyMapper {
                     JmsConnection.VALUE_KEYSTORE_BYTES.equals(values[0]) ||
                     JmsConnection.VALUE_KEYSTORE_PASSWORD.equals(values[0])) {
                     try {
-                        Goid ssgKeystoreId = GoidEntity.DEFAULT_GOID;
+                        Goid ssgKeystoreId = PersistentEntity.DEFAULT_GOID;
                         String ssgKeyAlias = null;
                         if (values.length == 1) {
                             // version 3.7 format - no SSG keystore ID and key alias specified; defaults to the SSG SSL private key and cert

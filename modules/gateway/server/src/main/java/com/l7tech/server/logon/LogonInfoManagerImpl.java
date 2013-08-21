@@ -2,7 +2,7 @@ package com.l7tech.server.logon;
 
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 
@@ -27,7 +27,7 @@ import org.hibernate.criterion.Restrictions;
  * User: dlee
  * Date: Jun 27, 2008
  */
-public class LogonInfoManagerImpl extends HibernateGoidEntityManager<LogonInfo, EntityHeader> implements LogonInfoManager {
+public class LogonInfoManagerImpl extends HibernateEntityManager<LogonInfo, EntityHeader> implements LogonInfoManager {
 
     private static final Logger logger = Logger.getLogger(LogonInfoManagerImpl.class.getName());
 

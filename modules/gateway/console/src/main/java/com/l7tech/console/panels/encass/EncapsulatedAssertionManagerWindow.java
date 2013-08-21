@@ -106,7 +106,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 if (selected != null) {
                     final EncapsulatedAssertionConfig clone = selected.getCopy();
                     clone.setGuid(null);
-                    clone.setGoid(GoidEntity.DEFAULT_GOID);
+                    clone.setGoid(PersistentEntity.DEFAULT_GOID);
                     clone.setName(EntityUtils.getNameForCopy(selected.getName()));
                     doProperties(clone, false);
                 }
@@ -376,7 +376,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      * @param promptForAutoPopulateOnNew whether the user should be asked if they want to auto-populate inputs and outputs if this is a new config.
      */
     private void doProperties(@NotNull final EncapsulatedAssertionConfig config, final boolean promptForAutoPopulateOnNew) {
-        final boolean isNew = GoidEntity.DEFAULT_GOID.equals(config.getGoid());
+        final boolean isNew = PersistentEntity.DEFAULT_GOID.equals(config.getGoid());
         AbstractEncapsulatedAssertionAction action = null;
         if (isNew) {
             action = new CreateEncapsulatedAssertionAction(config, new ConfigChangeWindowUpdater(config), promptForAutoPopulateOnNew);

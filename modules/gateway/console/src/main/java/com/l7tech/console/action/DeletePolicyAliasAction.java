@@ -77,7 +77,7 @@ public class DeletePolicyAliasAction extends DeleteEntityNodeAction<PolicyEntity
             //delete the alias, leaving the original service alone
             //what alias does this node represent? Need it's policy id and folder id to find out
             //pH's folder id has been modified to point at the folder containing the alias
-            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getGoid(), pH.getFolderGoid());
+            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getGoid(), pH.getFolderId());
             if(pa != null){
                 policyAdmin.deleteEntityAlias((Goid.toString(pa.getGoid())));
             }else{

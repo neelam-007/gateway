@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.esmtrust;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.security.cert.TrustedCert;
 import org.hibernate.annotations.Proxy;
 
@@ -15,7 +15,7 @@ import javax.persistence.Table;
 @Entity
 @Proxy(lazy=false)
 @Table(name="trusted_esm")
-public class TrustedEsm extends NamedGoidEntityImp {
+public class TrustedEsm extends NamedEntityImp {
     private TrustedCert trustedCert;
 
     @ManyToOne(optional=false)

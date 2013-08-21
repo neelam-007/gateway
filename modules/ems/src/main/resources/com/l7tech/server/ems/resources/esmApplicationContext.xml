@@ -225,7 +225,7 @@
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 
-    <bean id="goidEntityInvalidator" class="com.l7tech.server.GoidEntityVersionChecker">
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker">
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>

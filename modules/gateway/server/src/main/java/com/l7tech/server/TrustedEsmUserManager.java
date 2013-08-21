@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsmUser}.
  */
-public interface TrustedEsmUserManager extends GoidEntityManager<TrustedEsmUser, EntityHeader> {
+public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, EntityHeader> {
     /** Exception thrown if an attempt is made to configure a user mapping which already exists. */
     public static class MappingAlreadyExistsException extends Exception {
         public MappingAlreadyExistsException() {

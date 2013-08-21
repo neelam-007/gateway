@@ -151,7 +151,7 @@ public class PasteAsAliasAction extends SecureAction {
             }
 
             header.setAliasGoid(aliasGoid);
-            header.setFolderGoid(parentFolder.getGoid());
+            header.setFolderId(parentFolder.getGoid());
             final EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
             int insertPosition = parentNode.getInsertPosition(childNode, RootNode.getComparator());
@@ -164,9 +164,9 @@ public class PasteAsAliasAction extends SecureAction {
     }
 
     @Nullable
-    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneGoid header, @NotNull final EntityType aliasType) {
+    private SecurityZone getSecurityZoneFromHeader(@NotNull final HasSecurityZoneId header, @NotNull final EntityType aliasType) {
         SecurityZone zone = null;
-        final Goid securityZoneGoid = header.getSecurityZoneGoid();
+        final Goid securityZoneGoid = header.getSecurityZoneId();
         if (securityZoneGoid != null) {
             final SecurityZone headerZone = SecurityZoneUtil.getSecurityZoneByGoid(securityZoneGoid);
             if (headerZone != null && headerZone.permitsEntityType(aliasType)) {

@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class KeystoreFileManagerImpl
-        extends HibernateGoidEntityManager<KeystoreFile, EntityHeader>
+        extends HibernateEntityManager<KeystoreFile, EntityHeader>
         implements KeystoreFileManager, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(KeystoreFileManagerImpl.class.getName());

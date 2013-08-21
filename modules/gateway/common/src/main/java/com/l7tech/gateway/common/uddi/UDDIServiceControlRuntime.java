@@ -5,7 +5,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -21,7 +21,7 @@ import javax.persistence.Version;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control_monitor_runtime")
-public class UDDIServiceControlRuntime extends GoidEntityImp{
+public class UDDIServiceControlRuntime extends PersistentEntityImp {
 
     // - PUBLIC
 

@@ -11,7 +11,7 @@ import java.security.cert.X509Certificate;
 /**
  * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
  */
-public interface TrustedEsmManager extends GoidEntityManager<TrustedEsm, EntityHeader> {
+public interface TrustedEsmManager extends EntityManager<TrustedEsm, EntityHeader> {
 
     /**
      * Find TrustedEms by ID.

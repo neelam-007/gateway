@@ -8,7 +8,7 @@ import java.util.List;
  * @since Enterprise Manager 1.0
  * @author rmak
  */
-public interface EnterpriseFolderManager extends GoidEntityManager<EnterpriseFolder, EntityHeader> {
+public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder, EntityHeader> {
 
     /**
      * Creates an enterprise folder.

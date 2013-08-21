@@ -83,7 +83,7 @@ public class FolderPropertiesAction extends SecureAction {
                 folder.setSecurityZone(dialog.getSelectedSecurityZone());
                 folderAdmin.saveFolder(folder);
                 folderHeader.setName(dialog.getName());
-                folderHeader.setSecurityZoneGoid(dialog.getSelectedSecurityZone() == null ? null : dialog.getSelectedSecurityZone().getGoid());
+                folderHeader.setSecurityZoneId(dialog.getSelectedSecurityZone() == null ? null : dialog.getSelectedSecurityZone().getGoid());
                 final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

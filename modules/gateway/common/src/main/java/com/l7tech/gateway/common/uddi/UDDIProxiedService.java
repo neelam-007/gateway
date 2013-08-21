@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.uddi;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -15,7 +15,7 @@ import javax.persistence.*;
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_proxied_service")
-public class UDDIProxiedService extends GoidEntityImp {
+public class UDDIProxiedService extends PersistentEntityImp {
 
     public UDDIProxiedService() {
     }

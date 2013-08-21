@@ -2,7 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
@@ -28,7 +28,7 @@ import java.util.TreeMap;
 @Entity
 @Proxy(lazy=false)
 @Table(name="password_policy")
-public class IdentityProviderPasswordPolicy extends GoidEntityImp {
+public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
     private String propertiesXml;
     private Map<String, Object> properties = new TreeMap<String, Object>();
     private Goid internalIdentityProviderGoid;

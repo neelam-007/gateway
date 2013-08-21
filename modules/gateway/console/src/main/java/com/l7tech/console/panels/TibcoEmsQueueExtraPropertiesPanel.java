@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.swing.*;
@@ -86,7 +86,7 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             verifyServerHostNameCheckBox.setSelected(strToBool(properties.getProperty(TibcoEmsConstants.TibjmsSSL.ENABLE_VERIFY_HOST_NAME)));
             useCertForClientAuthCheckBox.setSelected(properties.getProperty(TibcoEmsConstants.TibjmsSSL.IDENTITY) != null);
             
-            Goid keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, GoidEntity.DEFAULT_GOID.toHexString()));
+            Goid keystoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, PersistentEntity.DEFAULT_GOID.toHexString()));
             String keyAlias = Goid.isDefault(keystoreId)? null : properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
             int index = clientCertsComboBox.select(keystoreId, keyAlias);
             if (index < 0) clientCertsComboBox.setSelectedIndex(0);
@@ -126,7 +126,7 @@ public class TibcoEmsQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
             String selectedKeyAlias;
             if (Goid.isDefault(selectedKeystoreId)) {
                 try {
-                    SsgKeyEntry defaultSslKey = Registry.getDefault().getTrustedCertManager().findKeyEntry(null, GoidEntity.DEFAULT_GOID);
+                    SsgKeyEntry defaultSslKey = Registry.getDefault().getTrustedCertManager().findKeyEntry(null, PersistentEntity.DEFAULT_GOID);
                     selectedKeyAlias = defaultSslKey.getAlias();
                 } catch (Exception e) {
                     throw new RuntimeException("Cannot find Default SSL Key", e);

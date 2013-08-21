@@ -161,7 +161,7 @@ public class GatewayApiImpl implements GatewayApi {
             String relatedOid = header.isAlias()? header.getStrId() : null;
             String entityName = header.getDisplayName() + (header.isAlias()? " alias" : "");
 
-            EntityInfo entityInfo = new EntityInfo(entityType, external.getExternalId(), entityGoid, relatedOid, entityName, external.getDescription(), header.getFolderGoid()==null ? null : Goid.toString(header.getFolderGoid()), header.getVersion());
+            EntityInfo entityInfo = new EntityInfo(entityType, external.getExternalId(), entityGoid, relatedOid, entityName, external.getDescription(), header.getFolderId()==null ? null : Goid.toString(header.getFolderId()), header.getVersion());
 
             entityInfo.setOperations( serviceExternalEntityHeaderEnhancer.getOperations( external ) );
 
@@ -179,7 +179,7 @@ public class GatewayApiImpl implements GatewayApi {
             String relatedOid = header.isAlias()? header.getStrId() : null;
             String entityName = header.getName() + (header.isAlias()? " alias" : "");
 
-            info.add( new EntityInfo( entityType, external.getExternalId(), entityOid, relatedOid, entityName, header.getDescription(), header.getFolderGoid()==null ? null : Goid.toString(header.getFolderGoid()), header.getVersion() ) );
+            info.add( new EntityInfo( entityType, external.getExternalId(), entityOid, relatedOid, entityName, header.getDescription(), header.getFolderId()==null ? null : Goid.toString(header.getFolderId()), header.getVersion() ) );
         }
     }
 

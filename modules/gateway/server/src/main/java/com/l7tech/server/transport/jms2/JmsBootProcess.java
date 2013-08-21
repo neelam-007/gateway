@@ -364,7 +364,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     /**
      * Periodically checks for new, updated or deleted JMS endpoints
      */
-    private class EndpointVersionChecker extends PeriodicGoidVersionCheck {
+    private class EndpointVersionChecker extends PeriodicVersionCheck {
         EndpointVersionChecker( JmsEndpointManager mgr ) throws FindException {
             super( mgr );
         }
@@ -376,13 +376,13 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
         }
 
         @Override
-        protected void onUpdate( GoidEntity updatedEntity ) {
+        protected void onUpdate( PersistentEntity updatedEntity ) {
             logger.info( "Endpoint " + updatedEntity.getGoid() + " updated!" );
             endpointUpdated( (JmsEndpoint)updatedEntity, true );
         }
 
         @Override
-        protected void onCreate( GoidEntity createdEntity ) {
+        protected void onCreate( PersistentEntity createdEntity ) {
             logger.info( "Endpoint " + createdEntity.getGoid() + " created!" );
             endpointUpdated( (JmsEndpoint)createdEntity, true );
         }
@@ -396,7 +396,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     /**
      * Periodically checks for new, updated or deleted JMS connections
      */
-    private class ConnectionVersionChecker extends PeriodicGoidVersionCheck {
+    private class ConnectionVersionChecker extends PeriodicVersionCheck {
         ConnectionVersionChecker( JmsConnectionManager mgr ) throws FindException {
             super(mgr);
         }
@@ -408,13 +408,13 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
         }
 
         @Override
-        protected void onUpdate( GoidEntity updatedEntity ) {
+        protected void onUpdate( PersistentEntity updatedEntity ) {
             logger.info( "Connection " + updatedEntity.getGoid() + " updated!" );
             connectionUpdated( (JmsConnection)updatedEntity );
         }
 
         @Override
-        protected void onCreate(GoidEntity createdEntity) {
+        protected void onCreate(PersistentEntity createdEntity) {
             logger.info( "Connection " + createdEntity.getGoid() + " created!" );
             connectionUpdated( (JmsConnection)createdEntity );
         }

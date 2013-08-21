@@ -1,6 +1,6 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Proxy(lazy=false)
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @Table(name="generic_entity")
-public class GenericEntity extends NamedGoidEntityImp {
+public class GenericEntity extends NamedEntityImp {
     private String description;
     private String entityClassName;
     private String valueXml;

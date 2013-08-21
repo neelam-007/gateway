@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.ZoneableNamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.Charsets;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 @Entity
 @Proxy(lazy=false)
 @Table(name="email_listener")
-public class EmailListener extends ZoneableNamedGoidEntityImp {
+public class EmailListener extends ZoneableNamedEntityImp {
     private static final Logger logger = Logger.getLogger(EmailListener.class.getName());
     private static final Charset ENCODING = Charsets.UTF8;
 

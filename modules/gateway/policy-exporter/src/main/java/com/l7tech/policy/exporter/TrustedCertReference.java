@@ -190,7 +190,7 @@ public class TrustedCertReference extends ExternalReference {
             try {
                 output.goid = GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, Long.parseLong(val));
             } catch (NumberFormatException nfe) {
-                output.goid = GoidEntity.DEFAULT_GOID;
+                output.goid = PersistentEntity.DEFAULT_GOID;
             }
         }
 

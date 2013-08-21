@@ -2,7 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -26,7 +26,7 @@ import java.util.Map;
  * @Date: Nov 14, 2008
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class SsgNodeManagerImpl extends HibernateGoidEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
+public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
 
     //- PUBLIC
 

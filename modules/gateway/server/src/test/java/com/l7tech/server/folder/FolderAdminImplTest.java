@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
@@ -70,7 +70,7 @@ public class FolderAdminImplTest {
 
         moveEntityToFolderAsUser(toFolder, policy);
 
-        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
         verify(folderedEntityManager).updateFolder(policy, toFolder);
     }
 
@@ -87,7 +87,7 @@ public class FolderAdminImplTest {
         moveEntityToFolderAsUser(null, policy);
 
         verify(folderManager).findRootFolder();
-        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
         verify(folderedEntityManager).updateFolder(policy, rootFolder);
     }
 
@@ -102,7 +102,7 @@ public class FolderAdminImplTest {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(1)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(1)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -120,7 +120,7 @@ public class FolderAdminImplTest {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -139,7 +139,7 @@ public class FolderAdminImplTest {
             moveEntityToFolderAsUser(toFolder, policy);
             fail("Expected PermissionDeniedException");
         } catch (final PermissionDeniedException e) {
-            verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+            verify(rbacServices, times(3)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
             verify(folderedEntityManager, never()).updateFolder(policy, toFolder);
             throw e;
         }
@@ -154,12 +154,12 @@ public class FolderAdminImplTest {
 
         moveEntityToFolderAsUser(toFolder, doesNotHaveFolder);
 
-        verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(GoidEntity.class), eq(OperationType.UPDATE), eq((String) null));
+        verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
         // let the manager handle how it wants to deal with the entity
         verify(folderedEntityManager).updateFolder(doesNotHaveFolder, toFolder);
     }
 
-    private void moveEntityToFolderAsUser(final Folder moveTo, final GoidEntity toMove) {
+    private void moveEntityToFolderAsUser(final Folder moveTo, final PersistentEntity toMove) {
         Subject.doAs(new Subject(true, Collections.singleton(user), Collections.emptySet(), Collections.emptySet()), new PrivilegedAction() {
             @Override
             public Object run() {

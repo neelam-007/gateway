@@ -14,14 +14,14 @@ import javax.xml.bind.annotation.XmlTransient;
  * Convenience superclass for PersistentEntities that can be placed into security zones.
  */
 @MappedSuperclass
-public abstract class ZoneableGoidEntityImp extends GoidEntityImp implements ZoneableEntity {
+public abstract class ZoneableEntityImp extends PersistentEntityImp implements ZoneableEntity {
     protected SecurityZone securityZone;
 
-    protected ZoneableGoidEntityImp() {
+    protected ZoneableEntityImp() {
         super();
     }
 
-    protected ZoneableGoidEntityImp(final GoidEntityImp entity) {
+    protected ZoneableEntityImp(final PersistentEntityImp entity) {
         super(entity);
     }
 

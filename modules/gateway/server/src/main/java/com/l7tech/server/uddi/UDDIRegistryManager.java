@@ -10,13 +10,13 @@ package com.l7tech.server.uddi;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
 
 import java.util.Collection;
 
-public interface UDDIRegistryManager extends GoidEntityManager<UDDIRegistry, EntityHeader> {
+public interface UDDIRegistryManager extends EntityManager<UDDIRegistry, EntityHeader> {
 
     /**
      * Get all the UDDIProxiedService which belong to this UDDIRegistry

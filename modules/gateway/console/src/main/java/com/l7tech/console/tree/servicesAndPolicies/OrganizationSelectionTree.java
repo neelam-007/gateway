@@ -117,7 +117,7 @@ public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends J
         if ( entityHeader instanceof FolderHeader ) {
             folderId = ((FolderHeader)entityHeader).getParentFolderGoid();
         } else if ( entityHeader instanceof OrganizationHeader ) {
-            folderId = ((OrganizationHeader)entityHeader).getFolderGoid();
+            folderId = ((OrganizationHeader)entityHeader).getFolderId();
         }
         return folderId;
     }

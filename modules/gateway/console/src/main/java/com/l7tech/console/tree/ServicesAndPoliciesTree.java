@@ -873,7 +873,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             if(!(userObj instanceof OrganizationHeader)) return;
 
             OrganizationHeader oH = (OrganizationHeader) userObj;
-            Goid folderGoid = oH.getFolderGoid();
+            Goid folderGoid = oH.getFolderId();
 
             OrganizationHeader newHeader;
             if(atn instanceof ServiceNode){
@@ -887,7 +887,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 log.log(Level.INFO, msg);
                 throw new RuntimeException(msg);
             }
-            newHeader.setFolderGoid(folderGoid);
+            newHeader.setFolderId(folderGoid);
             newHeader.setAliasGoid(oH.getAliasGoid());
 
             atn.setUserObject(newHeader);

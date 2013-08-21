@@ -2,7 +2,7 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -19,7 +19,7 @@ import java.util.Collection;
  * @see com.l7tech.gateway.common.security.RevocationCheckPolicy RevocationCheckPolicy
  */
 public class RevocationCheckPolicyManagerImpl
-        extends HibernateGoidEntityManager<RevocationCheckPolicy, EntityHeader>
+        extends HibernateEntityManager<RevocationCheckPolicy, EntityHeader>
         implements RevocationCheckPolicyManager {
 
     //- PUBLIC

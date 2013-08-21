@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.migration;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,7 @@ import java.util.Map;
  *
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationMappingRecordManagerImpl extends HibernateGoidEntityManager<MigrationMappingRecord, ExternalEntityHeader> implements MigrationMappingRecordManager {
+public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<MigrationMappingRecord, ExternalEntityHeader> implements MigrationMappingRecordManager {
 
     //- PUBLIC
 
@@ -86,7 +86,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateGoidEntityManage
             throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );
         }
 
-        Goid goid = GoidEntity.DEFAULT_GOID;
+        Goid goid = PersistentEntity.DEFAULT_GOID;
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {
@@ -137,7 +137,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateGoidEntityManage
             throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );            
         }
 
-        Goid goid = GoidEntity.DEFAULT_GOID;
+        Goid goid = PersistentEntity.DEFAULT_GOID;
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {

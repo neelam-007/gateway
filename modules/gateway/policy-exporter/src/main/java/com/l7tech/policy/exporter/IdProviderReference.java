@@ -78,7 +78,7 @@ public class IdProviderReference extends ExternalReference {
                     output.providerId = GoidUpgradeMapper.mapOid(EntityType.ID_PROVIDER_CONFIG, Long.parseLong(val));
                 }
             } catch (NumberFormatException nfe) {
-                output.providerId = GoidEntity.DEFAULT_GOID;
+                output.providerId = PersistentEntity.DEFAULT_GOID;
             }
         }
 

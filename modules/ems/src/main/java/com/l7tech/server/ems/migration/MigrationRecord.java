@@ -3,7 +3,7 @@ package com.l7tech.server.ems.migration;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
@@ -33,7 +33,7 @@ import java.util.List;
 @Proxy(lazy=false)
 @Table(name="migration")
 @XmlRootElement
-public class MigrationRecord extends NamedGoidEntityImp {
+public class MigrationRecord extends NamedEntityImp {
 
     private long timeCreated;
     private Goid provider;

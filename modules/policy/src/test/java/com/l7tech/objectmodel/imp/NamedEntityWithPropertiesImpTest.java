@@ -60,7 +60,7 @@ public class NamedEntityWithPropertiesImpTest {
     private Field propertiesField;
     @Before
     public void setUp() throws Exception {
-        propertiesField = NamedGoidEntityWithPropertiesImp.class.getDeclaredField("properties");
+        propertiesField = NamedEntityWithPropertiesImp.class.getDeclaredField("properties");
         propertiesField.setAccessible(true);
     }
 
@@ -111,7 +111,7 @@ public class NamedEntityWithPropertiesImpTest {
         Assert.assertEquals(entity.getProperties(), entityCopy.getProperties());
     }
 
-    private class MyNamedEntityWithProperties extends NamedGoidEntityWithPropertiesImp {
+    private class MyNamedEntityWithProperties extends NamedEntityWithPropertiesImp {
         public HashMap<String, String> getProperties() throws IllegalAccessException {
             return (HashMap<String, String>) propertiesField.get(this);
         }

@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.NamedGoidEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  *
  * TODO de-implement RbacServices when it becomes tractable
  */
-public interface RoleManager extends GoidEntityManager<Role, EntityHeader>, RbacServices {
+public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServices {
     public static final String ADMIN_REQUIRED = "At least one enabled User with no expiry must always be assigned to the Administrator role";
 
     @Transactional(readOnly=true)
@@ -123,7 +123,7 @@ public interface RoleManager extends GoidEntityManager<Role, EntityHeader>, Rbac
      * @param replacePattern a Pattern that finds the name component in the entity name
      * @throws com.l7tech.objectmodel.UpdateException
      */
-    void renameEntitySpecificRoles(EntityType entityType, NamedGoidEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
+    void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
 
     /**
      * Ensure that the assignment of a users to roles is acceptable.

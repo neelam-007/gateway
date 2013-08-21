@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.resources;
 
-import com.l7tech.objectmodel.imp.ZoneableGoidEntityImp;
+import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
@@ -15,7 +15,7 @@ import javax.validation.constraints.Size;
 @Entity
 @Proxy(lazy = false)
 @Table(name = "resource_entry")
-public class ResourceEntry extends ZoneableGoidEntityImp {
+public class ResourceEntry extends ZoneableEntityImp {
 
     //- PUBLIC
 

@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.*;
 /**
  *
  */
-public interface MigrationMappingRecordManager extends GoidEntityManager<MigrationMappingRecord, ExternalEntityHeader> {
+public interface MigrationMappingRecordManager extends EntityManager<MigrationMappingRecord, ExternalEntityHeader> {
 
     /**
      * Lookup a mapping record by source cluster/entity and destination cluster.

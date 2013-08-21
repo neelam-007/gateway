@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
@@ -169,7 +169,7 @@ public class Aggregator implements ServiceStateMonitor {
                 if(summaries.containsKey(serviceGoid)) {
                     return summaries.get(serviceGoid);
                 } else {
-                    return summaries.get(GoidEntity.DEFAULT_GOID);
+                    return summaries.get(PersistentEntity.DEFAULT_GOID);
                 }
             } else {
                 return null;

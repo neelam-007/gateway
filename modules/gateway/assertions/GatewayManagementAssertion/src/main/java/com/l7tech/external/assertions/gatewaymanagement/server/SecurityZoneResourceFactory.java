@@ -17,7 +17,7 @@ import java.util.List;
  *
  */
 @ResourceFactory.ResourceType(type=SecurityZoneMO.class)
-public class SecurityZoneResourceFactory extends GoidEntityManagerResourceFactory<SecurityZoneMO, SecurityZone, EntityHeader> {
+public class SecurityZoneResourceFactory extends EntityManagerResourceFactory<SecurityZoneMO, SecurityZone, EntityHeader> {
 
     //- PUBLIC
 

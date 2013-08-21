@@ -2,8 +2,8 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GoidEntityManager;
 import com.l7tech.objectmodel.PropertySearchableEntityManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +12,7 @@ import java.util.Collection;
 /**
  * Entity manager for SSG active connectors.
  */
-public interface SsgActiveConnectorManager extends GoidEntityManager<SsgActiveConnector, SsgActiveConnectorHeader>, PropertySearchableEntityManager<SsgActiveConnectorHeader> {
+public interface SsgActiveConnectorManager extends EntityManager<SsgActiveConnector, SsgActiveConnectorHeader>, PropertySearchableEntityManager<SsgActiveConnectorHeader> {
 
     /**
      * Find active connectors of the given type.

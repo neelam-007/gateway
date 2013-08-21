@@ -30,7 +30,7 @@ public class ServiceHeaderTest {
         service.setPolicy(policy);
         service.setSecurityZone(zone);
         header = new ServiceHeader(service);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
         assertEquals(new Goid(0,2222L), header.getPolicyGoid());
     }
 
@@ -39,7 +39,7 @@ public class ServiceHeaderTest {
         service.setSecurityZone(null);
         service.setPolicy(null);
         header = new ServiceHeader(service);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
         assertNull(header.getPolicyGoid());
     }
 
@@ -47,7 +47,7 @@ public class ServiceHeaderTest {
     public void copyConstructor() {
         header = new ServiceHeader(false, false, "test", new Goid(0,1234L), "test", "test", new Goid(0,1234L), new Goid(0,1234L), 0, 0, "test", false, false, ZONE_GOID, POLICY_GOID);
         final ServiceHeader copy = new ServiceHeader(header);
-        assertEquals(ZONE_GOID, copy.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, copy.getSecurityZoneId());
         assertEquals(POLICY_GOID, copy.getPolicyGoid());
     }
 }

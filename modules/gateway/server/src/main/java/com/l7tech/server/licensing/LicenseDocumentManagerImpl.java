@@ -2,7 +2,7 @@ package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.licensing.LicenseDocument;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class LicenseDocumentManagerImpl extends HibernateGoidEntityManager<LicenseDocument, EntityHeader> implements LicenseDocumentManager {
+public class LicenseDocumentManagerImpl extends HibernateEntityManager<LicenseDocument, EntityHeader> implements LicenseDocumentManager {
 
     @Override
     public Class<? extends Entity> getImpClass() {

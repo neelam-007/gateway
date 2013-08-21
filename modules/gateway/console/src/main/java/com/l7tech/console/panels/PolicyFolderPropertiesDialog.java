@@ -100,7 +100,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
         nameField.setText(header.getName());
         zoneControl.configure(EntityType.FOLDER,
                 Goid.isDefault(header.getGoid())  ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE,
-                header.getSecurityZoneGoid() == null ? null : SecurityZoneUtil.getSecurityZoneByGoid(header.getSecurityZoneGoid()));
+                header.getSecurityZoneId() == null ? null : SecurityZoneUtil.getSecurityZoneByGoid(header.getSecurityZoneId()));
 
         addWindowListener(new WindowAdapter() {
             @Override

@@ -2,7 +2,7 @@ package com.l7tech.server.store;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.CustomKeyValueStore;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.SQLException;
 import java.util.*;
 
-public class CustomKeyValueStoreManagerImpl extends HibernateGoidEntityManager<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
+public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
     @Override
     public Class<? extends Entity> getImpClass() {

@@ -39,7 +39,7 @@ public class EntityHeaderUtilsTest {
         assertEquals(NAME, header.getName());
         assertEquals(VERSION, header.getVersion());
         assertNull(header.getDescription());
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
     }
 
     @Test
@@ -48,7 +48,7 @@ public class EntityHeaderUtilsTest {
         assertNull(header.getGuid());
         assertNull(header.getName());
         assertEquals(GOID, header.getGoid());
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @BugId("EM-914")
@@ -104,7 +104,7 @@ public class EntityHeaderUtilsTest {
         zone.setGoid(new Goid(0,1234L));
         folder.setSecurityZone(zone);
         final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
-        assertEquals(new Goid(0,1234L), header.getSecurityZoneGoid());
+        assertEquals(new Goid(0,1234L), header.getSecurityZoneId());
     }
 
     @Test
@@ -112,7 +112,7 @@ public class EntityHeaderUtilsTest {
         final Folder folder = new Folder("testFolder", null);
         folder.setSecurityZone(null);
         final FolderHeader header = (FolderHeader) EntityHeaderUtils.fromEntity(folder);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class EntityHeaderUtilsTest {
         final JmsEndpoint endpoint = new JmsEndpoint();
         endpoint.setSecurityZone(zone);
         final JmsEndpointHeader header = (JmsEndpointHeader) EntityHeaderUtils.fromEntity(endpoint);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class EntityHeaderUtilsTest {
         final JmsEndpoint endpoint = new JmsEndpoint();
         endpoint.setSecurityZone(null);
         final JmsEndpointHeader header = (JmsEndpointHeader) EntityHeaderUtils.fromEntity(endpoint);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @BugId("SSG-6919")
@@ -147,7 +147,7 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneablePersistentEntitySetsSecurityZoneOid() {
         final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(GOID, VERSION, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertNull(header.getName());
         assertNull(header.getDescription());
@@ -159,14 +159,14 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneablePersistentEntitySetsNullSecurityZoneOid() {
         final StubZoneablePersistentEntity entity = new StubZoneablePersistentEntity(GOID, VERSION, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @Test
     public void fromEntityZoneableNamedEntitySetsSecurityZoneOid() {
         final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(GOID, VERSION, NAME, zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
         assertEquals(NAME, header.getName());
         assertNull(header.getDescription());
@@ -177,14 +177,14 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneableNamedEntitySetsNullSecurityZoneOid() {
         final StubZoneableNamedEntity entity = new StubZoneableNamedEntity(GOID, VERSION, NAME, null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @Test
     public void fromEntityZoneableNonPersistentEntitySetsSecurityZoneOid() {
         final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(GOID), zone);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertEquals(ZONE_GOID, header.getSecurityZoneGoid());
+        assertEquals(ZONE_GOID, header.getSecurityZoneId());
         assertEquals(GOID, header.getGoid());
     }
 
@@ -192,7 +192,7 @@ public class EntityHeaderUtilsTest {
     public void fromEntityZoneableNonPersistentEntitySetsNullSecurityZoneOid() {
         final StubZoneableNonPersistentEntity entity = new StubZoneableNonPersistentEntity(String.valueOf(GOID), null);
         final ZoneableEntityHeader header = (ZoneableEntityHeader) EntityHeaderUtils.fromEntity(entity);
-        assertNull(header.getSecurityZoneGoid());
+        assertNull(header.getSecurityZoneId());
     }
 
     @Test
@@ -216,7 +216,7 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityGoidEntity() {
-        final GoidEntityImp entity = new GoidEntityImp(){{setGoid(GOID); setVersion(VERSION);}};
+        final PersistentEntityImp entity = new PersistentEntityImp(){{setGoid(GOID); setVersion(VERSION);}};
         final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
         assertEquals(GOID, header.getGoid());
         assertEquals(VERSION, header.getVersion());
@@ -225,7 +225,7 @@ public class EntityHeaderUtilsTest {
 
     @Test
     public void fromEntityGoidNamedEntity() {
-        final NamedGoidEntityImp entity = new NamedGoidEntityImp(){{setGoid(GOID); setVersion(VERSION); setName(NAME);}};
+        final NamedEntityImp entity = new NamedEntityImp(){{setGoid(GOID); setVersion(VERSION); setName(NAME);}};
         final EntityHeader header = EntityHeaderUtils.fromEntity(entity);
         assertEquals(GOID, header.getGoid());
         assertEquals(VERSION, header.getVersion());
@@ -249,14 +249,14 @@ public class EntityHeaderUtilsTest {
         return guidHeader;
     }
 
-    private class StubPersistentEntity extends GoidEntityImp {
+    private class StubPersistentEntity extends PersistentEntityImp {
         private StubPersistentEntity(final Goid goid, final int version) {
             setGoid(goid);
             setVersion(version);
         }
     }
 
-    private class StubNamedEntity extends NamedGoidEntityImp {
+    private class StubNamedEntity extends NamedEntityImp {
         private StubNamedEntity(final Goid goid, final int version, final String name) {
             setGoid(goid);
             setVersion(version);
@@ -277,7 +277,7 @@ public class EntityHeaderUtilsTest {
         }
     }
 
-    private class StubZoneablePersistentEntity extends ZoneableGoidEntityImp {
+    private class StubZoneablePersistentEntity extends ZoneableEntityImp {
         private StubZoneablePersistentEntity(final Goid goid, final int version, final SecurityZone zone) {
             setGoid(goid);
             setVersion(version);
@@ -285,7 +285,7 @@ public class EntityHeaderUtilsTest {
         }
     }
 
-    private class StubZoneableNamedEntity extends ZoneableNamedGoidEntityImp {
+    private class StubZoneableNamedEntity extends ZoneableNamedEntityImp {
         private StubZoneableNamedEntity(final Goid goid, final int version, final String name, final SecurityZone zone) {
             setGoid(goid);
             setVersion(version);

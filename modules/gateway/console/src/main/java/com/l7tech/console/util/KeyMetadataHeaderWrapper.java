@@ -15,7 +15,7 @@ public class KeyMetadataHeaderWrapper extends ZoneableEntityHeader {
     public KeyMetadataHeaderWrapper(@NotNull final SsgKeyMetadata metadata) {
         super(metadata.getGoid(), EntityType.SSG_KEY_METADATA, null, null, metadata.getVersion());
         this.metadata = metadata;
-        setSecurityZoneGoid(metadata.getSecurityZone() == null ? null : metadata.getSecurityZone().getGoid());
+        setSecurityZoneId(metadata.getSecurityZone() == null ? null : metadata.getSecurityZone().getGoid());
     }
 
     public String getAlias() {

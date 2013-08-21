@@ -1,6 +1,6 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Entity
 @Proxy(lazy=false)
 @Table(name="password_history")
-public class PasswordChangeRecord extends GoidEntityImp {
+public class PasswordChangeRecord extends PersistentEntityImp {
     private static final long serialVersionUID = 1988465921721711468L;
 
     private InternalUser internalUser;

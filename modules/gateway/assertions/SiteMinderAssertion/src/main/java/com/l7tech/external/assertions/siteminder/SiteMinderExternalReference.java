@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.siteminder;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
@@ -85,7 +85,7 @@ public class SiteMinderExternalReference extends ExternalReference {
             copy.copyFrom(siteMinderConfiguration);
             copy.setSecret(null);
             copy.setPasswordGoid(null);
-            copy.setGoid(GoidEntity.DEFAULT_GOID);
+            copy.setGoid(PersistentEntity.DEFAULT_GOID);
             marshaller.marshal(copy, referenceElement);
 
         } catch (JAXBException e) {
@@ -148,7 +148,7 @@ public class SiteMinderExternalReference extends ExternalReference {
                     JAXBContext context = JAXBContext.newInstance(SiteMinderConfiguration.class);
                     Unmarshaller unmarshaller = context.createUnmarshaller();
                     SiteMinderConfiguration siteMinderConfiguration = (SiteMinderConfiguration) unmarshaller.unmarshal(child);
-                    siteMinderConfiguration.setGoid(GoidEntity.DEFAULT_GOID);
+                    siteMinderConfiguration.setGoid(PersistentEntity.DEFAULT_GOID);
                     siteMinderConfiguration.setPasswordGoid(null);
                     return new SiteMinderExternalReference(finder, siteMinderConfiguration);
 

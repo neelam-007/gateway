@@ -61,7 +61,7 @@ public class EntityUtil {
         return column.length();
     }
 
-    public static <ET extends GoidEntity> Map<Goid, ET> buildEntityMap(Iterable<ET> entities) {
+    public static <ET extends PersistentEntity> Map<Goid, ET> buildEntityMap(Iterable<ET> entities) {
         final Map<Goid, ET> map = new HashMap<Goid, ET>();
         for (ET entity : entities) {
             map.put(entity.getGoid(), entity);
@@ -69,7 +69,7 @@ public class EntityUtil {
         return map;
     }
 
-    public static class CreatedUpdatedDeleted<T extends GoidEntity> {
+    public static class CreatedUpdatedDeleted<T extends PersistentEntity> {
         public final Map<Goid, T> created;
         public final Map<Goid, T> updated;
         public final Set<Goid> deleted;
@@ -90,7 +90,7 @@ public class EntityUtil {
      * @param <T> the type of entity
      * @return a Triple consisting of the created entities, the updated entities, and the OIDs of the deleted entities.
      */
-    public static <T extends GoidEntity> CreatedUpdatedDeleted<T> findCreatedUpdatedDeleted(Map<Goid, T> before, Map<Goid, T> after) {
+    public static <T extends PersistentEntity> CreatedUpdatedDeleted<T> findCreatedUpdatedDeleted(Map<Goid, T> before, Map<Goid, T> after) {
         final Map<Goid, T> creates = new HashMap<Goid, T>();
         final Map<Goid, T> updates = new HashMap<Goid, T>();
         for (Map.Entry<Goid, T> entry : after.entrySet()) {

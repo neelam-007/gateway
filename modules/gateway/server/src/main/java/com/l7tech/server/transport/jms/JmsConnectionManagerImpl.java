@@ -9,7 +9,7 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.HibernateGoidEntityManager;
+import com.l7tech.server.HibernateEntityManager;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.*;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsConnectionManagerImpl
-        extends HibernateGoidEntityManager<JmsConnection, EntityHeader>
+        extends HibernateEntityManager<JmsConnection, EntityHeader>
         implements InitializingBean, JmsConnectionManager
 {
     @Override

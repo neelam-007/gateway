@@ -8,9 +8,9 @@ import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 
-public interface UDDIServiceControlRuntimeManager extends GoidEntityManager<UDDIServiceControlRuntime,EntityHeader> {
+public interface UDDIServiceControlRuntimeManager extends EntityManager<UDDIServiceControlRuntime,EntityHeader> {
 
     /**
      * Get the UDDIServiceControlRuntime which maps 1:1 to the supplied UDDIServiceControl's goid supplied

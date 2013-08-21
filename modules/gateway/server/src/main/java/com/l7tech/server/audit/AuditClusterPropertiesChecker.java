@@ -2,7 +2,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.event.GoidEntityInvalidationEvent;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
@@ -68,8 +68,8 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, P
     public void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ReadyForMessages) {
             checkAndAuditInitialStatus();
-        } else if (applicationEvent instanceof GoidEntityInvalidationEvent) {
-            GoidEntityInvalidationEvent entityInvalidationEvent = (GoidEntityInvalidationEvent) applicationEvent;
+        } else if (applicationEvent instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
             if (ClusterProperty.class.equals(entityInvalidationEvent.getEntityClass())) {
                 final Object source = entityInvalidationEvent.getSource();
                 if (! (source instanceof ClusterProperty)) return;
@@ -82,7 +82,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, P
                     return;
                 }
 
-                final boolean deleted = GoidEntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
+                final boolean deleted = EntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
 
                 if (CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD.equals(clusterProperty.getName())) {
                     // Check if it is the case where adminThreshold was deleted.  If so, do nothing, since D.N.E is equivalent to INFO.

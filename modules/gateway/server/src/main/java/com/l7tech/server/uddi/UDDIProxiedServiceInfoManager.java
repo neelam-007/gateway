@@ -8,7 +8,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.objectmodel.*;
 import java.util.Collection;
 
-public interface UDDIProxiedServiceInfoManager extends GoidEntityManager<UDDIProxiedServiceInfo, EntityHeader> {
+public interface UDDIProxiedServiceInfoManager extends EntityManager<UDDIProxiedServiceInfo, EntityHeader> {
 
     /**
      * Find a UDDIProxiedService by published service identifier (GOID)

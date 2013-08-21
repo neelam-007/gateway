@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
-import com.l7tech.objectmodel.imp.GoidEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import org.hibernate.annotations.Proxy;
@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Table(name="encapsulated_assertion_argument")
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @XmlRootElement(name = "EncapsulatedAssertionArgument")
-public class EncapsulatedAssertionArgumentDescriptor extends GoidEntityImp {
+public class EncapsulatedAssertionArgumentDescriptor extends PersistentEntityImp {
     private EncapsulatedAssertionConfig encapsulatedAssertionConfig;
     private int ordinal;
     private String argumentName;
