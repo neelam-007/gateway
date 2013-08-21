@@ -19,10 +19,7 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 public class GoidUpgradeMapper {
-    @NonObfuscatable
     private static final Map<String, Long> tableNamePrefixMap = new HashMap<>();
-
-    @NonObfuscatable
     private static boolean hasPrefixes = false;
 
     /**
@@ -68,95 +65,95 @@ public class GoidUpgradeMapper {
     public static Long getPrefix(EntityType entityType) {
         if (!hasPrefixes)
             return null;
-        switch (entityType) {
-            case JDBC_CONNECTION:
-                return tableNamePrefixMap.get("jdbc_connection");
-            case SAMPLE_MESSAGE:
-                return tableNamePrefixMap.get("sample_messages");
-            case CLUSTER_PROPERTY:
-                return tableNamePrefixMap.get("cluster_properties");
-            case EMAIL_LISTENER:
-                return tableNamePrefixMap.get("email_listener");
-            case GENERIC:
-                return tableNamePrefixMap.get("generic_entity");
-            case SSG_CONNECTOR:
-                return tableNamePrefixMap.get("connector");
-            case FIREWALL_RULE:
-                return tableNamePrefixMap.get("firewall_rule");
-            case ENCAPSULATED_ASSERTION:
-                return tableNamePrefixMap.get("encapsulated_assertion");
-            case JMS_CONNECTION:
-                return tableNamePrefixMap.get("jms_connection");
-            case JMS_ENDPOINT:
-                return tableNamePrefixMap.get("jms_endpoint");
-            case HTTP_CONFIGURATION:
-                return tableNamePrefixMap.get("http_configuration");
-            case SSG_ACTIVE_CONNECTOR:
-                return tableNamePrefixMap.get("active_connector");
-            case FOLDER:
-                return tableNamePrefixMap.get("folder");
-            case POLICY:
-                return tableNamePrefixMap.get("policy");
-            case POLICY_ALIAS:
-                return tableNamePrefixMap.get("policy_alias");
-            case POLICY_VERSION:
-                return tableNamePrefixMap.get("policy_version");
-            case SERVICE:
-                return tableNamePrefixMap.get("published_service");
-            case SERVICE_DOCUMENT:
-                return tableNamePrefixMap.get("service_documents");
-            case SERVICE_ALIAS:
-                return tableNamePrefixMap.get("published_service_alias");
-            case SERVICE_USAGE:
-                return tableNamePrefixMap.get("service_usage");
-            case UDDI_PROXIED_SERVICE_INFO:
-                return tableNamePrefixMap.get("uddi_proxied_service_info");
-            case UDDI_REGISTRY:
-                return tableNamePrefixMap.get("uddi_registries");
-            case UDDI_SERVICE_CONTROL:
-                return tableNamePrefixMap.get("uddi_service_control");
-            case ASSERTION_ACCESS:
-                return tableNamePrefixMap.get("assertion_access");
-            case AUDIT_ADMIN:
-                return tableNamePrefixMap.get("audit_admin");
-            case AUDIT_MESSAGE:
-                return tableNamePrefixMap.get("audit_message");
-            case AUDIT_RECORD:
-                return tableNamePrefixMap.get("audit_main");
-            case TRUSTED_CERT:
-                return tableNamePrefixMap.get("trusted_cert");
-            case CLUSTER_INFO:
-                return tableNamePrefixMap.get("cluster_info");
-            case CUSTOM_KEY_VALUE_STORE:
-                return tableNamePrefixMap.get("custom_key_value_store");
-            case ID_PROVIDER_CONFIG:
-                return tableNamePrefixMap.get("identity_provider");
-            case SSG_KEYSTORE:
-                return tableNamePrefixMap.get("keystore_file");
-            case SSG_KEY_METADATA:
-                return tableNamePrefixMap.get("keystore_key_metadata");
-            case LICENSE_DOCUMENT:
-                return tableNamePrefixMap.get("license_document");
-            case PASSWORD_POLICY:
-                return tableNamePrefixMap.get("password_policy");
-            case RBAC_ROLE:
-                return tableNamePrefixMap.get("rbac_role");
-            case RESOURCE_ENTRY:
-                return tableNamePrefixMap.get("resource_entry");
-            case REVOCATION_CHECK_POLICY:
-                return tableNamePrefixMap.get("revocation_check_policy");
-            case SECURE_PASSWORD:
-                return tableNamePrefixMap.get("sample_messages");
-            case SECURITY_ZONE:
-                return tableNamePrefixMap.get("security_zone");
-            case SITEMINDER_CONFIGURATION:
-                return tableNamePrefixMap.get("siteminder_configuration");
-            case TRUSTED_ESM:
-                return tableNamePrefixMap.get("trusted_esm");
-            case TRUSTED_ESM_USER:
-                return tableNamePrefixMap.get("trusted_esm_user");
-            default:
-                return null;
+        //Do not use a switch statement here, it will cause problems with the Obfuscator
+        if (entityType == EntityType.JDBC_CONNECTION) {
+            return tableNamePrefixMap.get("jdbc_connection");
+        } else if (entityType == EntityType.SAMPLE_MESSAGE) {
+            return tableNamePrefixMap.get("sample_messages");
+        } else if (entityType == EntityType.CLUSTER_PROPERTY) {
+            return tableNamePrefixMap.get("cluster_properties");
+        } else if (entityType == EntityType.EMAIL_LISTENER) {
+            return tableNamePrefixMap.get("email_listener");
+        } else if (entityType == EntityType.GENERIC) {
+            return tableNamePrefixMap.get("generic_entity");
+        } else if (entityType == EntityType.SSG_CONNECTOR) {
+            return tableNamePrefixMap.get("connector");
+        } else if (entityType == EntityType.FIREWALL_RULE) {
+            return tableNamePrefixMap.get("firewall_rule");
+        } else if (entityType == EntityType.ENCAPSULATED_ASSERTION) {
+            return tableNamePrefixMap.get("encapsulated_assertion");
+        } else if (entityType == EntityType.JMS_CONNECTION) {
+            return tableNamePrefixMap.get("jms_connection");
+        } else if (entityType == EntityType.JMS_ENDPOINT) {
+            return tableNamePrefixMap.get("jms_endpoint");
+        } else if (entityType == EntityType.HTTP_CONFIGURATION) {
+            return tableNamePrefixMap.get("http_configuration");
+        } else if (entityType == EntityType.SSG_ACTIVE_CONNECTOR) {
+            return tableNamePrefixMap.get("active_connector");
+        } else if (entityType == EntityType.FOLDER) {
+            return tableNamePrefixMap.get("folder");
+        } else if (entityType == EntityType.POLICY) {
+            return tableNamePrefixMap.get("policy");
+        } else if (entityType == EntityType.POLICY_ALIAS) {
+            return tableNamePrefixMap.get("policy_alias");
+        } else if (entityType == EntityType.POLICY_VERSION) {
+            return tableNamePrefixMap.get("policy_version");
+        } else if (entityType == EntityType.SERVICE) {
+            return tableNamePrefixMap.get("published_service");
+        } else if (entityType == EntityType.SERVICE_DOCUMENT) {
+            return tableNamePrefixMap.get("service_documents");
+        } else if (entityType == EntityType.SERVICE_ALIAS) {
+            return tableNamePrefixMap.get("published_service_alias");
+        } else if (entityType == EntityType.SERVICE_USAGE) {
+            return tableNamePrefixMap.get("service_usage");
+        } else if (entityType == EntityType.UDDI_PROXIED_SERVICE_INFO) {
+            return tableNamePrefixMap.get("uddi_proxied_service_info");
+        } else if (entityType == EntityType.UDDI_REGISTRY) {
+            return tableNamePrefixMap.get("uddi_registries");
+        } else if (entityType == EntityType.UDDI_SERVICE_CONTROL) {
+            return tableNamePrefixMap.get("uddi_service_control");
+        } else if (entityType == EntityType.ASSERTION_ACCESS) {
+            return tableNamePrefixMap.get("assertion_access");
+        } else if (entityType == EntityType.AUDIT_ADMIN) {
+            return tableNamePrefixMap.get("audit_admin");
+        } else if (entityType == EntityType.AUDIT_MESSAGE) {
+            return tableNamePrefixMap.get("audit_message");
+        } else if (entityType == EntityType.AUDIT_RECORD) {
+            return tableNamePrefixMap.get("audit_main");
+        } else if (entityType == EntityType.TRUSTED_CERT) {
+            return tableNamePrefixMap.get("trusted_cert");
+        } else if (entityType == EntityType.CLUSTER_INFO) {
+            return tableNamePrefixMap.get("cluster_info");
+        } else if (entityType == EntityType.CUSTOM_KEY_VALUE_STORE) {
+            return tableNamePrefixMap.get("custom_key_value_store");
+        } else if (entityType == EntityType.ID_PROVIDER_CONFIG) {
+            return tableNamePrefixMap.get("identity_provider");
+        } else if (entityType == EntityType.SSG_KEYSTORE) {
+            return tableNamePrefixMap.get("keystore_file");
+        } else if (entityType == EntityType.SSG_KEY_METADATA) {
+            return tableNamePrefixMap.get("keystore_key_metadata");
+        } else if (entityType == EntityType.LICENSE_DOCUMENT) {
+            return tableNamePrefixMap.get("license_document");
+        } else if (entityType == EntityType.PASSWORD_POLICY) {
+            return tableNamePrefixMap.get("password_policy");
+        } else if (entityType == EntityType.RBAC_ROLE) {
+            return tableNamePrefixMap.get("rbac_role");
+        } else if (entityType == EntityType.RESOURCE_ENTRY) {
+            return tableNamePrefixMap.get("resource_entry");
+        } else if (entityType == EntityType.REVOCATION_CHECK_POLICY) {
+            return tableNamePrefixMap.get("revocation_check_policy");
+        } else if (entityType == EntityType.SECURE_PASSWORD) {
+            return tableNamePrefixMap.get("sample_messages");
+        } else if (entityType == EntityType.SECURITY_ZONE) {
+            return tableNamePrefixMap.get("security_zone");
+        } else if (entityType == EntityType.SITEMINDER_CONFIGURATION) {
+            return tableNamePrefixMap.get("siteminder_configuration");
+        } else if (entityType == EntityType.TRUSTED_ESM) {
+            return tableNamePrefixMap.get("trusted_esm");
+        } else if (entityType == EntityType.TRUSTED_ESM_USER) {
+            return tableNamePrefixMap.get("trusted_esm_user");
+        } else {
+            return null;
         }
     }
 
