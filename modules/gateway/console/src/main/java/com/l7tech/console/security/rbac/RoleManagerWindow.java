@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -181,7 +182,16 @@ public class RoleManagerWindow extends JDialog {
             public void run() {
                 handleTableChange();
             }
-        });
+        }) {
+            @Override
+            public void tableChanged(final TableModelEvent e) {
+                if (e.getType() == TableModelEvent.DELETE) {
+                    handleTableChange(null);
+                } else {
+                    run();
+                }
+            }
+        };
         rolesTable.getSelectionModel().addListSelectionListener(tableListener);
         rolesTableModel.addTableModelListener(tableListener);
         Utilities.setRowSorter(rolesTable, rolesTableModel);
@@ -189,7 +199,10 @@ public class RoleManagerWindow extends JDialog {
     }
 
     private void handleTableChange() {
-        final Role selectedRole = getSelectedRole();
+        handleTableChange(getSelectedRole());
+    }
+
+    private void handleTableChange(@Nullable final Role selectedRole) {
         propertiesPanel.configure(selectedRole, selectedRole == null ? null : getNameForRole(selectedRole));
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         final boolean canUpdate = securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole));
