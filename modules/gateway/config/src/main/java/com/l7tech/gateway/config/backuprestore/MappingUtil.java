@@ -394,9 +394,9 @@ class MappingUtil {
                 return;
             }
 
-            resultSet = selectStatement.executeQuery("select objectid, " + policyColumn + " from " + table + ";");
+            resultSet = selectStatement.executeQuery("select goid, " + policyColumn + " from " + table + ";");
             while (resultSet.next()) {
-                final long objectid = resultSet.getLong(1);
+                final byte[] goid = resultSet.getBytes(1);
                 String policyXml = resultSet.getString(2);
                 boolean changed = false;
                 if (policyXml != null) {
@@ -404,7 +404,7 @@ class MappingUtil {
                         if (policyXml.indexOf("stringValue=\"" + fromIP + "\"") >= 0) {
                             String toIP = mapping.backendIPMapping.get(fromIP);
                             final String msg = "\tMapping routing IP address for " +
-                                    getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP;
+                                    getDescription(connection, table, goid) + ": from " + fromIP + " to " + toIP;
                             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, verbose, printStream);
                             policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
                             changed = true;
@@ -412,9 +412,9 @@ class MappingUtil {
                     }
                 }
                 if (changed) {
-                    final PreparedStatement updateStatement = connection.prepareStatement("UPDATE " + table + " SET " + policyColumn + "=? WHERE objectid=?");
+                    final PreparedStatement updateStatement = connection.prepareStatement("UPDATE " + table + " SET " + policyColumn + "=? WHERE goid=?");
                     updateStatement.setString(1, policyXml);
-                    updateStatement.setLong(2, objectid);
+                    updateStatement.setBytes(2, goid);
                     updateStatement.executeUpdate();
                     updateStatement.close();
                 }
@@ -430,34 +430,34 @@ class MappingUtil {
      *
      * @param connection    opened connection to the database
      * @param table         name of table containing the item
-     * @param objectid      objectid of the item
+     * @param goid          goid of the item
      * @return an appropriate description of the policy item; or "N/A" if database error occurs; never null
      * @throws NullPointerException if any parameter is <code>null</code>
      * @throws RuntimeException if <code>table</code> is not related to policies
      */
     private static String getDescription(final Connection connection,
                                          final String table,
-                                         final long objectid) {
+                                         final byte[] goid) {
         if (connection == null) throw new NullPointerException("connection must not be null");
         if (table == null) throw new NullPointerException("table must not be null");
 
         String description;
         try {
             if (table.equalsIgnoreCase("published_service")) {
-                final String serviceName = getNameField(connection, "published_service", "objectid", objectid);
+                final String serviceName = getNameField(connection, "published_service", "goid", goid);
                 description = "\"" + serviceName + "\" service";
             } else if (table.equalsIgnoreCase("policy")) {
-                description = getPolicyDescription(connection, objectid);
+                description = getPolicyDescription(connection, goid);
             } else if (table.equalsIgnoreCase("policy_version")) {
-                final PreparedStatement statement = connection.prepareStatement("SELECT ordinal, policy_oid FROM policy_version WHERE objectid=?");
-                statement.setLong(1, objectid);
+                final PreparedStatement statement = connection.prepareStatement("SELECT ordinal, policy_goid FROM policy_version WHERE goid=?");
+                statement.setBytes(1, goid);
                 final ResultSet resultSet = statement.executeQuery();
                 resultSet.next();
                 final int ordinal = resultSet.getInt(1);
-                final long policy_oid = resultSet.getLong(2);
+                final byte[] policy_goid = resultSet.getBytes(2);
                 resultSet.close();
                 statement.close();
-                description = getPolicyDescription(connection, policy_oid) + " version " + ordinal;
+                description = getPolicyDescription(connection, policy_goid) + " version " + ordinal;
             } else {
                 throw new RuntimeException("Table not related to policies: " + table);
             }
@@ -477,18 +477,18 @@ class MappingUtil {
      * <blockquote><pre>"bar" service policy</pre></blockquote>
      *
      * @param connection    opened connection to the database
-     * @param policyOid     policy objectid
+     * @param policyGoid     policy goid
      * @return an appropriate description of the policy item; never null
      * @throws SQLException if database error occurs
      */
-    private static String getPolicyDescription(final Connection connection, final Long policyOid) throws SQLException {
-        final String policyName = getNameField(connection, "policy", "objectid", policyOid);
+    private static String getPolicyDescription(final Connection connection, final byte[] policyGoid) throws SQLException {
+        final String policyName = getNameField(connection, "policy", "goid", policyGoid);
         if (policyName != null) {
             // This is a named policy fragment.
             return "policy fragment \"" + policyName + "\"";
         } else {
             // This is a published service policy.
-            final String serviceName = getNameField(connection, "published_service", "policy_oid", policyOid);
+            final String serviceName = getNameField(connection, "published_service", "policy_goid", policyGoid);
             return "\"" + serviceName + "\" service policy";
         }
     }
@@ -499,15 +499,15 @@ class MappingUtil {
      *
      * @param connection    opened connection to the database
      * @param table         name of database table
-     * @param oidColumn     name of column containing objectid
-     * @param oid           value of objectid
-     * @return value of "name" column; null if no row has matching objectid or the SQL value is NULL
+     * @param goidColumn     name of column containing goid
+     * @param goid           value of goid
+     * @return value of "name" column; null if no row has matching goid or the SQL value is NULL
      * @throws SQLException if database error occurs
      */
-    private static String getNameField(final Connection connection, final String table, final String oidColumn, final long oid) throws SQLException {
+    private static String getNameField(final Connection connection, final String table, final String goidColumn, final byte[] goid) throws SQLException {
         String name = null;
-        final PreparedStatement statement = connection.prepareStatement("SELECT name FROM " + table + " WHERE " + oidColumn + "=?;");
-        statement.setLong(1, oid);
+        final PreparedStatement statement = connection.prepareStatement("SELECT name FROM " + table + " WHERE " + goidColumn + "=?;");
+        statement.setBytes(1, goid);
         final ResultSet resultSet = statement.executeQuery();
         if (resultSet.next()) {
             name = resultSet.getString(1);
