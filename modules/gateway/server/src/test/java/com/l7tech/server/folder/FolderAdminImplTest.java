@@ -4,10 +4,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.policy.Policy;
@@ -22,11 +19,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
@@ -63,7 +58,7 @@ public class FolderAdminImplTest {
     public void moveEntityToFolderAllowed() throws Exception {
         final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "test", false);
         policy.setFolder(fromFolder);
-        policy.setGoid(new Goid(0,1234L));
+        policy.setGoid(new Goid(0, 1234L));
         when(rbacServices.isPermittedForEntity(user, toFolder, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, policy, OperationType.UPDATE, null)).thenReturn(true);
         when(rbacServices.isPermittedForEntity(user, fromFolder, OperationType.UPDATE, null)).thenReturn(true);
@@ -157,6 +152,26 @@ public class FolderAdminImplTest {
         verify(rbacServices, times(2)).isPermittedForEntity(eq(user), any(PersistentEntity.class), eq(OperationType.UPDATE), eq((String) null));
         // let the manager handle how it wants to deal with the entity
         verify(folderedEntityManager).updateFolder(doesNotHaveFolder, toFolder);
+    }
+
+    @BugId("SSM-4455")
+    @Test(expected = NonEmptyFolderDeletionException.class)
+    public void deleteNonEmptyFolder() throws Exception {
+        final Goid folderGoid = new Goid(0, 1);
+        final List<Policy> folderItems = new ArrayList<>();
+        folderItems.add(new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false));
+        when(folderedEntityManager.findByFolder(folderGoid)).thenReturn(folderItems);
+        folderAdmin.deleteFolder(folderGoid);
+    }
+
+    @BugId("SSM-4455")
+    @Test()
+    public void deleteEmptyFolder() throws Exception {
+        final Goid folderGoid = new Goid(0, 1);
+        when(folderedEntityManager.findByFolder(folderGoid)).thenReturn(Collections.emptyList());
+        folderAdmin.deleteFolder(folderGoid);
+        // once per manager
+        verify(folderedEntityManager, times(2)).findByFolder(folderGoid);
     }
 
     private void moveEntityToFolderAsUser(final Folder moveTo, final PersistentEntity toMove) {

@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.Folder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -161,6 +162,11 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
 
     @Override
     public void updateFolder( final ET entity, final Folder folder ) throws UpdateException {
+    }
+
+    @Override
+    public Collection<ET> findByFolder(@NotNull Goid folderGoid) throws FindException {
+        return null;
     }
 
     @Override

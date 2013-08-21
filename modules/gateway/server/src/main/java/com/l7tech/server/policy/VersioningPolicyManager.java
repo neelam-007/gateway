@@ -6,6 +6,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -68,7 +69,7 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public Policy findByHeader(EntityHeader header) throws FindException {
-        return processRevision( policyManager.findByHeader(header) );
+        return processRevision(policyManager.findByHeader(header));
     }
 
     @Override
@@ -162,6 +163,11 @@ public class VersioningPolicyManager implements PolicyManager {
         } catch ( ObjectModelException ome ) {
             throw new UpdateException("Unable to save policy version when updating policy.", ome);
         }
+    }
+
+    @Override
+    public Collection<Policy> findByFolder(@NotNull final Goid folderGoid) throws FindException {
+        return policyManager.findByFolder(folderGoid);
     }
 
     @Override

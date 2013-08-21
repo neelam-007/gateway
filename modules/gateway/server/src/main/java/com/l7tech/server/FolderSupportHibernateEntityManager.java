@@ -2,12 +2,23 @@ package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import org.jetbrains.annotations.NotNull;
+
+import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * Extension of HibernateEntityManager that supports use of Folders.
  */
-public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends HibernateEntityManager<ET,HT> {
+public abstract class FolderSupportHibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader> extends HibernateEntityManager<ET,HT> implements FolderedEntityManager<ET,HT> {
+    private static final String FOLDER_GOID = "folder.goid";
 
     //- PUBLIC
 
@@ -41,6 +52,23 @@ public abstract class FolderSupportHibernateEntityManager<ET extends PersistentE
      */
     public void updateWithFolder( final ET entity ) throws UpdateException {
         super.update(entity);
+    }
+
+    @Override
+    public Collection<ET> findByFolder(@NotNull final Goid folderGoid) throws FindException {
+        //noinspection unchecked
+        try {
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    final Criteria crit = session.createCriteria(getImpClass());
+                    crit.add(Restrictions.eq(FOLDER_GOID, folderGoid));
+                    return crit.list();
+                }
+            });
+        } catch (final Exception e) {
+            throw new FindException("Unable to retrieve entities by folder", e);
+        }
     }
 
     //- PROTECTED

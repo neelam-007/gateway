@@ -326,7 +326,10 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     model.removeNodeFromParent(folderNode);
                 }
-            } catch(ObjectModelException e) {
+            } catch (final NonEmptyFolderDeletionException e) {
+                log.log(Level.WARNING, "Could not delete folder because it is not empty: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Folder could not be deleted because it is not empty (not all items may be viewable).", "Delete Error", JOptionPane.ERROR_MESSAGE );
+            } catch (ObjectModelException e) {
                 JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error deleting folder:\n" + ExceptionUtils.getMessage(e), "Delete Error", JOptionPane.ERROR_MESSAGE );
             }
         }else{

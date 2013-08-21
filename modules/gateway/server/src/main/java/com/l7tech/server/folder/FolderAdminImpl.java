@@ -38,6 +38,12 @@ public class FolderAdminImpl implements FolderAdmin {
 
     @Override
     public void deleteFolder( final Goid goid ) throws FindException, DeleteException {
+        for (final FolderedEntityManager folderedEntityManager : entityManagerMap.values()) {
+            final Collection entitiesInFolder = folderedEntityManager.findByFolder(goid);
+            if (!entitiesInFolder.isEmpty()) {
+                throw new NonEmptyFolderDeletionException("Folder with goid " + goid + " is not empty");
+            }
+        }
         folderManager.deleteRoles(goid);
         folderManager.delete(goid);
     }

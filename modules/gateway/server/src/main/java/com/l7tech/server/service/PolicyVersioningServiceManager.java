@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public Collection<PublishedService> findAll() throws FindException {
-        return processRevisions( serviceManager.findAll() );
+        return processRevisions(serviceManager.findAll());
     }
 
     @Override
@@ -96,7 +97,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService findByUniqueName(String name) throws FindException {
-        return processRevision( serviceManager.findByUniqueName(name) );
+        return processRevision(serviceManager.findByUniqueName(name));
     }
 
     @Override
@@ -106,7 +107,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService getCachedEntity(Goid o, int maxAge) throws FindException {
-        return processRevision( serviceManager.getCachedEntity(o, maxAge) );
+        return processRevision(serviceManager.getCachedEntity(o, maxAge));
     }
 
     @Override
@@ -126,7 +127,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService findByHeader(EntityHeader header) throws FindException {
-        return processRevision( serviceManager.findByHeader(header) );
+        return processRevision(serviceManager.findByHeader(header));
     }
 
     @Override
@@ -172,6 +173,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
                 throw new UpdateException("Unable to save policy version when updating service.", ome);
             }
         }
+    }
+
+    @Override
+    public Collection<PublishedService> findByFolder(@NotNull final Goid folderGoid) throws FindException {
+        return serviceManager.findByFolder(folderGoid);
     }
 
     @Override
