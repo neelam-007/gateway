@@ -454,8 +454,10 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         final XmlElementEncryptionResolvedConfig encryptionResolvedConfig;
+        final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
+
         try {
-            encryptionResolvedConfig = XmlElementEncryptorConfigUtils.getXmlElementEncryptorConfig(assertion.getXmlEncryptConfig(), ctxVariables, getAudit());
+            encryptionResolvedConfig = XmlElementEncryptorConfigUtils.getXmlElementEncryptorConfig(xmlEncryptConfig, ctxVariables, getAudit());
         } catch (Exception e) {
             throw new SamlpAssertionException("Unable to process encryption configuration: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));
@@ -471,7 +473,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
         final Pair<Element,SecretKey> encryptedKey;
         try {
-            encryptedKey = encryptor.createEncryptedKey(samlpDoc);
+            encryptedKey = encryptor.createEncryptedKey(samlpDoc, xmlEncryptConfig.isUseOaep(), null);
         } catch (GeneralSecurityException e) {
             throw new SamlpAssertionException("Unable to create encrypted key for NameID encryption: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));

@@ -6,8 +6,6 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -26,6 +24,14 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     }
 
     private final static String baseName = "(Non-SOAP) Encrypt XML Element";
+
+    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
+    @Override
+    public Object clone() {
+        final NonSoapEncryptElementAssertion clone = (NonSoapEncryptElementAssertion) super.clone();
+        clone.config = (XmlElementEncryptionConfig) config.clone();
+        return clone;
+    }
 
     @Override
     public String getDefaultXpathExpressionString() {
@@ -69,7 +75,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapEncryptElementValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAdvice");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -129,6 +135,14 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
 
     public void setEncryptedKeyRecipientAttribute(String encryptedKeyRecipientAttribute) {
         config.setEncryptedKeyRecipientAttribute(encryptedKeyRecipientAttribute);
+    }
+
+    public boolean isUseOaep() {
+        return config().isUseOaep();
+    }
+
+    public void setUseOaep(boolean useOaep) {
+        config.setUseOaep(useOaep);
     }
 
     public XmlElementEncryptionConfig config() {

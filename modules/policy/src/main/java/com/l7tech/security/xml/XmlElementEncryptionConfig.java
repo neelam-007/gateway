@@ -45,6 +45,8 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
 
     private String encryptedKeyRecipientAttribute;
 
+    private boolean useOaep = false;
+
     @Override
     public Object clone() {
         try {
@@ -114,6 +116,14 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
 
     public void setIncludeEncryptedDataTypeAttribute(boolean includeEncryptedDataTypeAttribute) {
         this.includeEncryptedDataTypeAttribute = includeEncryptedDataTypeAttribute;
+    }
+
+    public boolean isUseOaep() {
+        return useOaep;
+    }
+
+    public void setUseOaep(boolean useOaep) {
+        this.useOaep = useOaep;
     }
 
     @Override

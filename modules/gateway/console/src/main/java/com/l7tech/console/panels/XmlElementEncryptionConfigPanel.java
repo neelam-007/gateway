@@ -48,6 +48,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private SquigglyTextField typeSquigglyField;
     private JCheckBox recipientAttributeCheckBox;
     private SquigglyTextField recipientSquigglyField;
+    private JCheckBox oaepCheckBox;
     private String certb64;
 
     private final XmlElementEncryptionConfig model;
@@ -215,6 +216,8 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         final boolean contentsOnly = encryptOnlyElementContentsCheckBox.isSelected();
         model.setEncryptContentsOnly(contentsOnly);
 
+        model.setUseOaep(oaepCheckBox.isSelected());
+
         validateModel();
     }
 
@@ -238,6 +241,8 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             recipientAttributeCheckBox.setSelected(true);
             recipientSquigglyField.setText(recipientAttribute);
         }
+
+        oaepCheckBox.setSelected(model.isUseOaep());
 
         enableOrDisableComponents();
     }

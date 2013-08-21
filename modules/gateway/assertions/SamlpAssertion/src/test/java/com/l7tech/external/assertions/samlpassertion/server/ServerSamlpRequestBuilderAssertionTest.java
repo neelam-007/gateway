@@ -18,11 +18,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -33,6 +31,7 @@ import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -41,6 +40,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"JavaDoc"})
 public class ServerSamlpRequestBuilderAssertionTest {
@@ -51,7 +53,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
      */
     @Test
     public void testEncryptedID_Version2() throws Exception {
-        runEncryptUseCase(new Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext>() {
+        Document samlpRequest = runEncryptUseCase(new Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext>() {
             @Override
             public Void call(XmlElementEncryptionConfig xmlElementEncryptionConfig, PolicyEnforcementContext policyEnforcementContext) {
                 Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
@@ -64,7 +66,36 @@ public class ServerSamlpRequestBuilderAssertionTest {
                 return null;
             }
         });
+        String xml = XmlUtil.nodeToFormattedString(samlpRequest);
+        assertFalse("Must NOT use OAEP key wrapping", xml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2));
+        assertTrue("Must use RSA 1.5 key wrapping", xml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO));
     }
+
+    /*
+     * Ensure that encryption using OAEP works as expected, when so configured.
+     */
+    @Test
+    @BugId("SSG-7462")
+    public void testEncryptedID_Version2_useOaep() throws Exception {
+        Document samlpRequest = runEncryptUseCase(new Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext>() {
+            @Override
+            public Void call(XmlElementEncryptionConfig xmlElementEncryptionConfig, PolicyEnforcementContext policyEnforcementContext) {
+                Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+                try {
+                    xmlElementEncryptionConfig.setRecipientCertificateBase64(HexUtils.encodeBase64(k.left.getEncoded(), true));
+                } catch (CertificateEncodingException e) {
+                    Assert.fail("Unexpected Exception: " + e.getMessage());
+                }
+                xmlElementEncryptionConfig.setUseOaep(true);
+
+                return null;
+            }
+        });
+        String xml = XmlUtil.nodeToFormattedString(samlpRequest);
+        assertTrue("Must use OAEP key wrapping", xml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2));
+        assertFalse("Must NOT use RSA 1.5 key wrapping", xml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO));
+    }
+
 
     /**
      * Validate the EncryptedID can be generated via a cert from a context variable
@@ -86,7 +117,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
         });
     }
 
-    private void runEncryptUseCase(Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext> configCallBack) throws Exception {
+    private Document runEncryptUseCase(Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext> configCallBack) throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
         assertion.setVersion(2);
@@ -130,6 +161,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
         //first element should be the auth token
         final Element encryptedID = xpathResultSetIterator.nextElementAsCursor().asDomElement();
         Assert.assertEquals("Wrong element found", "EncryptedID", encryptedID.getLocalName());
+        return documentElement.getOwnerDocument();
     }
 
     /**

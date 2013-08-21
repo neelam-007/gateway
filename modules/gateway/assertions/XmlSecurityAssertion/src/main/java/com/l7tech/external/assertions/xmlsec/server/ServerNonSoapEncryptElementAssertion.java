@@ -41,7 +41,7 @@ public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityA
                 XmlElementEncryptorConfigUtils.getXmlElementEncryptorConfig(assertion.config(), context.getVariableMap(varsUsed, getAudit()), getAudit());
         final XmlElementEncryptor elementEncryptor = new XmlElementEncryptor(encryptionResolvedConfig);
 
-        Pair<Element, SecretKey> ek = elementEncryptor.createEncryptedKey(doc);
+        Pair<Element, SecretKey> ek = elementEncryptor.createEncryptedKey(doc, assertion.config().isUseOaep(), null);
 
         for (Element element : elementsToEncrypt)
             elementEncryptor.encryptAndReplaceElement(element, ek);

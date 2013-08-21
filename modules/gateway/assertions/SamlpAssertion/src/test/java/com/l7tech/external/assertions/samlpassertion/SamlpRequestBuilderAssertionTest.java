@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import static org.junit.Assert.*;
-
 import com.l7tech.policy.AllAssertionsTest;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * User: vchan
@@ -58,6 +58,7 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
             Object obj = parseAssertionFromXml(policyXml);
             assertNotNull(obj);
             assertTrue(isAssertionClass(obj));
+            assertFalse("Legacy assertion should parse as having OAEP disabled", (castAssertionClass(obj).getXmlEncryptConfig().isUseOaep()));
 
         } catch (Exception ex) {
             fail("Unexpected error encountered -- " + ex);
@@ -102,6 +103,7 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
             SamlpRequestBuilderAssertion requestBuilder = (SamlpRequestBuilderAssertion) obj;
             // validate old serialized property was set and assigned correctly
             assertFalse(requestBuilder.isSignAssertion());
+            assertFalse(requestBuilder.getXmlEncryptConfig().isUseOaep());
 
         } catch (Exception ex) {
             fail("Unexpected error encountered -- " + ex);
@@ -115,6 +117,7 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
             // validate old serialized property was set and assigned correctly
             assertFalse(requestBuilder.isSignAssertion());
             assertEquals(new Integer(1), requestBuilder.getVersion());
+            assertFalse(requestBuilder.getXmlEncryptConfig().isUseOaep());
 
         } catch (Exception ex) {
             fail("Unexpected error encountered -- " + ex);

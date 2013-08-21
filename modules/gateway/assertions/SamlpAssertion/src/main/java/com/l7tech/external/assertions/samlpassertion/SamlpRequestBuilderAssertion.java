@@ -547,7 +547,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertionAdvice");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Protocol Request Wizard");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
 

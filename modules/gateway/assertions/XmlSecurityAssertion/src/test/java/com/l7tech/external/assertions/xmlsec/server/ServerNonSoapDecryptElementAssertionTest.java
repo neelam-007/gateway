@@ -11,6 +11,7 @@ import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
@@ -24,9 +25,7 @@ import org.w3c.dom.Element;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -118,7 +117,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         Element element = pair.left;
         XencUtil.XmlEncKey key = pair.right;
 
-        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key.getSecretKey(), false, null);
         final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
         XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
 
@@ -143,7 +142,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         Element element = pair.left;
         XencUtil.XmlEncKey key = pair.right;
 
-        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key.getSecretKey(), false, null);
         final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
         XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
 
@@ -176,7 +175,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         Element element = pair.left;
         XencUtil.XmlEncKey key = pair.right;
 
-        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key.getSecretKey(), false, null);
         final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
         XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
 
@@ -210,7 +209,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         Element element = pair.left;
         XencUtil.XmlEncKey key = pair.right;
 
-        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key.getSecretKey(), false, null);
         final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
         XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
 

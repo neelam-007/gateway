@@ -4,9 +4,11 @@ import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SoapConstants;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class XmlElementEncryptorTest {
     private static final Logger logger = Logger.getLogger(XmlElementEncryptorTest.class.getName());
@@ -47,12 +50,13 @@ public class XmlElementEncryptorTest {
     }
 
     @BugNumber(11697)
+    @BugId("SSM-3743")
     @Test
     public void testTypeAndRecipientAttributes() throws Exception {
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
         final XmlElementEncryptionResolvedConfig config =
-                new XmlElementEncryptionResolvedConfig(CertUtils.decodeFromPEM(recipb64, false), XencUtil.AES_128_CBC, false);
+            new XmlElementEncryptionResolvedConfig(CertUtils.decodeFromPEM(recipb64, false), XencUtil.AES_128_CBC, false);
 
         final String customUri = "customuri";
         config.setEncryptedDataTypeAttribute(customUri);
@@ -61,7 +65,7 @@ public class XmlElementEncryptorTest {
 
         XmlElementEncryptor elementEncryptor = new XmlElementEncryptor(config);
         final Document doc = XmlUtil.parse(TEST_XML);
-        final Pair<Element, SecretKey> keyPair = elementEncryptor.createEncryptedKey(doc);
+        final Pair<Element, SecretKey> keyPair = elementEncryptor.createEncryptedKey(doc, false, null);
         {
             final Element encryptedKey = keyPair.left;
             assertNotNull(encryptedKey);
@@ -78,5 +82,24 @@ public class XmlElementEncryptorTest {
             assertNotNull(type);
             assertEquals(customUri, type.getTextContent());
         }
+    }
+
+    @Test
+    @BugId("SSG-7462")
+    public void testOaep() throws Exception {
+        XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
+        rawConfig.setRecipientCertificateBase64(recipb64);
+        final XmlElementEncryptionResolvedConfig config =
+            new XmlElementEncryptionResolvedConfig(CertUtils.decodeFromPEM(recipb64, false), XencUtil.AES_128_CBC, false);
+
+        XmlElementEncryptor elementEncryptor = new XmlElementEncryptor(config);
+        final Document doc = XmlUtil.parse(TEST_XML);
+        final Pair<Element, SecretKey> keyPair = elementEncryptor.createEncryptedKey(doc, true, null);
+        elementEncryptor.encryptAndReplaceElement(doc.getDocumentElement(), keyPair);
+        String encryptedXml = XmlUtil.nodeToString(doc);
+        assertTrue("encrypted data must be present", encryptedXml.contains("EncryptedData"));
+        assertTrue("plaintext must be gone", !encryptedXml.contains("somepassword"));
+        assertTrue("RSA 1.5 must not be used", !encryptedXml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO));
+        assertTrue("OAEP must be used", encryptedXml.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2));
     }
 }

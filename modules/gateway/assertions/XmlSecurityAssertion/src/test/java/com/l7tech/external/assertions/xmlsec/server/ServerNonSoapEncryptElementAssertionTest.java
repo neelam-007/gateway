@@ -14,6 +14,7 @@ import com.l7tech.security.xml.XencUtil;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
@@ -358,6 +359,22 @@ public class ServerNonSoapEncryptElementAssertionTest {
         }
 
         assertTrue(testAudit.isAuditPresentContaining("Type attribute for EncryptedData is not a valid URI: 'not a uri'"));
+    }
+
+    @Test
+    @BugId("SSG-7462")
+    public void testEncryptWithOaep() throws Exception {
+        Message req = makeReq();
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ass.setUseOaep(true);
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.NONE, result);
+        checkResult(req, 1);
+        final Document doc = req.getXmlKnob().getDocumentReadOnly();
+        final String docString = XmlUtil.nodeToString(doc);
+        assertTrue("Must use OAEP key wrapping", docString.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2));
+        assertFalse("Must NOT use RSA 1.5 key wrapping", docString.contains(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO));
     }
 
     public static NonSoapEncryptElementAssertion makeAss() {

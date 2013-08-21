@@ -14,6 +14,7 @@ import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -54,19 +55,21 @@ public class XmlElementEncryptor {
      * and will include an embedded KeyInfo identifying the recipient certificate (using an X509Data issuer/serial reference).
      *
      * @param factory a DOM document to use as a factory for new DOM nodes.  Required.
+     * @param oaep true to use OAEP key wrapping.  False to use RSA 1.5 key wrapping.
+     * @param oaepParams parameters for OAEP mask generation, or null to use defaults.  Ignroed if oaep is false.
      * @return a Pair consisting of the new EncryptedKey DOM Element and the new SecretKey that was generated for it.  Never null, and neither element is ever null.
      * @throws GeneralSecurityException if there is an error performing the encryption.
      */
-    public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory) throws GeneralSecurityException {
+    public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory, boolean oaep, @Nullable byte[] oaepParams) throws GeneralSecurityException {
         byte[] keybytes = new byte[32];
         random.nextBytes(keybytes);
-        XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(config.getXencAlgorithm(), keybytes);
-        final Element encryptedKey = createEncryptedKey(factory, config.getRecipientCert(), xek);
+        SecretKey secretKey = new XencUtil.XmlEncKey(config.getXencAlgorithm(), keybytes).getSecretKey();
+        final Element encryptedKey = createEncryptedKey(factory, config.getRecipientCert(), secretKey, oaep, oaepParams);
         final String recipientAttrValue = config.getEncryptedKeyRecipientAttribute();
         if (recipientAttrValue != null) {
             encryptedKey.setAttribute("Recipient", recipientAttrValue);
         }
-        return new Pair<Element, SecretKey>(encryptedKey, xek.getSecretKey());
+        return new Pair<Element, SecretKey>(encryptedKey, secretKey);
     }
 
     /**
@@ -75,11 +78,13 @@ public class XmlElementEncryptor {
      *
      * @param factory a DOM document to use as a factory for new DOM nodes.  Required.
      * @param recipientCert the recipient certificate.  Required.
-     * @param xek the symmetric key and cipher URI to use. Required.
+     * @param secretKey the secret key to wrap. Required.
+     * @param oaep true to use OAEP key wrapping.  False to use RSA 1.5 key wrapping.
+     * @param oaepParams parameters for OAEP generation, or null to use defaults.  Ignored if oaep is false.
      * @return a Pair consisting of the new EncryptedKey DOM Element and the new SecretKey that was generated for it.  Never null, and neither element is ever null.
      * @throws GeneralSecurityException if there is an error performing the encryption.
      */
-    public static Element createEncryptedKey(@NotNull Document factory, @NotNull X509Certificate recipientCert, @NotNull XencUtil.XmlEncKey xek) throws GeneralSecurityException {
+    public static Element createEncryptedKey(@NotNull Document factory, @NotNull X509Certificate recipientCert, @NotNull SecretKey secretKey, boolean oaep, @Nullable byte[] oaepParams) throws GeneralSecurityException {
         final String xencNs = SoapUtil.XMLENC_NS;
         final String xenc = "xenc";
         Element encryptedKey = factory.createElementNS(xencNs, "xenc:EncryptedKey");
@@ -89,12 +94,15 @@ public class XmlElementEncryptor {
         iskid.createAndAppendKeyInfoElement(new NamespaceFactory(), encryptedKey);
         Element cipherData = DomUtils.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = DomUtils.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
-        final SecretKey secretKey = xek.getSecretKey();
         final byte[] encryptedKeyBytes;
-        encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
+        encryptionMethod.setAttribute("Algorithm", oaep ? SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2 : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
         if (!ConfigFactory.getBooleanProperty(PROP_ENCRYPT_FOR_EXPIRED_CERT, false))
             recipientCert.checkValidity();
-        encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
+        if (oaep) {
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey(), oaepParams);
+        } else {
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
+        }
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(DomUtils.createTextNode(factory, base64));
         return encryptedKey;
