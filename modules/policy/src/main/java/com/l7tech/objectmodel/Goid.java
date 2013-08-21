@@ -9,8 +9,6 @@ import java.beans.PersistenceDelegate;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 
 /**
  * Goid Object represents a global object id for the gateways entities.
@@ -19,15 +17,14 @@ import java.util.Arrays;
  */
 public final class Goid implements Comparable<Goid>, Serializable {
 
-    //The bytes of the goid. This should always be a 16 byte array
-    private final byte[] goid;
+    private long high = 0;
+    private long low = -1;
 
     /**
      * This is needed for serialization
      */
     @SuppressWarnings("UnusedDeclaration")
     private Goid() {
-        goid = null;
     }
 
     /**
@@ -37,7 +34,8 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @param low  The low long will be the last 8 bytes of the goid
      */
     public Goid(long high, long low) {
-        goid = ByteBuffer.allocate(16).putLong(high).putLong(low).array();
+        this.high = high;
+        this.low = low;
     }
 
     /**
@@ -51,7 +49,9 @@ public final class Goid implements Comparable<Goid>, Serializable {
         if (goid.length != 16) {
             throw new IllegalArgumentException("Cannot create a goid from a byte array that is not 16 bytes long.");
         }
-        this.goid = Arrays.copyOf(goid, 16);
+        ByteBuffer buffer = ByteBuffer.wrap(goid);
+        this.high = buffer.getLong();
+        this.low = buffer.getLong();
     }
 
     /**
@@ -73,7 +73,9 @@ public final class Goid implements Comparable<Goid>, Serializable {
         if (goidFromString.length != 16) {
             throw new IllegalArgumentException("Cannot create a goid from this String, it does not decode to a 16 byte array.");
         }
-        this.goid = goidFromString;
+        ByteBuffer buffer = ByteBuffer.wrap(goidFromString);
+        this.high = buffer.getLong();
+        this.low = buffer.getLong();
     }
 
     /**
@@ -101,9 +103,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return The high 8 bytes of the goid as a long.
      */
     public long getHi() {
-        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOfRange(goid, 0, 8));
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        return buffer.getLong();
+        return high;
     }
 
     /**
@@ -112,9 +112,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return The low 8 bytes of the goid as a long
      */
     public long getLow() {
-        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOfRange(goid, 8, 16));
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        return buffer.getLong();
+        return low;
     }
 
     /**
@@ -123,7 +121,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return The bytes of this goid
      */
     public byte[] getBytes() {
-        return Arrays.copyOf(goid, 16);
+        return ByteBuffer.allocate(16).putLong(high).putLong(low).array();
     }
 
     /**
@@ -138,21 +136,20 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     @Override
-    public boolean equals(@Nullable Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Goid goid1 = (Goid) o;
+        Goid goid = (Goid) o;
 
-        //noinspection RedundantIfStatement
-        if (!Arrays.equals(goid, goid1.goid)) return false;
-
-        return true;
+        return high == goid.high && low == goid.low;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(goid);
+        int result = (int) (high ^ (high >>> 32));
+        result = 31 * result + (int) (low ^ (low >>> 32));
+        return result;
     }
 
     /**
@@ -171,7 +168,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return The Hex String representation of the goid
      */
     public String toHexString() {
-        return HexUtils.hexDump(goid);
+        return HexUtils.hexDump(getBytes());
     }
 
     /**

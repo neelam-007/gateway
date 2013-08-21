@@ -3,6 +3,7 @@ package com.l7tech.objectmodel;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.Random;
 
 /**
@@ -228,6 +229,13 @@ public class GoidTest {
             Assert.assertEquals("The goid string format should contain only lowercase characters.", goid.toString().toLowerCase(), goid.toString());
             Assert.assertEquals("The goid string format should contain only lowercase characters.", Goid.toString(goid).toLowerCase(), Goid.toString(goid));
         }
+    }
+
+    @Test
+    public void testGoidLongIntegerByteOrder() {
+        Goid goid = new Goid("8db55bbdc8b6f5951f10faf1386979fe");
+        Assert.assertEquals("724aa44237490a6b", BigInteger.valueOf(goid.getHi()).abs().toString(16));
+        Assert.assertEquals("1f10faf1386979fe", BigInteger.valueOf(goid.getLow()).abs().toString(16));
     }
 
     private static Goid createRandomGoid() {
