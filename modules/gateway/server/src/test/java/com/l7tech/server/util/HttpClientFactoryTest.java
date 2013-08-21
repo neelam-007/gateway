@@ -21,6 +21,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -57,6 +58,7 @@ public class HttpClientFactoryTest {
 
     }
 
+    @Ignore
     @Test
     public void testCreateHttpsClient() throws Exception {
 

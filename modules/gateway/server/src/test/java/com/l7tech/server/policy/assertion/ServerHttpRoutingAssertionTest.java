@@ -41,6 +41,7 @@ import com.l7tech.util.IOUtils;
 import org.apache.http.pool.PoolStats;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -874,6 +875,7 @@ public class ServerHttpRoutingAssertionTest {
 
     }
 
+    @Ignore
     @Test
     public void testSSLConnection() throws Exception {
 
@@ -980,6 +982,7 @@ public class ServerHttpRoutingAssertionTest {
     }
 
 
+    @Ignore
     @Test
     public void testHttpsTrace() throws Exception {
 
