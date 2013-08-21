@@ -58,7 +58,6 @@ public class HttpClientFactoryTest {
 
     }
 
-    @Ignore
     @Test
     public void testCreateHttpsClient() throws Exception {
 

@@ -875,7 +875,6 @@ public class ServerHttpRoutingAssertionTest {
 
     }
 
-    @Ignore
     @Test
     public void testSSLConnection() throws Exception {
 
@@ -982,7 +981,6 @@ public class ServerHttpRoutingAssertionTest {
     }
 
 
-    @Ignore
     @Test
     public void testHttpsTrace() throws Exception {
 
