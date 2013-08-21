@@ -36,6 +36,8 @@ class CheckInfo {
     private CheckAfter after;
     Serializable id = null;
     Entity entity = null;
+    Iterable<Entity> entities = null;
+
 
     CheckBefore getBefore() {
         return before;

@@ -198,22 +198,36 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 Entity entity = getEntityArg(check, args);
                 if (entity != null) {
                     String id = entity.getId();
-                    checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) || DEFAULT_GOID.equals(id) ? CREATE : UPDATE);
+                    checkEntityBefore(check, args, determineCreateOrUpdate(id));
                     break;
                 } else {
-                    // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
-                    check.setBefore(CheckBefore.NONE);
-                    check.setAfter(CheckAfter.NONE);
-                    for (EntityType type : check.types) {
-                        if (!rbacServices.isPermittedForAnyEntityOfType(user, UPDATE, type)) {
-                            throw new PermissionDeniedException(UPDATE, type);
+                    final Iterable<Entity> iterable = getIterableArg(check, args);
+                    if (iterable != null) {
+                        final OperationType iterableOperation = getOperationForIterable(iterable);
+                        if (iterableOperation != null) {
+                            check.operation = iterableOperation;
+                            check.setBefore(CheckBefore.COLLECTION);
+                            check.setAfter(CheckAfter.NONE);
+                            break;
+                        } else {
+                            // iterable has no items
+                            return methodInvocation.proceed();
                         }
-                        if (!rbacServices.isPermittedForAnyEntityOfType(user, CREATE, type)) {
-                            throw new PermissionDeniedException(CREATE, type);
+                    } else {
+                        // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
+                        check.setBefore(CheckBefore.NONE);
+                        check.setAfter(CheckAfter.NONE);
+                        for (EntityType type : check.types) {
+                            if (!rbacServices.isPermittedForAnyEntityOfType(user, UPDATE, type)) {
+                                throw new PermissionDeniedException(UPDATE, type);
+                            }
+                            if (!rbacServices.isPermittedForAnyEntityOfType(user, CREATE, type)) {
+                                throw new PermissionDeniedException(CREATE, type);
+                            }
                         }
+                        /* BYPASS further checks */
+                        return methodInvocation.proceed();
                     }
-                    /* BYPASS further checks */
-                    return methodInvocation.proceed();
                 }
             case UPDATE:
                 // Like SAVE_OR_UPDATE, but CREATE permission will not help you here -- only UPDATE permission will do, even if an entity is located and its OID is -1
@@ -380,6 +394,18 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                         throw new PermissionDeniedException(check.operation, type, "User does not have permission to create, read, update, or delete any of type " + type);
                     }
                 }
+                break;
+            case COLLECTION:
+                if (check.entities == null) {
+                    throw new IllegalStateException("Check collection before cannot be performed because the entities to check are null");
+                }
+                final Iterator<Entity> iterator = check.entities.iterator();
+                while (iterator.hasNext()) {
+                    final Entity toCheck = iterator.next();
+                    if (!rbacServices.isPermittedForEntity(user, toCheck, check.operation, check.otherOperationName)) {
+                        throw new PermissionDeniedException(check.operation, toCheck, check.otherOperationName);
+                    }
+                }
             case NONE:
                 break;
         }
@@ -464,6 +490,24 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                         new Object[]{check.operation.name(), ename, mname});
                 return rv;
         }
+    }
+
+    private OperationType getOperationForIterable(Iterable<Entity> iterable) {
+        OperationType iterableOperation = null;
+        for (final Entity toCheck : iterable) {
+            final String idToCheck = toCheck.getId();
+            final OperationType operation = determineCreateOrUpdate(idToCheck);
+            if (iterableOperation == null) {
+                iterableOperation = operation;
+            } else if (operation != iterableOperation) {
+                throw new IllegalStateException("Iterable cannot contain a mix of persisted and non persisted entities.");
+            }
+        }
+        return iterableOperation;
+    }
+
+    private OperationType determineCreateOrUpdate(@Nullable final String id) {
+        return id == null || DEFAULT_ID.equals(id) || DEFAULT_GOID.equals(id) ? CREATE : UPDATE;
     }
 
     private Object invokeWithCustomInterceptor(@NotNull MethodInvocation methodInvocation, @NotNull User user, @NotNull String customInterceptorClassName, @NotNull ClassLoader classLoader) throws Throwable {
@@ -615,6 +659,27 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         if (arg instanceof Entity) {
             info.entity = (Entity)arg;
             return info.entity;
+        }
+
+        return null;
+    }
+
+    private Iterable<Entity> getIterableArg(final CheckInfo info, final Object[] args) {
+        final Object arg = getSingleOrRelevantArg(args, info.relevantArg);
+        if (arg == null) return null;
+
+        if (arg instanceof Iterable) {
+            final Iterable iterable = (Iterable) arg;
+            final Iterator iterator = iterable.iterator();
+            while (iterator.hasNext()) {
+                final Object obj = iterator.next();
+                if (!(obj instanceof Entity)) {
+                    logger.log(Level.FINEST, "Iterable arg is invalid because it contains at least one non-Entity");
+                    return null;
+                }
+            }
+            info.entities = (Iterable)arg;
+            return info.entities;
         }
 
         return null;

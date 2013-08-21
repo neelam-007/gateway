@@ -23,6 +23,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.util.*;
 
+import static com.l7tech.objectmodel.EntityType.ANY;
 import static com.l7tech.objectmodel.EntityType.GENERIC;
 import static com.l7tech.objectmodel.EntityType.USER;
 import static org.junit.Assert.*;
@@ -86,6 +87,31 @@ public class SecuredMethodInterceptorTest {
     private static Object wrappedDeniedEntityExisting = new MockCustomEntityTranslator.WrappedEntity(deniedEntityExisting);
     private static Object wrappedAllowedGoidEntityExisting = new MockCustomEntityTranslator.WrappedEntity(allowedGoidEntityExisting);
     private static Object wrappedDeniedGoidEntityExisting = new MockCustomEntityTranslator.WrappedEntity(deniedGoidEntityExisting);
+    private static Collection allowedEntitiesNew;
+    private static Collection deniedEntitiesNew;
+    private static Collection mixedEntitiesNew;
+    private static Collection allowedEntitiesExisting;
+    private static Collection deniedEntitiesExisting;
+    private static Collection mixedEntitiesExisting;
+    private static Collection emptyCollection;
+
+    static {
+        allowedEntitiesNew = new ArrayList();
+        allowedEntitiesNew.add(allowedEntityNew);
+        deniedEntitiesNew = new ArrayList();
+        deniedEntitiesNew.add(deniedEntityNew);
+        mixedEntitiesNew = new ArrayList();
+        mixedEntitiesNew.add(allowedEntityNew);
+        mixedEntitiesNew.add(deniedEntityNew);
+        allowedEntitiesExisting = new ArrayList();
+        allowedEntitiesExisting.add(allowedEntityExisting);
+        deniedEntitiesExisting = new ArrayList();
+        deniedEntitiesExisting.add(deniedEntityExisting);
+        mixedEntitiesExisting = new ArrayList();
+        mixedEntitiesExisting.add(allowedEntityExisting);
+        mixedEntitiesExisting.add(deniedEntityExisting);
+        emptyCollection = new ArrayList();
+    }
 
     /**
      * This is the list of tests to run. Each value in the array is a parameter to that is passed into the constructor.
@@ -271,7 +297,15 @@ public class SecuredMethodInterceptorTest {
                 //customInterceptor
                 {"customInterceptor", privilegedUser, null, null, genericString, null},
                 {"testConfiguration", privilegedUser, null, null, null, null},
-                {"testConfiguration", unprivilegedUser, null, null, null, PermissionDeniedException.class}
+                {"testConfiguration", unprivilegedUser, null, null, null, PermissionDeniedException.class},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{allowedEntitiesNew}, null, null, null},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{deniedEntitiesNew}, null, null, PermissionDeniedException.class},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{mixedEntitiesNew}, null, null, PermissionDeniedException.class},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{allowedEntitiesExisting}, null, null, null},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{deniedEntitiesExisting}, null, null, PermissionDeniedException.class},
+                {"saveOrUpdateCollection", privilegedUser, new Object[]{mixedEntitiesExisting}, null, null, PermissionDeniedException.class},
+                {"saveOrUpdateCollection", unprivilegedUser, new Object[]{emptyCollection}, null, null, null},
+                {"saveOrUpdateArray", unprivilegedUser, new Object[]{new Object[]{allowedEntityExisting}}, null, null, PermissionDeniedException.class}
         });
     }
 
@@ -550,6 +584,12 @@ public class SecuredMethodInterceptorTest {
 
         @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
         void testConfiguration();
+
+        @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
+        void saveOrUpdateCollection(ArrayList list);
+
+        @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
+        void saveOrUpdateArray(Object[] array);
     }
 
     /**

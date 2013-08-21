@@ -22,5 +22,10 @@ enum CheckBefore {
     /**
      * Check permission to execute operation against some entities of the type.
      */
-    SOME
+    SOME,
+
+    /**
+     * Argument is a collection - check permission to execute operation against all entities in a collection.
+     */
+    COLLECTION
 }
