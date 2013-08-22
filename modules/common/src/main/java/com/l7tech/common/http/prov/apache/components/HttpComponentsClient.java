@@ -534,7 +534,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-    private void configureProxyAuthentication(CredentialsProvider proxyCredProvider, HttpParams clientParams, String host, int port, String username, String password) {
+    private void configureProxyAuthentication(CredentialsProvider proxyCredProvider, HttpParams clientParams, HttpHost proxyHost, String username, String password) {
 
         // authentication schemes are ordered according to priorities
         List<String> authpref = new ArrayList<String>();
@@ -543,8 +543,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         authpref.add(AuthPolicy.BASIC);
         clientParams.setParameter(AuthPNames.PROXY_AUTH_PREF, authpref);
         if(proxyHost != null) {
-            final HttpHost proxyHost = new HttpHost(host, port);
-            clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxyHost);
             proxyCredProvider.setCredentials(new AuthScope(proxyHost,AuthScope.ANY_REALM,"basic"), new UsernamePasswordCredentials(username, password));
             NTCredentials ntCredentials =  buildNTCredentials(username, password);
             if(ntCredentials != null) {
@@ -560,17 +558,24 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private void configureParameters(HttpParams clientParams, HttpContext state, DefaultHttpClient client, HttpUriRequest httpMethod, GenericHttpRequestParams params) {
         boolean proxyConfigured = false;
         CredentialsProvider proxyCredProvider = new BasicCredentialsProvider();
+
         if ( params.getProxyHost() != null ) {
+            HttpHost proxy = new HttpHost( params.getProxyHost(), params.getProxyPort() );
+            clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
             final PasswordAuthentication proxyAuthentication = params.getProxyAuthentication();
             if ( proxyAuthentication != null ) {
-                configureProxyAuthentication(proxyCredProvider, clientParams, params.getProxyHost(), params.getProxyPort(), proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword()));
+                configureProxyAuthentication(proxyCredProvider, clientParams, proxy, proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword()));
                 client.setCredentialsProvider(proxyCredProvider);
                 proxyConfigured = true;
             }
-        } else if (proxyUsername != null && proxyUsername.length() > 0) {
-            configureProxyAuthentication(proxyCredProvider, clientParams, proxyHost, proxyPort, proxyUsername, proxyPassword);
-            client.setCredentialsProvider(proxyCredProvider);
-            proxyConfigured = true;
+        } else if (proxyHost != null && proxyHost.length() > 0) {
+            HttpHost proxy = new HttpHost( proxyHost, proxyPort );
+            clientParams.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+            if (proxyUsername != null && proxyUsername.length() > 0) {
+                configureProxyAuthentication(proxyCredProvider, clientParams, proxy, proxyUsername, proxyPassword);
+                client.setCredentialsProvider(proxyCredProvider);
+                proxyConfigured = true;
+            }
         }
 
         clientParams.setParameter(ClientPNames.HANDLE_REDIRECTS, params.isFollowRedirects());
