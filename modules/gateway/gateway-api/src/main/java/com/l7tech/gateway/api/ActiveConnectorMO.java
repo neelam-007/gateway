@@ -30,6 +30,9 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
  *   <li>SftpSecurePasswordKeyOid</li>
  *   <li>SftpServerFingerPrint</li>
  *   <li>SftpDeleteOnReceive</li>
+ *   <li>enableResponseMessages</li>
+ *   <li>overrideContentType</li>
+ *   <li>pollingInterval</li>
  * </ul>
  * </p>
  *
@@ -43,6 +46,10 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
  *      <li>MqNativeQueueManagerName</li>
  *      <li>MqNativeChannel</li>
  *      <li>MqNativeTargetQueueName</li>
+ *      <li>overrideContentType</li>
+ *      <li>numberOfSacToCreate</li>
+ *      <li>requestSizeLimit</li>
+ *      <li>inbound</li>
  *    </ul>
  *    </li>
  *    <li> security connection properties:
@@ -91,48 +98,96 @@ public class ActiveConnectorMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
+    /**
+    /**
+     * Get name of the active connector (case insensitive, required)
+     *
+     * @return The name (may be null)
+     */
     public String getName() {
         return get(name);
     }
 
+    /**
+     * Set the name for the active connector.
+     *
+     * @param name The name to use.
+     */
     public void setName(final String name) {
         this.name = set(this.name, name);
     }
 
+    /**
+     * The active connector enabled flag
+     *
+     * @return True if the active connector is enabled.
+     */
     public boolean isEnabled() {
         return get(enabled, false);
     }
 
+    /**
+     * Set the active connector enabled flag.
+     *
+     * @param enabled True to enable the active connector
+     */
     public void setEnabled(final boolean enabled) {
         this.enabled = set(this.enabled, enabled);
     }
 
     /**
-     * Type for active connectors
+     * Get the type of the active connector
+     *
+     * @return The type of the active connector (may be null)
      */
     public String getType() {
         return get(type);
     }
 
+    /**
+     * Set the type of the active connector (required)
+     *
+     * @param type  The type of this active connector
+     */
     public void setType(final String type) {
         this.type = set(this.type,type);
     }
 
+    /**
+     * Get the hardwired service ID for an inbound connection ( bypass resoution).
+     * Null if using service resolution
+     *
+     * @return The hardwired service ID (may be null)
+     */
     public String getHardwiredId() {
         return get(hardwiredId);
     }
 
+    /**
+     * Set the hardwired service ID for an inbound connection
+     *
+     * @param hardwiredId  The service ID to use
+     */
     public void setHardwiredId(final String hardwiredId) {
         this.hardwiredId = set(this.hardwiredId, hardwiredId);
     }
 
-
+    /**
+     * Get the properties for this active connector
+     *
+     * @return The properties (may be null)
+     */
     @XmlElement(name="Properties")
     @XmlJavaTypeAdapter( PropertiesMapType.PropertiesMapTypeAdapter.class)
     public Map<String, String> getProperties() {
         return properties;
     }
 
+    /**
+     * Set the properties for this active connector.
+     *
+     * @param properties The properties to use
+     */
     public void setProperties( final Map<String, String> properties ) {
         this.properties = properties;
     }
