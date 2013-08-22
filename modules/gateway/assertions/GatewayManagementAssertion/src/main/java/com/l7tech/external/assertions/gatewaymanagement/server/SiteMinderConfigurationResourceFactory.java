@@ -50,7 +50,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smResource.setHostname( siteMinderCfg.getHostname() );
         smResource.setHostConfiguration( siteMinderCfg.getHostConfiguration() );
         smResource.setUserName( siteMinderCfg.getUserName() );
-        smResource.setPasswordId(siteMinderCfg.getPasswordGoid().toString());
+        smResource.setPasswordId(siteMinderCfg.getPasswordGoid() == null ? null:siteMinderCfg.getPasswordGoid().toString());
         smResource.setIpCheck( siteMinderCfg.isIpcheck() );
         smResource.setUpdateSsoToken( siteMinderCfg.isUpdateSSOToken() );
         smResource.setEnabled( siteMinderCfg.isEnabled() );
@@ -101,7 +101,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }
         } else {
-
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
         }
         smConfiguration.setIpcheck( smResource.getIpCheck() );
         smConfiguration.setUpdateSSOToken( smResource.getUpdateSsoToken() );
