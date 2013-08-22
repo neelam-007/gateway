@@ -331,7 +331,7 @@ public class JMSEndpointReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
-                if (jmsRoutingAssertion.getEndpointOid().equals(goid.toString())) {
+                if (Goid.equals(jmsRoutingAssertion.getEndpointOid(), goid)) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         // replace endpoint id
                         jmsRoutingAssertion.setEndpointOid(localEndpointId);

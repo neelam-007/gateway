@@ -98,24 +98,16 @@ public abstract class ExternalReference {
      * @param identifier The identifier for the existing dependency
      * @return true if successful
      * @see #localizeAssertion(Assertion)
-     * @see #setLocalizeReplace(long)
+     * @see #setLocalizeReplace(Goid)
      */
     public boolean setLocalizeReplace( final String identifier ) {
         boolean localized = false;
-        try {
-            localized = setLocalizeReplace( Long.parseLong( identifier ) );
-            return localized;
-        } catch ( NumberFormatException nfe ) {
-            // not localized
-        }
         try {
             localized = setLocalizeReplace( new Goid(identifier) );
         } catch ( IllegalArgumentException ile ) {
             // not localized
         }
         return localized;
-
-
     }
 
     /**
@@ -159,10 +151,6 @@ public abstract class ExternalReference {
      * @return true if successful
      * @see #localizeAssertion(Assertion)
      */
-    @Deprecated
-    public boolean setLocalizeReplace( long identifier ) {
-        return false;
-    }
     public boolean setLocalizeReplace( Goid identifier ) {
         return false;
     }

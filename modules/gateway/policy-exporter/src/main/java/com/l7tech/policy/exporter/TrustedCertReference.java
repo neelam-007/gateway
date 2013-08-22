@@ -144,7 +144,7 @@ public class TrustedCertReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof BridgeRoutingAssertion) {
                 BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;
-                if ( goid != null && goid.equals(bra.getServerCertificateGoid()) ) {
+                if ( goid != null && Goid.equals(goid, bra.getServerCertificateGoid()) ) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         // replace server cert oid
                         bra.setServerCertificateGoid(localCertId);
