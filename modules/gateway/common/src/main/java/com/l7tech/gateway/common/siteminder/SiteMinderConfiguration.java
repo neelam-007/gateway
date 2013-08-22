@@ -9,6 +9,8 @@ import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -39,8 +41,8 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     private boolean enabled;
     private String hostname;
     private int fipsmode;
-    private boolean noncluster_failover;
-    private int cluster_threshold;
+    private boolean nonClusterFailover;
+    private int clusterThreshold;
     private String hostConfiguration;
     private String userName;
     private Goid passwordGoid;
@@ -55,8 +57,8 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         ipcheck = false;
         hostname = "";
         fipsmode = 0;
-        noncluster_failover = false;
-        cluster_threshold = 50;
+        nonClusterFailover = false;
+        clusterThreshold = 50;
         enabled = true;
         hostConfiguration = "";
         userName = "";
@@ -134,6 +136,8 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     }
 
     @NotNull
+    @Min(0)
+    @Max(4)
     @Column(name="fipsmode",nullable=false)
     public int getFipsmode () {
         return fipsmode;
@@ -144,12 +148,12 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     }
 
     @Column(name="noncluster_failover")
-    public boolean isNoncluster_failover() {
-        return noncluster_failover;
+    public boolean isNonClusterFailover() {
+        return nonClusterFailover;
     }
 
-    public void setNoncluster_failover(boolean noncluster_failover) {
-        this.noncluster_failover = noncluster_failover;
+    public void setNonClusterFailover(boolean nonClusterFailover) {
+        this.nonClusterFailover = nonClusterFailover;
     }
 
     /**
@@ -185,12 +189,12 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     }
 
     @Column(name="cluster_threshold")
-    public int getCluster_threshold() {
-        return cluster_threshold;
+    public int getClusterThreshold() {
+        return clusterThreshold;
     }
 
-    public void setCluster_threshold(int cluster_threshold) {
-        this.cluster_threshold = cluster_threshold;
+    public void setClusterThreshold(int clusterThreshold) {
+        this.clusterThreshold = clusterThreshold;
     }
 
     @Size(min=1,max=256)
@@ -246,7 +250,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     @Fetch(FetchMode.SUBSELECT)
     @ElementCollection(fetch=FetchType.EAGER)
     @JoinTable(name="siteminder_configuration_property",
-            joinColumns=@JoinColumn(name="goid", referencedColumnName="goid"))
+            joinColumns=@JoinColumn(name="siteminder_configuration_goid", referencedColumnName="goid"))
     @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=32672)
     public Map<String, String> getProperties(){
@@ -288,8 +292,8 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.setEnabled(other.isEnabled());
         this.setHostname(other.getHostname());
         this.setFipsmode(other.getFipsmode());
-        this.setNoncluster_failover(other.isNoncluster_failover());
-        this.setCluster_threshold((other.getCluster_threshold()));
+        this.setNonClusterFailover(other.isNonClusterFailover());
+        this.setClusterThreshold((other.getClusterThreshold()));
         this.setUpdateSSOToken(other.isUpdateSSOToken());
         this.setHostConfiguration(other.getHostConfiguration());
         this.setUserName(other.getUserName());

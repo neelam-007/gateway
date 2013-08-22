@@ -54,11 +54,13 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     public static final String COMPAT_FIPS_MODE = "COMPAT";
     public static final String MIGRATE_FIPS_MODE = "MIGRATE";
     public static final String ONLY_FIPS_MODE = "ONLY";
+    public static final String ONLY_FIPS_MD5_MODE = "ONLY MD5";
 
     public static final int FIPS140_UNSET = 0;
     public static final int FIPS140_COMPAT = 1;
     public static final int FIPS140_MIGRATE = 2;
     public static final int FIPS140_ONLY = 3;
+    public static final int FIPS140_ONLY_MD5 = 4;
 
     private SiteMinderConfiguration configuration;
 
@@ -110,6 +112,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     public static final Object COMPAT_MODE = new FipsModeType(FIPS140_COMPAT, COMPAT_FIPS_MODE);
     public static final Object MIGRATE_MODE = new FipsModeType(FIPS140_MIGRATE, MIGRATE_FIPS_MODE);
     public static final Object ONLY_MODE =  new FipsModeType(FIPS140_ONLY, ONLY_FIPS_MODE);
+    public static final Object ONLY_MD5_MODE =  new FipsModeType(FIPS140_ONLY_MD5, ONLY_FIPS_MD5_MODE);
 
     private boolean confirmed;
 
@@ -171,7 +174,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 UNSET_MODE,
                 COMPAT_MODE,
                 MIGRATE_MODE,
-                ONLY_MODE
+                ONLY_MODE,
+                ONLY_MD5_MODE
         }));
 
         InputValidator validator = new InputValidator(this, resources.getString("dialog.title.siteminder.configuration.properties"));
@@ -301,7 +305,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 fipsModeComboBox.setSelectedIndex(FIPS140_UNSET);
                 break;
         }
-        nonclusterFailoverCheckBox.setSelected(configuration.isNoncluster_failover());
+        nonclusterFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
         clusterSettingsMap.clear();
         if (configuration.getProperties() != null) {
             clusterSettingsMap.putAll(configuration.getProperties());
@@ -439,8 +443,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 MessageFormat.format(resources.getString("warning.basic.config.fips.configured"), resources.getString("property.agent.fipsmode"));
                 break;
         }
-        configuration.setNoncluster_failover(nonclusterFailoverCheckBox.isSelected());
-        configuration.setCluster_threshold((Integer)clusterTresholdSpinner.getValue());
+        configuration.setNonClusterFailover(nonclusterFailoverCheckBox.isSelected());
+        configuration.setClusterThreshold((Integer)clusterTresholdSpinner.getValue());
         configuration.setProperties(clusterSettingsMap);
         configuration.setSecurityZone(zoneControl.getSelectedZone());
     }

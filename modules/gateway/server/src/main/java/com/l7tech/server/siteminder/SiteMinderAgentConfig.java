@@ -133,12 +133,12 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
 
     @Override
     public boolean isNonClusterFailover() {
-        return config.isNoncluster_failover();
+        return config.isNonClusterFailover();
     }
 
     @Override
     public int getClusterThreshold() {
-        return config.getCluster_threshold();
+        return config.getClusterThreshold();
     }
 
     @Override

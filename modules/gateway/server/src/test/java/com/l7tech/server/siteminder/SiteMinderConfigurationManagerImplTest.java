@@ -32,8 +32,8 @@ public class SiteMinderConfigurationManagerImplTest {
                 config.setIpcheck(false);
                 config.setHostname("aw80Compat");
                 config.setFipsmode(1);
-                config.setNoncluster_failover(false);
-                config.setCluster_threshold(50);
+                config.setNonClusterFailover(false);
+                config.setClusterThreshold(50);
                 Map<String, String> properties = new HashMap();
                 properties.put("server.0.0.address", "10.7.34.32");
                 properties.put("server.0.0.authentication.port", "44442");

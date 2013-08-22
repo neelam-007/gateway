@@ -54,10 +54,10 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smResource.setIpCheck( siteMinderCfg.isIpcheck() );
         smResource.setUpdateSsoToken( siteMinderCfg.isUpdateSSOToken() );
         smResource.setEnabled( siteMinderCfg.isEnabled() );
-        smResource.setNonClusterFailover( siteMinderCfg.isNoncluster_failover() );
+        smResource.setNonClusterFailover( siteMinderCfg.isNonClusterFailover() );
         smResource.setIpCheck( siteMinderCfg.isIpcheck() );
         smResource.setFipsMode( siteMinderCfg.getFipsmode() );
-        smResource.setClusterThreshold( siteMinderCfg.getCluster_threshold() );
+        smResource.setClusterThreshold( siteMinderCfg.getClusterThreshold() );
 
         Map<String,String> properties = new HashMap<String,String>();
         for (String propertyName : siteMinderCfg.getPropertyNames()) {
@@ -106,10 +106,10 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setIpcheck( smResource.getIpCheck() );
         smConfiguration.setUpdateSSOToken( smResource.getUpdateSsoToken() );
         smConfiguration.setEnabled( smResource.getEnabled() );
-        smConfiguration.setNoncluster_failover( smResource.getNonClusterFailover() );
+        smConfiguration.setNonClusterFailover( smResource.getNonClusterFailover() );
         smConfiguration.setIpcheck( smResource.getEnabled() );
         smConfiguration.setFipsmode( smResource.getFipsMode() );
-        smConfiguration.setCluster_threshold( smResource.getClusterThreshold() );
+        smConfiguration.setClusterThreshold( smResource.getClusterThreshold() );
 
         Map<String, String> smProperties = new HashMap<String, String>( smResource.getProperties().size() );
         for (Map.Entry<String, String> entry : smResource.getProperties().entrySet()) {
@@ -139,10 +139,10 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         oldEntity.setIpcheck( newEntity.isIpcheck() );
         oldEntity.setUpdateSSOToken( newEntity.isUpdateSSOToken() );
         oldEntity.setEnabled( newEntity.isEnabled() );
-        oldEntity.setNoncluster_failover( newEntity.isNoncluster_failover() );
+        oldEntity.setNonClusterFailover( newEntity.isNonClusterFailover() );
         oldEntity.setIpcheck( newEntity.isIpcheck() );
         oldEntity.setFipsmode( newEntity.getFipsmode() );
-        oldEntity.setCluster_threshold( newEntity.getCluster_threshold() );
+        oldEntity.setClusterThreshold( newEntity.getClusterThreshold() );
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );
 
         Map<String, String> newProperties = new HashMap<String, String>( newEntity.getProperties().size() );

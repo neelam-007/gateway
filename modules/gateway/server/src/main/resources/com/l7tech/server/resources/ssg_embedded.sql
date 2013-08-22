@@ -517,10 +517,10 @@ create table siteminder_configuration (
 );
 
 CREATE TABLE siteminder_configuration_property (
-  goid CHAR(16) FOR BIT DATA references siteminder_configuration(goid) on delete cascade,
+  siteminder_configuration_goid CHAR(16) FOR BIT DATA references siteminder_configuration(goid) on delete cascade,
   name varchar(128) not null,
   value varchar(32672) not null,
-  primary key (goid,name)
+  primary key (siteminder_configuration_goid,name)
 );
 
 create table jms_connection (
