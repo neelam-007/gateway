@@ -915,6 +915,7 @@ ALTER TABLE http_configuration CHANGE COLUMN objectid goid binary(16) NOT NULL P
 -- For manual runs use: set @http_configuration_prefix=createUnreservedPoorRandomPrefix();
 SET @http_configuration_prefix=#RANDOM_LONG_NOT_RESERVED#;
 update http_configuration set goid = toGoid(@http_configuration_prefix,old_objectid);
+ALTER TABLE http_configuration DROP COLUMN old_objectid;
 
 update rbac_role set entity_goid = toGoid(@http_configuration_prefix,entity_oid) where entity_oid is not null and entity_type='HTTP_CONFIGURATION';
 update rbac_predicate_oid oid1 left join rbac_predicate on rbac_predicate.objectid = oid1.objectid left join rbac_permission on rbac_predicate.permission_oid = rbac_permission.objectid set oid1.entity_id = goidToString(toGoid(@http_configuration_prefix,oid1.entity_id)) where rbac_permission.entity_type = 'HTTP_CONFIGURATION';

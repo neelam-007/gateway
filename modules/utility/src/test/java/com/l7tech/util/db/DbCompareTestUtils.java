@@ -36,13 +36,6 @@ public class DbCompareTestUtils {
             Map<String, Map<String, String>> newTableColumnsInfo = getResultSetInfo(newDatabaseMetadata.getColumns(null, "APP", tableName, null), 4);
             Map<String, Map<String, String>> upgradedTableColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getColumns(null, "APP", tableName, null), 4);
 
-            //Remove the old_objectId column for now.
-            //TODO: remove this!
-            newTableColumnsInfo.remove("old_objectid");
-            upgradedTableColumnsInfo.remove("old_objectid");
-            newTableColumnsInfo.remove("old_objectid".toUpperCase());
-            upgradedTableColumnsInfo.remove("old_objectid".toUpperCase());
-
             // ignore Ordinal position for now. We will not enforce column ordering for derby.
             compareResultInfo(newTableColumnsInfo, upgradedTableColumnsInfo,
                     "Table " + tableName + " has a different number of columns",
