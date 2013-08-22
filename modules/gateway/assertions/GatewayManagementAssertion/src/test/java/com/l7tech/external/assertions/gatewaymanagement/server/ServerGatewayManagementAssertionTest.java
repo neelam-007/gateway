@@ -1004,6 +1004,49 @@ public class ServerGatewayManagementAssertionTest {
         doCreate( resourceUri, payload, Goid.toString(new Goid(0,4)) );
     }
 
+    @BugId("SSG-7422")
+    @Test
+    public void testCreateActiveConnectorBadHardwiredId() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/activeConnectors";
+        String payload =
+                "<l7:ActiveConnector xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:Name>test</l7:Name>\n" +
+                        "    <l7:Enabled>true</l7:Enabled>\n" +
+                        "    <l7:Type>SFTP</l7:Type>\n" +
+                        "    <l7:HardwiredId>hardwiredId</l7:HardwiredId>\n" +
+                        "    <l7:Properties>\n" +
+                        "        <l7:Property key=\"enableResponseMessages\">\n" +
+                        "            <l7:StringValue>true</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpHost\">\n" +
+                        "            <l7:StringValue>centospp.l7tech.com</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpPort\">\n" +
+                        "            <l7:StringValue>22</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"overrideContentType\">\n" +
+                        "            <l7:StringValue>text/xml; charset=utf-8</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"pollingInterval\">\n" +
+                        "            <l7:StringValue>10</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpDeleteOnReceive\">\n" +
+                        "            <l7:StringValue>false</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpSecurePasswordOid\">\n" +
+                        "            <l7:StringValue>360448</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpUsername\">\n" +
+                        "            <l7:StringValue>fish</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "        <l7:Property key=\"SftpDirectory\">\n" +
+                        "            <l7:StringValue>/home/fish/messages</l7:StringValue>\n" +
+                        "        </l7:Property>\n" +
+                        "    </l7:Properties>\n" +
+                        "</l7:ActiveConnector>";
+        doCreateFail( resourceUri, payload, "wxf:InvalidRepresentation" );
+    }
+
     @Test
     public void testCreateActiveConnectorBadType() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/activeConnectors";

@@ -63,7 +63,14 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
 
         activeConnector.setEnabled(connectionResource.isEnabled());
         activeConnector.setName(connectionResource.getName());
-        activeConnector.setHardwiredServiceGoid(connectionResource.getHardwiredId()==null?null:Goid.parseGoid(connectionResource.getHardwiredId()));
+
+        try{
+            Goid serviceGoid = connectionResource.getHardwiredId()== null? null :Goid.parseGoid(connectionResource.getHardwiredId());
+            activeConnector.setHardwiredServiceGoid(serviceGoid);
+        } catch( IllegalArgumentException e){
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid hardwired id: "+e.getMessage());
+        }
+
         activeConnector.setType(connectionResource.getType());
 
         // handle securityZone
