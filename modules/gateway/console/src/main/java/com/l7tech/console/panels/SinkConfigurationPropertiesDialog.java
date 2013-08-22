@@ -692,7 +692,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         }
 
         final boolean syslogHostSelected = syslogHostList.getSelectedValue() != null;
-        syslogTestMessageButton.setEnabled( !readOnly );
         syslogHostAdd.setEnabled( !readOnly );
         syslogHostRemove.setEnabled( !readOnly && syslogHostSelected );
         syslogHostEdit.setEnabled( !readOnly && syslogHostSelected );

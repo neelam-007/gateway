@@ -77,6 +77,7 @@ public interface LogSinkAdmin extends LogAccessAdmin {
      * @param message The test message contents
      * @return Whether the message was successfully sent or not
      */
+    @Secured(stereotype = TEST_CONFIGURATION)
     boolean sendTestSyslogMessage(SinkConfiguration sinkConfiguration, String message);
 
     /**
