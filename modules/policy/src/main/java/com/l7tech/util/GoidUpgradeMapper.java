@@ -143,7 +143,7 @@ public class GoidUpgradeMapper {
         } else if (entityType == EntityType.REVOCATION_CHECK_POLICY) {
             return tableNamePrefixMap.get("revocation_check_policy");
         } else if (entityType == EntityType.SECURE_PASSWORD) {
-            return tableNamePrefixMap.get("sample_messages");
+            return tableNamePrefixMap.get("secure_password");
         } else if (entityType == EntityType.SECURITY_ZONE) {
             return tableNamePrefixMap.get("security_zone");
         } else if (entityType == EntityType.SITEMINDER_CONFIGURATION) {
