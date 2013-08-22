@@ -304,7 +304,7 @@ public class SecuredMethodInterceptorTest {
                 {"saveOrUpdateCollection", privilegedUser, new Object[]{allowedEntitiesExisting}, null, null, null},
                 {"saveOrUpdateCollection", privilegedUser, new Object[]{deniedEntitiesExisting}, null, null, PermissionDeniedException.class},
                 {"saveOrUpdateCollection", privilegedUser, new Object[]{mixedEntitiesExisting}, null, null, PermissionDeniedException.class},
-                {"saveOrUpdateCollection", unprivilegedUser, new Object[]{emptyCollection}, null, null, null},
+                {"saveOrUpdateCollection", unprivilegedUser, new Object[]{emptyCollection}, null, null, IllegalStateException.class},
                 {"saveOrUpdateArray", unprivilegedUser, new Object[]{new Object[]{allowedEntityExisting}}, null, null, PermissionDeniedException.class}
         });
     }

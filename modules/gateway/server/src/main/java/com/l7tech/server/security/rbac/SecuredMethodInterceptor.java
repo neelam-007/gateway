@@ -203,16 +203,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 } else {
                     final Iterable<Entity> iterable = getIterableArg(check, args);
                     if (iterable != null) {
-                        final OperationType iterableOperation = getOperationForIterable(iterable);
-                        if (iterableOperation != null) {
-                            check.operation = iterableOperation;
-                            check.setBefore(CheckBefore.COLLECTION);
-                            check.setAfter(CheckAfter.NONE);
-                            break;
-                        } else {
-                            // iterable has no items
-                            return methodInvocation.proceed();
-                        }
+                        check.operation = getOperationForIterable(iterable);
+                        check.setBefore(CheckBefore.COLLECTION);
+                        check.setAfter(CheckAfter.NONE);
+                        break;
                     } else {
                         // this is incredibly ugly: Must have permission to update AND create ANY entity of all specified types; if so, we BYPASS any remaining checks
                         check.setBefore(CheckBefore.NONE);
@@ -492,6 +486,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         }
     }
 
+    @NotNull
     private OperationType getOperationForIterable(Iterable<Entity> iterable) {
         OperationType iterableOperation = null;
         for (final Entity toCheck : iterable) {
@@ -502,6 +497,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
             } else if (operation != iterableOperation) {
                 throw new IllegalStateException("Iterable cannot contain a mix of persisted and non persisted entities.");
             }
+        }
+        if (iterableOperation == null) {
+            throw new IllegalStateException("Unable to determine save or update operation for iterable because it is empty");
         }
         return iterableOperation;
     }
