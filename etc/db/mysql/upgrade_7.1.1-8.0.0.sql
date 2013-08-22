@@ -125,10 +125,10 @@ CREATE TABLE siteminder_configuration (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 CREATE TABLE siteminder_configuration_property (
-  goid binary(16) NOT NULL,
+  siteminder_configuration_goid binary(16) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  FOREIGN KEY (goid) REFERENCES siteminder_configuration (goid) ON DELETE CASCADE
+  FOREIGN KEY (siteminder_configuration_goid) REFERENCES siteminder_configuration (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
