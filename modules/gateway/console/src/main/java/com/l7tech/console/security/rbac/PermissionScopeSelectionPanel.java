@@ -173,87 +173,77 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             if (config.getScopeType() != null) {
                 switch (config.getScopeType()) {
                     case CONDITIONAL:
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                conditionsPanel.setVisible(true);
-                                specificObjectsPanel.setVisible(false);
-                                header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
-                                tabPanel.removeAll();
-                                if (type == EntityType.AUDIT_RECORD) {
-                                    tabPanel.addTab(TYPES, typesTab);
-                                }
-                                tabPanel.addTab(ATTRIBUTES, attributesTab);
-                                if (type == EntityType.ANY || type.isFolderable()) {
-                                    tabPanel.addTab(FOLDERS, foldersTab);
-                                }
-                                if (type == EntityType.ANY || type == EntityType.AUDIT_RECORD || type.isSecurityZoneable()) {
-                                    tabPanel.addTab(ZONES, zonesTab);
-                                    enableDisableZones();
-                                }
-                                reloadAttributeComboBox();
-                                notifyListeners();
-                            }
-                        });
+                        conditionsPanel.setVisible(true);
+                        specificObjectsPanel.setVisible(false);
+                        header.setText(SELECT_OPTIONS_FOR_THESE_PERMISSIONS);
+                        tabPanel.removeAll();
+                        if (type == EntityType.AUDIT_RECORD) {
+                            tabPanel.addTab(TYPES, typesTab);
+                        }
+                        tabPanel.addTab(ATTRIBUTES, attributesTab);
+                        if (type == EntityType.ANY || type.isFolderable()) {
+                            tabPanel.addTab(FOLDERS, foldersTab);
+                        }
+                        if (type == EntityType.ANY || type == EntityType.AUDIT_RECORD || type.isSecurityZoneable()) {
+                            tabPanel.addTab(ZONES, zonesTab);
+                            enableDisableZones();
+                        }
+                        reloadAttributeComboBox();
+                        notifyListeners();
                         break;
                     case SPECIFIC_OBJECTS:
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                specificObjectsPanel.setVisible(true);
-                                conditionsPanel.setVisible(false);
-                                final String typePlural = config.getType().getPluralName().toLowerCase();
-                                header.setText("Select " + typePlural);
-                                specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
-                                specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
+                        specificObjectsPanel.setVisible(true);
+                        conditionsPanel.setVisible(false);
+                        final String typePlural = config.getType().getPluralName().toLowerCase();
+                        header.setText("Select " + typePlural);
+                        specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
+                        specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
 
-                                // folderable entities
-                                specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
-                                specificAncestryCheckBox.setVisible(type.isFolderable());
+                        // folderable entities
+                        specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
+                        specificAncestryCheckBox.setVisible(type.isFolderable());
 
-                                // aliases
-                                final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
-                                aliasOwnersCheckBox.setVisible(isAlias);
-                                aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
+                        // aliases
+                        final boolean isAlias = Alias.class.isAssignableFrom(type.getEntityClass());
+                        aliasOwnersCheckBox.setVisible(isAlias);
+                        aliasOwnersCheckBox.setText(isAlias ? "Grant read access to the object referenced by each selected alias." : StringUtils.EMPTY);
 
-                                // identities or trusted esm user
-                                String comboBoxDisplay = StringUtils.EMPTY;
-                                if (isIdentityType(type)) {
-                                    comboBoxDisplay = EntityType.ID_PROVIDER_CONFIG.getName() + ":";
-                                } else if (type == EntityType.TRUSTED_ESM_USER) {
-                                    comboBoxDisplay = EntityType.TRUSTED_ESM.getName() + ":";
+                        // identities or trusted esm user
+                        String comboBoxDisplay = StringUtils.EMPTY;
+                        if (isIdentityType(type)) {
+                            comboBoxDisplay = EntityType.ID_PROVIDER_CONFIG.getName() + ":";
+                        } else if (type == EntityType.TRUSTED_ESM_USER) {
+                            comboBoxDisplay = EntityType.TRUSTED_ESM.getName() + ":";
+                        }
+                        comboBoxLabel.setText(comboBoxDisplay);
+                        comboBoxPanel.setVisible(isIdentityType(type) || type == EntityType.TRUSTED_ESM_USER);
+                        loadComboBox(type);
+
+                        // uddi
+                        uddiServiceCheckBox.setVisible(type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO);
+                        if (type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO) {
+                            uddiServiceCheckBox.setText("Grant additional access to the uddi services referenced by each selected " + type.getName().toLowerCase() + ".");
+                        } else {
+                            uddiServiceCheckBox.setText(StringUtils.EMPTY);
+                        }
+
+                        if (config.getSelectedEntities().isEmpty()) {
+                            if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
+                                final List<EntityHeader> entities = new ArrayList<>();
+                                try {
+                                    entities.addAll(EntityUtils.getEntities(config.getType()));
+                                } catch (final FindException e) {
+                                    logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 }
-                                comboBoxLabel.setText(comboBoxDisplay);
-                                comboBoxPanel.setVisible(isIdentityType(type) || type == EntityType.TRUSTED_ESM_USER);
-                                loadComboBox(type);
-
-                                // uddi
-                                uddiServiceCheckBox.setVisible(type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO);
-                                if (type == EntityType.UDDI_SERVICE_CONTROL || type == EntityType.UDDI_PROXIED_SERVICE_INFO) {
-                                    uddiServiceCheckBox.setText("Grant additional access to the uddi services referenced by each selected " + type.getName().toLowerCase() + ".");
+                                specificObjectsModel.setSelectableObjects(entities);
+                            } else {
+                                if (type == EntityType.TRUSTED_ESM_USER) {
+                                    loadTrustedEsmUsers();
                                 } else {
-                                    uddiServiceCheckBox.setText(StringUtils.EMPTY);
-                                }
-
-                                if (config.getSelectedEntities().isEmpty()) {
-                                    if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
-                                        final List<EntityHeader> entities = new ArrayList<>();
-                                        try {
-                                            entities.addAll(EntityUtils.getEntities(config.getType()));
-                                        } catch (final FindException e) {
-                                            logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                        }
-                                        specificObjectsModel.setSelectableObjects(entities);
-                                    } else {
-                                        if (type == EntityType.TRUSTED_ESM_USER) {
-                                            loadTrustedEsmUsers();
-                                        } else {
-                                            loadIdentities(type);
-                                        }
-                                    }
+                                    loadIdentities(type);
                                 }
                             }
-                        });
+                        }
                         break;
                     default:
                         throw new IllegalStateException("Unsupported scope type: " + config.getScopeType());

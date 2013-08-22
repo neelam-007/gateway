@@ -187,12 +187,7 @@ public class SecurityZoneWidget extends JPanel {
     private void customizeDisplay() {
         if (hideIfNoZones && (loadedZones.isEmpty() || (loadedZones.size() == 1 && loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())))) {
             logger.log(Level.FINER, "Hiding the SecurityZoneWidget because no zones are available");
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    setVisible(false);
-                }
-            });
+            setVisible(false);
         } else {
             displayAsStaticTextWhenNecessary();
         }
@@ -266,21 +261,16 @@ public class SecurityZoneWidget extends JPanel {
 
     private void displayAsStaticTextWhenNecessary() {
         if (OperationType.READ == operation || loadedZones.size() == 1) {
-            SwingUtilities.invokeLater(new Runnable() {
+            zonesComboBox.setUI(new BasicComboBoxUI() {
                 @Override
-                public void run() {
-                    zonesComboBox.setUI(new BasicComboBoxUI() {
+                protected JButton createArrowButton() {
+                    // remove arrow by creating a plain button
+                    return new JButton() {
                         @Override
-                        protected JButton createArrowButton() {
-                            // remove arrow by creating a plain button
-                            return new JButton() {
-                                @Override
-                                public int getWidth() {
-                                    return 0;
-                                }
-                            };
+                        public int getWidth() {
+                            return 0;
                         }
-                    });
+                    };
                 }
             });
         }
