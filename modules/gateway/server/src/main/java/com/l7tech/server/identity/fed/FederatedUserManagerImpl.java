@@ -185,7 +185,7 @@ public class FederatedUserManagerImpl
         try {
             final Conjunction conjunction = Restrictions.conjunction();
             conjunction.add( asCriterion( getUniqueConstraints( user ) ) );
-            if ( Goid.isDefault(user.getGoid()) ) {
+            if (  !user.isUnsaved() ) {
                 conjunction.add( Restrictions.ne( "goid", user.getGoid() ) );
             }
             existing = findMatching( conjunction );
