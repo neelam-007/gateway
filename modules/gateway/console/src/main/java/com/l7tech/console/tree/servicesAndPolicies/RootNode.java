@@ -303,6 +303,11 @@ public final class RootNode extends FolderNode {
         return atn;
     }
 
+    @Nullable
+    public SecurityZone getSecurityZone() {
+        return getFolder().getSecurityZone();
+    }
+
     public void setSecurityZone(@Nullable final SecurityZone zone) {
         getFolder().setSecurityZone(zone);
     }

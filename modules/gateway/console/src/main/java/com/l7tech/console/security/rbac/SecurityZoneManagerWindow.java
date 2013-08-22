@@ -3,6 +3,8 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.SimpleTableModel;
@@ -12,10 +14,12 @@ import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.comparator.NamedEntityComparator;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.WordUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -107,7 +111,7 @@ public class SecurityZoneManagerWindow extends JDialog {
             public void deleteEntity(SecurityZone entity) throws DeleteException {
                 Registry.getDefault().getRbacAdmin().deleteSecurityZone(entity);
                 flushCachedZones();
-                refreshTrees();
+                refreshTrees(entity);
                 loadModifiableEntityTypes();
             }
 
@@ -145,7 +149,7 @@ public class SecurityZoneManagerWindow extends JDialog {
             public SecurityZone saveEntity(SecurityZone entity) throws SaveException {
                 Goid goid = Registry.getDefault().getRbacAdmin().saveSecurityZone(entity);
                 flushCachedZones();
-                refreshTrees();
+                refreshTrees(entity);
                 // user may have modified a zone that affects their permissions
                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                 loadModifiableEntityTypes();
@@ -261,9 +265,25 @@ public class SecurityZoneManagerWindow extends JDialog {
         return selected;
     }
 
-    private void refreshTrees() {
+    private void refreshTrees(@NotNull final SecurityZone zoneChanged) {
         final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         servicesAndPoliciesTree.refresh();
         TopComponents.getInstance().getAssertionRegistry().updateAssertionAccess();
+        final IdentityProvidersTree providersTree = (IdentityProvidersTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+        providersTree.refresh(providersTree.getRootNode());
+        final RootNode rootNode = TopComponents.getInstance().getRootNode();
+        if (rootNode.getSecurityZone() != null && rootNode.getSecurityZone().equals(zoneChanged)) {
+            // reload zone for root node
+            try {
+                final Folder rootFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(Folder.ROOT_FOLDER_ID);
+                if (rootFolder != null) {
+                    rootNode.setSecurityZone(rootFolder.getSecurityZone());
+                } else {
+                    throw new FindException("Could not find root node");
+                }
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Unable to refresh zone on root node: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
     }
 }

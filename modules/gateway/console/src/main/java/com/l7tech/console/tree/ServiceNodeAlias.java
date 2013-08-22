@@ -33,23 +33,19 @@ public class ServiceNodeAlias extends ServiceNode{
         actions.add(new DeleteServiceAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         final PublishedServiceAlias alias = getAlias();
-        try {
-            if (alias != null && (alias.getSecurityZone() != null || !Registry.getDefault().getRbacAdmin().findAllSecurityZones().isEmpty())) {
-                actions.add(new ConfigureSecurityZoneAction<>(alias, new EntitySaver<PublishedServiceAlias>() {
-                    @Override
-                    public PublishedServiceAlias saveEntity(@NotNull final PublishedServiceAlias entity) throws SaveException {
-                        try {
-                            final Goid goid = Registry.getDefault().getServiceManager().saveAlias(entity);
-                            entity.setGoid(goid);
-                        } catch (final UpdateException | VersionException e) {
-                            throw new SaveException("Could not save service alias: " + e.getMessage(), e);
-                        }
-                        return entity;
+        if (alias != null) {
+            actions.add(new ConfigureSecurityZoneAction<>(alias, new EntitySaver<PublishedServiceAlias>() {
+                @Override
+                public PublishedServiceAlias saveEntity(@NotNull final PublishedServiceAlias entity) throws SaveException {
+                    try {
+                        final Goid goid = Registry.getDefault().getServiceManager().saveAlias(entity);
+                        entity.setGoid(goid);
+                    } catch (final UpdateException | VersionException e) {
+                        throw new SaveException("Could not save service alias: " + e.getMessage(), e);
                     }
-                }));
-            }
-        } catch (final FindException e) {
-            logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), e);
+                    return entity;
+                }
+            }));
         }
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);

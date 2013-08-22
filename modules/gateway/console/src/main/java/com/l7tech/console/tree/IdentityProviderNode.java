@@ -111,25 +111,18 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
 
             list.add(new ForceAdminPasswordResetAction());
             list.add(new IdentityProviderManagePasswordPolicyAction());
-            try {
-                // only provide the security zone action if the provider already has a zone or the current user can read at least one zone
-                if (config.getSecurityZone() != null || !Registry.getDefault().getRbacAdmin().findAllSecurityZones().isEmpty()) {
-                    list.add(new ConfigureSecurityZoneAction<>(config, new EntitySaver<IdentityProviderConfig>() {
-                        @Override
-                        public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
-                            try {
-                                final Goid oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
-                                entity.setGoid(oid);
-                            } catch (final UpdateException e) {
-                                throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
-                            }
-                            return entity;
-                        }
-                    }));
+            list.add(new ConfigureSecurityZoneAction<>(config, new EntitySaver<IdentityProviderConfig>() {
+                @Override
+                public IdentityProviderConfig saveEntity(@NotNull final IdentityProviderConfig entity) throws SaveException {
+                    try {
+                        final Goid oid = Registry.getDefault().getIdentityAdmin().saveIdentityProviderConfig(entity);
+                        entity.setGoid(oid);
+                    } catch (final UpdateException e) {
+                        throw new SaveException("Unable to save identity provider: " + e.getMessage(), e);
+                    }
+                    return entity;
                 }
-            } catch (final FindException e) {
-                logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
+            }));
         }
 
 

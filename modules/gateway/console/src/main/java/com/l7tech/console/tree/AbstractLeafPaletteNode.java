@@ -110,26 +110,18 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
         Action[] ret = new Action[0];
         final Assertion assertion = asAssertion();
         if (assertion != null) {
-            // If no security zones are visible to current admin and the zone is not set on the assertion, don't bother offering the security zone action
-            try {
-                Collection<SecurityZone> zones = Registry.getDefault().getRbacAdmin().findAllSecurityZones();
-                final AssertionAccess assertionAccess = TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion);
-                if ((zones == null || zones.isEmpty()) && (assertionAccess == null || assertionAccess.getSecurityZone() == null)) {
-                    return ret;
-                }
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "Unable to check security zones: " + ExceptionUtils.getMessage(e), e);
+            final AssertionAccess assertionAccess = TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion);
+            if (assertionAccess == null) {
+                return ret;
             }
-
             SecureAction zoneAction = createSecurityZoneAction(assertion);
-
             ret = zoneAction.isAuthorized() ? new Action[] { zoneAction } : new Action[]{};
         }
         return ret;
     }
 
     protected ConfigureSecurityZoneAction createSecurityZoneAction(final Assertion assertion) {
-        return new ConfigureSecurityZoneAction<AssertionAccess>(TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion), new EntitySaver<AssertionAccess>() {
+        return new ConfigureSecurityZoneAction<>(TopComponents.getInstance().getAssertionRegistry().getAssertionAccess(assertion), new EntitySaver<AssertionAccess>() {
             @Override
             public AssertionAccess saveEntity(AssertionAccess assertionAccess) throws SaveException {
                 try {
