@@ -218,6 +218,23 @@ public class ServiceResolutionManagerTest {
     }
 
     @Test
+    public void testResolutionServiceGoidWithUppercaseHex() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/service/"+new Goid(serviceUpgradePrefix,2L).toHexString().toUpperCase()) );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved 1)", service );
+        assertEquals( "Service id", new Goid(serviceUpgradePrefix,2L), service.getGoid() );
+
+        // test with service id disabled
+        final ResolutionConfiguration config = getDefaultResolutionConfiguration();
+        config.setUseServiceOid( false );
+        configure( config, resolutionManager.getResolvers() );
+        PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNull( "Service not null (resolved 2)", service2 );
+    }
+
+    @Test
     public void testResolutionServiceComplexHexGoid() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));

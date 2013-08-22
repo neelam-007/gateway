@@ -93,7 +93,7 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
                 final String match = findMatch(originalUrl);
                 if (match != null) {
                     auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
-                    return match;
+                    return match.toLowerCase();
                 }
                 auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_NOMATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
             }
@@ -103,7 +103,7 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
         final String match = findMatch(requestURI);
         if (match != null) {
             auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_URI_MATCH, requestURI);
-            return match;
+            return match.toLowerCase();
         }
         auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_URI_NOMATCH, requestURI);
         return null;
