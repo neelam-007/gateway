@@ -76,9 +76,11 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
         // handle securityZone
         doSecurityZoneFromResource( connectionResource, activeConnector );
 
-        for (Map.Entry<String, String> entry : connectionResource.getProperties().entrySet()) {
-
-            activeConnector.setProperty(entry.getKey(), entry.getValue());
+        Map<String, String> props = connectionResource.getProperties();
+        if(props!=null){
+            for (Map.Entry<String, String> entry : props.entrySet()) {
+                activeConnector.setProperty(entry.getKey(), entry.getValue());
+            }
         }
 
         return activeConnector;
