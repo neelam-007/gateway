@@ -352,6 +352,16 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
         switch (check.getBefore()) {
             case ENTITY:
                 if (check.entity == null) throw new NullPointerException("check.entity");
+                if (check.operation == UPDATE) {
+                    // need to check if the existing entity can be updated
+                    final Entity existing = entityFinder.find(check.entity.getClass(), check.entity.getId());
+                    if (existing != null && !rbacServices.isPermittedForEntity(user, existing, UPDATE, check.otherOperationName)) {
+                        throw new PermissionDeniedException(UPDATE, existing, check.otherOperationName);
+                    } else if (existing == null) {
+                        logger.log(Level.WARNING, "Could not find existing entity for update check: " + check.entity);
+                        throw new PermissionDeniedException(check.operation, check.entity, check.otherOperationName);
+                    }
+                }
                 if (!rbacServices.isPermittedForEntity(user, check.entity, check.operation, check.otherOperationName)) {
                     throw new PermissionDeniedException(check.operation, check.entity, check.otherOperationName);
                 }

@@ -72,6 +72,7 @@ public class SecuredMethodInterceptorTest {
     private static MyEntity deniedEntityNew = new MyEntity();
     private static MyEntity allowedEntityExisting = new MyEntity(new Goid(0,123l));
     private static MyEntity deniedEntityExisting = new MyEntity(new Goid(0,456l));
+    private static MyEntity unknownEntityExisting = new MyEntity(new Goid(0, 7777));
     private static MyPersistentEntity allowedGoidEntityNew = new MyPersistentEntity();
     private static MyPersistentEntity deniedGoidEntityNew = new MyPersistentEntity();
     private static MyPersistentEntity allowedGoidEntityExisting = new MyPersistentEntity(new Goid(0,123l));
@@ -199,6 +200,7 @@ public class SecuredMethodInterceptorTest {
                 {"update", privilegedUser, new Object[]{allowedGoidEntityExisting}, null, null, null},
                 {"update", privilegedUser, new Object[]{deniedEntityExisting}, null, null, PermissionDeniedException.class},
                 {"update", privilegedUser, new Object[]{deniedGoidEntityExisting}, null, null, PermissionDeniedException.class},
+                {"update", privilegedUser, new Object[]{unknownEntityExisting}, null, null, PermissionDeniedException.class},
                 //saveOrUpdate
                 {"saveOrUpdate", privilegedUser, new Object[]{allowedEntityNew}, null, null, null},
                 {"saveOrUpdate", privilegedUser, new Object[]{allowedGoidEntityNew}, null, null, null},
@@ -208,6 +210,7 @@ public class SecuredMethodInterceptorTest {
                 {"saveOrUpdate", privilegedUser, new Object[]{allowedGoidEntityExisting}, null, null, null},
                 {"saveOrUpdate", privilegedUser, new Object[]{deniedEntityExisting}, null, null, PermissionDeniedException.class},
                 {"saveOrUpdate", privilegedUser, new Object[]{deniedGoidEntityExisting}, null, null, PermissionDeniedException.class},
+                {"saveOrUpdate", privilegedUser, new Object[]{unknownEntityExisting}, null, null, PermissionDeniedException.class},
                 {"saveOrUpdate", privilegedUser, new Object[0], null, null, null},
                 {"saveOrUpdate", unprivilegedUser, new Object[0], null, null, PermissionDeniedException.class},
                 //deleteById
@@ -263,8 +266,8 @@ public class SecuredMethodInterceptorTest {
                 {"getIdentityPropertyById", privilegedUser, new Object[]{allowedGoidEntityExisting.getGoid(), allowedEntityExisting.getId()}, genericString, genericString, null},
                 {"getIdentityPropertyById", privilegedUser, new Object[]{deniedGoidEntityExisting.getGoid(), deniedEntityExisting.getId()}, genericString, genericString, PermissionDeniedException.class},
                 //setPropertyOfEntity
-                {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedEntityNew}, null, null, null},
-                {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedGoidEntityNew}, null, null, null},
+                {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedEntityNew}, null, null, PermissionDeniedException.class},
+                {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedGoidEntityNew}, null, null, PermissionDeniedException.class},
                 {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, deniedEntityNew}, null, null, PermissionDeniedException.class},
                 {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, deniedGoidEntityNew}, null, null, PermissionDeniedException.class},
                 {"setPropertyOfEntity", privilegedUser, new Object[]{genericString, allowedEntityExisting}, null, null, null},
@@ -390,6 +393,8 @@ public class SecuredMethodInterceptorTest {
         when(entityFinder.find(any(Class.class), eq(deniedEntityExisting.getId()))).thenReturn(deniedEntityExisting);
         when(entityFinder.find(any(Class.class), eq(allowedGoidEntityExisting.getId()))).thenReturn(allowedGoidEntityExisting);
         when(entityFinder.find(any(Class.class), eq(deniedGoidEntityExisting.getId()))).thenReturn(deniedGoidEntityExisting);
+
+        when(entityFinder.find(any(Class.class), eq(unknownEntityExisting.getId()))).thenReturn(null);
     }
 
     /**
