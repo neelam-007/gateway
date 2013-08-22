@@ -238,14 +238,7 @@ public class ChangePasswordDialog extends JDialog {
                 help = true;
                 final PasswordHelpDialog dialog = new PasswordHelpDialog(ChangePasswordDialog.this, passwordPolicyDescription);
                 Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!dialog.isOk()) {
-                            dispose();
-                        }
-                    }
-                });
+                DialogDisplayer.display(dialog);
             }
         });
 
