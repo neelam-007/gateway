@@ -1546,7 +1546,8 @@ INSERT INTO cluster_properties
            (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
            (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null),
            (toGoid(0,-800003), 0, 'upgrade.task.800003', 'com.l7tech.server.upgrade.Upgrade71To80IdProviderReferences', null),
-           (toGoid(0,-800004), 0, 'upgrade.task.800004', 'com.l7tech.server.upgrade.Upgrade71To80AuditRecords', null);
+           (toGoid(0,-800004), 0, 'upgrade.task.800004', 'com.l7tech.server.upgrade.Upgrade71To80AuditRecords', null),
+           (toGoid(0,-800005), 0, 'upgrade.task.800005', 'com.l7tech.server.upgrade.Upgrade71to80UpdateGatewayManagementWsdl', null);
 
 
 --
