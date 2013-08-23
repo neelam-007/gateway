@@ -447,11 +447,11 @@ public class RegistryStub extends Registry {
                                                                           "properties");
             
             @Override
-            public EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException {
-                if(oid == 2468L) {
+            public EmailListener findEmailListenerByPrimaryKey(Goid goid) throws FindException {
+                if(Goid.equals(goid, new Goid(0,2468L))) {
                     return emailListener;
                 } else {
-                    throw new FindException("no email listener found with id " + oid);
+                    throw new FindException("no email listener found with id " + goid);
                 }
             }
 

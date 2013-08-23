@@ -35,8 +35,8 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
     }
 
     @Override
-    public EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException {
-        return emailListenerManager.findByPrimaryKey(oid);
+    public EmailListener findEmailListenerByPrimaryKey(Goid goid) throws FindException {
+        return emailListenerManager.findByPrimaryKey(goid);
     }
 
     @Override

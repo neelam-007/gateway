@@ -51,14 +51,14 @@ public interface EmailListenerAdmin {
     }
 
     /**
-     * Finds a particular {@link EmailListener} with the specified OID, or null if no such policy can be found.
-     * @param oid the OID of the EmailListener to retrieve
-     * @return the EmailListener with the specified OID, or null if no such email listener can be found.
+     * Finds a particular {@link EmailListener} with the specified GOID, or null if no such policy can be found.
+     * @param goid the GOID of the EmailListener to retrieve
+     * @return the EmailListener with the specified GOID, or null if no such email listener can be found.
      */
     @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
-    EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException;
+    EmailListener findEmailListenerByPrimaryKey(Goid goid) throws FindException;
 
     /**
      * Retrieve all available email listeners.
