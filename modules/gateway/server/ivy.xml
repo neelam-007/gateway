@@ -72,7 +72,7 @@
         <dependency org="org.hibernate" name="hibernate-validator" rev="4.1.0.Final" force="true" conf="core">
             <exclude org="org.slf4j" module="slf4j-api" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
-        </dependency>        
+        </dependency>
         <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
         <dependency org="org.javassist" name="javassist" rev="3.16.1-GA" force="true" conf="core"/>
@@ -128,14 +128,13 @@
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
         <dependency name="layer7-kerberos" rev="latest.integration" conf="test"/>
 
-        <!-- Exclusions --> 
+        <!-- Exclusions -->
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
-        <exclude org="org.codehaus.woodstox" module="woodstox-core-asl"/>
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.5"/>
         <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p3"/>
