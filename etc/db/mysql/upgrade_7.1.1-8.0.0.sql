@@ -561,6 +561,7 @@ ALTER TABLE internal_user_group ADD COLUMN old_user_id BIGINT(20);
 UPDATE internal_user_group SET old_user_id=user_id;
 ALTER TABLE internal_user_group CHANGE COLUMN user_id user_goid binary(16) NOT NULL;
 UPDATE internal_user_group SET user_goid = toGoid(@internal_user_prefix, old_user_id);
+UPDATE internal_user_group SET user_goid = toGoid(0, old_user_id) where old_user_id =3 ;
 ALTER TABLE internal_user_group DROP COLUMN old_user_id;
 
 ALTER TABLE internal_user_group ADD COLUMN old_internal_group BIGINT(20);
@@ -668,6 +669,7 @@ ALTER TABLE password_history ADD COLUMN old_internal_user_oid BIGINT(20);
 UPDATE password_history SET old_internal_user_oid=internal_user_oid;
 ALTER TABLE password_history CHANGE COLUMN internal_user_oid internal_user_goid binary(16) NOT NULL;
 UPDATE password_history SET internal_user_goid = toGoid(@internal_user_prefix, old_internal_user_oid);
+UPDATE password_history SET internal_user_goid = toGoid(@internal_user_prefix, old_internal_user_oid) where old_internal_user_oid =3 ;
 ALTER TABLE password_history DROP COLUMN old_internal_user_oid;
 ALTER TABLE password_history ADD FOREIGN KEY (internal_user_goid) REFERENCES internal_user(goid);
 
@@ -675,6 +677,7 @@ ALTER TABLE policy_version ADD COLUMN old_user_provider_oid BIGINT(20);
 UPDATE policy_version SET old_user_provider_oid=user_provider_oid;
 ALTER TABLE policy_version CHANGE COLUMN user_provider_oid user_provider_goid binary(16);
 UPDATE policy_version SET user_provider_goid = toGoid(@identity_provider_prefix, old_user_provider_oid);
+UPDATE policy_version SET user_provider_goid = toGoid(0, old_user_provider_oid) where old_user_provider_oid = -2;
 ALTER TABLE policy_version DROP COLUMN old_user_provider_oid;
 
 ALTER TABLE client_cert ADD COLUMN old_provider BIGINT(20);
@@ -703,7 +706,7 @@ ALTER TABLE message_context_mapping_values DROP COLUMN old_auth_user_provider_id
 ALTER TABLE audit_main ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE audit_main SET old_provider_oid=provider_oid;
 ALTER TABLE audit_main CHANGE COLUMN provider_oid provider_goid binary(16);
-UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid) where old_provider_oid<>-1;
+UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid) where old_provider_oid > 0;
 UPDATE audit_main SET provider_goid = null where old_provider_oid=-1;
 UPDATE audit_main SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
 ALTER TABLE audit_main DROP COLUMN old_provider_oid;

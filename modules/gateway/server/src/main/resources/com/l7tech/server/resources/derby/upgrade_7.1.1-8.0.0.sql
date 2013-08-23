@@ -442,9 +442,8 @@ ALTER TABLE audit_main ADD COLUMN provider_oid_backup bigint;
 update audit_main set provider_oid_backup = provider_oid;
 ALTER TABLE audit_main DROP COLUMN provider_oid;
 ALTER TABLE audit_main ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
-update audit_main set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
+update audit_main set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup)where provider_oid_backup > 0;
 update audit_main set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
-UPDATE audit_main SET provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup) where provider_oid_backup<>-1;
 ALTER TABLE audit_main DROP COLUMN provider_oid_backup;
 
 ALTER TABLE message_context_mapping_values ADD COLUMN auth_user_provider_id_backup bigint;
@@ -604,6 +603,7 @@ update internal_user_group set user_id_backup = user_id;
 ALTER TABLE internal_user_group DROP COLUMN user_id;
 ALTER TABLE internal_user_group ADD COLUMN user_goid CHAR(16) FOR BIT DATA;
 update internal_user_group set user_goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), user_id_backup);
+update internal_user_group set user_goid = toGoid(0, user_id_backup) where user_id_backup = 3;
 ALTER TABLE internal_user_group DROP COLUMN user_id_backup;
 ALTER TABLE internal_user_group ALTER COLUMN user_goid NOT NULL;
 
@@ -630,7 +630,7 @@ update password_history set internal_user_oid_backup = internal_user_oid;
 ALTER TABLE password_history DROP COLUMN internal_user_oid;
 ALTER TABLE password_history ADD COLUMN internal_user_goid CHAR(16) FOR BIT DATA;
 update password_history set internal_user_goid = toGoid(cast(getVariable('internal_user_prefix') as bigint), internal_user_oid_backup);
-update password_history set internal_user_goid = toGoid(0,-2) where internal_user_oid_backup = -2;
+update password_history set internal_user_goid = toGoid(0,3) where internal_user_oid_backup = 3;
 ALTER TABLE password_history DROP COLUMN internal_user_oid_backup;
 ALTER TABLE password_history ALTER COLUMN internal_user_goid NOT NULL;
 alter table password_history add constraint FKF16E7AF0C9B8DFC1 foreign key (internal_user_goid) references internal_user;
