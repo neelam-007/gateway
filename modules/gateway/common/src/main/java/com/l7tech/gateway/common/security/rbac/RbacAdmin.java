@@ -168,6 +168,6 @@ public interface RbacAdmin {
      * @return the up-to-date assertion access after saving.  Never null.
      * @throws UpdateException
      */
-    @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=UPDATE)
+    @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=SAVE_OR_UPDATE)
     Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException;
 }
