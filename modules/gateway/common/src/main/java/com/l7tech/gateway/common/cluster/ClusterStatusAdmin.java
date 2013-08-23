@@ -586,4 +586,6 @@ public interface ClusterStatusAdmin {
      * A read-only property to indicate the ability to configure firewall rules.
      */
     public static final String CAPABILITY_FIREWALL = "appliance.firewall";
+
+    public static final String CAPABILITY_SITEMINDER = "siteminder";
 }

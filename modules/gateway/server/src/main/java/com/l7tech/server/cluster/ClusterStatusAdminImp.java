@@ -418,7 +418,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
 
     private static boolean isKnownCapability(String capability) {
         return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability) ||
-                ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability);
+                ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability) || ClusterStatusAdmin.CAPABILITY_SITEMINDER.equals(capability);
     }
 
     @Override
@@ -434,6 +434,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             if (applianceDir.exists() && applianceDir.isDirectory()){
                 return "true";
             }
+        } else if (ClusterStatusAdmin.CAPABILITY_SITEMINDER.equals(capability)) {
+            boolean enabled =  ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enabled",true);
+            return Boolean.toString(enabled);
         }
         return null;
     }

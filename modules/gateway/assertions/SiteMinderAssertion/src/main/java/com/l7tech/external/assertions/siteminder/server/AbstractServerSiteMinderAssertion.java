@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -35,8 +36,9 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
     protected ApplicationContext applicationContext;
     protected SiteMinderConfigurationManager manager;
 
-    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, final ApplicationContext applicationContext) {
+    public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, final ApplicationContext applicationContext) throws  PolicyAssertionException{
         super(assertion);
+        checkSiteMinderEnabled();//check if SiteMinder SDK is installed
         this.hla = applicationContext.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class);
         this.manager = applicationContext.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class);
     }
@@ -73,5 +75,12 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         }
 
         return address;
+    }
+
+    protected void checkSiteMinderEnabled() throws  PolicyAssertionException {
+        if(!ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enabled", true)) {
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder SDK is not installed or misconfigured! Assertion failed");
+            throw new PolicyAssertionException(assertion, "SiteMinder SDK not installed or misconfigured!");
+        }
     }
 }
