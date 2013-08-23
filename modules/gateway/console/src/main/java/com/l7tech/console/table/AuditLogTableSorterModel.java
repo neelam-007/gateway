@@ -555,9 +555,9 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                     final DigitalSignatureUIState stateB = getUISignatureState(logMsgB);
                     return (ascending ? 1 : -1) * stateA.compareTo(stateB);
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
-                    elementA = logMsgA.getMsgNumber();
-                    elementB = logMsgB.getMsgNumber();
-                    break;
+                    Goid A = logMsgA.getMsgNumber();
+                    Goid B = logMsgB.getMsgNumber();
+                    return (ascending ? 1 : -1) * A.compareTo(B);
                 case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
                     elementA = logMsgA.getNodeName();
                     elementB = logMsgB.getNodeName();
