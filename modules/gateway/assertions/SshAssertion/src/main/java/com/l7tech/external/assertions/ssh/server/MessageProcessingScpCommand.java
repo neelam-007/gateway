@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.CommandKnob;
@@ -92,43 +93,42 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
             throw new IOException("Can not write to " + path);
         }
 
-        final InputStream fileInput = length <= 0L ?
-                new EmptyInputStream() :
-                new TruncatingInputStream(in, length);
-        Map<String, String> parameters = CollectionUtils.MapBuilder.<String, String>builder().
-                put("length", String.valueOf(length)).unmodifiableMap();
-        ack();
         try {
-            submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT, parameters);
-        } catch (MessageProcessingException e) {
-            sshFile.handleClose();
-            throw new CausedIOException("Message processing failed writing a file via SCP", e);
-        }
-        IOUtils.copyStream(fileInput, sshFile.getOutputStream());
-        sshFile.getOutputStream().close();
-        fileInput.close();
-
-        try {
-            if(!sshFile.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)){
-                sshFile.handleClose();
-                //this means that message processing failed to finish before the time ran out.
-                logger.log(Level.WARNING, "Message processing failed to finish in the allowed amount of time.");
-                throw new CausedIOException("Error processing PUT command for: " + sshFile.getAbsolutePath());
+            final InputStream fileInput = length <= 0L ?
+                    new EmptyInputStream() :
+                    new TruncatingInputStream(in, length);
+            Map<String, String> parameters = CollectionUtils.MapBuilder.<String, String>builder().
+                    put("length", String.valueOf(length)).unmodifiableMap();
+            ack();
+            try {
+                submitMessageProcessingTask(sshFile, CommandKnob.CommandType.PUT, parameters);
+            } catch (MessageProcessingException e) {
+                throw new CausedIOException("Message processing failed writing a file via SCP", e);
             }
-        } catch (InterruptedException e) {
+            IOUtils.copyStream(fileInput, sshFile.getOutputStream());
+            sshFile.getOutputStream().close();
+            fileInput.close();
+
+            try {
+                if(!sshFile.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)){
+                    //this means that message processing failed to finish before the time ran out.
+                    logger.log(Level.WARNING, "Message processing failed to finish in the allowed amount of time.");
+                    throw new CausedIOException("Error processing PUT command for: " + sshFile.getAbsolutePath());
+                }
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Interrupted waiting for message processing to finish: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new CausedIOException("Error processing PUT command for: " + sshFile.getAbsolutePath(), e);
+            }
+            AssertionStatus status = sshFile.getMessageProcessingStatus().getMessageProcessStatus();
+            if (status != AssertionStatus.NONE) {
+                logger.log(Level.WARNING, "There was an error attempting to process an SCP write request: " + ((status == null) ? "null status" : status.getMessage()));
+                throw new CausedIOException("Message processing failed: " + ((status == null) ? "null status" : status.getMessage()));
+            }
+            ack();
+            readAck(false);
+        } finally {
             sshFile.handleClose();
-            logger.log(Level.WARNING, "Interrupted waiting for message processing to finish: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new CausedIOException("Error processing PUT command for: " + sshFile.getAbsolutePath(), e);
         }
-        AssertionStatus status = sshFile.getMessageProcessingStatus().getMessageProcessStatus();
-        if (status != AssertionStatus.NONE) {
-            sshFile.handleClose();
-            logger.log(Level.WARNING, "There was an error attempting to process an SCP write request: " + ((status == null) ? "null status" : status.getMessage()));
-            throw new CausedIOException("Message processing failed: " + ((status == null) ? "null status" : status.getMessage()));
-        }
-        sshFile.handleClose();
-        ack();
-        readAck(false);
     }
 
     @Override
@@ -136,54 +136,58 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
         logger.log(Level.FINER, "SCP reading file {0}", path);
 
         final VirtualSshFile sshFile = (VirtualSshFile) file;
+        try {
 
-        try {
-            submitMessageProcessingTask(sshFile, CommandKnob.CommandType.GET);
-        } catch (MessageProcessingException e) {
-            sshFile.handleClose();
-            throw new CausedIOException("Message processing failed reading a file via SCP", e);
-        }
-        //wait till the message processor finished processing, this is when the input stream will be set on the file.
-        try {
-            if(!sshFile.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)){
-                sshFile.handleClose();
-                //this means that message processing failed to finish before the time ran out.
-                logger.log(Level.WARNING, "Message processing failed to finish in the allowed amount of time.");
-                throw new CausedIOException("Error processing GET command for: " + file.getAbsolutePath());
+            try {
+                submitMessageProcessingTask(sshFile, CommandKnob.CommandType.GET);
+            } catch (MessageProcessingException e) {
+                throw new CausedIOException("Message processing failed reading a file via SCP", e);
             }
-        } catch (InterruptedException e) {
+            //wait till the message processor finished processing, this is when the input stream will be set on the file.
+            try {
+                if (!sshFile.getMessageProcessingStatus().waitForMessageProcessingFinished(connector.getLongProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, DEFAULT_MAX_MESSAGE_PROCESSING_WAIT_TIME), TimeUnit.SECONDS)) {
+                    //this means that message processing failed to finish before the time ran out.
+                    logger.log(Level.WARNING, "Message processing failed to finish in the allowed amount of time.");
+                    throw new CausedIOException("Error processing GET command for: " + file.getAbsolutePath());
+                }
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Interrupted waiting for message processing to finish: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new CausedIOException("Error processing GET command for: " + file.getAbsolutePath(), e);
+            }
+
+            AssertionStatus status = sshFile.getMessageProcessingStatus().getMessageProcessStatus();
+            if (status != AssertionStatus.NONE) {
+                logger.log(Level.WARNING, "There was an error attempting to process an SCP read request: " + ((status == null) ? "null status" : status.getMessage()));
+                throw new CausedIOException("Message processing failed: " + ((status == null) ? "null status" : status.getMessage()));
+            }
+
+            StringBuffer buf = new StringBuffer();
+            buf.append("C");
+            buf.append("0644"); // what about perms
+            buf.append(" ");
+
+            long contentLength = sshFile.getMessageProcessingStatus().getResultContentLength();
+            logger.log(Level.FINE, "SCP Read: Content length returned: " + contentLength);
+            if (sshFile.getInputStream() instanceof ByteLimitInputStream && contentLength > ((ByteLimitInputStream) sshFile.getInputStream()).getSizeLimit()) {
+                logger.log(Level.WARNING, "Content length of file is greater then the input streams size limit. Content length: " + contentLength + " size limit: " + ((ByteLimitInputStream) sshFile.getInputStream()).getSizeLimit());
+                throw new CausedIOException("File too big. File size: " + contentLength + " Maximum size: " + ((ByteLimitInputStream) sshFile.getInputStream()).getSizeLimit());
+            }
+
+            buf.append(contentLength); // length
+            buf.append(" ");
+            buf.append(sshFile.getName());
+            buf.append("\n");
+            out.write(buf.toString().getBytes());
+            out.flush();
+            readAck(false);
+
+            IOUtils.copyStream(sshFile.getInputStream(), out);
+            out.flush();
+            ack();
+            readAck(false);
+        } finally {
             sshFile.handleClose();
-            logger.log(Level.WARNING, "Interrupted waiting for message processing to finish: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new CausedIOException("Error processing GET command for: " + file.getAbsolutePath(), e);
         }
-
-        AssertionStatus status = sshFile.getMessageProcessingStatus().getMessageProcessStatus();
-        if (status != AssertionStatus.NONE) {
-            sshFile.handleClose();
-            logger.log(Level.WARNING, "There was an error attempting to process an SCP read request: " + ((status == null) ? "null status" : status.getMessage()));
-            throw new CausedIOException("Message processing failed: " + ((status == null) ? "null status" : status.getMessage()));
-        }
-
-        StringBuffer buf = new StringBuffer();
-        buf.append("C");
-        buf.append("0644"); // what about perms
-        buf.append(" ");
-
-        long contentLength = sshFile.getMessageProcessingStatus().getResultContentLength();
-        logger.log(Level.FINE, "SCP Read: Content length returned: " + contentLength);
-        buf.append(contentLength); // length
-        buf.append(" ");
-        buf.append(sshFile.getName());
-        buf.append("\n");
-        out.write(buf.toString().getBytes());
-        out.flush();
-        readAck(false);
-
-        IOUtils.copyStream(sshFile.getInputStream(), out);
-        out.flush();
-        sshFile.handleClose();
-        ack();
-        readAck(false);
     }
 
     @Override
