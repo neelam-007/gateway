@@ -301,21 +301,6 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
      * Otherwise, it will be null.
      */
-    @Deprecated
-    @Column(name="entity_oid")
-    public Long getEntityOid() {
-        return entityOid;
-    }
-
-    @Deprecated
-    public void setEntityOid(Long entityOid) {
-        this.entityOid = entityOid;
-    }
-
-    /**
-     * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
-     * Otherwise, it will be null.
-     */
     @Column(name="entity_goid")
     @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getEntityGoid() {

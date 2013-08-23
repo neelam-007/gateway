@@ -92,24 +92,11 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     }
 
     @Override
-    public Collection<Role> findEntitySpecificRoles(EntityType etype, long entityOid) throws FindException {
-        for (Role role : entities.values()) {
-            if (role.getEntityType() == etype && role.getEntityOid() == entityOid) return Collections.singletonList(role);
-        }
-        return null;
-    }
-
-    @Override
     public Collection<Role> findEntitySpecificRoles(EntityType etype, Goid entityGoid) throws FindException {
         for (Role role : entities.values()) {
             if (role.getEntityType() == etype && role.getEntityGoid().equals(entityGoid)) return Collections.singletonList(role);
         }
         return null;
-    }
-
-    @Override
-    public void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException {
-        throw new UnsupportedOperationException();
     }
 
     @Override

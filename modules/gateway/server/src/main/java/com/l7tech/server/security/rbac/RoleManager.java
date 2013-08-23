@@ -66,18 +66,6 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
 
     /**
      * Finds all roles that are marked as being scoped to a particular entity instance of a particular type,
-     * using the metadata in {@link com.l7tech.gateway.common.security.rbac.Role#getEntityOid()} and
-     * {@link com.l7tech.gateway.common.security.rbac.Role#getEntityType()}.
-     * <p/>
-     * This method does <b>not</b> actually check the scopes of all permissions of all roles in order
-     * to find a match.
-     */
-    @Transactional(readOnly=true)
-    @Deprecated
-    Collection<Role> findEntitySpecificRoles(EntityType etype, long entityOid) throws FindException;
-
-    /**
-     * Finds all roles that are marked as being scoped to a particular entity instance of a particular type,
      * using the metadata in {@link com.l7tech.gateway.common.security.rbac.Role#getEntityGoid()} and
      * {@link com.l7tech.gateway.common.security.rbac.Role#getEntityType()}.
      * <p/>
@@ -86,21 +74,6 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      */
     @Transactional(readOnly=true)
     Collection<Role> findEntitySpecificRoles(EntityType etype, Goid entityOid) throws FindException;
-
-    /**
-     * Deletes all roles that are marked as being scoped to a particular entity instance (which is presumably being deleted),
-     * using the metadata in {@link com.l7tech.gateway.common.security.rbac.Role#getEntityOid()} and
-     * {@link com.l7tech.gateway.common.security.rbac.Role#getEntityType()}.
-     * <p/>
-     * This method also scans for and UPDATES any roles (that aren't being deleted outright) that contain permissions
-     * with at least one scope dependent upon the specified entity.  Any affected permissions will be removed from the
-     * affected roles.  It is possible that this may leave roles that contain no permissions.
-     *
-     * @param etype type of entity whose roles are to be deleted, eg Folder.  Required.
-     * @param entityOid OID of entity instnace whose roles are to be deleted.  Required.
-     */
-    @Deprecated
-    void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException;
 
     /**
      * Deletes all roles that are marked as being scoped to a particular entity instance (which is presumably being deleted),

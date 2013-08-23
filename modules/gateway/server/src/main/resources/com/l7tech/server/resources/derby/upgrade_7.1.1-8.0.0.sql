@@ -1539,6 +1539,9 @@ update audit_admin set entity_id = toGoid(cast(getVariable('service_documents_pr
 update audit_admin set entity_id = toGoid(0, entity_id_backup) where entity_id_backup < 0;
 ALTER TABLE audit_admin DROP COLUMN entity_id_backup;
 
+-- we are now all done with rbac_role.entity_oid
+ALTER TABLE rbac_role DROP COLUMN entity_oid;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

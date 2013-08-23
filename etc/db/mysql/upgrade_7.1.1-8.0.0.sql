@@ -1744,6 +1744,10 @@ update audit_admin set entity_id = toGoid(@policy_version_prefix, entity_id_back
 update audit_admin set entity_id = toGoid(@service_documents_prefix, entity_id_backup) where entity_class='com.l7tech.gateway.common.service.ServiceDocument';
 update audit_admin set entity_id = toGoid(0, entity_id_backup) where entity_id_backup < 0 ;
 ALTER TABLE audit_admin DROP COLUMN entity_id_backup;
+
+-- we are now all done with rbac_role.entity_oid
+ALTER TABLE rbac_role DROP COLUMN entity_oid;
+
 --
 -- Register upgrade task for upgrading sink configuration references to GOIDs
 --

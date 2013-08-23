@@ -28,11 +28,6 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
         this.targetEntityId = targetEntityId;
     }
 
-    public ObjectIdentityPredicate(Permission permission, long targetEntityOid) {
-        super(permission);
-        this.targetEntityId = Long.toString(targetEntityOid);
-    }
-
     protected ObjectIdentityPredicate() { }
 
     @Override

@@ -94,7 +94,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     @Override
     public void delete(StandardReport standardReport) throws DeleteException {
         super.delete(standardReport);
-        // roleManager.deleteEntitySpecificRole( EntityType.ESM_STANDARD_REPORT, standardReport.getOid() );
+        // roleManager.deleteEntitySpecificRole( EntityType.ESM_STANDARD_REPORT, standardReport.getGoid() );
     }
 
     @Override
@@ -105,7 +105,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     @Override
     public Goid save( final StandardReport entity ) throws SaveException {
 
-        // addReportRole( oid, entity );
+        // addReportRole( goid, entity );
 
         return super.save(entity);
     }
@@ -135,7 +135,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
         return criterion;
     }
 
-     private void addReportRole( final long oid, final StandardReport standardReport ) throws SaveException {
+     private void addReportRole( final Goid goid, final StandardReport standardReport ) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
         // truncate service name in the role name to avoid going beyond 128 limit
@@ -143,19 +143,19 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
 
         // cutoff is arbitrarily set to 50
         reportname = TextUtils.truncStringMiddle(reportname, 50);
-        String name = MessageFormat.format("Manage {0} Report (#{1})", reportname, oid);
+        String name = MessageFormat.format("Manage {0} Report (#{1})", reportname, goid);
 
         Role newRole = new Role();
         newRole.setName(name);
 
         // RUD this report
-        newRole.addEntityPermission(READ, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
-        newRole.addEntityPermission(UPDATE, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
-        newRole.addEntityPermission(DELETE, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
+        newRole.addEntityPermission(READ, EntityType.ESM_STANDARD_REPORT, goid.toString());
+        newRole.addEntityPermission(UPDATE, EntityType.ESM_STANDARD_REPORT, goid.toString());
+        newRole.addEntityPermission(DELETE, EntityType.ESM_STANDARD_REPORT, goid.toString());
 
         // Set role as entity-specific
         newRole.setEntityType(EntityType.ESM_STANDARD_REPORT);
-        newRole.setEntityOid(oid);
+        newRole.setEntityGoid(goid);
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} Report.");
 
         if (currentUser != null) {

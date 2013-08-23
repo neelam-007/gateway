@@ -12,7 +12,6 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -113,7 +112,6 @@ public class RbacAdminImpl implements RbacAdmin {
             }
         }
 
-        Long entityOid = theRole.getEntityOid();
         Goid entityGoid = theRole.getEntityGoid();
         EntityType entityType = theRole.getEntityType();
         if (entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
@@ -122,13 +120,6 @@ public class RbacAdminImpl implements RbacAdmin {
                     theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityGoid));
                 } catch (FindException e) {
                     logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityGoid, theRole.getName()), ExceptionUtils.getDebugException(e));
-                }
-            } else if (entityOid != null) {
-                //fall back on the goid upgrade mapper if the rbac table entity_goid column did not get properly updated.
-                try {
-                    theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), GoidUpgradeMapper.mapOid(entityType, entityOid)));
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), GoidUpgradeMapper.mapOid(entityType, entityOid), theRole.getName()), ExceptionUtils.getDebugException(e));
                 }
             }
         }

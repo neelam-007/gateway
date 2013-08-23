@@ -26,7 +26,7 @@ public class AuthorizerTest {
     @Before
     public void setup() {
         user = new UserBean(new Goid(0, 1), "<admin user>");
-        user.setUniqueIdentifier("-3");
+        user.setUniqueIdentifier(new Goid(0, -3).toString());
         role = new Role();
         permissions = new HashSet<>();
     }
@@ -123,7 +123,7 @@ public class AuthorizerTest {
         return new Authorizer() {
             public Collection<Permission> getUserPermissions() throws RuntimeException {
                 Permission upermission = new Permission(role, OperationType.UPDATE, EntityType.USER);
-                upermission.setScope(Collections.<ScopePredicate>singleton(new ObjectIdentityPredicate(upermission, -3)));
+                upermission.setScope(Collections.<ScopePredicate>singleton(new ObjectIdentityPredicate(upermission, new Goid(0, -3).toHexString())));
                 return Arrays.asList(upermission);
             }
         };

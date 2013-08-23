@@ -114,7 +114,7 @@ public class SecurityZoneUtilTest {
         zone.setPermittedEntityTypes(entityTypes);
         // user is allowed to update a specific service
         final Permission permission = new Permission(new Role(), OperationType.UPDATE, EntityType.SERVICE);
-        permission.setScope(Collections.<ScopePredicate>singleton(new ObjectIdentityPredicate(permission, 1234L)));
+        permission.setScope(Collections.<ScopePredicate>singleton(new ObjectIdentityPredicate(permission, new Goid(0, 1234L).toString())));
         permissions.add(permission);
         assertTrue(SecurityZoneUtil.isZoneValidForOperation(zone, entityTypes, OperationType.UPDATE, permissions));
     }

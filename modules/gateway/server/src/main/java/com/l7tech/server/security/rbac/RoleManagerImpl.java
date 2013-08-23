@@ -372,22 +372,6 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)
-    @Deprecated
-    public Collection<Role> findEntitySpecificRoles(final EntityType etype, final long entityId) throws FindException {
-        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-            @Override
-            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Criteria crit = session.createCriteria(Role.class);
-                crit.add(Restrictions.eq("entityTypeName", etype.name()));
-                crit.add(Restrictions.eq("entityOid", entityId));
-                return crit.list();
-            }
-        });
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Override
-    @Transactional(readOnly=true)
     public Collection<Role> findEntitySpecificRoles(final EntityType etype, final Goid entityId) throws FindException {
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             @Override
@@ -398,24 +382,6 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 return crit.list();
             }
         });
-    }
-
-    @Override
-    @Deprecated
-    public void deleteEntitySpecificRoles(EntityType etype, final long entityOid) throws DeleteException {
-        try {
-            Collection<Role> roles = findEntitySpecificRoles(etype, entityOid);
-            if (roles == null) return;
-            for ( Role role : roles ) {
-                logger.info("Deleting obsolete Role #" + role.getGoid() + " (" + role.getName() + ")");
-                delete(role);
-            }
-
-            deleteEntitySpecificPermissions(new HashSet<Role>(roles), etype, entityOid);
-        } catch (FindException e) {
-            throw new DeleteException("Couldn't find Roles for this Entity", e);
-        }
-
     }
 
     @Override
