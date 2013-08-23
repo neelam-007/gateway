@@ -523,7 +523,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
      */
     static <E extends Exception> Pair<Goid,String>  toInternalId( final String identifier ,
                                                                   final Functions.NullaryVoidThrows<E> validationThrower ) throws E {
-        return toInternalId(Collections.<String,String>emptyMap().put(IDENTITY_SELECTOR,identifier), validationThrower);
+        return toInternalId(Collections.<String,String>singletonMap(IDENTITY_SELECTOR,identifier), validationThrower);
     }
 
     static <E extends Exception> Pair<Goid,String>  toInternalId( final Map<String,String> selectorMap ,
