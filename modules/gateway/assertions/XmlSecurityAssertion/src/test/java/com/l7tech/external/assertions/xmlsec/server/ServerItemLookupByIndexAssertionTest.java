@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.test.BugNumber;
 import org.junit.Test;
 
@@ -29,5 +30,34 @@ public class ServerItemLookupByIndexAssertionTest {
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         assertEquals("baz", context.getVariable("out"));
+    }
+
+    @Test
+    public void testNotMultiValue() throws Exception {
+        ItemLookupByIndexAssertion ass = new ItemLookupByIndexAssertion();
+        ass.setMultivaluedVariableName("singleVar");
+        ass.setOutputVariableName("out");
+        ass.setIndexValue("${i}");
+        ServerItemLookupByIndexAssertion sass = new ServerItemLookupByIndexAssertion(ass);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("singleVar", "test");
+        context.setVariable("i", "0");
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test(expected= AssertionStatusException.class)
+    public void testWrongIndexSingleValue() throws Exception {
+        ItemLookupByIndexAssertion ass = new ItemLookupByIndexAssertion();
+        ass.setMultivaluedVariableName("singleVar");
+        ass.setOutputVariableName("out");
+        ass.setIndexValue("${i}");
+        ServerItemLookupByIndexAssertion sass = new ServerItemLookupByIndexAssertion(ass);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("singleVar", "test");
+        context.setVariable("i", "1");
+
+        AssertionStatus result = sass.checkRequest(context);
     }
 }

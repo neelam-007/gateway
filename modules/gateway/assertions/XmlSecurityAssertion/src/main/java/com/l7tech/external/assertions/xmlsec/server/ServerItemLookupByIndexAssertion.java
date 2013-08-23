@@ -78,6 +78,8 @@ public class ServerItemLookupByIndexAssertion extends AbstractServerAssertion<It
                 idx++;
             }
             throw new IndexOutOfBoundsException("Collection contains fewer than " + (index + 1) + " items");
+        } else if (index == 0) {
+            return multival;
         } else {
             final String msg = "Not a multi-valued context variable: " + varname;
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
