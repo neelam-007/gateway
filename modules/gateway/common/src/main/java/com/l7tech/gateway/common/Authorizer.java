@@ -70,18 +70,17 @@ public abstract class Authorizer {
                 // Permission grants read access to anything with matching type
                 if (perm.getScope() == null || perm.getScope().size() == 0) return true;
 
-                AttemptedEntityOperation attemptedEntityOperation = (AttemptedEntityOperation) attempted;
+                final AttemptedEntityOperation attemptedEntityOperation = (AttemptedEntityOperation) attempted;
                 if ( attemptedEntityOperation.getEntity() != null ) {
-                    if ( perm.getScope().size() == 1 ) {
-                        ScopePredicate pred = perm.getScope().iterator().next();
-                        if ( pred instanceof ScopeEvaluator ) {
-                            try {
-                                if (((ScopeEvaluator)pred).matches( attemptedEntityOperation.getEntity() ))
-                                    return true;
-                            } catch ( Exception e ) {
-                                // check other permissions
-                            }
+                    boolean allPredicatesMatch = true;
+                    for (final ScopePredicate scopePredicate : perm.getScope()) {
+                        if (scopePredicate instanceof ScopeEvaluator && !((ScopeEvaluator)scopePredicate).matches(attemptedEntityOperation.getEntity())) {
+                            allPredicatesMatch = false;
+                            break;
                         }
+                    }
+                    if (allPredicatesMatch) {
+                        return true;
                     }
                 }
             } else if (attempted instanceof AttemptedCreate) {
