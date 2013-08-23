@@ -24,7 +24,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,6 +94,11 @@ public class InternalIdentityProviderImpl
             ar = authenticateSshCredentials(pc, dbUser);
         } else {
             ar = authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
+        }
+
+        if (ar == null) {
+            // Probably a bug, turn into auth exception to prevent subsequent NPE
+            throw new AuthenticationException("Authentication produced no result for credential format " + format);
         }
 
         springContext.publishEvent(new Authenticated(ar));

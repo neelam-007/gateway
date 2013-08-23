@@ -37,7 +37,7 @@ public class SessionAuthenticator {
         }
 
         final SessionSecurityToken token = (SessionSecurityToken) securityToken;
-        if ( token.getProviderId().equals(providerId )) {
+        if ( !token.getProviderId().equals(providerId )) {
             return null;
         } else if ( (user.getId()==null&&token.getUserId()!=null) ||
                     (user.getId()!=null&&!user.getId().equals( token.getUserId() )) ) {
