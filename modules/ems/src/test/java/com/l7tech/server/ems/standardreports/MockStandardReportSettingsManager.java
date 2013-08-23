@@ -3,6 +3,7 @@ package com.l7tech.server.ems.standardreports;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.Collection;
@@ -19,8 +20,8 @@ public class MockStandardReportSettingsManager extends EntityManagerStub<Standar
         return Collections.emptyList();
     }
 
-    public StandardReportSettings findByPrimaryKeyForUser(User user, long oid) throws FindException {
-        return super.findByPrimaryKey(oid);
+    public StandardReportSettings findByPrimaryKeyForUser(User user, Goid goid) throws FindException {
+        return super.findByPrimaryKey(goid);
     }
 
     public StandardReportSettings findByNameAndUser(User user, String name) throws FindException {

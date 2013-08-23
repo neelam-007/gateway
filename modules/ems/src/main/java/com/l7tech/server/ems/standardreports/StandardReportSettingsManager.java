@@ -2,8 +2,9 @@ package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 
 import java.util.Collection;
 
@@ -30,11 +31,11 @@ public interface StandardReportSettingsManager extends EntityManager<StandardRep
      * Find report by oid only if the user matches.
      *
      * @param user The user for the settings
-     * @param oid The identifier for the settings
+     * @param goid The identifier for the settings
      * @return The setting or null if not found or user does not match
      * @throws FindException If an error occurs
      */
-    StandardReportSettings findByPrimaryKeyForUser( User user, long oid ) throws FindException;
+    StandardReportSettings findByPrimaryKeyForUser( User user, Goid goid ) throws FindException;
 
     /**
      * Find report by name and user.

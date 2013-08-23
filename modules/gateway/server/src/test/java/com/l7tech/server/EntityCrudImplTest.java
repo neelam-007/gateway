@@ -14,8 +14,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.Serializable;
 import java.util.*;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyLong;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -83,7 +83,7 @@ public class EntityCrudImplTest {
     @Test
     public void setSecurityZoneForEntitiesNone() throws Exception {
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, Collections.<Serializable>emptyList());
-        verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
+        verify(zoneEntityManager, never()).findByPrimaryKey(any(Goid.class));
         verify(policyEntityManager, never()).update(any(Policy.class));
     }
 
@@ -130,7 +130,7 @@ public class EntityCrudImplTest {
     @Test(expected = UpdateException.class)
     public void setSecurityZoneForEntitiesErrorFindingZone() throws Exception {
         ids.add(1L);
-        when(zoneEntityManager.findByPrimaryKey(anyLong())).thenThrow(new FindException("mocking exception"));
+        when(zoneEntityManager.findByPrimaryKey(any(Goid.class))).thenThrow(new FindException("mocking exception"));
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, EntityType.POLICY, ids);
     }
 
@@ -158,8 +158,8 @@ public class EntityCrudImplTest {
             entityCrud.setSecurityZoneForEntities(null, EntityType.RBAC_ROLE, ids);
             fail("Expected IllegalArgumentException");
         } catch (final IllegalArgumentException e) {
-            verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
-            verify(policyEntityManager, never()).findByPrimaryKey(anyLong());
+            verify(zoneEntityManager, never()).findByPrimaryKey(any(Goid.class));
+            verify(policyEntityManager, never()).findByPrimaryKey(any(Goid.class));
             verify(policyEntityManager, never()).update(any(Policy.class));
             throw e;
         }
@@ -186,7 +186,7 @@ public class EntityCrudImplTest {
     @Test
     public void setSecurityZoneForEntitiesMultipleEntityTypesNone() throws Exception {
         entityCrud.setSecurityZoneForEntities(ZONE_GOID, Collections.<EntityType, Collection<Serializable>>emptyMap());
-        verify(zoneEntityManager, never()).findByPrimaryKey(anyLong());
+        verify(zoneEntityManager, never()).findByPrimaryKey(any(Goid.class));
     }
 
     @Test(expected = UpdateException.class)
@@ -279,11 +279,6 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public Policy findByPrimaryKey(long oid) throws FindException {
-            return policyEntityManager.findByPrimaryKey(oid);
-        }
-
-        @Override
         public Policy findByPrimaryKey(Goid goid) throws FindException {
             return policyEntityManager.findByPrimaryKey(goid);
         }
@@ -369,11 +364,6 @@ public class EntityCrudImplTest {
         @Override
         public SecurityZone findByHeader(EntityHeader header) throws FindException {
             return zoneEntityManager.findByHeader(header);
-        }
-
-        @Override
-        public SecurityZone findByPrimaryKey(long oid) throws FindException {
-            return zoneEntityManager.findByPrimaryKey(oid);
         }
 
         @Override
@@ -465,11 +455,6 @@ public class EntityCrudImplTest {
         }
 
         @Override
-        public PublishedService findByPrimaryKey(long oid) throws FindException {
-            return serviceEntityManager.findByPrimaryKey(oid);
-        }
-
-        @Override
         public PublishedService findByPrimaryKey(Goid goid) throws FindException {
             return serviceEntityManager.findByPrimaryKey(goid);
         }
@@ -555,11 +540,6 @@ public class EntityCrudImplTest {
         @Override
         public JdbcConnection findByHeader(EntityHeader header) throws FindException {
             return jdbcConnectionEntityManager.findByHeader(header);
-        }
-
-        @Override
-        public JdbcConnection findByPrimaryKey(long oid) throws FindException {
-            return jdbcConnectionEntityManager.findByPrimaryKey(oid);
         }
 
         @Override

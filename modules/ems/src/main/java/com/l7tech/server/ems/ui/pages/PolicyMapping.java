@@ -337,7 +337,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         try {
             //todo - Usages of this method can cause OOM as the bundleXml property can be very large.
             //todo - to fix usages write new update methods which update the entities properties by id.
-            record = migrationManager.findByPrimaryKey(Long.parseLong(migrationId));
+            record = migrationManager.findByPrimaryKey(Goid.parseGoid(migrationId));
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error loading migration record.", fe );
         } catch ( NumberFormatException nfe ) {

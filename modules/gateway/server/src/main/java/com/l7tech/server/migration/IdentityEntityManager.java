@@ -51,11 +51,6 @@ public class IdentityEntityManager implements ReadOnlyEntityManager<Identity, Id
     }
 
     @Override
-    public Identity findByPrimaryKey(final long oid) throws FindException {
-        return null;
-    }
-
-    @Override
     public Collection<IdentityHeader> findAllHeaders() throws FindException {
         return Collections.emptyList();
     }

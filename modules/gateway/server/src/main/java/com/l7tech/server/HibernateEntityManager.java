@@ -85,12 +85,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     @Transactional(readOnly=true)
-    public ET findByPrimaryKey(final long oid) throws FindException {
-        throw new UnsupportedOperationException("Cannot find a goid enabled entity using a long oid");
-    }
-
-    @Override
-    @Transactional(readOnly=true)
     public ET findByPrimaryKey(final Goid goid) throws FindException {
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<ET>() {

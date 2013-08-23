@@ -4,6 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.standardreports.*;
@@ -25,9 +26,9 @@ import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import javax.inject.Inject;
 import org.mortbay.util.ajax.JSON;
 
+import javax.inject.Inject;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -153,7 +154,7 @@ public class StandardReports extends EsmStandardWebPage {
                 String deletedSettingsOid = deleteSettingsDialogInputId.getConvertedInput();
                 try {
                     logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
-                    final StandardReportSettings settings = standardReportSettingsManager.findByPrimaryKey(Long.parseLong(deletedSettingsOid));
+                    final StandardReportSettings settings = standardReportSettingsManager.findByPrimaryKey(Goid.parseGoid(deletedSettingsOid));
                     final User user = getUser();
                     if ( settings != null && user.getId().equals(settings.getUserId()) && user.getProviderId().equals(settings.getProvider())) {
                         standardReportSettingsManager.delete( settings );
@@ -479,7 +480,7 @@ public class StandardReports extends EsmStandardWebPage {
             } else if (jsonData instanceof String) {
                 String oid = (String) jsonData;
                 try {
-                    StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKeyForUser( StandardReports.this.getUser(), Integer.parseInt(oid));
+                    StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKeyForUser( StandardReports.this.getUser(), Goid.parseGoid(oid));
                     if ( reportSettings == null ) {
                         returnValue = new JSONException("Settings OID ('" + oid + "') is invalid.");
                     } else {

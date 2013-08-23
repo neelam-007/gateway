@@ -75,7 +75,7 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
     private static final String channel = "channel";
     private static final boolean isQueueCredentialRequired = true;
     private static final String userId = "userId";
-    private static final long securePasswordOid = 4444;
+    private static final Goid securePasswordGoid = new Goid(0,4444);
     private static final String encryptedPassword = "?????????????????";
     private static final char[] password = {'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
 
@@ -201,11 +201,11 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL)).thenReturn(channel);
         when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)).thenReturn(isQueueCredentialRequired);
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID)).thenReturn(userId);
-        when(ssgActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L)).thenReturn(securePasswordOid);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, "-1L")).thenReturn(securePasswordGoid.toHexString());
 
         when(securePassword.getEncodedPassword()).thenReturn(encryptedPassword);
 
-        when(securePasswordManager.findByPrimaryKey(securePasswordOid)).thenReturn(securePassword);
+        when(securePasswordManager.findByPrimaryKey(securePasswordGoid)).thenReturn(securePassword);
         when(securePasswordManager.decryptPassword(encryptedPassword)).thenReturn(password);
 
         serverConfig.putProperty(MQ_CONNECT_ERROR_SLEEP_PROPERTY, "10s");

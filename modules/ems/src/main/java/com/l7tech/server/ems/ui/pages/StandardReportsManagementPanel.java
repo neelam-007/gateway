@@ -1,46 +1,41 @@
 package com.l7tech.server.ems.ui.pages;
 
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.form.HiddenField;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.AjaxEventBehavior;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.util.value.ValueMap;
-import javax.inject.Inject;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.AbstractReadOnlyModel;
-import com.l7tech.server.ems.standardreports.StandardReportManager;
-import com.l7tech.server.ems.standardreports.StandardReport;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
-import com.l7tech.server.ems.util.TypedPropertyColumn;
-import com.l7tech.identity.User;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ems.standardreports.StandardReport;
+import com.l7tech.server.ems.standardreports.StandardReportManager;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.util.Functions;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ResourceReference;
+import org.apache.wicket.ajax.AjaxEventBehavior;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Button;
+import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.util.value.ValueMap;
 
+import javax.inject.Inject;
 import java.io.Serializable;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,7 +93,7 @@ public class StandardReportsManagementPanel extends Panel {
                         final String[] reportIdentifiers = reportIdentifierStr.split(",");
                         final Collection<StandardReport> reports = new ArrayList<StandardReport>();
                         for ( String reportIdentifier : reportIdentifiers )   {
-                            reports.add( reportManager.findByPrimaryKey( Long.parseLong(reportIdentifier) ) );
+                            reports.add( reportManager.findByPrimaryKey( Goid.parseGoid(reportIdentifier) ) );
                         }
                         if ( !reports.isEmpty() ) {
                             // Pop up a warning dialog to let the user confirm the report deletion.
@@ -170,7 +165,7 @@ public class StandardReportsManagementPanel extends Panel {
                 boolean enable = false;
                 for ( String value : values ) {
                     try {
-                        StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(value) );
+                        StandardReport report = reportManager.findByPrimaryKey( Goid.parseGoid(value) );
                         if ( "COMPLETED".equals(report.getStatus()) ) {
                             enable = true;
                         }

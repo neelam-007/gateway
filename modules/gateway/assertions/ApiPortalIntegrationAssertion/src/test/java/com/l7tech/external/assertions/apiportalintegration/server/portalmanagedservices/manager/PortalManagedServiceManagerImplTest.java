@@ -782,7 +782,7 @@ public class PortalManagedServiceManagerImplTest {
         } catch (final FindException e) {
             // expected
             verify(serviceManager).findAllHeaders();
-            verify(serviceManager, never()).findByPrimaryKey(anyLong());
+            verify(serviceManager, never()).findByPrimaryKey(any(Goid.class));
             throw e;
         }
         fail("Expected FindException");

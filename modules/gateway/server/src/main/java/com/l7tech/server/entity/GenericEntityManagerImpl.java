@@ -100,10 +100,6 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         // Get delegate from Spring so it has tx wrappers
         final GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         return new EntityManager<ET, GenericEntityHeader>() {
-            @Override
-            public ET findByPrimaryKey(long oid) throws FindException {
-                throw new UnsupportedOperationException("Generic entities do not support oids anymore.");
-            }
 
             @Override
             public ET findByPrimaryKey(Goid goid) throws FindException {

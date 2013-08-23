@@ -1,29 +1,29 @@
 package com.l7tech.server.ems.standardreports;
 
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.resource.StringResourceStream;
-import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
-import org.apache.wicket.util.resource.AbstractResourceStream;
-import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.util.time.Time;
-
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipEntry;
-
-import com.l7tech.server.ems.ui.SecureResource;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.ems.ui.SecureResource;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
+import org.apache.wicket.util.resource.AbstractResourceStream;
+import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
+import org.apache.wicket.util.resource.StringResourceStream;
+import org.apache.wicket.util.time.Time;
+import org.apache.wicket.util.value.ValueMap;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Web resource for report downloads.
@@ -62,7 +62,7 @@ public class ReportViewResource extends SecureResource {
                 StandardReportManager manager = getStandardReportManager();
                 if ( manager != null ) {
                     try {
-                        final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
+                        final StandardReport report = manager.findByPrimaryKey( Goid.parseGoid(id) );
                         StandardReportArtifact typedArtifact = null;
                         if ( report != null ) {
                             for ( StandardReportArtifact artifact : report.getArtifacts() ) {
@@ -168,7 +168,7 @@ public class ReportViewResource extends SecureResource {
         User user = JaasUtils.getCurrentUser();
         if ( manager != null && user != null ) {
             try {
-                StandardReport report = manager.findByPrimaryKey( Long.parseLong( reportId ) );
+                StandardReport report = manager.findByPrimaryKey( Goid.parseGoid( reportId ) );
                 if ( report != null ) {
                     if ( user.getId().equals( report.getUserId() ) &&
                          user.getProviderId().equals(report.getProvider() )){

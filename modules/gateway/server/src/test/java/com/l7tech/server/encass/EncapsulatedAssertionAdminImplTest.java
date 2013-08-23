@@ -17,7 +17,6 @@ import java.util.Collection;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -87,7 +86,7 @@ public class EncapsulatedAssertionAdminImplTest {
 
     @Test(expected = FindException.class)
     public void findByPrimaryKeyNull() throws Exception {
-        when(manager.findByPrimaryKey(anyLong())).thenReturn(null);
+        when(manager.findByPrimaryKey(any(Goid.class))).thenReturn(null);
         admin.findByPrimaryKey(CONFIG_GOID);
     }
 

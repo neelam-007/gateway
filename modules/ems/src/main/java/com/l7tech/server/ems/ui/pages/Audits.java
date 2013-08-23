@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.rbac.RequiredPermission;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.util.Functions;
@@ -209,7 +210,7 @@ public class Audits extends EsmStandardWebPage {
                 if ( ajaxRequestTarget != null &&
                     auditIdentifier != null ) {
                     try {
-                        AuditRecord record = auditRecordManager.findByPrimaryKey( Long.parseLong(auditIdentifier) );
+                        AuditRecord record = auditRecordManager.findByPrimaryKey( Goid.parseGoid(auditIdentifier) );
 
                         AuditDetailPanel details = new AuditDetailPanel( "details", record );
 

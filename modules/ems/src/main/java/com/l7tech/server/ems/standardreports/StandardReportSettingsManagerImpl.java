@@ -45,10 +45,10 @@ public class StandardReportSettingsManagerImpl extends HibernateEntityManager<St
     }
 
     @Override
-    public StandardReportSettings findByPrimaryKeyForUser( final User user, final long oid ) throws FindException {
+    public StandardReportSettings findByPrimaryKeyForUser( final User user, final Goid goid ) throws FindException {
         StandardReportSettings settingsForUser = null;
 
-        final StandardReportSettings settings = findByPrimaryKey( oid );
+        final StandardReportSettings settings = findByPrimaryKey( goid );
         if ( settings.getProvider().equals(user.getProviderId()) &&
              settings.getUserId() != null &&
              settings.getUserId().equals(user.getId()) ) {

@@ -86,11 +86,6 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return processRevision( serviceManager.findByPrimaryKey(oid) );
-    }
-
-    @Override
     public PublishedService findByPrimaryKey(Goid goid) throws FindException {
         return processRevision( serviceManager.findByPrimaryKey(goid) );
     }

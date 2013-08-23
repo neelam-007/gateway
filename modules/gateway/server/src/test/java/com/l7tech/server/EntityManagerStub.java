@@ -41,11 +41,6 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     @Override
-    public ET findByPrimaryKey(long oid) throws FindException {
-        return entities.get(oid);
-    }
-
-    @Override
     public ET findByPrimaryKey(Goid goid) throws FindException {
         return entities.get(goid);
     }

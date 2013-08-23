@@ -25,11 +25,6 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
     }
 
     @Override
-    public Policy findByPrimaryKey(long oid) throws FindException {
-        throw new UnsupportedOperationException("Oids are not supported here.");
-    }
-
-    @Override
     public Policy findByPrimaryKey(Goid goid) throws FindException {
         Policy p = cache.get(goid);
         if (p != null) return p;
