@@ -3,6 +3,7 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
@@ -17,6 +18,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,9 +49,17 @@ public class PermissionGroupPropertiesDialog extends JDialog {
         Utilities.setEscAction(this, closeButton);
         typeLabel.setText(group.getEntityType() == EntityType.ANY ? ALL : group.getEntityType().getName());
         scopeTextArea.setText(getScopeDescription(group));
-        final Set<String> operations = new HashSet<>(group.getOperations().size());
+        final Set<String> operations = new TreeSet<>();
+        boolean containsOther = false;
         for (final OperationType operationType : group.getOperations()) {
-            operations.add(operationType.getName().toLowerCase());
+            if (operationType != OperationType.OTHER) {
+                operations.add(operationType.getName().toLowerCase());
+            } else {
+                containsOther = true;
+            }
+        }
+        if (containsOther) {
+            operations.addAll(group.getOtherOperations());
         }
         opsLabel.setText(StringUtils.join(operations, SEPARATOR));
     }

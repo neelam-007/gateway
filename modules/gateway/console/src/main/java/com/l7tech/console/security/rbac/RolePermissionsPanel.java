@@ -220,8 +220,9 @@ public class RolePermissionsPanel extends JPanel {
         permissionsModel = TableUtil.configureTable(permissionsTable, columns.toArray(new TableUtil.Col[columns.size()]));
 
         permissionsTable.getTableHeader().setDefaultRenderer(new HeaderCellRenderer(permissionsTable.getTableHeader().getDefaultRenderer()));
-        permissionsTable.getColumnModel().getColumn(columnIndices.get(TYPE)).setCellRenderer(new HighlightedCellRenderer());
-        permissionsTable.getColumnModel().getColumn(columnIndices.get(SCOPE)).setCellRenderer(new ScopeCellRenderer());
+        final HighlightedCellRenderer highlightedCellRenderer = new HighlightedCellRenderer();
+        permissionsTable.getColumnModel().getColumn(columnIndices.get(TYPE)).setCellRenderer(highlightedCellRenderer);
+        permissionsTable.getColumnModel().getColumn(columnIndices.get(SCOPE)).setCellRenderer(highlightedCellRenderer);
         if (!readOnly) {
             permissionsTable.getColumnModel().getColumn(columnIndices.get(NEW)).setCellRenderer(new CheckCellRenderer());
         }
@@ -344,14 +345,7 @@ public class RolePermissionsPanel extends JPanel {
                     int modelIndex = permissionsTable.convertRowIndexToModel(row);
                     if (modelIndex > 0) {
                         final PermissionGroup permissionGroup = permissionsModel.getRowObject(modelIndex);
-                        final Set<String> otherOps = new HashSet<>();
-                        for (final Permission permission : permissionGroup.getPermissions()) {
-                            if (permission.getOperation() == OperationType.OTHER && StringUtils.isNotBlank(permission.getOtherOperationName())) {
-                                otherOps.add(permission.getOtherOperationName());
-                            } else if (permission.getOperation() == OperationType.NONE) {
-                                otherOps.add(OperationType.NONE.getName());
-                            }
-                        }
+                        label.setToolTipText(StringUtils.join(permissionGroup.getOtherOperations(), ","));
                     }
                 }
             }
@@ -371,21 +365,6 @@ public class RolePermissionsPanel extends JPanel {
                 final JLabel label = (JLabel) component;
                 label.setText(StringUtils.EMPTY);
                 label.setIcon(booleanValue ? CHECK : null);
-            }
-            return component;
-        }
-    }
-
-    private class ScopeCellRenderer extends HighlightedCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-            final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (component instanceof JLabel && value instanceof String) {
-                final JLabel label = (JLabel) component;
-                final String scopeStr = (String) value;
-                final String[] split = StringUtils.split(scopeStr, ",");
-                final String join = StringUtils.join(split, ",<br/>");
-                label.setToolTipText("<html>" + join + "</html>");
             }
             return component;
         }

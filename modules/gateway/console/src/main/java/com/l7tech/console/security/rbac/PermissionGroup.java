@@ -67,6 +67,19 @@ public class PermissionGroup {
     }
 
     /**
+     * @return a set of other operation names if this PermissionGroup has any permissions with OperationType#OTHER.
+     */
+    public Set<String> getOtherOperations() {
+        final Set<String> otherOps = new TreeSet<>();
+        for (final Permission permission : permissions) {
+            if (permission.getOperation() == OperationType.OTHER) {
+                otherOps.add(permission.getOtherOperationName());
+            }
+        }
+        return otherOps;
+    }
+
+    /**
      * Group the specified permissions into the minimum number of permission groups.
      *
      * @param permissions set of permissions to examine.
