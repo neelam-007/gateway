@@ -28,6 +28,10 @@
         <dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
         <dependency org="commons-configuration" name="commons-configuration" rev="1.8" force="true" conf="core"/>
 
+        <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
+        <exclude org="org.codehaus.woodstox" module="woodstox-core-asl"/>
+        <exclude org="org.slf4j" module="slf4j-api"/>
+
         <exclude org="com.l7tech"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

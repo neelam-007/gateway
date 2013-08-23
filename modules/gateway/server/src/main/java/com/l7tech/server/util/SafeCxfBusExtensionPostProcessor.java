@@ -25,7 +25,7 @@ public class SafeCxfBusExtensionPostProcessor extends BusExtensionPostProcessor 
     public void setApplicationContext( final ApplicationContext ctx ) {
         context = ctx;
         bus.setExtension( context, ApplicationContext.class );
-        bus.setExtension( new SpringBeanLocator( context ), ConfiguredBeanLocator.class );
+        bus.setExtension( new SpringBeanLocator( context, getBus() ), ConfiguredBeanLocator.class );
     }
 
     public Object postProcessBeforeInitialization( final Object bean,

@@ -44,7 +44,14 @@
         <dependency org="com.l7tech.lib" name="layer7-sun-jaxws" rev="1.0" conf="core"/> <!-- should be before CXF in classpath -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
         <dependency org="com.jscape" name="sftp" rev="8.8.1" force="true" conf="core"/>
-        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.3.10" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.5.11" force="true" conf="core">
+            <exclude org="org.apache.velocity" module="velocity"/>
+            <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
+            <exclude org="org.eclipse.jetty" />
+        </dependency>
+        <dependency org="org.apache.neethi" name="neethi" rev="3.0.2" force="true" conf="core"/>
+        <dependency org="org.apache.ws.xmlschema" name="xmlschema-core" rev="2.0.3" conf="core"/>
+
         <dependency org="commons-configuration" name="commons-configuration" rev="1.8" force="true" conf="core">
             <exclude org="commons-digester" module="commons-digester" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
@@ -115,7 +122,7 @@
         <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="test,alternative"/>
 
         <!-- Test dependencies -->
-        <dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.3.10" force="true" conf="test"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.5.11" force="true" conf="test"/>
         <!-- apacheds-server-integ is used for LdapIdentityProviderTest but not currently in our repository -->
         <!--<dependency org="org.apache.directory.server" name="apacheds-server-integ" rev="1.5.5" force="true" conf="test"/>-->
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
@@ -128,6 +135,7 @@
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+        <exclude org="org.codehaus.woodstox" module="woodstox-core-asl"/>
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.5"/>
         <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p3"/>

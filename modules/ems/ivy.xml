@@ -40,8 +40,10 @@
         <dependency org="org.mortbay.jetty" name="jetty-sslengine" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.20" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.3.10" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.10" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.5.11" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.5.11" force="true" conf="core"/>
+
+
 
         <!-- For the ESM, we'll always use the FIPS version of RSA for the time being -->
         <dependency org="com.rsa" name="jcmFIPS" rev="6.1" force="true" conf="core"/>
@@ -49,7 +51,12 @@
         <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="core"/>
-        
+
+        <!-- org.apache.cxf exclusions -->
+        <exclude org="org.apache.velocity" module="velocity"/>
+        <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
+        <!-- end org.apache.cxf exclusions -->
+
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />

@@ -28,8 +28,17 @@
                      matcher="exact"/>
         </dependency>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.20" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.3.10" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.3.10" force="true" conf="core"/>
+
+        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.5.11" force="true" conf="core">
+            <exclude org="org.apache.velocity" module="velocity"/>
+            <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
+            <exclude org="org.apache.geronimo.specs" module="geronimo-servlet_2.5_spec"/>
+            <exclude org="org.eclipse.jetty" />
+        </dependency>
+
+        <dependency org="org.codehaus.woodstox" name="stax2-api" rev="3.1.1" force="true" conf="core"/>
+        <dependency org="org.codehaus.woodstox" name="woodstox-core-asl" rev="4.2.0" force="true" conf="core"/>
+
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="core"/>

@@ -25,6 +25,8 @@
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
+        <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
+
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
     </dependencies>
 </ivy-module>

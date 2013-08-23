@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="org.apache.cxf"
+		module="cxf-rt-transports-local"
+		revision="2.5.11"
+		status="release"
+		publication="20130716131547"
+	>
+		<description homepage="http://cxf.apache.org">
+		Apache CXF Runtime Local Transport
+		</description>
+		<m:dependency.management__org.easymock__easymock__scope>test</m:dependency.management__org.easymock__easymock__scope>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_0>javax.xml.bind__jsr173_api</m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_0>
+		<m:properties__cxf.wss4j.version>1.6.11</m:properties__cxf.wss4j.version>
+		<m:dependency.management__org.springframework__spring-beans__exclusion_0>log4j__log4j</m:dependency.management__org.springframework__spring-beans__exclusion_0>
+		<m:dependency.management__org.apache.maven__maven-core__version>2.2.1</m:dependency.management__org.apache.maven__maven-core__version>
+		<m:dependency.management__org.springframework__spring-beans__exclusion_1>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-beans__exclusion_1>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__version>1.2.10</m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__version>
+		<m:properties__cxf.jaxb22.version>2.2.5</m:properties__cxf.jaxb22.version>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__version>1.2.10</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__version>
+		<m:properties__cxf.opensaml.osgi.version>2.5.1_2</m:properties__cxf.opensaml.osgi.version>
+		<m:properties__extra.saaj.dep.groupId>${cxf.saaj.impl.groupId}</m:properties__extra.saaj.dep.groupId>
+		<m:properties__cxf.axiom.version>1.2.10</m:properties__cxf.axiom.version>
+		<m:dependency.management__org.apache.velocity__velocity__version>1.7</m:dependency.management__org.apache.velocity__velocity__version>
+		<m:dependency.management__commons-httpclient__commons-httpclient__version>3.1</m:dependency.management__commons-httpclient__commons-httpclient__version>
+		<m:properties__extra.saaj.dep.version>${cxf.saaj.impl.version}</m:properties__extra.saaj.dep.version>
+		<m:dependency.management__antlr__antlr__version>2.7.7</m:dependency.management__antlr__antlr__version>
+		<m:properties__cxf.jdom.bundle.version>1.1_4</m:properties__cxf.jdom.bundle.version>
+		<m:properties__cxf.protect-xmlschema-collections>false</m:properties__cxf.protect-xmlschema-collections>
+		<m:properties__cxf.build-utils.version>2.4.1</m:properties__cxf.build-utils.version>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_0>org.springframework__spring-core</m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_0>
+		<m:properties__cxf.jaxb.version>${cxf.jaxb21.version}</m:properties__cxf.jaxb.version>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_1>org.springframework__spring-dao</m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_1>
+		<m:dependency.management__org.springframework__spring-beans__exclusion_3>logkit__logkit</m:dependency.management__org.springframework__spring-beans__exclusion_3>
+		<m:dependency.management__rhino__js__version>1.7R2</m:dependency.management__rhino__js__version>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_2>org.springframework__spring-jdbc</m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_2>
+		<m:dependency.management__org.springframework__spring-beans__exclusion_2>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-beans__exclusion_2>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_3>org.springframework__spring-remoting</m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_3>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_3>javax.xml__jsr173</m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_3>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_4>org.springframework__spring-support</m:dependency.management__org.springframework.security__spring-security-core-tiger__exclusion_4>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_4>javax.activation__activation</m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_4>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_1>javax.xml.bind__activation</m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_1>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-jms_1.1_spec__version>1.1.1</m:dependency.management__org.apache.geronimo.specs__geronimo-jms_1.1_spec__version>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_2>javax.xml.bind__jaxb-api</m:dependency.management__com.sun.xml.bind__jaxb-impl__exclusion_2>
+		<m:dependency.management__org.apache.activemq__activemq-core__exclusion_0>org.apache.geronimo.specs__geronimo-jms_1.1_spec</m:dependency.management__org.apache.activemq__activemq-core__exclusion_0>
+		<m:dependency.management__org.bouncycastle__bcprov-jdk15on__version>1.47</m:dependency.management__org.bouncycastle__bcprov-jdk15on__version>
+		<m:properties__cxf.geronimo.jms.version>1.1.1</m:properties__cxf.geronimo.jms.version>
+		<m:dependency.management__org.apache.maven__maven-artifact__scope>provided</m:dependency.management__org.apache.maven__maven-artifact__scope>
+		<m:dependency.management__javax.xml.soap__saaj-api__exclusion_0>javax.activation__activation</m:dependency.management__javax.xml.soap__saaj-api__exclusion_0>
+		<m:properties__cxf.opensaml.version>2.5.1</m:properties__cxf.opensaml.version>
+		<m:dependency.management__javax.xml.soap__saaj-api__exclusion_1>activation__activation</m:dependency.management__javax.xml.soap__saaj-api__exclusion_1>
+		<m:dependency.management__org.apache.abdera__abdera-parser__version>1.1.2</m:dependency.management__org.apache.abdera__abdera-parser__version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-activation_1.1_spec__version>1.1</m:dependency.management__org.apache.geronimo.specs__geronimo-activation_1.1_spec__version>
+		<m:properties__cxf.wsdl4j.version>1.6.3</m:properties__cxf.wsdl4j.version>
+		<m:properties__cxf.jetty.version>7.5.4.v20111024</m:properties__cxf.jetty.version>
+		<m:dependency.management__org.codehaus.jra__jra__version>1.0-alpha-4</m:dependency.management__org.codehaus.jra__jra__version>
+		<m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__exclusion_0>org.apache.bcel__bcel</m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__exclusion_0>
+		<m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__exclusion_1>xalan__xalan</m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__exclusion_1>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-ws-metadata_2.0_spec__version>1.1.3</m:dependency.management__org.apache.geronimo.specs__geronimo-ws-metadata_2.0_spec__version>
+		<m:properties__cxf.xmlschema.version>2.0.3</m:properties__cxf.xmlschema.version>
+		<m:properties__cxf.pmd.eclipse.ruleset>cxf-pmd-ruleset.xml</m:properties__cxf.pmd.eclipse.ruleset>
+		<m:properties__cxf.woodstox.stax2-api.version>3.1.1</m:properties__cxf.woodstox.stax2-api.version>
+		<m:properties__cxf.asm.bundle.version>3.3.1_1</m:properties__cxf.asm.bundle.version>
+		<m:properties__cxf.neethi.version>3.0.2</m:properties__cxf.neethi.version>
+		<m:properties__cxf.jaxb21.xjc.version>2.1.13</m:properties__cxf.jaxb21.xjc.version>
+		<m:dependency.management__org.jibx__jibx-tools__version>1.2.4.5</m:dependency.management__org.jibx__jibx-tools__version>
+		<m:dependency.management__org.apache.maven__maven-plugin-api__exclusion_0>junit__junit</m:dependency.management__org.apache.maven__maven-plugin-api__exclusion_0>
+		<m:dependency.management__org.springframework__spring-tx__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-tx__version>
+		<m:properties__cxf.saaj-impl.bundle.version>1.3.20_1</m:properties__cxf.saaj-impl.bundle.version>
+		<m:dependency.management__javax.xml.bind__jaxb-api__exclusion_3>javax.xml.bind__jsr173_api</m:dependency.management__javax.xml.bind__jaxb-api__exclusion_3>
+		<m:dependency.management__org.springframework__spring-web__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-web__version>
+		<m:dependency.management__javax.xml.bind__jaxb-api__exclusion_2>javax.xml__jsr173</m:dependency.management__javax.xml.bind__jaxb-api__exclusion_2>
+		<m:dependency.management__javax.xml.bind__jaxb-api__exclusion_1>javax.xml.stream__stax-api</m:dependency.management__javax.xml.bind__jaxb-api__exclusion_1>
+		<m:dependency.management__javax.xml.bind__jaxb-api__exclusion_0>javax.activation__activation</m:dependency.management__javax.xml.bind__jaxb-api__exclusion_0>
+		<m:dependency.management__org.apache.activemq__activemq-core__version>5.4.2</m:dependency.management__org.apache.activemq__activemq-core__version>
+		<m:dependency.management__cglib__cglib-nodep__version>2.2.2</m:dependency.management__cglib__cglib-nodep__version>
+		<m:properties__cxf.velocity.version>1.7</m:properties__cxf.velocity.version>
+		<m:properties__cxf.surefire.usefile>false</m:properties__cxf.surefire.usefile>
+		<m:dependency.management__org.apache.xmlbeans__xmlbeans__version>2.5.0</m:dependency.management__org.apache.xmlbeans__xmlbeans__version>
+		<m:properties__cxf.activemq.version>5.4.2</m:properties__cxf.activemq.version>
+		<m:dependency.management__org.apache.abdera__abdera-core__version>1.1.2</m:dependency.management__org.apache.abdera__abdera-core__version>
+		<m:properties__cxf.saaj.impl.version>1.3.19</m:properties__cxf.saaj.impl.version>
+		<m:properties__cxf.saaj.impl.artifactId>saaj-impl</m:properties__cxf.saaj.impl.artifactId>
+		<m:dependency.management__org.apache.abdera__abdera-core__exclusion_0>org.apache.geronimo.specs__geronimo-activation_1.0.2_spec</m:dependency.management__org.apache.abdera__abdera-core__exclusion_0>
+		<m:dependency.management__org.apache.abdera__abdera-core__exclusion_1>org.apache.geronimo.specs__geronimo-stax-api_1.0_spec</m:dependency.management__org.apache.abdera__abdera-core__exclusion_1>
+		<m:properties__cxf.xmlbeans.bundle.version>2.5.0_2</m:properties__cxf.xmlbeans.bundle.version>
+		<m:properties__cxf.jdk.version>1.6</m:properties__cxf.jdk.version>
+		<m:maven.plugins>org.apache.cxf.build-utils__cxf-xml2fastinfoset-plugin__2.4.1|null__maven-remote-resources-plugin__1.3|org.apache.cxf.build-utils__cxf-xml2fastinfoset-plugin__2.4.1|null__maven-remote-resources-plugin__1.3</m:maven.plugins>
+		<m:dependency.management__commons-logging__commons-logging__exclusion_0>log4j__log4j</m:dependency.management__commons-logging__commons-logging__exclusion_0>
+		<m:dependency.management__commons-logging__commons-logging__exclusion_1>logkit__logkit</m:dependency.management__commons-logging__commons-logging__exclusion_1>
+		<m:dependency.management__commons-logging__commons-logging__exclusion_2>avalon-framework__avalon-framework</m:dependency.management__commons-logging__commons-logging__exclusion_2>
+		<m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__version>1.3.19</m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__version>
+		<m:dependency.management__commons-logging__commons-logging__exclusion_3>javax.servlet__servlet-api</m:dependency.management__commons-logging__commons-logging__exclusion_3>
+		<m:dependency.management__org.springframework.security__spring-security-core__version>2.0.6.RELEASE</m:dependency.management__org.springframework.security__spring-security-core__version>
+		<m:dependency.management__org.apache.maven__maven-plugin-api__scope>provided</m:dependency.management__org.apache.maven__maven-plugin-api__scope>
+		<m:dependency.management__org.eclipse.jetty__jetty-server__version>7.5.4.v20111024</m:dependency.management__org.eclipse.jetty__jetty-server__version>
+		<m:properties__cxf.oro.bundle.version>2.0.8_6</m:properties__cxf.oro.bundle.version>
+		<m:dependency.management__com.sun.xml.parsers__jaxp-ri__version>1.4.5</m:dependency.management__com.sun.xml.parsers__jaxp-ri__version>
+		<m:properties__cxf.commons-collections.version>3.2.1</m:properties__cxf.commons-collections.version>
+		<m:properties__cxf.servlet-api-2.5.artifact>geronimo-servlet_2.5_spec</m:properties__cxf.servlet-api-2.5.artifact>
+		<m:dependency.management__org.apache.maven__maven-project__scope>provided</m:dependency.management__org.apache.maven__maven-project__scope>
+		<m:dependency.management__org.apache.xmlbeans__xmlbeans__exclusion_0>stax__stax-api</m:dependency.management__org.apache.xmlbeans__xmlbeans__exclusion_0>
+		<m:dependency.management__org.springframework__spring-web__exclusion_0>log4j__log4j</m:dependency.management__org.springframework__spring-web__exclusion_0>
+		<m:dependency.management__org.springframework__spring-web__exclusion_1>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-web__exclusion_1>
+		<m:dependency.management__org.springframework__spring-web__exclusion_2>logkit__logkit</m:dependency.management__org.springframework__spring-web__exclusion_2>
+		<m:dependency.management__xalan__xalan__exclusion_0>xml-apis__xml-apis</m:dependency.management__xalan__xalan__exclusion_0>
+		<m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__version>4.2.0</m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__version>
+		<m:dependency.management__org.springframework__spring-webmvc__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-webmvc__version>
+		<m:properties__cxf.spring.validation.mode>VALIDATION_AUTO</m:properties__cxf.spring.validation.mode>
+		<m:dependency.management__org.springframework__spring-aop__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-aop__version>
+		<m:dependency.management__org.easymock__easymock__version>3.1</m:dependency.management__org.easymock__easymock__version>
+		<m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__version>2.0.3</m:dependency.management__org.apache.ws.xmlschema__xmlschema-core__version>
+		<m:properties__cxf.geronimo.annotation.version>1.1.1</m:properties__cxf.geronimo.annotation.version>
+		<m:dependency.management__jtidy__jtidy__version>4aug2000r7-dev</m:dependency.management__jtidy__jtidy__version>
+		<m:properties__cxf.servlet-api-2.5.version>1.1.2</m:properties__cxf.servlet-api-2.5.version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-annotation_1.0_spec__version>1.1.1</m:dependency.management__org.apache.geronimo.specs__geronimo-annotation_1.0_spec__version>
+		<m:dependency.management__org.springframework__spring-core__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-core__version>
+		<m:dependency.management__commons-logging__commons-logging__version>1.1.1</m:dependency.management__commons-logging__commons-logging__version>
+		<m:dependency.management__org.springframework__spring-context__exclusion_3>log4j__log4j</m:dependency.management__org.springframework__spring-context__exclusion_3>
+		<m:dependency.management__org.springframework__spring-context__exclusion_2>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-context__exclusion_2>
+		<m:dependency.management__org.jibx__jibx-bind__version>1.2.4.5</m:dependency.management__org.jibx__jibx-bind__version>
+		<m:dependency.management__org.springframework__spring-context__exclusion_1>logkit__logkit</m:dependency.management__org.springframework__spring-context__exclusion_1>
+		<m:dependency.management__org.springframework__spring-context__exclusion_0>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-context__exclusion_0>
+		<m:dependency.management__javax.xml.soap__saaj-api__version>1.3.4</m:dependency.management__javax.xml.soap__saaj-api__version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-j2ee-management_1.1_spec__version>1.0.1</m:dependency.management__org.apache.geronimo.specs__geronimo-j2ee-management_1.1_spec__version>
+		<m:properties__cxf.spring.osgi.version>1.2.1</m:properties__cxf.spring.osgi.version>
+		<m:properties__cxf.geronimo.ws.metadata.version>1.1.3</m:properties__cxf.geronimo.ws.metadata.version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-stax-api_1.0_spec__version>1.0.1</m:dependency.management__org.apache.geronimo.specs__geronimo-stax-api_1.0_spec__version>
+		<m:dependency.management__org.springframework__spring-web__exclusion_3>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-web__exclusion_3>
+		<m:properties__cxf.geronimo.servlet.version>1.0</m:properties__cxf.geronimo.servlet.version>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_2>javax.mail__mail</m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_2>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_1>xml-apis__xml-apis</m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_1>
+		<m:dependency.management__org.apache.maven__maven-project__version>2.2.1</m:dependency.management__org.apache.maven__maven-project__version>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_0>stax__stax-api</m:dependency.management__org.apache.ws.commons.axiom__axiom-impl__exclusion_0>
+		<m:dependency.management__net.java.dev.msv__msv-core__version>2011.1</m:dependency.management__net.java.dev.msv__msv-core__version>
+		<m:dependency.management__org.springframework.security__spring-security-acl__version>2.0.6.RELEASE</m:dependency.management__org.springframework.security__spring-security-acl__version>
+		<m:properties__cxf.jaxb22.impl.version>2.2.5.1</m:properties__cxf.jaxb22.impl.version>
+		<m:properties__cxf.codegenplugin.forkmode>once</m:properties__cxf.codegenplugin.forkmode>
+		<m:properties__extra.saaj.dep.artifactId>${cxf.saaj.impl.artifactId}</m:properties__extra.saaj.dep.artifactId>
+		<m:dependency.management__org.codehaus.jettison__jettison__version>1.3.2</m:dependency.management__org.codehaus.jettison__jettison__version>
+		<m:dependency.management__org.springframework__spring-core__exclusion_0>log4j__log4j</m:dependency.management__org.springframework__spring-core__exclusion_0>
+		<m:dependency.management__org.springframework__spring-core__exclusion_1>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-core__exclusion_1>
+		<m:dependency.management__org.springframework__spring-webmvc__exclusion_2>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-webmvc__exclusion_2>
+		<m:dependency.management__org.springframework__spring-core__exclusion_3>logkit__logkit</m:dependency.management__org.springframework__spring-core__exclusion_3>
+		<m:dependency.management__org.springframework__spring-webmvc__exclusion_1>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-webmvc__exclusion_1>
+		<m:dependency.management__javax.xml.bind__jaxb-api__version>2.1</m:dependency.management__javax.xml.bind__jaxb-api__version>
+		<m:dependency.management__org.springframework__spring-core__exclusion_2>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-core__exclusion_2>
+		<m:properties__cxf.jetty.osgi.version>[7.2,8.2)</m:properties__cxf.jetty.osgi.version>
+		<m:dependency.management__org.springframework__spring-webmvc__exclusion_3>log4j__log4j</m:dependency.management__org.springframework__spring-webmvc__exclusion_3>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-ejb_3.0_spec__version>1.0.1</m:dependency.management__org.apache.geronimo.specs__geronimo-ejb_3.0_spec__version>
+		<m:dependency.management__org.jibx__jibx-run__version>1.2.4.5</m:dependency.management__org.jibx__jibx-run__version>
+		<m:dependency.management__org.springframework__spring-webmvc__exclusion_0>logkit__logkit</m:dependency.management__org.springframework__spring-webmvc__exclusion_0>
+		<m:properties__cxf.xmlsec.bundle.version>1.5.4</m:properties__cxf.xmlsec.bundle.version>
+		<m:dependency.management__httpunit__httpunit__version>1.6.2</m:dependency.management__httpunit__httpunit__version>
+		<m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_1>stax__stax-api</m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_1>
+		<m:dependency.management__junit__junit__scope>test</m:dependency.management__junit__junit__scope>
+		<m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_0>javax.xml.stream__stax-api</m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_0>
+		<m:properties__cxf.javax.mail.version>1.4.4</m:properties__cxf.javax.mail.version>
+		<m:properties__cxf.felix.framework.version>2.0.5</m:properties__cxf.felix.framework.version>
+		<m:dependency.management__asm__asm__version>3.3.1</m:dependency.management__asm__asm__version>
+		<m:properties__cxf.woodstox.core.version>4.2.0</m:properties__cxf.woodstox.core.version>
+		<m:properties__cxf.msv.version>2011.1</m:properties__cxf.msv.version>
+		<m:dependency.management__org.springframework__spring-test__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-test__version>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__version>1.1.2</m:dependency.management__org.apache.abdera__abdera-extensions-json__version>
+		<m:dependency.management__com.sun.xml.bind__jaxb-impl__version>2.1.13</m:dependency.management__com.sun.xml.bind__jaxb-impl__version>
+		<m:dependency.management__org.apache.ant__ant-nodeps__version>1.8.1</m:dependency.management__org.apache.ant__ant-nodeps__version>
+		<m:dependency.management__xml-resolver__xml-resolver__version>1.2</m:dependency.management__xml-resolver__xml-resolver__version>
+		<m:properties__cxf.surefire.fork.mode>once</m:properties__cxf.surefire.fork.mode>
+		<m:dependency.management__org.apache.aries.blueprint__org.apache.aries.blueprint.core__scope>provided</m:dependency.management__org.apache.aries.blueprint__org.apache.aries.blueprint.core__scope>
+		<m:properties__cxf.geronimo.j2ee.management.version>1.0.1</m:properties__cxf.geronimo.j2ee.management.version>
+		<m:dependency.management__org.eclipse.jetty__jetty-servlet__version>7.5.4.v20111024</m:dependency.management__org.eclipse.jetty__jetty-servlet__version>
+		<m:properties__cxf.joda.time.version>1.6.2</m:properties__cxf.joda.time.version>
+		<m:properties__cxf.jaxb.bundle.version>2.2.1.1_2</m:properties__cxf.jaxb.bundle.version>
+		<m:dependency.management__org.osgi__org.osgi.core__scope>provided</m:dependency.management__org.osgi__org.osgi.core__scope>
+		<m:dependency.management__jaxen__jaxen__exclusion_0>jdom__jdom</m:dependency.management__jaxen__jaxen__exclusion_0>
+		<m:dependency.management__jaxen__jaxen__exclusion_1>dom4j__dom4j</m:dependency.management__jaxen__jaxen__exclusion_1>
+		<m:properties__cxf.compile.flags>-Xlint:unchecked,deprecation,fallthrough,finally</m:properties__cxf.compile.flags>
+		<m:dependency.management__org.apache.maven__maven-artifact__version>2.2.1</m:dependency.management__org.apache.maven__maven-artifact__version>
+		<m:properties__cxf.opensamlws.version>1.4.2-1</m:properties__cxf.opensamlws.version>
+		<m:dependency.management__jaxen__jaxen__exclusion_6>xerces__xercesImpl</m:dependency.management__jaxen__jaxen__exclusion_6>
+		<m:properties__cxf.xmlresolver.bundle.version>1.2_5</m:properties__cxf.xmlresolver.bundle.version>
+		<m:dependency.management__jaxen__jaxen__exclusion_4>xalan__xalan</m:dependency.management__jaxen__jaxen__exclusion_4>
+		<m:dependency.management__jaxen__jaxen__exclusion_5>xerces__xmlParserAPIs</m:dependency.management__jaxen__jaxen__exclusion_5>
+		<m:dependency.management__jaxen__jaxen__exclusion_2>xml-apis__xml-apis</m:dependency.management__jaxen__jaxen__exclusion_2>
+		<m:dependency.management__jaxen__jaxen__exclusion_3>xom__xom</m:dependency.management__jaxen__jaxen__exclusion_3>
+		<m:properties__cxf.opensaml.xmltooling.version>1.3.2-1</m:properties__cxf.opensaml.xmltooling.version>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_6>xerces__xercesImpl</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_6>
+		<m:properties__cxf.fastinfoset.bundle.version>1.2.7_4</m:properties__cxf.fastinfoset.bundle.version>
+		<m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__exclusion_0>javax.activation__activation</m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__exclusion_0>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_5>xml-apis__xml-apis</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_5>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_8>javax.mail__mail</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_8>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_7>xerces__xmlParserAPIs</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_7>
+		<m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__exclusion_1>activation__activation</m:dependency.management__com.sun.xml.messaging.saaj__saaj-impl__exclusion_1>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_2>org.codehaus.woodstox__wstx-asl</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_2>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_1>xom__xom</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_1>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_4>stax__stax-api</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_4>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_3>xml-apis__xml-apis</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_3>
+		<m:properties__cxf.commons-codec.version>1.4</m:properties__cxf.commons-codec.version>
+		<m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_0>xalan__xalan</m:dependency.management__org.apache.ws.commons.axiom__axiom-api__exclusion_0>
+		<m:properties__cxf.spring.mock>spring-test</m:properties__cxf.spring.mock>
+		<m:dependency.management__jaxme__jaxme2__version>0.5.1</m:dependency.management__jaxme__jaxme2__version>
+		<m:properties__cxf.xerces.bundle.version>2.9.1_5</m:properties__cxf.xerces.bundle.version>
+		<m:dependency.management__httpunit__httpunit__exclusion_1>javax.servlet__servlet-api</m:dependency.management__httpunit__httpunit__exclusion_1>
+		<m:properties__cxf.specs.jaxws.api.version>1.1</m:properties__cxf.specs.jaxws.api.version>
+		<m:dependency.management__httpunit__httpunit__exclusion_0>xerces__xercesImpl</m:dependency.management__httpunit__httpunit__exclusion_0>
+		<m:dependency.management__wsdl4j__wsdl4j__version>1.6.3</m:dependency.management__wsdl4j__wsdl4j__version>
+		<m:properties__cxf.maven.core.version>2.2.1</m:properties__cxf.maven.core.version>
+		<m:dependency.management__com.sun.xml.bind__jaxb-xjc__version>2.1.13</m:dependency.management__com.sun.xml.bind__jaxb-xjc__version>
+		<m:properties__cxf.servlet-api.version>1.0</m:properties__cxf.servlet-api.version>
+		<m:dependency.management__org.springframework__spring-dao__exclusion_0>org.springframework__spring-jdbc</m:dependency.management__org.springframework__spring-dao__exclusion_0>
+		<m:properties__cxf.hazelcast.version>1.9.4</m:properties__cxf.hazelcast.version>
+		<m:properties__cxf.rhino.bundle.version>1.7R2_3</m:properties__cxf.rhino.bundle.version>
+		<m:properties__cxf.server.launcher.vmargs>-ea</m:properties__cxf.server.launcher.vmargs>
+		<m:dependency.management__junit__junit__version>4.10</m:dependency.management__junit__junit__version>
+		<m:dependency.management__httpunit__httpunit__exclusion_2>xerces__xmlParserAPIs</m:dependency.management__httpunit__httpunit__exclusion_2>
+		<m:dependency.management__httpunit__httpunit__exclusion_3>jtidy__jtidy</m:dependency.management__httpunit__httpunit__exclusion_3>
+		<m:properties__cxf.servicemix.specs.version>1.9.0</m:properties__cxf.servicemix.specs.version>
+		<m:properties__cxf.compile.show.deprecation>true</m:properties__cxf.compile.show.deprecation>
+		<m:dependency.management__org.springframework__spring-dao__version>2.0.8</m:dependency.management__org.springframework__spring-dao__version>
+		<m:dependency.management__org.springframework__spring-aop__exclusion_3>log4j__log4j</m:dependency.management__org.springframework__spring-aop__exclusion_3>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_10>org.apache.geronimo.specs__geronimo-activation_1.1_spec</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_10>
+		<m:dependency.management__org.springframework__spring-aop__exclusion_1>javax.servlet__servlet-api</m:dependency.management__org.springframework__spring-aop__exclusion_1>
+		<m:dependency.management__org.springframework__spring-aop__exclusion_2>logkit__logkit</m:dependency.management__org.springframework__spring-aop__exclusion_2>
+		<m:properties__cxf.aries.version>0.3.1</m:properties__cxf.aries.version>
+		<m:dependency.management__org.springframework__spring-aop__exclusion_0>avalon-framework__avalon-framework</m:dependency.management__org.springframework__spring-aop__exclusion_0>
+		<m:properties__cxf.geronimo.servlet25.version>1.1.2</m:properties__cxf.geronimo.servlet25.version>
+		<m:properties__cxf.jettison.version>1.3.2</m:properties__cxf.jettison.version>
+		<m:dependency.management__org.apache.neethi__neethi__version>3.0.2</m:dependency.management__org.apache.neethi__neethi__version>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_2>log4j__log4j</m:dependency.management__org.apache.neethi__neethi__exclusion_2>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_3>javax.servlet__servlet-api</m:dependency.management__org.apache.neethi__neethi__exclusion_3>
+		<m:dependency.management__org.springframework__spring-dao__exclusion_1>org.springframework__spring-remoting</m:dependency.management__org.springframework__spring-dao__exclusion_1>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_0>org.apache.ws.commons.axiom__axiom-impl</m:dependency.management__org.apache.neethi__neethi__exclusion_0>
+		<m:dependency.management__org.springframework__spring-dao__exclusion_2>org.springframework__spring-support</m:dependency.management__org.springframework__spring-dao__exclusion_2>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_1>org.apache.ws.commons.axiom__axiom-parent</m:dependency.management__org.apache.neethi__neethi__exclusion_1>
+		<m:dependency.management__org.eclipse.jetty__jetty-server__exclusion_0>javax.servlet__servlet-api</m:dependency.management__org.eclipse.jetty__jetty-server__exclusion_0>
+		<m:properties__cxf.cglib.bundle.version>2.2_2</m:properties__cxf.cglib.bundle.version>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_6>org.apache.ws.commons.axiom__axiom-api</m:dependency.management__org.apache.neethi__neethi__exclusion_6>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_7>woodstox__wstx-asl</m:dependency.management__org.apache.neethi__neethi__exclusion_7>
+		<m:dependency.management__org.codehaus.jettison__jettison__exclusion_0>stax__stax-api</m:dependency.management__org.codehaus.jettison__jettison__exclusion_0>
+		<m:dependency.management__org.osgi__org.osgi.core__version>4.2.0</m:dependency.management__org.osgi__org.osgi.core__version>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_4>woodstox__wstx-asl</m:dependency.management__org.apache.neethi__neethi__exclusion_4>
+		<m:properties__cxf.surefire.fork.vmargs>-ea</m:properties__cxf.surefire.fork.vmargs>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_5>wsdl4j__wsdl4j</m:dependency.management__org.apache.neethi__neethi__exclusion_5>
+		<m:dependency.management__org.osgi__org.osgi.compendium__version>4.2.0</m:dependency.management__org.osgi__org.osgi.compendium__version>
+		<m:properties__cxf.spring.version>3.0.6.RELEASE</m:properties__cxf.spring.version>
+		<m:dependency.management__org.apache.neethi__neethi__exclusion_8>org.codehaus.woodstox__woodstox-core-asl</m:dependency.management__org.apache.neethi__neethi__exclusion_8>
+		<m:properties__cxf.jibx.version>1.2.4.5</m:properties__cxf.jibx.version>
+		<m:properties__cxf.compiler.fork>false</m:properties__cxf.compiler.fork>
+		<m:dependency.management__org.eclipse.jetty__jetty-webapp__version>7.5.4.v20111024</m:dependency.management__org.eclipse.jetty__jetty-webapp__version>
+		<m:properties__cxf.xalan.bundle.version>2.7.1_6</m:properties__cxf.xalan.bundle.version>
+		<m:dependency.management__javax.ws.rs__jsr311-api__version>1.1.1</m:dependency.management__javax.ws.rs__jsr311-api__version>
+		<m:dependency.management__xerces__xercesImpl__version>2.9.1</m:dependency.management__xerces__xercesImpl__version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec__version>1.7.1</m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec__version>
+		<m:dependency.management__xalan__xalan__version>2.7.1</m:dependency.management__xalan__xalan__version>
+		<m:dependency.management__org.slf4j__slf4j-api__version>1.6.2</m:dependency.management__org.slf4j__slf4j-api__version>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_7>xerces__xmlParserAPIs</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_7>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_6>javax.mail__mail</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_6>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_9>org.apache.geronimo.specs__geronimo-stax-api_1.0_spec</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_9>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_8>stax__stax-api</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_8>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_3>xml-apis__xml-apis</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_3>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-servlet_2.5_spec__version>1.1.2</m:dependency.management__org.apache.geronimo.specs__geronimo-servlet_2.5_spec__version>
+		<m:properties__cxf.derby.version>10.2.2.0</m:properties__cxf.derby.version>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_2>xerces__xercesImpl</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_2>
+		<m:properties__cxf.servlet-api.artifact>geronimo-servlet_3.0_spec</m:properties__cxf.servlet-api.artifact>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_5>xml-apis__xml-apis</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_5>
+		<m:properties__cxf.ehcache.bundle.version>2.4.3_1</m:properties__cxf.ehcache.bundle.version>
+		<m:dependency.management__xerces__xercesImpl__exclusion_0>xml-apis__xml-apis</m:dependency.management__xerces__xercesImpl__exclusion_0>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_4>xalan__xalan</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_4>
+		<m:dependency.management__org.springframework__spring-beans__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-beans__version>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_1>xom__xom</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_1>
+		<m:dependency.management__org.apache.abdera__abdera-parser__exclusion_0>org.codehaus.woodstox__wstx-asl</m:dependency.management__org.apache.abdera__abdera-parser__exclusion_0>
+		<m:properties__cxf.surefire.format>brief</m:properties__cxf.surefire.format>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_5>org.apache.abdera__abdera-client</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_5>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_4>javax.servlet__servlet-api</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_4>
+		<m:properties__cxf.jaxb21.impl.version>2.1.13</m:properties__cxf.jaxb21.impl.version>
+		<m:properties__cxf.jaxb22.xjc.version>2.2.5.1</m:properties__cxf.jaxb22.xjc.version>
+		<m:dependency.management__org.apache.maven__maven-project__exclusion_0>junit__junit</m:dependency.management__org.apache.maven__maven-project__exclusion_0>
+		<m:properties__project.build.sourceEncoding>UTF-8</m:properties__project.build.sourceEncoding>
+		<m:properties__cxf.jdom.version>1.0</m:properties__cxf.jdom.version>
+		<m:properties__site.deploy.url>scp://people.apache.org/www/cxf.apache.org/maven-site</m:properties__site.deploy.url>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_2>org.apache.abdera__abdera-server</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_2>
+		<m:properties__cxf.ehcache.version>2.5.1</m:properties__cxf.ehcache.version>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_3>org.apache.abdera__abdera-extensions-html</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_3>
+		<m:dependency.management__jaxen__jaxen__version>1.1.4</m:dependency.management__jaxen__jaxen__version>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_0>stax__stax-api</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_0>
+		<m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__version>1.2.12</m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__version>
+		<m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_1>org.apache.geronimo.specs__geronimo-activation_1.0.2_spec</m:dependency.management__org.apache.abdera__abdera-extensions-json__exclusion_1>
+		<m:properties__cxf.bcel.bundle.version>5.2_4</m:properties__cxf.bcel.bundle.version>
+		<m:dependency.management__commons-lang__commons-lang__version>2.6</m:dependency.management__commons-lang__commons-lang__version>
+		<m:properties__cxf.geronimo.transaction.version>1.1.1</m:properties__cxf.geronimo.transaction.version>
+		<m:properties__cxf.cglib.osgi.version>[2.1.3,3.0.0)</m:properties__cxf.cglib.osgi.version>
+		<m:properties__cxf.commons-lang.version>2.6</m:properties__cxf.commons-lang.version>
+		<m:properties__cxf.felix.configadmin.version>1.2.4</m:properties__cxf.felix.configadmin.version>
+		<m:properties__cxf.wsdl4j.bundle.version>1.6.2_6</m:properties__cxf.wsdl4j.bundle.version>
+		<m:properties__cxf.pax.logging.version>1.6.0</m:properties__cxf.pax.logging.version>
+		<m:properties__cxf.karaf.version>2.2.9</m:properties__cxf.karaf.version>
+		<m:dependency.management__org.apache.maven__maven-core__scope>provided</m:dependency.management__org.apache.maven__maven-core__scope>
+		<m:properties__cxf.abdera.version>1.1.2</m:properties__cxf.abdera.version>
+		<m:dependency.management__com.sun.xml.bind__jaxb-xjc__exclusion_1>javax.xml.bind__jsr173_api</m:dependency.management__com.sun.xml.bind__jaxb-xjc__exclusion_1>
+		<m:dependency.management__com.sun.xml.bind__jaxb-xjc__exclusion_0>com.sun.xml.bind__jaxb-impl</m:dependency.management__com.sun.xml.bind__jaxb-xjc__exclusion_0>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-jaxws_2.2_spec__version>1.1</m:dependency.management__org.apache.geronimo.specs__geronimo-jaxws_2.2_spec__version>
+		<m:properties__cxf.servlet-api.group>org.apache.geronimo.specs</m:properties__cxf.servlet-api.group>
+		<m:properties__cxf.jaxb.xjc.version>${cxf.jaxb21.xjc.version}</m:properties__cxf.jaxb.xjc.version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-servlet_3.0_spec__version>1.0</m:dependency.management__org.apache.geronimo.specs__geronimo-servlet_3.0_spec__version>
+		<m:dependency.management__org.apache.aries.blueprint__org.apache.aries.blueprint.core__version>0.3.1</m:dependency.management__org.apache.aries.blueprint__org.apache.aries.blueprint.core__version>
+		<m:properties__cxf.downloadSources>true</m:properties__cxf.downloadSources>
+		<m:dependency.management__org.springframework.security__spring-security-acl__exclusion_0>org.springframework__spring-core</m:dependency.management__org.springframework.security__spring-security-acl__exclusion_0>
+		<m:properties__cxf.xmlbeans.version>2.5.0</m:properties__cxf.xmlbeans.version>
+		<m:dependency.management__org.springframework.security__spring-security-acl__exclusion_1>org.springframework__spring-dao</m:dependency.management__org.springframework.security__spring-security-acl__exclusion_1>
+		<m:dependency.management__commons-codec__commons-codec__version>1.4</m:dependency.management__commons-codec__commons-codec__version>
+		<m:dependency.management__org.springframework.security__spring-security-acl__exclusion_2>org.springframework__spring-jdbc</m:dependency.management__org.springframework.security__spring-security-acl__exclusion_2>
+		<m:properties__cxf.spring.ldap.version>1.3.1.RELEASE</m:properties__cxf.spring.ldap.version>
+		<m:dependency.management__org.springframework.security__spring-security-acl__exclusion_3>org.springframework__spring-remoting</m:dependency.management__org.springframework.security__spring-security-acl__exclusion_3>
+		<m:dependency.management__org.springframework.security__spring-security-acl__exclusion_4>org.springframework__spring-support</m:dependency.management__org.springframework.security__spring-security-acl__exclusion_4>
+		<m:properties__cxf.saaj.version>1.3.4</m:properties__cxf.saaj.version>
+		<m:dependency.management__org.apache.maven__maven-plugin-api__version>2.2.1</m:dependency.management__org.apache.maven__maven-plugin-api__version>
+		<m:dependency.management__org.apache.ant__ant__version>1.8.2</m:dependency.management__org.apache.ant__ant__version>
+		<m:dependency.management__org.slf4j__slf4j-jdk14__version>1.6.2</m:dependency.management__org.slf4j__slf4j-jdk14__version>
+		<m:properties__cxf.jaxb21.version>2.1</m:properties__cxf.jaxb21.version>
+		<m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__exclusion_0>javax.xml__jsr173</m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__exclusion_0>
+		<m:properties__cxf.osgi.version>4.2.0</m:properties__cxf.osgi.version>
+		<m:properties__cxf.saaj.impl.groupId>com.sun.xml.messaging.saaj</m:properties__cxf.saaj.impl.groupId>
+		<m:dependency.management__org.osgi__org.osgi.compendium__scope>provided</m:dependency.management__org.osgi__org.osgi.compendium__scope>
+		<m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__exclusion_1>javax.xml.bind__jsr173_api</m:dependency.management__com.sun.xml.fastinfoset__FastInfoset__exclusion_1>
+		<m:properties__cxf.xjc-utils.version>2.4.0</m:properties__cxf.xjc-utils.version>
+		<m:properties__cxf.rhino.version>1.7R2</m:properties__cxf.rhino.version>
+		<m:dependency.management__org.jibx__jibx-schema__version>1.2.4.5</m:dependency.management__org.jibx__jibx-schema__version>
+		<m:properties__cxf.jaxb.impl.version>${cxf.jaxb21.impl.version}</m:properties__cxf.jaxb.impl.version>
+		<m:dependency.management__org.springframework.security__spring-security-core-tiger__version>2.0.6.RELEASE</m:dependency.management__org.springframework.security__spring-security-core-tiger__version>
+		<m:dependency.management__org.springframework__spring-context__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-context__version>
+		<m:properties__cxf.eclipse.outputDirectory>${basedir}/target/classes</m:properties__cxf.eclipse.outputDirectory>
+		<m:dependency.management__org.springframework__spring-jms__version>3.0.6.RELEASE</m:dependency.management__org.springframework__spring-jms__version>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-j2ee-connector_1.5_spec__version>2.0.0</m:dependency.management__org.apache.geronimo.specs__geronimo-j2ee-connector_1.5_spec__version>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="sources" visibility="public" description="this configuration contains the source artifact of this module, if any."/>
+		<conf name="javadoc" visibility="public" description="this configuration contains the javadoc artifact of this module, if any."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="cxf-rt-transports-local" type="jar" ext="jar" conf="master"/>
+		<artifact name="cxf-rt-transports-local" type="source" ext="jar" conf="sources" m:classifier="sources"/>
+		<artifact name="cxf-rt-transports-local" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
+	</publications>
+	<dependencies>
+		<dependency org="junit" name="junit" rev="4.10" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.apache.cxf" name="cxf-api" rev="2.5.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.5.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<override org="org.easymock" module="easymock" matcher="exact" rev="3.1"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="org.springframework" module="spring-beans" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.maven" module="maven-core" matcher="exact" rev="2.2.1"/>
+		<override org="org.springframework" module="spring-beans" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-impl" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.velocity" module="velocity" matcher="exact" rev="1.7"/>
+		<override org="commons-httpclient" module="commons-httpclient" matcher="exact" rev="3.1"/>
+		<override org="antlr" module="antlr" matcher="exact" rev="2.7.7"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-beans" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="rhino" module="js" matcher="exact" rev="1.7R2"/>
+		<override org="org.springframework" module="spring-beans" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-jms_1.1_spec" matcher="exact" rev="1.1.1"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="org.apache.activemq" module="activemq-core" matcher="exact" rev="5.4.2"/>
+		<override org="org.bouncycastle" module="bcprov-jdk15on" matcher="exact" rev="1.47"/>
+		<override org="org.apache.maven" module="maven-artifact" matcher="exact" rev="2.2.1"/>
+		<override org="javax.xml.soap" module="saaj-api" matcher="exact" rev="1.3.4"/>
+		<override org="javax.xml.soap" module="saaj-api" matcher="exact" rev="1.3.4"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-activation_1.1_spec" matcher="exact" rev="1.1"/>
+		<override org="org.codehaus.jra" module="jra" matcher="exact" rev="1.0-alpha-4"/>
+		<override org="org.apache.ws.xmlschema" module="xmlschema-core" matcher="exact" rev="2.0.3"/>
+		<override org="org.apache.ws.xmlschema" module="xmlschema-core" matcher="exact" rev="2.0.3"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-ws-metadata_2.0_spec" matcher="exact" rev="1.1.3"/>
+		<override org="org.apache.maven" module="maven-plugin-api" matcher="exact" rev="2.2.1"/>
+		<override org="org.jibx" module="jibx-tools" matcher="exact" rev="1.2.4.5"/>
+		<override org="org.springframework" module="spring-tx" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
+		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
+		<override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
+		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
+		<override org="cglib" module="cglib-nodep" matcher="exact" rev="2.2.2"/>
+		<override org="org.apache.activemq" module="activemq-core" matcher="exact" rev="5.4.2"/>
+		<override org="org.apache.xmlbeans" module="xmlbeans" matcher="exact" rev="2.5.0"/>
+		<override org="org.apache.abdera" module="abdera-core" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-core" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-core" matcher="exact" rev="1.1.2"/>
+		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
+		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
+		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.19"/>
+		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
+		<override org="org.apache.maven" module="maven-plugin-api" matcher="exact" rev="2.2.1"/>
+		<override org="org.springframework.security" module="spring-security-core" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
+		<override org="org.eclipse.jetty" module="jetty-server" matcher="exact" rev="7.5.4.v20111024"/>
+		<override org="com.sun.xml.parsers" module="jaxp-ri" matcher="exact" rev="1.4.5"/>
+		<override org="org.apache.maven" module="maven-project" matcher="exact" rev="2.2.1"/>
+		<override org="org.apache.xmlbeans" module="xmlbeans" matcher="exact" rev="2.5.0"/>
+		<override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="xalan" module="xalan" matcher="exact" rev="2.7.1"/>
+		<override org="org.codehaus.woodstox" module="woodstox-core-asl" matcher="exact" rev="4.2.0"/>
+		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-aop" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.easymock" module="easymock" matcher="exact" rev="3.1"/>
+		<override org="org.apache.ws.xmlschema" module="xmlschema-core" matcher="exact" rev="2.0.3"/>
+		<override org="jtidy" module="jtidy" matcher="exact" rev="4aug2000r7-dev"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-annotation_1.0_spec" matcher="exact" rev="1.1.1"/>
+		<override org="org.springframework" module="spring-core" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="commons-logging" module="commons-logging" matcher="exact" rev="1.1.1"/>
+		<override org="org.springframework" module="spring-context" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-context" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.jibx" module="jibx-bind" matcher="exact" rev="1.2.4.5"/>
+		<override org="org.springframework" module="spring-context" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-context" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="javax.xml.soap" module="saaj-api" matcher="exact" rev="1.3.4"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-j2ee-management_1.1_spec" matcher="exact" rev="1.0.1"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-stax-api_1.0_spec" matcher="exact" rev="1.0.1"/>
+		<override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-impl" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-impl" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.maven" module="maven-project" matcher="exact" rev="2.2.1"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-impl" matcher="exact" rev="1.2.10"/>
+		<override org="net.java.dev.msv" module="msv-core" matcher="exact" rev="2011.1"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.codehaus.jettison" module="jettison" matcher="exact" rev="1.3.2"/>
+		<override org="org.springframework" module="spring-core" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-core" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-core" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
+		<override org="org.springframework" module="spring-core" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-ejb_3.0_spec" matcher="exact" rev="1.0.1"/>
+		<override org="org.jibx" module="jibx-run" matcher="exact" rev="1.2.4.5"/>
+		<override org="org.springframework" module="spring-webmvc" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
+		<override org="org.codehaus.woodstox" module="woodstox-core-asl" matcher="exact" rev="4.2.0"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="org.codehaus.woodstox" module="woodstox-core-asl" matcher="exact" rev="4.2.0"/>
+		<override org="asm" module="asm" matcher="exact" rev="3.3.1"/>
+		<override org="org.springframework" module="spring-test" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
+		<override org="org.apache.ant" module="ant-nodeps" matcher="exact" rev="1.8.1"/>
+		<override org="xml-resolver" module="xml-resolver" matcher="exact" rev="1.2"/>
+		<override org="org.apache.aries.blueprint" module="org.apache.aries.blueprint.core" matcher="exact" rev="0.3.1"/>
+		<override org="org.eclipse.jetty" module="jetty-servlet" matcher="exact" rev="7.5.4.v20111024"/>
+		<override org="org.osgi" module="org.osgi.core" matcher="exact" rev="4.2.0"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="org.apache.maven" module="maven-artifact" matcher="exact" rev="2.2.1"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.19"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.19"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="org.apache.ws.commons.axiom" module="axiom-api" matcher="exact" rev="1.2.10"/>
+		<override org="jaxme" module="jaxme2" matcher="exact" rev="0.5.1"/>
+		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
+		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
+		<override org="wsdl4j" module="wsdl4j" matcher="exact" rev="1.6.3"/>
+		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
+		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>
+		<override org="junit" module="junit" matcher="exact" rev="4.10"/>
+		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
+		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
+		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>
+		<override org="org.springframework" module="spring-aop" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.springframework" module="spring-aop" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-aop" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-aop" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>
+		<override org="org.eclipse.jetty" module="jetty-server" matcher="exact" rev="7.5.4.v20111024"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.springframework" module="spring-dao" matcher="exact" rev="2.0.8"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.codehaus.jettison" module="jettison" matcher="exact" rev="1.3.2"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.osgi" module="org.osgi.core" matcher="exact" rev="4.2.0"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.osgi" module="org.osgi.compendium" matcher="exact" rev="4.2.0"/>
+		<override org="org.apache.neethi" module="neethi" matcher="exact" rev="3.0.2"/>
+		<override org="org.eclipse.jetty" module="jetty-webapp" matcher="exact" rev="7.5.4.v20111024"/>
+		<override org="javax.ws.rs" module="jsr311-api" matcher="exact" rev="1.1.1"/>
+		<override org="xerces" module="xercesImpl" matcher="exact" rev="2.9.1"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec" matcher="exact" rev="1.7.1"/>
+		<override org="xalan" module="xalan" matcher="exact" rev="2.7.1"/>
+		<override org="org.slf4j" module="slf4j-api" matcher="exact" rev="1.6.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-servlet_2.5_spec" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="xerces" module="xercesImpl" matcher="exact" rev="2.9.1"/>
+		<override org="org.springframework" module="spring-beans" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-parser" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.maven" module="maven-project" matcher="exact" rev="2.2.1"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.12"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="jaxen" module="jaxen" matcher="exact" rev="1.1.4"/>
+		<override org="org.apache.abdera" module="abdera-extensions-json" matcher="exact" rev="1.1.2"/>
+		<override org="commons-lang" module="commons-lang" matcher="exact" rev="2.6"/>
+		<override org="org.apache.maven" module="maven-core" matcher="exact" rev="2.2.1"/>
+		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
+		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-jaxws_2.2_spec" matcher="exact" rev="1.1"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-servlet_3.0_spec" matcher="exact" rev="1.0"/>
+		<override org="org.apache.aries.blueprint" module="org.apache.aries.blueprint.core" matcher="exact" rev="0.3.1"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="commons-codec" module="commons-codec" matcher="exact" rev="1.4"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.apache.ant" module="ant" matcher="exact" rev="1.8.2"/>
+		<override org="org.apache.maven" module="maven-plugin-api" matcher="exact" rev="2.2.1"/>
+		<override org="org.springframework.security" module="spring-security-acl" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.slf4j" module="slf4j-jdk14" matcher="exact" rev="1.6.2"/>
+		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.12"/>
+		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.12"/>
+		<override org="org.osgi" module="org.osgi.compendium" matcher="exact" rev="4.2.0"/>
+		<override org="org.jibx" module="jibx-schema" matcher="exact" rev="1.2.4.5"/>
+		<override org="org.springframework" module="spring-context" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.springframework.security" module="spring-security-core-tiger" matcher="exact" rev="2.0.6.RELEASE"/>
+		<override org="org.springframework" module="spring-jms" matcher="exact" rev="3.0.6.RELEASE"/>
+		<override org="org.apache.geronimo.specs" module="geronimo-j2ee-connector_1.5_spec" matcher="exact" rev="2.0.0"/>
+	</dependencies>
+</ivy-module>

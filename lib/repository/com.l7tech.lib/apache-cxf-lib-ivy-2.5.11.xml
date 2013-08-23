@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech.lib" module="apache-cxf-lib" revision="2.5.11" status="release" publication="20100212120000" default="true"/>
+
+    <configurations defaultconfmapping="compile->default; core->default; runtime->default; test->default">
+        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
+        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+        <conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
+        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
+        <conf name="test" description="The dependency required for building/running tests only." extends="runtime,compile"/>
+        <conf name="optional" description="Contains all optional dependencies"/>
+    </configurations>
+    <publications>
+    </publications>
+    <dependencies>
+        <dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-api" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-common-utilities" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-bindings-soap" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-databinding-jaxb" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-frontend-simple" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-http-jetty" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-ws-addr" rev="2.5.11" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-tools-common" rev="2.5.11" conf="core"/>
+
+        <dependency org="javax.xml.bind" name="jaxb-api" rev="2.1" conf="core"/>
+
+        <exclude org="avalon-framework" module="avalon-framework" ext="jar" matcher="exact" />
+        <exclude org="com.sun.xml.bind" module="jaxb-xjc" ext="jar" matcher="exact" />
+        <exclude org="javax.xml.stream" module="stax-api" ext="jar" matcher="exact" />
+        <exclude org="log4j" module="log4j" ext="jar" matcher="exact" />
+        <exclude org="logkit" module="logkit" ext="jar" matcher="exact" />
+        <exclude org="org.apache.ws.commons.axiom" module="*" ext="jar" matcher="exact" />
+        <exclude org="org.codehaus.woodstox" module="wstx-asl" ext="jar" matcher="exact" />
+        <exclude org="org.springframework" module="*" ext="jar" matcher="exact" />
+        <exclude org="stax" module="stax-api" ext="jar" matcher="exact" />
+        <exclude org="org.apache.velocity" module="velocity" ext="jar" matcher="exact" />
+        <exclude org="xalan" module="xalan" ext="jar" matcher="exact" />
+        <exclude org="xerces" module="xercesImpl" ext="jar" matcher="exact" />
+        <exclude org="xerces" module="xmlParserAPIs" ext="jar" matcher="exact" />
+        <exclude org="xml-apis" module="xml-apis" ext="jar" matcher="exact" />
+        <exclude org="xom" module="xom" ext="jar" matcher="exact" />
+        <exclude org="bouncycastle" module="*" ext="jar" matcher="exact" />
+
+        <override org="org.springframework" module="spring-web" matcher="exact" rev="3.0.7.RELEASE"/>
+    </dependencies>
+
+</ivy-module>
