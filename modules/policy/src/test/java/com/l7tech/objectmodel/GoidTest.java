@@ -238,6 +238,12 @@ public class GoidTest {
         Assert.assertEquals("1f10faf1386979fe", BigInteger.valueOf(goid.getLow()).abs().toString(16));
     }
 
+    @Test
+    public void sanityTestForDefaultGoid(){
+        Assert.assertEquals("You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid(0,-1), Goid.DEFAULT_GOID);
+        Assert.assertEquals("You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid(0,-1), PersistentEntity.DEFAULT_GOID);
+    }
+
     private static Goid createRandomGoid() {
         Random random = new Random();
         byte[] bytes = new byte[16];

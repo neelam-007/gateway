@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
  * @author Victor Kazakov
  */
 public final class Goid implements Comparable<Goid>, Serializable {
+    //This is the default Goid
+    public static final Goid DEFAULT_GOID = new Goid(0, -1);
 
     private long high = 0;
     private long low = -1;
