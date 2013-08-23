@@ -54,9 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
-import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_ERROR;
-import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_INFO;
-import static com.l7tech.gateway.common.audit.AssertionMessages.SSH_ROUTING_PASSTHRU_NO_USERNAME;
+import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -441,7 +439,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
                 @Override
                 public void end() {
-                    logAndAudit(SSH_ROUTING_INFO, new String[]{"Finished retrieving file: " + fileName + " in Session: " + session.getKey().toString()});
+                    logger.log(Level.FINE, "SSH routing: Finished retrieving file: " + fileName + " in Session: " + session.getKey().toString());
                 }
             };
 
