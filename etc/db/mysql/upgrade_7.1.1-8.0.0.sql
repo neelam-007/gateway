@@ -731,7 +731,7 @@ UPDATE rbac_assignment SET provider_goid = toGoid(0, -2) where provider_goid = t
 ALTER TABLE rbac_assignment DROP COLUMN old_provider_oid;
 ALTER TABLE rbac_assignment ADD UNIQUE KEY unique_assignment (provider_goid,role_oid,identity_id, entity_type);
 ALTER TABLE rbac_assignment ADD CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE;
-ALTER TABLE rbac_assignment ADD INDEX i_rbacassign_poid (provider_goid);
+ALTER TABLE rbac_assignment ADD INDEX i_rbacassign_pid (provider_goid);
 
 ALTER TABLE wssc_session ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE wssc_session SET old_provider_oid=provider_id;
