@@ -1,7 +1,9 @@
 package com.l7tech.objectmodel.imp;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Type;
 
@@ -88,7 +90,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
             setGoid(DEFAULT_GOID);
         } else {
             try {
-                setGoid(new Goid(id));
+                setGoid(GoidUpgradeMapper.mapId(EntityType.findTypeByEntity(this.getClass()), id));
             } catch (IllegalArgumentException e) {
                 setGoid(DEFAULT_GOID);
             }
