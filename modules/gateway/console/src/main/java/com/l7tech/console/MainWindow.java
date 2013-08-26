@@ -4086,12 +4086,12 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             int invalidCount = compositeLicense.getInvalidFeatureLicenses().size() +
                             compositeLicense.getInvalidLicenseDocuments().size();
-
             if (invalidCount == 1) {
-                message.append("A license installed on this gateway is invalid.\n");
+
+                message.append("A license installed on this gateway is invalid:\n");
             } else {
                 message.append(invalidCount)
-                        .append(" of the licenses installed on this gateway are invalid.\n");
+                        .append(" of the licenses installed on this gateway are invalid:\n");
             }
 
             for (Long idKey : invalidFeatureLicenses.keySet()) {
@@ -4105,6 +4105,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
                         !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
                     message.append(" does not grant access to this version of this product.");
+                } else if (!l.isLicensePeriodStartBefore(System.currentTimeMillis())) {
+                    message.append(" is not yet valid.");
                 }
 
                 message.append("\n");
