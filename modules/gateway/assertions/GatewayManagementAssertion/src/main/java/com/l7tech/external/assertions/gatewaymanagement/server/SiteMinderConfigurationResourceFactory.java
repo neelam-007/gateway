@@ -44,7 +44,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
 
         smResource.setId( siteMinderCfg.getId() );
         smResource.setName(siteMinderCfg.getName());
-        smResource.setAgentName(siteMinderCfg.getAgent_name());
+        smResource.setAgentName(siteMinderCfg.getAgentName());
         // omit Secret for reads
         smResource.setAddress( siteMinderCfg.getAddress() );
         smResource.setHostname( siteMinderCfg.getHostname() );
@@ -83,7 +83,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration = new SiteMinderConfiguration();
 
         smConfiguration.setName( smResource.getName() );
-        smConfiguration.setAgent_name( smResource.getAgentName() );
+        smConfiguration.setAgentName( smResource.getAgentName() );
         smConfiguration.setAddress( smResource.getAddress() );
         smConfiguration.setSecret( smResource.getSecret() );
         smConfiguration.setHostname( smResource.getHostname() );
@@ -127,7 +127,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
     protected void updateEntity(SiteMinderConfiguration oldEntity, SiteMinderConfiguration newEntity) throws InvalidResourceException {
 
         oldEntity.setName( newEntity.getName() );
-        oldEntity.setAgent_name( newEntity.getAgent_name() );
+        oldEntity.setAgentName( newEntity.getAgentName() );
         oldEntity.setAddress( newEntity.getAddress() );
         if ( newEntity.getSecret() != null ) {
             oldEntity.setSecret( newEntity.getSecret() );

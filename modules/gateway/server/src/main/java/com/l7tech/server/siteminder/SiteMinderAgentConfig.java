@@ -103,7 +103,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
 
     @Override
     public String getAgentName() {
-        return config.getAgent_name();
+        return config.getAgentName();
     }
 
     @Override

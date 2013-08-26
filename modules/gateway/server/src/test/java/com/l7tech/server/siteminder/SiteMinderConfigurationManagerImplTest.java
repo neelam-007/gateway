@@ -27,7 +27,7 @@ public class SiteMinderConfigurationManagerImplTest {
                 config.setGoid(PersistentEntity.DEFAULT_GOID);
                 config.setName("aw80");
                 config.setAddress("127.0.0.1");
-                config.setAgent_name("layer7-agent");
+                config.setAgentName("layer7-agent");
                 config.setSecret("{RC2}kZiLwNZObmPrkGIxDIr+wjLr92OMIXTySRn0YWaQ8uMEHNgyN6BqDYMDq434h37fVCRBGT/nM1gDWZDq9SG/TAx12EAJbItKxyj7SH4Obq25R8gwxXl/Xh2WvoYOfpX0SbxyYAdiWyE1rwZVhpnmm1ToIEZjypTbNtM3VQS7PflzMeoXDMkNlP0Na9PGxB+X");
                 config.setIpcheck(false);
                 config.setHostname("aw80Compat");

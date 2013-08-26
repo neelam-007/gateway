@@ -249,7 +249,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
                 case 1:
                     return configuration.getName();
                 case 2:
-                    return configuration.getAgent_name();
+                    return configuration.getAgentName();
                 case 3:
                     return configuration.getAddress();
                 case 4:

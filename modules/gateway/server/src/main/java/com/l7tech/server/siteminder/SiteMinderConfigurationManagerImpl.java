@@ -50,6 +50,9 @@ public class SiteMinderConfigurationManagerImpl
         if (agent == null) {
             SiteMinderConfiguration c = findByPrimaryKey(goid);
             if (c != null) {
+                if (!c.isEnabled()) {
+                    throw new IllegalStateException("SiteMinder Configuration: " + c.getAgentName() + " is disabled.");
+                }
                 agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(c));
                 cache.put(goid, agent);
             }

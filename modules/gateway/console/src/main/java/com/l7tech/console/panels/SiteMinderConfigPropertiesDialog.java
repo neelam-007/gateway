@@ -280,7 +280,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         }
 
         configurationNameTextField.setText(configuration.getName());
-        agentNameTextField.setText(configuration.getAgent_name());
+        agentNameTextField.setText(configuration.getAgentName());
         //secretTextArea.setText(configuration.getSecret());
         secretPasswordField.setText(configuration.getSecret());
         addressTextField.setText(configuration.getAddress());
@@ -416,7 +416,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private void viewToModel(){
 
         configuration.setName(configurationNameTextField.getText().trim());
-        configuration.setAgent_name(agentNameTextField.getText().trim());
+        configuration.setAgentName(agentNameTextField.getText().trim());
         //configuration.setSecret(secretTextArea.getText().trim());
         configuration.setSecret(new String(secretPasswordField.getPassword()));
         configuration.setAddress(addressTextField.getText().trim());
