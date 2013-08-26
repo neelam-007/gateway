@@ -1536,7 +1536,6 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -358),0,toGoid(0, -350),'READ',NULL,'HTTP_CONFIGURATION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -359),0,toGoid(0, -350),'READ',NULL,'ENCAPSULATED_ASSERTION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -360),0,toGoid(0, -350),'READ',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -361),0,toGoid(0, -350),'CREATE',NULL,'ASSERTION_ACCESS');
 
 INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_goid, description, user_created) VALUES (toGoid(0, -400),1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -401),0,toGoid(0, -400),'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -1580,8 +1579,7 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -439),0,toGoid(0, -400),'READ',NULL,'HTTP_CONFIGURATION');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -440),0,toGoid(0, -400),'CREATE',NULL,'POLICY');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -441),0,toGoid(0, -400),'READ',NULL,'ENCAPSULATED_ASSERTION');
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -442),0,toGoid(0, -400),'CREATE',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0,toGoid(0, -400),'READ',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -442),0,toGoid(0, -400),'READ',NULL,'ASSERTION_ACCESS');
 
 INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_goid, description, user_created) VALUES (toGoid(0, -450),0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -451),0,toGoid(0, -450),'READ',NULL,'CLUSTER_INFO');

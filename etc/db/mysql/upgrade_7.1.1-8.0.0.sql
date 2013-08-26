@@ -212,9 +212,7 @@ alter table jms_connection add FOREIGN KEY (security_zone_goid) REFERENCES secur
 -- RBAC for Assertions: Update "Publish Webservices" and "Manage Webservices" canned roles so they can still use policy assertions in 8.0
 --
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-360,0,-350,'READ',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-361,0,-350,'CREATE',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-442,0,-400,'CREATE',NULL,'ASSERTION_ACCESS');
-INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-443,0,-400,'READ',NULL,'ASSERTION_ACCESS');
+INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-442,0,-400,'READ',NULL,'ASSERTION_ACCESS');
 INSERT INTO rbac_permission (objectid, version, role_oid, operation_type, other_operation, entity_type) VALUES (-1356,0,-1350,'READ',NULL,'ASSERTION_ACCESS');
 
 -- Increasing the length of the issuer dn to match the length of the subject dn
