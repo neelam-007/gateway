@@ -4,7 +4,8 @@ import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.beans.DefaultPersistenceDelegate;
+import java.beans.Encoder;
+import java.beans.Expression;
 import java.beans.PersistenceDelegate;
 import java.io.IOException;
 import java.io.Serializable;
@@ -95,8 +96,13 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @return a PersistenceDelegate for Goid instances.  Never null.
      */
     public static PersistenceDelegate getPersistenceDelegate() {
-        // Encode as call to constructor-from-byte-array using the value returned from getBytes().
-        return new DefaultPersistenceDelegate(new String[]{"bytes"});
+        // Encode as call to constructor-from-string using the value returned from toString().
+        return new PersistenceDelegate() {
+            @Override
+            protected Expression instantiate(Object oldInstance, Encoder out) {
+                return new Expression(oldInstance, Goid.class, "new", new Object[]{oldInstance.toString()});
+            }
+        };
     }
 
     /**
