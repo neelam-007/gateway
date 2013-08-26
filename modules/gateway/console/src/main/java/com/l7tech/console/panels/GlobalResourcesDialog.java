@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -340,7 +341,7 @@ public class GlobalResourcesDialog extends JDialog {
         }
 
         if ( resourceEntry != null ) {
-            editEntry( resourceEntry, flags.canUpdateSome() );
+            editEntry( resourceEntry, Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.RESOURCE_ENTRY, resourceEntry)) );
         } else {
             showErrorMessage( "Error Accessing Resource", "The selected resource is no longer available." );
 
