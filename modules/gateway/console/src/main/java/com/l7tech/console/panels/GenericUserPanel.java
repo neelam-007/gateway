@@ -851,14 +851,16 @@ public class GenericUserPanel extends UserPanel {
     }
 
     private void saveRoleChanges() throws SaveException {
-        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-        for (final Role addedRole : rolesPanel.getAddedRoles()) {
-            addedRole.addAssignedUser(user);
-            rbacAdmin.saveRole(addedRole);
-        }
-        for (final Role removedRole : rolesPanel.getRemovedRoles()) {
-            removedRole.removeAssignedUser(user);
-            rbacAdmin.saveRole(removedRole);
+        if (config.isAdminEnabled() && rolesPanel != null) {
+            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+            for (final Role addedRole : rolesPanel.getAddedRoles()) {
+                addedRole.addAssignedUser(user);
+                rbacAdmin.saveRole(addedRole);
+            }
+            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+                removedRole.removeAssignedUser(user);
+                rbacAdmin.saveRole(removedRole);
+            }
         }
     }
 

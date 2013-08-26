@@ -499,14 +499,16 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
     }
 
     private void saveRoleChanges() throws SaveException {
-        final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-        for (final Role addedRole : rolesPanel.getAddedRoles()) {
-            addedRole.addAssignedGroup(group);
-            rbacAdmin.saveRole(addedRole);
-        }
-        for (final Role removedRole : rolesPanel.getRemovedRoles()) {
-            removedRole.removeAssignedGroup(group);
-            rbacAdmin.saveRole(removedRole);
+        if (config.isAdminEnabled() && rolesPanel != null) {
+            final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
+            for (final Role addedRole : rolesPanel.getAddedRoles()) {
+                addedRole.addAssignedGroup(group);
+                rbacAdmin.saveRole(addedRole);
+            }
+            for (final Role removedRole : rolesPanel.getRemovedRoles()) {
+                removedRole.removeAssignedGroup(group);
+                rbacAdmin.saveRole(removedRole);
+            }
         }
     }
 
