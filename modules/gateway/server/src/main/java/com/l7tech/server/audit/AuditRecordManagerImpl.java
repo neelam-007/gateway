@@ -115,9 +115,9 @@ public class AuditRecordManagerImpl
             // This query must perform multiple queries to avoid cartesian product as there are several possible collections
             // to fill in the audit record hierarchy.
             final Query query = session.createQuery(HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED);
-            Collection<Long> auditRecordIdNumbers = new ArrayList<Long>();
+            Collection<Goid> auditRecordIdNumbers = new ArrayList<Goid>();
             for(String idStr : auditRecordIds){
-                try{ auditRecordIdNumbers.add(Long.parseLong(idStr));}
+                try{ auditRecordIdNumbers.add(Goid.parseGoid(idStr));}
                 catch(NumberFormatException e){}// ignore
             }
             query.setParameterList(IDS_PARAMETER, auditRecordIdNumbers);
