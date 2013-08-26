@@ -1,7 +1,9 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
@@ -71,6 +73,15 @@ public class HttpProxyConfiguration implements Serializable {
     public void setPasswordGoid(final Goid passwordGoid) {
         checkLocked();
         this.passwordGoid = passwordGoid;
+    }
+
+    /**
+     * @deprecated This is only needed here for de-serialization purposed for the ioHttpProxy cluster property
+     */
+    @Deprecated
+    public void setPasswordOid(final Long passwordOid) {
+        checkLocked();
+        this.passwordGoid = GoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, passwordOid);
     }
 
     //- PRIVATE
