@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SecurityZone;
@@ -24,6 +25,8 @@ import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.GlobalResourceImportContext.ImportChoice.*;
 
@@ -31,6 +34,7 @@ import static com.l7tech.console.panels.GlobalResourceImportContext.ImportChoice
  * Context for global resource imports.
  */
 class GlobalResourceImportContext {
+    private static final Logger logger = Logger.getLogger(GlobalResourceImportContext.class.getName());
 
     //- PUBLIC
 
@@ -615,7 +619,12 @@ class GlobalResourceImportContext {
                 return resolveHeaders( uri, new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
                     @Override
                     public Collection<ResourceEntryHeader> call() throws ObjectModelException {
-                        final ResourceEntryHeader header = resourceAdmin.findResourceHeaderByUriAndType( uri, null );
+                        ResourceEntryHeader header = null;
+                        try {
+                            header = resourceAdmin.findResourceHeaderByUriAndType( uri, null );
+                        } catch (final PermissionDeniedException e) {
+                            logger.log(Level.WARNING,  "User does not have permission to read resource entry with uri " + uri, ExceptionUtils.getDebugException(e));
+                        }
                         return header == null ? Collections.<ResourceEntryHeader>emptySet() : Collections.singleton( header );
                     }
                 } );

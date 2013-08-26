@@ -22,6 +22,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Charsets;
@@ -508,11 +509,18 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
     protected static void handleSaveError( final Component owner,
                                            final SaveException saveException ) {
-        logger.log( Level.WARNING, "Error saving resources", saveException );
-        showErrorMessage(
-            owner,
-            "Error Saving Resources",
-            "Unable to save resources:\n" + ExceptionUtils.getMessage( saveException ) );
+        logger.log( Level.WARNING, "Error saving resources", ExceptionUtils.getDebugException(saveException) );
+        if (saveException instanceof DuplicateObjectException) {
+            showErrorMessage(
+                owner,
+                "Error Saving Resources",
+                "Resource already exists: " + ExceptionUtils.getMessage( saveException ) );
+        } else {
+            showErrorMessage(
+                owner,
+                "Error Saving Resources",
+                "Unable to save resources:\n" + ExceptionUtils.getMessage( saveException ) );
+        }
     }
 
     protected static void handleSaveError( final ErrorListener listener,
