@@ -238,7 +238,7 @@ public class ManageLicensesDialog extends JDialog {
         String confirmationDialogMessage = "This will irrevocably destroy the existing gateway license and cannot\n" +
                 "be undone. It will also cause the Policy Manager to disconnect when\n" +
                 "you are finished managing licenses.\n" +
-                "Really remove this gateway license?";
+                "Are you sure you want to remove this Gateway license?";
 
         DialogDisplayer.showSafeConfirmDialog(
                 this,
