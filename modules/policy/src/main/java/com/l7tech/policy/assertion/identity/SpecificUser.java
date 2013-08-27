@@ -88,7 +88,11 @@ public class SpecificUser extends IdentityAssertion {
             try{
                 Long groupOidId = Long.parseLong(getUserUid());
                 if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){
-                    setUserUid(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                    if(groupOidId == 3){
+                        setUserUid(Goid.toString(new Goid(0,3)));
+                    }else{
+                        setUserUid(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                    }
                 }else{
                     setUserUid(GoidUpgradeMapper.mapOidFromTableName("fed_user",groupOidId).toString());
                 }

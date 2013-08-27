@@ -62,6 +62,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     @Deprecated
     public void setTargetIdentityType( final TargetIdentityType targetIdentityType ) {
         this.targetIdentityType = targetIdentityType;
+        mapUserId();
     }
 
 
@@ -126,13 +127,25 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
 
     private final Goid INTERNAL_IDENTITY_PROVIDER = new Goid(0,-2);
     private void mapUserId(){
-        if(getIdentityId()!=null && getIdentityId().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(PersistentEntity.DEFAULT_GOID)){
+        if(getTargetIdentityType()!=null && getIdentityId()!=null && getIdentityId().length()!=32 && getIdentityProviderOid()!=null&& !getIdentityProviderOid().equals(PersistentEntity.DEFAULT_GOID)){
             try{
                 Long groupOidId = Long.parseLong(getIdentityId());
                 if(getIdentityProviderOid().equals(INTERNAL_IDENTITY_PROVIDER)){
-                    setIdentityId(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                    if(getTargetIdentityType().equals(TargetIdentityType.USER)){
+                        if(groupOidId == 3){
+                            setIdentityId(Goid.toString(new Goid(0,3)));
+                        }else{
+                            setIdentityId(GoidUpgradeMapper.mapOidFromTableName("internal_user", groupOidId).toString());
+                        }
+                    }else if(getTargetIdentityType().equals(TargetIdentityType.GROUP)){
+                        setIdentityId(GoidUpgradeMapper.mapOidFromTableName("internal_group", groupOidId).toString());
+                    }
                 }else{
-                    setIdentityId(GoidUpgradeMapper.mapOidFromTableName("fed_user",groupOidId).toString());
+                    if(getTargetIdentityType().equals(TargetIdentityType.USER)){
+                        setIdentityId(GoidUpgradeMapper.mapOidFromTableName("fed_user",groupOidId).toString());
+                    }else if(getTargetIdentityType().equals(TargetIdentityType.GROUP)){
+                        setIdentityId(GoidUpgradeMapper.mapOidFromTableName("fed_group",groupOidId).toString());
+                    }
                 }
             }catch(NumberFormatException e){
                 // no need to map dn group id
