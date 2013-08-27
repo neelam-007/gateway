@@ -54,6 +54,8 @@ public class LicenseDetailsDialog extends JDialog {
             }
         });
 
+        Utilities.setEscKeyStrokeDisposes(this);
+
         pack();
     }
 

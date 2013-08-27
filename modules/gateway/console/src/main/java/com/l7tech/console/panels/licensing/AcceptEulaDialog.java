@@ -7,6 +7,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
@@ -36,25 +38,39 @@ public class AcceptEulaDialog extends JDialog {
         eulaDetailsHolderPanel.setLayout(new BorderLayout());
         eulaDetailsHolderPanel.add(new EulaPanel(featureLicense.getEulaText()));
 
+        Utilities.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                doDecline();
+            }
+        });
+
         agreeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                licenseAccepted = true;
-                dispose();
+                doAccept();
             }
         });
 
         declineButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                licenseAccepted = false;
-                dispose();
+                doDecline();
             }
         });
 
         Utilities.equalizeButtonSizes(agreeButton, declineButton);
 
         pack();
+    }
+
+    public void doAccept() {
+        licenseAccepted = true;
+        dispose();
+    }
+
+    public void doDecline() {
+        licenseAccepted = false;
+        dispose();
     }
 
     public boolean isLicenseAccepted() {

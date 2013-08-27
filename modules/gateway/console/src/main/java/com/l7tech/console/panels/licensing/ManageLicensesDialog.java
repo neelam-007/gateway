@@ -90,9 +90,17 @@ public class ManageLicensesDialog extends JDialog {
 
         closeButton.addActionListener(getCloseActionListener());
 
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
+                onClose();
+            }
+        });
+
+        Utilities.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
                 onClose();
             }
         });

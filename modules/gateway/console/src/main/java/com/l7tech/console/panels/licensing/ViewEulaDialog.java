@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.licensing;
 
 import com.l7tech.gateway.common.licensing.FeatureLicense;
+import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,6 +41,8 @@ public class ViewEulaDialog extends JDialog {
                 dispose();
             }
         });
+
+        Utilities.setEscKeyStrokeDisposes(this);
 
         pack();
     }
