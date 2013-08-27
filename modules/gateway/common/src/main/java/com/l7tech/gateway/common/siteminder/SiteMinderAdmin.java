@@ -60,7 +60,7 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
      * @throws FindException: thrown when errors finding the SiteMinder configuration entities.
      */
     @Transactional(readOnly = true)
-    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.FIND_ENTITIES)
+    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.GET_PROPERTY_OF_ENTITY)
     List<String>  getAllSiteMinderConfigurationNames() throws FindException;
 
     /**
@@ -91,7 +91,7 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
      * @return
      */
     @Transactional(readOnly = true)
-    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.FIND_ENTITIES)
+    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.SAVE_OR_UPDATE)
     AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(String address,
                                                                             String username,
                                                                             Goid password,
