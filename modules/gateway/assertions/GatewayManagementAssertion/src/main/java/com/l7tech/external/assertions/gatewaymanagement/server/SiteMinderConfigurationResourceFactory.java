@@ -111,9 +111,11 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setFipsmode( smResource.getFipsMode() );
         smConfiguration.setClusterThreshold( smResource.getClusterThreshold() );
 
-        Map<String, String> smProperties = new HashMap<String, String>( smResource.getProperties().size() );
-        for (Map.Entry<String, String> entry : smResource.getProperties().entrySet()) {
-            smProperties.put( entry.getKey(), entry.getValue() );
+        Map<String, String> smProperties = new HashMap<String, String>();
+        if ( smResource.getProperties() != null ) {
+            for (Map.Entry<String, String> entry : smResource.getProperties().entrySet()) {
+                smProperties.put( entry.getKey(), entry.getValue() );
+            }
         }
         smConfiguration.setProperties( smProperties );
 
