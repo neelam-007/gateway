@@ -79,8 +79,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions",
                     "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles",
                     "com.l7tech.server.upgrade.Upgrade70To71UpdateRoles",
-                    "com.l7tech.server.upgrade.Upgrade71To80UpdateRoles",
-                    "com.l7tech.server.upgrade.Upgrade71To80AuditRecords") )
+                    "com.l7tech.server.upgrade.Upgrade71To80UpdateRoles") )
         .unmodifiableMap();
 
     private final ClusterPropertyManager clusterPropertyManager;

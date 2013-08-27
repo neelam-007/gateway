@@ -1,5 +1,6 @@
 package com.l7tech.server.upgrade;
 
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
@@ -197,6 +198,31 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
             });
         } catch (Exception e) {
             throw new NonfatalUpgradeException("Could not update secured stored conversation session", e);
+        }
+
+        //  audit_main.user_id
+        try {
+            new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Void>() {
+                @Override
+                public Void doInHibernate(final Session session) throws HibernateException, SQLException {
+                    Criteria schemaCriteria = session.createCriteria(AuditRecord.class);
+                    for (Object schemaCriteriaObj : schemaCriteria.list()) {
+                        if (schemaCriteriaObj instanceof AuditRecord) {
+                            AuditRecord auditRecord = (AuditRecord) schemaCriteriaObj;
+                            Goid providerId = auditRecord.getIdentityProviderGoid();
+                            if(isInternal(providerId) ){
+                                auditRecord.setUserId(getInternalUserId(internal_user_prefix,  auditRecord.getUserId()));
+                            }
+                            else if(isFederated(providerId)){
+                                auditRecord.setUserId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(auditRecord.getUserId()))));
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new NonfatalUpgradeException("Could not update audit records", e);
         }
 
     }

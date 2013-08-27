@@ -705,8 +705,7 @@ ALTER TABLE audit_main ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE audit_main SET old_provider_oid=provider_oid;
 ALTER TABLE audit_main CHANGE COLUMN provider_oid provider_goid binary(16);
 UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid) where old_provider_oid > 0;
-UPDATE audit_main SET provider_goid = null where old_provider_oid=-1;
-UPDATE audit_main SET provider_goid = toGoid(0, -2) where provider_goid = toGoid(@identity_provider_prefix, -2);
+UPDATE audit_main SET provider_goid = toGoid(0, -2) where old_provider_oid = -2;
 ALTER TABLE audit_main DROP COLUMN old_provider_oid;
 
 DROP INDEX internal_identity_provider_oid ON password_policy;
@@ -1757,8 +1756,7 @@ INSERT INTO cluster_properties
     values (toGoid(0,-800001), 0, 'upgrade.task.800001', 'com.l7tech.server.upgrade.Upgrade71To80SinkConfig', null),
            (toGoid(0,-800002), 0, 'upgrade.task.800002', 'com.l7tech.server.upgrade.Upgrade71To80IdReferences', null),
            (toGoid(0,-800003), 0, 'upgrade.task.800003', 'com.l7tech.server.upgrade.Upgrade71To80IdProviderReferences', null),
-           (toGoid(0,-800004), 0, 'upgrade.task.800004', 'com.l7tech.server.upgrade.Upgrade71To80AuditRecords', null),
-           (toGoid(0,-800005), 0, 'upgrade.task.800005', 'com.l7tech.server.upgrade.Upgrade71to80UpdateGatewayManagementWsdl', null);
+           (toGoid(0,-800004), 0, 'upgrade.task.800004', 'com.l7tech.server.upgrade.Upgrade71to80UpdateGatewayManagementWsdl', null);
 
 
 --
