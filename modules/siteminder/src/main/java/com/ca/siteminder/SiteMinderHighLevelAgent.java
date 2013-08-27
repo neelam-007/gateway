@@ -158,7 +158,7 @@ public class SiteMinderHighLevelAgent {
             userCreds = credentials.getUserCredentials();
         }
 
-        if(ssoCookie == null
+        if( (ssoCookie == null || ssoCookie.trim().length() == 0)
                 && ((userCreds.name == null || userCreds.name.length() < 1) && (userCreds.password == null || userCreds.password.length() < 1)
                     && (userCreds.certBinary == null || userCreds.certBinary.length == 0))) {
             logger.log(Level.WARNING, "Credentials missing in service request.");
@@ -168,7 +168,7 @@ public class SiteMinderHighLevelAgent {
         String newSsoCookie = null;
         int result = AgentAPI.FAILURE;
 
-        if (null != ssoCookie) {
+        if (null != ssoCookie && ssoCookie.trim().length() > 0) {
             // attempt to authorize with existing cookie
             result = agent.validateSession( userCreds, userIp, ssoCookie,  context.getTransactionId(), context);
             if(result != AgentAPI.YES) {
