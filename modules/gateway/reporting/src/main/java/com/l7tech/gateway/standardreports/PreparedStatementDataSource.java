@@ -6,21 +6,20 @@
  */
 package com.l7tech.gateway.standardreports;
 
+import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRField;
 import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRField;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.ResultSet;
-
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Pair;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The use of this object is not very natural as it's a minimum change injection into current implementation of
@@ -275,7 +274,7 @@ public class PreparedStatementDataSource implements JRDataSource {
         POLICY_VIOLATIONS("POLICY_VIOLATIONS", SupportedType.JAVA_LANG_LONG),
         ROUTING_FAILURES("ROUTING_FAILURES", SupportedType.JAVA_LANG_LONG),
         USAGE_SUM("USAGE_SUM", SupportedType.JAVA_LANG_LONG),
-        SERVICE_ID("SERVICE_ID", SupportedType.JAVA_LANG_LONG),
+        SERVICE_ID("SERVICE_ID", SupportedType.JAVA_LANG_STRING),
         SERVICE_NAME("SERVICE_NAME", SupportedType.JAVA_LANG_STRING),
         ROUTING_URI("ROUTING_URI", SupportedType.JAVA_LANG_STRING),
         FRTM("FRTM", SupportedType.JAVA_LANG_INTEGER),
