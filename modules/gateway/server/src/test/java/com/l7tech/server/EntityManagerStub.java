@@ -197,8 +197,4 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public void updateRoles( final ET entity ) throws UpdateException {
     }
-
-    @Override
-    public void deleteRoles( final Goid entityOid ) throws DeleteException {
-    }
 }

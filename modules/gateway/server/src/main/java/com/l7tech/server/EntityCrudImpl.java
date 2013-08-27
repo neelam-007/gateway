@@ -170,9 +170,6 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         final EntityManager manager = getEntityManager(e.getClass());
         if (manager != null) {
             manager.delete((PersistentEntity)e);
-            if ( manager instanceof RoleAwareEntityManager) {
-                ((RoleAwareEntityManager)manager).deleteRoles( ((PersistentEntity) e).getGoid() );
-            }
             return;
         }
 

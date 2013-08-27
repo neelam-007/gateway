@@ -90,6 +90,19 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
     void deleteEntitySpecificRoles(EntityType etype, Goid entityGoid) throws DeleteException;
 
     /**
+     * Removes all permissions which reference the given entity (which is presumably being deleted) from their roles.
+     * It is possible that this may leave roles that contain no permissions.
+     *
+     * Typically used for entities which do not have Goids.
+     * For entities which have Goids use {@link #deleteEntitySpecificRoles(com.l7tech.objectmodel.EntityType, com.l7tech.objectmodel.Goid)}.
+     *
+     * @param etype type of entity whose roles are to be deleted, eg Folder.  Required.
+     * @param entityId the id of the entity whose permissions are to be deleted. Required.
+     * @throws DeleteException
+     */
+    void deleteEntitySpecificPermissions(@NotNull final EntityType etype, @NotNull final String entityId) throws DeleteException;
+
+    /**
      * Updates the Roles corresponding to the provided Entity to match a new name, if it's different
      * @param entityType the RBAC type of the Entity being updated
      * @param entity the entity being updated

@@ -268,7 +268,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 }
             });
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class)) return null; 
+            if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class) || ExceptionUtils.causedBy(e, ObjectNotFoundException.class)) return null;
             throw new FindException("Couldn't find entity ", e);
         }
     }

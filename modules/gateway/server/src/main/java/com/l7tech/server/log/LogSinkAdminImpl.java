@@ -38,7 +38,6 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     @Override
     public void deleteSinkConfiguration(Goid goid) throws DeleteException, FindException {
         sinkManager.delete(goid);
-        sinkManager.deleteRoles(goid);
     }
 
     @Override

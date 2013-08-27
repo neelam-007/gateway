@@ -179,11 +179,6 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         }
     }
 
-    @Override
-    public void deleteRoles( final Goid folderGoid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(FOLDER, folderGoid);
-    }
-
     /**
      * Creates management new role for the specified Folder.
      *

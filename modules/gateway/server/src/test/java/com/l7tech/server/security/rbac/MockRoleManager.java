@@ -105,6 +105,10 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     }
 
     @Override
+    public void deleteEntitySpecificPermissions(@NotNull EntityType etype, @NotNull String entityId) throws DeleteException {
+    }
+
+    @Override
     public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }

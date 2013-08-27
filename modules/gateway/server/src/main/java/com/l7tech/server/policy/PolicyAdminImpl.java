@@ -154,7 +154,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public void deletePolicy(Goid goid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         checkForActiveAuditSinkOrTracePolicy(goid);
         policyManager.delete(goid);
-        policyManager.deleteRoles(goid);
+        //policyManager.deleteRoles(goid);
     }
 
     private void checkForActiveAuditSinkOrTracePolicy(Goid goid) throws FindException, PolicyDeletionForbiddenException {
@@ -223,10 +223,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public void deleteEntityAlias(String policyGoid) throws DeleteException {
+    public void deleteEntityAlias(String aliasGoid) throws DeleteException {
         final PolicyAlias alias;
         try {
-            Goid goid = Goid.parseGoid(policyGoid);
+            Goid goid = Goid.parseGoid(aliasGoid);
             alias = policyAliasManager.findByPrimaryKey(goid);
             policyAliasManager.delete(alias);
             logger.info("Deleted PolicyAlias: " + goid);

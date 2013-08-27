@@ -44,7 +44,6 @@ public class FolderAdminImpl implements FolderAdmin {
                 throw new NonEmptyFolderDeletionException("Folder with goid " + goid + " is not empty");
             }
         }
-        folderManager.deleteRoles(goid);
         folderManager.delete(goid);
     }
 

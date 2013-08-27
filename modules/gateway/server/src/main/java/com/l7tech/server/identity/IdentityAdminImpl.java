@@ -238,7 +238,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 deleteAllVirtualGroups(oid);
             }
 
-            manager.deleteRoles( ipc.getGoid() );
             manager.delete(ipc);
 
             trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getGoid());

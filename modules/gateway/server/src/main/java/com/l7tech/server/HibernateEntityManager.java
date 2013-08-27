@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.event.entity.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -8,6 +9,9 @@ import com.l7tech.util.Functions;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.hibernate.jdbc.Work;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -48,7 +52,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public abstract class HibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader>
         extends HibernateDaoSupport
-        implements EntityManager<ET, HT>
+        implements EntityManager<ET, HT>, ApplicationContextAware
 {
     public static final String EMPTY_STRING = "";
     public static final String F_GOID = "goid";
@@ -82,6 +86,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             " WHERE " + getTableName() + "." + F_GOID + " = ?";
 
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
+    protected ApplicationContext applicationContext;
+
+    @Override
+    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
 
     @Override
     @Transactional(readOnly=true)
@@ -722,7 +732,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     if (todelete.size() == 0) {
                         // nothing to do
                     } else if (todelete.size() == 1) {
-                        session.delete(todelete.get(0));
+                        final Object entity = todelete.get(0);
+                        publishRoleAwareEntityDeletionEvent(entity);
+                        session.delete(entity);
                     } else {
                         throw new RuntimeException("More than one entity found with oid = " + goid);
                     }
@@ -743,8 +755,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     ET entity = (ET)session.get(getImpClass(), et.getGoid());
                     if (entity == null) {
+                        publishRoleAwareEntityDeletionEvent(et);
                         session.delete(et);
                     } else {
+                        publishRoleAwareEntityDeletionEvent(entity);
                         // Avoid NonUniqueObjectException if an older version of this is still in the Session
                         session.delete(entity);
                     }
@@ -960,6 +974,21 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      */
     protected final <RT> RT doWithCacheReadLock(Callable<RT> stuff) throws Exception {
         return doWithLock(cacheLock.readLock(), stuff);
+    }
+
+    /**
+     * If the entity allows Role permissions to reference it in its permission scope, publish an event which indicates it is about to be deleted.
+     * @param entity the entity which is about to be deleted.
+     */
+    private void publishRoleAwareEntityDeletionEvent(final Object entity) {
+        if (applicationContext != null && entity instanceof Entity) {
+            final EntityType type = EntityType.findTypeByEntity((Class<? extends Entity>) entity.getClass());
+            if (type != null && type.isAllowSpecificScope()) {
+                applicationContext.publishEvent(new RoleAwareEntityDeletionEvent(this, (Entity)entity));
+            }
+        } else {
+            logger.log(Level.WARNING, "Unable to publish RoleAwareEntityDeletionEvent because object is not an Entity or applicationContext is null.");
+        }
     }
 
     private <RT> RT doWithLock(Lock lock, Callable<RT> stuff) throws Exception {

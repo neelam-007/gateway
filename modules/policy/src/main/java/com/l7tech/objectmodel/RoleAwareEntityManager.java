@@ -22,12 +22,4 @@ public interface RoleAwareEntityManager<PET extends PersistentEntity> {
      * @throws com.l7tech.objectmodel.UpdateException If an error occurs
      */
     void updateRoles(PET entity) throws UpdateException;
-
-    /**
-     * Delete any roles for the given entity identifier.
-     *
-     * @param entityGoid The OID for the entity whose roles should be deleted.
-     * @throws com.l7tech.objectmodel.DeleteException If an error occurs.
-     */
-    void deleteRoles(Goid entityGoid) throws DeleteException;
 }

@@ -1,5 +1,6 @@
 package com.l7tech.server.security.rbac;
 
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
@@ -7,6 +8,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.event.entity.RoleAwareEntityDeletionEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
@@ -17,6 +20,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +36,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
-public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
+public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices, PostStartupApplicationListener {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
     private static final String IDENTITY_ID = "identityId";
@@ -401,36 +405,15 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     }
 
-    // Scan all roles for permissions with scopes that will never again match if the specified entity is deleted, and remove
-    // the affected permissions from their owning roles (leaving the roles behind, possibly with no permissions;
-    // note that auto-created roles will have been already deleted by this point so only custom roles may be left in this state.)
-    @Deprecated
-    private void deleteEntitySpecificPermissions(Set<Role> rolesAlreadyDeleted, EntityType etype, final long entityOid) throws DeleteException {
-        Set<Permission> permissionsToDelete = new HashSet<Permission>();
-
-        permissionsToDelete.addAll(findObjectIdentityPredicatePermissionsForEntity(etype, entityOid));
-        permissionsToDelete.addAll(findEntityFolderAncestryPredicatePermissionsForEntity(etype, entityOid));
-        if (EntityType.FOLDER.equals(etype)) {
-            throw new UnsupportedOperationException("Folder entities are no longer supported here");
-        }
-        if (EntityType.SECURITY_ZONE.equals(etype)) {
-            throw new UnsupportedOperationException("SecurityZone entities are no longer supported here");
-        }
-
-        Set<Role> rolesToUpdate = new HashSet<Role>();
-        for (Permission permission : permissionsToDelete) {
+    @Override
+    public void deleteEntitySpecificPermissions(@NotNull final EntityType etype, @NotNull final String entityId) throws DeleteException {
+        final Set<Permission> permissionsToDelete = findObjectIdentityPredicatePermissionsForEntity(etype, entityId);
+        for (final Permission permission : permissionsToDelete) {
             final Role role = permission.getRole();
-            if (!rolesAlreadyDeleted.contains(role)) {
-                role.getPermissions().remove(permission);
-                rolesToUpdate.add(role);
-            }
-        }
-
-        for (Role role : rolesToUpdate) {
+            role.getPermissions().remove(permission);
             try {
-                logger.info("Removing obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + ")");
                 update(role);
-            } catch (UpdateException e) {
+            } catch (final UpdateException e) {
                 logger.log(Level.SEVERE, "Unable to remove obsolete permissions from Role #" + role.getGoid() + " (" + role.getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
@@ -489,12 +472,16 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, Goid entityGoid) {
+        return findObjectIdentityPredicatePermissionsForEntity(etype, entityGoid.toHexString());
+    }
+
+    private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, String entityId) {
         Set<Permission> ret = new HashSet<Permission>();
 
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID, entityGoid.toHexString());
+        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID, entityId);
         for (Object predicate : predicates) {
             if (!(predicate instanceof ObjectIdentityPredicate))
-                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding object identity predicates by entity goid");
+                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding object identity predicates by entity id");
 
             ObjectIdentityPredicate oip = (ObjectIdentityPredicate) predicate;
             if (etype.equals(oip.getPermission().getEntityType())) {
@@ -666,5 +653,25 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     protected void initDao() throws Exception {
         super.initDao();
         if (rbacServices == null) throw new IllegalStateException("rbacServices component is missing");
+    }
+
+    @Override
+    public void onApplicationEvent(@NotNull final ApplicationEvent event) {
+        if (event instanceof RoleAwareEntityDeletionEvent) {
+            final Entity deleted = ((RoleAwareEntityDeletionEvent)event).getEntity();
+            final EntityType type = EntityType.findTypeByEntity(deleted.getClass());
+            if (type != null && type != EntityType.ANY) {
+                try {
+                    if (deleted instanceof PersistentEntity) {
+                        deleteEntitySpecificRoles(type, ((PersistentEntity) deleted).getGoid());
+                    } else if (deleted instanceof SsgKeyEntry) {
+                        deleteEntitySpecificPermissions(type, deleted.getId());
+                    }
+                } catch (final DeleteException e) {
+                    logger.log(Level.WARNING, "Error deleting roles for entity " + deleted + ": " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
     }
 }

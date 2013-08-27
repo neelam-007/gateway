@@ -414,7 +414,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }
             service = serviceManager.findByPrimaryKey(goid);
             serviceManager.delete(service);
-            serviceManager.deleteRoles(service.getGoid());
             logger.info("Deleted PublishedService: " + goid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);

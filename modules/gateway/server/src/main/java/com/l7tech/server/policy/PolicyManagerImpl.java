@@ -254,11 +254,6 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
-    public void deleteRoles( final Goid policyGoid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(EntityType.POLICY, policyGoid);
-    }
-
-    @Override
     public void addManagePolicyRole(Policy policy) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 

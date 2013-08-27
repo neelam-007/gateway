@@ -195,11 +195,6 @@ public class VersioningPolicyManager implements PolicyManager {
         policyManager.updateRoles( entity );
     }
 
-    @Override
-    public void deleteRoles( final Goid entityGoid ) throws DeleteException {
-        policyManager.deleteRoles( entityGoid );
-    }
-
     //- PRIVATE
 
     private final PolicyManager policyManager;

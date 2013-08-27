@@ -178,7 +178,6 @@ public class RbacAdminImpl implements RbacAdmin {
 
     @Override
     public void deleteSecurityZone(SecurityZone securityZone) throws DeleteException {
-        securityZoneManager.deleteRoles(securityZone.getGoid());
         securityZoneManager.delete(securityZone);
     }
 

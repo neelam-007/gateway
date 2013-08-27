@@ -118,11 +118,6 @@ public class IdProvConfManagerServer
         // handled in update method
     }
 
-    @Override
-    public void deleteRoles( final Goid entityGoid ) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, entityGoid);
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************

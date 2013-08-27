@@ -99,7 +99,6 @@ public class RbacAdminImplTest {
     @Test
     public void deleteSecurityZone() throws Exception {
         admin.deleteSecurityZone(zone);
-        verify(securityZoneManager).deleteRoles(ZONE_GOID);
         verify(securityZoneManager).delete(zone);
     }
 

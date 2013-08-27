@@ -123,18 +123,6 @@ public class SecurityZoneManagerImplTest {
         manager.updateRoles(zone);
     }
 
-    @Test
-    public void deleteRoles() throws Exception {
-        manager.deleteRoles(zone.getGoid());
-        verify(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getGoid());
-    }
-
-    @Test(expected = DeleteException.class)
-    public void deleteRolesDeleteException() throws Exception {
-        doThrow(new DeleteException("mocking exception")).when(roleManager).deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, zone.getGoid());
-        manager.deleteRoles(zone.getGoid());
-    }
-
     private ZoneRoleMatcher isReadZoneRole(final String zoneName) {
         return new ZoneRoleMatcher(zoneName, true);
     }

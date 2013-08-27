@@ -50,11 +50,6 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
         }
     }
 
-    @Override
-    public void deleteRoles(Goid entityGoid) throws DeleteException {
-        roleManager.deleteEntitySpecificRoles(EntityType.SECURITY_ZONE, entityGoid);
-    }
-
     void setRoleManager(final RoleManager roleManager) {
         this.roleManager = roleManager;
     }

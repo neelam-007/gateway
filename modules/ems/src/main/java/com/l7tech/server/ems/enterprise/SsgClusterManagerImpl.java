@@ -261,7 +261,6 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     @Override
     public void delete( final SsgCluster ssgCluster ) throws DeleteException {
         super.delete(ssgCluster);
-        roleManager.deleteEntitySpecificRoles(ESM_SSG_CLUSTER, ssgCluster.getGoid());
     }
 
     @Override
