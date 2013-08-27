@@ -408,6 +408,21 @@ public class ServerSshRouteAssertionTest {
     }
 
     @Test
+    public void testSftpPutFailIfFileExists() throws IOException, PolicyAssertionException, LicenseException, JSchException, FileTransferException, SftpException {
+        assertion.setCommandType(CommandKnob.CommandType.PUT);
+        assertion.setScpProtocol(false);
+        assertion.setFailIfFileExists(true);
+
+        Mockito.when(sftpClient.getFileAttributes(Matchers.eq(fileDir), Matchers.eq(fileName))).thenReturn(new XmlSshFile());
+
+        AssertionStatus status = serverSshRouteAssertion.checkRequest(peCtx);
+
+        Assert.assertEquals("Assertion is expected to fail: Messages:\n" + getAuditMessages(), AssertionStatus.FAILED, status);
+
+        Mockito.verify(sftpClient, Mockito.never()).upload(Matchers.any(InputStream.class), Matchers.eq(fileDir), Matchers.eq(fileName), Matchers.eq(fileLength), Matchers.eq(fileOffset), Matchers.eq(false), Matchers.any(XmlSshFile.class), Matchers.any(FileTransferProgressMonitor.class));
+    }
+
+    @Test
     public void testSftpPutPerversePermissions() throws IOException, PolicyAssertionException, LicenseException, JSchException, FileTransferException {
         assertion.setCommandType(CommandKnob.CommandType.PUT);
         assertion.setPreserveFileMetadata(true);

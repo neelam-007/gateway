@@ -381,7 +381,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         return true;
     }
 
-    private boolean performPutCommand(FileTransferClient sshClient, String fileName, String directory, MimeKnob mimeKnob, Map<String, ?> variables, SshKnob.FileMetadata fileMetadata) throws IOException, JSchException, FileTransferException, NoSuchPartException {
+    private boolean performPutCommand(FileTransferClient sshClient, String fileName, String directory, MimeKnob mimeKnob, Map<String, ?> variables, SshKnob.FileMetadata fileMetadata) throws IOException, JSchException, FileTransferException, NoSuchPartException, SftpException {
         // Get the file length
         long fileLength = getFileLength(variables);
         if (assertion.isScpProtocol() && fileLength == -1) {
@@ -399,6 +399,17 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             xmlSshFile = new XmlSshFile();
             xmlSshFile.setPermissions(fileMetadata.getPermission());
         }
+
+        // Bug: SSG-7570
+        // checking to see if the file exists if fail if file exists property is set.
+        if(sshClient instanceof SftpClient && assertion.isFailIfFileExists()){
+            SftpClient sftpClient = (SftpClient) sshClient;
+            XmlSshFile existingFile = sftpClient.getFileAttributes(directory, fileName);
+            if(existingFile != null) {
+                throw new FileTransferException("Cannot upload file. File already exists: " + directory + "/" + fileName);
+            }
+        }
+
         // Upload the message. This will block until the entire file has been uploaded.
         // Appending when the offset is > 0 is how the jscape client worked by default. This needs to be here for backwards compatibility with Goatfish.
         // Todo: introduce a cluster property to implement appending in a better way.
