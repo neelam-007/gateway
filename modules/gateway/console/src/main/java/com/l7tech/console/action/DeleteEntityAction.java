@@ -74,7 +74,7 @@ public class DeleteEntityAction extends SecureAction {
             deleteMe = new AnonymousUserReference(header.getStrId(), config.getGoid(), header.getName());
         } else if (type == EntityType.GROUP) {
             type = GROUP;
-            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getGoid(), header.getName());
+            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getGoid(), header.getName(), header.getDescription());
         } else if (type == EntityType.ID_PROVIDER_CONFIG) {
             type = ID_PROVIDER_CONFIG;
             deleteMe = config;

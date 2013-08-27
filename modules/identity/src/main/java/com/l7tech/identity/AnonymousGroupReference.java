@@ -16,8 +16,14 @@ public class AnonymousGroupReference extends AnonymousEntityReference implements
     private final GroupBean groupBean;
 
     public AnonymousGroupReference(String uniqueId, Goid providerOid, String name) {
+        this(uniqueId, providerOid, name, null);
+    }
+
+    public AnonymousGroupReference(String uniqueId, Goid providerOid, String name, String description) {
         super(Group.class, uniqueId, name);
         this.groupBean = new GroupBean(providerOid, null);
+        this.groupBean.setUniqueIdentifier(uniqueId);
+        this.groupBean.setDescription(description);
     }
 
     @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)

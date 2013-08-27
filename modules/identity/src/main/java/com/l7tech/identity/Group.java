@@ -12,4 +12,9 @@ public interface Group extends Identity {
      * @return a human-readable description for this Group
      */
     String getDescription();
+
+    /**
+     * @return a human-readable name for this Group.
+     */
+    String getName();
 }

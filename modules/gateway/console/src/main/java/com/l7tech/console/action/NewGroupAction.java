@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
@@ -25,10 +26,9 @@ import java.awt.*;
  */
 public class NewGroupAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewGroupAction.class.getName());
-    private AttemptedCreateSpecific attemptedCreateInternal;
 
     public NewGroupAction(IdentityProviderNode node) {
-        super(node, MemberOfGroup.class, null);
+        super(node, MemberOfGroup.class, new AttemptedCreate(EntityType.GROUP));
     }
 
     /**
@@ -36,31 +36,6 @@ public class NewGroupAction extends NodeAction {
      */
     public String getName() {
         return "Create Group";
-    }
-
-    @Override
-    public boolean isAuthorized() {
-        AttemptedOperation ao;
-        if (node == null) {
-            // This is the Create Internal Group action in MainWindow
-            ao = getAttemptedCreateInternal();
-        } else {
-            // This probably belongs to a node in the provider tree
-            Goid providerId = ((IdentityProviderNode)node).getEntityHeader().getGoid();
-            if (providerId.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) {
-                ao = getAttemptedCreateInternal();
-            } else {
-                ao = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(providerId, "<new group>"));
-            }
-        }
-        return canAttemptOperation(ao);
-    }
-
-    private AttemptedOperation getAttemptedCreateInternal() {
-        if (attemptedCreateInternal == null) {
-            attemptedCreateInternal = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new group>"));
-        }
-        return attemptedCreateInternal;
     }
 
     /**
