@@ -1769,10 +1769,11 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testPutJmsDestination() throws Exception {
-        final String id = new Goid(0,1).toString();
+        final Goid id = new Goid(0,1);
+        final String idStr = id.toString();
         final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+id+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
-              "    <l7:JMSDestination id=\""+id+"\" version=\"0\">\n" +
-              "        <l7:JMSDestinationDetail id=\""+id+"\" version=\"0\">\n" +
+              "    <l7:JMSDestination id=\""+idStr+"\" version=\"0\">\n" +
+              "        <l7:JMSDestinationDetail id=\""+idStr+"\" version=\"0\">\n" +
               "            <l7:Name>Test Endpoint 1</l7:Name>\n" +
               "            <l7:DestinationName>Test Endpoint</l7:DestinationName>\n" +
               "            <l7:Inbound>false</l7:Inbound>\n" +
@@ -1790,7 +1791,7 @@ public class ServerGatewayManagementAssertionTest {
               "                </l7:Property>\n" +
               "            </l7:Properties>\n" +
               "        </l7:JMSDestinationDetail>\n" +
-              "        <l7:JMSConnection id=\""+id+"\" version=\"0\">\n" +
+              "        <l7:JMSConnection id=\""+idStr+"\" version=\"0\">\n" +
               "            <l7:Template>false</l7:Template>\n" +
               "            <l7:Properties>\n" +
               "                <l7:Property key=\"jndi.initialContextFactoryClassname\">\n" +
@@ -1820,9 +1821,9 @@ public class ServerGatewayManagementAssertionTest {
 
                 final int version = expectedVersion++;
 
-                assertEquals("JMS destination id", id, jmsDestination.getAttribute( "id" ));
+                assertEquals("JMS destination id", idStr, jmsDestination.getAttribute( "id" ));
                 assertEquals("JMS destination version", Integer.toString( version ), jmsDestination.getAttribute( "version" ));
-                assertEquals("JMS destination detail id", id , jmsDestinationDetail.getAttribute( "id" ));
+                assertEquals("JMS destination detail id", idStr , jmsDestinationDetail.getAttribute( "id" ));
                 assertEquals("JMS destination detail version", Integer.toString( version ), jmsDestinationDetail.getAttribute( "version" ));
                 assertEquals("JMS destination detail name", "Test Endpoint 1", XmlUtil.getTextValue(jmsDestinationDetailName));
             }
@@ -1830,6 +1831,11 @@ public class ServerGatewayManagementAssertionTest {
 
         putAndVerify( message, verifier, false );
         putAndVerify( message, verifier, true );
+
+        // Added for SSG-5693
+        JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
+        JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
+        assertEquals("Password field should be ignored","password",endpoint.getPassword());
     }
 
     @Test
@@ -3302,6 +3308,9 @@ public class ServerGatewayManagementAssertionTest {
         connection.setJndiUrl( jndiUrl );
         // Added for SSG-6372
         connection.setProviderType(providerType);
+        // Added for SSG-5693
+        connection.setUsername("user");
+        connection.setPassword("password");
         return connection;
     }
 
@@ -3311,6 +3320,9 @@ public class ServerGatewayManagementAssertionTest {
         endpoint.setConnectionGoid(new Goid(0, connectionOid));
         endpoint.setName( queueName );
         endpoint.setDestinationName( queueName );
+        // Added for SSG-5693
+        endpoint.setUsername("user");
+        endpoint.setPassword("password");
         return endpoint;
     }
 

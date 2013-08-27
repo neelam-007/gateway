@@ -165,7 +165,9 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         oldJmsEndpoint.setReplyToQueueName( newJmsEndpoint.getReplyToQueueName() );
         oldJmsEndpoint.setReplyType( newJmsEndpoint.getReplyType() );
         oldJmsEndpoint.setUsername( newJmsEndpoint.getUsername() );
-        oldJmsEndpoint.setPassword( newJmsEndpoint.getPassword() );
+        if(newJmsEndpoint.getPassword()!=null){
+            oldJmsEndpoint.setPassword( newJmsEndpoint.getPassword() );
+        }
         oldJmsEndpoint.setUseMessageIdForCorrelation( newJmsEndpoint.isUseMessageIdForCorrelation() );
         oldJmsEndpoint.setRequestMaxSize(newJmsEndpoint.getRequestMaxSize());
         oldJmsEndpoint.setSecurityZone(newJmsEndpoint.getSecurityZone());
@@ -179,7 +181,9 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         oldJmsConnection.setQueueFactoryUrl( newJmsConnection.getQueueFactoryUrl() );
         oldJmsConnection.setTopicFactoryUrl( newJmsConnection.getTopicFactoryUrl() );
         oldJmsConnection.setUsername( newJmsConnection.getUsername() );
-        oldJmsConnection.setPassword( newJmsConnection.getPassword() );
+        if(newJmsConnection.getPassword()!=null){
+            oldJmsConnection.setPassword( newJmsConnection.getPassword() );
+        }
         oldJmsConnection.properties( newJmsConnection.properties() );
         oldJmsConnection.setSecurityZone( newJmsConnection.getSecurityZone() );
     }
