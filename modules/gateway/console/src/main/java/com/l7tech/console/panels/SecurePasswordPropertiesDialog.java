@@ -70,6 +70,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private char[] enteredPassword;
     private String pemPublicKey;
     private int generateKeybits;
+    private boolean readOnly;
 
     public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword, final boolean readOnly) {
         super(owner, "Stored Password Properties");
@@ -77,6 +78,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
         Utilities.setEscKeyStrokeDisposes(this);
+        this.readOnly = readOnly;
 
         final boolean[] allowVariableCheckBoxStateStash = new boolean[1];
 
@@ -341,6 +343,11 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             confirmPasswordField.setEnabled(false);
             passwordLabel.setVisible(false);
             confirmPasswordLabel.setVisible(false);
+
+            nameField.setEnabled(!readOnly);
+            descriptionField.setEnabled(!readOnly);
+            changePasswordButton.setEnabled(!readOnly);
+            buttonOK.setEnabled(!readOnly);
         }
 
         // resize dialog to fit content

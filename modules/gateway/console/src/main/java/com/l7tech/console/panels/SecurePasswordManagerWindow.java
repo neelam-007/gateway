@@ -1,10 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -223,14 +226,22 @@ public class SecurePasswordManagerWindow extends JDialog {
 
     /** @return the selected SecurePassword, or null if no row is selected. */
     private SecurePassword getSelectedSecurePassword() {
-        return passwordTableModel.getRowObject(passwordTable.getRowSorter().convertRowIndexToModel(passwordTable.getSelectedRow()));
+        final int rowIndex = passwordTable.getSelectedRow();
+        if (rowIndex >= 0) {
+            final int modelIndex = passwordTable.convertRowIndexToModel(rowIndex);
+            if (modelIndex >= 0) {
+                return passwordTableModel.getRowObject(modelIndex);
+            }
+        }
+        return null;
     }
 
     private void enableOrDisableButtons() {
-        boolean enabled = passwordTable.getSelectedRow() >= 0;
-
-        removeButton.setEnabled(enabled);
-        editButton.setEnabled(enabled);
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        final SecurePassword selected = getSelectedSecurePassword();
+        removeButton.setEnabled(selected != null && securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.SECURE_PASSWORD, selected)));
+        editButton.setEnabled(selected != null);
+        addButton.setEnabled(securityProvider.hasPermission(new AttemptedCreate(EntityType.SECURE_PASSWORD)));
         // Other buttons are always enabled.
     }
 }
