@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
 public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(DefaultKeyImpl.class.getName());
 
-    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+|[0-9a-fA-F]{32}):(.*)$");
+    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^([0-9a-fA-F]{32}|-?\\d{1,20}):(.*)$");
     private static final SsgKeyEntry NULL_ENTRY = new SsgKeyEntry(new Goid(0,Long.MIN_VALUE), null, null, null);
 
     private final ServerConfig serverConfig;

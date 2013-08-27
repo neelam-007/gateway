@@ -14,10 +14,7 @@ import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
@@ -321,7 +318,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
         
         try {
-            PublishedService svc = serviceCache.getCachedService(Goid.parseGoid(method.getServiceId()));
+            PublishedService svc = serviceCache.getCachedService(GoidUpgradeMapper.mapId(EntityType.SERVICE, method.getServiceId()));
             if (svc == null) throw new ResourceUnknownFault("No service with ID " + method.getServiceId());
             
             final Subscription sub = new Subscription(method, generateNewSubscriptionId(), clusterNodeId);

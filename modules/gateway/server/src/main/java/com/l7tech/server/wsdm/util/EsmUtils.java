@@ -22,8 +22,8 @@ public class EsmUtils {
 
     private static final Logger logger = Logger.getLogger(EsmUtils.class.getName());
 
-    public final static Pattern serviceOidQueryStringPattern = Pattern.compile(".*serviceoid=(\\d+).*");
-    public final static Pattern serviceOidByUrl = Pattern.compile(".*/service/(\\d+).*");
+    public final static Pattern serviceOidQueryStringPattern = Pattern.compile(".*serviceoid=([0-9a-fA-F]{32}|\\d{1,20})(&.*)?$");
+    public final static Pattern serviceOidByUrl = Pattern.compile(".*/service/([0-9a-fA-F]{32}|\\d{1,20})([/\\?].*)?$");
     public final static Pattern serviceUriQueryStringPattern = Pattern.compile(".*serviceuri=(.*)");
 
     public static String determineServiceFromUrl(String url, ServiceCache serviceCache) throws ResourceUnknownFault {
@@ -43,7 +43,7 @@ public class EsmUtils {
 
     public static String getServiceOidFromQueryString(String url) {
         Matcher matcher = serviceOidQueryStringPattern.matcher(url);
-        if (matcher.find() && matcher.groupCount() == 1) {
+        if (matcher.find() && matcher.groupCount() == 2) {
             return matcher.group(1);
         }
 
@@ -52,7 +52,7 @@ public class EsmUtils {
 
     public static String getServiceOidFromServiceUrl(String url) {
         Matcher matcher = serviceOidByUrl.matcher(url);
-        if (matcher.find() && matcher.groupCount() == 1) {
+        if (matcher.find() && matcher.groupCount() == 2) {
             return matcher.group(1);
         }
 

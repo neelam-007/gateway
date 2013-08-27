@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
  * Represents a keystore ID and a key alias.
  */
 public class SsgKeyEntryId {
-    private static final Pattern PATTERN = Pattern.compile("^(\\d+|[0-9a-fA-F]{32}):(.*)$", Pattern.DOTALL);
+    private static final Pattern PATTERN = Pattern.compile("^([0-9a-fA-F]{32}|\\d{1,20}):(.*)$", Pattern.DOTALL);
 
     private final Goid keystoreId;
     private final String alias;
