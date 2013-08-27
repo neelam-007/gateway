@@ -318,15 +318,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         boolean fipsModeOK = fipsModeComboBox.getSelectedIndex() <= 0  ?  false : true;
 
         //get the properties from clusterSettingsMap
-        boolean enabled = clusterSettingsMap.containsKey(resources.getString("property.cluster.server.address")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.authentication.port")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.authorization.port")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.accounting.port")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.connection.min")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.connection.max")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.connection.step")) &&
-                          clusterSettingsMap.containsKey(resources.getString("property.cluster.server.timeout")) &&
-                          fipsModeOK &&
+        boolean enabled = fipsModeOK &&
                           isNonEmptyRequiredTextField(((JSpinner.DefaultEditor) clusterTresholdSpinner.getEditor()).getTextField().getText()) &&
                           isNonEmptyRequiredTextField(configurationNameTextField.getText()) &&
                           isNonEmptyRequiredTextField(agentNameTextField.getText()) &&

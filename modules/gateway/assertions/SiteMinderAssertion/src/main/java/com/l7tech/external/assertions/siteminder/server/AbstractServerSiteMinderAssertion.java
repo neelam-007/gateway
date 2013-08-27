@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
  * Date: 7/16/13
  */
 public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>{
+    public static final String SYSTEM_PROPERTY_SITEMINDER_ENABLED = "com.l7tech.server.siteminder.enabled";
     static final int SM_SUCCESS = 0;
     static final int SM_YES = 1;
     static final int SM_NO = 2;
@@ -33,7 +34,6 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
 
     protected SiteMinderHighLevelAgent hla;
 
-    protected ApplicationContext applicationContext;
     protected SiteMinderConfigurationManager manager;
 
     public AbstractServerSiteMinderAssertion(@NotNull final AT assertion, final ApplicationContext applicationContext) throws  PolicyAssertionException{
@@ -63,14 +63,13 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
 
     protected String getClientIp(PolicyEnforcementContext context) {
         //TODO: use message targetable setting to get remote address
-        //in case we don't have tcp knob use
+        //in case we don't have tcp knob use predefined address from the SiteMinderConfig
         String address = null;
         Message target = context.getRequest();
-        TcpKnob tcpKnob = target.getTcpKnob();
-        if(tcpKnob != null) {
+        try {
+            TcpKnob tcpKnob = target.getTcpKnob();
             address = tcpKnob.getRemoteAddress();
-        }
-        else {
+        } catch (IllegalStateException e) {
             logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
         }
 
@@ -78,7 +77,7 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
     }
 
     protected void checkSiteMinderEnabled() throws  PolicyAssertionException {
-        if(!ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enabled", true)) {
+        if(!ConfigFactory.getBooleanProperty(SYSTEM_PROPERTY_SITEMINDER_ENABLED, true)) {
             logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder SDK is not installed or misconfigured! Assertion failed");
             throw new PolicyAssertionException(assertion, "SiteMinder SDK not installed or misconfigured!");
         }
