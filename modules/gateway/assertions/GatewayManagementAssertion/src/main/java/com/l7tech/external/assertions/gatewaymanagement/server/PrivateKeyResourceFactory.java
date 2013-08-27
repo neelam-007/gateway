@@ -452,22 +452,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Aliases not found : " + pkcs12alias ) );
                 } catch ( MultipleAliasesException e ) {
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Alias must be specified : " + Arrays.asList( e.getAliases() ) ) );
-                } catch ( IOException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( CertificateException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( NoSuchAlgorithmException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( UnrecoverableKeyException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( ExecutionException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( InterruptedException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( NoSuchProviderException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                } catch ( KeyStoreException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                } catch ( IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
+                          ExecutionException | InterruptedException | NoSuchProviderException | KeyStoreException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException(e) );
                 }
             }
         }, false ) );
