@@ -27,10 +27,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -79,6 +76,13 @@ public class ManageLicensesDialog extends JDialog {
 
         configureLicenseTable();
         populateLicenseTable();
+
+        licenseTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) viewDetails();
+            }
+        });
 
         installButton.addActionListener(getInstallActionListener());
 
@@ -521,6 +525,7 @@ public class ManageLicensesDialog extends JDialog {
             return description;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         public Date getExpiry() {
             return expiry;
         }
