@@ -462,7 +462,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         meta.put( GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" } );
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
-        meta.put( POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
 
         // fix bug #12529: logged message(s) not showing in SOAP fault
         try {
@@ -486,86 +485,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         return meta;
     }
 
-    public static class Validator implements AssertionValidator {
-
-        private enum ActiveConnectorStatus {
-            ENABLED,
-            NOT_FOUND,
-            DISABLED
-        };
-
-        MqNativeRoutingAssertion assertion;
-        ActiveConnectorStatus activeConnectorStatus;
-        boolean isQueueNameValid;
-        boolean isReplyToQueueNameValid;
-
-        public Validator(MqNativeRoutingAssertion assertion) {
-
-            this.assertion = assertion;
-            SsgActiveConnector activeConnector;
-            TransportAdmin ta = Registry.getDefault().getTransportAdmin();
-            try {
-                activeConnector = ta.findSsgActiveConnectorByPrimaryKey(assertion.getSsgActiveConnectorGoid());
-                if ( activeConnector == null ) {
-                    activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
-                    return;
-                } else  if ( activeConnector.isEnabled() ) {
-                    activeConnectorStatus = ActiveConnectorStatus.ENABLED;
-                } else {
-                    activeConnectorStatus = ActiveConnectorStatus.DISABLED;
-                }
-
-                String mqQueueName = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
-                String replyToQueueName = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME);
-                MqNativeDynamicProperties dynamicProperties = assertion.getDynamicMqRoutingProperties();
-
-                if ( dynamicProperties != null ) {
-                    String dynamicQueueName = dynamicProperties.getQueueName();
-                    String dynamicReplyToQueueName = dynamicProperties.getReplyToQueue();
-
-                    if ( dynamicQueueName != null && !dynamicQueueName.isEmpty()) {
-                        mqQueueName = dynamicQueueName;
-                    }
-
-                    if ( dynamicReplyToQueueName != null
-                              && !dynamicReplyToQueueName.isEmpty()
-                              && activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE).equals(MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString())) {
-                        replyToQueueName = dynamicReplyToQueueName;
-                    }
-                }
-
-                isQueueNameValid = mqQueueName != null && !mqQueueName.isEmpty();
-                isReplyToQueueNameValid = ( !activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE).equals(MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString()) )
-                                            || ( replyToQueueName != null && !replyToQueueName.isEmpty() );
-
-            } catch (FindException e) {
-                activeConnectorStatus = ActiveConnectorStatus.NOT_FOUND;
-            }
-    }
-
-        @Override
-        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
-
-            switch (activeConnectorStatus) {
-                case ENABLED:
-                    break;
-                case NOT_FOUND:
-                    result.addWarning(new PolicyValidatorResult.Warning(assertion,"Destination Queue set to unknown MQ Native Queue",null));
-                    break;
-                case DISABLED:
-                    result.addWarning(new PolicyValidatorResult.Warning(assertion,"Destination Queue is disabled",null));
-                    break;
-            }
-
-            if ( ! isQueueNameValid ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Queue Name is not set in either MQ Native Queue Template or Routing Assertion",null));
-            }
-
-            if ( ! isReplyToQueueNameValid ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion,"Reply to Queue Name is not set in either MQ Queue Native Template or Routing Assertion.",null));
-            }
-        }
-    }
 
     @Override
     @EntityUse(@EntityTypeOverride(type = EntityType.SSG_ACTIVE_CONNECTOR, description = "MQ Native Queue"))
