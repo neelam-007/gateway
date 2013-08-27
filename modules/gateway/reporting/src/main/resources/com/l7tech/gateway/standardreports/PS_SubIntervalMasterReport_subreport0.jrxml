@@ -29,7 +29,7 @@
 
     <parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
     <parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
-    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.String"/>
     <parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false"
                class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
     <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>

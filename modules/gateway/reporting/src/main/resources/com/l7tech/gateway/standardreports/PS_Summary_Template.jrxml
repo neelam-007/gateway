@@ -130,7 +130,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
     <field name="BACK_SUM" class="java.lang.Double"/>
     <field name="COMPLETED" class="java.lang.Double"/>
     <field name="THROUGHPUT" class="java.lang.Double"/>
-    <field name="SERVICE_ID" class="java.lang.Long"/>
+    <field name="SERVICE_ID" class="java.lang.String"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
     <field name="ROUTING_URI" class="java.lang.String"/>
     <field name="FRTM" class="java.lang.Integer"/>
@@ -151,7 +151,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
     <field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
     <field name="ROUTING_FAILURES" class="java.lang.Long"/>
 
-    <variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
+    <variable name="SERVICE_ID" class="java.lang.String" resetType="Report" calculation="Nothing">
         <variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
     </variable>
     <variable name="THROUGHPUT_SUM" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">

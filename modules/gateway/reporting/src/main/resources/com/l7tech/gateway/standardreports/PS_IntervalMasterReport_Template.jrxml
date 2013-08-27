@@ -144,7 +144,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
         </defaultValueExpression>
     </parameter>
 
-    <field name="SERVICE_ID" class="java.lang.Long"/>
+    <field name="SERVICE_ID" class="java.lang.String"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
     <field name="ROUTING_URI" class="java.lang.String"/>
     <field name="SERVICE_OPERATION_VALUE" class="java.lang.String"/>

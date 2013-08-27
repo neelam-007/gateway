@@ -28,7 +28,7 @@
     <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
-    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.String"/>
     <parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
     <parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
     <parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false"

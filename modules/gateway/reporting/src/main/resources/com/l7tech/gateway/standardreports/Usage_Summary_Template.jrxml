@@ -125,7 +125,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
     </parameter>
 
 
-    <field name="SERVICE_ID" class="java.lang.Long"/>
+    <field name="SERVICE_ID" class="java.lang.String"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
     <field name="ROUTING_URI" class="java.lang.String"/>
     <field name="USAGE_SUM" class="java.lang.Long"/>

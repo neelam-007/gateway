@@ -29,7 +29,7 @@
 
     <parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
     <parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
-    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.String"/>
     <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
     <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
     <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
@@ -49,7 +49,7 @@ $P{INTERVAL_END},$P{SERVICE_ID}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{RESOLUTION}.i
         </defaultValueExpression>
     </parameter>
 
-    <field name="SERVICE_ID" class="java.lang.Long"/>
+    <field name="SERVICE_ID" class="java.lang.String"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
     <field name="ROUTING_URI" class="java.lang.String"/>
     <field name="USAGE_SUM" class="java.lang.Long"/>

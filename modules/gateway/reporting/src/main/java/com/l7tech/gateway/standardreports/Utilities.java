@@ -1003,7 +1003,7 @@ public class Utilities {
      *                         </pre>
      */
     public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                           Long serviceId,
+                                                           String serviceId,
                                                            LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
                                                            boolean isDetail, String operation) {
         if (serviceId == null) throw new NullPointerException("serviceId cannot be null");
@@ -1014,7 +1014,7 @@ public class Utilities {
         Set<String> operations = new HashSet<String>();
         if (!operation.equals(Utilities.SQL_PLACE_HOLDER)) operations.add(operation);
         Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
-        serviceIdToOperations.put(String.valueOf(serviceId), operations);
+        serviceIdToOperations.put(serviceId, operations);
 
         return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keysToFilters, resolution, isDetail);
 
@@ -1536,7 +1536,7 @@ public class Utilities {
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
     public static Pair<String, List<Object>> getPerformanceStatisticsMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                                                  Long serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
+                                                                                  String serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
                                                                                   int resolution, boolean isDetail, String operation, boolean isUsage) {
 
         if (serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
@@ -1545,7 +1545,7 @@ public class Utilities {
             operationSet.add(operation);
         }
         Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
-        serviceIdToOperations.put(serviceId.toString(), operationSet);
+        serviceIdToOperations.put(serviceId, operationSet);
 
         return getPerformanceStatisticsMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations,
                 keysToFilterValues, resolution, isDetail, isUsage);
@@ -1662,11 +1662,11 @@ public class Utilities {
      * @throws IllegalArgumentException if service id is null or empty
      */
     public static Pair<String, List<Object>> getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                               Long serviceId, int resolution) {
+                                                               String serviceId, int resolution) {
 
         if (serviceId == null) throw new IllegalArgumentException("Service id must be supplied");
         List<String> sIds = new ArrayList<String>();
-        sIds.add(serviceId.toString());
+        sIds.add(serviceId);
 
         return getNoMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, resolution);
     }
