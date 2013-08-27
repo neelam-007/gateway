@@ -1728,6 +1728,12 @@
                 <constructor-arg value="com.l7tech.server.security.keystore.SsgKeyStoreManager"/>
             </bean>
         </property>
+        <property name="genericEntityManager">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="genericEntityManager"/>
+                <constructor-arg value="com.l7tech.server.entity.GenericEntityManager"/>
+            </bean>
+        </property>
         <property name="encapsulatedAssertionConfigManager" ref="encapsulatedAssertionConfigManager"/>
         <property name="auditRecordManager">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">

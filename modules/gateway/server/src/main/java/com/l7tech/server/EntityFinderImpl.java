@@ -9,11 +9,13 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.DesignTimeEntityProvider;
+import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditRecordManager;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -53,6 +55,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private IdentityProviderFactory identityProviderFactory;
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
+    private GenericEntityManager genericEntityManager;
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private AuditRecordManager auditRecordManager;
 
@@ -72,6 +75,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     public void setKeyStoreManager(SsgKeyStoreManager keyStoreManager) {
         this.keyStoreManager = keyStoreManager;
+    }
+
+    public void setGenericEntityManager(GenericEntityManager genericEntityManager) {
+        this.genericEntityManager = genericEntityManager;
     }
 
     public void setAuditRecordManager(@NotNull final AuditRecordManager auditRecordManager) {
@@ -102,11 +109,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     final ClassMetadata metadata = getSessionFactory().getClassMetadata(entityClass);
                     final Criteria criteria = session.createCriteria(entityClass);
                     final ProjectionList pl = Projections.projectionList();
-                    if(PersistentEntity.class.isAssignableFrom(entityClass)){
-                        pl.add(Projections.property("goid"));
-                    } else {
-                        pl.add(Projections.property("oid"));
-                    }
+                    pl.add(Projections.property("goid"));
                     final boolean names = hasName(entityClass, metadata);
                     if (names) pl.add(Projections.property("name"));
                     criteria.setProjection(pl);
@@ -242,6 +245,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id.substring(0, sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
+            } else if (EntityType.GENERIC == type) {
+                return (ET) genericEntityManager.findByGenericClassAndPrimaryKey((Class<GenericEntity>)clazz, (pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.GENERIC, pk.toString()));
             } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
                 try {
                     tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
