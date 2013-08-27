@@ -667,7 +667,7 @@ ALTER TABLE password_history ADD COLUMN old_internal_user_oid BIGINT(20);
 UPDATE password_history SET old_internal_user_oid=internal_user_oid;
 ALTER TABLE password_history CHANGE COLUMN internal_user_oid internal_user_goid binary(16) NOT NULL;
 UPDATE password_history SET internal_user_goid = toGoid(@internal_user_prefix, old_internal_user_oid);
-UPDATE password_history SET internal_user_goid = toGoid(@internal_user_prefix, old_internal_user_oid) where old_internal_user_oid =3 ;
+UPDATE password_history SET internal_user_goid = toGoid(0, old_internal_user_oid) where old_internal_user_oid =3 ;
 ALTER TABLE password_history DROP COLUMN old_internal_user_oid;
 ALTER TABLE password_history ADD FOREIGN KEY (internal_user_goid) REFERENCES internal_user(goid);
 
