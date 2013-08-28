@@ -156,8 +156,9 @@ public class EntityNameResolverTest {
         config.setProtocol(HttpConfiguration.Protocol.HTTP);
         config.setHost("localhost");
         config.setPort(8080);
+        config.setPath("somePath");
         when(resourceAdmin.findHttpConfigurationByPrimaryKey(GOID)).thenReturn(config);
-        assertEquals("HTTP localhost 8080", resolver.getNameForHeader(new EntityHeader(GOID, EntityType.HTTP_CONFIGURATION, null, null)));
+        assertEquals("HTTP localhost 8080 somePath", resolver.getNameForHeader(new EntityHeader(GOID, EntityType.HTTP_CONFIGURATION, null, null)));
     }
 
     @Test(expected = FindException.class)
@@ -478,7 +479,17 @@ public class EntityNameResolverTest {
         httpConfig.setProtocol(HttpConfiguration.Protocol.HTTP);
         httpConfig.setHost("localhost");
         httpConfig.setPort(8080);
-        assertEquals("HTTP localhost 8080", resolver.getNameForEntity(httpConfig, true));
+        httpConfig.setPath("somePath");
+        assertEquals("HTTP localhost 8080 somePath", resolver.getNameForEntity(httpConfig, true));
+    }
+
+    @Test
+    public void getNameForHttpConfigNoProtocolOrPathAndDefaultPort() throws Exception {
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setProtocol(null);
+        httpConfig.setHost("localhost");
+        httpConfig.setPath(null);
+        assertEquals("<no protocol> localhost <no port> <no path>", resolver.getNameForEntity(httpConfig, true));
     }
 
     @Test

@@ -52,6 +52,9 @@ public class EntityNameResolver {
     private static final String NO_PATH = "--";
     private static final String UNKNOWN_FOLDER = "unknown folder";
     private static final String ROOT = "(root)";
+    private static final String NO_PROTOCOL = "<no protocol>";
+    private static final String NO_PORT = "<no port>";
+    private static final String NO_HTTP_CONFIG_PATH = "<no path>";
 
     private final ServiceAdmin serviceAdmin;
     private final PolicyAdmin policyAdmin;
@@ -266,7 +269,10 @@ public class EntityNameResolver {
             name = resource.getUri();
         } else if (entity instanceof HttpConfiguration) {
             final HttpConfiguration httpConfig = (HttpConfiguration) entity;
-            name = httpConfig.getProtocol() + " " + httpConfig.getHost() + " " + httpConfig.getPort();
+            final String protocol = httpConfig.getProtocol() == null ? NO_PROTOCOL : httpConfig.getProtocol().toString();
+            final String port = httpConfig.getPort() == 0 ? NO_PORT : String.valueOf(httpConfig.getPort());
+            final String path = httpConfig.getPath() == null ? NO_HTTP_CONFIG_PATH : httpConfig.getPath();
+            name = protocol + " " + httpConfig.getHost() + " " + port + " " + path;
         } else if (entity instanceof AssertionAccess) {
             final AssertionAccess assertionAccess = (AssertionAccess) entity;
             final Assertion assertion = assertionRegistry.findByClassName(assertionAccess.getName());
