@@ -135,7 +135,7 @@ public class SampleMessageDialog extends JDialog {
         });
 
         add(mainPanel);
-        zoneControl.configure(SampleMessage.DEFAULT_GOID.equals(message.getGoid()) ? OperationType.CREATE : OperationType.UPDATE, message);
+        zoneControl.configure(message);
         enableButtons();
     }
 

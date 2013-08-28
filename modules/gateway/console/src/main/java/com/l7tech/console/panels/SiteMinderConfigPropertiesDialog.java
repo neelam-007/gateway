@@ -199,9 +199,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         });
 
-        zoneControl.configure(SiteMinderConfiguration.DEFAULT_GOID.equals(
-                configuration.getGoid()) ? OperationType.CREATE : OperationType.UPDATE,
-                configuration);
+        zoneControl.configure(configuration);
 
         modelToView();
 
