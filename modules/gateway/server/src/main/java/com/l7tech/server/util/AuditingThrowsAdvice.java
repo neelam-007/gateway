@@ -1,12 +1,14 @@
 package com.l7tech.server.util;
 
 import com.l7tech.server.event.admin.AdminError;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.SystemAdminError;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import org.springframework.aop.ThrowsAdvice;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
 import javax.inject.Inject;
@@ -26,13 +28,21 @@ import java.util.logging.Logger;
 /**
  * Throws advice that audits exceptions from administrative APIs.
  */
-public class AuditingThrowsAdvice implements ThrowsAdvice, PropertyChangeListener {
+public class AuditingThrowsAdvice implements ThrowsAdvice, PropertyChangeListener, PostStartupApplicationListener {
 
     //- PUBLIC
 
     public AuditingThrowsAdvice( final Config config ) {
         this.config = config;
-        reload();
+    }
+
+    /**
+     * Load the properties after the gateway has started. This is done to avoid circular dependency issues (bug: SSG-7547)
+     */
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof Started) {
+            reload();
+        }
     }
 
     @SuppressWarnings({ "UnusedParameters" })

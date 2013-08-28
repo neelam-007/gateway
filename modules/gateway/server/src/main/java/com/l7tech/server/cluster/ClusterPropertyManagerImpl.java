@@ -110,6 +110,7 @@ public class ClusterPropertyManagerImpl
     }
 
     @Override
+    @Transactional(readOnly=true)
     public Collection<ClusterProperty> findAll() throws FindException {
         Collection<ClusterProperty> all = super.findAll();
         for (ClusterProperty clusterProperty : all) {

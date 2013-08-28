@@ -150,41 +150,48 @@
         <!-- inside transaction -->
     </bean>
 
+    <!-- This should not be an autowire candidate otherwise it will interfere with the server config -->
+    <bean id="auditingThrowsAdviceSwitchedConfig" class="com.l7tech.util.SwitchedConfig" autowire-candidate="false">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1"> <!-- Properties to switch property -->
+            <props>
+                <prop key="audit.adminExceptions.defaultIncludes">audit.adminExceptions.auditPermissionDenied
+                </prop>
+                <prop key="audit.adminExceptions.includes">audit.adminExceptions.auditPermissionDenied</prop>
+            </props>
+        </constructor-arg>
+        <constructor-arg index="2"> <!-- Overrides for switched properties when enabled -->
+            <map>
+                <entry key="audit.adminExceptions.defaultIncludes">
+                    <value type="boolean">false</value>
+                </entry>
+                <entry key="audit.adminExceptions.includes">
+                    <value type="java.lang.String">java.lang.Throwable
+                        com.l7tech.gateway.common.security.rbac.PermissionDeniedException
+                    </value>
+                </entry>
+            </map>
+        </constructor-arg>
+        <constructor-arg index="3"> <!-- Overrides for switched properties when disabled -->
+            <map>
+                <entry key="audit.adminExceptions.defaultIncludes">
+                    <value type="boolean">false</value>
+                </entry>
+                <entry key="audit.adminExceptions.includes">
+                    <value type="java.lang.String">java.lang.Throwable</value>
+                </entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
     <!-- Exception advices for server side error handling -->
     <bean id="auditingThrowsAdvice" class="com.l7tech.server.util.AuditingThrowsAdvice"
           depends-on="applicationEventPublisher">
         <constructor-arg>
-            <bean class="com.l7tech.util.SwitchedConfig">
-                <constructor-arg index="0" ref="serverConfig"/>
-                <constructor-arg index="1"> <!-- Properties to switch property -->
-                    <props>
-                        <prop key="audit.adminExceptions.defaultIncludes">audit.adminExceptions.auditPermissionDenied
-                        </prop>
-                        <prop key="audit.adminExceptions.includes">audit.adminExceptions.auditPermissionDenied</prop>
-                    </props>
-                </constructor-arg>
-                <constructor-arg index="2"> <!-- Overrides for switched properties when enabled -->
-                    <map>
-                        <entry key="audit.adminExceptions.defaultIncludes">
-                            <value type="boolean">false</value>
-                        </entry>
-                        <entry key="audit.adminExceptions.includes">
-                            <value type="java.lang.String">java.lang.Throwable
-                                com.l7tech.gateway.common.security.rbac.PermissionDeniedException
-                            </value>
-                        </entry>
-                    </map>
-                </constructor-arg>
-                <constructor-arg index="3"> <!-- Overrides for switched properties when disabled -->
-                    <map>
-                        <entry key="audit.adminExceptions.defaultIncludes">
-                            <value type="boolean">false</value>
-                        </entry>
-                        <entry key="audit.adminExceptions.includes">
-                            <value type="java.lang.String">java.lang.Throwable</value>
-                        </entry>
-                    </map>
-                </constructor-arg>
+            <!-- lazy load the switched config here to avoid circular dependency issues and managers not properly getting wrapped bug: SSG-7547 -->
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="auditingThrowsAdviceSwitchedConfig"/>
+                <constructor-arg value="com.l7tech.util.Config"/>
             </bean>
         </constructor-arg>
     </bean>
