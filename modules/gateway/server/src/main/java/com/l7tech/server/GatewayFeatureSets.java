@@ -750,13 +750,15 @@ public class GatewayFeatureSets {
                 "Cross Site Request Forgery Protection Assertion",
                 mass("assertion:CsrfProtection"));
 
-        // TODO jwilliams: create new feature set for nces, separate it from usAssertions, and use it in the NCES feature pack
+        GatewayFeatureSet ncesAssertions = fsr("set:NCES:Assertions",
+                "NCES decoration and validation assertions",
+                mass("assertion:NcesDecorator"),
+                mass("assertion:NcesValidator"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
-            mass("assertion:NcesDecorator"),
-            mass("assertion:NcesValidator"),
+            fs(ncesAssertions),
             esmAssertions,
             uiPublishInternalWizard);
 
@@ -1072,6 +1074,49 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
+         * NCES Feature Pack
+         */
+        GatewayFeatureSet ncesFeaturePack = fsp("set:Profile:NCES",
+                "NCES Feature Pack",
+                "Includes NCES and SAML specific assertions",
+                fs(ncesAssertions),
+                fs(saml2AttributeQueryAssertions),
+                fs(moduleLoader));
+
+        /**
+         * Mobile Access Gateway
+         */
+        GatewayFeatureSet mobileFeaturePack = fsp("set:Profile:Mobile",
+                "Mobile Access Gateway",
+                "Includes series of assertions required to support existing and future Mobile Access Gateway " +
+                        "functionality (requires SOA Gateway license as base)",
+                mass("assertion:CsrSigner"), // CsrSignerAssertion
+                mass("assertion:JwtDecode"), // JsonWebTokenAssertion
+                mass("assertion:JwtEncode"),
+                mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
+                mass("assertion:IDTokenDecode"),
+                mass("assertion:OpenIDConnectInstaller"),
+                mass("assertion:ApplePushNotification"), // ApplePushNotificationAssertion
+                mass("assertion:AppleFeedbackService"),
+                mass("assertion:WebSocket"), // WebSocketAssertion
+                mass("assertion:WebSocketEntityManager"),
+                mass("assertion:WebSocketValidation"),
+                mass("assertion:WebSocketMessageInjection"),
+                mass("assertion:XMPPGetRemoteCertificate"), // XMPPAssertion
+                mass("assertion:XMPPStartTLS"),
+                mass("assertion:XMPPCloseSession"),
+                mass("assertion:XMPPAssociateSessions"),
+                mass("assertion:XMPPGetAssociatedSessionId"),
+                mass("assertion:XMPPGetSessionAttribute"),
+                mass("assertion:XMPPSendToRemoteHost"),
+                mass("assertion:XMPPSetSessionAttribute"),
+                mass("assertion:XMPPOpenServerSession"),
+
+                /* NOTHING FOR ANDROID PUSH YET */
+
+                fs(moduleLoader));
+
+        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1083,7 +1128,9 @@ public class GatewayFeatureSets {
                 fs(experimental),
                 fs(flagPermaFips),
                 fs(profileApi),
-                fs(salesforceFeaturePack));
+                fs(salesforceFeaturePack),
+                fs(ncesFeaturePack),
+                fs(mobileFeaturePack));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
