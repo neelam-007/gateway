@@ -49,6 +49,7 @@ import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -1835,7 +1836,7 @@ public class ServerGatewayManagementAssertionTest {
         // Added for SSG-5693
         JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
         JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
-        assertEquals("Password field should be ignored","password",endpoint.getPassword());
+        assertEquals("Password field should be ignored", "password", endpoint.getPassword());
     }
 
     @Test
@@ -2713,6 +2714,60 @@ public class ServerGatewayManagementAssertionTest {
 
         assertEquals("Imported policy ref GUID", "006ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
         assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+    }
+    @Test
+    public void testPolicyImportExistingPolicyReference() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References>\n" +
+                     "        &lt;IncludedPolicyReference\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\"\n" +
+                        "            guid=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" included=\"true\"\n" +
+                        "            name=\"Imported Policy Include Fragment\" soap=\"false\" type=\"INCLUDE_FRAGMENT\"&gt;\n" +
+                        "            &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "                &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "                    &lt;L7p:AuditDetailAssertion&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"Policy Fragment: Imported Policy Include Fragment\"/&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"This extra assertion makes the policy conflict\"/&gt;\n" +
+                        "                    &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                        "                &lt;/wsp:All&gt;\n" +
+                        "            &lt;/wsp:Policy&gt;\n" +
+                        "        &lt;/IncludedPolicyReference&gt;\n" +
+                        "    &lt;/exp:References&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:AuditAssertion/&gt;\n" +
+                       "            &lt;L7p:Include&gt;\n" +
+                        "                &lt;L7p:PolicyGuid stringValue=\"006ece03-a64c-4c17-93cf-ce49e7265daa\"/&gt;\n" +
+                        "            &lt;/L7p:Include&gt;\n" +
+                          "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource>\n" +
+                        "<PolicyReferenceInstructions>\n" +
+                        "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
+                        "</PolicyReferenceInstructions>\n" +
+                        "</PolicyImportContext></env:Body></env:Envelope>";
+
+        // insert policy with same name
+        PolicyManagerStub policyManager = beanFactory.getBean("policyManager", PolicyManagerStub.class);
+        policyManager.save(policy( new Goid(123,2L), PolicyType.INCLUDE_FRAGMENT, "Imported Policy Include Fragment", true, POLICY) );
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
+        final Element importedPolicyRef = XmlUtil.findExactlyOneChildElementByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
+
+        assertEquals("Imported policy ref GUID", "006ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
+        assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+        Policy policy = policyManager.findByGuid("006ece03-a64c-4c17-93cf-ce49e7265daa");
+        assertEquals("Imported policy ref name", "Renamed Imported Policy Include Fragment", policy.getName());
+
     }
 
     @Test

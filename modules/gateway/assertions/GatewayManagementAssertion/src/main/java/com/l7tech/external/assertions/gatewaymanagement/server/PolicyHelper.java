@@ -840,6 +840,8 @@ public class PolicyHelper {
                             refId = resourceEntryHeaders.iterator().next().getStrId();
                         }
                     }
+                } else if ( reference instanceof IncludedPolicyReference){
+                    refId = ((IncludedPolicyReference) reference).getGuid();
                 }
 
                 // If there is no natural identifier use a synthetic identifier
