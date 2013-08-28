@@ -445,6 +445,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (myAccountMenuItem == null) {
             myAccountMenuItem = new JMenuItem(getMyAccountAction());
         }
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/user16.png"));
+        myAccountMenuItem.setIcon(icon);
         if (accel) {
             int mnemonic = myAccountMenuItem.getText().toCharArray()[2];
             myAccountMenuItem.setMnemonic(mnemonic);
