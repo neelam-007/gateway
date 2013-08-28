@@ -18,6 +18,7 @@ import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -481,6 +482,10 @@ public class PrivateKeyAdminHelper {
 
     public void doDeletePrivateKeyEntry( final SsgKeyStore store, final String keyAlias ) throws DeleteException, KeyStoreException {
         try {
+            final SsgKeyEntry keyEntry = doFindKeyEntry(keyAlias, store.getGoid());
+            if (keyEntry != null) {
+                applicationEventPublisher.publishEvent(new RoleAwareEntityDeletionEvent(this, keyEntry));
+            }
             Future<Boolean> result = store.deletePrivateKeyEntry(auditAfterDelete(store, keyAlias), keyAlias);
             // Force it to be synchronous (Bug #3852)
             result.get();
@@ -488,6 +493,8 @@ public class PrivateKeyAdminHelper {
             throw new DeleteException("Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (final FindException e) {
+            throw new DeleteException("Unable to find key: " + ExceptionUtils.getMessage(e), e);
         }
     }
 }

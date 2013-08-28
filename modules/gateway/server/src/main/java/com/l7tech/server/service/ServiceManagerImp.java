@@ -19,10 +19,6 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import org.hibernate.StaleObjectStateException;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.wsdl.WSDLException;
@@ -45,7 +41,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class ServiceManagerImp
         extends FolderSupportHibernateEntityManager<PublishedService, ServiceHeader>
-        implements ServiceManager, ApplicationContextAware
+        implements ServiceManager
 {
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
 
@@ -54,7 +50,6 @@ public class ServiceManagerImp
 
     private final RoleManager roleManager;
 
-    private ApplicationContext spring;
     private final ServiceAliasManager serviceAliasManager;
 
 
@@ -134,7 +129,7 @@ public class ServiceManagerImp
         }
 
         // 4. update cache on callback
-        spring.publishEvent(new ServiceCacheEvent.Updated(service));
+        applicationContext.publishEvent(new ServiceCacheEvent.Updated(service));
         return service.getGoid();
     }
 
@@ -167,7 +162,7 @@ public class ServiceManagerImp
         }
 
         // update cache after commit
-        spring.publishEvent(new ServiceCacheEvent.Updated(service));
+        applicationContext.publishEvent(new ServiceCacheEvent.Updated(service));
     }
 
     @Override
@@ -191,7 +186,7 @@ public class ServiceManagerImp
         super.delete(service);
 
         logger.info("Deleted service " + service.getName() + " #" + service.getGoid());
-        spring.publishEvent(new ServiceCacheEvent.Deleted(service));
+        applicationContext.publishEvent(new ServiceCacheEvent.Deleted(service));
     }
 
     @Transactional(propagation=SUPPORTS)
@@ -357,12 +352,6 @@ public class ServiceManagerImp
 
     private boolean shouldAutoAssignToNewRole() {
         return ConfigFactory.getBooleanProperty("rbac.autoRole.manageService.autoAssign", true);
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.SUPPORTS)
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.spring = applicationContext;
     }
 
     private void updatePolicyName( final PublishedService service, final Policy policy ) {

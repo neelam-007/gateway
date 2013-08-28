@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.event.admin.Deleted;
+import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Either;
@@ -657,8 +657,8 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
     @Override
     public void onApplicationEvent(@NotNull final ApplicationEvent event) {
-        if (event instanceof Deleted) {
-            final Entity deleted = ((Deleted)event).getEntity();
+        if (event instanceof RoleAwareEntityDeletionEvent) {
+            final Entity deleted = ((RoleAwareEntityDeletionEvent)event).getEntity();
             final EntityType type = EntityType.findTypeByEntity(deleted.getClass());
             if (type != null && type != EntityType.ANY) {
                 try {

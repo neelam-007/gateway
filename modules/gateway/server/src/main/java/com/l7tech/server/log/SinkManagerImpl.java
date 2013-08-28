@@ -26,8 +26,6 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
@@ -65,7 +63,7 @@ import static java.util.Collections.singletonList;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManagerImpl
         extends HibernateEntityManager<SinkConfiguration, EntityHeader>
-        implements SinkManager, ApplicationContextAware, PropertyChangeListener {
+        implements SinkManager, PropertyChangeListener {
 
     //- PUBLIC
 
@@ -428,12 +426,6 @@ public class SinkManagerImpl
     }
 
     @Override
-    public void setApplicationContext(final ApplicationContext applicationContext) {
-        if ( this.applicationContext == null )
-            this.applicationContext = applicationContext;
-    }
-
-    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         updateLogLevels( (String)evt.getOldValue(), (String)evt.getNewValue() );
     }
@@ -486,7 +478,6 @@ public class SinkManagerImpl
     private final ServerConfig serverConfig;
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
-    private ApplicationContext applicationContext;
     private final ClusterInfoManager clusterInfoManager;
     private final ClusterContextFactory clusterContextFactory;
     private final RoleManager roleManager;

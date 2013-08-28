@@ -30,7 +30,6 @@ import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +50,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedCertManagerImp
         extends HibernateEntityManager<TrustedCert, EntityHeader>
-        implements TrustedCertManager, ApplicationContextAware, InitializingBean, PropertyChangeListener
+        implements TrustedCertManager, InitializingBean, PropertyChangeListener
 {
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
 
@@ -66,7 +65,6 @@ public class TrustedCertManagerImp
     private final ClusterInfoManager clusterInfoManager;
 
     private ExpiryCheckerTask expiryCheckerTask;
-    private ApplicationContext spring;
 
     public TrustedCertManagerImp(Config config, ManagedTimer timer, ClusterInfoManager clusterInfoManager) {
         this.config = config;
@@ -234,7 +232,7 @@ public class TrustedCertManagerImp
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
-        this.spring = applicationContext;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -258,7 +256,7 @@ public class TrustedCertManagerImp
         @Override
         protected void doRun() {
             final long nowUTC = System.currentTimeMillis();
-            final AuditContextFactory auditContextFactory = spring.getBean("auditContextFactory", AuditContextFactory.class);
+            final AuditContextFactory auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
             final ClusterNodeInfo nodeInfo = clusterInfoManager.getSelfNodeInf();
 
             // These are retrieved here on every (infrequent) run so that the frequencies can change at runtime

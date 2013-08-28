@@ -4,6 +4,8 @@ package com.l7tech.objectmodel;
  * Interface implemented by EntityManagers that support roles.
  *
  * TODO this should probably just be a side effect of saving an Entity
+ *
+ * (role cleanup is done via application event handling by RoleManagerImpl - see SSG-7523).
  */
 public interface RoleAwareEntityManager<PET extends PersistentEntity> {
 

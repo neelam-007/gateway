@@ -14,9 +14,6 @@ import com.l7tech.util.ResourceUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
 import org.hibernate.Session;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +35,13 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class KeystoreFileManagerImpl
         extends HibernateEntityManager<KeystoreFile, EntityHeader>
-        implements KeystoreFileManager, ApplicationContextAware
+        implements KeystoreFileManager
 {
     protected static final Logger logger = Logger.getLogger(KeystoreFileManagerImpl.class.getName());
     private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
     private static final String HSM_INIT_FILE = "hsm_init.properties";
     private static final String PROPERTY_SCA_HSMINIT_PASSWORD = "hsm.sca.password";
     private MasterPasswordManager masterPasswordManager;
-    private ApplicationContext appContext;
 
     public KeystoreFileManagerImpl(MasterPasswordManager masterPasswordManager) {
         this.masterPasswordManager = masterPasswordManager;
@@ -127,7 +123,7 @@ public class KeystoreFileManagerImpl
     private void updatePassword(final Goid id, final char[] password) throws UpdateException {
         //set the password in the properties for this KeystoreFile (encrypted with the db encrypter), so we always have it from now on
         try {
-            final MasterPasswordManager dbEncrypter = (MasterPasswordManager) appContext.getBean("dbPasswordEncryption");
+            final MasterPasswordManager dbEncrypter = (MasterPasswordManager) applicationContext.getBean("dbPasswordEncryption");
             getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
@@ -174,10 +170,5 @@ public class KeystoreFileManagerImpl
 
     public boolean isHsmAvailable() {
         return JceProvider.PKCS11_ENGINE.equals( JceProvider.getEngineClass());
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.appContext = applicationContext;
     }
 }

@@ -14,8 +14,6 @@ import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
@@ -47,7 +45,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
         extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
-        implements AuditRecordManager, ApplicationContextAware, PropertyChangeListener
+        implements AuditRecordManager, PropertyChangeListener
 {
     private static final String SQL_GET_MIN_MILLS = "SELECT MIN(time) FROM audit_main WHERE time > ?";
     private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
@@ -76,12 +74,6 @@ public class AuditRecordManagerImpl
             }
         }
         return found;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -528,7 +520,6 @@ public class AuditRecordManagerImpl
 
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private Config config;
-    private ApplicationContext applicationContext;
     /**
      * Using Provider with Inject to work around circular dependency issues. ServiceCache will not be retrieved until it is needed.
      */
