@@ -11,7 +11,7 @@ import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
 
-    public static final int FIPS140_COMPAT = 1;
+    public static final int FIPS140_COMPAT = 1; // TODO jwilliams: remove these constants - should be using enum
     public static final int FIPS140_MIGRATE = 2;
     public static final int FIPS140_ONLY = 3;
 
@@ -78,7 +78,7 @@ public class SiteMinderHost implements Serializable {
 
     private Integer getFipsModeValue(Properties properties, String attr) {
         String value = getValue(properties, attr);
-        switch (value) {
+        switch (value) { // TODO jwilliams: fix this - ask Yuri if UNSET and MD5 should be included
             case "COMPAT":
                 return FIPS140_COMPAT;
             case "MIGRATE":

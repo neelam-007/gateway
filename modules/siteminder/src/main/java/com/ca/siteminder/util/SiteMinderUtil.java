@@ -1,6 +1,7 @@
 package com.ca.siteminder.util;
 
 import com.l7tech.common.io.ProcUtils;
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsMode;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
@@ -259,8 +260,9 @@ public abstract class SiteMinderUtil {
                                          String hostconfig,
                                          Integer fipsMode) throws IOException {
 
+        File program;
         File tmpDir = null;
-        File program = null;
+
         try {
             tmpDir = FileUtils.createTempDirectory("SMHOST", null, null, false);
             String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
@@ -271,7 +273,7 @@ public abstract class SiteMinderUtil {
 
             logger.log(Level.FINE, "registering SiteMinder agent with program: " + program);
 
-            ProcUtils.exec(null,program, new String[]{ "-i", address, "-u", username, "-p", password, "-hn", hostname, "-hc",  hostconfig, "-f", smHostConfig, "-cf", getFipsMode(fipsMode), "-o"}, (byte[]) null, false);
+            ProcUtils.exec(program, new String[]{ "-i", address, "-u", username, "-p", password, "-hn", hostname, "-hc",  hostconfig, "-f", smHostConfig, "-cf", getFipsMode(fipsMode), "-o"}, (byte[]) null, false);
 
             return new SiteMinderHost(smHostConfig);
 
@@ -294,17 +296,9 @@ public abstract class SiteMinderUtil {
     }
 
     public static String getFipsMode(int fipsMode) {
-        switch(fipsMode) {
-            case 0:
-                return "UNSET";
-            case 1:
-                return "COMPAT";
-            case 2:
-                return "MIGRATE";
-            case 3:
-                return "ONLY";
-        }
-        return null;
+        SiteMinderFipsMode mode = SiteMinderFipsMode.getByCode(fipsMode);
+
+        return mode == null ? null : mode.getName();
     }
 
     /**

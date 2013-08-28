@@ -23,12 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created with IntelliJ IDEA.
- * GUI for managing SiteMinder entities (Add, Edit, or Remove)
- * User: nilic
+ * @author nilic
  * Date: 7/22/13
  * Time: 2:04 PM
- * To change this template use File | Settings | File Templates.
  */
 public class SiteMinderConfigurationWindow extends JDialog {
 
@@ -45,7 +42,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
     private JButton copyButton;
     private JTable configurationTable;
 
-    private List<SiteMinderConfiguration> configurationList = new ArrayList<SiteMinderConfiguration>();
+    private List<SiteMinderConfiguration> configurationList = new ArrayList<>();
     private AbstractTableModel  configurationTableModel;
     private PermissionFlags flags;
 
@@ -244,7 +241,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
             SiteMinderConfiguration configuration = configurationList.get(row);
 
             switch (col) {
-                case 0:
+                case 0: // TODO jwilliams: fix this to match below statement
                     return configuration.isEnabled()?"Yes":"No";
                 case 1:
                     return configuration.getName();
@@ -263,15 +260,15 @@ public class SiteMinderConfigurationWindow extends JDialog {
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return resources.getString("column.label.enabled");              // Column: Enabled
-                case 1:
                     return resources.getString("column.label.configuration.name");   // Column: Configuration Name
-                case 2:
+                case 1:
                     return resources.getString("column.label.agent.name");           // Column: Agent Name
-                case 3:
+                case 2:
                     return resources.getString("column.label.agent.address");        // Column: Agent Address
-                case 4:
+                case 3:
                     return resources.getString("column.label.agent.hostname");       // Column: Agent Hostname
+                case 4:
+                    return resources.getString("column.label.enabled");              // Column: Enabled
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }

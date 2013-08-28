@@ -12,13 +12,11 @@ import com.l7tech.objectmodel.EntityType;
 import javax.swing.JOptionPane;
 
 /**
- * Created with IntelliJ IDEA.
- * User: nilic
+ * @author nilic
  * Date: 7/22/13
  * Time: 3:37 PM
- * To change this template use File | Settings | File Templates.
  */
-public class ManageSiteMinderConfigurationAction extends SecureAction{
+public class ManageSiteMinderConfigurationAction extends SecureAction {
     public ManageSiteMinderConfigurationAction(){
         super(new AttemptedAnyOperation(EntityType.SITEMINDER_CONFIGURATION), "service:Admin");
     }

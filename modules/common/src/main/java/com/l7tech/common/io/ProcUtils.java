@@ -225,13 +225,11 @@ public class ProcUtils {
     public static ProcResult exec(File cwd, File program, String[] args, InputStream stdin, boolean allowNonzeroExit) throws IOException {
         try {
             return doExec(cwd, program, args, stdin, allowNonzeroExit);
-        } catch (IOException e) {
+        } catch (IOException | ExecutionException e) {
             throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CausedIOException("Interrupted during invocation of program " + program.getName() + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (ExecutionException e) {
-            throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
         }
     }
 

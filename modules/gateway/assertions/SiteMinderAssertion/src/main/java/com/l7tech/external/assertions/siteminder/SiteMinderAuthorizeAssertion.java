@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -80,8 +79,6 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         this.cookieVersion = cookieVersion;
     }
 
-
-
     public String getCookieMaxAge() {
         return cookieMaxAge;
     }
@@ -148,7 +145,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         }
         String[] refNames = Syntax.getReferencedNames(cookieName, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion);
         varsUsed.addAll(Arrays.asList(refNames));
-        return varsUsed.toArray(new String[0]);
+        return varsUsed.toArray(new String[varsUsed.size()]);
     }
 
     //
@@ -162,7 +159,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT

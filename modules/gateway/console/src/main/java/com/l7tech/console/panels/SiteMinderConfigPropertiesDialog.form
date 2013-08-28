@@ -28,7 +28,7 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.name"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.name"/>
             </properties>
           </component>
           <component id="6b40f" class="javax.swing.JLabel">
@@ -36,7 +36,7 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.secret"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.secret"/>
             </properties>
           </component>
           <component id="7c6e4" class="javax.swing.JLabel">
@@ -44,7 +44,7 @@
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.address"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.address"/>
             </properties>
           </component>
           <component id="763b9" class="javax.swing.JTextField" binding="addressTextField">
@@ -60,7 +60,7 @@
               <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.ipcheck"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.ipcheck"/>
             </properties>
           </component>
           <component id="1acfb" class="javax.swing.JTextField" binding="hostNameTextField">
@@ -76,7 +76,7 @@
               <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.hostname"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.hostname"/>
             </properties>
           </component>
           <component id="2cde1" class="javax.swing.JComboBox" binding="fipsModeComboBox">
@@ -90,7 +90,7 @@
               <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.fipsmode"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.fipsmode"/>
             </properties>
           </component>
           <component id="22e23" class="javax.swing.JLabel">
@@ -98,7 +98,7 @@
               <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.cluster_threshold"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.cluster_threshold"/>
             </properties>
           </component>
           <component id="3ea4d" class="javax.swing.JCheckBox" binding="nonclusterFailoverCheckBox" default-binding="true">
@@ -106,7 +106,7 @@
               <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="property.agent.noncluster_failover"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderConfigPropertiesDialog" key="label.agent.noncluster_failover"/>
             </properties>
           </component>
           <component id="23498" class="javax.swing.JTextField" binding="agentNameTextField">
@@ -117,7 +117,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="3d9c3" class="javax.swing.JSpinner" binding="clusterTresholdSpinner">
+          <component id="3d9c3" class="javax.swing.JSpinner" binding="clusterThresholdSpinner">
             <constraints>
               <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="10" height="-1"/>

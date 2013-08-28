@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
- * User: nilic
+ * @author nilic
  * Date: 7/19/13
  * Time: 5:10 PM
- * To change this template use File | Settings | File Templates.
  */
 @XmlAccessorType(XmlAccessType.PROPERTY)
 @XmlRootElement
@@ -143,7 +141,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         return fipsmode;
     }
 
-    public void setFipsmode (int fipsmode ) {
+    public void setFipsmode (int fipsmode) {
         this.fipsmode = fipsmode;
     }
 
@@ -163,7 +161,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
      */
     @Transient
     public List<String> getPropertyNames() {
-        return new ArrayList<String>(properties.keySet());
+        return new ArrayList<>(properties.keySet());
     }
 
     /**

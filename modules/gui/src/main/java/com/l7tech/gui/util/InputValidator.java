@@ -410,6 +410,47 @@ public class InputValidator implements FocusListener {
     }
 
     /**
+     * Configure the specified JPasswordField component so that validation will fail if it has no text in it.
+     * <p/>
+     * The field will <b>not</b> be validated if it is disabled -- validation rules for disabled fields will always
+     * succeed.
+     * <p/>
+     * If this validator has been configured to disable an Ok button when invalid, the text component will also
+     * have a document change listener installed that triggers a call to validate().
+     * <p/>
+     * FieldName will be used for the "field must not be empty" error message, but any ValidationRule supplied
+     * by the caller is responsible for its own error message text.
+     *
+     * @param fieldName  the name of the field, for use in a generated error message.  Must not be null.
+     * @param comp  the component to validate.   Must not be null.
+     * @return the validation rule that was registered, so it can be removed later if desired.  Never null.
+     */
+    public ValidationRule constrainPasswordFieldToBeNonEmpty(@NotNull final String fieldName,
+                                                             @NotNull final JPasswordField comp)
+    {
+        final ValidationRule rule = new EnabledComponentValidationRule(comp, null) {
+            @Override
+            protected String validateComponent() {
+                String error = null;
+
+                final char[] val = comp.getPassword();
+
+                if (val == null || val.length == 0) {
+                    error = "The " + fieldName + " field must not be empty.";
+                }
+
+                Arrays.fill(val, ' '); // clear out the password
+
+                return error;
+            }
+        };
+
+        addRuleForComponent(comp, rule);
+
+        return rule;
+    }
+
+    /**
      * Registers a ValidationRule on the text field to ensure it does not contain over a max number of characters.
      *
      * If the text field is not enabled, no validation will be performed.

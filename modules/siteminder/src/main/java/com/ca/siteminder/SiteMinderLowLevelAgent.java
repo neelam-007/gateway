@@ -21,10 +21,6 @@ public class SiteMinderLowLevelAgent {
     public static final String DEFAULT_SITEMINDER_COOKIE_NAME = "SMSESSION";
     public static final int HTTP_HEADER_VARIABLE_ID = 224;
     public static final String HTTP_HEADER_CONTEXT_VARIABLE_PREFIX = SiteMinderAgentConstants.VAR_PREFIX + ".";
-    private static final String FIPS_MODE_COMPAT = "COMPAT";
-    private static final String FIPS_MODE_MIGRATE = "MIGRATE";
-    private static final String FIPS_MODE_ONLY = "ONLY";
-
 
     private static final Logger logger = Logger.getLogger(SiteMinderLowLevelAgent.class.getName());
 
