@@ -12,6 +12,8 @@ import java.awt.event.ActionListener;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public class AcceptEulaDialog extends JDialog {
+    public static final String DIALOG_TITLE = "End User License Agreement";
+
     private JPanel rootPanel;
     private JPanel eulaDetailsHolderPanel;
     private JButton agreeButton;
@@ -30,7 +32,7 @@ public class AcceptEulaDialog extends JDialog {
 
     private void init() {
         setModal(true);
-        setTitle("License Agreement");
+        setTitle(DIALOG_TITLE);
         setContentPane(rootPanel);
 
         eulaDetailsHolderPanel.setLayout(new BorderLayout());

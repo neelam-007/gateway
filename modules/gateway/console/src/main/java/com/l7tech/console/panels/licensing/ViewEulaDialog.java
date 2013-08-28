@@ -12,7 +12,7 @@ import java.awt.event.ActionListener;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public class ViewEulaDialog extends JDialog {
-    public static final String DIALOG_TITLE = "License Agreement";
+    public static final String DIALOG_TITLE = "End User License Agreement";
 
     private JPanel rootPanel;
     private JPanel eulaDetailsHolderPanel;
