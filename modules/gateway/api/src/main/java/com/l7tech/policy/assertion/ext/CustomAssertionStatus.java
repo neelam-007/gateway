@@ -5,16 +5,18 @@ package com.l7tech.policy.assertion.ext;
  */
 public enum CustomAssertionStatus {
 
-    /** Assertion finished successfully */
+    /** Assertion finished successfully. */
     NONE,
 
-    /** Credentials present but erroneous */
+    /** Credentials present but erroneous, authentication error. */
     AUTH_FAILED,
+
+    /** Credentials present but erroneous, authorization error. */
     UNAUTHORIZED,
 
-    /** The message may be valid, but does not satisfy a logical predicate */
+    /** Message may be valid, but does not satisfy a logical predicate. */
     FALSIFIED,
 
-    /** The assertion is unable to determine whether the message is acceptable; this does not automatically imply that the message is valid or invalid */
+    /** Assertion is unable to determine whether the message is acceptable; this does not automatically imply that the message is valid or invalid. */
     FAILED
 }
