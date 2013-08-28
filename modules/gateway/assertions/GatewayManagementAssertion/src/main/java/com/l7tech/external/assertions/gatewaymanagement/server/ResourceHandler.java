@@ -589,7 +589,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                 throw new ConcurrencyFault(SOAP.createFaultDetail("Entity in use, deletion forbidden.", null, null, null));
             } else {
                 setOperationInfo( context, null, "Error: " + ExceptionUtils.getMessage(e) );
-                logger.log( Level.WARNING, "Resource access error processing management request", e );
+                logger.log( Level.WARNING, "Resource access error processing management request", ExceptionUtils.getDebugException(e) );
                 throw (InternalErrorFault) new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
             }
         } else if ( e instanceof FaultException ) {

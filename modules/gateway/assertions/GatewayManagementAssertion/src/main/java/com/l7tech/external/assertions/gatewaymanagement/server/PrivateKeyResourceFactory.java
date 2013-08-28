@@ -454,7 +454,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Alias must be specified : " + Arrays.asList( e.getAliases() ) ) );
                 } catch ( IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
                           ExecutionException | InterruptedException | NoSuchProviderException | KeyStoreException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException(e) );
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                 }
             }
         }, false ) );
