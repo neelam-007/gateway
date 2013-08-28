@@ -59,7 +59,9 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
             smContext = new SiteMinderContext();
         }
 
-        initSmAgentFromContext(assertion.getAgentGoid(), smContext);
+        if (!initSmAgentFromContext(assertion.getAgentGoid(), smContext)) {
+            return AssertionStatus.FAILED;
+        }
 
         String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
         smContext.setTransactionId(transactionId);

@@ -43,7 +43,7 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         this.manager = applicationContext.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class);
     }
 
-    protected void initSmAgentFromContext(Goid agentGoid, SiteMinderContext context) throws PolicyAssertionException {
+    protected boolean initSmAgentFromContext(Goid agentGoid, SiteMinderContext context) throws PolicyAssertionException {
         try {
             if (context.getAgent() == null) {
                 context.setAgent(manager.getSiteMinderLowLevelAgent(agentGoid));
@@ -54,7 +54,11 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         } catch (FindException e) {
             logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agent Goid=" + agentGoid);
             throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
+        } catch (IllegalStateException e) {
+            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
+            return false;
         }
+        return true;
     }
 
     protected void populateContextVariables(PolicyEnforcementContext pac, String prefix, SiteMinderContext context) {
