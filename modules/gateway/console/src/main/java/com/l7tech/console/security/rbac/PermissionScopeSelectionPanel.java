@@ -197,7 +197,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         final String typePlural = config.getType().getPluralName().toLowerCase();
                         header.setText("Select " + typePlural);
                         specificObjectsLabel.setText("Permissions will only apply to the selected " + typePlural + ".");
-                        specificObjectsTablePanel.setSelectableObjectLabel(typePlural);
 
                         // folderable entities
                         specificAncestryCheckBox.setText(type.isFolderable() ? "Grant read access to the ancestors of the selected " + typePlural + "." : StringUtils.EMPTY);
@@ -236,6 +235,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                     logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 }
                                 specificObjectsModel.setSelectableObjects(entities);
+                                specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, typePlural);
                             } else {
                                 if (type == EntityType.TRUSTED_ESM_USER) {
                                     loadTrustedEsmUsers();

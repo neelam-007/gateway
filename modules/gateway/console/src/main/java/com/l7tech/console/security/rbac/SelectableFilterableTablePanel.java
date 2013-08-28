@@ -97,13 +97,6 @@ public class SelectableFilterableTablePanel extends JPanel {
         return selectableTable;
     }
 
-    /**
-     * param selectableObjectLabel the label to display for the types of objects in the table (ex. no 'selectObjectLabel' are available). Default is 'items'.
-     */
-    public void setSelectableObjectLabel(@NotNull final String selectableObjectLabel) {
-        this.selectableObjectLabel = selectableObjectLabel;
-    }
-
     private void initBtns() {
         Utilities.buttonToLink(selectAllButton);
         Utilities.buttonToLink(clearAllButton);
