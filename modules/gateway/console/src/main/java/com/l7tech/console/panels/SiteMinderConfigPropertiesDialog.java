@@ -27,6 +27,7 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
@@ -546,7 +547,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
         if (originalName.compareToIgnoreCase(newName) == 0) return null;
         try{
-            for (String name: admin.getAllSiteMinderConfigurationNames()) {
+            for (String name: getAllSiteMinderConfigurationNames()) {
                 if (name.equals(configurationNameTextField.getText())) {
                     return "The connection name \"" + name + "\" already exists. Try a new name.";
                 }
@@ -556,6 +557,24 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         }
 
         return null;
+    }
+
+    /**
+     * Get the names of all SiteMinder configuration entities.
+     * @return a list of the names of all SiteMinder configuration entities.
+     * @throws FindException: thrown when errors finding the SiteMinder configuration entity.
+     */
+    private List<String> getAllSiteMinderConfigurationNames() throws FindException {
+
+        SiteMinderAdmin admin = getSiteMinderAdmin();
+        List<SiteMinderConfiguration> configList = admin.getAllSiteMinderConfigurations();
+        List<String> names = new ArrayList<String>(configList.size());
+        for (SiteMinderConfiguration config : configList){
+            if (config.isEnabled()) {
+                names.add(config.getName());
+            }
+        }
+        return names;
     }
 
     private String validateSiteMinderConfiguration() {

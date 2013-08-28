@@ -164,6 +164,8 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
                 config = getSiteMinderAdmin().getSiteMinderConfiguration(assertion.getAgentGoid());
                 if (config != null) {
                     agentComboBox.setSelectedItem(new SiteMinderConfigurationKey(config));
+                } else {
+                    agentComboBox.setSelectedItem(null);
                 }
             }
         } catch (FindException e) {
@@ -221,45 +223,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         return Registry.getDefault().getSiteMinderConfigurationAdmin();
     }
 
-    private static class SiteMinderConfigurationKey {
-        private String agentId;
-        private Goid goid;
 
-        private SiteMinderConfigurationKey(SiteMinderConfiguration config) {
-            agentId = config.getName();
-            goid = config.getGoid();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof SiteMinderConfigurationKey)) return false;
-
-            SiteMinderConfigurationKey that = (SiteMinderConfigurationKey) o;
-
-            if (agentId != null ? !agentId.equals(that.agentId) : that.agentId != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return agentId != null ? agentId.hashCode() : 0;
-        }
-
-        @Override
-        public String toString() {
-            return agentId;
-        }
-
-        public Goid getGoid() {
-            return goid;
-        }
-
-        public String getAgentId() {
-            return agentId;
-        }
-    }
 
 
 }

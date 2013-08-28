@@ -55,15 +55,6 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
     List<SiteMinderConfiguration> getAllSiteMinderConfigurations() throws FindException;
 
     /**
-     * Get the names of all SiteMinder configuration entities.
-     * @return a list of the names of all SiteMinder configuration entities.
-     * @throws FindException: thrown when errors finding the SiteMinder configuration entities.
-     */
-    @Transactional(readOnly = true)
-    @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.GET_PROPERTY_OF_ENTITY)
-    List<String>  getAllSiteMinderConfigurationNames() throws FindException;
-
-    /**
      * Save a SiteMinder configuration entity into the database.
      * @param siteMinderConfiguration: the SiteMinder configuration entity to be saved
      * @return  a long, the saved entity object id.

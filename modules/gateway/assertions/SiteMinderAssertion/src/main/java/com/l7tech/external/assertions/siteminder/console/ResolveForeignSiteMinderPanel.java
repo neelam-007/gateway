@@ -69,7 +69,8 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
         if (changeRadioButton.isSelected()) {
             if (siteMinderSelectorComboBox.getSelectedIndex() < 0) return false;
             try {
-                final SiteMinderConfiguration c = getSiteMinderAdmin().getSiteMinderConfiguration((String)siteMinderSelectorComboBox.getSelectedItem());
+                final SiteMinderConfiguration c = getSiteMinderAdmin().getSiteMinderConfiguration(
+                        ((SiteMinderConfigurationKey)siteMinderSelectorComboBox.getSelectedItem()).getGoid());
                 foreignRef.setLocalizeReplace(c.getGoid());
             } catch (FindException e) {
                 return false;
@@ -129,7 +130,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
     }
 
     private void populateSiteMinderComboBox() {
-        DefaultComboBoxModel<String> agentComboBoxModel = new DefaultComboBoxModel<>();
+        DefaultComboBoxModel<SiteMinderConfigurationKey> agentComboBoxModel = new DefaultComboBoxModel<>();
         populateAgentComboBoxModel(agentComboBoxModel);
         siteMinderSelectorComboBox.setModel(agentComboBoxModel);
     }
@@ -194,12 +195,12 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
      * populates agent combo box with agent IDs
      * @param agentComboBoxModel
      */
-    private void populateAgentComboBoxModel(DefaultComboBoxModel<String> agentComboBoxModel) {
+    private void populateAgentComboBoxModel(DefaultComboBoxModel<SiteMinderConfigurationKey> agentComboBoxModel) {
 
         try {
-            java.util.List<String> agents = getSiteMinderAdmin().getAllSiteMinderConfigurationNames();
-            for (String agent: agents) {
-                agentComboBoxModel.addElement(agent);
+            java.util.List<SiteMinderConfiguration> agents = getSiteMinderAdmin().getAllSiteMinderConfigurations();
+            for (SiteMinderConfiguration agent: agents) {
+                agentComboBoxModel.addElement(new SiteMinderConfigurationKey(agent));
             }
         } catch (FindException e) {
             //do not throw any exceptions at this point. leave agent combo box empty

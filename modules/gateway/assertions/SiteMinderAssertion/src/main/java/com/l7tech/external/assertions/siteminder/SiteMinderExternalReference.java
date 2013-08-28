@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.siteminder;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
@@ -82,6 +81,9 @@ public class SiteMinderExternalReference extends ExternalReference {
             marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             SiteMinderConfiguration copy = new SiteMinderConfiguration();
+            if (siteMinderConfiguration == null) {
+                return;
+            }
             copy.copyFrom(siteMinderConfiguration);
             copy.setSecret(null);
             copy.setPasswordGoid(null);

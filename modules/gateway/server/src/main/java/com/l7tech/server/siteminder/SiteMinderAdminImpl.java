@@ -75,24 +75,6 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
     }
 
     /**
-     * Get the names of all SiteMinder configuration entities.
-     * @return a list of the names of all SiteMinder configuration entities.
-     * @throws FindException: thrown when errors finding the SiteMinder configuration entity.
-     */
-    public List<String> getAllSiteMinderConfigurationNames() throws FindException {
-
-        List<SiteMinderConfiguration> configList = getAllSiteMinderConfigurations();
-        List<String> names = new ArrayList<String>(configList.size());
-        for (SiteMinderConfiguration config : configList){
-            if (config.isEnabled()) {
-                names.add(config.getName());
-            }
-        }
-
-        return names;
-    }
-
-    /**
      * Save a SiteMinder configuration entity into the database.
      * @param configuration: the SiteMinder configuration entity to be saved.
      * @return a Goid, the saved entity object id.
