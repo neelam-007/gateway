@@ -9,6 +9,8 @@ import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.URIResourceDocument;
 import com.l7tech.common.io.XmlUtil;
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
+
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -617,6 +619,14 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
     private void init() {
         setTitle( resources.getString( "dialog.title" ));
+
+        getButtonHelp().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(GlobalResourceImportWizard.this);
+            }
+        });
+
         pack();
         Utilities.centerOnParentWindow( this );
     }
