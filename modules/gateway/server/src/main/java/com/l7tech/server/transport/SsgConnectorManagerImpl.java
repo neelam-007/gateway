@@ -14,6 +14,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.util.*;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.*;
@@ -39,7 +40,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
  */
 public class SsgConnectorManagerImpl
         extends HibernateEntityManager<SsgConnector, EntityHeader>
-        implements SsgConnectorManager, InitializingBean, DisposableBean, PropertyChangeListener
+        implements SsgConnectorManager, InitializingBean, DisposableBean, PropertyChangeListener, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
     private static final String PROP_RESERVED_PORTS = "com.l7tech.server.transport.reservedPorts";
@@ -52,6 +53,7 @@ public class SsgConnectorManagerImpl
             new ConcurrentSkipListMap<String, Pair<TransportDescriptor, TransportModule>>(String.CASE_INSENSITIVE_ORDER);
 
     private final AtomicReference<Pair<String, Set<InterfaceTag>>> interfaceTags = new AtomicReference<Pair<String, Set<InterfaceTag>>>(null);
+    private ApplicationEventPublisher applicationEventPublisher;
 
     public SsgConnectorManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
         this.serverConfig = serverConfig;
@@ -302,7 +304,7 @@ public class SsgConnectorManagerImpl
     }
 
     private void restartAllConnectorsUsingInterfaceTags() {
-        if (applicationContext == null)
+        if (applicationEventPublisher == null)
             return;
 
         List<Goid> goids = new ArrayList<Goid>();
@@ -316,7 +318,12 @@ public class SsgConnectorManagerImpl
         }
 
         EntityInvalidationEvent eie = new EntityInvalidationEvent(this, SsgConnector.class, goids.toArray(new Goid[goids.size()]), ArrayUtils.fill(new char[goids.size()], 'U'));
-        applicationContext.publishEvent(eie);
+        applicationEventPublisher.publishEvent(eie);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationEventPublisher = applicationContext;
     }
 
     @Override

@@ -16,6 +16,9 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +35,9 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClusterPropertyManagerImpl
         extends HibernateEntityManager<ClusterProperty, EntityHeader>
-        implements ClusterPropertyManager {
+        implements ClusterPropertyManager, ApplicationContextAware {
     private final Logger logger = Logger.getLogger(ClusterPropertyManagerImpl.class.getName());
+    private ApplicationContext applicationContext;
 
     private final String HQL_FIND_BY_NAME =
             "from " + getTableName() +
@@ -161,5 +165,10 @@ public class ClusterPropertyManagerImpl
     @Override
     public Class<? extends Entity> getImpClass() {
         return ClusterProperty.class;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

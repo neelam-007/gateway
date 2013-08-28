@@ -14,6 +14,9 @@ import com.l7tech.util.ResourceUtils;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.XMLDecoder;
@@ -32,7 +35,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * Implementation of GenericEntityManager.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
+public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEntity, GenericEntityHeader> implements GenericEntityManager, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(GenericEntityManagerImpl.class.getName());
 
     public static final String F_CLASSNAME = "entityClassName";
@@ -53,6 +56,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             "   AND " + getTableName() + "." + F_CLASSNAME + " = ?";
 
     private final ConcurrentMap<String, Class<? extends GenericEntity>> registeredClasses = new ConcurrentHashMap<String, Class<? extends GenericEntity>>();
+    private ApplicationContext applicationContext;
 
     @Override
     @Transactional(readOnly=true)
@@ -480,6 +484,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         if (!entityClass.getName().equals(ret.getEntityClassName()))
             return null;
         return asConcreteEntity(ret, entityClass);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     @Override

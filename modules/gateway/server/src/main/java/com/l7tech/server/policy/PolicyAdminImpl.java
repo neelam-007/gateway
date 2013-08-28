@@ -154,7 +154,6 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public void deletePolicy(Goid goid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         checkForActiveAuditSinkOrTracePolicy(goid);
         policyManager.delete(goid);
-        //policyManager.deleteRoles(goid);
     }
 
     private void checkForActiveAuditSinkOrTracePolicy(Goid goid) throws FindException, PolicyDeletionForbiddenException {
