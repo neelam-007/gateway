@@ -8,6 +8,7 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -232,7 +233,11 @@ public class SsgConnectorManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SsgConnector connector, final SsgConnector originalConnector, final boolean selectName) {
-        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, isCluster);
+        boolean readOnly = false;
+        if (!connector.getGoid().equals(SsgConnector.DEFAULT_GOID) && !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SSG_CONNECTOR, connector))) {
+            readOnly = true;
+        }
+        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, isCluster, readOnly);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if(selectName)

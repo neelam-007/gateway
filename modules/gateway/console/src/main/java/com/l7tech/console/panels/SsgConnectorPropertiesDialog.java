@@ -127,6 +127,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JPanel builtinServicesPanel;
     private ByteLimitPanel requestByteLimitPanel;
     private SecurityZoneWidget zoneControl;
+    private boolean readOnly;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -154,11 +155,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private Map<String, CustomTransportPropertiesPanel> customGuisByScheme = new TreeMap<String, CustomTransportPropertiesPanel>(String.CASE_INSENSITIVE_ORDER);
     private Map<String, Set<String>> reservedPropertyNamesByScheme = new TreeMap<String, Set<String>>(String.CASE_INSENSITIVE_ORDER);
 
-    private final boolean snmpQueryEnabled = Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getTransportAdmin().isSnmpQueryEnabled();;
+    private final boolean snmpQueryEnabled = Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getTransportAdmin().isSnmpQueryEnabled();
 
-    public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
+    public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster, final boolean readOnly) {
         super(owner, DIALOG_TITLE, ModalityType.DOCUMENT_MODAL);
         this.isCluster = isCluster;
+        this.readOnly = readOnly;
         initialize(connector);
     }
 
@@ -253,8 +255,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 TransportDescriptor proto = getSelectedProtocol();
-                threadPoolSizeSpinner.setEnabled( usePrivateThreadPoolCheckBox.isSelected() && (isHttpProto(proto) || isThreadPoolProto(proto)) );
-                threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
+                threadPoolSizeSpinner.setEnabled( !readOnly && usePrivateThreadPoolCheckBox.isSelected() && (isHttpProto(proto) || isThreadPoolProto(proto)) );
+                threadPoolSizeLabel.setEnabled( !readOnly && threadPoolSizeSpinner.isEnabled() );
             }
         } );
 
@@ -573,7 +575,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return requestByteLimitPanel.validateFields();
             }
         });
-        zoneControl.configure(connector.getGoid().equals(SsgConnector.DEFAULT_GOID) ? OperationType.CREATE : OperationType.UPDATE, connector);
+        zoneControl.configure(connector.getGoid().equals(SsgConnector.DEFAULT_GOID) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, connector);
 
         Utilities.enableGrayOnDisabled(contentTypeComboBox);
         Utilities.enableGrayOnDisabled(serviceNameComboBox);
@@ -745,6 +747,16 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableComponents() {
+        nameField.setEditable(!readOnly);
+        protocolComboBox.setEnabled(!readOnly);
+        portField.setEnabled(!readOnly);
+        interfaceComboBox.setEnabled(!readOnly);
+        interfacesButton.setEnabled(!readOnly);
+        enabledCheckBox.setEnabled(!readOnly);
+        addPropertyButton.setEnabled(!readOnly);
+        requestByteLimitPanel.setEnabled(!readOnly);
+        cipherSuiteListModel.setEnabled(!readOnly);
+        okButton.setEnabled(!readOnly);
         enableOrDisableTabs();
         enableOrDisableEndpoints();
         enableOrDisableTlsVersions();
@@ -755,14 +767,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableServiceResolutionDropdowns() {
-        serviceNameComboBox.setEnabled(hardwiredServiceCheckBox.isSelected());
-        contentTypeComboBox.setEnabled(overrideContentTypeCheckBox.isSelected());
+        serviceNameComboBox.setEnabled(!readOnly && hardwiredServiceCheckBox.isSelected());
+        contentTypeComboBox.setEnabled(!readOnly && overrideContentTypeCheckBox.isSelected());
     }
 
     private void enableOrDisablePropertyButtons() {
         boolean haveSel = propertyList.getSelectedIndex() >= 0;
-        editPropertyButton.setEnabled(haveSel);
-        removePropertyButton.setEnabled(haveSel);
+        editPropertyButton.setEnabled(!readOnly && haveSel);
+        removePropertyButton.setEnabled(!readOnly && haveSel);
     }
 
     private void enableOrDisableTabs() {
@@ -776,23 +788,23 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         tabbedPane.setEnabledAt(TAB_SSL, isSsl);
         tabbedPane.setEnabledAt(TAB_HTTP, isHttp || isPool);
 
-        usePrivateThreadPoolCheckBox.setEnabled(isHttp || isPool);
-        threadPoolSizeSpinner.setEnabled(usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected());
-        threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
+        usePrivateThreadPoolCheckBox.setEnabled(!readOnly && (isHttp || isPool));
+        threadPoolSizeSpinner.setEnabled(!readOnly && usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected());
+        threadPoolSizeLabel.setEnabled(!readOnly && threadPoolSizeSpinner.isEnabled() );
 
         tabbedPane.setEnabledAt(TAB_FTP, isFtp);
-        portRangeStartField.setEnabled(isFtp);  // disable controls InputValidator will ignore them when not relevant
-        portRangeCountField.setEnabled(isFtp);
+        portRangeStartField.setEnabled(!readOnly && isFtp);  // disable controls InputValidator will ignore them when not relevant
+        portRangeCountField.setEnabled(!readOnly && isFtp);
 
         if (!isSsl) cipherSuiteList.clearSelection();
-        cipherSuiteList.setEnabled(isSsl);
-        moveUpButton.setEnabled(isSsl);
-        moveDownButton.setEnabled(isSsl);
-        uncheckAllButton.setEnabled(isSsl);
-        defaultCipherListButton.setEnabled(isSsl);
-        clientAuthComboBox.setEnabled(isSsl);
-        privateKeyComboBox.setEnabled(isSsl);
-        managePrivateKeysButton.setEnabled(isSsl);
+        cipherSuiteList.setEnabled(!readOnly && isSsl);
+        moveUpButton.setEnabled(!readOnly && isSsl);
+        moveDownButton.setEnabled(!readOnly && isSsl);
+        uncheckAllButton.setEnabled(!readOnly && isSsl);
+        defaultCipherListButton.setEnabled(!readOnly && isSsl);
+        clientAuthComboBox.setEnabled(!readOnly && isSsl);
+        privateKeyComboBox.setEnabled(!readOnly && isSsl);
+        managePrivateKeysButton.setEnabled(!readOnly && isSsl);
 
         // Show custom controls, if any
         if (proto != null && proto.getCustomPropertiesPanelClassname() != null) {
@@ -821,7 +833,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         } else {
             setEnableAndSelect(false, false, "Disabled because the current protocol does not support content type overrides", overrideContentTypeCheckBox);
         }
-        contentTypeComboBox.setEnabled(oct);
+        contentTypeComboBox.setEnabled(!readOnly && oct);
 
         boolean hws = proto != null && proto.isSupportsHardwiredServiceResolution();
         if (hws) {
@@ -833,7 +845,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         } else {
             setEnableAndSelect(false, false, "Disabled because the current protocol does not support hardwired service resolution", hardwiredServiceCheckBox);
         }
-        serviceNameComboBox.setEnabled(hws);
+        serviceNameComboBox.setEnabled(!readOnly && hws);
     }
 
     private void disableOrRestoreEndpointCheckBox(Set<Endpoint> endpoints, SsgConnector.Endpoint endpoint, JCheckBox checkBox) {
@@ -890,19 +902,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private static void enableAndRestore(JCheckBox... boxes) {
+    private void enableAndRestore(JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
-            box.setEnabled(true);
+            box.setEnabled(!readOnly);
             box.setToolTipText(null);
             final Boolean we = (Boolean)box.getClientProperty(CPROP_WASENABLED);
             if (we != null) box.setSelected(we);
         }
     }
 
-    private static void setEnableAndSelect(boolean enabled, boolean selected, String toolTipText, JCheckBox... boxes) {
+    private void setEnableAndSelect(boolean enabled, boolean selected, String toolTipText, JCheckBox... boxes) {
         for (JCheckBox box : boxes) {
             box.setSelected(selected);
-            box.setEnabled(enabled);
+            box.setEnabled(!readOnly && enabled);
             box.setToolTipText(toolTipText);
         }
     }
@@ -1065,8 +1077,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         final boolean snmpPropEnabled = snmpQueryServicePropertyEnabled();
 
         // If the protocol is not HTTPS, then disable both CSR Handler service and Password changing service.
-        csrHandlerCheckBox.setEnabled(httpsEnabled);
-        passwordChangeCheckBox.setEnabled(httpsEnabled);
+        csrHandlerCheckBox.setEnabled(!readOnly && httpsEnabled);
+        passwordChangeCheckBox.setEnabled(!readOnly && httpsEnabled);
         if (! httpsEnabled) {
             csrHandlerCheckBox.setSelected(false);
             passwordChangeCheckBox.setSelected(false);
@@ -1074,8 +1086,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // If the SNMP Query Service cluster property is set as disabled, then make the checkbox of SNMP query service be invisible.
         // If the protocol is HTTP or HTTPS and the cluster property is set as true., set the SNMP query service checkbox as visible and enabled.
-        snmpQueryCheckBox.setVisible(httpEnabled &&snmpPropEnabled);
-        snmpQueryCheckBox.setEnabled(httpEnabled && snmpPropEnabled);
+        snmpQueryCheckBox.setVisible(!readOnly && httpEnabled &&snmpPropEnabled);
+        snmpQueryCheckBox.setEnabled(!readOnly && httpEnabled && snmpPropEnabled);
         if (!httpEnabled || !snmpPropEnabled) snmpQueryCheckBox.setSelected(false);
 
         // If one of individual built-in services is enabled, then the "Built-in services" checkbox should be enabled..
@@ -1087,8 +1099,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             wsdlProxyCheckBox.isEnabled() ||
             (snmpPropEnabled && snmpQueryCheckBox.isEnabled())) {
 
-            cbEnableBuiltinServices.setEnabled(true);
-            collapseOrExpandButton.setEnabled(true);
+            cbEnableBuiltinServices.setEnabled(!readOnly);
+            collapseOrExpandButton.setEnabled(!readOnly);
         } else {
             // If all built-in service checkboxes (including the parent one) are disabled, then disable the collapse/expand button.
             collapseOrExpandButton.setEnabled(false);
@@ -1116,16 +1128,16 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             pingServiceCheckBox.setSelected(true);
             stsCheckBox.setSelected(true);
             if (httpsEnabled) {
-                csrHandlerCheckBox.setEnabled(true);
-                csrHandlerCheckBox.setSelected(true);
+                csrHandlerCheckBox.setEnabled(!readOnly);
+                csrHandlerCheckBox.setSelected(!readOnly);
 
-                passwordChangeCheckBox.setEnabled(true);
-                passwordChangeCheckBox.setSelected(true);
+                passwordChangeCheckBox.setEnabled(!readOnly);
+                passwordChangeCheckBox.setSelected(!readOnly);
             }
             wsdlProxyCheckBox.setSelected(true);
             if (snmpPropEnabled) {
                 snmpQueryCheckBox.setVisible(true);
-                snmpQueryCheckBox.setEnabled(true);
+                snmpQueryCheckBox.setEnabled(!readOnly);
                 snmpQueryCheckBox.setSelected(true);
             }
 
@@ -1153,7 +1165,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         for (Endpoint endpoint: getBuiltinServicesMap().keySet()) {
             final JCheckBox checkBox = getBuiltinServicesMap().get(endpoint);
             if (endpoints.contains(endpoint)) {
-                checkBox.setEnabled(true);
+                checkBox.setEnabled(!readOnly);
 
                 final Boolean wasSelected = (Boolean)checkBox.getClientProperty(CPROP_WASENABLED);
                 if (wasSelected != null) checkBox.setSelected(wasSelected);

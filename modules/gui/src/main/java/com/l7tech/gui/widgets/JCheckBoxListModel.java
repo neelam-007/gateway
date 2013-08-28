@@ -131,6 +131,16 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     }
 
     /**
+     * Enable/disable the checkboxes in the list.
+     */
+    public void setEnabled(final boolean enabled) {
+        for (int index = 0; index < entries.size(); ++index) {
+            JCheckBox entry = entries.get(index);
+            entry.setEnabled(enabled);
+        }
+    }
+
+    /**
      * Return all entries that satisfy the predicate.
      *
      * @param predicate  the predicate to invoke to determine whether an entry should be included in the returned list.  Required.
