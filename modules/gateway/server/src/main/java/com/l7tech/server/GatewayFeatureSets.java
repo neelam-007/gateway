@@ -750,15 +750,7 @@ public class GatewayFeatureSets {
                 "Cross Site Request Forgery Protection Assertion",
                 mass("assertion:CsrfProtection"));
 
-        /**
-         * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
-         * the policy bundle installer module also being added.
-         */
-        GatewayFeatureSet salesforceAssertions =
-                fsr("set:SalesforceInstallerAssertion:Assertions", "The necessary assertions to install the Salesforce Connector",
-                        mass("assertion:Salesforce"),
-                        mass("assertion:SalesforceInstaller"),
-                        cass("assertion:SalesforceOperation"));
+        // TODO jwilliams: create new feature set for nces, separate it from usAssertions, and use it in the NCES feature pack
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -942,7 +934,6 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(siteMinderAssertions),
-            fs(salesforceAssertions),
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1008,7 +999,6 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
-            fs(salesforceAssertions),
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1059,18 +1049,41 @@ public class GatewayFeatureSets {
                 mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore),
                 fs(siteMinderAssertions),
-                fs(salesforceAssertions),
                 fs(csrfProtectionAssertion));
 
-        PROFILE_ALL =
-        fsp("set:Profile:Development", "Development Mode",
+        /**
+         * ### FEATURE PACK DEFINITIONS BEGIN ###
+         *
+         * IMPORTANT:
+         *
+         * -Feature packs containing modular assertions *must* include the Module Loader Service feature set.
+         * -All feature pack profiles should be included in the Development profile (set:Profile:Development).
+         */
+
+        /**
+         * Salesforce Connector
+         */
+        GatewayFeatureSet salesforceFeaturePack = fsp("set:Profile:Salesforce",
+                "Salesforce Connector",
+                "Includes assertions that provide access to Salesforce data",
+                mass("assertion:Salesforce"),
+                mass("assertion:SalesforceInstaller"),
+                cass("assertion:SalesforceOperation"),
+                fs(moduleLoader));
+
+        /**
+         * ### FEATURE PACK DEFINITIONS END ###
+         */
+
+        PROFILE_ALL = fsp("set:Profile:Development", "Development Mode",
                 "Everything everywhere, including experimental features.",
                 fs(profileGateway),
                 fs(profileFederal),
                 fs(profileUs),
                 fs(experimental),
                 fs(flagPermaFips),
-                fs(profileApi));
+                fs(profileApi),
+                fs(salesforceFeaturePack));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
