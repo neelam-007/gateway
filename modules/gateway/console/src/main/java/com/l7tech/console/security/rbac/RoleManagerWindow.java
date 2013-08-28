@@ -68,6 +68,27 @@ public class RoleManagerWindow extends JDialog {
         handleTableChange();
     }
 
+    /**
+     * Restore the permissions on the given Role from its persisted state.
+     *
+     * @param role the Role to restore.
+     */
+    public static void restorePermissions(@NotNull final Role role) {
+        if (!role.isUnsaved()) {
+            // restore permissions to pre-modified state
+            try {
+                final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getGoid());
+                if (found == null) {
+                    throw new FindException("Unable to retrieve role with id " + role.getGoid());
+                }
+                role.getPermissions().clear();
+                role.getPermissions().addAll(found.getPermissions());
+            } catch (final FindException ex) {
+                logger.log(Level.WARNING, "Error restoring role to pre-modified state: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+            }
+        }
+    }
+
     private void initCrudController() {
         crudController = new EntityCrudController<>();
         crudController.setEntityTable(rolesTable);
@@ -147,7 +168,14 @@ public class RoleManagerWindow extends JDialog {
                 final RolePropertiesDialog dlg = new RolePropertiesDialog(RoleManagerWindow.this, role, readOnly, roleNames, afterEditListener);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
-                DialogDisplayer.display(dlg);
+                DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!dlg.isConfirmed()) {
+                            restorePermissions(role);
+                        }
+                    }
+                });
             }
         });
     }

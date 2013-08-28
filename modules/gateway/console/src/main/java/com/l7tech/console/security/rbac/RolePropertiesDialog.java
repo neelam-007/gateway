@@ -42,6 +42,7 @@ public class RolePropertiesDialog extends JDialog {
     private Set<String> reservedNames;
     private String operation;
     private Functions.UnaryVoidThrows<Role, SaveException> afterEditListener;
+    private boolean confirmed;
 
     public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
 
@@ -68,24 +69,16 @@ public class RolePropertiesDialog extends JDialog {
         role.setDescription(basicPropertiesPanel.getDescriptionText());
     }
 
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
     private void initComponents() {
         okCancelPanel.setOkButtonText(operation);
         okCancelPanel.getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                if (!role.isUnsaved()) {
-                    // restore permissions to pre-modified state
-                    try {
-                        final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getGoid());
-                        if (found == null) {
-                            throw new FindException("Unable to retrieve role with id " + role.getGoid());
-                        }
-                        role.getPermissions().clear();
-                        role.getPermissions().addAll(found.getPermissions());
-                    } catch (final FindException ex) {
-                        logger.log(Level.WARNING, "Error restoring role to pre-modified state: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
-                    }
-                }
+                RoleManagerWindow.restorePermissions(role);
                 try {
                     afterEditListener.call(null);
                 } catch (final SaveException ex) {
@@ -146,6 +139,7 @@ public class RolePropertiesDialog extends JDialog {
                 showDuplicateNameError();
             } else {
                 save();
+                confirmed = true;
             }
         }
     }
