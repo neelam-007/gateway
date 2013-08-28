@@ -149,6 +149,8 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderAuthenticationPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Authenticate via SiteMinder Properties");
 
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertionValidator");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
