@@ -1085,6 +1085,9 @@ public class GatewayFeatureSets {
 
         /**
          * Mobile Access Gateway
+         *
+         * N.B. As of Halibut 8.0 GA this feature profile has no use. It will not serve any purpose until
+         * the assertions it references have been updated to be licensed from the assertion class.
          */
         GatewayFeatureSet mobileFeaturePack = fsp("set:Profile:Mobile",
                 "Mobile Access Gateway",
@@ -1111,9 +1114,6 @@ public class GatewayFeatureSets {
                 mass("assertion:XMPPSendToRemoteHost"),
                 mass("assertion:XMPPSetSessionAttribute"),
                 mass("assertion:XMPPOpenServerSession"),
-
-                /* NOTHING FOR ANDROID PUSH YET */
-
                 fs(moduleLoader));
 
         /**
