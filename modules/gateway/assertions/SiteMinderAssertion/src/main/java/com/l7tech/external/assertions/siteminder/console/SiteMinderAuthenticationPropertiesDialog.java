@@ -28,9 +28,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JRadioButton specifyCredentialsRadioButton;
     private JTextField credentialsTextField;
     private JCheckBox authenticateViaSiteMinderCookieCheckBox;
-    private JRadioButton useCookieFromRequestRadioButton;
-    private JTextField smCookieNameTextField;
-    private JRadioButton useCookieFromContextRadioButton;
     private TargetVariablePanel siteminderPrefixVariablePanel;
     private TargetVariablePanel cookieVariablePanel;
     private final InputValidator inputValidator;
@@ -48,8 +45,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
 
-
-        smCookieNameTextField.setText(SiteMinderAuthenticateAssertion.DEFAULT_SMSESSION_NAME);
         siteminderPrefixVariablePanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -63,19 +58,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             }
         });
 
-        useCookieFromRequestRadioButton.setSelected(true);
-        useCookieFromRequestRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableComponents();
-            }
-        });
-        useCookieFromContextRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableComponents();
-            }
-        });
         useLastCredentialsRadioButton.setSelected(true);
         useLastCredentialsRadioButton.addActionListener(new ActionListener() {
             @Override
@@ -112,10 +94,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     }
 
     private void enableDisableComponents() {
-        useCookieFromRequestRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
-        useCookieFromContextRadioButton.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
-        smCookieNameTextField.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected() && useCookieFromRequestRadioButton.isSelected());
-        cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected() && useCookieFromContextRadioButton.isSelected());
+        cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
         credentialsTextField.setEnabled(specifyCredentialsRadioButton.isSelected());
         getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid() && (!cookieVariablePanel.isEnabled() || cookieVariablePanel.isEntryValid()));
     }
@@ -128,14 +107,6 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     public void setData(SiteMinderAuthenticateAssertion assertion) {
         authenticateViaSiteMinderCookieCheckBox.setSelected(assertion.isUseSMCookie());
-        useCookieFromRequestRadioButton.setSelected(assertion.isUseCustomCookieName());
-        if(assertion.getCookieName() != null && !assertion.getCookieName().isEmpty()) {
-            smCookieNameTextField.setText(assertion.getCookieName());
-        }
-        else {
-            smCookieNameTextField.setText(SiteMinderAuthenticateAssertion.DEFAULT_SMSESSION_NAME);
-        }
-        useCookieFromContextRadioButton.setSelected(assertion.isUseVarAsCookieSource());
         cookieVariablePanel.setVariable(assertion.getCookieSourceVar());
         if(assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
             siteminderPrefixVariablePanel.setVariable(assertion.getPrefix());
@@ -162,10 +133,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     public SiteMinderAuthenticateAssertion getData(SiteMinderAuthenticateAssertion assertion) throws ValidationException {
         assertion.setUseSMCookie(authenticateViaSiteMinderCookieCheckBox.isSelected());
-        assertion.setUseCustomCookieName(useCookieFromRequestRadioButton.isSelected());
-        assertion.setCookieName(smCookieNameTextField.getText());
-        assertion.setUseVarAsCookieSource(useCookieFromContextRadioButton.isSelected());
-        assertion.setCookieSourceVar(useCookieFromContextRadioButton.isSelected()?cookieVariablePanel.getVariable():null);
+        assertion.setCookieSourceVar(authenticateViaSiteMinderCookieCheckBox.isSelected()?cookieVariablePanel.getVariable():null);
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
         assertion.setLastCredential(useLastCredentialsRadioButton.isSelected());
         assertion.setLogin(specifyCredentialsRadioButton.isSelected()?credentialsTextField.getText():null);

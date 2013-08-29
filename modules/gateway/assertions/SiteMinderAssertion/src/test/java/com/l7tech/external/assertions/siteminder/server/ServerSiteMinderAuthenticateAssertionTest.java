@@ -80,7 +80,6 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         smAuthenticateAssertion.setLastCredential(true);
         smAuthenticateAssertion.setUseSMCookie(false);
-        smAuthenticateAssertion.setCookieName("SMSESSION");
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
@@ -108,8 +107,9 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         smAuthenticateAssertion.setLastCredential(true);
         smAuthenticateAssertion.setUseSMCookie(true);
-        smAuthenticateAssertion.setUseCustomCookieName(true);
-        smAuthenticateAssertion.setCookieName("SMSESSION");
+        smAuthenticateAssertion.setCookieSourceVar("cookie.SMSESSION");
+
+        pec.setVariable("cookie.SMSESSION", SSO_TOKEN);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
         when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
@@ -134,8 +134,10 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         smAuthenticateAssertion.setLastCredential(true);
         smAuthenticateAssertion.setUseSMCookie(true);
-        smAuthenticateAssertion.setUseCustomCookieName(true);
-        smAuthenticateAssertion.setCookieName("SMSESSION");
+
+        smAuthenticateAssertion.setCookieSourceVar("cookie.SMSESSION");
+
+        pec.setVariable("cookie.SMSESSION", SSO_TOKEN);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
         when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());

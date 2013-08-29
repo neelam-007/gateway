@@ -189,21 +189,4 @@ public class SiteMinderHighLevelAgent {
 
         return result;
     }
-
-/*    public String getCredentialsAsString(final UserCredentials creds) {
-        String s = null;
-        if(creds.name != null && !creds.name.isEmpty()) {
-            s = creds.name;
-        }
-        else if (creds.certBinary != null && creds.certBinary.length > 0){
-            s = "<binary cert>";
-        }
-        else if (creds.certIssuerDN != null && !creds.certIssuerDN.isEmpty()){
-            s = creds.certIssuerDN;
-        }
-        else if (creds.certUserDN != null && !creds.certUserDN.isEmpty()){
-            s = creds.certUserDN;
-        }
-        return s;
-    }*/
 }

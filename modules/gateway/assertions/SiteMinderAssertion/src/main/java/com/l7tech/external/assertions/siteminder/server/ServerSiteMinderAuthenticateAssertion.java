@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.siteminder.server;
 
 import com.ca.siteminder.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -44,10 +43,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
-        String smCookieName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieName(), variableMap, getAudit());
-
-        //
-        String ssoToken = extractSsoToken(context, variableMap, smCookieName);
+        String ssoToken = extractSsoToken(variableMap);
 
         SiteMinderContext smContext = null;
         try {
@@ -69,7 +65,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             SiteMinderCredentials credentials = collectCredentials(context, variableMap, smContext);
             int result = hla.processAuthenticationRequest(credentials, getClientIp(context), ssoToken, smContext);
             if(result == SM_YES) {
-                context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 status = AssertionStatus.NONE;
             }
@@ -87,31 +82,17 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         return status;
     }
 
-    private String extractSsoToken(PolicyEnforcementContext context, Map<String, Object> variableMap, String smCookieName) {
+    private String extractSsoToken(Map<String, Object> variableMap) {
         String ssoToken = null;
         if(assertion.isUseSMCookie()) {
-            if(assertion.isUseCustomCookieName()) {
-                HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-                //TODO: try to find cookie from the request
-               if(httpRequestKnob != null){
-                   for(HttpCookie cookie : httpRequestKnob.getCookies()) {
-                       if(cookie.getCookieName().equalsIgnoreCase(smCookieName)){
-                           ssoToken = cookie.getCookieValue();
-                           break;
-                       }
-                   }
-               }
-           }
-           else {
-               //get cookie from a context variable
-               ssoToken = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getCookieSourceVar() + Syntax.SYNTAX_SUFFIX, variableMap, getAudit());
-           }
+           //get cookie from a context variable
+           ssoToken = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getCookieSourceVar() + Syntax.SYNTAX_SUFFIX, variableMap, getAudit());
         }
         return ssoToken;
     }
 
 
-    SiteMinderCredentials collectCredentials(PolicyEnforcementContext pec, Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
+    private SiteMinderCredentials collectCredentials(PolicyEnforcementContext pec, Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
         //determine the type of authentication scheme
         List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes = smContext.getAuthSchemes();
         if(supportedAuthSchemes.size() == 1 && supportedAuthSchemes.iterator().next() == SiteMinderContext.AuthenticationScheme.NONE) {

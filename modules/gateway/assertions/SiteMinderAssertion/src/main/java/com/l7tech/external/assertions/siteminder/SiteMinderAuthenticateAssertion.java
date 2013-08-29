@@ -20,14 +20,10 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(SiteMinderAuthenticateAssertion.class.getName());
 
-    public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
     public static final String DEFAULT_PREFIX = "siteminder";
 
-    private String cookieName;
-    private boolean useVarAsCookieSource;
     private String cookieSourceVar;
     private boolean useSMCookie;
-    private boolean useCustomCookieName;
     private String prefix;
     private boolean isLastCredential = true;
     private String login;
@@ -49,22 +45,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         isLastCredential = lastCredential;
     }
 
-    public String getCookieName() {
-        return cookieName;
-    }
-
-    public void setCookieName(String cookieName) {
-        this.cookieName = cookieName;
-    }
-
-    public boolean isUseVarAsCookieSource() {
-        return useVarAsCookieSource;
-    }
-
-    public void setUseVarAsCookieSource(boolean useVarAsCookieSource) {
-        this.useVarAsCookieSource = useVarAsCookieSource;
-    }
-
     public String getCookieSourceVar() {
         return cookieSourceVar;
     }
@@ -81,13 +61,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         this.useSMCookie = useSMCookie;
     }
 
-    public boolean isUseCustomCookieName() {
-        return useCustomCookieName;
-    }
-
-    public void setUseCustomCookieName(boolean useCustomCookieName) {
-        this.useCustomCookieName = useCustomCookieName;
-    }
 
     public String getPrefix() {
         return prefix;
@@ -105,7 +78,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
             varsUsed.add(cookieSourceVar);
         }
-        String[] refNames =  Syntax.getReferencedNames(cookieName, login);
+        String[] refNames =  Syntax.getReferencedNames(/*cookieName, */login);
         varsUsed.addAll(Arrays.asList(refNames));
         return varsUsed.toArray(new String[0]);
     }
