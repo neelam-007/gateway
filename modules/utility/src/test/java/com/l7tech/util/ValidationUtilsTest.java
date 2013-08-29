@@ -196,4 +196,14 @@ public class ValidationUtilsTest {
         assertFalse(ValidationUtils.isValidUrl("http://valid.com:8080/path?query=[abc]", false, null));
         assertFalse(ValidationUtils.isValidUrl("http://valid.com:8080/path?query=abc]", false, null));
     }
+
+    @Test
+    public void testValidGoid() throws Exception {
+        assertTrue(ValidationUtils.isValidGoid("", true));
+        assertTrue(ValidationUtils.isValidGoid( "0000000000000000fffffffffffffffe", true));
+        assertTrue(ValidationUtils.isValidGoid( "0000000000000000FFFFFFFFFFFFFFFE", true));
+        assertFalse(ValidationUtils.isValidGoid("0000000000000000fffffffffffffff", true));
+        assertFalse(ValidationUtils.isValidGoid("0000000000000000fffffffffffffffQ", true));
+    }
+
 }

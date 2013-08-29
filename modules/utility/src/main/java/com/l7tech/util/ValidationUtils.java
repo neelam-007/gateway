@@ -4,6 +4,7 @@ import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -284,6 +285,28 @@ public class ValidationUtils {
                 int value = Integer.parseInt( intText );
                 valid = value >= min && value <= max;                
             } catch ( NumberFormatException nfe ) {
+                // so is invalid
+            }
+        } else {
+            valid = allowEmpty;
+        }
+
+        return valid;
+    }
+    /**
+     * Check if the string is a valid goid (16 bytes hexadecimal value)
+     *
+     * @param goidText The value as a string
+     * @param allowEmpty true to treat an empty string as valid
+     * @return True if a goid.
+     */
+    public static boolean isValidGoid(String goidText, boolean allowEmpty) {
+        boolean valid = false;
+
+        if ( goidText != null && goidText.length() > 0 ) {
+            try {
+                valid =  HexUtils.unHexDump(goidText).length==16;
+            } catch ( IOException nfe ) {
                 // so is invalid
             }
         } else {

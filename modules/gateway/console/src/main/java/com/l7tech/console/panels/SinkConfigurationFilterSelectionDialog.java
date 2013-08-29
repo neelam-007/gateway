@@ -475,7 +475,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
         public Option<FilterSelection> resolveUserFilter( final String value ) {
             Option<FilterSelection> selection = none();
             final String[] id = value.split( ":", 2 );
-            if ( id.length == 2 && ValidationUtils.isValidLong( id[0], false, Long.MIN_VALUE, Long.MAX_VALUE )) {
+            if ( id.length == 2 && ValidationUtils.isValidGoid( id[0], false)) {
                 selection = doAdmin( null, new UnaryThrows<User,Registry,ObjectModelException>(){
                     @Override
                     public User call( final Registry registry ) throws ObjectModelException {

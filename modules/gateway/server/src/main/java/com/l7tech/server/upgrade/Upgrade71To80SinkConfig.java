@@ -55,7 +55,6 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
         sessionFactory = getBean("sessionFactory", SessionFactory.class);
         initPrefixes();
 
-        IdentityProviderConfigManager identityProviderConfigManager = getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         federatedProviderGoids = new ArrayList<String>();
 
         try {
@@ -149,7 +148,13 @@ public class Upgrade71To80SinkConfig implements UpgradeTask {
                 String userId = user.substring(user.indexOf(":")+1);
                 if(providerId.equals(Long.toString(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID))){
                     updated = true;
-                    newGuids.add(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID+":"+ Goid.toString(new Goid(internalUserPrefix, Long.parseLong(userId))));
+                    Goid userGoid;
+                    if(userId.equals("3")){
+                        userGoid = new Goid(0,3);
+                    }else{
+                        userGoid = new Goid(internalUserPrefix, Long.parseLong(userId));
+                    }
+                    newGuids.add(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID+":"+ Goid.toString(userGoid));
                 } else if(federatedProviderGoids.contains(providerId)){
                     updated = true;
                     newGuids.add(providerId+":"+ Goid.toString(new Goid(fedUserPrefix, Long.parseLong(userId))));
