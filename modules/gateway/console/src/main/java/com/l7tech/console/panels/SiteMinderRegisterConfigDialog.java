@@ -127,10 +127,10 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             userNameTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.username")));
 
             String fipsModeProperty = siteMinderHostParams.get(RESOURCES.getString("property.siteminder.fipsMode"));
-            SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(Integer.parseInt(fipsModeProperty));
+            SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByName(fipsModeProperty);
 
             // any unrecognized fips mode setting will be replaced with UNSPECIFIED
-            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
+            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
         }
         // TODO jwilliams: why are these both setting the fields? can both cases be true? if not, should use an else if for clarity - ask Natalija
         if (property.left.equals("Init SiteMinder Host")) {
@@ -140,7 +140,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             SiteMinderFipsModeOption mode = property.right.getFipsMode();
 
             // any unrecognized fips mode setting will be replaced with UNSPECIFIED
-            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
+            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
 
             hostConfigurationTextField.setText(property.right.getHostConfigObject());
             userNameTextField.setText(property.right.getUserName());

@@ -13,11 +13,9 @@ import java.util.Map;
  */
 public enum SiteMinderFipsModeOption {
 
-    UNSPECIFIED(0, "UNSPECIFIED"),  // Not a FIPS mode, but it is possible to register a host without specifying the mode
     COMPAT(1, "COMPAT"),        // FIPS compatibility mode
     MIGRATE(2, "MIGRATE"),      // FIPS migration mode
     ONLY(3, "ONLY");            // FIPS only
-//    ONLY_MD5(4, "ONLY MD5");  // UNKNOWN: mentioned in SiteMinder code, but name and use unknown - unavailable until need determined
 
     private static final Map<String, SiteMinderFipsModeOption> nameLookup;
     private static final Map<Integer, SiteMinderFipsModeOption> codeLookup;

@@ -134,8 +134,8 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     }
 
     @NotNull
-    @Min(0)
-    @Max(4)
+    @Min(1)
+    @Max(3)
     @Column(name="fipsmode",nullable=false)
     public int getFipsmode () {
         return fipsmode;

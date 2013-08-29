@@ -270,29 +270,18 @@ public abstract class SiteMinderUtil {
 
             logger.log(Level.FINE, "registering SiteMinder agent with program: " + program);
 
-            ArrayList<String> params = new ArrayList<>(15);
+            String[] params = {
+                    "-i", address,
+                    "-u", username,
+                    "-p", password,
+                    "-hn", hostname,
+                    "-hc", hostconfig,
+                    "-f", smHostConfig,
+                    "-cf", fipsMode.getName(),
+                    "-o"
+            };
 
-            params.add("-i");
-            params.add(address);
-            params.add("-u");
-            params.add(username);
-            params.add("-p");
-            params.add(password);
-            params.add("-hn");
-            params.add(hostname);
-            params.add("-hc");
-            params.add(hostconfig);
-            params.add("-f");
-            params.add(smHostConfig);
-
-            if (fipsMode != SiteMinderFipsModeOption.UNSPECIFIED) {
-                params.add("-cf");
-                params.add(fipsMode.getName());
-            }
-
-            params.add("-o");
-
-            ProcUtils.exec(program, params.toArray(new String[params.size()]), null, false);
+            ProcUtils.exec(program, params, null, false);
 
             return new SiteMinderHost(smHostConfig);
 

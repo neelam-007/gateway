@@ -252,7 +252,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(configuration.getFipsmode());
 
         // any unrecognized fips mode setting will be replaced with UNSPECIFIED
-        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
+        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
 
         enableFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
         clusterSettingsMap.clear();
@@ -340,7 +340,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         configuration.setEnabled(!disableCheckBox.isSelected());
 
         int modeIndex = fipsModeComboBox.getSelectedIndex();
-        SiteMinderFipsModeOption mode = modeIndex > -1 ? fipsModeComboBox.getItemAt(modeIndex) : SiteMinderFipsModeOption.UNSPECIFIED;
+        SiteMinderFipsModeOption mode = modeIndex > -1 ? fipsModeComboBox.getItemAt(modeIndex) : SiteMinderFipsModeOption.COMPAT;
 
         configuration.setFipsmode(mode.getCode());
         configuration.setNonClusterFailover(enableFailoverCheckBox.isSelected());

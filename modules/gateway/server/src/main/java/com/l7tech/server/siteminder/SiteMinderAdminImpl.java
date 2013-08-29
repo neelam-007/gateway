@@ -141,7 +141,6 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
         final FutureTask<String> registerTask = new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
-
                 try{
                     siteMinderConfigurationManager.validateSiteMinderConfiguration(siteMinderConfiguration);
                 } catch (SiteMinderApiClassException e) {
