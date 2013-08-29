@@ -84,7 +84,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
 
     @NotNull
     @Size(min=1,max=128)
-    @Column(name="address",nullable=false)
+    @Column(name="address",nullable=true)
     public String getAddress() {
         return address;
     }

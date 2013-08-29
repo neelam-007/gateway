@@ -446,7 +446,10 @@ public class SiteMinderLowLevelAgent {
     }
 
     private String getClientIp(String userIp) {
-        return agentCheckSessionIP && userIp != null ? userIp : agentIP;
+        if(agentCheckSessionIP)
+            return userIp != null ? userIp : agentIP;
+
+        return null;
     }
 
 
