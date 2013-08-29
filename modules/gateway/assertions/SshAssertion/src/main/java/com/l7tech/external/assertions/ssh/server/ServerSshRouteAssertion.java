@@ -193,7 +193,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     final SshKnob sshKnob = request.getKnob(SshKnob.class);
                     if (!performPutCommand(sshClient, fileName, directory, mimeKnob, variables, assertion.isPreserveFileMetadata() && sshKnob != null ? sshKnob.getFileMetadata() : null))
                         return AssertionStatus.FAILED;
-                    logAndAudit(SSH_ROUTING_INFO, new String[]{"Finished sending file: " + fileName + " in Session: " + session.getKey().toString()});
+                    logger.log(Level.FINE, "SSH routing: Finished sending file: " + fileName + " in Session: " + session.getKey().toString());
                 } else if (assertion.isScpProtocol()) {
                     logAndAudit(SSH_ROUTING_ERROR, "Unsupported SCP command type: " + commandType);
                     return AssertionStatus.BAD_REQUEST;

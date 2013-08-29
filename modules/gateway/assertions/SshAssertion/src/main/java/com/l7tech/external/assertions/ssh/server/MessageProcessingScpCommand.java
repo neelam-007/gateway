@@ -68,8 +68,6 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
 
     @Override
     protected void writeFile(String header, SshFile path) throws IOException {
-        logger.log(Level.FINER, "SCP Writing file {0}", path);
-
         //Parse the header and extract values.
         if (!header.startsWith("C")) {
             throw new IOException("Expected a C message but got '" + header + "'");
@@ -83,6 +81,8 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
 
         //find the correct name to name the file.
         String name = header.substring(header.indexOf(' ', 6) + 1);
+        logger.log(Level.FINER, "SCP Writing file {0}", name);
+
         final VirtualSshFile sshFile;
         if (path.isDirectory()) {
             sshFile = (VirtualSshFile) root.getFile(path, name);
