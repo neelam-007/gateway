@@ -131,6 +131,9 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
         compressionsString = compressionsString.substring(1);
         session.setConfig("compression.c2s", compressionsString);
         session.setConfig("compression.s2c", compressionsString);
+        //By default the jsch max auth tries is 6. This is unacceptable as it will lock users out after a single login attempt if they use the incorrect password. Set this to 1
+        //TODO: exposed this as a cluster property?
+        session.setConfig("MaxAuthTries", "1");
 
         session.connect(sshSessionKey.getConnectionTimeout());
         return new SshSession(sshSessionKey, session);
