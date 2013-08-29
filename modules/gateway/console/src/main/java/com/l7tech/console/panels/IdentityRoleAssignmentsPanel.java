@@ -54,7 +54,7 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private boolean readOnly;
 
     /**
-     * @param identity  the Identity that this panel is displaying role assignments for.
+     * @param identity      the Identity that this panel is displaying role assignments for.
      * @param assignedRoles the Roles assigned to the identity.
      * @param readOnly      true if the panel should only display the roles, and not allow any changes.
      */
@@ -117,6 +117,11 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                                 final List<Role> selectedRoles = selectDialog.getSelectedRoles();
                                 if (!selectedRoles.isEmpty()) {
                                     for (final Role selectedRole : selectedRoles) {
+                                        if (entityType == EntityType.GROUP) {
+                                            selectedRole.addAssignedGroup((Group) identity);
+                                        } else if (entityType == EntityType.USER) {
+                                            selectedRole.addAssignedUser((User) identity);
+                                        }
                                         rolesModel.addRow(selectedRole);
                                     }
                                 }
@@ -164,7 +169,8 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                             // it is possible for the same role to be assigned more than once to an identity via its groups
                             // if at least one of the assignments is a direct assignment, we allow them to remove the role
                             for (final RoleAssignment assignment : roleAssignments) {
-                                if (!assignment.isInherited()) {
+                                if (assignment.getEntityType() != null && entityType.getName().equals(assignment.getEntityType()) &&
+                                        assignment.getIdentityId().equals(identity.getId()) && !assignment.isInherited()) {
                                     directlyAssigned = true;
                                     break;
                                 }
