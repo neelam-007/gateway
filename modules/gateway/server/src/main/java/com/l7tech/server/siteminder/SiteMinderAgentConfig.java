@@ -25,7 +25,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
     }
 
     private void initServers() {
-        Map<Integer, TreeMap<Integer, ServerDef>> clusters = new TreeMap();
+        Map<Integer, TreeMap<Integer, ServerDef>> clusters = new TreeMap<>();
 
         for (Map.Entry<String, String> property : config.getProperties().entrySet()) {
             Matcher matcher = SERVER_DEF_PATTERN.matcher(property.getKey());
@@ -39,7 +39,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
 
                 TreeMap<Integer, ServerDef> cluster = clusters.get(clusterSeq);
                 if (cluster == null) {
-                    cluster = new TreeMap<Integer, ServerDef>();
+                    cluster = new TreeMap<>();
                     clusters.put(clusterSeq, cluster);
                 }
                 ServerDef server = cluster.get(serverSeq);
@@ -52,7 +52,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
             }
         }
 
-        servers = new ArrayList<ServerDef>();
+        servers = new ArrayList<>();
         for (Map<Integer, ServerDef> cluster : clusters.values()) {
             for (ServerDef server : cluster.values()) {
                 servers.add(server);
@@ -89,7 +89,6 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
                 break;
             default:
                 throw new IllegalArgumentException("Invalid server configuration entry:  " + key);
-
         }
     }
 
@@ -117,7 +116,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
     }
 
     @Override
-    public boolean isIpcheck() {
+    public boolean isIpCheck() {
         return config.isIpcheck();
     }
 
@@ -127,7 +126,7 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
     }
 
     @Override
-    public int getFibsmode() {
+    public int getFipsMode() {
         return config.getFipsmode();
     }
 

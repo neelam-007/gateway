@@ -43,7 +43,7 @@ public class SiteMinderAgentTest {
            }
 
            @Override
-           public boolean isIpcheck() {
+           public boolean isIpCheck() {
                return false;
            }
 
@@ -53,7 +53,7 @@ public class SiteMinderAgentTest {
            }
 
            @Override
-           public int getFibsmode() {
+           public int getFipsMode() {
                return 1;//COMPACT
            }
 
@@ -74,7 +74,7 @@ public class SiteMinderAgentTest {
 
            @Override
            public List<ServerDef> getServers() {
-               List<ServerDef> serverDefs = new ArrayList<ServerDef>();
+               List<ServerDef> serverDefs = new ArrayList<>();
                ServerDef serverDef = new ServerDef();
                serverDef.serverIpAddress = "10.7.34.32";
                serverDef.authenticationPort = 44442;

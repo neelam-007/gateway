@@ -135,7 +135,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
     @Override
     public Map<String, String> getData() {
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP, String.valueOf(scpCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP_PUT, String.valueOf(scpPUTCheckBox.isSelected()));
@@ -238,7 +238,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         validator.addRule(validator.constrainTextFieldToNumberRange(
                 "Idle timeout (in minutes)", maxConcurrentSessionsPerUserField, 0L, (long) Integer.MAX_VALUE ));
 
-        privateKeyField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        privateKeyField.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
 
         // load private key type (password type loaded by default by SecurePasswordComboBox constructor)
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);

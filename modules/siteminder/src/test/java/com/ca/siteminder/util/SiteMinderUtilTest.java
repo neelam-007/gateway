@@ -1,5 +1,6 @@
 package com.ca.siteminder.util;
 
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import netegrity.siteminder.javaagent.Attribute;
 import org.junit.Ignore;
@@ -15,7 +16,7 @@ public class SiteMinderUtilTest {
     @Test
     public void testRegHost() throws Exception {
 
-        SiteMinderHost host = SiteMinderUtil.regHost("10.7.34.32", "siteminder", "7layer", "awitrisna", "Layer7HostSettings", 1);
+        SiteMinderHost host = SiteMinderUtil.regHost("10.7.34.32", "siteminder", "7layer", "awitrisna", "Layer7HostSettings", SiteMinderFipsModeOption.COMPAT);
         assertNotNull(host.getHostname());
         assertNotNull(host.getHostConfigObject());
         assertNotNull(host.getPolicyServer());

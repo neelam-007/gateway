@@ -1,7 +1,7 @@
 package com.ca.siteminder.util;
 
 import com.l7tech.common.io.ProcUtils;
-import com.l7tech.gateway.common.siteminder.SiteMinderFipsMode;
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -29,6 +30,7 @@ public abstract class SiteMinderUtil {
     private static final char[] HEXADECIMAL_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static final String DEFAULT_SMREGHOST_PROGRAM = "/opt/CA/sdk/bin64/smreghost";
     private static final String SYSPROP_SMREGHOST_PROGRAM = "com.l7tech.server.smreghost.program";
+    private static final String TEMP_DIR = "SMHOST";
 
     private SiteMinderUtil() {}
 
@@ -51,7 +53,7 @@ public abstract class SiteMinderUtil {
      * @throws java.text.ParseException if the name cannot be parsed
      */
     public static String getMostSpecificAttributeValue(final String distinguishedName) throws ParseException {
-        StringBuffer value = new StringBuffer();
+        StringBuilder value = new StringBuilder();
         char[] dn = distinguishedName.toCharArray();
         int length = dn.length;
         int position = 0;
@@ -193,8 +195,6 @@ public abstract class SiteMinderUtil {
 
     /**
      * converts SiteMinder Attribute value to int
-     * @param attribute
-     * @return
      */
     public static int convertAttributeValueToInt(Attribute attribute) {
         int attrVal = -1;//default
@@ -222,17 +222,13 @@ public abstract class SiteMinderUtil {
     /**
      * If a certificate is present in the request, add it to the user credentials.
      *
-     * @param cert
-     * @param userCreds
      * @throws java.security.cert.CertificateEncodingException
-     * @throws CertificateEncodingException
      */
     public static boolean handleCertificate(X509Certificate cert, UserCredentials userCreds) throws CertificateEncodingException {
         boolean success = false;
         if (cert != null) {
             sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-            String base64Cert = null;
-            base64Cert = encoder.encode(cert.getEncoded());
+            String base64Cert = encoder.encode(cert.getEncoded());
             userCreds.certBinary = base64Cert.getBytes();
             userCreds.certIssuerDN = cert.getIssuerDN().toString();
             userCreds.certUserDN = cert.getSubjectDN().toString();
@@ -242,7 +238,7 @@ public abstract class SiteMinderUtil {
     }
 
     /**
-     * Register and retrieve siteminder host configuration.
+     * Register and retrieve SiteMinder host configuration.
      *
      * @param address Policy Server Address
      * @param username Username to login to PolicyServer
@@ -250,7 +246,7 @@ public abstract class SiteMinderUtil {
      * @param hostname register hostname
      * @param hostconfig host configuration
      * @param fipsMode fibs mode
-     * @return
+     * @return the registered SiteMinder host configuration
      * @throws IOException
      */
     public static SiteMinderHost regHost(String address,
@@ -258,22 +254,45 @@ public abstract class SiteMinderUtil {
                                          String password,
                                          String hostname,
                                          String hostconfig,
-                                         Integer fipsMode) throws IOException {
+                                         SiteMinderFipsModeOption fipsMode) throws IOException {
 
         File program;
         File tmpDir = null;
 
         try {
-            tmpDir = FileUtils.createTempDirectory("SMHOST", null, null, false);
+            tmpDir = FileUtils.createTempDirectory(TEMP_DIR, null, null, false);
             String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
 
             program = getSmRegHost();
+
             if (program == null)
                 throw new IOException("Unable to find smreghost");
 
             logger.log(Level.FINE, "registering SiteMinder agent with program: " + program);
 
-            ProcUtils.exec(program, new String[]{ "-i", address, "-u", username, "-p", password, "-hn", hostname, "-hc",  hostconfig, "-f", smHostConfig, "-cf", getFipsMode(fipsMode), "-o"}, (byte[]) null, false);
+            ArrayList<String> params = new ArrayList<>(15);
+
+            params.add("-i");
+            params.add(address);
+            params.add("-u");
+            params.add(username);
+            params.add("-p");
+            params.add(password);
+            params.add("-hn");
+            params.add(hostname);
+            params.add("-hc");
+            params.add(hostconfig);
+            params.add("-f");
+            params.add(smHostConfig);
+
+            if (fipsMode != SiteMinderFipsModeOption.UNSPECIFIED) {
+                params.add("-cf");
+                params.add(fipsMode.getName());
+            }
+
+            params.add("-o");
+
+            ProcUtils.exec(program, params.toArray(new String[params.size()]), null, false);
 
             return new SiteMinderHost(smHostConfig);
 
@@ -284,7 +303,6 @@ public abstract class SiteMinderUtil {
         }
     }
 
-
     /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
     private static File getSmRegHost() {
         File defaultProgram = new File(DEFAULT_SMREGHOST_PROGRAM);
@@ -293,12 +311,6 @@ public abstract class SiteMinderUtil {
             return null;
         File file = new File(program);
         return file.exists() && file.canExecute() ? file : null;
-    }
-
-    public static String getFipsMode(int fipsMode) {
-        SiteMinderFipsMode mode = SiteMinderFipsMode.getByCode(fipsMode);
-
-        return mode == null ? null : mode.getName();
     }
 
     /**

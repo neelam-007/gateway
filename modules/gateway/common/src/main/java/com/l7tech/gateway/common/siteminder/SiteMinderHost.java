@@ -11,10 +11,6 @@ import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
 
-    public static final int FIPS140_COMPAT = 1; // TODO jwilliams: remove these constants - should be using enum
-    public static final int FIPS140_MIGRATE = 2;
-    public static final int FIPS140_ONLY = 3;
-
     private final static String HOST_NAME = "hostname";
     private final static String HOST_CONFIG_OBJECT = "hostconfigobject";
     private final static String POLICY_SERVER = "policyserver";
@@ -29,11 +25,12 @@ public class SiteMinderHost implements Serializable {
     private Integer requestTimeout;
     private String sharedSecret;
     private Long sharedSecretTime;
-    private Integer fipsMode;
+    private SiteMinderFipsModeOption fipsMode;
     private String userName;
     private Goid passwordGoid;
 
-    public SiteMinderHost(String hostName, String policyServer, String hostConfigObject, Integer fipsMode, String userName, Goid passwordGoid){
+    public SiteMinderHost(String hostName, String policyServer, String hostConfigObject,
+                          SiteMinderFipsModeOption fipsMode, String userName, Goid passwordGoid) {
         this.hostname = hostName;
         this.hostConfigObject = hostConfigObject;
         this.policyServer = policyServer;
@@ -56,7 +53,7 @@ public class SiteMinderHost implements Serializable {
             requestTimeout = getIntValue(prop, REQUEST_TIMEOUT);
             sharedSecret = getValue(prop, SHARED_SECRET);
             sharedSecretTime = getLongValue(prop, SHARED_SECRET_TIME);
-            fipsMode = getFipsModeValue(prop, FIPS_MODE);
+            fipsMode = getFipsMode(prop, FIPS_MODE);
         }
     }
 
@@ -76,19 +73,11 @@ public class SiteMinderHost implements Serializable {
         return null;
     }
 
-    private Integer getFipsModeValue(Properties properties, String attr) {
-        String value = getValue(properties, attr);
-        switch (value) { // TODO jwilliams: fix this - ask Yuri if UNSET and MD5 should be included
-            case "COMPAT":
-                return FIPS140_COMPAT;
-            case "MIGRATE":
-                return FIPS140_MIGRATE;
-            case "ONLY":
-                return FIPS140_ONLY;
-        }
-        return null;
-    }
+    private SiteMinderFipsModeOption getFipsMode(Properties properties, String attr) {
+        String name = getValue(properties, attr);
 
+        return SiteMinderFipsModeOption.getByName(name);
+    }
 
     private String getValue(Properties properties, String attr) {
         String value = properties.getProperty(attr);
@@ -122,7 +111,7 @@ public class SiteMinderHost implements Serializable {
         return sharedSecretTime;
     }
 
-    public Integer getFipsMode() {
+    public SiteMinderFipsModeOption getFipsMode() {
         return fipsMode;
     }
 

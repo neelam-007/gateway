@@ -7,7 +7,6 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -146,8 +145,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
-        passwordField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
-        privateKeyField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        passwordField.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
+        privateKeyField.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
 
         // load private key type (password type loaded by default by SecurePasswordComboBox constructor)
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);

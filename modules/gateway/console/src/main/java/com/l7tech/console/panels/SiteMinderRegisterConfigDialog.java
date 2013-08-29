@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.siteminder.SiteMinderFipsMode;
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
@@ -13,7 +13,6 @@ import com.l7tech.util.MutablePair;
 import sun.security.util.Resources;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -40,7 +39,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
     private JTextField hostnameTextField;
     private JTextField hostConfigurationTextField;
     private JTextField userNameTextField;
-    private JComboBox<SiteMinderFipsMode> fipsModeComboBox;
+    private JComboBox<SiteMinderFipsModeOption> fipsModeComboBox;
     private JPanel mainPanel;
     private SecurePasswordComboBox securePasswordComboBox;
     private JButton managePasswordsButton;
@@ -54,59 +53,44 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
     }
 
     private void initialize(MutablePair<String, SiteMinderHost> property) {
-
-        // TODO jwilliams: really needs some validation to avoid ugly error messages from smreghost
-
         this.property = property;
 
         setContentPane(mainPanel);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
-        Utilities.setEscKeyStrokeDisposes(this);
 
-        DocumentListener docListener = new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                enableOrDisableOkButton();
-            }
-        });
+        InputValidator validator =
+                new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.register.properties"));
 
-        addressTextField.getDocument().addDocumentListener(docListener);
-        hostnameTextField.getDocument().addDocumentListener(docListener);
-        hostConfigurationTextField.getDocument().addDocumentListener(docListener);
-        userNameTextField.getDocument().addDocumentListener(docListener);
+        validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.address"), addressTextField, null);
+        validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.hostName"), hostnameTextField, null);
+        validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.hostConfiguration"), hostConfigurationTextField, null);
+        validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.username"), userNameTextField, null);
+        validator.ensureComboBoxSelection(RESOURCES.getString("property.siteminder.password"), securePasswordComboBox);
+        validator.ensureComboBoxSelection(RESOURCES.getString("property.siteminder.fipsMode"), fipsModeComboBox);
 
-        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
-        ((JTextField)securePasswordComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
+        securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
 
-        managePasswordsButton.addActionListener(new ActionListener(){
+        managePasswordsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
-                final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
+                final SecurePasswordManagerWindow dialog =
+                        new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
+
                 Utilities.centerOnScreen(dialog);
+
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         securePasswordComboBox.reloadPasswordList();
-                        enableOrDisableOkButton();
                         DialogDisplayer.pack(SiteMinderRegisterConfigDialog.this);
                     }
                 });
             }
         });
 
-        ((JTextField)fipsModeComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(docListener);
-
-        fipsModeComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableOkButton();
-            }
-        });
-
-        fipsModeComboBox.setModel(new DefaultComboBoxModel<>(SiteMinderFipsMode.values()));
+        fipsModeComboBox.setModel(new DefaultComboBoxModel<>(SiteMinderFipsModeOption.values()));
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -127,7 +111,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
         modelToView();
 
-        enableOrDisableOkButton();
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     public boolean isConfirmed() {
@@ -139,36 +123,38 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
             //parse policy server
             addressTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.address")));
             hostnameTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.hostName")));
-            hostConfigurationTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.host.configuration")));
+            hostConfigurationTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.hostConfiguration")));
             userNameTextField.setText(siteMinderHostParams.get(RESOURCES.getString("property.siteminder.username")));
 
-            String fipsModeProperty = siteMinderHostParams.get(RESOURCES.getString("property.siteminder.fipsmode"));
-            SiteMinderFipsMode mode = SiteMinderFipsMode.getByCode(Integer.parseInt(fipsModeProperty));
+            String fipsModeProperty = siteMinderHostParams.get(RESOURCES.getString("property.siteminder.fipsMode"));
+            SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(Integer.parseInt(fipsModeProperty));
 
-            // any unrecognized fips mode setting will be replaced with UNSET
-            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsMode.UNSET : mode);
+            // any unrecognized fips mode setting will be replaced with UNSPECIFIED
+            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
         }
         // TODO jwilliams: why are these both setting the fields? can both cases be true? if not, should use an else if for clarity - ask Natalija
         if (property.left.equals("Init SiteMinder Host")) {
             addressTextField.setText(property.right.getPolicyServer());
             hostnameTextField.setText(property.right.getHostname());
 
-            SiteMinderFipsMode mode = SiteMinderFipsMode.getByCode(property.right.getFipsMode());
+            SiteMinderFipsModeOption mode = property.right.getFipsMode();
 
-            // any unrecognized fips mode setting will be replaced with UNSET
-            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsMode.UNSET : mode);
+            // any unrecognized fips mode setting will be replaced with UNSPECIFIED
+            fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
 
             hostConfigurationTextField.setText(property.right.getHostConfigObject());
             userNameTextField.setText(property.right.getUserName());
-            if (property.right.getPasswordGoid() != null){
+
+            if (property.right.getPasswordGoid() != null) {
                 securePasswordComboBox.setSelectedSecurePassword(property.right.getPasswordGoid());
             }
         }
     }
 
-    private void register(){
+    private void register() {
 
         final SiteMinderAdmin admin = getSiteMinderAdmin();
+
         if (admin == null) return;
 
         String address = addressTextField.getText().trim();
@@ -178,8 +164,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         String hostConfiguration = hostConfigurationTextField.getText().trim();
 
         int modeIndex = fipsModeComboBox.getSelectedIndex();
-        SiteMinderFipsMode mode = modeIndex > -1 ? fipsModeComboBox.getItemAt(modeIndex) : SiteMinderFipsMode.UNSET;
-        Integer fipsMode = mode.getCode();
+        SiteMinderFipsModeOption fipsMode = fipsModeComboBox.getItemAt(modeIndex);
 
         try {
             Either<String, SiteMinderHost> either = doAsyncAdmin(admin,
@@ -189,7 +174,8 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
                     admin.registerSiteMinderConfiguration(address, userName, password, hostName, hostConfiguration, fipsMode));
 
             if (either.isLeft()) {
-                DialogDisplayer.showMessageDialog(this, MessageFormat.format(RESOURCES.getString("message.register.siteminder.config.failed"), either.left()),
+                DialogDisplayer.showMessageDialog(this,
+                        MessageFormat.format(RESOURCES.getString("message.register.siteminder.config.failed"), either.left()),
                         RESOURCES.getString("dialog.title.siteminder.configuration.register"),
                         JOptionPane.WARNING_MESSAGE, null);
                 return;
@@ -197,17 +183,19 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
             SiteMinderHost siteMinderHost = either.right();
 
-            String message = siteMinderHost != null ?
-                    RESOURCES.getString("message.register.siteminder.config.passed") : MessageFormat.format(RESOURCES.getString("message.register.siteminder.config.failed"), RESOURCES.getString("message.register.siteminder.config.message"));
+            String message = siteMinderHost != null
+                    ? RESOURCES.getString("message.register.siteminder.config.passed")
+                    : MessageFormat.format(RESOURCES.getString("message.register.siteminder.config.failed"),
+                            RESOURCES.getString("message.register.siteminder.config.message"));
 
             DialogDisplayer.showMessageDialog(this, message, RESOURCES.getString("dialog.title.siteminder.configuration.register"),
                     siteMinderHost != null ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
 
-            if (siteMinderHost != null){
+            if (siteMinderHost != null) {
                 siteMinderHostParams.put(RESOURCES.getString("property.siteminder.address"),address);
                 siteMinderHostParams.put(RESOURCES.getString("property.siteminder.hostName"),hostName);
-                siteMinderHostParams.put(RESOURCES.getString("property.siteminder.host.configuration"),hostConfiguration);
-                siteMinderHostParams.put(RESOURCES.getString("property.siteminder.fipsmode"),fipsMode.toString());
+                siteMinderHostParams.put(RESOURCES.getString("property.siteminder.hostConfiguration"),hostConfiguration);
+                siteMinderHostParams.put(RESOURCES.getString("property.siteminder.fipsMode"),fipsMode.toString());
                 siteMinderHostParams.put(RESOURCES.getString("property.siteminder.username"),userName);
             }
 
@@ -231,25 +219,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         }
     }
 
-    private void enableOrDisableOkButton() {  // TODO jwilliams: should remove this behaviour, same as SiteMinderConfigPropertiesDialog
-
-        boolean addressOK = isNonEmptyRequiredTextField(addressTextField.getText().trim());
-        boolean hostNameOK = isNonEmptyRequiredTextField(hostnameTextField.getText().trim());
-        boolean hostConfigurationOK = isNonEmptyRequiredTextField(hostConfigurationTextField.getText().trim());
-        boolean userNameOK = isNonEmptyRequiredTextField(userNameTextField.getText().trim());
-        boolean passwordOK = securePasswordComboBox.getSelectedItem() != null;
-        boolean fipsModeOK = fipsModeComboBox.getSelectedIndex() > 0;
-
-        boolean enabled =  addressOK && hostNameOK && hostConfigurationOK && userNameOK && passwordOK && fipsModeOK;
-
-        okButton.setEnabled(enabled);
-    }
-
-    private boolean isNonEmptyRequiredTextField(String text) {
-        return text != null && !text.trim().isEmpty();
-    }
-
-    private SiteMinderAdmin getSiteMinderAdmin(){
+    private SiteMinderAdmin getSiteMinderAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent())
             return null;

@@ -4,13 +4,12 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,7 +31,7 @@ public class ProcUtils {
      * @throws NullPointerException if args is null or contains a null.
      */
     public static String[] args(Object... args) {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
         for (Object arg : args) {
             if (arg instanceof String[]) {
                 String[] strings = (String[])arg;
@@ -194,7 +193,8 @@ public class ProcUtils {
      * @return  the bytes that the program wrote to its stdout before exiting.  May be empty but never null.
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
-    public static ProcResult exec(File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
+    public static ProcResult exec(File program, String[] args,
+                                  @Nullable byte[] stdin, boolean allowNonzeroExit) throws IOException {
         return exec(null, program, args, stdin, allowNonzeroExit);
     }
 
@@ -216,13 +216,13 @@ public class ProcUtils {
      * @return  the bytes that the program wrote to its stdout before exiting.  May be empty but never null.
      * @throws java.io.IOException if there is a problem running the subprocess, or the subprocess exits nonzero.
      */
-    public static ProcResult exec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
+    public static ProcResult exec(@Nullable File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
         if (stdin != null && logger.isLoggable(Level.FINEST))
             logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
         return exec(cwd, program, args, stdin != null ? new ByteArrayInputStream(stdin) : null, allowNonzeroExit);
     }
 
-    public static ProcResult exec(File cwd, File program, String[] args, InputStream stdin, boolean allowNonzeroExit) throws IOException {
+    public static ProcResult exec(@Nullable File cwd, File program, String[] args, InputStream stdin, boolean allowNonzeroExit) throws IOException {
         try {
             return doExec(cwd, program, args, stdin, allowNonzeroExit);
         } catch (IOException | ExecutionException e) {

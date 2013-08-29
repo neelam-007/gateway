@@ -53,7 +53,7 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderRegisterConfigDialog" key="label.siteminder.host.configuration"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderRegisterConfigDialog" key="label.siteminder.hostConfiguration"/>
             </properties>
           </component>
           <component id="2603a" class="javax.swing.JTextField" binding="hostConfigurationTextField">
@@ -69,7 +69,7 @@
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderRegisterConfigDialog" key="label.siteminder.fipsmode"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderRegisterConfigDialog" key="label.siteminder.fipsMode"/>
             </properties>
           </component>
           <component id="da2b0" class="javax.swing.JComboBox" binding="fipsModeComboBox">

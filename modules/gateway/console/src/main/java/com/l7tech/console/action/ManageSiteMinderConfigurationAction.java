@@ -38,23 +38,25 @@ public class ManageSiteMinderConfigurationAction extends SecureAction {
 
     @Override
     protected void performAction() {
-        if(checkSiteMinderEnabled()){
-            SiteMinderConfigurationWindow configurationWindow = new SiteMinderConfigurationWindow(TopComponents.getInstance().getTopParent());
+        if(checkSiteMinderEnabled()) {
+            SiteMinderConfigurationWindow configurationWindow =
+                    new SiteMinderConfigurationWindow(TopComponents.getInstance().getTopParent());
             configurationWindow.pack();
             Utilities.centerOnScreen(configurationWindow);
             DialogDisplayer.display(configurationWindow);
-        }
-        else {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot find SiteMinder SDK!", "SiteMinder Error", JOptionPane.ERROR_MESSAGE, null);
+        } else {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "Cannot find SiteMinder SDK!", "SiteMinder Error", JOptionPane.ERROR_MESSAGE, null);
         }
     }
 
     private boolean checkSiteMinderEnabled() {
         boolean enabled = false;
+
         ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
         if(clusterStatusAdmin != null) {
-            enabled =  Boolean.parseBoolean(clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_SITEMINDER));
+            enabled = Boolean.parseBoolean(clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_SITEMINDER));
         }
 
         return enabled;

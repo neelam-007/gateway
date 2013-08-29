@@ -59,7 +59,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smResource.setFipsMode( siteMinderCfg.getFipsmode() );
         smResource.setClusterThreshold( siteMinderCfg.getClusterThreshold() );
 
-        Map<String,String> properties = new HashMap<String,String>();
+        Map<String,String> properties = new HashMap<>();
         for (String propertyName : siteMinderCfg.getPropertyNames()) {
             properties.put(propertyName, siteMinderCfg.getProperties().get(propertyName));
         }
@@ -111,7 +111,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setFipsmode( smResource.getFipsMode() );
         smConfiguration.setClusterThreshold( smResource.getClusterThreshold() );
 
-        Map<String, String> smProperties = new HashMap<String, String>();
+        Map<String, String> smProperties = new HashMap<>();
         if ( smResource.getProperties() != null ) {
             for (Map.Entry<String, String> entry : smResource.getProperties().entrySet()) {
                 smProperties.put( entry.getKey(), entry.getValue() );
@@ -147,7 +147,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         oldEntity.setClusterThreshold( newEntity.getClusterThreshold() );
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );
 
-        Map<String, String> newProperties = new HashMap<String, String>( newEntity.getProperties().size() );
+        Map<String, String> newProperties = new HashMap<>( newEntity.getProperties().size() );
         for (String prop : newEntity.getPropertyNames()) {
             newProperties.put( prop, newEntity.getProperties().get( prop ) );
         }

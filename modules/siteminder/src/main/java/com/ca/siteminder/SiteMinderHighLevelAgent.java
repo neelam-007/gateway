@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import com.ca.siteminder.util.SiteMinderUtil;
 import netegrity.siteminder.javaagent.*;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -16,21 +17,17 @@ public class SiteMinderHighLevelAgent {
     private static final Logger logger = Logger.getLogger(SiteMinderHighLevelAgent.class.getName());
 
     /**
-     *
-     * @param userIp
-     * @param resource
-     * @param action
-     * @return
+     * @return true if the resource is protected
      * @throws SiteMinderApiClassException
      */
-    public boolean checkProtected(final  String userIp,
+    public boolean checkProtected(final String userIp,
                               final String resource,
                               final String action,
                               SiteMinderContext context) throws SiteMinderApiClassException {
+        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
-
-        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         // The realmDef object will contain the realm handle for the resource if the resource is protected.
         ResourceContextDef resCtxDef = new ResourceContextDef(agent.getName(), "", resource, action);
@@ -115,7 +112,7 @@ public class SiteMinderHighLevelAgent {
         else {
             authSchemes.add(SiteMinderContext.AuthenticationScheme.NONE); // anonymous auth scheme
         }
-        context.setAuthSchemes(new ArrayList<SiteMinderContext.AuthenticationScheme>(authSchemes));
+        context.setAuthSchemes(new ArrayList<>(authSchemes));
     }
 
     public int processAuthorizationRequest(final String userIp, final String ssoCookie,final SiteMinderContext context) throws SiteMinderApiClassException {
@@ -132,16 +129,17 @@ public class SiteMinderHighLevelAgent {
     /**
      * Perform authentication if required, and authorize the session against the specified resource.
      *
-     * @param credentials
+     *
+     * @param credentials the user credentials
      * @param userIp    the client IP address
      * @param ssoCookie the SiteMinder SSO Token cookie
-     * @param context
+     * @param context the SiteMinder context
      * @return the value of new (or updated) SiteMinder SSO Token cookie
      * @throws SiteMinderApiClassException
      */
     public int processAuthenticationRequest(SiteMinderCredentials credentials,
                                             final String userIp,
-                                            final String ssoCookie,
+                                            @Nullable final String ssoCookie,
                                             final SiteMinderContext context)
         throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
@@ -150,11 +148,11 @@ public class SiteMinderHighLevelAgent {
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
 
         // check for some kind of credential
-        UserCredentials userCreds = null;
+        UserCredentials userCreds;
+
         if(credentials == null) {
             userCreds = new UserCredentials();
-        }
-        else {
+        } else {
             userCreds = credentials.getUserCredentials();
         }
 
@@ -165,8 +163,7 @@ public class SiteMinderHighLevelAgent {
             return AgentAPI.CHALLENGE;
         }
 
-        String newSsoCookie = null;
-        int result = AgentAPI.FAILURE;
+        int result;
 
         if (null != ssoCookie && ssoCookie.trim().length() > 0) {
             // attempt to authorize with existing cookie
@@ -178,8 +175,7 @@ public class SiteMinderHighLevelAgent {
             else {
                 logger.log(Level.FINE, "Authenticated user using third-party cookie:" + ssoCookie);
             }
-        }
-        else {
+        } else {
             // authenticate using credentials
             result = agent.authenticate(userCreds, userIp, context.getTransactionId(), context);
             if(result != AgentAPI.YES) {
@@ -190,6 +186,7 @@ public class SiteMinderHighLevelAgent {
             }
 
         }
+
         return result;
     }
 

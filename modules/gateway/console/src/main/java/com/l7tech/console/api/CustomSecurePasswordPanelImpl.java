@@ -34,7 +34,7 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
 
     public CustomSecurePasswordPanelImpl(SecurePassword.SecurePasswordType typeFilter, JDialog owner) {
         securePasswordComboBox = new SecurePasswordComboBox(typeFilter);
-        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
         this.typeFilter = typeFilter;
         parent = owner;
 

@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 /**
  * A ComboBox that can be used to choose an available SecurePassword.
  */
-public class SecurePasswordComboBox extends JComboBox {
+public class SecurePasswordComboBox extends JComboBox<SecurePassword> {
     private static Logger logger = Logger.getLogger(SecurePasswordComboBox.class.getName());
     private List<SecurePassword> securePasswords;
 
@@ -39,20 +39,20 @@ public class SecurePasswordComboBox extends JComboBox {
     public void reloadPasswordList(SecurePassword.SecurePasswordType typeFilter) {
         try {
             SecurePassword selectedSecurePassword = this.getSelectedSecurePassword();
-            securePasswords = new ArrayList<SecurePassword>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
+            securePasswords = new ArrayList<>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
             for (Iterator<SecurePassword> iterator = securePasswords.iterator(); iterator.hasNext(); ) {
                 SecurePassword securePassword =  iterator.next();
                 if (securePassword.getType() != typeFilter) {
                     iterator.remove();
                 }
             }
-            Collections.sort( securePasswords, new ResolvingComparator<SecurePassword,String>( new Resolver<SecurePassword,String>(){
+            Collections.sort( securePasswords, new ResolvingComparator<>( new Resolver<SecurePassword,String>(){
                 @Override
                 public String resolve( final SecurePassword key ) {
                     return key.getName().toLowerCase();
                 }
             }, false ) );
-            setModel(new DefaultComboBoxModel(securePasswords.toArray()));
+            setModel(new DefaultComboBoxModel<>(securePasswords.toArray(new SecurePassword[securePasswords.size()])));
 
             if (selectedSecurePassword != null && this.containsItem(selectedSecurePassword.getGoid())) {
                 // Select currently selected item.
@@ -92,7 +92,7 @@ public class SecurePasswordComboBox extends JComboBox {
             unavailablePassword.setGoid(goid);
             unavailablePassword.setName("Current password (password details are unavailable)");
             securePasswords.add(0, unavailablePassword);
-            setModel(new DefaultComboBoxModel(securePasswords.toArray()));
+            setModel(new DefaultComboBoxModel<>(securePasswords.toArray(new SecurePassword[securePasswords.size()])));
             setSelectedIndex(0);
         } else {
             // password does not yet exist in the database
@@ -101,11 +101,12 @@ public class SecurePasswordComboBox extends JComboBox {
     }
 
     public boolean containsItem(Goid goid) {
-        for(int i = 0; i< securePasswords.size(); i++) {
-            if(Goid.equals(securePasswords.get(i).getGoid(), goid)) {
+        for (SecurePassword securePassword : securePasswords) {
+            if (Goid.equals(securePassword.getGoid(), goid)) {
                 return true;
             }
         }
+
         return false;
     }
 }

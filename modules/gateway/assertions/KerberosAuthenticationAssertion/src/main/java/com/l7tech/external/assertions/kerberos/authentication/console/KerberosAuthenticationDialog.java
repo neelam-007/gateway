@@ -63,7 +63,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         useGatewayKeytabRadioButton.setSelected(true);
         useConfiguredCredentialsRadioButton.setSelected(false);
 
-        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
         manageStoredPasswordsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

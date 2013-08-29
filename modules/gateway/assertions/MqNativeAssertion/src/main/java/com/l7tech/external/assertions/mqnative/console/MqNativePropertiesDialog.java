@@ -13,7 +13,6 @@ import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -301,7 +300,7 @@ public class MqNativePropertiesDialog extends JDialog {
         queueNameTextBox.setDocument(new MaxLengthDocument(255));
         queueNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
-        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
         securePasswordComboBox.addActionListener(enableDisableListener);
 
         managePasswordsButton.addActionListener(new ActionListener(){
@@ -543,7 +542,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private void loadContentTypesModel() {
         if (contentTypeModel == null) {
-            List<ContentTypeComboBoxItem> items = new ArrayList<ContentTypeComboBoxItem>();
+            List<ContentTypeComboBoxItem> items = new ArrayList<>();
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.XML_DEFAULT));
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.SOAP_1_2_DEFAULT));
             items.add(new ContentTypeComboBoxItem(ContentTypeHeader.TEXT_DEFAULT));

@@ -4,8 +4,7 @@ import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.siteminder.SiteMinderFipsMode;
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -57,10 +56,10 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private SquigglyTextField configurationNameTextField;
     private JTextField agentNameTextField;
     private JTextField addressTextField;
-    private JCheckBox IPCheckCheckBox;
+    private JCheckBox checkIPCheckBox;
     private JTextField hostNameTextField;
-    private JComboBox<SiteMinderFipsMode> fipsModeComboBox;
-    private JCheckBox nonclusterFailoverCheckBox;
+    private JComboBox<SiteMinderFipsModeOption> fipsModeComboBox;
+    private JCheckBox enableFailoverCheckBox;
     private JTable clusterSettingsTable;
     private JButton addButton;
     private JButton editButton;
@@ -107,25 +106,25 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         addressTextField.setDocument(new MaxLengthDocument(128));
         hostNameTextField.setDocument(new MaxLengthDocument(255));
         ((JTextField)fipsModeComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(255));
-        fipsModeComboBox.setModel(new DefaultComboBoxModel<>(SiteMinderFipsMode.values()));
+        fipsModeComboBox.setModel(new DefaultComboBoxModel<>(SiteMinderFipsModeOption.values()));
         clusterThresholdSpinner.setModel(new SpinnerNumberModel(50, CLUSTER_THRESHOLD_MIN, CLUSTER_THRESHOLD_MAX, 1));
 
         initClusterSettingsTable();
 
         InputValidator.ValidationRule clusterThresholdRule =
                 new InputValidator.NumberSpinnerValidationRule(clusterThresholdSpinner,
-                        RESOURCES.getString("property.clusterThreshold"));
+                        RESOURCES.getString("property.agent.clusterThreshold"));
 
         InputValidator.ValidationRule ipCheckBoxRule =
-                new InputValidator.ComponentValidationRule(IPCheckCheckBox) {
+                new InputValidator.ComponentValidationRule(checkIPCheckBox) {
                     @Override
                     public String getValidationError() {
-                        if (IPCheckCheckBox.isSelected()) {
+                        if (checkIPCheckBox.isSelected()) {
                             final String address = addressTextField.getText();
 
                             if (address == null || address.trim().isEmpty()) {
                                 return "The " + RESOURCES.getString("property.agent.address") +
-                                        " field must not be empty if IP Check is enabled.";
+                                        " field must not be empty if Check IP is enabled.";
                             }
                         }
 
@@ -140,14 +139,16 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.configuration.properties"));
 
         okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.name"), agentNameTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.configuration.name"), configurationNameTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.configurationName"), configurationNameTextField, null);
         okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
         okValidator.constrainPasswordFieldToBeNonEmpty(RESOURCES.getString("property.agent.secret"), secretPasswordField);
+        okValidator.ensureComboBoxSelection(RESOURCES.getString("property.agent.fipsMode"), fipsModeComboBox);
         okValidator.addRule(clusterThresholdRule);
         okValidator.addRule(ipCheckBoxRule);
 
         testValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
         testValidator.constrainPasswordFieldToBeNonEmpty(RESOURCES.getString("property.agent.secret"), secretPasswordField);
+        testValidator.ensureComboBoxSelection(RESOURCES.getString("property.agent.fipsMode"), fipsModeComboBox);
         testValidator.addRule(clusterThresholdRule);
         testValidator.addRule(ipCheckBoxRule);
 
@@ -215,7 +216,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 configuration.setHostname(siteMinderHost.getHostname());
                 configuration.setSecret(siteMinderHost.getSharedSecret());
                 configuration.setAddress("127.0.0.1");
-                configuration.setFipsmode(siteMinderHost.getFipsMode());
+                configuration.setFipsmode(siteMinderHost.getFipsMode().getCode());
                 configuration.setPasswordGoid(siteMinderHost.getPasswordGoid());
                 configuration.setHostConfiguration(siteMinderHost.getHostConfigObject());
                 configuration.setUserName(siteMinderHost.getUserName());
@@ -243,17 +244,17 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         agentNameTextField.setText(configuration.getAgentName());
         secretPasswordField.setText(configuration.getSecret());
         addressTextField.setText(configuration.getAddress());
-        IPCheckCheckBox.setSelected(configuration.isIpcheck());
+        checkIPCheckBox.setSelected(configuration.isIpcheck());
         updateSSOTokenCheckBox.setSelected(configuration.isUpdateSSOToken());
         hostNameTextField.setText(configuration.getHostname());
         disableCheckBox.setSelected(!configuration.isEnabled());
 
-        SiteMinderFipsMode mode = SiteMinderFipsMode.getByCode(configuration.getFipsmode());
+        SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(configuration.getFipsmode());
 
-        // any unrecognized fips mode setting will be replaced with UNSET
-        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsMode.UNSET : mode);
+        // any unrecognized fips mode setting will be replaced with UNSPECIFIED
+        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.UNSPECIFIED : mode);
 
-        nonclusterFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
+        enableFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
         clusterSettingsMap.clear();
 
         if (configuration.getProperties() != null) {
@@ -333,16 +334,16 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         configuration.setAgentName(agentNameTextField.getText().trim());
         configuration.setSecret(new String(secretPasswordField.getPassword()));
         configuration.setAddress(addressTextField.getText().trim());
-        configuration.setIpcheck(IPCheckCheckBox.isSelected());
+        configuration.setIpcheck(checkIPCheckBox.isSelected());
         configuration.setUpdateSSOToken(updateSSOTokenCheckBox.isSelected());
         configuration.setHostname(hostNameTextField.getText().trim());
         configuration.setEnabled(!disableCheckBox.isSelected());
 
         int modeIndex = fipsModeComboBox.getSelectedIndex();
-        SiteMinderFipsMode mode = modeIndex > -1 ? fipsModeComboBox.getItemAt(modeIndex) : SiteMinderFipsMode.UNSET;
+        SiteMinderFipsModeOption mode = modeIndex > -1 ? fipsModeComboBox.getItemAt(modeIndex) : SiteMinderFipsModeOption.UNSPECIFIED;
 
         configuration.setFipsmode(mode.getCode());
-        configuration.setNonClusterFailover(nonclusterFailoverCheckBox.isSelected());
+        configuration.setNonClusterFailover(enableFailoverCheckBox.isSelected());
         configuration.setClusterThreshold((Integer) clusterThresholdSpinner.getValue());
         configuration.setProperties(clusterSettingsMap);
         configuration.setSecurityZone(zoneControl.getSelectedZone());
@@ -356,7 +357,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         register(new MutablePair<>("Init SiteMinder Host", new SiteMinderHost(configuration.getHostname(),
                 clusterSettingsMap.get(RESOURCES.getString("property.cluster.server.address")),
                 configuration.getHostConfiguration(),
-                configuration.getFipsmode(),
+                SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
                 configuration.getUserName(),
                 configuration.getPasswordGoid())));
     }
@@ -515,16 +516,16 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                     RESOURCES.getString("property.agent.secret"));
         } else if ("ipcheck".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.ipcheck"));
+                    RESOURCES.getString("property.agent.checkIP"));
         } else if ("fipsmode".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.fipsmode"));
+                    RESOURCES.getString("property.agent.fipsMode"));
         } else if ("noncluster_failover".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.noncluster_failover"));
+                    RESOURCES.getString("property.agent.enableFailover"));
         } else if ("cluster_threshold".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.cluster_threshold"));
+                    RESOURCES.getString("property.agent.clusterThreshold"));
         }
 
         // Check if there exists a duplicate with other properties.

@@ -4,8 +4,6 @@ import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.*;
 
-import java.security.Provider;
-import java.security.Security;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -18,9 +16,7 @@ import java.util.logging.Logger;
  * Date: 6/26/13
  */
 public class SiteMinderLowLevelAgent {
-    public static final String DEFAULT_SITEMINDER_COOKIE_NAME = "SMSESSION";
     public static final int HTTP_HEADER_VARIABLE_ID = 224;
-    public static final String HTTP_HEADER_CONTEXT_VARIABLE_PREFIX = SiteMinderAgentConstants.VAR_PREFIX + ".";
 
     private static final Logger logger = Logger.getLogger(SiteMinderLowLevelAgent.class.getName());
 
@@ -30,7 +26,6 @@ public class SiteMinderLowLevelAgent {
     private String agentName;
     private String agentIP;
     private boolean agentCheckSessionIP;
-    private String cookieName;
     private boolean updateCookie;
     private SiteMinderConfig agentConfig;
 
@@ -47,7 +42,7 @@ public class SiteMinderLowLevelAgent {
         try {
             agentName = agentConfig.getAgentName();
             agentIP = agentConfig.getAddress();
-            agentCheckSessionIP = agentConfig.isIpcheck();
+            agentCheckSessionIP = agentConfig.isIpCheck();
             updateCookie = agentConfig.isUpdateSSOToken();
 
             InitDef initDef = null;
@@ -82,23 +77,23 @@ public class SiteMinderLowLevelAgent {
                 }
             }
 
-            int cryptoOpMode = agentConfig.getFibsmode();
+            int cryptoOpMode = agentConfig.getFipsMode();
 
             initDef.setCryptoOpMode(cryptoOpMode);
             agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
 
-            int retcode = agentApi.init(initDef);
+            int retCode = agentApi.init(initDef);
 
-            if (retcode == AgentAPI.SUCCESS) {
+            if (retCode == AgentAPI.SUCCESS) {
                 //TODO: check if the management info is correct and if we need to put it into the cluster property
                 ManagementContextDef mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_SET_AGENT_INFO, "Product=sdk,Platform=WinNT/Solaris,Version=12.5,Update=0,Label=160");
                 AttributeList attrList = new AttributeList();
                 agentApi.doManagement(mgtCtxDef, attrList);
                mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_GET_AGENT_COMMANDS, "");//TODO: why do we call create management context for the second time? is it really necessary?
                 attrList.removeAllAttributes();//TODO: this is very suspicious code why do we need to remove all attributes?
-               retcode = agentApi.doManagement(mgtCtxDef, attrList);// what the hack? do management again?
+               retCode = agentApi.doManagement(mgtCtxDef, attrList);// what the hack? do management again?
 
-                switch(retcode) {
+                switch(retCode) {
                     case AgentAPI.NOCONNECTION:
                     case AgentAPI.TIMEOUT:
                     case AgentAPI.FAILURE:
@@ -118,7 +113,7 @@ public class SiteMinderLowLevelAgent {
                 }
             }
             else {
-                if(retcode == AgentAPI.NOCONNECTION) {
+                if(retCode == AgentAPI.NOCONNECTION) {
                     logger.log(Level.SEVERE, "The SiteMinder Agent " + agentName + " cannot connect to the Policy Server");
                 }
                 else {
@@ -146,9 +141,8 @@ public class SiteMinderLowLevelAgent {
      * Authenticate the principal against the resource
      * @param userCreds the user credential to authenticate
      * @param userIp    the ip address of the client
-     * @param transactionId
+     * @param transactionId the transaction id
      * @param context SiteMinderContext object
-     * @throws javax.security.auth.login.FailedLoginException on failed authentication
      */
     int authenticate(UserCredentials userCreds, String userIp, String transactionId, SiteMinderContext context)
             throws SiteMinderApiClassException {
@@ -219,7 +213,7 @@ public class SiteMinderLowLevelAgent {
     /**
      * Authorize the session against the resource
      * @param ssoToken  the SSO token obtained previously by authenticate method
-     * @param transactionId
+     * @param transactionId the transaction id
      * @param context SiteMinderContext
      * @throws java.security.AccessControlException on access control error
      */
@@ -227,7 +221,7 @@ public class SiteMinderLowLevelAgent {
             throws SiteMinderApiClassException {
 
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
-        int result = 0;
+        int result;
 
         List<Pair<String, Object>> attributes = context.getAttrList();
         ResourceContextDef resCtxDef = getSiteMinderResourceDefFromContext(context);
@@ -318,8 +312,8 @@ public class SiteMinderLowLevelAgent {
      * @param userCreds user credential to validate
      * @param userIp    the ip address of the client
      * @param ssoToken  ssoToken which contains sessionDef after decoded
-     * @param transactionId
-     * @param context
+     * @param transactionId the transaction id
+     * @param context the SiteMinder context
      * @throws SiteMinderApiClassException on invalid sessionDef
 
      */
@@ -337,7 +331,8 @@ public class SiteMinderLowLevelAgent {
         TokenDescriptor td = new TokenDescriptor(0, false);
         StringBuffer newToken = new StringBuffer();
 
-        int result = 0; //validation does not change the token
+        int result; //validation does not change the token
+
         try {
             result = agentApi.decodeSSOToken(ssoToken, td, attrList, false, newToken);
         } catch (Exception e) {
@@ -358,7 +353,6 @@ public class SiteMinderLowLevelAgent {
         }
 
         if (userCreds.name != null) {
-            final String credName = userCreds.name;
             final String sessName = getUserIdentifier(attrList);
 
             if (sessName == null) {
@@ -558,11 +552,6 @@ public class SiteMinderLowLevelAgent {
 
     /**
      * Calls agent API to create SSO token and checks if it was successful
-     * @param userCreds
-     * @param resource
-     * @param sessionDef
-     * @param attrList
-     * @return
      * @throws SiteMinderApiClassException
      */
     private int getSsoToken(UserCredentials userCreds, String resource, SessionDef sessionDef, AttributeList attrList, SiteMinderContext context) throws SiteMinderApiClassException {
@@ -585,11 +574,10 @@ public class SiteMinderLowLevelAgent {
 
     /**
      * return agent API error message
-     * @param errCode
-     * @return
-     * @throws SiteMinderApiClassException
+     * @param errCode a SSO Token creation error code
+     * @return the corresponding error message for the specified error code
      */
-    private String getCreateSSOTokenErrorMessage(int errCode) throws SiteMinderApiClassException {
+    private String getCreateSSOTokenErrorMessage(int errCode) {
         if(errCode == AgentAPI.FAILURE) {
             return "Unable to create SSO token";
         }
@@ -598,7 +586,7 @@ public class SiteMinderLowLevelAgent {
         return getCommonErrorMessage(errCode);
     }
 
-    private String getCommonErrorMessage(int errCode) throws SiteMinderApiClassException {
+    private String getCommonErrorMessage(int errCode) {
         if(errCode == AgentAPI.NOCONNECTION) {
             return "There was no connection to the Policy Server";
         } else if(errCode == AgentAPI.INVALID_ATTRLIST) {

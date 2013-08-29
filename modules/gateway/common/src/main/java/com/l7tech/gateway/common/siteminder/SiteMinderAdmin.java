@@ -12,12 +12,11 @@ import java.util.List;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
- * Created with IntelliJ IDEA.
  * Admin interface for managing SiteMinder Configuration Entities
- * User: nilic
+ *
+ * @author nilic
  * Date: 7/22/13
  * Time: 10:16 AM
- * To change this template use File | Settings | File Templates.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types = EntityType.SITEMINDER_CONFIGURATION)
@@ -79,7 +78,6 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
      * @param hostname: Registered hostname
      * @param hostconfig: Host's configuration
      * @param fipsMode: FIPS mode
-     * @return
      */
     @Transactional(readOnly = true)
     @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.SAVE_OR_UPDATE)
@@ -88,7 +86,7 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
                                                                             Goid password,
                                                                             String hostname,
                                                                             String hostconfig,
-                                                                            Integer fipsMode);
+                                                                            SiteMinderFipsModeOption fipsMode);
 
     /**
      * Test the SiteMinder Configuration

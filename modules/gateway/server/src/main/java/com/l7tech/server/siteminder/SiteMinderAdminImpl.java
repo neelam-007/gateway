@@ -6,11 +6,9 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Background;
@@ -29,14 +27,13 @@ import java.util.logging.Level;
 import static com.l7tech.server.event.AdminInfo.find;
 
 /**
- * Created with IntelliJ IDEA.
  * The implementation of the interface SiteMinderAdmin to manage SiteMinder Configuration Entities,
- * User: nilic
+ * 
+ * @author nilic
  * Date: 7/22/13
  * Time: 11:07 AM
- * To change this template use File | Settings | File Templates.
  */
-public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteMinderAdmin {
+public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMinderAdmin {
 
     private SiteMinderConfigurationManager siteMinderConfigurationManager;
 
@@ -69,7 +66,7 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      */
     public List<SiteMinderConfiguration> getAllSiteMinderConfigurations() throws FindException {
 
-        List<SiteMinderConfiguration> configurations = new ArrayList<SiteMinderConfiguration>();
+        List<SiteMinderConfiguration> configurations = new ArrayList<>();
         configurations.addAll(siteMinderConfigurationManager.findAll());
         return configurations;
     }
@@ -103,7 +100,6 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      * @param hostname: Registered hostname
      * @param hostconfig: Host's configuration
      * @param fipsMode: FIPS mode
-     * @return
      */
     @Override
     public AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(final String address,
@@ -111,20 +107,21 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
                                                                                    final Goid password,
                                                                                    final String hostname,
                                                                                    final String hostconfig,
-                                                                                   final Integer fipsMode){
-
-        final FutureTask<SiteMinderHost> registerTask = new FutureTask<SiteMinderHost>(find(false).wrapCallable(new Callable<SiteMinderHost>() {
+                                                                                   final SiteMinderFipsModeOption fipsMode) {
+        final FutureTask<SiteMinderHost> registerTask =
+                new FutureTask<>(find(false).wrapCallable(new Callable<SiteMinderHost>() {
             @Override
             public SiteMinderHost call() throws Exception {
-                SiteMinderHost siteMinderHost = null;
+                SiteMinderHost siteMinderHost;
 
-                try{
+                try {
                     siteMinderHost =  registerSiteMinderHost(address, username, password, hostname, hostconfig, fipsMode);
-                } catch (IOException e){
+                } catch (IOException e) {
                     final String msg = "Unable to register SiteMinder configuration. Check connection with policy server";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     throw e;
                 }
+
                 return siteMinderHost;
             }
         }));
@@ -141,13 +138,13 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
 
     @Override
     public JobId<String> testSiteMinderConfiguration(final SiteMinderConfiguration siteMinderConfiguration) {
-        final FutureTask<String> registerTask = new FutureTask<String>(find(false).wrapCallable(new Callable<String>() {
+        final FutureTask<String> registerTask = new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
 
                 try{
                     siteMinderConfigurationManager.validateSiteMinderConfiguration(siteMinderConfiguration);
-                } catch (SiteMinderApiClassException e){
+                } catch (SiteMinderApiClassException e) {
                     return ExceptionUtils.getMessage(e);
                 }
                 return "";
@@ -172,28 +169,32 @@ public class SiteMinderAdminImpl  extends AsyncAdminMethodsImpl implements SiteM
      * @param hostname: Registered hostname
      * @param hostconfig: Host's configuration
      * @param fipsMode: FIPS mode
-     * @return
      */
     public SiteMinderHost registerSiteMinderHost(String address,
                                                  String username,
                                                  Goid passwordGoid,
                                                  String hostname,
                                                  String hostconfig,
-                                                 Integer fipsMode) throws IOException, ParseException, FindException {
+                                                 SiteMinderFipsModeOption fipsMode)
+            throws IOException, ParseException, FindException {
+        String password;
 
-        String password = "";
-        try{
+        try {
             SecurePassword securePassword = securePasswordManager.findByPrimaryKey(passwordGoid);
+
+            if (securePassword == null) throw new FindException();
+
             password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
-        } catch (FindException e){
-            final String msg = "Unable to find password oid entity.";
-            logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to find password. " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
             throw e;
         } catch (ParseException e) {
-            final String msg = "Parse exception during decrypting password.";
-            logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Parsing error during password decryption. " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
             throw e;
         }
+
         return SiteMinderUtil.regHost(address, username, password, hostname, hostconfig, fipsMode);
     }
 }

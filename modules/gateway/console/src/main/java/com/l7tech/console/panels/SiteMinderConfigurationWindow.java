@@ -46,17 +46,12 @@ public class SiteMinderConfigurationWindow extends JDialog {
     private AbstractTableModel  configurationTableModel;
     private PermissionFlags flags;
 
-    public SiteMinderConfigurationWindow(Frame owner){
+    public SiteMinderConfigurationWindow(Frame owner) {
         super(owner, resources.getString("dialog.title.manage.siteminder.configuration"));
         initialize();
     }
 
-    public SiteMinderConfigurationWindow(Dialog owner) {
-        super(owner, resources.getString("dialog.title.manage.siteminder.configuration"));
-        initialize();
-    }
-
-    private void initialize(){
+    private void initialize() {
         flags = PermissionFlags.get(EntityType.SITEMINDER_CONFIGURATION);
 
         // Initialize GUI components
@@ -106,7 +101,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
         enableOrDisableButtons();
     }
 
-    private void initSiteMinderConfigurationTable(){
+    private void initSiteMinderConfigurationTable() {
         //refresh configuration list
         loadSiteMinderConfigurationList();
 
@@ -124,57 +119,62 @@ public class SiteMinderConfigurationWindow extends JDialog {
     }
 
 
-    private void loadSiteMinderConfigurationList(){
+    private void loadSiteMinderConfigurationList() {
         SiteMinderAdmin admin = getSiteMinderAdmin();
-        if (admin != null){
+        if (admin != null) {
             try {
                 configurationList = admin.getAllSiteMinderConfigurations();
-            } catch (FindException ex){
+            } catch (FindException ex) {
                 logger.warning("Cannot find SiteMinder Configurations.");
             }
             Collections.sort(configurationList);
         }
     }
 
-    private SiteMinderAdmin getSiteMinderAdmin(){
+    private SiteMinderAdmin getSiteMinderAdmin() {
         Registry reg = Registry.getDefault();
         if (!reg.isAdminContextPresent())
             return null;
         return reg.getSiteMinderConfigurationAdmin();
     }
 
-    private void doAdd(){
+    private void doAdd() {
         SiteMinderConfiguration configuration = new SiteMinderConfiguration();
         editAndSave(configuration, true);
     }
 
-    private void doEdit(){
+    private void doEdit() {
         int selectedRow = configurationTable.getSelectedRow();
 
         if (selectedRow < 0) return;
         editAndSave(configurationList.get(selectedRow), false);
     }
 
-    private void doRemove(){
+    private void doRemove() {
 
         int selectedRow = configurationTable.getSelectedRow();
+
         if (selectedRow < 0) return;
 
         SiteMinderConfiguration configuration = configurationList.get(selectedRow);
         Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
 
         int result = JOptionPane.showOptionDialog(
-                this, MessageFormat.format(resources.getString("confirmation.remove.configuration"), configuration.getName()),
-                resources.getString("dialog.title.remove.configuration"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                this,
+                MessageFormat.format(resources.getString("confirmation.remove.configuration"), configuration.getName()),
+                resources.getString("dialog.title.remove.configuration"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
-        if (result == 0){
+        if (result == 0) {
             configurationList.remove(selectedRow);
 
             SiteMinderAdmin admin = getSiteMinderAdmin();
-            if (admin == null) return ;
-            try{
+
+            if (admin == null) return;
+
+            try {
                 admin.deleteSiteMinderConfiguration(configuration);
-            } catch (DeleteException ex){
+            } catch (DeleteException ex) {
                 logger.warning("Cannot delete the SiteMinder configuration " + configuration.getName());
                 return;
             }
@@ -187,7 +187,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
         if (selectedRow >= 0) configurationTable.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
     }
 
-    private void doCopy(){
+    private void doCopy() {
 
         int selectedRow = configurationTable.getSelectedRow();
 
@@ -197,7 +197,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
         editAndSave(newConfiguration, true);
     }
 
-    private void enableOrDisableButtons(){
+    private void enableOrDisableButtons() {
 
         int selectedRow = configurationTable.getSelectedRow();
 
@@ -227,30 +227,30 @@ public class SiteMinderConfigurationWindow extends JDialog {
         }
 
         @Override
-        public int getRowCount(){
+        public int getRowCount() {
             return configurationList.size();
         }
 
         @Override
-        public int getColumnCount(){
+        public int getColumnCount() {
             return MAX_TABLE_COLUMN_NUM;
         }
 
         @Override
-        public Object getValueAt(int row, int col){
+        public Object getValueAt(int row, int col) {
             SiteMinderConfiguration configuration = configurationList.get(row);
 
             switch (col) {
-                case 0: // TODO jwilliams: fix this to match below statement
-                    return configuration.isEnabled()?"Yes":"No";
-                case 1:
+                case 0:
                     return configuration.getName();
-                case 2:
+                case 1:
                     return configuration.getAgentName();
-                case 3:
+                case 2:
                     return configuration.getAddress();
-                case 4:
+                case 3:
                     return configuration.getHostname();
+                case 4:
+                    return configuration.isEnabled()? "Yes" : "No";
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
             }
@@ -275,7 +275,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
         }
     }
 
-    private void editAndSave(final SiteMinderConfiguration configuration, final boolean selectName){
+    private void editAndSave(final SiteMinderConfiguration configuration, final boolean selectName) {
         final SiteMinderConfigPropertiesDialog configPropDialog = new SiteMinderConfigPropertiesDialog(SiteMinderConfigurationWindow.this, configuration);
 
         configPropDialog.pack();
@@ -285,7 +285,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
         DialogDisplayer.display(configPropDialog, new Runnable() {
             @Override
             public void run() {
-                if (configPropDialog.isConfirmed()){
+                if (configPropDialog.isConfirmed()) {
                     Runnable reedit = new Runnable() {
                         @Override
                         public void run() {
@@ -299,7 +299,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
                     if (admin == null) return;
                     try{
                         admin.saveSiteMinderConfiguration(configuration);
-                    } catch (UpdateException ex){
+                    } catch (UpdateException ex) {
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
                                 ex,
@@ -314,9 +314,9 @@ public class SiteMinderConfigurationWindow extends JDialog {
 
                 int currentRow = -1;
                 if (configuration.getName() != null && configuration.getName().length() > 0) {
-                    for (SiteMinderConfiguration config: configurationList){
+                    for (SiteMinderConfiguration config: configurationList) {
                         currentRow ++;
-                        if (config.getName().equals(configuration.getName())){
+                        if (config.getName().equals(configuration.getName())) {
                             break;
                         }
                     }

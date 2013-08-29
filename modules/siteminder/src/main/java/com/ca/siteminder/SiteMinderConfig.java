@@ -26,11 +26,11 @@ public interface SiteMinderConfig {
 
     public String getSecret();
 
-    public boolean isIpcheck();
+    public boolean isIpCheck();
 
     public String getHostname();
 
-    public int getFibsmode();
+    public int getFipsMode();
 
     public boolean isNonClusterFailover();
 

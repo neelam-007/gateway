@@ -1,6 +1,7 @@
 package com.ca.siteminder;
 
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -30,8 +31,8 @@ public class SiteMinderContext {
     private RealmDef realmDef;
     private SessionDef sessionDef;
     private  String transactionId = null;
-    private List<Pair<String, Object>> attrList = new ArrayList<Pair<String,Object>>();
-    List<AuthenticationScheme> authSchemes = new ArrayList<AuthenticationScheme>();
+    private List<Pair<String, Object>> attrList = new ArrayList<>();
+    List<AuthenticationScheme> authSchemes = new ArrayList<>();
     private String ssoToken;
     private SiteMinderLowLevelAgent agent;
 
@@ -51,7 +52,7 @@ public class SiteMinderContext {
         return ssoToken;
     }
 
-    public void setSsoToken(String ssoToken) {
+    public void setSsoToken(@Nullable String ssoToken) {
         this.ssoToken = ssoToken;
     }
 
