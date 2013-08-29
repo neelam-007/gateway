@@ -23,6 +23,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 
 import javax.naming.Context;
@@ -984,7 +985,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 if (Boolean.parseBoolean(tmp)) {
                     tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
                     isHardWired = true;
-                    hardWiredId = Goid.parseGoid(tmp);
+                    hardWiredId = GoidUpgradeMapper.mapId(EntityType.SERVICE,tmp);
                 }
             }
 

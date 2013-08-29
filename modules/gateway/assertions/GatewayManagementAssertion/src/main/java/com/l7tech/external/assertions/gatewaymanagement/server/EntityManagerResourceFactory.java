@@ -648,23 +648,6 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         }
     }
 
-    // todo remove after goidification
-    @Deprecated
-    static protected final long toInternalIdLong( final String identifier,
-                                       final String identifierDescription ) throws InvalidResourceException {
-        if ( identifier == null )
-            throw new InvalidResourceException(
-                    InvalidResourceException.ExceptionType.MISSING_VALUES,
-                    "Missing " + identifierDescription );
-        try {
-            return Long.parseLong(identifier);
-        } catch ( NumberFormatException nfe ) {
-            throw new InvalidResourceException(
-                    InvalidResourceException.ExceptionType.INVALID_VALUES,
-                    "Invalid " + identifierDescription );
-        }
-    }
-
     /**
      * Set the identifier for the entity from the given resource identifier.
      *

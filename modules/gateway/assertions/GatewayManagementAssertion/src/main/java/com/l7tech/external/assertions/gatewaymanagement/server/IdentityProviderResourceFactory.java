@@ -194,11 +194,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 List<Goid> goids = Functions.map(detail.getCertificateReferences(), new Functions.Unary<Goid, String>() {
                     @Override
                     public Goid call(final String s) {
-                        try {
-                            return new Goid(s);
-                        } catch ( IllegalArgumentException nfe ) {
-                            return PersistentEntity.DEFAULT_GOID; // will not match any certificate
-                        }
+                        return GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT,s);
                     }
                 });
                 federatedIdentityProviderConfig.setTrustedCertGoids(goids.toArray(new Goid[goids.size()]));

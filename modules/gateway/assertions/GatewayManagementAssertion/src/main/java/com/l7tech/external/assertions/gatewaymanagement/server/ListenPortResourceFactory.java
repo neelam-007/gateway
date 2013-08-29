@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -94,7 +95,8 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
         }
 
         putProperty( connector, SsgConnector.PROP_BIND_ADDRESS, optional( listenPort.getInterface() ) );
-        putProperty( connector, SsgConnector.PROP_HARDWIRED_SERVICE_ID, optional( listenPort.getTargetServiceId() ) );
+        Goid serviceId = GoidUpgradeMapper.mapId(EntityType.SERVICE, listenPort.getTargetServiceId());
+        putProperty( connector, SsgConnector.PROP_HARDWIRED_SERVICE_ID, optional(serviceId==null?null:serviceId.toString() ));
         setTlsProperties( listenPort, connector );
 
         // handle SecurityZone

@@ -14,6 +14,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
@@ -1221,7 +1222,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         setEndpointList(connector.getEndpoints());
 
         String hardwiredServiceIdStr = connector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
-        Goid hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Goid.parseGoid(hardwiredServiceIdStr) : PublishedService.DEFAULT_GOID;
+        Goid hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT,hardwiredServiceIdStr) : PublishedService.DEFAULT_GOID;
         boolean usingHardwired = serviceNameComboBox.populateAndSelect(!Goid.isDefault(hardwiredServiceId), hardwiredServiceId);
         hardwiredServiceCheckBox.setSelected(usingHardwired);
 
