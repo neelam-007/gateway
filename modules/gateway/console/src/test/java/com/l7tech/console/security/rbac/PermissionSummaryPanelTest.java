@@ -703,6 +703,37 @@ public class PermissionSummaryPanelTest {
         assertEquals(providerGoid.toHexString(), attributes.get("providerId"));
     }
 
+    @BugId("SSM-4482")
+    @Test
+    public void generatePermissionsSpecificGroupLongId() throws Exception {
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.GROUP);
+        operations.add(OperationType.READ);
+        final Goid providerGoid = new Goid(0, 1);
+        final StringBuilder longIdBuilder = new StringBuilder();
+        for (int i = 0; i < PermissionSummaryPanel.MAX_ATTRIBUTE_VAL_LENGTH + 1; i++) {
+            longIdBuilder.append("x");
+        }
+        final String longId = longIdBuilder.toString();
+        entities.add(new IdentityHeader(providerGoid, longId, EntityType.GROUP, "test", null, null, 0));
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Set<ScopePredicate> scope = config.getGeneratedPermissions().iterator().next().getScope();
+        assertEquals(2, scope.size());
+        final Map<String, AttributePredicate> attributes = new HashMap<>();
+        for (final ScopePredicate predicate : scope) {
+            final AttributePredicate attribute = (AttributePredicate) predicate;
+            attributes.put(attribute.getAttribute(), attribute);
+        }
+        final AttributePredicate idAttr = attributes.get("id");
+        assertEquals(longId.substring(0, PermissionSummaryPanel.MAX_ATTRIBUTE_VAL_LENGTH), idAttr.getValue());
+        assertEquals("sw", idAttr.getMode());
+        final AttributePredicate provIdAttr = attributes.get("providerId");
+        assertEquals(providerGoid.toHexString(), provIdAttr.getValue());
+        assertNull(provIdAttr.getMode());
+    }
+
     @BugId("SSG-6919")
     @Test
     public void generatePermissionsSpecificJmsEndpointWithConnection() throws Exception {
