@@ -137,9 +137,11 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         // map the service id value if required
         Properties props = jmsConnection.properties();
         String serviceId = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-        Goid serviceGoid = GoidUpgradeMapper.mapId(EntityType.SERVICE, serviceId);
-        props.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, serviceGoid.toString());
-        jmsConnection.properties(props);
+        if(serviceId!=null){
+            Goid serviceGoid = GoidUpgradeMapper.mapId(EntityType.SERVICE, serviceId);
+            props.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, serviceGoid.toString());
+            jmsConnection.properties(props);
+        }
 
         // handleSecurityZone
         doSecurityZoneFromResource( jmsDestination, jmsEndpoint );
