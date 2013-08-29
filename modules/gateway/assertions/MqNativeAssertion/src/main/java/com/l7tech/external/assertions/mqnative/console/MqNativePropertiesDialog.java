@@ -580,13 +580,20 @@ public class MqNativePropertiesDialog extends JDialog {
             enabledCheckBox.setSelected(mqNativeActiveConnector.isEnabled());
 
             final String userId = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
-            final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
-
-            credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || (passwordGoid != null && !Goid.isDefault(passwordGoid)));
             authUserNameTextBox.setText(userId);
             authUserNameTextBox.setCaretPosition( 0 );
-            if(passwordGoid != null && !Goid.isDefault(passwordGoid)) {
-                securePasswordComboBox.setSelectedSecurePassword(passwordGoid);
+
+            try{
+                final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID));
+
+                credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || (passwordGoid != null && !Goid.isDefault(passwordGoid)));
+
+                if(passwordGoid != null && !Goid.isDefault(passwordGoid)) {
+                    securePasswordComboBox.setSelectedSecurePassword(passwordGoid);
+                }
+            }catch( IllegalArgumentException e){
+                credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId));
+                securePasswordComboBox.setSelectedIndex(-1);
             }
 
             final boolean isSslEnabled = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED);
@@ -609,11 +616,15 @@ public class MqNativePropertiesDialog extends JDialog {
                     keystoreComboBox.setEnabled(true);
 
                     final String sslKeyStoreAlias = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
-                    final Goid sslKeyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID));
-                    if (!StringUtils.isEmpty(sslKeyStoreAlias) && !Goid.isDefault(sslKeyStoreId)) {
-                        keystoreComboBox.select(sslKeyStoreId, sslKeyStoreAlias);
-                    } else {
-                        keystoreComboBox.selectDefaultSsl();
+                    try{
+                        final Goid sslKeyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID));
+                        if (!StringUtils.isEmpty(sslKeyStoreAlias) && !Goid.isDefault(sslKeyStoreId)) {
+                            keystoreComboBox.select(sslKeyStoreId, sslKeyStoreAlias);
+                        } else {
+                            keystoreComboBox.selectDefaultSsl();
+                        }
+                    }catch( IllegalArgumentException e ){
+                        keystoreComboBox.setSelectedIndex(-1);
                     }
                 } else {
                     keystoreLabel.setEnabled(false);
