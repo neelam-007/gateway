@@ -1,6 +1,7 @@
 package com.l7tech.xml.xpath;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.XmlSafe;
 import com.l7tech.xml.NamespaceMigratable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
  * Class <code>XpathExpression</code> contains the XPath expression
  * and the namespace array.
  */
+@XmlSafe
 public class XpathExpression extends CompilableXpath implements Serializable, NamespaceMigratable {
 
     //- PUBLIC
@@ -22,6 +24,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
     /**
      * default constructor for XML serialization support
      */
+    @XmlSafe
     public XpathExpression() {
     }
 
@@ -30,6 +33,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *
      * @param expression the XPath expression
      */
+    @XmlSafe
     public XpathExpression(String expression) {
         this(expression, null);
     }
@@ -41,6 +45,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @param customPrefix   custom namespace prefix to declare, or null.
      * @param customNsUri    custom namespace URI to declare, or null.
      */
+    @XmlSafe
     public XpathExpression(String expression, String customPrefix, String customNsUri) {
         this(expression, makeMap(customPrefix, customNsUri));
     }
@@ -52,6 +57,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @param namespaces the namespaces map, may be null, it will result
      *                   in internal namespace map have zero elements.
      */
+    @XmlSafe
     public XpathExpression(String expression, @Nullable Map<String, String> namespaces) {
         this(expression, XpathVersion.UNSPECIFIED, namespaces);
     }
@@ -64,6 +70,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @param namespaces the namespaces map, may be null, it will result
      *                   in internal namespace map have zero elements.
      */
+    @XmlSafe
     public XpathExpression(String expression, @NotNull XpathVersion xpathVersion, @Nullable Map<String, String> namespaces) {
         this.expression = expression;
         if (namespaces != null) {
@@ -76,6 +83,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @return the XPath expression
      */
     @Override
+    @XmlSafe
     public String getExpression() {
         return expression;
     }
@@ -85,6 +93,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *         this is the reference, not safe copy
      */
     @Override
+    @XmlSafe
     public Map<String,String> getNamespaces() {
         return namespaces;
     }
@@ -94,6 +103,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *
      * @param expression the XPath expression
      */
+    @XmlSafe
     public void setExpression(String expression) {
         this.expression = expression;
     }
@@ -103,6 +113,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *
      * @param namespaces namespace map of prefix to namespace URI
      */
+    @XmlSafe
     public void setNamespaces(Map<String,String> namespaces) {
         if (namespaces != null) {
             this.namespaces.clear();
@@ -114,6 +125,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @return the XPath version hint ("1.0", "2.0", or "3.0"), or UNSPECIFIED to assume XPath 1.0.  Never null.
      */
     @NotNull
+    @XmlSafe
     public XpathVersion getXpathVersion() {
         return xpathVersion;
     }
@@ -126,6 +138,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      * @param xpathVersion the XPath version to use when interpreting the expression ("1.0", "2.0" or "3.0") or null to assume XPath 1.0.
      */
     @SuppressWarnings("UnusedDeclaration")
+    @XmlSafe
     public void setXpathVersion(@NotNull XpathVersion xpathVersion) {
         this.xpathVersion = xpathVersion;
     }

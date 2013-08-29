@@ -19,7 +19,7 @@ import java.util.Iterator;
  * Time: 1:51:56 PM
  */
 public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
-    protected static final File LOCK_FILE = new File(STORE_DIR + File.separator + "confdir.lck");
+    protected File LOCK_FILE = new File(getStoreDir() + File.separator + "confdir.lck");
 
     private Thread shutdownHook = null;
     private RandomAccessFile lockRaf = null;
@@ -48,7 +48,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      * calling this method at any given time; see {@link #lockConfiguration} for a way to do this.
      */
     public synchronized void save() throws IOException {
-        FileUtils.saveFileSafely(STORE_PATH, new FileUtils.Saver() {
+        FileUtils.saveFileSafely(getStorePath(), new FileUtils.Saver() {
             public void doSave(FileOutputStream fos) {
                 XMLEncoder encoder = null;
                 try {

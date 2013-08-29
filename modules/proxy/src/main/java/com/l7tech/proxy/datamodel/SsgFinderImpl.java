@@ -1,13 +1,16 @@
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.util.FileUtils;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.beans.XMLDecoder;
+import java.beans.ExceptionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,15 +25,13 @@ import java.util.logging.Logger;
 public class SsgFinderImpl implements SsgFinder {
     private static final Logger log = Logger.getLogger(SsgFinderImpl.class.getName());
 
-    protected static final String STORE_DIR = Ssg.PROXY_CONFIG;
-    protected static final String STORE_PATH = STORE_DIR + File.separator + "ssgs.xml";
-    protected static final File STORE_FILE = new File(STORE_PATH);
-
     protected long lastLoaded = Long.MIN_VALUE; // time that config file was last loaded
     protected SortedSet ssgs = new TreeSet();
     protected HashMap hostCache = new HashMap();
     protected HashMap endpointCache = new HashMap();
     protected boolean init = false;
+    String storePath = null;
+    static ExceptionListener exceptionListener = null;
 
     private static class SsgFinderHolder {
         private static final SsgFinderImpl ssgFinder = new SsgFinderImpl();
@@ -46,7 +47,15 @@ public class SsgFinderImpl implements SsgFinder {
 
     /** @return the path the config file we are saving and loading from. */
     public String getStorePath() {
-        return STORE_PATH;
+        return storePath != null ? storePath : getStoreDir() + File.separator + "ssgs.xml";
+    }
+
+    protected File getStoreFile() {
+        return new File(getStorePath());
+    }
+
+    public String getStoreDir() {
+        return Ssg.PROXY_CONFIG;
     }
 
     /**
@@ -80,10 +89,10 @@ public class SsgFinderImpl implements SsgFinder {
      */
     public synchronized void load() {
         FileUtils.LastModifiedFileInputStream in = null;
-        XMLDecoder decoder = null;
+        SafeXMLDecoder decoder = null;
         try {
-            in = FileUtils.loadFileSafely(STORE_PATH);
-            decoder = new XMLDecoder(in);
+            in = FileUtils.loadFileSafely(getStorePath());
+            decoder = new SafeXMLDecoder(getClassFilter(), in, null, exceptionListener, null);
             final Collection newssgs = (Collection)decoder.readObject();
             if (newssgs != null) {
                 ssgs.clear();
@@ -95,7 +104,7 @@ public class SsgFinderImpl implements SsgFinder {
         } catch (IOException e) {
             log.log(Level.SEVERE, "Unable to load Gateway store", e);
         } catch (ClassCastException e) {
-            log.log(Level.SEVERE, "Badly formatted Gateway store " + STORE_PATH, e);
+            log.log(Level.SEVERE, "Badly formatted Gateway store " + getStorePath(), e);
         } finally {
             if (decoder != null)
                 decoder.close();
@@ -106,12 +115,74 @@ public class SsgFinderImpl implements SsgFinder {
         init = true;
     }
 
+    ClassFilter getClassFilter() {
+        Set<String> classes = new HashSet<>(Arrays.asList(
+            "java.lang.String",
+            "java.util.TreeSet",
+            "java.util.HashMap",
+            "java.util.LinkedList",
+            "java.util.LinkedHashMap"
+        ));
+        Set<String> constructors = new HashSet<>(Arrays.asList(
+            "java.util.TreeSet()",
+            "java.util.HashMap()",
+            "java.util.LinkedList()",
+            "java.util.LinkedHashMap()"
+        ));
+        Set<String> methods = new HashSet<>(Arrays.asList(
+            "java.lang.reflect.Array.set(java.lang.Object,int,java.lang.Object)",
+            "java.util.LinkedList.add(java.lang.Object)",
+            "java.util.TreeSet.add(java.lang.Object)",
+            "java.util.HashMap.remove(java.lang.Object)", // TODO do we really need to allow remove?
+            "java.util.HashMap.put(java.lang.Object,java.lang.Object)"
+        ));
+
+        ClassFilter staticFilter = new StringClassFilter(classes, constructors, methods);
+        ClassFilter annotationFilter = new AnnotationClassFilter(null, Arrays.asList("com.l7tech.")) {
+            @Override
+            protected boolean permitClass(@NotNull Class<?> clazz) {
+                return super.permitClass(clazz) || Assertion.class.isAssignableFrom(clazz);
+            }
+
+            @Override
+            public boolean permitConstructor(@NotNull Constructor<?> constructor) {
+                if (super.permitConstructor(constructor))
+                    return true;
+
+                if (Assertion.class.isAssignableFrom(constructor.getDeclaringClass())) {
+                    if (constructor.getParameterTypes().length < 1)
+                        return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public boolean permitMethod(@NotNull Method method) {
+                if (super.permitMethod(method))
+                    return true;
+
+                if (Assertion.class.isAssignableFrom(method.getDeclaringClass())) {
+                    if (method.getName().startsWith("set") && !"set".equals(method.getName()))
+                        return true;
+
+                    // TODO this may not be safe if any assertion returns an unsafe class from a getter
+                    if (method.getName().startsWith("get") && !"get".equals(method.getName()))
+                        return true;
+                }
+
+                return false;
+            }
+        };
+        return new CompositeClassFilter(staticFilter, annotationFilter);
+    }
+
     /**
      * Reload config file from disk if it has changed since last time we loaded it.
      */
     public void loadIfChanged() {
-        if (STORE_FILE.lastModified() > lastLoaded) {
-            log.info("Reloading SSG configuration from " + STORE_PATH);
+        if (getStoreFile().lastModified() > lastLoaded) {
+            log.info("Reloading SSG configuration from " + getStorePath());
             load();
         }
     }

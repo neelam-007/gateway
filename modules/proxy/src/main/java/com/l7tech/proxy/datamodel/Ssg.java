@@ -8,6 +8,7 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.XmlSafe;
 
 import javax.net.ssl.SSLContext;
 import javax.swing.*;
@@ -34,6 +35,7 @@ import java.util.logging.Logger;
  * Ssg settings that get loaded from and saved to ssgs.xml.  Does not contain any behaviour; for that,
  * see {@link SsgRuntime}.
  */
+@XmlSafe(allowAllSetters = true)
 public class Ssg implements Serializable, Comparable, SslPeer {
     private static final Logger log = Logger.getLogger(Ssg.class.getName());
     private static final String SSG_PROTOCOL = "http";
@@ -205,6 +207,7 @@ public class Ssg implements Serializable, Comparable, SslPeer {
      *
      * @return the persistent policy manager.  Never null.
      */
+    @XmlSafe
     public PersistentPolicyManager getPersistentPolicyManager() {
         return persistentPolicyManager;
     }
@@ -865,11 +868,13 @@ public class Ssg implements Serializable, Comparable, SslPeer {
     }
 
     /** @param properties a map of generic properties to store in this Ssg */
+    @XmlSafe
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 
     /** @return properties a map of generic properties to store in this Ssg */
+    @XmlSafe
     public Map<String, String> getProperties() {
         return properties;
     }

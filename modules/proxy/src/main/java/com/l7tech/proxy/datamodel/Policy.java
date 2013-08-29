@@ -10,12 +10,14 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.util.XmlSafe;
 
 import java.io.Serializable;
 
 /**
  * Holds a policy assertion tree along with versioning metadata.
  */
+@XmlSafe
 public class Policy implements Serializable, Cloneable {
     private Assertion assertion;
     private String version;
@@ -64,6 +66,7 @@ public class Policy implements Serializable, Cloneable {
      *
      * @param valid false to mark this policy as invalid.  (Bean serializer may set it to true when loading from disk.)
      */
+    @XmlSafe
     public void setValid(boolean valid) {
         this.valid = valid;
     }
@@ -72,16 +75,19 @@ public class Policy implements Serializable, Cloneable {
         return alwaysValid;
     }
 
+    @XmlSafe
     public void setAlwaysValid(boolean alwaysValid) {
         this.alwaysValid = alwaysValid;
     }
 
     /** assertion mutator for xml bean deserializer.  Do not call this method. */
+    @XmlSafe
     public void setAssertion(Assertion assertion) {
         this.assertion = assertion;
     }
 
     /** Set the policy version. */
+    @XmlSafe
     public void setVersion(String version) {
         this.version = version;
     }

@@ -1,12 +1,14 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.XmlSafe;
 
 import java.io.Serializable;
 
 /**
  * Represents a binding between a policy and the kinds of requests it applies to.
  */
+@XmlSafe(allowAllSetters=true)
 public class PolicyAttachmentKey implements Serializable, Comparable {
     private String uri;
     private String soapAction;

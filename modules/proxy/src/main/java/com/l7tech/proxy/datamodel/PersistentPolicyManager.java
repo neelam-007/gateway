@@ -6,6 +6,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+import com.l7tech.util.XmlSafe;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Map;
  * A {@link PolicyManager} that stores policies that are persisted to disk, and possibly originated locally.
  * Usually delegated from a {@link TransientPolicyManager}.
  */
+@XmlSafe(allowAllSetters = true)
 public class PersistentPolicyManager extends LocalPolicyManager {
 
     PersistentPolicyManager() {
@@ -52,11 +54,13 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     }
 
     /** Policy map accessor, for xml bean serializer.  Do not call this method. */
+    @XmlSafe
     public HashMap getPolicyMap() {
         return super.getPolicyMap();
     }
 
     /** Policy map mutator, for xml bean deserializer.  Do not call this method. */
+    @XmlSafe
     public void setPolicyMap(HashMap policyMap) {
         super.setPolicyMap(policyMap);
     }
@@ -64,6 +68,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     /**
      * Wildcard map accessor, for xml bean serializer.  Do not call this method.
      */
+    @XmlSafe
     public Map getWildcardMatches() {
         return super.getWildcardMatches();
     }
@@ -71,6 +76,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     /**
      * Wildcard map mutator, for xml bean deserializer.  Do not call this method.
      */
+    @XmlSafe
     public void setWildcardMatches(Map wildcardMatches) {
         super.setWildcardMatches(wildcardMatches);
     }

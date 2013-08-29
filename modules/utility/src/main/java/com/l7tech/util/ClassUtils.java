@@ -178,6 +178,35 @@ public class ClassUtils {
     }
 
     /**
+     * Return the name of the specified type as it would appear in Java source.
+     * For most types this is the same as type.getName().  For arrays, this
+     * converts the type name from something like "[B" or "[Ljava.lang.String;"
+     * into "byte[]" or "java.lang.String[]" respectively.
+     *
+     * @param type name of type whose friendly name to produce.  Required.
+     * @return a java name for the type.
+     */
+    public static String getJavaTypeName(Class<?> type) {
+        if (!type.isArray())
+            return type.getName();
+
+        String name;
+        int bracketsNeeded = 0;
+        Class<?> componentType = type;
+        do {
+            bracketsNeeded++;
+            name = componentType.getName();
+            componentType = componentType.getComponentType();
+        } while (componentType != null);
+
+        StringBuilder sb = new StringBuilder(name);
+        for (int i = 1; i < bracketsNeeded; ++i) {
+            sb.append("[]");
+        }
+        return sb.toString();
+    }
+
+    /**
      * List the resources contained in the path.
      *
      * <p>WARNING: This should work for JAR / file resources, but will not work

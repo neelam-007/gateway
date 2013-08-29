@@ -2,7 +2,9 @@ package com.l7tech.util;
 
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
@@ -118,6 +120,7 @@ public class TextUtilsTest {
         assertEquals("Last 5 lines", last4Line, TextUtils.tail(text, 5));
     }
 
+    @SuppressWarnings("StringEquality")
     @Test
     public void testConvertLineBreaks() {
         final String CR = "\r";
@@ -350,5 +353,55 @@ public class TextUtilsTest {
 
         assertEquals(-1, index);
         assertTrue(evidence.toString().isEmpty());
+    }
+
+    @Test
+    public void testMatchesAnyPrefix() throws Exception {
+        TreeSet<String> prefixes = new TreeSet<String>(Arrays.asList(
+            "com.l7tech.bar.",
+            "com.l7tech.foo.",
+            "com.l7tech.blatch.",
+            "com.ca.bloof.",
+            "com.ca.",
+            "com.other.Allow"
+        ));
+
+        final Functions.Unary<Boolean, String> matcher = TextUtils.matchesAnyPrefix(prefixes);
+
+        List<String> testValues = Arrays.asList(
+            "F:com.yoyodyne.foo",
+            "F:com.",
+            "F:com.l7tech",
+            "F:com.l7tech.blatch",
+            "T:com.l7tech.blatch.foof",
+            "F:com.l7tech.blatcho",
+            "T:com.ca.bloof.blargle",
+            "T:com.ca.qwer.df",
+            "F:foo",
+            "F:",
+            "T:com.ca.bloof.qwerqwe",
+            "T:com.ca.bloofo",
+            "T:com.ca.qwerqwer",
+            "F:com.cab",
+            "T:com.other.Allow"
+        );
+
+        for (String testValue : testValues) {
+            String prefix;
+            boolean shouldSucceed;
+            if (testValue.startsWith("T:")) {
+                shouldSucceed = true;
+                prefix = testValue.substring(2);
+            } else if (testValue.startsWith("F:")) {
+                shouldSucceed = false;
+                prefix = testValue.substring(2);
+            } else {
+                throw new RuntimeException("Unknown prefix, must be T: or F: for " + testValue);
+            }
+
+            boolean result = matcher.call(prefix);
+            assertEquals("Expected prefix match=" + shouldSucceed + " for prefix " + testValue, shouldSucceed, result);
+        }
+
     }
 }

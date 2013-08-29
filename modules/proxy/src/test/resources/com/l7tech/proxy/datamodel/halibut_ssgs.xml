@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.7.0_17" class="java.beans.XMLDecoder">
+ <object class="java.util.TreeSet">
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg" id="Ssg0">
+    <void property="defaultSsg">
+     <boolean>true</boolean>
+    </void>
+    <void property="id">
+     <long>1</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="1">
+      <void index="0">
+       <string>127.0.0.1</string>
+      </void>
+     </array>
+    </void>
+    <void property="persistPassword">
+     <array class="byte" length="12">
+      <void index="0">
+       <byte>89</byte>
+      </void>
+      <void index="1">
+       <byte>88</byte>
+      </void>
+      <void index="2">
+       <byte>78</byte>
+      </void>
+      <void index="3">
+       <byte>107</byte>
+      </void>
+      <void index="4">
+       <byte>90</byte>
+      </void>
+      <void index="5">
+       <byte>109</byte>
+      </void>
+      <void index="6">
+       <byte>70</byte>
+      </void>
+      <void index="7">
+       <byte>122</byte>
+      </void>
+      <void index="8">
+       <byte>90</byte>
+      </void>
+      <void index="9">
+       <byte>71</byte>
+      </void>
+      <void index="10">
+       <byte>89</byte>
+      </void>
+      <void index="11">
+       <byte>61</byte>
+      </void>
+     </array>
+    </void>
+    <void property="persistentPolicyManager">
+     <void property="policyMap">
+      <void method="put">
+       <object class="com.l7tech.proxy.datamodel.PolicyAttachmentKey">
+        <void property="persistent">
+         <boolean>true</boolean>
+        </void>
+        <void property="proxyUri">
+         <string>/</string>
+        </void>
+        <void property="soapAction">
+         <string>&quot;http://warehouse.acme.com/ws/placeOrder&quot;</string>
+        </void>
+        <void property="uri">
+         <string>http://warehouse.acme.com/ws</string>
+        </void>
+       </object>
+       <object class="com.l7tech.proxy.datamodel.Policy">
+        <void property="alwaysValid">
+         <boolean>true</boolean>
+        </void>
+        <void property="assertion">
+         <object class="com.l7tech.policy.assertion.composite.AllAssertion">
+          <void property="children">
+           <object class="java.util.LinkedList">
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray0" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray0"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void property="version">
+         <string>4be748068fa6781f514c5ec5c35fa26a|53e95bd74e700b4a2d61352d27fb7174</string>
+        </void>
+       </object>
+      </void>
+      <void method="put">
+       <object class="com.l7tech.proxy.datamodel.PolicyAttachmentKey">
+        <void property="persistent">
+         <boolean>true</boolean>
+        </void>
+        <void property="proxyUri">
+         <string>/</string>
+        </void>
+        <void property="soapAction">
+         <string>&quot;http://warehouse.acme.com/ws/currentOrders&quot;</string>
+        </void>
+        <void property="uri">
+         <string>http://warehouse.acme.com/ws</string>
+        </void>
+       </object>
+       <object class="com.l7tech.proxy.datamodel.Policy">
+        <void property="alwaysValid">
+         <boolean>true</boolean>
+        </void>
+        <void property="assertion">
+         <object class="com.l7tech.policy.assertion.composite.AllAssertion">
+          <void property="children">
+           <object class="java.util.LinkedList">
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray1" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray1"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void property="version">
+         <string>4be748068fa6781f514c5ec5c35fa26a|53e95bd74e700b4a2d61352d27fb7174</string>
+        </void>
+       </object>
+      </void>
+      <void method="put">
+       <object class="com.l7tech.proxy.datamodel.PolicyAttachmentKey">
+        <void property="persistent">
+         <boolean>true</boolean>
+        </void>
+        <void property="proxyUri">
+         <string>/</string>
+        </void>
+        <void property="soapAction">
+         <string>&quot;http://warehouse.acme.com/ws/getProductDetails&quot;</string>
+        </void>
+        <void property="uri">
+         <string>http://warehouse.acme.com/ws</string>
+        </void>
+       </object>
+       <object class="com.l7tech.proxy.datamodel.Policy">
+        <void property="alwaysValid">
+         <boolean>true</boolean>
+        </void>
+        <void property="assertion">
+         <object class="com.l7tech.policy.assertion.composite.AllAssertion">
+          <void property="children">
+           <object class="java.util.LinkedList">
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray2" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray2"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void property="version">
+         <string>4be748068fa6781f514c5ec5c35fa26a|53e95bd74e700b4a2d61352d27fb7174</string>
+        </void>
+       </object>
+      </void>
+     </void>
+     <void property="wildcardMatches">
+      <void method="put">
+       <object class="com.l7tech.proxy.datamodel.PolicyAttachmentKey">
+        <void property="beginsWithMatch">
+         <boolean>true</boolean>
+        </void>
+        <void property="persistent">
+         <boolean>true</boolean>
+        </void>
+        <void property="proxyUri">
+         <string>/</string>
+        </void>
+        <void property="soapAction">
+         <string>&quot;http://warehouse.acme.com/ws/listProducts&quot;</string>
+        </void>
+        <void property="uri">
+         <string>http://warehouse.acme.com/ws</string>
+        </void>
+       </object>
+       <object class="com.l7tech.proxy.datamodel.Policy">
+        <void property="alwaysValid">
+         <boolean>true</boolean>
+        </void>
+        <void property="assertion">
+         <object class="com.l7tech.policy.assertion.composite.AllAssertion">
+          <void property="children">
+           <object class="java.util.LinkedList">
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray3" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray3"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+           </object>
+          </void>
+         </object>
+        </void>
+        <void property="version">
+         <string>4be748068fa6781f514c5ec5c35fa26a|53e95bd74e700b4a2d61352d27fb7174</string>
+        </void>
+       </object>
+      </void>
+     </void>
+    </void>
+    <void property="savePasswordToDisk">
+     <boolean>true</boolean>
+    </void>
+    <void property="serverUrl">
+     <string>http://data.l7tech.local:8080/ssg/soap</string>
+    </void>
+    <void property="useOverrideIpAddresses">
+     <boolean>true</boolean>
+    </void>
+    <void property="username">
+     <string>bob</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="compress">
+     <boolean>true</boolean>
+    </void>
+    <void property="failoverStrategyName">
+     <string>robin</string>
+    </void>
+    <void property="httpHeaderPassthrough">
+     <boolean>true</boolean>
+    </void>
+    <void property="id">
+     <long>2</long>
+    </void>
+    <void property="localEndpoint">
+     <string>rergqreg</string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="2">
+      <void index="0">
+       <string>5.4.2.1</string>
+      </void>
+      <void index="1">
+       <string>255.22.43.1</string>
+      </void>
+     </array>
+    </void>
+    <void property="properties">
+     <void method="put">
+      <string>asdf</string>
+      <string>eeeee</string>
+     </void>
+     <void method="put">
+      <string>gtgtgtgtg</string>
+      <string>aaaa</string>
+     </void>
+     <void method="put">
+      <string>someProperty</string>
+      <string>someValue</string>
+     </void>
+    </void>
+    <void property="serverUrl">
+     <string>http://blarg.example.com:6666/ssg/soap</string>
+    </void>
+    <void property="sslPort">
+     <int>5555</int>
+    </void>
+    <void property="trustedGateway">
+     <object idref="Ssg0"/>
+    </void>
+    <void property="useOverrideIpAddresses">
+     <boolean>true</boolean>
+    </void>
+    <void property="useSslByDefault">
+     <boolean>false</boolean>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="generic">
+     <boolean>true</boolean>
+    </void>
+    <void property="id">
+     <long>3</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://generichttp.example.com</string>
+    </void>
+    <void property="sslPort">
+     <int>-1</int>
+    </void>
+    <void property="useSslByDefault">
+     <boolean>false</boolean>
+    </void>
+    <void property="username">
+     <string>qwerqwer</string>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

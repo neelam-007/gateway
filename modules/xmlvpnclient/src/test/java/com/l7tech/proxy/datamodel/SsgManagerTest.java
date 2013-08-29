@@ -10,11 +10,11 @@ import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 
 import java.io.IOException;
 import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Work the Client Proxy's SSG Manager a little bit.
@@ -39,6 +39,7 @@ public class SsgManagerTest {
 
     @Before
     public void tearDown() throws Exception {
+        SsgFinderImpl.exceptionListener = new SsgFinderTest.FatalExceptionListener();
         sm.clear();
         sm.save();
     }

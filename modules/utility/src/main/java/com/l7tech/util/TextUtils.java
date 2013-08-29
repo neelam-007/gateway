@@ -1,10 +1,6 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.CollectionUtils.list;
-import static com.l7tech.util.CollectionUtils.toList;
-import static com.l7tech.util.Functions.*;
-
-import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,12 +9,14 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.StringTokenizer;
-import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toList;
+import static com.l7tech.util.Functions.*;
 
 /**
  * Utilities for text mode programs.
@@ -857,6 +855,28 @@ public class TextUtils {
             @Override
             public Boolean call( final String text ) {
                 return text.startsWith( prefix );
+            }
+        };
+    }
+
+    /**
+     * Create a predicate that will match strings as long as they begin with one of the given prefixes.
+     *
+     * @param prefixes a list of prefixes to match.  Required but may be empty. Will be flattened into a case-sensitive Set.  Empty prefixes are not supported.
+     *                 Overlapping prefixes are supported (eg, both "foo.bar.baz." and "foo.bar." in the prefix list will work as expected).
+     * @return a predicate that will return true only for strings that match one of the specified prefixes.
+     */
+    @NotNull
+    public static Unary<Boolean,String> matchesAnyPrefix(Collection<String> prefixes) {
+        final NavigableSet<String> prefixSet = new TreeSet<String>(prefixes);
+        return new Unary<Boolean, String>() {
+            @Override
+            public Boolean call(String val) {
+                String lower = prefixSet.floor(val);
+                while (lower != null && lower.length() > 0 && !val.startsWith(lower)) {
+                    lower = prefixSet.lower(lower);
+                }
+                return lower != null;
             }
         };
     }
