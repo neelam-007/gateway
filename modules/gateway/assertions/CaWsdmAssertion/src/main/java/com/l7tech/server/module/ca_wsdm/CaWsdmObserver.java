@@ -10,7 +10,6 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.RoutingEvent;
@@ -35,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Level;
@@ -52,8 +52,21 @@ public class CaWsdmObserver implements ApplicationListener {
     protected static final Logger logger = Logger.getLogger(CaWsdmObserver.class.getName());
 
     static {
-        // Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.
-        org.apache.log4j.Logger.getLogger("LOCAL_REQUEST_LOG").setLevel(org.apache.log4j.Level.OFF);
+        disableLocalRequestLogger();
+    }
+
+    private static void disableLocalRequestLogger() {
+        try {
+            // Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.
+            org.apache.log4j.Logger locLogger = org.apache.log4j.Logger.getLogger("LOCAL_REQUEST_LOG");
+            if (locLogger == null)
+                return;
+
+            Method setLevel = locLogger.getClass().getMethod("setLevel", org.apache.log4j.Level.class);
+            setLevel.invoke(locLogger, org.apache.log4j.Level.OFF);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to turn off empty SEVERE logs from CA Unicenter WSDM ODK LOCAL_REQUEST_LOG: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     /** A map that automatically purges the eldest entries when a size limit is reached. */
