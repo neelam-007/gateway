@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
@@ -354,7 +355,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                 if (check.entity == null) throw new NullPointerException("check.entity");
                 if (check.operation == UPDATE) {
                     // need to check if the existing entity can be updated
-                    final Entity existing = entityFinder.find(check.entity.getClass(), check.entity.getId());
+                    Entity existing = null;
+                    if (check.entity instanceof Identity && check.types.length == 1) {
+                        final Identity identity = (Identity) check.entity;
+                        existing = entityFinder.find(new IdentityHeader(identity.getProviderId(), identity.getId(),
+                                                        check.types[0], null, null, null, null));
+                    } else {
+                        existing = entityFinder.find(check.entity.getClass(), check.entity.getId());
+                    }
                     if (existing != null && !rbacServices.isPermittedForEntity(user, existing, UPDATE, check.otherOperationName)) {
                         throw new PermissionDeniedException(UPDATE, existing, check.otherOperationName);
                     } else if (existing == null) {

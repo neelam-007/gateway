@@ -4,7 +4,9 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
@@ -23,9 +25,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.util.*;
 
-import static com.l7tech.objectmodel.EntityType.ANY;
-import static com.l7tech.objectmodel.EntityType.GENERIC;
-import static com.l7tech.objectmodel.EntityType.USER;
+import static com.l7tech.objectmodel.EntityType.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
@@ -95,6 +95,10 @@ public class SecuredMethodInterceptorTest {
     private static Collection deniedEntitiesExisting;
     private static Collection mixedEntitiesExisting;
     private static Collection emptyCollection;
+    private static IdentityHeader allowedUserExistingHeader = new IdentityHeader(new Goid(0,1), "allowedExistingUser", USER, null, null, null, null);
+    private static UserBean allowedUserExisting;
+    private static IdentityHeader deniedUserExistingHeader = new IdentityHeader(new Goid(1,2), "deniedExistingUser", USER, null, null, null, null);
+    private static UserBean deniedUserExisting;
 
     static {
         allowedEntitiesNew = new ArrayList();
@@ -112,6 +116,10 @@ public class SecuredMethodInterceptorTest {
         mixedEntitiesExisting.add(allowedEntityExisting);
         mixedEntitiesExisting.add(deniedEntityExisting);
         emptyCollection = new ArrayList();
+        allowedUserExisting = new UserBean(allowedUserExistingHeader.getProviderGoid(), null);
+        allowedUserExisting.setUniqueIdentifier(allowedUserExistingHeader.getStrId());
+        deniedUserExisting = new UserBean(deniedUserExistingHeader.getProviderGoid(), null);
+        deniedUserExisting.setUniqueIdentifier(deniedUserExistingHeader.getStrId());
     }
 
     /**
@@ -308,7 +316,9 @@ public class SecuredMethodInterceptorTest {
                 {"saveOrUpdateCollection", privilegedUser, new Object[]{deniedEntitiesExisting}, null, null, PermissionDeniedException.class},
                 {"saveOrUpdateCollection", privilegedUser, new Object[]{mixedEntitiesExisting}, null, null, PermissionDeniedException.class},
                 {"saveOrUpdateCollection", unprivilegedUser, new Object[]{emptyCollection}, null, null, IllegalStateException.class},
-                {"saveOrUpdateArray", unprivilegedUser, new Object[]{new Object[]{allowedEntityExisting}}, null, null, PermissionDeniedException.class}
+                {"saveOrUpdateArray", unprivilegedUser, new Object[]{new Object[]{allowedEntityExisting}}, null, null, PermissionDeniedException.class},
+                {"updateUser", privilegedUser, new Object[]{allowedUserExisting}, null, null, null},
+                {"updateUser", privilegedUser, new Object[]{deniedUserExisting}, null, null, PermissionDeniedException.class}
         });
     }
 
@@ -355,6 +365,8 @@ public class SecuredMethodInterceptorTest {
         when(rbacServices.isPermittedForEntity(eq(privilegedUser), eq(deniedGoidEntityNew), any(OperationType.class), (String) isNull())).thenReturn(false);
         when(rbacServices.isPermittedForEntity(eq(privilegedUser), eq(allowedGoidEntityExisting), any(OperationType.class), (String) isNull())).thenReturn(true);
         when(rbacServices.isPermittedForEntity(eq(privilegedUser), eq(deniedGoidEntityExisting), any(OperationType.class), (String) isNull())).thenReturn(false);
+        when(rbacServices.isPermittedForEntity(eq(privilegedUser), eq(allowedUserExisting), any(OperationType.class), (String) isNull())).thenReturn(true);
+        when(rbacServices.isPermittedForEntity(eq(privilegedUser), eq(deniedUserExisting), any(OperationType.class), (String) isNull())).thenReturn(false);
 
         //applies semi privileged user permissions on entities
         when(rbacServices.isPermittedForEntity(eq(semiPrivilegedUser), eq(allowedEntityNew), any(OperationType.class), (String) isNull())).thenReturn(true);
@@ -383,6 +395,8 @@ public class SecuredMethodInterceptorTest {
 
         when(entityFinder.find(eq(allowedIdentityHeaderUserType))).thenReturn(allowedEntityExisting);
         when(entityFinder.find(eq(deniedIdentityHeaderUserType))).thenReturn(deniedEntityExisting);
+        when(entityFinder.find(eq(allowedUserExistingHeader))).thenReturn(allowedUserExisting);
+        when(entityFinder.find(eq(deniedUserExistingHeader))).thenReturn(deniedUserExisting);
 
         when(entityFinder.find(any(Class.class), eq(allowedEntityExisting.getId()))).thenReturn(allowedEntityExisting);
         when(entityFinder.find(any(Class.class), eq(deniedEntityExisting.getId()))).thenReturn(deniedEntityExisting);
@@ -595,6 +609,9 @@ public class SecuredMethodInterceptorTest {
 
         @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE)
         void saveOrUpdateArray(Object[] array);
+
+        @Secured(types = EntityType.USER, stereotype = MethodStereotype.UPDATE)
+        void updateUser(UserBean user);
     }
 
     /**
