@@ -28,7 +28,7 @@ public interface RbacAdmin {
     String ROLE_NAME_PREFIX = "Manage";
     String ROLE_NAME_PREFIX_READ = "View";
     String ROLE_NAME_OID_SUFFIX = " (#{1})";
-    String RENAME_REGEX_PATTERN = "(?<=^\\w'{'1,128'}' ).*?(?= {0} \\(#\\d[\\d, ]*\\)$)";
+    String RENAME_REGEX_PATTERN = "(?<=^\\w'{'1,128'}' ).*?(?= {0} \\(#[\\d[\\d, ]|[A-Za-z0-9]]*\\)$)";
     String ZONE_ROLE_NAME_TYPE_SUFFIX = "Zone";
 
     /**
