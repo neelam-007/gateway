@@ -98,8 +98,8 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Check Protected Resource with SiteMinder Policy Server");
-        meta.put(AssertionMetadata.LONG_NAME, "Check if resource is protected with CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Check if Resource is protected against CA SiteMinder Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -161,16 +161,22 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
         return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
 
-    private final static String baseName = "Check Protected Resource with SiteMinder Policy Server";
+    private final static String baseName = "Check Protected Resource Against SiteMinder";
+    private static final int MAX_DISPLAY_LENGTH = 120;
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderCheckProtectedAssertion>(){
         @Override
         public String getAssertionName( final SiteMinderCheckProtectedAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            StringBuffer name = new StringBuffer(baseName + ": ");
+            StringBuffer name = new StringBuffer(baseName + ": [");
+            name.append(assertion.getPrefix());
+            name.append("], agent [");
             name.append(assertion.getAgentId());
-
+            name.append(']');
+            if(name.length() > MAX_DISPLAY_LENGTH) {
+                name = name.replace(MAX_DISPLAY_LENGTH - 1, name.length() - 1, "...");
+            }
             return name.toString();
         }
     };

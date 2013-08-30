@@ -102,8 +102,8 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Authenticate via SiteMinder Policy Server");
-        meta.put(AssertionMetadata.LONG_NAME, "Authenticate via CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Authenticate user against CA SiteMinder Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -116,6 +116,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
@@ -163,4 +164,22 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
+
+    private final static String baseName = "Authenticate Against SiteMinder";
+    private static final int MAX_DISPLAY_LENGTH = 80;
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderAuthenticateAssertion>(){
+        @Override
+        public String getAssertionName( final SiteMinderAuthenticateAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuffer name = new StringBuffer(baseName + ": [");
+            name.append(assertion.getPrefix());
+            name.append(']');
+            if(name.length() > MAX_DISPLAY_LENGTH) {
+                name = name.replace(MAX_DISPLAY_LENGTH - 1, name.length() - 1, "...");
+            }
+            return name.toString();
+        }
+    };
 }

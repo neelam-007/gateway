@@ -167,8 +167,8 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Authorize with SiteMinder Policy Server");
-        meta.put(AssertionMetadata.LONG_NAME, "Authorize user with CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.LONG_NAME, "Authorize user via CA SiteMinder Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -177,6 +177,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/user16.png");
@@ -226,4 +227,22 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
+
+    private final static String baseName = "Authorize via SiteMinder";
+    private static final int MAX_DISPLAY_LENGTH = 80;
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderAuthorizeAssertion>(){
+        @Override
+        public String getAssertionName( final SiteMinderAuthorizeAssertion assertion, final boolean decorate) {
+            if(!decorate) return baseName;
+
+            StringBuffer name = new StringBuffer(baseName + ": [");
+            name.append(assertion.getPrefix());
+            name.append(']');
+            if(name.length() > MAX_DISPLAY_LENGTH) {
+                name = name.replace(MAX_DISPLAY_LENGTH - 1, name.length() - 1, "...");
+            }
+            return name.toString();
+        }
+    };
 }
