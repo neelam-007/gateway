@@ -21,12 +21,12 @@ import java.util.Set;
 @RunWith(MockitoJUnitRunner.class)
 @Ignore
 public class MysqlDatabaseUpgradeTest {
-    private String HOST_NAME = "localhost";
-    private int PORT = 3306;
+    private String HOST_NAME = DBCredentials.MYSQL_HOST;
+    private int PORT = DBCredentials.MYSQL_PORT;
     private String DB_USER_NAME = "gateway";
     private String DB_USER_PASSWORD = "7layer";
-    private String ADMIN_USER_NAME = "root";
-    private String ADMIN_USER_PASSWORD = "7layer";
+    private String ADMIN_USER_NAME = DBCredentials.MYSQL_ROOT_USER;
+    private String ADMIN_USER_PASSWORD = DBCredentials.MYSQL_ROOT_PASSWORD;
 
     private String NEW_DB_NAME = "mysql_database_upgrade_test__new_db_test";
     private String UPGRADE_DB_NAME = "mysql_database_upgrade_test__upgrade_db_test";
