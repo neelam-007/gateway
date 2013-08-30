@@ -69,7 +69,7 @@ public class SecurityZoneMO extends AccessibleObject {
     }
 
     /**
-     * Set the permitted entity tyes for this security zone
+     * Set the permitted entity types for this security zone
      *
      * <p>Recognised entity types are:
      * <ul>
