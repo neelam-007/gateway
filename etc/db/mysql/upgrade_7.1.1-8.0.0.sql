@@ -1841,6 +1841,8 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('wsdm_subscription', @wsdm_subscription_prefix),
       ('password_history', @password_history_prefix);
 
+-- SSM-4482 widen value column
+alter table rbac_predicate_attribute modify value varchar(4096);
 
 --
 -- Reenable FK at very end of script

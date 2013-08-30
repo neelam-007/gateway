@@ -1631,3 +1631,6 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('trusted_esm_user', cast(getVariable('trusted_esm_user_prefix') as bigint)),
       ('wsdm_subscription', cast(getVariable('wsdm_subscription_prefix') as bigint)),
       ('password_history_user', cast(getVariable('password_history_prefix') as bigint));
+
+-- SSM-4482 widen value column
+alter table rbac_predicate_attribute alter value set data type varchar(4096);

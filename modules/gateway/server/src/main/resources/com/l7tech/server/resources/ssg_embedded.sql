@@ -717,7 +717,7 @@ create table rbac_predicate (
 create table rbac_predicate_attribute (
     goid CHAR(16) FOR BIT DATA not null,
     attribute varchar(255) not null,
-    value varchar(255),
+    value varchar(4096),
     mode varchar(255),
     primary key (goid)
 );

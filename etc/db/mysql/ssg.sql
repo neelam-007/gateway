@@ -1394,7 +1394,7 @@ DROP TABLE IF EXISTS rbac_predicate_attribute;
 CREATE TABLE rbac_predicate_attribute (
   goid binary(16) NOT NULL,
   attribute varchar(255) default NULL,
-  value varchar(255) default NULL,
+  value varchar(4096) default NULL,
   mode varchar(255) default NULL,
   PRIMARY KEY (goid),
   FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE
