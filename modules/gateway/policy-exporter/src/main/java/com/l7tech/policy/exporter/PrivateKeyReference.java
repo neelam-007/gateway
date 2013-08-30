@@ -52,7 +52,7 @@ public class PrivateKeyReference extends ExternalReference {
                 isDefaultKey = true;
             } else {
                 isDefaultKey = false;
-                localKeystoreGoid = keyable.getNonDefaultKeystoreId();
+                keystoreGoid = keyable.getNonDefaultKeystoreId();
                 keyAlias = keyable.getKeyAlias();
             }
         }
