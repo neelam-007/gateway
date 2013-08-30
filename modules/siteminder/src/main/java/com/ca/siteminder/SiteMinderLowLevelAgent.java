@@ -58,6 +58,9 @@ public class SiteMinderLowLevelAgent {
                     initDef = new InitDef(agentConfig.getHostname(), agentConfig.getSecret(), agentConfig.isNonClusterFailover(), (ServerDef)iter.next());
                 }
             }
+            else {
+                initDef = new InitDef();//if we dont have any configuration assume it's empty
+            }
 
             // additional servers
             while(iter.hasNext()) {

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,11 @@ public class SiteMinderConfigurationManagerImpl
                 if (!c.isEnabled()) {
                     throw new IllegalStateException("SiteMinder Configuration: " + c.getAgentName() + " is disabled.");
                 }
-                agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(c));
+                try {
+                    agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(c));
+                } catch (IllegalArgumentException e) {
+                    throw new SiteMinderApiClassException(ExceptionUtils.getMessage(e));
+                }
                 cache.put(goid, agent);
             }
         }
@@ -62,7 +67,11 @@ public class SiteMinderConfigurationManagerImpl
 
     @Override
     public void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException {
-        new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(config));
+        try {
+            new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(config));
+        } catch (IllegalArgumentException e) {
+            throw new SiteMinderApiClassException(ExceptionUtils.getMessage(e));
+        }
     }
 
     @Override
