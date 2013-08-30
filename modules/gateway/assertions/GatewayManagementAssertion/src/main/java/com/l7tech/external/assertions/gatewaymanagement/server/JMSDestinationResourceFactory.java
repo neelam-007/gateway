@@ -41,7 +41,7 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
                                           final JmsEndpointManager jmsEndpointManager,
                                           final JmsConnectionManager jmsConnectionManager,
                                           final SecurityZoneManager securityZoneManager) {
-        super( false, true, services, securityFilter, transactionManager, jmsEndpointManager, securityZoneManager );
+        super( false, false, services, securityFilter, transactionManager, jmsEndpointManager, securityZoneManager );
         this.jmsConnectionManager = jmsConnectionManager;
     }
 
