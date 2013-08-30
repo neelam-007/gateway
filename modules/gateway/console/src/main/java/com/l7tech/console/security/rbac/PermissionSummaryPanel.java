@@ -36,7 +36,6 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     private static final String SPECIFIC_OBJECTS_LABEL = "A set of specific objects";
     private static final String SERVICE_ID = "serviceid";
     private static final String NODE_ID = "nodeid";
-    static final int MAX_ATTRIBUTE_VAL_LENGTH = 255;
     private JPanel contentPanel;
     private JPanel optionsPanel;
     private RolePermissionsPanel permissionsPanel;
@@ -285,16 +284,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         } else if ((entityType == EntityType.USER || entityType == EntityType.GROUP) && header instanceof IdentityHeader) {
             final IdentityHeader identityHeader = (IdentityHeader) header;
             scope.add(new AttributePredicate(specificEntityPermission, PROVIDER_ID, identityHeader.getProviderGoid().toHexString()));
-            String idValue = identityHeader.getStrId();
-            String mode = null;
-            if (identityHeader.getStrId().length() > MAX_ATTRIBUTE_VAL_LENGTH) {
-                logger.log(Level.WARNING, "Identity id " + identityHeader.getStrId()+ " is being truncated to max chars " + MAX_ATTRIBUTE_VAL_LENGTH + " and attribute predicate mode set to starts with.");
-                idValue = idValue.substring(0, MAX_ATTRIBUTE_VAL_LENGTH);
-                mode = AttributePredicate.STARTS_WITH;
-            }
-            final AttributePredicate attribute = new AttributePredicate(specificEntityPermission, ID, idValue);
-            attribute.setMode(mode);
-            scope.add(attribute);
+            scope.add(new AttributePredicate(specificEntityPermission, ID, identityHeader.getStrId()));
         } else if (entityType == EntityType.SERVICE_USAGE && header instanceof ServiceUsageHeader) {
             final ServiceUsageHeader usageHeader = (ServiceUsageHeader) header;
             scope.add(new AttributePredicate(specificEntityPermission, SERVICE_ID, usageHeader.getServiceGoid().toHexString()));
