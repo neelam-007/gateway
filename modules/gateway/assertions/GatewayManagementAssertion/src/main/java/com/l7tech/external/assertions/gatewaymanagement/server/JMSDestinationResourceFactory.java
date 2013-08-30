@@ -196,7 +196,13 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         if(newJmsConnection.getPassword()!=null){
             oldJmsConnection.setPassword( newJmsConnection.getPassword() );
         }
-        oldJmsConnection.properties( newJmsConnection.properties() );
+
+        // not update the JNDI connection password if not specified
+        Properties newProperties = newJmsConnection.properties();
+        if(oldJmsConnection.properties().containsKey("java.naming.security.credentials") && !newProperties.containsKey("java.naming.security.credentials"))
+            newProperties.setProperty("java.naming.security.credentials",oldJmsConnection.properties().getProperty("java.naming.security.credentials"));
+        oldJmsConnection.properties( newProperties );
+
         oldJmsConnection.setSecurityZone( newJmsConnection.getSecurityZone() );
     }
 
@@ -322,7 +328,9 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         final Map<String,Object> propMap = new HashMap<String,Object>();
 
         for ( final String property : properties.stringPropertyNames() ) {
-            propMap.put( property, properties.getProperty( property ));   
+            // not include JNDI connection password
+            if(!property.equals("java.naming.security.credentials"))
+                propMap.put( property, properties.getProperty( property ));
         }
 
         return propMap;

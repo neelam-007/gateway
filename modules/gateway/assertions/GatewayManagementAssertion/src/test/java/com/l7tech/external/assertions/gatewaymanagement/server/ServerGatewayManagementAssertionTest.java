@@ -488,6 +488,49 @@ public class ServerGatewayManagementAssertionTest {
         assertEquals("Jms Destination identifier:", id, jmsDestination.getAttribute("id"));
     }
 
+    @BugId("SSG-7449")
+    @Test
+    public void testGetJmsDestinationWithJNDIPassword() throws Exception {
+        final Goid id = new Goid(0,1);
+
+        final String idStr = id.toString();
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element jmsDestination = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "JMSDestination" );
+        final Element jmsConnection = XmlUtil.findExactlyOneChildElementByName( jmsDestination, NS_GATEWAY_MANAGEMENT, "JMSConnection" );
+        final Element contextProperties = XmlUtil.findExactlyOneChildElementByName( jmsConnection, NS_GATEWAY_MANAGEMENT, "ContextPropertiesTemplate" );
+
+        assertEquals("Jms Destination identifier:", idStr, jmsDestination.getAttribute("id"));
+
+        try{
+            final Element jndiPassword = XmlUtil.findExactlyOneChildElementByName( contextProperties, NS_GATEWAY_MANAGEMENT, "java.naming.security.credentials" );
+            fail("Jndi password element found");
+        }catch(MissingRequiredElementException e){
+            // expected
+        }
+    }
+
     @Test
     public void testGetActiveConnector() throws Exception {
         final String id = new Goid(0,2).toString();
@@ -1837,6 +1880,82 @@ public class ServerGatewayManagementAssertionTest {
         JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
         JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
         assertEquals("Password field should be ignored", "password", endpoint.getPassword());
+    }
+    @Test
+    public void testPutJmsDestinationWithJndiPassword() throws Exception {
+        final Goid id = new Goid(0,1);
+        final String idStr = id.toString();
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+id+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "    <l7:JMSDestination id=\""+idStr+"\" version=\"0\">\n" +
+                "        <l7:JMSDestinationDetail id=\""+idStr+"\" version=\"0\">\n" +
+                "            <l7:Name>Test Endpoint 1</l7:Name>\n" +
+                "            <l7:DestinationName>Test Endpoint</l7:DestinationName>\n" +
+                "            <l7:Inbound>false</l7:Inbound>\n" +
+                "            <l7:Enabled>true</l7:Enabled>\n" +
+                "            <l7:Template>false</l7:Template>\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"replyType\">\n" +
+                "                    <l7:StringValue>AUTOMATIC</l7:StringValue>\n" +
+                "                </l7:Property>\n" +
+                "                <l7:Property key=\"outbound.MessageType\">\n" +
+                "                    <l7:StringValue>AUTOMATIC</l7:StringValue>\n" +
+                "                </l7:Property>\n" +
+                "                <l7:Property key=\"useRequestCorrelationId\">\n" +
+                "                    <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "                </l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "        </l7:JMSDestinationDetail>\n" +
+                "        <l7:JMSConnection id=\""+idStr+"\" version=\"0\">\n" +
+                "            <l7:Template>false</l7:Template>\n" +
+                "            <l7:Properties>\n" +
+                "                <l7:Property key=\"jndi.initialContextFactoryClassname\">\n" +
+                "                    <l7:StringValue>com.context.Classname</l7:StringValue>\n" +
+                "                </l7:Property>\n" +
+                "                <l7:Property key=\"jndi.providerUrl\">\n" +
+                "                    <l7:StringValue>ldap://jndi</l7:StringValue>\n" +
+                "                </l7:Property>\n" +
+                "                <l7:Property key=\"queue.connectionFactoryName\">\n" +
+                "                    <l7:StringValue>qcf</l7:StringValue>\n" +
+                "                </l7:Property>\n" +
+                "            </l7:Properties>\n" +
+                "            <l7:ContextPropertiesTemplate/>\n" +
+                "        </l7:JMSConnection>\n" +
+                "    </l7:JMSDestination>\n" +
+                "</s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            private int expectedVersion = 1;
+
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element jmsDestination = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "JMSDestination");
+                final Element jmsDestinationDetail = XmlUtil.findExactlyOneChildElementByName(jmsDestination, NS_GATEWAY_MANAGEMENT, "JMSDestinationDetail");
+                final Element jmsDestinationDetailName = XmlUtil.findExactlyOneChildElementByName(jmsDestinationDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+                final int version = expectedVersion++;
+
+                assertEquals("JMS destination id", idStr, jmsDestination.getAttribute( "id" ));
+                assertEquals("JMS destination version", Integer.toString( version ), jmsDestination.getAttribute( "version" ));
+                assertEquals("JMS destination detail id", idStr , jmsDestinationDetail.getAttribute( "id" ));
+                assertEquals("JMS destination detail version", Integer.toString( version ), jmsDestinationDetail.getAttribute( "version" ));
+                assertEquals("JMS destination detail name", "Test Endpoint 1", XmlUtil.getTextValue(jmsDestinationDetailName));
+            }
+        };
+
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+
+        // Added for SSG-5693
+        JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
+        JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
+        assertEquals("Password field should be ignored", "password", endpoint.getPassword());
+
+        // Added for SSG-7449
+        JmsConnectionManagerStub jmsConnectionManager = beanFactory.getBean( "jmsConnectionManager",  JmsConnectionManagerStub.class);
+        JmsConnection connection = jmsConnectionManager.findByPrimaryKey(id);
+        assertEquals("JNDI Password field should be ignored", "jndi-password", connection.properties().getProperty("java.naming.security.credentials"));
     }
 
     @Test
@@ -3366,6 +3485,11 @@ public class ServerGatewayManagementAssertionTest {
         // Added for SSG-5693
         connection.setUsername("user");
         connection.setPassword("password");
+        // Added for SSG-7449
+        Properties connectionProperties = connection.properties();
+        connectionProperties.setProperty("java.naming.security.credentials","jndi-password");
+        connectionProperties.setProperty("com.l7tech.server.jms.prop.hardwired.service.bool","false");
+        connection.properties(connectionProperties);
         return connection;
     }
 
