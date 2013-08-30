@@ -97,7 +97,7 @@ public class DefaultAliasTracker {
         SpecialKeyInfo info = info().infoByType.get(type);
         return info != null && info.entry != null &&
                 entry.getAlias().equalsIgnoreCase(info.entry.getAlias()) &&
-                entry.getKeystoreId() == info.entry.getKeystoreId();
+                entry.getKeystoreId().equals(info.entry.getKeystoreId());
     }
 
     public boolean isSpecialKey(Goid keystoreId, String alias, SpecialKeyType type) {
