@@ -7,6 +7,10 @@ import java.lang.reflect.Method;
 
 /**
  * Filter used by {@link SafeXMLDecoder} to check if a class, constuctor or method should be permitted.
+ * <p/>
+ * Classes should generally be permitted for XML decoding <b>only</b> if they are pure data storage bean classes
+ * whose static and class initializers and whitelisted constructors and methods have <b>no side-effects</b> that
+ * could be used/combined in unexpected ways by an attacker providing specially-crafted XML to decode.
  */
 public interface ClassFilter {
 
