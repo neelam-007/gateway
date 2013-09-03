@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -34,6 +35,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.AssertionAccessManagerStub;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -49,6 +51,7 @@ import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
@@ -58,6 +61,7 @@ import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
@@ -699,6 +703,103 @@ public class ServerGatewayManagementAssertionTest {
         assertEquals(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, DomUtils.getTextValue(storeNameElm));
         assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
         assertEquals("PHhtbD5UZXN0IHZhbHVlPC94bWw+", DomUtils.getTextValue(valueElm));
+    }
+
+    @Test
+    public void testGetSiteminderByKey() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/siteMinderConfigurations</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element siteminderConfigurationElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SiteMinderConfiguration");
+        final Element nameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element agentNameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "AgentName");
+        final Element addressElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "Address");
+
+        assertEquals("Config 1", DomUtils.getTextValue(nameElm));
+        assertEquals("agent 1", DomUtils.getTextValue(agentNameElm));
+    }
+
+    @Test
+    public void testGetAssertionSecurityZoneByKey() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/assertionSecurityZones</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element assSecurityZoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "AssertionSecurityZone");
+        final Element nameElm = XmlUtil.findExactlyOneChildElementByName(assSecurityZoneElm, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Test assertion access 1", DomUtils.getTextValue(nameElm));
+        assertEquals(idStr, assSecurityZoneElm.getAttribute("securityZoneId"));
+    }
+
+    @Test
+    public void testGetSecurityZoneByKey() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/securityZones</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SecurityZone");
+        final Element nameElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Test Security Zone 0001", DomUtils.getTextValue(nameElm));
     }
 
     @Test
@@ -1407,6 +1508,60 @@ public class ServerGatewayManagementAssertionTest {
             "</l7:CustomKeyValue>";
 
         String expectedId = new Goid(0,2).toString();
+        doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreateSiteminderConfig() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/siteMinderConfigurations";
+        String payload =
+                "<l7:SiteMinderConfiguration xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "   <l7:Name>New Config</l7:Name>\n" +
+                "   <l7:AgentName>agent name</l7:AgentName>\n" +
+                "   <l7:Address>0.0.0.999</l7:Address>\n" +
+                "   <l7:Hostname>localhost</l7:Hostname>\n" +
+                "   <l7:HostConfiguration>55</l7:HostConfiguration>\n" +
+                "   <l7:UserName>user</l7:UserName>\n" +
+                "   <l7:PasswordId>00000000000000000000000000000001</l7:PasswordId>\n" +
+                "   <l7:Enabled>true</l7:Enabled>\n" +
+                "   <l7:FipsMode>3</l7:FipsMode>\n" +
+                "   <l7:IpCheck>false</l7:IpCheck>\n" +
+                "   <l7:UpdateSsoToken>false</l7:UpdateSsoToken>\n" +
+                "   <l7:ClusterThreshold>50</l7:ClusterThreshold>\n" +
+                "   <l7:NonClusterFailover>false</l7:NonClusterFailover>"+
+                "   <l7:Secret>secret</l7:Secret>\n" +
+                "   <l7:Properties/>\n" +
+                "</l7:SiteMinderConfiguration>";
+
+        String expectedId = new Goid(0,3).toString();
+        doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreateAssertionSecurityZone() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/assertionSecurityZones";
+        String payload =
+                "<l7:AssertionSecurityZone xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"  securityZoneId=\"00000000000000000000000000000002\">\n" +
+                        "   <l7:Name>New Assertion Security Zone</l7:Name>\n" +
+                        "</l7:AssertionSecurityZone>";
+
+        String expectedId = new Goid(0,3).toString();
+        doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreateSecurityZone() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/securityZones";
+        String payload =
+                "<l7:SecurityZone id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:Name>New Security Zone</l7:Name>\n" +
+                "    <l7:Description>Canned New Security Zone</l7:Description>\n" +
+                "    <l7:PermittedEntityTypes>\n" +
+                "        <l7:StringValue>FOLDER</l7:StringValue>\n" +
+                "    </l7:PermittedEntityTypes>\n" +
+                "</l7:SecurityZone>";
+
+        String expectedId = new Goid(0,3).toString();
         doCreate(resourceUri, payload, expectedId);
     }
 
@@ -2306,6 +2461,152 @@ public class ServerGatewayManagementAssertionTest {
                 assertEquals(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, DomUtils.getTextValue(storeNameElm));
                 assertEquals("key.prefix.key1", DomUtils.getTextValue(keyElm));
                 assertEquals("PHhtbD5UZXN0IHZhbHVlIC0gVXBkYXRlZDwveG1sPg==", DomUtils.getTextValue(valueElm));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutSiteminderConfig() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/siteMinderConfigurations</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:SiteMinderConfiguration xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "       <l7:Name>New Config 1</l7:Name>\n" +
+                        "       <l7:AgentName>agent 1</l7:AgentName>\n" +
+                        "       <l7:Address>0.0.0.999</l7:Address>\n" +
+                        "       <l7:Hostname>localhost</l7:Hostname>\n" +
+                        "       <l7:HostConfiguration>55</l7:HostConfiguration>\n" +
+                        "       <l7:UserName>user</l7:UserName>\n" +
+                        "       <l7:PasswordId>00000000000000000000000000000001</l7:PasswordId>\n" +
+                        "       <l7:Enabled>true</l7:Enabled>\n" +
+                        "       <l7:FipsMode>3</l7:FipsMode>\n" +
+                        "       <l7:IpCheck>false</l7:IpCheck>\n" +
+                        "       <l7:UpdateSsoToken>false</l7:UpdateSsoToken>\n" +
+                        "       <l7:ClusterThreshold>50</l7:ClusterThreshold>\n" +
+                        "       <l7:NonClusterFailover>false</l7:NonClusterFailover>"+
+                        "       <l7:Secret>secret</l7:Secret>\n" +
+                        "       <l7:Properties/>\n" +
+                        "    </l7:SiteMinderConfiguration>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element siteminderConfigElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SiteMinderConfiguration");
+                final Element nameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigElm, NS_GATEWAY_MANAGEMENT, "Name");
+                final Element agentNameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigElm, NS_GATEWAY_MANAGEMENT, "AgentName");
+
+                assertEquals("New Config 1", DomUtils.getTextValue(nameElm));
+                assertEquals("agent 1", DomUtils.getTextValue(agentNameElm));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutAssertionSecurityZone() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/assertionSecurityZones</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:AssertionSecurityZone xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"00000000000000000000000000000001\">\n" +
+                        "       <l7:Name>New AssertionSecurityZone</l7:Name>\n" +
+                        "    </l7:AssertionSecurityZone>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "AssertionSecurityZone");
+                final Element nameElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "Name");
+
+                assertEquals("New AssertionSecurityZone", DomUtils.getTextValue(nameElm));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutSecurityZone() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                "  <s:Header>\n" +
+                "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                "    <a:ReplyTo> \n" +
+                "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                "    </a:ReplyTo> \n" +
+                "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/securityZones</w:ResourceURI> \n" +
+                "    <w:SelectorSet>\n" +
+                "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                "    </w:SelectorSet>\n" +
+                "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                "  </s:Header>\n" +
+                "  <s:Body> \n" +
+                "     <l7:SecurityZone id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "            <l7:Name>New Name Security Zone 0001</l7:Name>\n" +
+                "            <l7:Description>Canned New Name Security Zone 0001</l7:Description>\n" +
+                "            <l7:PermittedEntityTypes>\n" +
+                "                <l7:StringValue>SERVICE</l7:StringValue>\n" +
+                "                <l7:StringValue>SERVICE_ALIAS</l7:StringValue>\n" +
+                "                <l7:StringValue>JDBC_CONNECTION</l7:StringValue>\n" +
+                "                <l7:StringValue>ASSERTION_ACCESS</l7:StringValue>\n" +
+                "            </l7:PermittedEntityTypes>\n" +
+                "        </l7:SecurityZone>\n" +
+                "  </s:Body>\n" +
+                "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SecurityZone");
+                final Element nameElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "Name");
+
+                assertEquals("New Name Security Zone 0001", DomUtils.getTextValue(nameElm));
             }
         };
 
@@ -3378,6 +3679,23 @@ public class ServerGatewayManagementAssertionTest {
 
         beanFactory.addBean("securityZoneManager", new SecurityZoneManagerStub( securityZone1, securityZone2 ));
 
+        // siteminder
+        beanFactory.addBean("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub(
+                siteminderConfiguration(new Goid(0, 1L), "Config 1","agent 1","0.0.0.0","secret","localhost",3),
+                siteminderConfiguration(new Goid(0, 2L), "Config 2","agent 2","0.0.0.0","secret","localhost",3)));
+
+        // assertion security zone
+        final AssertionAccess assAccess1 = new AssertionAccess();
+        assAccess1.setGoid(new Goid(0,1));
+        assAccess1.setName("Test assertion access 1");
+        assAccess1.setSecurityZone(securityZone1);
+
+        final AssertionAccess assAccess2 = new AssertionAccess();
+        assAccess2.setGoid(new Goid(0,2));
+        assAccess2.setName("Test assertion access 2");
+        assAccess2.setSecurityZone(securityZone2);
+        beanFactory.addBean("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
+
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
                 new FilterClassLoader(systemClassLoader, systemClassLoader,
@@ -3561,6 +3879,27 @@ public class ServerGatewayManagementAssertionTest {
         }
 
         return connector;
+    }
+
+    private static SiteMinderConfiguration siteminderConfiguration(final Goid goid,
+                                                                   final String name,
+                                                                   final String agentName,
+                                                                   final String address,
+                                                                   final String secret,
+                                                                   final String hostname,
+                                                                   final int fipsmode)
+    {
+        final SiteMinderConfiguration configuration = new SiteMinderConfiguration();
+        configuration.setGoid(goid);
+        configuration.setName(name);
+        configuration.setAgentName(agentName);
+        configuration.setAddress(address);
+        configuration.setSecret(secret);
+        configuration.setHostname(hostname);
+        configuration.setFipsmode(fipsmode);
+        configuration.setProperties(new HashMap<String, String>());
+        configuration.putProperty("property","value");
+        return configuration;
     }
 
     private static EncapsulatedAssertionConfig encapsulatedAssertion(final Goid goid, final String name, final String guid, final Policy policy,
