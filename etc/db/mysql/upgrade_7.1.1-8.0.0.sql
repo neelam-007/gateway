@@ -342,7 +342,7 @@ update password_history set goid = toGoid(@password_history_prefix,objectid_back
 ALTER TABLE password_history DROP COLUMN objectid_backup;
 
 
---Keystore
+-- Keystore
 ALTER TABLE keystore_file ADD COLUMN objectid_backup BIGINT(20);
 update keystore_file set objectid_backup=objectid;
 ALTER TABLE keystore_file CHANGE COLUMN objectid goid BINARY(16) NOT NULL;
