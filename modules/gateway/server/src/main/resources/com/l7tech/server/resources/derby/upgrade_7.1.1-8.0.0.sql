@@ -1641,3 +1641,10 @@ alter table policy_alias
     foreign key (policy_goid)
     references policy
     on delete cascade;
+
+-- SSG-7486 add foreign key constraint to sample_messages
+alter table sample_messages
+    add constraint FK_SAMPLE_MESSAGE_PUB_SERVICE
+    foreign key (published_service_goid)
+    references published_service
+    on delete cascade;

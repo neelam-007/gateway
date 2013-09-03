@@ -1238,6 +1238,12 @@ alter table uddi_proxied_service
     references uddi_proxied_service_info
     on delete cascade;
 
+alter table sample_messages
+    add constraint FK_SAMPLE_MESSAGE_PUB_SERVICE
+    foreign key (published_service_goid)
+    references published_service
+    on delete cascade;
+
 -- **************************************************************************
 -- Populate initial data
 -- **************************************************************************
