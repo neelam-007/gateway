@@ -19,7 +19,6 @@ import java.util.Set;
  * @author Victor Kazakov
  */
 @RunWith(MockitoJUnitRunner.class)
-@Ignore
 public class MysqlDatabaseUpgradeTest {
     private String HOST_NAME = DBCredentials.MYSQL_HOST;
     private int PORT = DBCredentials.MYSQL_PORT;
