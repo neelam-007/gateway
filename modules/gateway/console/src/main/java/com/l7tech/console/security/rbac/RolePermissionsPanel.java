@@ -337,17 +337,19 @@ public class RolePermissionsPanel extends JPanel {
         public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
             Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (value instanceof Boolean && component instanceof JLabel) {
+                String tooltip = null;
                 final Boolean booleanValue = (Boolean) value;
                 final JLabel label = (JLabel) component;
                 label.setIcon(booleanValue ? CHECK : CROSS);
                 label.setText(StringUtils.EMPTY);
                 if (booleanValue && column == columnIndices.get(OTHER)) {
                     int modelIndex = permissionsTable.convertRowIndexToModel(row);
-                    if (modelIndex > 0) {
+                    if (modelIndex >= 0) {
                         final PermissionGroup permissionGroup = permissionsModel.getRowObject(modelIndex);
-                        label.setToolTipText(StringUtils.join(permissionGroup.getOtherOperations(), ","));
+                        tooltip = StringUtils.join(permissionGroup.getOtherOperations(), ",");
                     }
                 }
+                label.setToolTipText(tooltip);
             }
             return component;
         }
@@ -434,9 +436,7 @@ public class RolePermissionsPanel extends JPanel {
                 } else {
                     // no tooltip
                 }
-                if (tooltip != null) {
-                    label.setToolTipText(tooltip);
-                }
+                label.setToolTipText(tooltip);
             }
             return component;
         }
