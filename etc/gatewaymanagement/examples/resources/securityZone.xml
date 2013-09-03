@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SecurityZone xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="A4353AA1ABDDA228CB36AF06D388000D">
+    <Name>Example</Name>
+    <Description>Example description</Description>
+    <PermittedEntityTypes>
+        <StringValue>SERVICE</StringValue>
+        <StringValue>SERVICE_ALIAS</StringValue>
+        <StringValue>JMS_CONNECTION</StringValue>
+    </PermittedEntityTypes>
+</SecurityZone>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SiteMinderConfiguration xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="A4353AA1ABDDA228CB36AF06D388000D">
+    <Name>Config 1</Name>
+    <AgentName>agent 1</AgentName>
+    <Address>0.0.0.0</Address>
+    <Hostname>localhost</Hostname>
+    <HostConfiguration>config</HostConfiguration>
+    <UserName>user</UserName>
+    <Enabled>true</Enabled>
+    <FipsMode>3</FipsMode>
+    <IpCheck>false</IpCheck>
+    <UpdateSsoToken>false</UpdateSsoToken>
+    <ClusterThreshold>50</ClusterThreshold>
+    <NonClusterFailover>false</NonClusterFailover>
+    <Properties>
+        <Property key="server.0.0.address">
+            <StringValue>0.0.0.0</StringValue>
+        </Property>
+        <Property key="server.0.0.authentication.port">
+            <StringValue>44442</StringValue>
+        </Property>
+        <Property key="server.0.0.accounting.port">
+            <StringValue>44441</StringValue>
+        </Property>
+        <Property key="server.0.0.connection.max">
+            <StringValue>3</StringValue>
+        </Property>
+        <Property key="server.0.0.connection.min">
+            <StringValue>1</StringValue>
+        </Property>
+        <Property key="server.0.0.authorization.port">
+            <StringValue>44443</StringValue>
+        </Property>
+        <Property key="server.0.0.timeout">
+            <StringValue>60</StringValue>
+        </Property>
+        <Property key="server.0.0.connection.step">
+            <StringValue>1</StringValue>
+        </Property>
+    </Properties>
+</SiteMinderConfiguration>

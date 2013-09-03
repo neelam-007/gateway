@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ActiveConnector xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="A4353AA1ABDDA228CB36AF06D388000D">
+    <Name>Example</Name>
+    <Enabled>true</Enabled>
+    <Type>SFTP</Type>
+    <HardwiredId>4B483AA1ABDDA228CB36AF06D388000D</HardwiredId>
+    <Properties>
+        <Property key="SftpHost">
+            <StringValue>host</StringValue>
+        </Property>
+        <Property key="SftpPort">
+            <StringValue>1234</StringValue>
+        </Property>
+        <Property key="SftpSecurePasswordOid">
+            <StringValue>00000000000000000000000000000002</StringValue>
+        </Property>
+        <Property key="SftpUsername">
+            <StringValue>user</StringValue>
+        </Property>
+        <Property key="SftpDirectory">
+            <StringValue>dir</StringValue>
+        </Property>
+    </Properties>
+</ActiveConnector>

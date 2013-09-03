@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CustomKeyValue xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="A4353AA1ABDDA228CB36AF06D388000D">
+    <StoreName>ExampleStore</StoreName>
+    <Key>key</Key>
+    <Value>value</Value>
+</CustomKeyValue>

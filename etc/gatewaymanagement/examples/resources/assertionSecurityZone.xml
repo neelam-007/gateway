@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssertionSecurityZone xmlns="http://ns.l7tech.com/2010/04/gateway-management"
+                       securityZoneId="A4353A468BDDA228CB36AF06D388000D"
+                       version="0"
+                       id="A4353AA1ABDDA228CB36AF06D388000D">
+    <Name>Example</Name>
+</AssertionSecurityZone>
