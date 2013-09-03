@@ -9,7 +9,6 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.*;
 
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -211,7 +210,7 @@ public class KeystoreFilePropertyManager {
             if (resultSet.next()) {
                 String xml = resultSet.getString(1);
                 if ( xml != null && xml.length() > 0 ) {
-                    XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
+                    final SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8))).build();
                     //noinspection unchecked
                     properties = (Map<String, String>)xd.readObject();
                 } else {

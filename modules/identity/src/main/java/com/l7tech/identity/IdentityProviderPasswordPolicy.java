@@ -3,10 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -142,7 +139,7 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
             properties.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
             //noinspection unchecked
             properties = (Map<String, Object>) decoder.readObject();
         }

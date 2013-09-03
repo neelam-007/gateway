@@ -1,21 +1,16 @@
 package com.l7tech.gateway.common;
 
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.PersistentUser;
-import com.l7tech.identity.GroupMembership;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.Group;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -24,11 +19,12 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.TestDocuments;
+import com.l7tech.util.SafeXMLDecoder;
+import com.l7tech.util.SafeXMLDecoderBuilder;
+import com.l7tech.util.StringClassFilter;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.WSDLException;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
 import java.util.*;
@@ -274,9 +270,12 @@ public class StubDataStore {
 
     private void reconstituteFrom(String path)
       throws FileNotFoundException {
-        XMLDecoder decoder = null;
+        SafeXMLDecoder decoder = null;
         try {
-            decoder = new XMLDecoder(new BufferedInputStream(new FileInputStream(path)));
+            decoder = new SafeXMLDecoderBuilder(new BufferedInputStream(new FileInputStream(path)))
+                    .addClassFilter(new StringClassFilter(classes, constructors, methods))
+                    .build();
+
             //noinspection InfiniteLoopStatement
             while (true) {
                 populate(decoder.readObject());
@@ -343,6 +342,50 @@ public class StubDataStore {
     private Map<Goid, JmsEndpoint> jmsEndpoints = new HashMap<Goid, JmsEndpoint>();
 
     private long objectIdSequence = 100;
+
+    private static final Set<String> classes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.identity.IdentityProviderConfig",
+            "com.l7tech.identity.internal.InternalUser",
+            "com.l7tech.identity.internal.InternalGroup",
+            "com.l7tech.gateway.common.service.PublishedService",
+            "java.lang.Enum",
+            "com.l7tech.common.http.HttpMethod",
+            "com.l7tech.gateway.common.transport.jms.JmsConnection",
+            "com.l7tech.gateway.common.transport.jms.JmsEndpoint"
+    )));
+
+    private static final Set<String> constructors = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.identity.IdentityProviderConfig()",
+            "com.l7tech.identity.internal.InternalUser()",
+            "com.l7tech.identity.internal.InternalGroup()",
+            "com.l7tech.gateway.common.service.PublishedService()",
+            "com.l7tech.gateway.common.transport.jms.JmsConnection()",
+            "com.l7tech.gateway.common.transport.jms.JmsEndpoint()"
+    )));
+
+    private static final Set<String> methods = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.identity.IdentityProviderConfig.setDescription(java.lang.String)",
+            "com.l7tech.objectmodel.imp.PersistentEntityImp.setId(java.lang.String)",
+            "com.l7tech.objectmodel.imp.NamedEntityImp.setName(java.lang.String)",
+            "com.l7tech.identity.IdentityProviderConfig.setTypeVal(int)",
+            "com.l7tech.identity.PersistentUser.setEmail(java.lang.String)",
+            "com.l7tech.identity.PersistentUser.setFirstName(java.lang.String)",
+            "com.l7tech.identity.PersistentUser.setLastName(java.lang.String",
+            "com.l7tech.identity.PersistentUser.setLastName(java.lang.String)",
+            "com.l7tech.identity.PersistentUser.setLogin(java.lang.String)",
+            "com.l7tech.identity.PersistentGroup.setDescription(java.lang.String)",
+            "com.l7tech.gateway.common.service.PublishedService.getHttpMethods()",
+            "java.util.RegularEnumSet.clear()",
+            "java.lang.Enum.valueOf(java.lang.Class,java.lang.String)",
+            "java.util.RegularEnumSet.add(java.lang.Enum)",
+            "com.l7tech.gateway.common.service.PublishedService.getPolicy()",
+            "com.l7tech.policy.Policy.setSoap(boolean)",
+            "com.l7tech.policy.Policy.setXml(java.lang.String)",
+            "com.l7tech.gateway.common.service.PublishedService.setWsdlUrl(java.lang.String)",
+            "com.l7tech.gateway.common.service.PublishedService.setWsdlXml(java.lang.String)",
+            "com.l7tech.gateway.common.transport.jms.JmsConnection.setJndiUrl(java.lang.String)",
+            "com.l7tech.gateway.common.transport.jms.JmsEndpoint.setDestinationName(java.lang.String)"
+    )));
 
     /**
      * initial seed data load.

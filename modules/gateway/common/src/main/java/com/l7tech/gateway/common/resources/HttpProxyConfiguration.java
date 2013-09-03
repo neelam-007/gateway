@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.XmlSafe;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
@@ -14,14 +15,17 @@ import java.io.Serializable;
  * Bean for HTTP proxy configuration properties.
  */
 @Embeddable
+@XmlSafe
 public class HttpProxyConfiguration implements Serializable {
 
     //- PUBLIC
 
+    @XmlSafe
     public HttpProxyConfiguration(){
         locked = false;
     }
 
+    @XmlSafe
     public HttpProxyConfiguration( final HttpProxyConfiguration httpProxyConfiguration,
                                    final boolean lock ) {
         this.locked = lock;
@@ -33,36 +37,43 @@ public class HttpProxyConfiguration implements Serializable {
         }
     }
 
+    @XmlSafe
     @Column(name="proxy_host", length=128)
     public String getHost() {
         return host;
     }
 
+    @XmlSafe
     public void setHost( final String host ) {
         checkLocked();
         this.host = host;
     }
 
+    @XmlSafe
     @Column(name="proxy_port")
     public int getPort() {
         return port;
     }
 
+    @XmlSafe
     public void setPort( final int port ) {
         checkLocked();
         this.port = port;
     }
 
+    @XmlSafe
     @Column(name="proxy_username", length=255)
     public String getUsername() {
         return username;
     }
 
+    @XmlSafe
     public void setUsername( final String username ) {
         checkLocked();
         this.username = username;
     }
 
+    @XmlSafe
     @Column(name="proxy_password_goid")
     @Type(type = "com.l7tech.server.util.GoidType")
     @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
@@ -70,6 +81,7 @@ public class HttpProxyConfiguration implements Serializable {
         return passwordGoid;
     }
 
+    @XmlSafe
     public void setPasswordGoid(final Goid passwordGoid) {
         checkLocked();
         this.passwordGoid = passwordGoid;
@@ -79,6 +91,7 @@ public class HttpProxyConfiguration implements Serializable {
      * @deprecated This is only needed here for de-serialization purposed for the ioHttpProxy cluster property
      */
     @Deprecated
+    @XmlSafe
     public void setPasswordOid(final Long passwordOid) {
         checkLocked();
         this.passwordGoid = GoidUpgradeMapper.mapOid(EntityType.SECURE_PASSWORD, passwordOid);

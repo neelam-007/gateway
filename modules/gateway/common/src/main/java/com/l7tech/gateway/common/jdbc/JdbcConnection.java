@@ -4,10 +4,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -175,7 +172,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
             additionalProps.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
             //noinspection unchecked
             additionalProps = (Map<String, Object>) decoder.readObject();
         }

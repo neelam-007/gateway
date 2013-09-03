@@ -17,9 +17,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.FederatedIdProviderReference;
 import com.l7tech.policy.exporter.IdProviderReference;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Resolver;
-import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -257,7 +255,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         String szedProps = unresolvedRef.getIdProviderConfProps();
         if (szedProps != null) {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(szedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
             Map props = (Map)decoder.readObject();
             Set keys = props.keySet();
             for (Object key : keys) {

@@ -13,8 +13,7 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.beans.ExceptionListener;
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,12 +142,15 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
             props.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in, null, new ExceptionListener() {
-                @Override
-                public void exceptionThrown( final Exception e ) {
-                    logger.log( Level.WARNING, "Error loading configuration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                }
-            });
+            final SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
+                    .addClassFilter(new StringClassFilter(classes, constructors, methods))
+/*                    .setExceptionListener(new ExceptionListener() {
+                        @Override
+                        public void exceptionThrown(final Exception e) {
+                            logger.log(Level.WARNING, "Error loading configuration '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+                        }
+                    })*/
+                    .build();
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();
         }
@@ -320,4 +322,16 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
 
     private String propsXml;
     private Map<String, Object> props = new HashMap<String, Object>();
+
+    private static final Set<String> classes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.security.types.CertificateValidationType"
+    )));
+
+    private static final Set<String> constructors = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.security.types.CertificateValidationType()"
+    )));
+
+    private static final Set<String> methods = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "com.l7tech.security.types.CertificateValidationType.valueOf(java.lang.String)"
+    )));
 }

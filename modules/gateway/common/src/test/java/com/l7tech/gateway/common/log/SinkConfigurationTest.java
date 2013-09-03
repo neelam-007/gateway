@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.log;
 
 import com.l7tech.objectmodel.SecurityZone;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,5 +66,13 @@ public class SinkConfigurationTest {
         copy.setSecurityZone(new SecurityZone());
         copy.copyFrom(s1);
         assertNull(copy.getSecurityZone());
+    }
+
+    @Test
+    public void testLoadingProperties(){
+        String xml = "<java version=\"1.6.0\" class=\"java.beans.XMLDecoder\"><object class=\"java.util.HashMap\"><void method=\"put\"><string>file.maxSize</string><string>20000</string></void><void method=\"put\"><string>file.format</string><string>STANDARD</string></void><void method=\"put\"><string>file.logCount</string><string>10</string></void></object></java>";
+        SinkConfiguration sinkConfiguration = new SinkConfiguration();
+        sinkConfiguration.setXmlProperties(xml);
+        Assert.assertEquals("20000", sinkConfiguration.getProperty("file.maxSize"));
     }
 }

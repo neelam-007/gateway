@@ -1,5 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 
 /**
@@ -12,35 +14,44 @@ import java.io.Serializable;
  * $Id$<br/>
  *
  */
+@XmlSafe
 public class GroupMappingConfig implements Serializable {
+    @XmlSafe
     public String getObjClass() {
         return objClass;
     }
 
+    @XmlSafe
     public void setObjClass(String objClass) {
         this.objClass = objClass;
     }
 
+    @XmlSafe
     public String getNameAttrName() {
         return nameAttrName;
     }
 
+    @XmlSafe
     public void setNameAttrName(String nameAttrName) {
         this.nameAttrName = nameAttrName;
     }
 
+    @XmlSafe
     public String getMemberAttrName() {
         return memberAttrName;
     }
 
+    @XmlSafe
     public void setMemberAttrName(String memberAttrName) {
         this.memberAttrName = memberAttrName;
     }
 
+    @XmlSafe
     public MemberStrategy getMemberStrategy() {
         return memberStrategy;
     }
 
+    @XmlSafe
     public void setMemberStrategy(MemberStrategy memberStrategy) {
         this.memberStrategy = memberStrategy;
     }
@@ -50,6 +61,7 @@ public class GroupMappingConfig implements Serializable {
     private String memberAttrName;
     private MemberStrategy memberStrategy;
 
+    @XmlSafe
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof GroupMappingConfig)) return false;
@@ -64,6 +76,7 @@ public class GroupMappingConfig implements Serializable {
         return true;
     }
 
+    @XmlSafe
     public int hashCode() {
         int result;
         result = (objClass != null ? objClass.hashCode() : 0);

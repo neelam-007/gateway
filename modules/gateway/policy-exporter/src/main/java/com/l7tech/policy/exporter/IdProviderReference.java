@@ -307,7 +307,7 @@ public class IdProviderReference extends ExternalReference {
             return new HashMap();
         }
         ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-        java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+        SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
         return (Map)decoder.readObject();
     }
 

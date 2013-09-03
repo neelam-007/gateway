@@ -5,10 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.CascadeType;
@@ -421,12 +418,14 @@ public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
             props.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in, null, new ExceptionListener() {
-                @Override
-                public void exceptionThrown( final Exception e ) {
-                    logger.log( Level.WARNING, "Error loading properties '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                }
-            });
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
+/*                    .setExceptionListener(new ExceptionListener() {
+                        @Override
+                        public void exceptionThrown( final Exception e ) {
+                            logger.log( Level.WARNING, "Error loading properties '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                        }
+                    })*/
+                    .build();
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();
         }

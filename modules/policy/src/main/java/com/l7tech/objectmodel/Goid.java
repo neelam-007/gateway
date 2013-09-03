@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.XmlSafe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +17,7 @@ import java.nio.ByteBuffer;
  *
  * @author Victor Kazakov
  */
+@XmlSafe
 public final class Goid implements Comparable<Goid>, Serializable {
     //This is the default Goid
     public static final Goid DEFAULT_GOID = new Goid(0, -1);
@@ -27,6 +29,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * This is needed for serialization
      */
     @SuppressWarnings("UnusedDeclaration")
+    @XmlSafe
     private Goid() {
     }
 
@@ -36,6 +39,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @param high The high long will be the first 8 bytes of the goid
      * @param low  The low long will be the last 8 bytes of the goid
      */
+    @XmlSafe
     public Goid(long high, long low) {
         this.high = high;
         this.low = low;
@@ -48,6 +52,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @param goid The bytes to create the goid from. This must be 16 bytes long
      * @throws IllegalArgumentException This is thrown if the given goid bytes are not 16 bytes long
      */
+    @XmlSafe
     public Goid(byte[] goid) {
         if (goid.length != 16) {
             throw new IllegalArgumentException("Cannot create a goid from a byte array that is not 16 bytes long.");
@@ -64,6 +69,7 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * @param goid A string representation of a goid.
      * @throws IllegalArgumentException This is thrown if the given string does not represent a goid
      */
+    @XmlSafe
     public Goid(@NotNull String goid) {
         byte[] goidFromString;
 

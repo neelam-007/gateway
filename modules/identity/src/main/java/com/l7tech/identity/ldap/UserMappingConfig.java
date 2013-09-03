@@ -1,5 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 
 /**
@@ -10,92 +12,115 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: Jan 20, 2004<br/>
  */
+@XmlSafe
 public class UserMappingConfig implements Serializable {
 
+    @XmlSafe
     public String getObjClass() {
         return objClass;
     }
 
+    @XmlSafe
     public void setObjClass(String objClass) {
         this.objClass = objClass;
     }
 
+    @XmlSafe
     public String getNameAttrName() {
         return nameAttrName;
     }
 
+    @XmlSafe
     public void setNameAttrName(String nameAttrName) {
         this.nameAttrName = nameAttrName;
     }
 
+    @XmlSafe
     public String getLoginAttrName() {
         return loginAttrName;
     }
 
+    @XmlSafe
     public void setLoginAttrName(String loginAttrName) {
         this.loginAttrName = loginAttrName;
     }
 
+    @XmlSafe
     public String getPasswdAttrName() {
         return passwdAttrName;
     }
 
+    @XmlSafe
     public void setPasswdAttrName(String passwdAttrName) {
         this.passwdAttrName = passwdAttrName;
     }
 
+    @XmlSafe
     public String getFirstNameAttrName() {
         return firstNameAttrName;
     }
 
+    @XmlSafe
     public void setFirstNameAttrName(String firstNameAttrName) {
         this.firstNameAttrName = firstNameAttrName;
     }
 
+    @XmlSafe
     public String getLastNameAttrName() {
         return lastNameAttrName;
     }
 
+    @XmlSafe
     public void setLastNameAttrName(String lastNameAttrName) {
         this.lastNameAttrName = lastNameAttrName;
     }
 
+    @XmlSafe
     public String getEmailNameAttrName() {
         return emailNameAttrName;
     }
 
+    @XmlSafe
     public void setEmailNameAttrName(String emailNameAttrName) {
         this.emailNameAttrName = emailNameAttrName;
     }
 
+    @XmlSafe
     public String getKerberosAttrName() {
         return kerberosAttrName;
     }
 
+    @XmlSafe
     public void setKerberosAttrName( String kerberosAttrName ) {
         this.kerberosAttrName = kerberosAttrName;
     }
 
+    @XmlSafe
     public String getKerberosEnterpriseAttrName() {
         return kerberosEnterpriseAttrName;
     }
 
+    @XmlSafe
     public void setKerberosEnterpriseAttrName( String kerberosEnterpriseAttrName ) {
         this.kerberosEnterpriseAttrName = kerberosEnterpriseAttrName;
     }
 
+    @XmlSafe
     public PasswdStrategy getPasswdType() {
         return passwdType;
     }
 
+    @XmlSafe
     public void setPasswdType(PasswdStrategy passwdType) {
         this.passwdType = passwdType;
     }
 
+    @XmlSafe
     public String getUserCertAttrName() {
         return userCertAttrName;
     }
 
+    @XmlSafe
     public void setUserCertAttrName(String userCertAttrName) {
         this.userCertAttrName = userCertAttrName;
     }    

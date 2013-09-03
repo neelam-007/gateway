@@ -9,13 +9,14 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.SafeXMLDecoder;
+import com.l7tech.util.SafeXMLDecoderBuilder;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
@@ -59,7 +60,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING))).build();
             //noinspection unchecked
             this.properties = (Map<String, String>)xd.readObject();
         }

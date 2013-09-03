@@ -7,16 +7,12 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.sql.SQLException;
@@ -505,9 +501,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
         }
 
-        XMLDecoder decoder = null;
+        SafeXMLDecoder decoder = null;
         try {
-            decoder = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)), null, null, entityClass.getClassLoader());
+             decoder = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
+                    .setClassLoader(entityClass.getClassLoader()).build();
+
             Object obj = decoder.readObject();
             if (entityClass.isInstance(obj)) {
                 ET ret = entityClass.cast(obj);

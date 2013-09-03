@@ -3,13 +3,9 @@ package com.l7tech.server.ems.monitoring;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.util.Config;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.server.ems.EsmConfigParams;
+import com.l7tech.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -115,7 +111,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
         if (serializedSettings != null && serializedSettings.length() >= 2) {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedSettings));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
             settingsMap = (Map<String, Object>) decoder.readObject();
         }
 

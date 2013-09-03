@@ -5,10 +5,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 import org.mortbay.util.ajax.JSON;
@@ -138,7 +135,7 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
             settingsProps.clear();
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
             //noinspection unchecked
             settingsProps = (Map<String, Object>) decoder.readObject();
         }

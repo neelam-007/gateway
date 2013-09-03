@@ -23,11 +23,7 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.*;
-import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.wsdl.SerializableWSDLLocator;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.wsdl.PrettyGoodWSDLLocator;
-import com.l7tech.wsdl.WsdlEntityResolver;
+import com.l7tech.wsdl.*;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
@@ -54,7 +50,6 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
 import java.math.BigInteger;
@@ -788,7 +783,7 @@ public class GClient {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(selected);
-                XMLDecoder dec = new XMLDecoder(fis);
+                SafeXMLDecoder dec = new SafeXMLDecoderBuilder(fis).build();
                 Object obj = dec.readObject();
                 if (obj instanceof GClient) {
                     GClient gClient = (GClient)obj;

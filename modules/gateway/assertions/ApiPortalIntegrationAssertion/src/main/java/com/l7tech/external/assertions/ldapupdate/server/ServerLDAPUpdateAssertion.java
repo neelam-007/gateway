@@ -22,7 +22,6 @@ import org.springframework.beans.factory.BeanFactory;
 import javax.naming.directory.*;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBException;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -280,7 +279,7 @@ public class ServerLDAPUpdateAssertion extends AbstractServerAssertion<LDAPUpdat
                 String serializedProps = identityProvider.getConfig().getSerializedProps();
                 if (serializedProps != null) {
                     ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
-                    XMLDecoder decoder = new XMLDecoder(in);
+                    SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in).build();
                     Map mapProps = (Map) decoder.readObject();
                     String templateName = (String) mapProps.get("originalTemplateName");
                     if (templateName != null) {

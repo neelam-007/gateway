@@ -1,5 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 
 /**
@@ -12,7 +14,9 @@ import java.io.Serializable;
  * $Id$<br/>
  *
  */
+@XmlSafe
 public class MemberStrategy implements Serializable {
+    @XmlSafe
     public boolean equals(Object obj) {
         if (!(obj instanceof MemberStrategy)) return false;
         MemberStrategy otherone = (MemberStrategy)obj;
@@ -20,22 +24,28 @@ public class MemberStrategy implements Serializable {
         return false;
     }
 
+    @XmlSafe
     public int hashCode() {
         return val;
     }
+
+    @XmlSafe
     private MemberStrategy(int val) {
         this.val = val;
     }
     private int val;
 
     // for serialization purposes only
+    @XmlSafe
     public MemberStrategy() {
     }
     // for serialization purposes only
+    @XmlSafe
     public int getVal() {
         return val;
     }
     // for serialization purposes only
+    @XmlSafe
     public void setVal(int val) {
         this.val = val;
     }

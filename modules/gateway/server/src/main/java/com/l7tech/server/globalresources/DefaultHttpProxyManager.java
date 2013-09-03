@@ -7,13 +7,9 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 
 import java.beans.ExceptionListener;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.util.logging.Level;
@@ -36,13 +32,14 @@ public class DefaultHttpProxyManager {
         HttpProxyConfiguration httpProxyConfiguration = new HttpProxyConfiguration();
         if ( httpProxyXml != null && !httpProxyXml.isEmpty() ) {
             final ByteArrayInputStream in = new ByteArrayInputStream( httpProxyXml.getBytes( Charsets.UTF8));
-            XMLDecoder decoder = new XMLDecoder(in, null, new ExceptionListener() {
-                @Override
-                public void exceptionThrown( final Exception e ) {
-                    logger.log( Level.WARNING, "Error loading configuration '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                }
-            });
-
+            final SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
+                    /*.setExceptionListener(new ExceptionListener() {
+                        @Override
+                        public void exceptionThrown( final Exception e ) {
+                            logger.log( Level.WARNING, "Error loading configuration '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                        }
+                    })*/
+                    .build();
             try {
                 final Object httpProxyObject = decoder.readObject();
                 if ( httpProxyObject instanceof HttpProxyConfiguration ) {

@@ -6,12 +6,13 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.SafeXMLDecoder;
+import com.l7tech.util.SafeXMLDecoderBuilder;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
@@ -252,7 +253,7 @@ public class InternalUser extends PersistentUser {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING))).build();
             //noinspection unchecked
             this.properties = (Map<String, String>)xd.readObject();
         }
