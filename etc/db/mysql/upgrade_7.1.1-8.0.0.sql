@@ -62,6 +62,21 @@ begin
 end//
 delimiter ;
 
+-- The dropIndexIfExists function will drop a named index only if it currently exists.
+-- The first parameter is the table name.  The second parameter is the index name.
+DROP PROCEDURE IF EXISTS dropIndexIfExists;
+delimiter //
+create procedure dropIndexIfExists(in tableName varchar(255), in indexName varchar(255))
+begin
+  IF ((SELECT COUNT(*) FROM information_schema.statistics WHERE TABLE_SCHEMA = DATABASE() AND table_name = tableName AND index_name = indexName) > 0) THEN
+    SET @s = CONCAT('DROP INDEX ', indexName, ' ON ', tableName);
+    PREPARE stmt FROM @s;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+end//
+delimiter ;
+
 -- ****** The below function is only needed in manual upgrades.                      ****** --
 -- ****** It will create a not very random goid prefix that is not a reserved prefix ****** --
 -- DROP FUNCTION IF EXISTS createUnreservedPoorRandomPrefix;
@@ -222,7 +237,7 @@ ALTER TABLE trusted_cert MODIFY COLUMN issuer_dn VARCHAR(2048);
 -- updating the client_cert index to match the index in ssg.sql
 -- Note the trusted_cert table index doesn't need to be as it was already created with issuer_dn(255)
 -- setting the length to 255 will use the first 255 characters of the issuer_dn to create the index.
-ALTER TABLE client_cert DROP INDEX i_issuer_dn;
+CALL dropIndexIfExists('client_cert', 'i_issuer_dn');
 CREATE INDEX i_issuer_dn ON client_cert (issuer_dn(255));
 
 --
@@ -537,8 +552,8 @@ ALTER TABLE internal_user DROP COLUMN old_objectid;
 
 UPDATE rbac_assignment SET identity_id = goidToString(toGoid(0, 3)) where identity_id = '3' and entity_type='User';
 
-DROP INDEX provider_oid ON internal_user_group;
-DROP INDEX user_id ON internal_user_group;
+CALL dropIndexIfExists('internal_user_group', 'provider_oid');
+CALL dropIndexIfExists('internal_user_group', 'user_id');
 
 ALTER TABLE internal_user_group ADD COLUMN old_objectid BIGINT(20);
 UPDATE internal_user_group SET old_objectid=objectid;
@@ -571,8 +586,8 @@ ALTER TABLE internal_user_group DROP COLUMN old_internal_group;
 CREATE INDEX provider_goid ON internal_user_group (provider_goid);
 CREATE INDEX user_goid ON internal_user_group (user_goid);
 
-DROP INDEX i_name ON fed_user;
-DROP INDEX i_provider_oid ON fed_user;
+CALL dropIndexIfExists('fed_user', 'i_name');
+CALL dropIndexIfExists('fed_user', 'i_provider_oid');
 
 ALTER TABLE fed_user ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_user SET old_objectid=objectid;
@@ -592,8 +607,8 @@ ALTER TABLE fed_user DROP COLUMN old_provider_oid;
 CREATE INDEX i_provider_goid ON fed_user (provider_goid);
 CREATE UNIQUE INDEX i_name ON fed_user (provider_goid, name);
 
-DROP INDEX i_name ON fed_group;
-DROP INDEX i_provider_oid ON fed_group;
+CALL dropIndexIfExists('fed_group', 'i_name');
+CALL dropIndexIfExists('fed_group', 'i_provider_oid');
 
 ALTER TABLE fed_group ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_group SET old_objectid=objectid;
@@ -632,8 +647,8 @@ ALTER TABLE fed_user_group CHANGE COLUMN fed_group_oid fed_group_goid binary(16)
 UPDATE fed_user_group SET fed_group_goid = toGoid(@fed_group_prefix, old_fed_group_oid);
 ALTER TABLE fed_user_group DROP COLUMN old_fed_group_oid;
 
-DROP INDEX i_name ON fed_group_virtual;
-DROP INDEX i_provider_oid ON fed_group_virtual;
+CALL dropIndexIfExists('fed_group_virtual', 'i_name');
+CALL dropIndexIfExists('fed_group_virtual', 'i_provider_oid');
 
 ALTER TABLE fed_group_virtual ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_group_virtual SET old_objectid=objectid;
@@ -653,7 +668,7 @@ ALTER TABLE fed_group_virtual DROP COLUMN old_provider_oid;
 CREATE INDEX i_provider_goid ON fed_group_virtual (provider_goid);
 CREATE UNIQUE INDEX i_name ON fed_group_virtual (provider_goid, name);
 
-DROP INDEX unique_provider_login ON logon_info;
+CALL dropIndexIfExists('logon_info', 'unique_provider_login');
 ALTER TABLE logon_info ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE logon_info SET old_provider_oid=provider_oid;
 ALTER TABLE logon_info CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
@@ -708,7 +723,7 @@ UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_prov
 UPDATE audit_main SET provider_goid = toGoid(0, -2) where old_provider_oid = -2;
 ALTER TABLE audit_main DROP COLUMN old_provider_oid;
 
-DROP INDEX internal_identity_provider_oid ON password_policy;
+CALL dropIndexIfExists('password_policy', 'internal_identity_provider_oid');
 ALTER TABLE password_policy ADD COLUMN old_internal_identity_provider_oid BIGINT(20);
 UPDATE password_policy SET old_internal_identity_provider_oid=internal_identity_provider_oid;
 ALTER TABLE password_policy CHANGE COLUMN internal_identity_provider_oid internal_identity_provider_goid binary(16);
@@ -718,8 +733,8 @@ ALTER TABLE password_policy DROP COLUMN old_internal_identity_provider_oid;
 ALTER TABLE password_policy ADD UNIQUE KEY  (internal_identity_provider_goid);
 ALTER TABLE password_policy ADD FOREIGN KEY (internal_identity_provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE;
 
-DROP INDEX unique_assignment ON rbac_assignment;
-DROP INDEX i_rbacassign_poid ON rbac_assignment;
+CALL dropIndexIfExists('rbac_assignment', 'unique_assignment');
+CALL dropIndexIfExists('rbac_assignment', 'i_rbacassign_poid');
 ALTER TABLE rbac_assignment ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE rbac_assignment SET old_provider_oid=provider_oid;
 ALTER TABLE rbac_assignment CHANGE COLUMN provider_oid provider_goid binary(16) NOT NULL;
@@ -1007,7 +1022,7 @@ call dropForeignKey('rbac_predicate_folder','folder');
 
 ALTER TABLE folder ADD COLUMN objectid_backup BIGINT(20);
 update folder set objectid_backup=objectid;
-DROP INDEX i_name_parent ON folder;
+CALL dropIndexIfExists('folder', 'i_name_parent');
 ALTER TABLE folder CHANGE COLUMN objectid goid binary(16) NOT NULL;
 -- For manual runs use: set @folder_prefix=createUnreservedPoorRandomPrefix();
 SET @folder_prefix=#RANDOM_LONG_NOT_RESERVED#;
@@ -1843,6 +1858,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
 
 -- SSM-4482 widen value column
 alter table rbac_predicate_attribute modify value varchar(4096);
+
+-- Clean up temporary stored procedures
+DROP PROCEDURE IF EXISTS dropForeignKey;
+DROP PROCEDURE IF EXISTS dropIndexIfExists;
 
 --
 -- Reenable FK at very end of script
