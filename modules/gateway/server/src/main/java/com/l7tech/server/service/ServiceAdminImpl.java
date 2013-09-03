@@ -693,9 +693,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new FindException("Missing required service identifier");
         }
         try {
-            return Goid.parseGoid(serviceGoid);
+            return GoidUpgradeMapper.mapId(EntityType.SERVICE, serviceGoid);
         } catch ( IllegalArgumentException iae ) {
-            throw new FindException("Invalid service identifier '"+serviceGoid+"'.");
+            throw new FindException("Invalid service identifier '"+serviceGoid+"'.", iae);
         }
     }
 
