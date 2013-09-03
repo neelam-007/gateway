@@ -3,6 +3,7 @@ package com.l7tech.server.mapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
@@ -29,18 +30,18 @@ public class MessageContextMappingValueManagerImpl
 
     private final Logger logger = Logger.getLogger(MessageContextMappingKeyManagerImpl.class.getName());
     private final String HQL_GET_MAPPING_VALUES = "FROM " + getTableName() +
-        " IN CLASS " + getImpClass().getName() + " WHERE objectid = ?";
+        " IN CLASS " + getImpClass().getName() + " WHERE goid = ?";
     private final String HQL_GET_MAPPING_VALUES_BY_DIGEST = "FROM " + getTableName() +
         " IN CLASS " + getImpClass().getName() + " WHERE digested = ?";
 
     @Override
-    public MessageContextMappingValues getMessageContextMappingValues(final long oid) throws FindException {
+    public MessageContextMappingValues getMessageContextMappingValues(final Goid goid) throws FindException {
         try {
             return (MessageContextMappingValues)getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_GET_MAPPING_VALUES);
-                    q.setLong(0, oid);
+                    q.setParameter(0, goid);
                     return q.uniqueResult();
                 }
             });
