@@ -586,6 +586,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private void loadIdentities(final EntityType type) {
+        final String pluralName = type.getPluralName();
         if (comboBox.getSelectedItem() instanceof EntityHeader) {
             final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
             final List<EntityHeader> identities = new ArrayList<>();
@@ -599,12 +600,15 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 logger.log(Level.WARNING, "Unable to retrieve identities: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
             specificObjectsModel.setSelectableObjects(identities);
+            specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName.toLowerCase());
         } else {
             specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+            specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName.toLowerCase());
         }
     }
 
     private void loadTrustedEsmUsers() {
+        final String pluralName = EntityType.TRUSTED_ESM_USER.getPluralName().toLowerCase();
         if (comboBox.getSelectedItem() instanceof EntityHeader) {
             final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
             final List<EntityHeader> userHeaders = new ArrayList<>();
@@ -617,8 +621,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 logger.log(Level.WARNING, "Unable to retrieve trusted esm users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
             specificObjectsModel.setSelectableObjects(userHeaders);
+            specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName);
         } else {
             specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+            specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName);
         }
     }
 
