@@ -285,43 +285,46 @@ public class SiteMinderConfigurationWindow extends JDialog {
         DialogDisplayer.display(configPropDialog, new Runnable() {
             @Override
             public void run() {
-                if (configPropDialog.isConfirmed()) {
-                    Runnable reedit = new Runnable() {
-                        @Override
-                        public void run() {
-                            loadSiteMinderConfigurationList();
-                            editAndSave(configuration, selectName);
-                        }
-                    };
+                try {
+                    if (configPropDialog.isConfirmed()) {
+                        Runnable reedit = new Runnable() {
+                            @Override
+                            public void run() {
+                                loadSiteMinderConfigurationList();
+                                editAndSave(configuration, selectName);
+                            }
+                        };
 
-                    //Save the connection
-                    SiteMinderAdmin admin = getSiteMinderAdmin();
-                    if (admin == null) return;
-                    try{
-                        admin.saveSiteMinderConfiguration(configuration);
-                    } catch (UpdateException ex) {
-                        showErrorMessage(resources.getString("errors.saveFailed.title"),
-                                resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
-                                ex,
-                                reedit);
-                        return;
-                    }
-                }
-
-                loadSiteMinderConfigurationList();
-
-                configurationTableModel.fireTableDataChanged();
-
-                int currentRow = -1;
-                if (configuration.getName() != null && configuration.getName().length() > 0) {
-                    for (SiteMinderConfiguration config: configurationList) {
-                        currentRow ++;
-                        if (config.getName().equals(configuration.getName())) {
-                            break;
+                        //Save the connection
+                        SiteMinderAdmin admin = getSiteMinderAdmin();
+                        if (admin == null) return;
+                        try{
+                            admin.saveSiteMinderConfiguration(configuration);
+                        } catch (UpdateException ex) {
+                            showErrorMessage(resources.getString("errors.saveFailed.title"),
+                                    resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
+                                    ex,
+                                    reedit);
+                            return;
                         }
                     }
+                } finally {
 
-                    configurationTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+                    loadSiteMinderConfigurationList();
+
+                    configurationTableModel.fireTableDataChanged();
+
+                    int currentRow = -1;
+                    if (configuration.getName() != null && configuration.getName().length() > 0) {
+                        for (SiteMinderConfiguration config: configurationList) {
+                            currentRow ++;
+                            if (config.getName().equals(configuration.getName())) {
+                                break;
+                            }
+                        }
+
+                        configurationTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+                    }
                 }
             }
         }) ;
