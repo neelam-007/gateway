@@ -1152,6 +1152,12 @@ alter table policy_alias
     references folder
     on delete cascade;
 
+alter table policy_alias
+    add constraint FK_POL_ALIAS_POLICY
+    foreign key (policy_goid)
+    references policy
+    on delete cascade;
+
 alter table published_service
     add constraint FK25874164DB935A63
     foreign key (folder_goid)

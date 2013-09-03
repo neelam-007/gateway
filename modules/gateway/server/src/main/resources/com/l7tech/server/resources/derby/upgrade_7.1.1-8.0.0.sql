@@ -1634,3 +1634,10 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
 
 -- SSM-4482 widen value column
 alter table rbac_predicate_attribute alter value set data type varchar(4096);
+
+-- SSG-7594 add foreign key constraint to policy_alias
+alter table policy_alias
+    add constraint FK_POL_ALIAS_POLICY
+    foreign key (policy_goid)
+    references policy
+    on delete cascade;
