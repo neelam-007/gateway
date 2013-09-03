@@ -8,14 +8,12 @@ package com.l7tech.client;
 import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -28,6 +26,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
@@ -65,7 +64,7 @@ class WsdlProxy {
      * the Ssg gave us (probably pointing at itself), and will need to be rewritten to point at the Bridge instead.
      *
      * @param ssg           the Ssg to contact
-     * @param serviceoid    the OID of the service whose WSDL to obtain
+     * @param serviceId    the ID (GOID) of the service whose WSDL to obtain
      * @param queryParameters additional query string parameters for the request
      * @return the Wsdl document obtained from the Ssg.
      * @throws OperationCanceledException       if the user canceled the Logon dialog
@@ -75,10 +74,10 @@ class WsdlProxy {
      * @throws WSDLException                    if the Ssg gave us back something other than a valid Wsdl document
      * @throws ServiceNotFoundException     if we got back a 404 from the Wsdl service
      */
-    static Document obtainWsdlForService(Ssg ssg, long serviceoid, final Map<String,String[]> queryParameters)
+    static Document obtainWsdlForService(Ssg ssg, String serviceId, final Map<String,String[]> queryParameters)
             throws OperationCanceledException, WSDLException, IOException, DownloadException, ServiceNotFoundException, HttpChallengeRequiredException {
         try {
-            return doDownload(ssg, serviceoid, queryParameters);
+            return doDownload(ssg, serviceId, queryParameters);
         } catch (SAXException e) {
             throw new RuntimeException("impossible exception", e);
         }
@@ -101,20 +100,20 @@ class WsdlProxy {
     static Document obtainWsilForServices(Ssg ssg)
             throws OperationCanceledException, DownloadException, IOException, SAXException, ServiceNotFoundException, HttpChallengeRequiredException {
         try {
-            return doDownload(ssg, 0, Collections.<String, String[]>emptyMap());
+            return doDownload(ssg, null, Collections.<String, String[]>emptyMap());
         } catch (WSDLException e) {
             throw new RuntimeException("impossible exception", e); // this can't happen
         }
     }
 
     private static Document doDownload( final Ssg ssg,
-                                        final long serviceoid,
+                                        @Nullable final String serviceId,
                                         final Map<String,String[]> queryParameters )
             throws OperationCanceledException, IOException, DownloadException,
             WSDLException, SAXException, ServiceNotFoundException, HttpChallengeRequiredException {
         StringBuilder file = new StringBuilder(SecureSpanConstants.WSDL_PROXY_FILE);
-        if (serviceoid != 0) {
-            file.append("?serviceoid=").append(serviceoid);
+        if (serviceId != null) {
+            file.append("?serviceoid=").append(serviceId);
 
             for ( final Map.Entry<String,String[]> parameterEntry : queryParameters.entrySet() ) {
                 if ( parameterEntry.getKey() != null &&
@@ -148,7 +147,23 @@ class WsdlProxy {
         PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
-            if (isAnonCreds(pw)) pw = null;
+            if (isAnonCreds(pw)) {
+                pw = null;
+            } else {
+                // Prepare private key
+                try {
+                    ssg.getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey(pw);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (BadCredentialsException e) {
+                    ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
+                    continue;
+                } catch (KeyStoreCorruptException e) {
+                    log.log(Level.WARNING, "Unable to prepare client cert private key: " + ExceptionUtils.getMessage(e), e);
+                    ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
+                    continue;
+                }
+            }
             params.setPasswordAuthentication(pw);
             log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
             SimpleHttpClient.SimpleHttpResponse result = null;
@@ -183,7 +198,7 @@ class WsdlProxy {
                 inputSource.setByteStream( new ByteArrayInputStream(result.getBytes()) );
                 return XmlUtil.parse( inputSource, false );
             } else if (status == 404) {
-                throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
+                throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceId);
             } else if (status == 401 || status == 403) {
                 ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
                 // FALLTHROUGH - continue and try again with new password

@@ -606,19 +606,18 @@ public class RequestHandler extends AbstractHandler {
     private void handleWsdlRequestForOid( final Request request,
                                           final Response response,
                                           final Ssg ssg,
-                                          final String oidStr,
+                                          final String serviceId,
                                           final Map<String,String[]> queryParameters ) throws HttpException {
         try {
-            final long oid = Long.parseLong(oidStr);
-            final Document wsdlDoc = WsdlProxy.obtainWsdlForService(ssg, oid, queryParameters);
+            final Document wsdlDoc = WsdlProxy.obtainWsdlForService(ssg, serviceId, queryParameters);
 
             // Rewrite WSDL and Schema references
-            rewriteReferences( request, ssg, oidStr, wsdlDoc );
+            rewriteReferences( request, ssg, serviceId, wsdlDoc );
 
             // Rewrite the wsdl URLs
             WsdlUtil.rewriteAddressLocations(wsdlDoc, new WsdlUtil.LocationBuilder() {
                 public String buildLocation(Element address) throws MalformedURLException {
-                    return RequestHandler.this.buildLocation(request.getLocalName(), ssg.getLocalEndpoint(), request.getLocalPort(), oid, address.getAttribute(ATTR_LOCATION));
+                    return RequestHandler.this.buildLocation(request.getLocalName(), ssg.getLocalEndpoint(), request.getLocalPort(), serviceId, address.getAttribute(ATTR_LOCATION));
                 }
             });
 
@@ -686,7 +685,7 @@ public class RequestHandler extends AbstractHandler {
     private String buildLocation( final String host,
                                   final String localEndpoint,
                                   final int port,
-                                  final long oid,
+                                  final String serviceId,
                                   final String existingLocation ) throws MalformedURLException {
         URL newUrl = null;
 
@@ -706,7 +705,7 @@ public class RequestHandler extends AbstractHandler {
         }
 
         if ( newUrl == null ) {
-            newUrl = new URL(protocol, host, port,  "/" + localEndpoint + "/service/" + oid);
+            newUrl = new URL(protocol, host, port,  "/" + localEndpoint + "/service/" + serviceId);
         }
 
         return newUrl.toString();

@@ -200,6 +200,7 @@ class GuiCredentialManager extends CredentialManager {
                 ssg.getRuntime().setCachedPassword(pw.getPassword());
                 ssg.getRuntime().onCredentialsUpdated();
                 ssg.getRuntime().promptForUsernameAndPassword(true);
+                ssg.getRuntime().resetSslContext();
                 holder.pw = pw;
 
                 doSsgManagerSave();
