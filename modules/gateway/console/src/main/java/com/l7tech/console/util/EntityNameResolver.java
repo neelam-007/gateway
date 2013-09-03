@@ -27,6 +27,7 @@ import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,7 +50,7 @@ public class EntityNameResolver {
     private static final int MIN_FOLDER_PATH = 1;
     private static final int FIRST_FOLDER_INDEX = 0;
     private static final int SECOND_LAST_FOLDER_INDEX = 3;
-    private static final String NO_PATH = "--";
+    private static final String MULTIPLE_PATH = "<multiple>";
     private static final String UNKNOWN_FOLDER = "unknown folder";
     private static final String ROOT = "(root)";
     private static final String NO_PROTOCOL = "<no protocol>";
@@ -398,8 +399,8 @@ public class EntityNameResolver {
     @NotNull
     public String getPaletteFolders(@NotNull final Assertion assertion) {
         final List<String> folderNames = new ArrayList<>();
-        if (assertion instanceof CustomAssertionHolder) {
-            folderNames.add(NO_PATH);
+        if (assertion instanceof CustomAssertionHolder || assertion instanceof EncapsulatedAssertion) {
+            folderNames.add(MULTIPLE_PATH);
         } else {
             final Object paletteFolders = assertion.meta().get(AssertionMetadata.PALETTE_FOLDERS);
             if (paletteFolders instanceof String[]) {

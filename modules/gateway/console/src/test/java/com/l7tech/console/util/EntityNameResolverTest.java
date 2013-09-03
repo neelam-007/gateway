@@ -25,6 +25,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -400,7 +401,12 @@ public class EntityNameResolverTest {
     @BugId("SSM-4366")
     @Test
     public void getPaletteFolderNameForCustomAssertion() throws Exception {
-        assertEquals("--", resolver.getPaletteFolders(new CustomAssertionHolder()));
+        assertEquals("<multiple>", resolver.getPaletteFolders(new CustomAssertionHolder()));
+    }
+
+    @Test
+    public void getPaletteFolderNameForEncapsulatedAssertion() throws Exception {
+        assertEquals("<multiple>", resolver.getPaletteFolders(new EncapsulatedAssertion()));
     }
 
     @Test
