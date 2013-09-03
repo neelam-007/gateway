@@ -72,7 +72,7 @@ public class PermissionGroupPropertiesDialog extends JDialog {
         final String scopeDescription;
         final Set<ScopePredicate> scope = group.getScope();
         if (!scope.isEmpty()) {
-            final Set<String> predicateDescriptions = new HashSet<>(scope.size());
+            final Set<String> predicateDescriptions = new TreeSet<>();
             final EntityNameResolver nameResolver = Registry.getDefault().getEntityNameResolver();
             for (final ScopePredicate predicate : scope) {
                 try {
