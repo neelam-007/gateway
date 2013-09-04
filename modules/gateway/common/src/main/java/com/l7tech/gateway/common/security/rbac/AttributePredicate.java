@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
@@ -165,14 +166,8 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         Object got;
         try {
             got = getter.invoke(entity);
-        } catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE, "Couldn't invoke " + entity.getClass().getName() + "." + getter.getName(), e);
-            return false;
-        } catch (InvocationTargetException e) {
-            logger.log(Level.SEVERE, "Couldn't invoke " + entity.getClass().getName() + "." + getter.getName(), e);
-            return false;
-        } catch (IllegalArgumentException e) {
-            logger.log(Level.SEVERE, "Couldn't invoke " + entity.getClass().getName() + "." + getter.getName(), e);
+        } catch (final IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+            logger.log(Level.INFO, "Couldn't invoke " + entity.getClass().getName() + "." + getter.getName(), ExceptionUtils.getDebugException(e));
             return false;
         }
 
