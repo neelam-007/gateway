@@ -33,7 +33,7 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
                                        final PlatformTransactionManager transactionManager,
                                        final TrustedCertManager trustedCertManager,
                                        final SecurityZoneManager securityZoneManager ) {
-        super( false, true, services, securityFilter, transactionManager, trustedCertManager, securityZoneManager );
+        super( false, false, services, securityFilter, transactionManager, trustedCertManager, securityZoneManager );
     }
 
     //- PROTECTED

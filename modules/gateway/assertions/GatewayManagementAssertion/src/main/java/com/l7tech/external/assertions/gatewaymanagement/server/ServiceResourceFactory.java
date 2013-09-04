@@ -59,7 +59,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
                                    final PolicyHelper policyHelper,
                                    final FolderResourceFactory folderResourceFactory,
                                    final SecurityZoneManager securityZoneManager ) {
-        super( false, true, services, securityFilter, transactionManager, serviceManager, securityZoneManager );
+        super( false, false, services, securityFilter, transactionManager, serviceManager, securityZoneManager );
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
