@@ -188,12 +188,11 @@ public class SiteMinderConfigurationWindow extends JDialog {
     }
 
     private void doCopy() {
-
         int selectedRow = configurationTable.getSelectedRow();
 
         SiteMinderConfiguration newConfiguration = new SiteMinderConfiguration();
         newConfiguration.copyFrom(configurationList.get(selectedRow));
-        EntityUtils.updateCopy( newConfiguration);
+        EntityUtils.updateCopy(newConfiguration);
         editAndSave(newConfiguration, true);
     }
 

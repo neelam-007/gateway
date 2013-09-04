@@ -20,9 +20,7 @@ public class SiteMinderConfigurationKey {
 
         SiteMinderConfigurationKey that = (SiteMinderConfigurationKey) o;
 
-        if (agentId != null ? !agentId.equals(that.agentId) : that.agentId != null) return false;
-
-        return true;
+        return !(agentId != null ? !agentId.equals(that.agentId) : that.agentId != null);
     }
 
     @Override

@@ -13,6 +13,8 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Either;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MutablePair;
 import sun.security.util.Resources;
 
@@ -27,6 +29,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
@@ -36,6 +40,8 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
  * Time: 4:36 PM
  */
 public class SiteMinderConfigPropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(SiteMinderConfigPropertiesDialog.class.getName());
+
     private static final ResourceBundle RESOURCES =
             Resources.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigPropertiesDialog");
 
@@ -47,7 +53,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private static final int CLUSTER_SERVER_CONN_STEP = 1;
 
     private final Map<String, String> clusterSettingsMap = new TreeMap<>();
-    private final Map<String, SiteMinderHost> siteMinderHostMap = new TreeMap<>();
 
     private boolean confirmed;
 
@@ -201,67 +206,11 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         });
 
-        zoneControl.configure(configuration);
+        zoneControl.configure(this.configuration);
 
         modelToView();
 
         Utilities.setMinimumSize(this);
-    }
-
-    private void modelToView() {
-        if (siteMinderHostMap != null && siteMinderHostMap.size() != 0 ) {
-            SiteMinderHost siteMinderHost = siteMinderHostMap.get("SiteMinder Host Configuration");
-
-            if (siteMinderHost != null) {
-                configuration.setHostname(siteMinderHost.getHostname());
-                configuration.setSecret(siteMinderHost.getSharedSecret());
-                configuration.setAddress("127.0.0.1");
-                configuration.setFipsmode(siteMinderHost.getFipsMode().getCode());
-                configuration.setPasswordGoid(siteMinderHost.getPasswordGoid());
-                configuration.setHostConfiguration(siteMinderHost.getHostConfigObject());
-                configuration.setUserName(siteMinderHost.getUserName());
-
-                Map<String, String> properties = new HashMap<>();
-
-                String [] clusterProperties = siteMinderHost.getPolicyServer().split(",");
-
-                if (clusterProperties.length == 4) {
-                    properties.put(RESOURCES.getString("property.cluster.server.address"), clusterProperties[0]);
-                    properties.put(RESOURCES.getString("property.cluster.server.accounting.port"), clusterProperties[1]);
-                    properties.put(RESOURCES.getString("property.cluster.server.authentication.port"), clusterProperties[2]);
-                    properties.put(RESOURCES.getString("property.cluster.server.authorization.port"), clusterProperties[3]);
-                    properties.put(RESOURCES.getString("property.cluster.server.connection.min"), String.valueOf(CLUSTER_SERVER_CONN_MIN));
-                    properties.put(RESOURCES.getString("property.cluster.server.connection.max"), String.valueOf(CLUSTER_SERVER_CONN_MAX));
-                    properties.put(RESOURCES.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
-                    properties.put(RESOURCES.getString("property.cluster.server.timeout"), String.valueOf(siteMinderHost.getRequestTimeout()));
-
-                    configuration.setProperties(properties);
-                }
-            }
-        }
-
-        configurationNameTextField.setText(configuration.getName());
-        agentNameTextField.setText(configuration.getAgentName());
-        secretPasswordField.setText(configuration.getSecret());
-        addressTextField.setText(configuration.getAddress());
-        checkIPCheckBox.setSelected(configuration.isIpcheck());
-        updateSSOTokenCheckBox.setSelected(configuration.isUpdateSSOToken());
-        hostNameTextField.setText(configuration.getHostname());
-        disableCheckBox.setSelected(!configuration.isEnabled());
-
-        SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(configuration.getFipsmode());
-
-        // any unrecognized fips mode setting will be replaced with UNSPECIFIED
-        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
-
-        enableFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
-        clusterSettingsMap.clear();
-
-        if (configuration.getProperties() != null) {
-            clusterSettingsMap.putAll(configuration.getProperties());
-        }
-
-        clusterSettingTableModel.fireTableDataChanged();
     }
 
     private void doAdd() {
@@ -303,30 +252,109 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     }
 
     private void doOK() {
-        String warningMessage =  checkDuplicateSiteMinderConfiguration();
+        if (validateSiteMinderConfigurationNameUnique()) {
+            viewToModel();
 
-        if (warningMessage != null) {
-            DialogDisplayer.showMessageDialog( SiteMinderConfigPropertiesDialog.this, warningMessage,
-                    RESOURCES.getString( "dialog.title.error.saving.config" ), JOptionPane.WARNING_MESSAGE, null);
-            return;
+            confirmed = true;
+
+            dispose();
         }
-
-        // Assign new attributes to the connect
-        viewToModel();
-
-        confirmed = true;
-        dispose();
     }
 
     private void doTest() {
-        String warningMessage = validateSiteMinderConfiguration();
-        if (warningMessage != null && warningMessage.length() != 0) {
-            DialogDisplayer.showMessageDialog( SiteMinderConfigPropertiesDialog.this, warningMessage,
-                    RESOURCES.getString( "dialog.title.siteminder.configuration.validation" ), JOptionPane.WARNING_MESSAGE, null);
-        } else {
-            DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this, RESOURCES.getString("message.validation.siteminder.config.passed"),
-                    RESOURCES.getString("dialog.title.siteminder.configuration.validation"), JOptionPane.WARNING_MESSAGE, null);
+        if (validateSiteMinderConfiguration()) {
+            DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                    RESOURCES.getString("message.validation.siteminder.config.passed"),
+                    RESOURCES.getString("dialog.title.siteminder.configuration.validation"),
+                    JOptionPane.INFORMATION_MESSAGE, null);
         }
+    }
+
+    private void doCancel() {
+        dispose();
+    }
+
+    private void doRegister() {
+        register(new SiteMinderHost(configuration.getHostname(),
+                clusterSettingsMap.get(RESOURCES.getString("property.cluster.server.address")),
+                configuration.getHostConfiguration(),
+                SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
+                configuration.getUserName(),
+                configuration.getPasswordGoid()));
+    }
+
+    private void register(final SiteMinderHost siteMinderHost) {
+        final SiteMinderRegisterConfigDialog dlg = new SiteMinderRegisterConfigDialog(this, siteMinderHost);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.isConfirmed()) {
+                    SiteMinderHost newHost = dlg.getSiteMinderHost();
+
+                    configuration.setHostConfiguration(newHost.getHostConfigObject());
+                    configuration.setUserName(newHost.getUserName());
+                    configuration.setPasswordGoid(newHost.getPasswordGoid());
+
+                    hostNameTextField.setText(newHost.getHostname());
+                    secretPasswordField.setText(newHost.getSharedSecret());
+                    addressTextField.setText("127.0.0.1");
+                    fipsModeComboBox.setSelectedItem(newHost.getFipsMode());
+
+                    Map<String, String> properties = new HashMap<>();
+
+                    String[] clusterProperties = newHost.getPolicyServer().split(",");
+
+                    if (clusterProperties.length == 4) {
+                        properties.put(RESOURCES.getString("property.cluster.server.address"), clusterProperties[0]);
+                        properties.put(RESOURCES.getString("property.cluster.server.accounting.port"), clusterProperties[1]);
+                        properties.put(RESOURCES.getString("property.cluster.server.authentication.port"), clusterProperties[2]);
+                        properties.put(RESOURCES.getString("property.cluster.server.authorization.port"), clusterProperties[3]);
+                        properties.put(RESOURCES.getString("property.cluster.server.connection.min"), String.valueOf(CLUSTER_SERVER_CONN_MIN));
+                        properties.put(RESOURCES.getString("property.cluster.server.connection.max"), String.valueOf(CLUSTER_SERVER_CONN_MAX));
+                        properties.put(RESOURCES.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
+                        properties.put(RESOURCES.getString("property.cluster.server.timeout"), String.valueOf(newHost.getRequestTimeout()));
+                    } else {
+                        logger.log(Level.WARNING, "Unexpected number of SiteMinder Cluster Properties returned: " + newHost.getPolicyServer());
+                    }
+
+                    clusterSettingsMap.clear();
+
+                    if (configuration.getProperties() != null) {
+                        clusterSettingsMap.putAll(properties);
+                    }
+
+                    clusterSettingTableModel.fireTableDataChanged();
+                }
+            }
+        });
+    }
+
+    private void modelToView() {
+        configurationNameTextField.setText(configuration.getName());
+        agentNameTextField.setText(configuration.getAgentName());
+        secretPasswordField.setText(configuration.getSecret());
+        addressTextField.setText(configuration.getAddress());
+        checkIPCheckBox.setSelected(configuration.isIpcheck());
+        updateSSOTokenCheckBox.setSelected(configuration.isUpdateSSOToken());
+        hostNameTextField.setText(configuration.getHostname());
+        disableCheckBox.setSelected(!configuration.isEnabled());
+
+        SiteMinderFipsModeOption mode = SiteMinderFipsModeOption.getByCode(configuration.getFipsmode());
+
+        // any unrecognized fips mode setting will be replaced with COMPAT
+        fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
+
+        enableFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
+        clusterSettingsMap.clear();
+
+        if (configuration.getProperties() != null) {
+            clusterSettingsMap.putAll(configuration.getProperties());
+        }
+
+        clusterSettingTableModel.fireTableDataChanged();
     }
 
     private void viewToModel() {
@@ -349,40 +377,12 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         configuration.setSecurityZone(zoneControl.getSelectedZone());
     }
 
-    private void doCancel() {
-        dispose();
-    }
-
-    private void doRegister() {
-        register(new MutablePair<>("Init SiteMinder Host", new SiteMinderHost(configuration.getHostname(),
-                clusterSettingsMap.get(RESOURCES.getString("property.cluster.server.address")),
-                configuration.getHostConfiguration(),
-                SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
-                configuration.getUserName(),
-                configuration.getPasswordGoid())));
-    }
-
-    private void register(final MutablePair<String, SiteMinderHost> property) {
-        final SiteMinderRegisterConfigDialog dlg = new SiteMinderRegisterConfigDialog(this, property);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-
-        DialogDisplayer.display(dlg, new Runnable() {
-            @Override
-            public void run() {
-                if (dlg.isConfirmed()) {
-                    siteMinderHostMap.put(property.left, property.right);
-                    modelToView();
-                }
-            }
-        });
-    }
-
     private void initClusterSettingsTable() {
         clusterSettingTableModel= new ClusterSettingsTableModel();
 
         clusterSettingsTable.setModel(clusterSettingTableModel);
         clusterSettingsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         clusterSettingsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -491,9 +491,9 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                     clusterSettingTableModel.fireTableDataChanged();
 
                     // Refresh the selection highlight
-                    ArrayList<String> keyset = new ArrayList<>();
-                    keyset.addAll(clusterSettingsMap.keySet());
-                    int currentRow = keyset.indexOf(property.left);
+                    ArrayList<String> keySet = new ArrayList<>();
+                    keySet.addAll(clusterSettingsMap.keySet());
+                    int currentRow = keySet.indexOf(property.left);
                     clusterSettingsTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
                 }
             }
@@ -539,75 +539,107 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         return null;
     }
 
-    private String checkDuplicateSiteMinderConfiguration() {
-        SiteMinderAdmin admin = getSiteMinderAdmin();
+    private boolean validateSiteMinderConfigurationNameUnique() {
+        boolean valid = false;
 
-        if (admin == null) return "Can't get SiteMinder admin. Check log and try again";
-        String originalName = configuration.getName();
         String newName = configurationNameTextField.getText();
 
-        if (originalName.compareToIgnoreCase(newName) == 0) return null;
-        try{
-            for (String name: getAllSiteMinderConfigurationNames()) {
-                if (name.equals(configurationNameTextField.getText())) {
-                    return "The connection name \"" + name + "\" already exists. Try a new name.";
+        SiteMinderAdmin admin = getSiteMinderAdmin();
+
+        if (admin != null) {
+            List<SiteMinderConfiguration> configurations;
+
+            try {
+                configurations = admin.getAllSiteMinderConfigurations();
+
+                boolean foundDuplicate = false;
+
+                for (SiteMinderConfiguration config : configurations) {
+                    if (config.getName().equals(newName) && !config.getGoid().equals(configuration.getGoid())) {
+                        foundDuplicate = true;
+                        break;
+                    }
                 }
+
+                if (foundDuplicate) {
+                    DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                            "The configuration name \"" + newName + "\" is already in use. Please use a different name.",
+                            RESOURCES.getString("dialog.title.error.saving.config"),
+                            JOptionPane.WARNING_MESSAGE, null);
+                } else {
+                    valid = true;
+                }
+            } catch (FindException e) {
+                String errorMessage = "Error checking for duplicate SiteMinder Configuration names: " + e.getMessage();
+
+                logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+
+                DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                        errorMessage,
+                        RESOURCES.getString("dialog.title.error.saving.config"),
+                        JOptionPane.ERROR_MESSAGE, null);
             }
-        } catch (FindException ex) {
-            return "Can't find SiteMinder Configuration. Check log and try again.";
+        } else {
+            DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                    "Error checking for duplicate SiteMinder Configuration names: Disconnected from gateway.",
+                    RESOURCES.getString("dialog.title.error.saving.config"),
+                    JOptionPane.ERROR_MESSAGE, null);
         }
 
-        return null;
+        return valid;
     }
 
-    /**
-     * Get the names of all SiteMinder configuration entities.
-     * @return a list of the names of all SiteMinder configuration entities.
-     * @throws FindException: thrown when errors finding the SiteMinder configuration entity.
-     */
-    private List<String> getAllSiteMinderConfigurationNames() throws FindException {
+    private boolean validateSiteMinderConfiguration() {
+        boolean valid = false;
 
         SiteMinderAdmin admin = getSiteMinderAdmin();
-        List<SiteMinderConfiguration> configList = admin.getAllSiteMinderConfigurations();
-        List<String> names = new ArrayList<String>(configList.size());
-        for (SiteMinderConfiguration config : configList){
-            if (config.isEnabled()) {
-                names.add(config.getName());
+
+        if (admin != null) {
+            viewToModel();
+
+            try {
+                Either<String, String> either = doAsyncAdmin(admin,
+                        SiteMinderConfigPropertiesDialog.this,
+                        RESOURCES.getString("message.validation.progress"),
+                        RESOURCES.getString("message.validation"),
+                        admin.testSiteMinderConfiguration(configuration));
+
+                if (!either.isRight() || either.right().length() == 0) {
+                    valid = true;
+                } else {
+                    DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                            MessageFormat.format(RESOURCES.getString("message.validation.siteminder.config.failed"),
+                                    either.right()),
+                            RESOURCES.getString("dialog.title.siteminder.configuration.validation"),
+                            JOptionPane.WARNING_MESSAGE, null);
+                }
+            } catch (InvocationTargetException e) {
+                DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                        MessageFormat.format(RESOURCES.getString("message.validation.siteminder.config.failed"),
+                                e.getMessage()),
+                        RESOURCES.getString("dialog.title.siteminder.configuration.validation"),
+                        JOptionPane.WARNING_MESSAGE, null);
+            } catch (InterruptedException e) {
+                // do nothing, user cancelled
             }
-        }
-        return names;
-    }
-
-    private String validateSiteMinderConfiguration() {
-        SiteMinderAdmin admin = getSiteMinderAdmin();
-
-        if (admin == null) return "Can't get SiteMinder admin. Check log and try again";
-
-        viewToModel();
-        String msg = null;
-
-        try {
-            msg = doAsyncAdmin(admin,
-                    SiteMinderConfigPropertiesDialog.this,
-                    RESOURCES.getString("message.validation.progress"),
-                    RESOURCES.getString("message.validation"),
-                    admin.testSiteMinderConfiguration(configuration)).right();
-        } catch (InterruptedException e) {
-            // do nothing, user cancelled
-        } catch (InvocationTargetException e) {
-            DialogDisplayer.showMessageDialog(this,
-                    MessageFormat.format(RESOURCES.getString("message.validation.siteminder.config.failed"), e.getMessage()),
-                    RESOURCES.getString("dialog.title.siteminder.configuration.validation"),
-                    JOptionPane.WARNING_MESSAGE, null);
+        } else {
+            DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
+                    "Error validating SiteMinder Configuration: Disconnected from gateway.",
+                    RESOURCES.getString("dialog.title.error.saving.config"),
+                    JOptionPane.ERROR_MESSAGE, null);
         }
 
-        return msg;
+        return valid;
     }
 
     private SiteMinderAdmin getSiteMinderAdmin() {
         Registry reg = Registry.getDefault();
-        if (!reg.isAdminContextPresent())
+
+        if (!reg.isAdminContextPresent()) {
+            logger.warning("Cannot get SiteMinder Configuration Admin due to no Admin Context present.");
             return null;
+        }
+
         return reg.getSiteMinderConfigurationAdmin();
     }
 

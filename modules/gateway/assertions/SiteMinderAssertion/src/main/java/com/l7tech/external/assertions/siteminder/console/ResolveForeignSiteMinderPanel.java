@@ -193,7 +193,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
     /**
      * populates agent combo box with agent IDs
-     * @param agentComboBoxModel
+     * @param agentComboBoxModel the model to populate
      */
     private void populateAgentComboBoxModel(DefaultComboBoxModel<SiteMinderConfigurationKey> agentComboBoxModel) {
 
