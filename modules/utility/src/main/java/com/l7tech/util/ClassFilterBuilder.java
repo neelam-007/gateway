@@ -186,6 +186,7 @@ public class ClassFilterBuilder {
         "java.lang.String",
         "java.util.TreeSet",
         "java.util.HashMap",
+        "java.util.ArrayList",
         "java.util.LinkedList",
         "java.util.LinkedHashMap",
         "java.util.TreeMap"
@@ -195,12 +196,14 @@ public class ClassFilterBuilder {
         "java.jang.Object()",
         "java.util.TreeSet()",
         "java.util.HashMap()",
+        "java.util.ArrayList()",
         "java.util.LinkedList()",
         "java.util.LinkedHashMap()",
         "java.util.TreeMap()"
     )));
     private static final Set<String> DEFAULT_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "java.lang.reflect.Array.set(java.lang.Object,int,java.lang.Object)",
+        "java.util.ArrayList.add(java.lang.Object)",
         "java.util.LinkedList.add(java.lang.Object)",
         "java.util.TreeSet.add(java.lang.Object)",
         "java.util.HashMap.remove(java.lang.Object)",
