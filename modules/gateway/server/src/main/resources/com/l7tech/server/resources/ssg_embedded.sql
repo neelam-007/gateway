@@ -945,7 +945,7 @@ create table trusted_esm_user (
     esm_user_display_name varchar(128),
     esm_user_id varchar(128),
     provider_goid  CHAR(16) FOR BIT DATA not null,
-    user_id varchar(128),
+    user_id varchar(255),
     version integer,
     trusted_esm_goid CHAR(16) FOR BIT DATA not null,
     primary key (goid)

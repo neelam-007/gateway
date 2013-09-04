@@ -551,7 +551,7 @@ CREATE TABLE trusted_esm_user (
   version integer NOT NULL,
   trusted_esm_goid binary(16) NOT NULL,
   provider_goid binary(16) NOT NULL,
-  user_id varchar(128) NOT NULL,
+  user_id varchar(255) NOT NULL,
   esm_user_id varchar(128) NOT NULL,
   esm_user_display_name varchar(128) default NULL,
   PRIMARY KEY(goid),

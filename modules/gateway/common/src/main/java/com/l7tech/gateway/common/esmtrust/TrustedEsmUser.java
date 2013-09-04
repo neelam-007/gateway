@@ -47,7 +47,7 @@ public class TrustedEsmUser extends PersistentEntityImp {
         this.providerGoid = providerGoid;
     }
 
-    @Column(name="user_id", length=128)
+    @Column(name="user_id", length=255)
     public String getSsgUserId() {
         return ssgUserId;
     }

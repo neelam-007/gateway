@@ -1859,6 +1859,9 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
 -- SSM-4482 widen value column
 alter table rbac_predicate_attribute modify value varchar(4096);
 
+-- SSG-6773 widen value column
+alter table trusted_esm_user modify user_id varchar(255) NOT NULL;
+
 -- Clean up temporary stored procedures
 DROP PROCEDURE IF EXISTS dropForeignKey;
 DROP PROCEDURE IF EXISTS dropIndexIfExists;
