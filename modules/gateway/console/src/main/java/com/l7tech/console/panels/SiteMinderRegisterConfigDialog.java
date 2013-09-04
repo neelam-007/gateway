@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
 import com.l7tech.console.util.Registry;
@@ -151,6 +152,15 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         int modeIndex = fipsModeComboBox.getSelectedIndex();
         SiteMinderFipsModeOption fipsMode = fipsModeComboBox.getItemAt(modeIndex);
 
+        SiteMinderConfiguration c = new SiteMinderConfiguration();
+        c.setAddress(address);
+        c.setUserName(userName);
+        c.setPasswordGoid(password);
+        c.setHostname(hostName);
+        c.setHostConfiguration(hostConfiguration);
+        c.setFipsmode(fipsMode.getCode());
+        c.setSecurityZone(siteMinderHost.getSecurityZone());
+
         Either<String, SiteMinderHost> either;
 
         try {
@@ -158,7 +168,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
                     SiteMinderRegisterConfigDialog.this,
                     RESOURCES.getString("message.registering.progress"),
                     RESOURCES.getString("message.registering"),
-                    admin.registerSiteMinderConfiguration(address, userName, password, hostName, hostConfiguration, fipsMode));
+                    admin.registerSiteMinderConfiguration(c));
         } catch (InterruptedException e) {
             // do nothing, user cancelled
             return;

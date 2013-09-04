@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.siteminder;
 
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurityZone;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,9 +29,10 @@ public class SiteMinderHost implements Serializable {
     private SiteMinderFipsModeOption fipsMode;
     private String userName;
     private Goid passwordGoid;
+    private SecurityZone securityZone;
 
     public SiteMinderHost(String hostName, String policyServer, String hostConfigObject,
-                          SiteMinderFipsModeOption fipsMode, String userName, Goid passwordGoid) {
+                          SiteMinderFipsModeOption fipsMode, String userName, Goid passwordGoid, SecurityZone securityZone) {
         this.hostname = hostName;
         this.hostConfigObject = hostConfigObject;
         this.policyServer = policyServer;
@@ -40,6 +42,7 @@ public class SiteMinderHost implements Serializable {
         this.fipsMode = fipsMode;
         this.userName = userName;
         this.passwordGoid = passwordGoid;
+        this.securityZone = securityZone;
     }
 
 
@@ -130,5 +133,13 @@ public class SiteMinderHost implements Serializable {
 
     public Goid getPasswordGoid() {
         return passwordGoid;
+    }
+
+    public SecurityZone getSecurityZone() {
+        return securityZone;
+    }
+
+    public void setSecurityZone(SecurityZone securityZone) {
+        this.securityZone = securityZone;
     }
 }

@@ -72,21 +72,11 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
 
     /**
      * Register and retrieve siteminder host configuration.
-     * @param address: Policy Server Address
-     * @param username: Username to login to PolicyServer
-     * @param password: Password to login to PolicyServer
-     * @param hostname: Registered hostname
-     * @param hostconfig: Host's configuration
-     * @param fipsMode: FIPS mode
+     * @param siteMinderConfiguration: the SiteMinder configuration
      */
     @Transactional(readOnly = true)
     @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(String address,
-                                                                            String username,
-                                                                            Goid password,
-                                                                            String hostname,
-                                                                            String hostconfig,
-                                                                            SiteMinderFipsModeOption fipsMode);
+    AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration);
 
     /**
      * Test the SiteMinder Configuration

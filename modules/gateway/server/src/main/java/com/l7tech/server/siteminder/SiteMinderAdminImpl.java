@@ -94,20 +94,10 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
 
     /**
      * Register SiteMinder configuration
-     * @param address: Policy Server Address
-     * @param username: Username to login to PolicyServer
-     * @param password: Password to login to PolicyServer
-     * @param hostname: Registered hostname
-     * @param hostconfig: Host's configuration
-     * @param fipsMode: FIPS mode
+     * @param siteMinderConfiguration SiteMinderConfiguration
      */
     @Override
-    public AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(final String address,
-                                                                                   final String username,
-                                                                                   final Goid password,
-                                                                                   final String hostname,
-                                                                                   final String hostconfig,
-                                                                                   final SiteMinderFipsModeOption fipsMode) {
+    public AsyncAdminMethods.JobId<SiteMinderHost> registerSiteMinderConfiguration(final SiteMinderConfiguration siteMinderConfiguration) {
         final FutureTask<SiteMinderHost> registerTask =
                 new FutureTask<>(find(false).wrapCallable(new Callable<SiteMinderHost>() {
             @Override
@@ -115,7 +105,12 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
                 SiteMinderHost siteMinderHost;
 
                 try {
-                    siteMinderHost =  registerSiteMinderHost(address, username, password, hostname, hostconfig, fipsMode);
+                    siteMinderHost =  registerSiteMinderHost(siteMinderConfiguration.getAddress(),
+                            siteMinderConfiguration.getUserName(),
+                            siteMinderConfiguration.getPasswordGoid(),
+                            siteMinderConfiguration.getHostname(),
+                            siteMinderConfiguration.getHostConfiguration(),
+                            SiteMinderFipsModeOption.getByCode(siteMinderConfiguration.getFipsmode()));
                 } catch (IOException e) {
                     final String msg = "Unable to register SiteMinder configuration. Check connection with policy server";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

@@ -280,7 +280,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 configuration.getHostConfiguration(),
                 SiteMinderFipsModeOption.getByCode(configuration.getFipsmode()),
                 configuration.getUserName(),
-                configuration.getPasswordGoid()));
+                configuration.getPasswordGoid(),
+                zoneControl.getSelectedZone()));
     }
 
     private void register(final SiteMinderHost siteMinderHost) {
@@ -322,9 +323,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
                     clusterSettingsMap.clear();
 
-                    if (configuration.getProperties() != null) {
-                        clusterSettingsMap.putAll(properties);
-                    }
+                    clusterSettingsMap.putAll(properties);
 
                     clusterSettingTableModel.fireTableDataChanged();
                 }
