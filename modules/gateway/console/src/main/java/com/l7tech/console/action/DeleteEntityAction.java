@@ -2,6 +2,10 @@ package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import static com.l7tech.objectmodel.EntityType.*;
+
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -14,14 +18,12 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AnonymousGroupReference;
 import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.EventListener;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -66,15 +68,33 @@ public class DeleteEntityAction extends SecureAction {
         return attemptedDelete;
     }
 
-    protected AttemptedDeleteSpecific getAttemptedDelete(EntityHeader header) {
+    protected AttemptedDeleteSpecific getAttemptedDelete(final EntityHeader header) {
         EntityType type = header.getType();
-        Entity deleteMe;
+        Entity deleteMe = null;
         if (type == EntityType.USER) {
             type = USER;
-            deleteMe = new AnonymousUserReference(header.getStrId(), config.getGoid(), header.getName());
+            if (header instanceof IdentityHeader) {
+                try {
+                    deleteMe = Registry.getDefault().getIdentityAdmin().findUserByID(((IdentityHeader) header).getProviderGoid(), header.getStrId());
+                } catch (final FindException | PermissionDeniedException e) {
+                    logger.log(Level.WARNING, "Unable to retrieve user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+            if (deleteMe == null) {
+                deleteMe = new AnonymousUserReference(header.getStrId(), config.getGoid(), header.getName());
+            }
         } else if (type == EntityType.GROUP) {
             type = GROUP;
-            deleteMe = new AnonymousGroupReference(header.getStrId(), config.getGoid(), header.getName(), header.getDescription());
+            if (header instanceof IdentityHeader) {
+                try {
+                    deleteMe = Registry.getDefault().getIdentityAdmin().findGroupByID(((IdentityHeader) header).getProviderGoid(), header.getStrId());
+                } catch (final FindException | PermissionDeniedException e) {
+                    logger.log(Level.WARNING, "Unable to retrieve group: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+            if (deleteMe == null) {
+                deleteMe = new AnonymousGroupReference(header.getStrId(), config.getGoid(), header.getName(), header.getDescription());
+            }
         } else if (type == EntityType.ID_PROVIDER_CONFIG) {
             type = ID_PROVIDER_CONFIG;
             deleteMe = config;
