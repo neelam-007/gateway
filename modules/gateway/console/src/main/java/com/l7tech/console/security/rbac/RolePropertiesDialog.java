@@ -57,6 +57,7 @@ public class RolePropertiesDialog extends JDialog {
         this.role = role;
         this.readOnly = readOnly;
         this.afterEditListener = afterEditListener;
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(contentPanel);
         initComponents();
         initValidation();
