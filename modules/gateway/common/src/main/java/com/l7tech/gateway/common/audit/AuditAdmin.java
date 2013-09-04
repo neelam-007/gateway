@@ -62,7 +62,6 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param jobId the ID of the job whose result to pick up.  Required.
      * @return a job status string in the format specified in {@link AsyncAdminMethods#getJobStatus}
      */
-    @Secured(stereotype=FIND_HEADERS)
     @Administrative(licensed=false, background = true)
     String getFindHeadersJobStatus(JobId<AuditRecordHeader[]> jobId);
 
