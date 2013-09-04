@@ -21,8 +21,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.extract;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 
@@ -105,6 +109,61 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
     @Override
     protected void beforeDeleteEntity( final EntityBag<Folder> folderEntityBag ) throws ObjectModelException {
         checkRoot( folderEntityBag.getEntity() );
+    }
+
+    @Override
+    public FolderMO getResource(final Map<String, String> selectorMap) throws ResourceNotFoundException {
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,FolderMO>>(){
+            @Override
+            public Either<ResourceNotFoundException,FolderMO> execute() throws ObjectModelException {
+                try {
+                    Folder folder = selectFolder(selectorMap);
+                    EntityBag<Folder> entityBag = new EntityBag<Folder>(folder);
+                    checkPermitted( OperationType.READ, null, entityBag.getEntity() );
+                    return right( identify( asResource( entityBag ), entityBag.getEntity() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
+    }
+
+    private Folder selectFolder(Map<String, String> selectorMap) throws ResourceAccessException, ResourceNotFoundException {
+
+        Folder folder = null;
+        final String id = handleRootFolderOid(selectorMap.get(IDENTITY_SELECTOR));
+
+        if ( id == null ) {
+            throw new InvalidResourceSelectors();
+        }
+
+        if ( id != null ) {
+            try {
+                folder = folderManager.findByPrimaryKey( toInternalId(id) );
+            } catch (FindException e) {
+                handleObjectModelException(e);
+            }
+        }
+
+
+        // Verify all selectors match (selectors must be AND'd)
+        if ( folder != null ) {
+            if ( id != null && !id.equalsIgnoreCase(folder.getId())) {
+                folder = null;
+            }
+        }
+
+        if ( folder != null ) {
+            folder = filterEntity( folder );
+        }
+
+        if ( folder == null ) {
+            throw new ResourceNotFoundException("Resource not found " + selectorMap);
+        } else {
+            EntityContext.setEntityInfo( getType(), folder.getId() );
+        }
+
+        return folder;
     }
 
     /**
