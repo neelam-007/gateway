@@ -47,6 +47,7 @@ import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
@@ -496,7 +497,7 @@ public class PolicyHelper {
 
         public JdbcConnection getJdbcConnectionById( final String id ) throws FindException {
             try {
-                return filter( jdbcConnectionManager.findByPrimaryKey( new Goid( id ) ) );
+                return filter( jdbcConnectionManager.findByPrimaryKey( GoidUpgradeMapper.mapId(EntityType.JDBC_CONNECTION, id) ) );
             } catch ( NumberFormatException nfe ) {
                 return null;
             }

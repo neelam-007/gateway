@@ -4,9 +4,11 @@ import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.SocketWrapper.TraceSupport;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.ResourceUtils;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
@@ -93,7 +95,7 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
             Object oid = attributes.get(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
             if (oid == null)
                 return null;
-            return connectorGoid = new Goid(oid.toString());
+            return connectorGoid = GoidUpgradeMapper.mapId(EntityType.SSG_CONNECTOR, oid.toString());
         }
     }
 

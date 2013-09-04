@@ -1,11 +1,13 @@
 package com.l7tech.server.tomcat;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLException;
@@ -102,7 +104,7 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
             HttpTransportModule httpTransportModule = null;
             try {
                 transportModuleId = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
-                connectorGoid = new Goid(getRequiredStringAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID));
+                connectorGoid = GoidUpgradeMapper.mapId(EntityType.SSG_CONNECTOR, getRequiredStringAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID));
                 httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
                 if (httpTransportModule == null)
                     throw new IllegalStateException("No HttpTransportModule with ID " + transportModuleId + " was found");
