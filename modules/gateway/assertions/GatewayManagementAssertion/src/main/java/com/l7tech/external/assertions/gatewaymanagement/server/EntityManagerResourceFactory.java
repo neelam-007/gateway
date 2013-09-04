@@ -150,6 +150,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             public E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
                 try {
                     final EntityBag<E> oldEntityBag = selectEntityBag( selectorMap );
+                    checkPermitted( OperationType.UPDATE, null, oldEntityBag.getEntity() );
                     final EntityBag<E> newEntityBag = fromResourceAsBag( resource );
 
                     if ( resource instanceof ManagedObject ) {
