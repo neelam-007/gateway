@@ -7,6 +7,7 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -51,6 +52,7 @@ import static java.util.Collections.emptySet;
  */
 public class PublishServiceWizard extends Wizard {
     private boolean completedBundle;
+    private IdentityProviderWizardPanel identityPanel;
     /**
      * the bag of service and assertions that his wizard collects
      */
@@ -162,24 +164,26 @@ public class PublishServiceWizard extends Wizard {
 
     public static PublishServiceWizard getInstance(Frame parent) {
         ServicePanel panel1 = new ServicePanel();
+        IdentityProviderWizardPanel panel3 = null;
         if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
             ServiceResolutionPanel panel2 = new ServiceResolutionPanel();
-            IdentityProviderWizardPanel panel3 = new IdentityProviderWizardPanel(true);
+            panel3 = new IdentityProviderWizardPanel(true);
             ProtectedServiceWizardPanel panel4 = new ProtectedServiceWizardPanel();
             panel1.setNextPanel(panel2);
             panel2.setNextPanel(panel3);
             panel3.setNextPanel(panel4);
         }
-        return new PublishServiceWizard(parent, panel1);
+        return new PublishServiceWizard(parent, panel1, panel3);
     }
 
     /**
      * Creates new form PublishServiceWizard
      */
-    protected PublishServiceWizard(Frame parent, WizardStepPanel firstPanel) {
+    protected PublishServiceWizard(Frame parent, WizardStepPanel firstPanel, IdentityProviderWizardPanel identityPanel) {
         super(parent, firstPanel);
         setTitle("Publish SOAP Web Service Wizard");
         wizardInput = saBundle;
+        this.identityPanel = identityPanel;
         addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {
@@ -232,6 +236,10 @@ public class PublishServiceWizard extends Wizard {
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
             saBundle.service.setFolder(saBundle.getFolder().orSome(TopComponents.getInstance().getRootNode().getFolder()));
+            if (saBundle.service.getSecurityZone() == null && identityPanel != null) {
+                // security zone may not have been configured yet
+                saBundle.service.setSecurityZone(identityPanel.getSelectedSecurityZone());
+            }
 
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
             final PublishedService newService = saBundle.getService();
@@ -280,6 +288,10 @@ public class PublishServiceWizard extends Wizard {
 
     private void handlePublishError( final Exception e ) {
         logger.log( Level.WARNING, "Cannot publish service as is", e);
+        if (e instanceof PermissionDeniedException) {
+            // let PermissionDeniedErrorHandler handle it
+            throw (PermissionDeniedException) e;
+        }
         DialogDisplayer.showMessageDialog(null,
           "Unable to save the service '" + saBundle.service.getName() + "'\n",
           "Error",
