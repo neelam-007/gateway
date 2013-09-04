@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.message.EmailKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
@@ -19,6 +20,7 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -121,7 +123,7 @@ public class EmailHandlerImpl implements EmailHandler {
                 if (tmp != null) {
                     if (Boolean.parseBoolean(tmp)) {
                         tmp = props.getProperty( EmailListener.PROP_HARDWIRED_SERVICE_ID);
-                        hardWiredServiceGoidHolder[0] = Goid.parseGoid(tmp);
+                        hardWiredServiceGoidHolder[0] = GoidUpgradeMapper.mapId(EntityType.SERVICE, tmp);
                     }
                 }
             } catch (Exception e) {

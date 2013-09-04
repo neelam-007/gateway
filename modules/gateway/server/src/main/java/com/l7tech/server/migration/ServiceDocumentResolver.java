@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -32,7 +33,7 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
 
         final Goid serviceGoid;
         try {
-            serviceGoid = Goid.parseGoid((String) getPropertyValue(entity, property));
+            serviceGoid = GoidUpgradeMapper.mapId(EntityType.SERVICE, (String) getPropertyValue(entity, property));
         } catch (RuntimeException e) {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }

@@ -201,7 +201,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
 
     /**
-     * @deprecated Secure passwords use goids now.
+     * @deprecated Secure passwords use goids now. Needed for backwards compatibility
      */
     @Deprecated
     public void setPrivateKeyOid(@Nullable Long privateKeyOid) {
@@ -226,7 +226,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
 
     /**
-     * @deprecated Secure passwords use goids now.
+     * @deprecated Secure passwords use goids now. Needed for backwards compatibility
      */
     @Deprecated
     public void setPasswordOid(@Nullable Long passwordOid) {

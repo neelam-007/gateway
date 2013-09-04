@@ -788,7 +788,7 @@ public class LogPanel extends JPanel {
                 } else {
                     entityId = Goid.parseGoid(entityIdTxt);
                 }
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 entityId = AuditRecord.DEFAULT_GOID; // This case presents Invalid Entity Id.
             }
         } else {
@@ -969,7 +969,7 @@ public class LogPanel extends JPanel {
         if (entityIdProperty != null) {
             try {
                 entityId = Goid.parseGoid(entityIdProperty);
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 entityId = AuditRecord.DEFAULT_GOID; // This case represents Invalid Entity Id
             }
         } else {

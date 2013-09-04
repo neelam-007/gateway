@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
@@ -554,7 +555,7 @@ public class ServicePropertiesDialog extends JDialog {
     }
 
     private UDDIServiceControl getNewUDDIServiceControl(WsdlPortInfo wsdlPortInfo) {
-        return new UDDIServiceControl(subject.getGoid(), Goid.parseGoid(wsdlPortInfo.getUddiRegistryId()),
+        return new UDDIServiceControl(subject.getGoid(), GoidUpgradeMapper.mapId(EntityType.UDDI_SERVICE_CONTROL, wsdlPortInfo.getUddiRegistryId()),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
                 wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
                 wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getWsdlPortBindingNamespace(),

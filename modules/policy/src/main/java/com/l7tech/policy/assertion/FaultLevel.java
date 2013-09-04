@@ -70,6 +70,9 @@ public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariabl
         data.setNonDefaultKeystoreId( nonDefaultKeystoreId );
     }
 
+    /**
+     * @Deprecated Needed for backwards compatibility
+     */
     @Deprecated
     public void setNonDefaultKeystoreId( final long nonDefaultKeystoreId ) {
         data.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultKeystoreId ));

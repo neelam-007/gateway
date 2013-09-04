@@ -9,6 +9,7 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -60,7 +61,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             if (out == null) return null;
             out.setProviderId(getProviderGoid());
             return out;
-        } catch (NumberFormatException nfe) {
+        } catch (IllegalArgumentException iae) {
             logger.fine("findByPrimaryKey called with invalid arg '"+oid+"'.");
             return null;
         }

@@ -76,7 +76,7 @@ public class GoidUpgradeMapperTest {
 
     @Test
     public void testMapIds(){
-        assertNull( GoidUpgradeMapper.mapId( null, null ) );
+        assertNull( GoidUpgradeMapper.mapId( (EntityType)null, null ) );
         assertEquals(PersistentEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
         assertEquals(new Goid(WRAP, 44), GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT, "44"));
         assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapId(EntityType.SERVICE, "45"));
@@ -86,7 +86,7 @@ public class GoidUpgradeMapperTest {
         assertEquals(PersistentEntity.DEFAULT_GOID, GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -1L));
         assertEquals(new Goid(TRUSTED_CERT_PREFIX, 44), GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT, "44"));
         assertEquals(new Goid(WRAP, 45), GoidUpgradeMapper.mapId(EntityType.SERVICE, "45"));
-        assertEquals(new Goid(WRAP, 41), GoidUpgradeMapper.mapId(null, "41"));
+        assertEquals(new Goid(WRAP, 41), GoidUpgradeMapper.mapId((EntityType)null, "41"));
         assertEquals(new Goid(456,890), GoidUpgradeMapper.mapId(EntityType.SERVICE, new Goid(456,890).toHexString()));
     }
 }

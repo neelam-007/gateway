@@ -52,7 +52,7 @@ public class GoidUpgradeMapper {
      * @return The prefix for the table name. Null if there is not prefix for the table name.
      */
     public static Long getPrefix(String tableName) {
-        return hasPrefixes ? tableNamePrefixMap.get(tableName) : null;
+        return (hasPrefixes && tableName != null) ? tableNamePrefixMap.get(tableName) : null;
     }
 
     /**
@@ -217,6 +217,36 @@ public class GoidUpgradeMapper {
         }
         try {
             return mapOid(entityType, Long.parseLong(id));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Id is neither a goid or an oid. ID: " + id);
+        }
+    }
+
+    /**
+     * Map a String to a Goid. This will convert a String id which either be a String representation of a Goid or a oid
+     * into a Goid. If the String is already a goid hex string then it is converted to a Goid and that is returned. If
+     * the String is a String representation of a long (oid) then the long is mapped using GoidUpgradeMapper#mapOidFromTableName().
+     * <p/>
+     * If the given string is not a Hex goid representation or a long id then an IllegalArgumentException is thrown.
+     *
+     * @param tableName  the table name associated with the OID, or null to avoid checking for an upgraded prefix and
+     *                   just always use the WRAPPED_OID prefix.
+     * @param id         the id to parse, either a Goid hex String or a String long oid or null to just return null.
+     * @return a new Goid encoding this object ID with the upgraded prefix for this entity type, if available, or else
+     *         with the WRAPPED_OID prefix, or null if oid was null or DefaultGoid if oid was -1 or a Goid
+     *         representation of the id if it was a Hex String.
+     */
+    public static Goid mapId(@Nullable String tableName, @Nullable String id) {
+        if(id == null)
+            return null;
+        try {
+            Goid goid = new Goid(id);
+            return goid;
+        } catch (IllegalArgumentException e) {
+            //do nothing, try it as an oid
+        }
+        try {
+            return mapOidFromTableName(tableName, Long.parseLong(id));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Id is neither a goid or an oid. ID: " + id);
         }

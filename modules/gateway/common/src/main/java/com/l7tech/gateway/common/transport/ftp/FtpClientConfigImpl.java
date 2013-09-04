@@ -141,6 +141,7 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     public FtpCredentialsSource getCredentialsSource() { return this.credentialsSource; }
 
     @Override
+    @Deprecated
     public FtpClientConfig setClientCertId(long id) { this.clientCertKeystoreGoid = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, id); return this; }
 
     @Override

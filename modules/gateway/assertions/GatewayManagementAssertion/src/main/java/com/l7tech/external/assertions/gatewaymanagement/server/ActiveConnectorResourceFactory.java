@@ -4,11 +4,13 @@ import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 
@@ -65,7 +67,7 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
         activeConnector.setName(connectionResource.getName());
 
         try{
-            Goid serviceGoid = connectionResource.getHardwiredId()== null? null :Goid.parseGoid(connectionResource.getHardwiredId());
+            Goid serviceGoid = connectionResource.getHardwiredId()== null? null : GoidUpgradeMapper.mapId(EntityType.SERVICE, connectionResource.getHardwiredId());
             activeConnector.setHardwiredServiceGoid(serviceGoid);
         } catch( IllegalArgumentException e){
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid hardwired id: "+e.getMessage());

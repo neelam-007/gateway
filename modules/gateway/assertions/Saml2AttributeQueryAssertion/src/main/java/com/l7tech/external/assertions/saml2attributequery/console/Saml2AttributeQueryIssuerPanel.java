@@ -16,23 +16,6 @@ import java.awt.*;
  * To change this template use File | Settings | File Templates.
  */
 public class Saml2AttributeQueryIssuerPanel extends WizardStepPanel {
-    private static class LdapServerEntry {
-        private long oid;
-        private String name;
-
-        public LdapServerEntry(long oid, String name) {
-            this.oid = oid;
-            this.name = name;
-        }
-
-        public String toString() {
-            return name;
-        }
-
-        public long getOid() {
-            return oid;
-        }
-    }
 
     private JPanel mainPanel;
     private JTextField issuerField;

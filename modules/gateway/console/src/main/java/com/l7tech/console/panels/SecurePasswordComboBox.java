@@ -87,7 +87,7 @@ public class SecurePasswordComboBox extends JComboBox<SecurePassword> {
             setSelectedIndex(selectedIndex);
         } else if (!Goid.isDefault(goid)) {
             // oid not found in available passwords - could be not readable by current user
-            logger.log(Level.WARNING, "Password oid not available to current user");
+            logger.log(Level.WARNING, "Password goid not available to current user");
             final SecurePassword unavailablePassword = new SecurePassword();
             unavailablePassword.setGoid(goid);
             unavailablePassword.setName("Current password (password details are unavailable)");

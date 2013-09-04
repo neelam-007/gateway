@@ -47,8 +47,6 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private String description;
 
     private EntityType entityType;
-    @Deprecated
-    private Long entityOid;
     private Goid entityGoid;
     private Entity cachedSpecificEntity;
     private Tag tag;

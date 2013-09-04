@@ -1,6 +1,8 @@
 package com.l7tech.server.wsdm;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -103,7 +105,7 @@ public class QoSMetricsService {
         boolean operational = false;
         if (serviceId != null) {
             try {
-                goid = Goid.parseGoid(serviceId);
+                goid = GoidUpgradeMapper.mapId(EntityType.SERVICE, serviceId);
                 PublishedService ps = serviceCache.getCachedService(goid);
                 if (ps == null) throw new ResourceUnknownFault("No service by the ");
                 operational = !ps.isDisabled();

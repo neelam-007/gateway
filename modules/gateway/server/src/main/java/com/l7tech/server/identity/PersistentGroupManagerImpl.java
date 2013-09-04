@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -91,8 +92,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             if (out == null) return null;
             out.setProviderId(getProviderGoid());
             return out;
-        } catch (NumberFormatException nfe) {
-            throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
+        } catch (IllegalArgumentException iae) {
+            throw new FindException("Can't find groups with bad IDs: " + oid, iae);
         }
     }
 

@@ -481,9 +481,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
-     * Returns the current version (in the database) of the entity with the specified OID.
+     * Returns the current version (in the database) of the entity with the specified GOID.
      *
-     * @param goid the OID of the entity whose version should be retrieved
+     * @param goid the GOID of the entity whose version should be retrieved
      * @return The version, or null if the entity does not exist.
      * @throws com.l7tech.objectmodel.FindException
      */
@@ -736,7 +736,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                         publishRoleAwareEntityDeletionEvent(entity);
                         session.delete(entity);
                     } else {
-                        throw new RuntimeException("More than one entity found with oid = " + goid);
+                        throw new RuntimeException("More than one entity found with goid = " + goid);
                     }
                     return null;
                 }
@@ -855,7 +855,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * is stale by looking up its {@link com.l7tech.objectmodel.PersistentEntity#getVersion}.  If the cached entity has the same
      * version as the database, the cached version is marked fresh.
      *
-     * @param goid the OID of the object to get
+     * @param goid the GOID of the object to get
      * @param maxAge the age, in milliseconds, that a cached entity must attain before it is considered stale
      * @return the object with the specified ID, from a cache if possible.
      * @throws com.l7tech.objectmodel.FindException
@@ -1072,9 +1072,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
-     * Lookup the entity by oid and delete(ET) it.
+     * Lookup the entity by goid and delete(ET) it.
      *
-     * @param goid The entity oid.
+     * @param goid The entity goid.
      * @return true if the entity was deleted; false otherwise
      * @throws com.l7tech.objectmodel.FindException if there is a problem finding the entity
      * @throws com.l7tech.objectmodel.DeleteException if there is a problem deleting the entity

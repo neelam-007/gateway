@@ -114,7 +114,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 FederatedGroup group = new FederatedGroup();
                 val = getParamFromEl(groupElement, GOID_EL_NAME);
                 if(val != null) {
-                    group.setGoid(Goid.parseGoid(val));
+                    group.setGoid(GoidUpgradeMapper.mapId("fed_group", val));
                 }
 
                 val = getParamFromEl(groupElement, NAME_EL_NAME);
@@ -151,7 +151,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 VirtualGroup group = new VirtualGroup();
                 val = getParamFromEl(groupElement, GOID_EL_NAME);
                 if(val != null) {
-                    group.setGoid(Goid.parseGoid(val));
+                    group.setGoid(GoidUpgradeMapper.mapId("fed_group_virtual", val));
                 }
 
                 val = getParamFromEl(groupElement, NAME_EL_NAME);
@@ -184,7 +184,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 FederatedUser user = new FederatedUser();
                 val = getParamFromEl(userElement, GOID_EL_NAME);
                 if(val != null) {
-                    user.setGoid(Goid.parseGoid(val));
+                    user.setGoid(GoidUpgradeMapper.mapId("fed_user", val));
                 }
 
                 val = getParamFromEl(userElement, NAME_EL_NAME);

@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -199,7 +200,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
 
-            final Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+            final Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {
                 request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
             }

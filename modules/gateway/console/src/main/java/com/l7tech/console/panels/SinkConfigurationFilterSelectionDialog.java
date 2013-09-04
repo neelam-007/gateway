@@ -18,6 +18,7 @@ import com.l7tech.gui.util.TreeModelListenerAdapter;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.GoidUpgradeMapper;
 
 import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
 import static com.l7tech.objectmodel.EntityType.findTypeByEntity;
@@ -479,7 +480,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                 selection = doAdmin( null, new UnaryThrows<User,Registry,ObjectModelException>(){
                     @Override
                     public User call( final Registry registry ) throws ObjectModelException {
-                        return registry.getIdentityAdmin().findUserByID( Goid.parseGoid( id[0] ), id[1] );
+                        return registry.getIdentityAdmin().findUserByID( GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG, id[0]), id[1] );
                     }
                 } ).map( new Unary<FilterSelection, User>(){
                     @Override

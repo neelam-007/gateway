@@ -852,7 +852,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         if (zoneId != null && !zoneId.isEmpty()) {
             final Goid securityZoneGoid;
             try {
-                securityZoneGoid = Goid.parseGoid( zoneId );
+                securityZoneGoid = GoidUpgradeMapper.mapId(EntityType.SECURITY_ZONE, zoneId );
             } catch( IllegalArgumentException nfe ) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
             }

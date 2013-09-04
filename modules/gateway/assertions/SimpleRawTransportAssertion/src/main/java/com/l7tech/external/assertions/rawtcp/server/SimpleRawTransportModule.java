@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
@@ -385,7 +386,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     private void handleRawTcpRequest(final Socket sock, SsgConnector connector) {
-        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+        Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
 
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;

@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
@@ -23,10 +24,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.uddi.WsdlPortInfo;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Option;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -253,7 +251,7 @@ public class PublishServiceWizard extends Wizard {
                     //was the service created from UDDI, if the WSDL url still matches what was saved, then
                     //record this
                     if( saBundle.isServiceControlRequired() ){
-                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(goid, Goid.parseGoid(wsdlPortInfo.getUddiRegistryId()),
+                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(goid, GoidUpgradeMapper.mapId(EntityType.UDDI_SERVICE_CONTROL, wsdlPortInfo.getUddiRegistryId()),
                                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
                                 wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                                 wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),

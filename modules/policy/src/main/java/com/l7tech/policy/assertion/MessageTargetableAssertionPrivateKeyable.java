@@ -33,6 +33,7 @@ public abstract class MessageTargetableAssertionPrivateKeyable
         privateKeyableSupport.setNonDefaultKeystoreId(nonDefaultId);
     }
 
+    // For backward compat while parsing pre-GOID policies.  Not needed for new assertions.
     @Deprecated
     public void setNonDefaultKeystoreId(long nonDefaultId) {
         privateKeyableSupport.setNonDefaultKeystoreId(GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, nonDefaultId));

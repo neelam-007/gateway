@@ -23,13 +23,6 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
         this.name = name;
     }
 
-    @Deprecated
-    public AnonymousEntityReference(Class<? extends Entity> entityClass, long oid, String name) {
-        this.entityClass = entityClass;
-        this.name = name;
-        this.uniqueId = Long.toString(oid);
-    }
-
     public AnonymousEntityReference(Class<? extends Entity> entityClass, Goid oid, String name) {
         this.entityClass = entityClass;
         this.name = name;

@@ -1069,7 +1069,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             TrustedCert cert = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(oid);
             return cert == null ? null : cert.getName();
         } catch (FindException e) {
-            log.log(Level.INFO, "Unable to retrieve trusted certificate OID " + oid + ": " + ExceptionUtils.getMessage(e), e);
+            log.log(Level.INFO, "Unable to retrieve trusted certificate GOID " + oid + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         }
     }

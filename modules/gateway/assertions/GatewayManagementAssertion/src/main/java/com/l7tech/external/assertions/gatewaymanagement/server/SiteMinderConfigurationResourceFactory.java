@@ -5,13 +5,14 @@ import com.l7tech.gateway.api.SiteMinderConfigurationMO;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.HashMap;
@@ -91,12 +92,12 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setUserName( smResource.getUserName() );
         if ( smResource.getPasswordId() != null && !smResource.getPasswordId().isEmpty() ) {
             try {
-                SecurePassword password = securePasswordManager.findByPrimaryKey( Goid.parseGoid( smResource.getPasswordId() ) );
+                SecurePassword password = securePasswordManager.findByPrimaryKey( GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()) );
 
                 if (password == null) {
                     throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
                 }
-                smConfiguration.setPasswordGoid(Goid.parseGoid(smResource.getPasswordId()));
+                smConfiguration.setPasswordGoid(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()));
             } catch (FindException e) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }

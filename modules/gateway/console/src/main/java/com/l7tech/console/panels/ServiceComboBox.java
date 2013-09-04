@@ -49,7 +49,7 @@ public class ServiceComboBox extends JComboBox {
             logger.severe("Can not find service with id " + item.serviceID);
         } catch (final PermissionDeniedException e) {
             // service exists but user does not have permission to read it
-            logger.log(Level.WARNING, "User does not have permission to read selected service. Returning default service with selected oid.");
+            logger.log(Level.WARNING, "User does not have permission to read selected service. Returning default service with selected goid.");
             svc = new PublishedService();
             svc.setGoid(item.serviceID);
         }

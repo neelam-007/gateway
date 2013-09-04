@@ -453,24 +453,6 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         }
     }
 
-    @Deprecated
-    private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, long entityOid) {
-        Set<Permission> ret = new HashSet<Permission>();
-
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_OBJECT_IDENTITY_PREDICATES_REFERENCING_ENTITY_ID, String.valueOf(entityOid));
-        for (Object predicate : predicates) {
-            if (!(predicate instanceof ObjectIdentityPredicate))
-                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding object identity predicates by entity oid");
-
-            ObjectIdentityPredicate oip = (ObjectIdentityPredicate) predicate;
-            if (etype.equals(oip.getPermission().getEntityType())) {
-                ret.add(oip.getPermission());
-            }
-        }
-
-        return ret;
-    }
-
     private Set<Permission> findObjectIdentityPredicatePermissionsForEntity(EntityType etype, Goid entityGoid) {
         return findObjectIdentityPredicatePermissionsForEntity(etype, entityGoid.toHexString());
     }
@@ -487,22 +469,6 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
             if (etype.equals(oip.getPermission().getEntityType())) {
                 ret.add(oip.getPermission());
             }
-        }
-
-        return ret;
-    }
-
-    @Deprecated
-    private Set<Permission> findEntityFolderAncestryPredicatePermissionsForEntity(EntityType etype, long entityOid) {
-        Set<Permission> ret = new HashSet<Permission>();
-
-        List predicates = getHibernateTemplate().find(HQL_FIND_ALL_FOLDER_ANCESTRY_PREDICATES_REFERENCING_ENTITY_ID_AND_TYPE, String.valueOf(entityOid), etype);
-        for (Object predicate : predicates) {
-            if (!(predicate instanceof EntityFolderAncestryPredicate))
-                throw new HibernateException("Got unexpected return value type of " + predicate.getClass() + " while finding entity folder ancestry predicates by entity oid and type");
-
-            EntityFolderAncestryPredicate efap = (EntityFolderAncestryPredicate) predicate;
-            ret.add(efap.getPermission());
         }
 
         return ret;

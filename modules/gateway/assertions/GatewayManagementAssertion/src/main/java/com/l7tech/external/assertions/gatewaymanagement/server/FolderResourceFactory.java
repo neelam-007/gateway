@@ -15,6 +15,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -217,7 +218,7 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
             @Override
             public Goid call( final String value ) {
                 try {
-                    return Goid.parseGoid( handleRootFolderOid(value) );
+                    return GoidUpgradeMapper.mapId(EntityType.FOLDER, handleRootFolderOid(value));
                 } catch( IllegalArgumentException nfe ) {
                     return PersistentEntity.DEFAULT_GOID; // will not match any folder
                 }

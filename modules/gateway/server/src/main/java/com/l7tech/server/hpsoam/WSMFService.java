@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
@@ -47,7 +48,7 @@ public class WSMFService implements ApplicationContextAware {
     private ServiceManager serviceManager;
     private ApplicationContext applicationContext;
     private long bogusPushEventNr = 0;
-    static final Pattern serviceoidPattern = Pattern.compile(".*/service/(\\d*).*");
+    static final Pattern serviceoidPattern = Pattern.compile(".*/service/([0-9a-fA-F]{32}|\\d{1,20}).*");
 
     public static boolean isEnabled() {
         return ConfigFactory.getBooleanProperty( HPSOAM_ENABLED, false );
@@ -94,7 +95,7 @@ public class WSMFService implements ApplicationContextAware {
         context.url = WSMFServlet.getFullURL(req);
         Matcher matcher = serviceoidPattern.matcher(context.url);
         if (matcher.matches()) {
-            context.serviceid = Goid.parseGoid(matcher.group(1));
+            context.serviceid = GoidUpgradeMapper.mapId(EntityType.SERVICE, matcher.group(1));
         }
 
         if (context.serviceid != null) {
@@ -375,7 +376,7 @@ public class WSMFService implements ApplicationContextAware {
     public String handleMOSpecificGET(String fullURL, HttpServletRequest req) {
         Matcher matcher = serviceoidPattern.matcher(fullURL);
         if (matcher.matches()) {
-            return containerMO.handleMOSpecificGET(fullURL, Goid.parseGoid(matcher.group(1)), req);
+            return containerMO.handleMOSpecificGET(fullURL, GoidUpgradeMapper.mapId(EntityType.SERVICE, matcher.group(1)), req);
         }
         throw new RuntimeException("Cannot happen");
     }

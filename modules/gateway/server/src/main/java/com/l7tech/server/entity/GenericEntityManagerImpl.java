@@ -438,7 +438,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             final Goid goid = entity.getGoid();
             GenericEntity got = findByPrimaryKey(goid);
             if (got != null && !entityClass.getName().equals(got.getEntityClassName()))
-                throw new UpdateException("Generic entity with oid " + goid.toString() + " cannot be updated as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
+                throw new UpdateException("Generic entity with goid " + goid.toString() + " cannot be updated as a " + entityClass.getName() + " because it is actually a " + got.getEntityClassName());
         } catch (FindException e) {
             throw new UpdateException("Unable to update generic entity: " + ExceptionUtils.getMessage(e), e);
         }

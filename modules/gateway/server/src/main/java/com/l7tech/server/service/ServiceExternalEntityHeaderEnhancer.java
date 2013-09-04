@@ -3,9 +3,9 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.cluster.ExternalEntityHeaderEnhancer;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
@@ -35,7 +35,7 @@ public class ServiceExternalEntityHeaderEnhancer implements ExternalEntityHeader
         if ( header.getType() == EntityType.SERVICE ) {
             service = serviceCache.getCachedService(header.getGoid());
         } else if ( header.getType() == EntityType.SERVICE_ALIAS && ValidationUtils.isValidLong( header.getProperty( "Alias Of" ), false, Long.MIN_VALUE, Long.MAX_VALUE) ) {
-            service = serviceCache.getCachedService(Goid.parseGoid(header.getProperty("Alias Of")));
+            service = serviceCache.getCachedService(GoidUpgradeMapper.mapId(EntityType.SERVICE, header.getProperty("Alias Of")));
         } else {
             service = null;
         }

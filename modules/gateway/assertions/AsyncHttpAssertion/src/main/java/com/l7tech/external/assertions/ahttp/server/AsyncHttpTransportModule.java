@@ -11,6 +11,7 @@ import com.l7tech.message.HasServiceId;
 import com.l7tech.message.HasServiceIdImpl;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
@@ -269,7 +270,7 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
     void submitRequestToMessageProcessor(@NotNull PendingAsyncRequest pendingRequest, @NotNull HttpRequest httpRequest, @NotNull HttpResponse httpResponse, @NotNull InputStream bodyInputStream, @Nullable InetSocketAddress clientAddress) {
         final AsyncHttpListenerInfo listenerInfo = pendingRequest.getListenerInfo();
         final SsgConnector connector = listenerInfo.getConnector();
-        Goid hardwiredServiceGoid = connector.getGoidProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+        Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
 
         String idToCleanup = null;
         PolicyEnforcementContext context = null;

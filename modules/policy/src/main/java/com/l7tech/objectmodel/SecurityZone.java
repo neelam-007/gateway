@@ -96,7 +96,7 @@ public class SecurityZone extends NamedEntityImp {
     @Override
     public String toString() {
         return "SecurityZone{" +
-            "oid=" + getGoid().toHexString() +
+            "goid=" + getGoid().toHexString() +
             ", name='" + getName() + "'" +
             ", description='" + description + '\'' +
             '}';

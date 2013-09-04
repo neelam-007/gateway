@@ -53,7 +53,7 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
     public EncapsulatedAssertionConfig findByPrimaryKey(Goid goid) throws FindException {
         EncapsulatedAssertionConfig ret = encapsulatedAssertionConfigManager.findByPrimaryKey(goid);
         if (ret == null)
-            throw new FindException("No encapsulated assertion config found with oid " + goid);
+            throw new FindException("No encapsulated assertion config found with goid " + goid);
         ret.detachPolicy();
         return ret;
     }

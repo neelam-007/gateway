@@ -2,12 +2,14 @@ package com.l7tech.gateway.common.transport;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Pair;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -498,12 +500,12 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
      * @param dflt the default value to return if the property is not set or if it is not a valid Goid
      * @return the requested property value, or null if it is not set
      */
-    public Goid getGoidProperty(String key, Goid dflt) {
+    public Goid getGoidProperty(EntityType entityType, String key, Goid dflt) {
         String val = getProperty(key);
         if (val == null)
             return dflt;
         try {
-            return Goid.parseGoid(val);
+            return GoidUpgradeMapper.mapId(entityType, val);
         } catch (IllegalArgumentException iae) {
             if (logger.isLoggable(Level.WARNING))
                 logger.log(Level.WARNING, "Invalid goid property value for listen port " + getPort() + " property " + key + ": " + val);

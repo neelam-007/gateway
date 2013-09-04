@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -31,7 +32,7 @@ public abstract class SecurityZoneableEntityManagerResourceFactory<R extends Sec
             if (resource.getSecurityZoneId() != null && !resource.getSecurityZoneId().isEmpty()) {
                 final Goid securityZoneId;
                 try {
-                    securityZoneId = Goid.parseGoid( resource.getSecurityZoneId() );
+                    securityZoneId = GoidUpgradeMapper.mapId(EntityType.SECURITY_ZONE, resource.getSecurityZoneId());
                 } catch( IllegalArgumentException nfe ) {
                     throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
                 }

@@ -215,7 +215,7 @@ public class SsgFirewallManagerDialog extends JDialog {
                     }
                     loadFirewallRules();
                 } catch (Exception e1) {
-                    logger.warning("Unable to remove the firewall rule with oid of " + rule.getGoid());
+                    logger.warning("Unable to remove the firewall rule with goid of " + rule.getGoid());
                 }
             }
         });

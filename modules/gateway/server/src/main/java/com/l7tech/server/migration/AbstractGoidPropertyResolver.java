@@ -61,7 +61,7 @@ public abstract class AbstractGoidPropertyResolver extends AbstractPropertyResol
             externalHeader.setValueMapping(valueMappingType, valueType, goid);
             result.put(externalHeader, Collections.singleton(new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported)));
         } catch (FindException e) {
-            logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, goid});
+            logger.log(Level.FINE, "No entity found for type: {0} goid: {1}.", new Object[]{targetType, goid});
         }
         return result;
     }

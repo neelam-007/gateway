@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
@@ -62,7 +63,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
             encassEntity.setArgumentDescriptors(getArgumentDescriptorSet(encassResource, encassEntity));
             encassEntity.setResultDescriptors(getResultDescriptorSet(encassResource, encassEntity));
 
-            Policy policy = policyManager.findByPrimaryKey(toInternalId(encassResource.getPolicyReference().getId(), "Policy Resource Identifier")) ;
+            Policy policy = policyManager.findByPrimaryKey(toInternalId(EntityType.POLICY, encassResource.getPolicyReference().getId(), "Policy Resource Identifier")) ;
             if (policy == null)
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy reference");
             checkPermitted(OperationType.READ, null, policy);

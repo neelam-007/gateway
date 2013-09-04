@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
@@ -183,7 +184,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     if (tmp != null) {
                         if (Boolean.parseBoolean(tmp)) {
                             tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                            hardwiredserviceGoidHolder[0] = Goid.parseGoid(tmp);
+                            hardwiredserviceGoidHolder[0] = GoidUpgradeMapper.mapId(EntityType.SERVICE, tmp);
                         }
                     }
                 } catch (Exception e) {

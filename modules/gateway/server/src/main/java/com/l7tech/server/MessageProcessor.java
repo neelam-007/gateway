@@ -1074,7 +1074,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             final Goid serviceGoid = context.getService().getGoid();
             serverPolicy = serviceCache.getServerPolicy(serviceGoid);
             if (serverPolicy == null)
-                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid for service OID " + serviceGoid + " (" + context.getService().getName() + ")");
+                throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid for service GOID " + serviceGoid + " (" + context.getService().getName() + ")");
             context.setServicePolicyMetadata( serverPolicy.getPolicyMetadata() );
         }
 

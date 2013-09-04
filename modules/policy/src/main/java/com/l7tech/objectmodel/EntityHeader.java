@@ -112,7 +112,7 @@ public class EntityHeader extends EntityHeaderRef {
     }
 
     public String toStringVerbose() {
-        return "EntityHeader. Name=" + getName() + ", oid=" + getStrId() + ", description=" + description +
+        return "EntityHeader. Name=" + getName() + ", id=" + getStrId() + ", description=" + description +
                ", type = " + type.toString();
     }
 

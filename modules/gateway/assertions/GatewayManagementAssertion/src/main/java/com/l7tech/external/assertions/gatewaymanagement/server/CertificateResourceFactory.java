@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -81,7 +82,7 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
         if ( revocationCheckingEnabled ) {
             if ( certificateResource.getRevocationCheckingPolicyId() != null ) {
                 certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.SPECIFIED );
-                certificateEntity.setRevocationCheckPolicyOid( toInternalId( certificateResource.getRevocationCheckingPolicyId(), "Revocation Checking Policy Identifier" ) );
+                certificateEntity.setRevocationCheckPolicyOid(toInternalId( EntityType.REVOCATION_CHECK_POLICY, certificateResource.getRevocationCheckingPolicyId(), "Revocation Checking Policy Identifier" ) );
             } else {
                 certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
             }

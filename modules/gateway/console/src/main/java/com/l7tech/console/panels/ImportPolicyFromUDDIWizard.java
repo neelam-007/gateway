@@ -45,17 +45,8 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
     }
 
     public class Data {
-        private long registryOid;
         private String policyXML;
         private boolean confirmed;
-
-        public long getRegistryOid() {
-            return registryOid;
-        }
-
-        public void setRegistryOid( final long registryOid ) {
-            this.registryOid = registryOid;
-        }
 
         public String getPolicyXML() {
             return policyXML;

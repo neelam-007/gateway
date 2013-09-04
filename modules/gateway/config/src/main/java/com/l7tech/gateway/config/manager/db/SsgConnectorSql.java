@@ -35,7 +35,7 @@ public class SsgConnectorSql {
     public static Collection<SsgConnector> loadAll(Connection c) throws SQLException {
         Collection<SsgConnector> connectors =
                 doLoadAll(c, "connector", SsgConnector.class,
-                        "goid", "name","enabled", "port", "scheme", "secure", "endpoints", "client_auth", "keystore_oid", "key_alias");
+                        "goid", "name","enabled", "port", "scheme", "secure", "endpoints", "client_auth", "keystore_goid", "key_alias");
 
         // Fill in properties
         for (final SsgConnector connector : connectors) {

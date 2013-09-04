@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -509,7 +510,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
             if (Boolean.parseBoolean(tmp)) {
                 tmp = props.getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
                 isHardWired = true;
-                hardWiredId = Goid.parseGoid(tmp);
+                hardWiredId = GoidUpgradeMapper.mapId(EntityType.SERVICE, tmp);
             }
  	 	}
 

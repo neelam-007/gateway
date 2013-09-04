@@ -633,14 +633,15 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @return The identifier as a Goid
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the given identifier is not valid
      */
-    protected final Goid toInternalId( final String identifier,
+    protected final Goid toInternalId( final EntityType entityType,
+                                       final String identifier,
                                        final String identifierDescription ) throws InvalidResourceException {
         if ( identifier == null )
             throw new InvalidResourceException(
                     InvalidResourceException.ExceptionType.MISSING_VALUES,
                     "Missing " + identifierDescription );
         try {
-            return Goid.parseGoid(identifier);
+            return GoidUpgradeMapper.mapId(entityType, identifier);
         } catch ( IllegalArgumentException nfe ) {
             throw new InvalidResourceException(
                     InvalidResourceException.ExceptionType.INVALID_VALUES,

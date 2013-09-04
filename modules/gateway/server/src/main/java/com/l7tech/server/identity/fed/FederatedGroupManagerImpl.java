@@ -13,16 +13,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManagerImpl;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -98,7 +95,7 @@ public class FederatedGroupManagerImpl
         try {
             FederatedGroup g = super.findByPrimaryKey(oid);
             if ( g == null ) {
-                g = findByPrimaryKey(VirtualGroup.class, Goid.parseGoid(oid));
+                g = findByPrimaryKey(VirtualGroup.class, GoidUpgradeMapper.mapId("fed_group_virtual", oid));
                 if (g != null) {
                     g.setProviderId(providerConfig.getGoid());
                 }

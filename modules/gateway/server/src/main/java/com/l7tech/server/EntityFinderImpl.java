@@ -317,7 +317,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             return results;
         } catch (final HibernateException e) {
             // can happen if the class doesn't store its security zone in the database
-            throw new FindException("Unable to retrieve entities with class " + clazz.getName() + " and security zone oid " + securityZoneGoid, e);
+            throw new FindException("Unable to retrieve entities with class " + clazz.getName() + " and security zone goid " + securityZoneGoid, e);
         }
     }
 
