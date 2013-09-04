@@ -101,7 +101,9 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
             }
         }
         //remove the dependency processor
-        processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+        if(processorRegistry != null) {
+            processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+        }
     }
 
     /**

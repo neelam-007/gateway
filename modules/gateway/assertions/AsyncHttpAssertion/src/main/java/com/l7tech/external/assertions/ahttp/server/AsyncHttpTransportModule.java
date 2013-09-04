@@ -435,9 +435,11 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
             } finally {
                 instance = null;
             }
+            //remove the dependency processor
+            if(processorRegistry != null) {
+                processorRegistry.remove(SCHEME_ASYNC_HTTP);
+            }
         }
-        //remove the dependency processor
-        processorRegistry.remove(SCHEME_ASYNC_HTTP);
     }
 
     public static boolean sendResponseToPendingRequest(String requestId, Message response, boolean destroyAsRead) {

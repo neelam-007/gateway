@@ -53,9 +53,11 @@ public class ModuleLoadListener {
             } finally {
                 instance = null;
             }
+            //remove the dependency processor
+            if (processorRegistry != null) {
+                processorRegistry.remove(SimpleRawTransportModule.SCHEME_RAW_TCP);
+            }
         }
-        //remove the dependency processor
-        processorRegistry.remove(SimpleRawTransportModule.SCHEME_RAW_TCP);
     }
 
 }

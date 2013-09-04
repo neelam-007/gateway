@@ -72,9 +72,11 @@ public class SshServerModuleLoadListener {
             } finally {
                 instance = null;
             }
+            //remove the dependency processor from the list
+            if(processorRegistry != null){
+                processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+            }
         }
-        //remove the dependency processor from the list
-        processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
     }
 
 }
