@@ -387,6 +387,56 @@ public class SafeXMLDecoderTest {
         assertEquals("Size mismatch", 10, Array.getLength(obj));
     }
 
+    @Test
+    public void testDecodeArray() {
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<java version=\"1.7.0_03\" class=\"java.beans.XMLDecoder\">\n" +
+                " <array class=\"java.lang.Object\" length=\"3\">\n" +
+                "  <void index=\"0\">\n" +
+                "   <object class=\"java.util.HashMap\">\n" +
+                "    <void method=\"put\">\n" +
+                "     <string>file.format</string>\n" +
+                "     <string>STANDARD</string>\n" +
+                "    </void>\n" +
+                "    <void method=\"put\">\n" +
+                "     <string>file.maxSize</string>\n" +
+                "     <string>1024</string>\n" +
+                "    </void>\n" +
+                "    <void method=\"put\">\n" +
+                "     <string>file.logCount</string>\n" +
+                "     <string>2</string>\n" +
+                "    </void>\n" +
+                "   </object>\n" +
+                "  </void>\n" +
+                "  <void index=\"1\">\n" +
+                "   <object class=\"java.util.ArrayList\"/>\n" +
+                "  </void>\n" +
+                "  <void index=\"2\">\n" +
+                "   <object class=\"java.util.HashMap\">\n" +
+                "    <void method=\"put\">\n" +
+                "     <string>policy-id</string>\n" +
+                "     <object class=\"java.util.ArrayList\">\n" +
+                "      <void method=\"add\">\n" +
+                "       <string>241696774</string>\n" +
+                "      </void>\n" +
+                "     </object>\n" +
+                "    </void>\n" +
+                "   </object>\n" +
+                "  </void>\n" +
+                " </array>\n" +
+                "</java>\n";
+
+        ClassFilter testFilter = new ClassFilterBuilder().allowDefaults().build();
+
+        SafeXMLDecoder decoder = new SafeXMLDecoder(testFilter, new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)), null, failListener);
+        Object obj = decoder.readObject();
+        decoder.close();
+        assertTrue("Returned object is not array", obj.getClass().isArray());
+        assertSame("Array type expected", Object.class, obj.getClass().getComponentType());
+        assertEquals("Size mismatch", 3, Array.getLength(obj));
+    }
+
     private void decode(String resourceName) throws Exception {
         SafeXMLDecoder d = null;
         try {

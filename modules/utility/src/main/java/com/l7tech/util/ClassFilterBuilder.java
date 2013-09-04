@@ -182,7 +182,7 @@ public class ClassFilterBuilder {
     );
 
     private static final Set<String> DEFAULT_CLASSES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        "java.jang.Object",
+        "java.lang.Object",
         "java.lang.String",
         "java.util.TreeSet",
         "java.util.HashMap",
@@ -193,7 +193,7 @@ public class ClassFilterBuilder {
     )));
 
     private static final Set<String> DEFAULT_CONSTRUCTORS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        "java.jang.Object()",
+        "java.lang.Object()",
         "java.util.TreeSet()",
         "java.util.HashMap()",
         "java.util.ArrayList()",
