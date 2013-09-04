@@ -22,6 +22,9 @@
     <bean id="trustedEsmUserManager" class="com.l7tech.server.TrustedEsmUserManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerImpl" parent="hibernateBean">
+    </bean>
+
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
         <property name="rbacServices">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">

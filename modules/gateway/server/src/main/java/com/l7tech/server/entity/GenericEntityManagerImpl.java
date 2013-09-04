@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -503,7 +505,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
         SafeXMLDecoder decoder = null;
         try {
-             decoder = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
+             decoder = new SafeXMLDecoderBuilder(makeClassFilterBuilder(entityClass), new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
                     .setClassLoader(entityClass.getClassLoader()).build();
 
             Object obj = decoder.readObject();
@@ -519,6 +521,33 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         }
 
         throw new InvalidGenericEntityException("Generic entity XML stream did not contain an instance of " + entityClassName);
+    }
+
+    private <ET extends GenericEntity> ClassFilterBuilder makeClassFilterBuilder(final Class<ET> entityClass) {
+        // Automatically permit the target generic entity, its default constructor, and simple getters and setters, so most simple uses of generic entities will Just Work
+        ClassFilter extraFilter = new AnnotationClassFilter(entityClass.getClassLoader(), Arrays.asList("com.l7tech.", entityClass.getPackage().getName() + ".")) {
+            @Override
+            protected boolean permitClass(@NotNull Class<?> clazz) {
+                return super.permitClass(clazz) ||
+                    GenericEntity.class.isAssignableFrom(clazz);
+            }
+
+            @Override
+            public boolean permitConstructor(@NotNull Constructor<?> constructor) {
+                return super.permitConstructor(constructor) ||
+                    (GenericEntity.class.isAssignableFrom(constructor.getDeclaringClass()) && constructor.getParameterTypes().length < 1);
+            }
+
+            @Override
+            public boolean permitMethod(@NotNull Method method) {
+                return super.permitMethod(method) ||
+                    (GenericEntity.class.isAssignableFrom(method.getDeclaringClass()) && (isSetter(method) || isGetter(method)));
+            }
+        };
+        return new ClassFilterBuilder().
+            allowDefaults().
+            addClassFilter(extraFilter).
+            addMethods("com.l7tech.objectmodel.imp.NamedEntityImp.setName(java.lang.String)");
     }
 
     static void regenerateValueXml(GenericEntity that) {

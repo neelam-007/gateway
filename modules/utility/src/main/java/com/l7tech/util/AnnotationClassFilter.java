@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,10 +113,20 @@ public class AnnotationClassFilter implements ClassFilter {
         if (classSafety == null)
             return false;
 
-        if (classSafety.allowAllSetters() && method.getName().startsWith("set") && !"set".equals(method.getName())) {
+        if (classSafety.allowAllSetters() && isSetter(method)) {
             return true;
         }
 
         return false;
+    }
+
+    protected boolean isSetter(@NotNull Method method) {
+        return !Modifier.isStatic(method.getModifiers()) && method.getName().startsWith("set") && method.getParameterTypes().length == 1;
+    }
+
+    protected boolean isGetter(@NotNull Method method) {
+        return !Modifier.isStatic(method.getModifiers()) &&
+            (method.getName().startsWith("get") || (method.getName().startsWith("is") && boolean.class.equals(method.getReturnType()))) &&
+            method.getParameterTypes().length == 0;
     }
 }

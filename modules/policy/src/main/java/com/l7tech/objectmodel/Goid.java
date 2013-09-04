@@ -34,12 +34,14 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     /**
-     * Creates a new goid from two long values
+     * Creates a new goid from two long values.
+     * <p/>
+     * This method is intended to be used for unit tests and should generally <b>not be used in production</b>
+     * because the Goid type may be widened in the future to be larger than 128 bits.
      *
      * @param high The high long will be the first 8 bytes of the goid
      * @param low  The low long will be the last 8 bytes of the goid
      */
-    @XmlSafe
     public Goid(long high, long low) {
         this.high = high;
         this.low = low;
@@ -112,7 +114,10 @@ public final class Goid implements Comparable<Goid>, Serializable {
     }
 
     /**
-     * Returns the 8 high bytes of the goid as a long
+     * Returns the 8 high bytes of the goid as a long.
+     * <p/>
+     * This method should generally <b>not be used in production</b>
+     * because the Goid type may be widened in the future to be larger than 128 bits.
      *
      * @return The high 8 bytes of the goid as a long.
      */
@@ -122,6 +127,9 @@ public final class Goid implements Comparable<Goid>, Serializable {
 
     /**
      * Returns the low 8 bytes of the goid as a long
+     * <p/>
+     * This method should generally <b>not be used in production</b>
+     * because the Goid type may be widened in the future to be larger than 128 bits.
      *
      * @return The low 8 bytes of the goid as a long
      */

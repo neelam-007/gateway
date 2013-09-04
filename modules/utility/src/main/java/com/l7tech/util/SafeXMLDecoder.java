@@ -37,8 +37,7 @@ import java.util.*;
 
 /**
  * An XMLDecoder that is very strict about the constructors and methods it will invoke.
- */
-/**
+ * <p/>
  * <code>XMLDecoder</code> reads objects from xml created by
  * <code>XMLEncoder</code>.
  * <p>
