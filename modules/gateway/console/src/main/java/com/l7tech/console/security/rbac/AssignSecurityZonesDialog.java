@@ -142,8 +142,8 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     private void initBtns() {
         getRootPane().setDefaultButton(closeBtn);
-        Utilities.setEscAction(this, closeBtn);
         closeBtn.addActionListener(Utilities.createDisposeAction(this));
+        Utilities.setEscAction(this, closeBtn);
         setBtn.addActionListener(new BulkUpdateActionListener());
     }
 
