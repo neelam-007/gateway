@@ -155,7 +155,9 @@ public class MqNativeModuleLoadListener {
         unregisterExternalReferenceFactory();
 
         //remove the dependency processor
-        processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
+        if (processorRegistry != null) {
+            processorRegistry.remove(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
+        }
     }
 
     /**
