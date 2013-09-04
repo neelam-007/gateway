@@ -69,6 +69,6 @@ public class MysqlDatabaseUpgradeTest {
     @Test
     public void compareNewToUpgradedDatabase() throws SQLException {
 
-        DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, false), dbActions.getConnection(upgradeDBConfig, false));
+        DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, true, false), dbActions.getConnection(upgradeDBConfig, true, false));
     }
 }
