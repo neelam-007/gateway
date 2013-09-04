@@ -29,6 +29,7 @@ public class SiteMinderLowLevelAgent {
     private boolean updateCookie;
     private SiteMinderConfig agentConfig;
 
+
     public SiteMinderLowLevelAgent() {
     }
 
@@ -37,9 +38,15 @@ public class SiteMinderLowLevelAgent {
         if(!initialize()) throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API");
     }
 
+
+    static{
+            AgentAPI.enableJavaCompatibilityMode();//fix clustering issue by enabling java compatibility mode so it can
+    }
+
     private boolean initialize() throws SiteMinderApiClassException {
         initialized = false;
         try {
+
             agentName = agentConfig.getAgentName();
             agentIP = agentConfig.getAddress();
             agentCheckSessionIP = agentConfig.isIpCheck();

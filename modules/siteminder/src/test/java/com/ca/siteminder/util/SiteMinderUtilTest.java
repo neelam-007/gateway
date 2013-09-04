@@ -24,6 +24,7 @@ public class SiteMinderUtilTest {
         assertNotNull(host.getSharedSecret());
         assertNotNull(host.getSharedSecretTime());
         assertNotNull(host.getFipsMode());
+        System.out.println(host);
 
     }
 

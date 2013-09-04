@@ -1,5 +1,6 @@
 package com.ca.siteminder.util;
 
+import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.gateway.common.siteminder.SiteMinderFipsModeOption;
 import com.l7tech.gateway.common.siteminder.SiteMinderHost;
@@ -14,7 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -28,8 +28,12 @@ import java.util.regex.Pattern;
 public abstract class SiteMinderUtil {
     private static final Logger logger = Logger.getLogger(SiteMinderUtil.class.getName());
     private static final char[] HEXADECIMAL_DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    private static final String DEFAULT_SMREGHOST_PROGRAM = "/opt/CA/sdk/bin64/smreghost";
+    private static final String DEFAULT_SDK_PATH = "/opt/CA/sdk/bin64";
+    private static final String DEFAULT_SMREGHOST_PROGRAM = "smreghost";
     private static final String SYSPROP_SMREGHOST_PROGRAM = "com.l7tech.server.smreghost.program";
+    private static final String DEFAULT_SHAREDSECRETCONVERT_PROGRAM = "smsharedsecretconvert";
+    private static final String SYSPROP_SDK_PATH = "com.l7tech.server.smreghost.path";
+    private static final String SYSPROP_SHAREDSECRETCONVERT_PROGRAM = "com.l7tech.server.sharedsecretconvert.program";
     private static final String TEMP_DIR = "SMHOST";
 
     private SiteMinderUtil() {}
@@ -263,12 +267,11 @@ public abstract class SiteMinderUtil {
             tmpDir = FileUtils.createTempDirectory(TEMP_DIR, null, null, false);
             String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
 
-            program = getSmRegHost();
+            logger.log(Level.FINE, "registering SiteMinder agent...");
 
-            if (program == null)
-                throw new IOException("Unable to find smreghost");
+            String sdkPath = ConfigFactory.getProperty(SYSPROP_SDK_PATH, DEFAULT_SDK_PATH);
 
-            logger.log(Level.FINE, "registering SiteMinder agent with program: " + program);
+            String smreghost = ConfigFactory.getProperty(SYSPROP_SMREGHOST_PROGRAM, DEFAULT_SMREGHOST_PROGRAM);
 
             String[] params = {
                     "-i", address,
@@ -281,7 +284,18 @@ public abstract class SiteMinderUtil {
                     "-o"
             };
 
-            ProcUtils.exec(program, params, null, false);
+            execSmRegProgram(sdkPath + File.separator + smreghost, params);
+
+            ////////////////////////////////////////////////////////////////////////////////////////////
+            // Invoke shared secret convertion utility
+
+            logger.log(Level.FINE, "converting shared secret...");
+
+            String sharedConvertUtil = ConfigFactory.getProperty(SYSPROP_SHAREDSECRETCONVERT_PROGRAM, DEFAULT_SHAREDSECRETCONVERT_PROGRAM);
+
+            execSmRegProgram(sdkPath + File.separator + sharedConvertUtil, new String[]{"-f", smHostConfig});
+
+            ///////////////////////////////////////////////////////////////////////////////////////////
 
             return new SiteMinderHost(smHostConfig);
 
@@ -292,15 +306,19 @@ public abstract class SiteMinderUtil {
         }
     }
 
-    /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
-    private static File getSmRegHost() {
-        File defaultProgram = new File(DEFAULT_SMREGHOST_PROGRAM);
-        String program = ConfigFactory.getProperty(SYSPROP_SMREGHOST_PROGRAM, defaultProgram.getAbsolutePath());
-        if (program == null || program.length() < 1)
+    private static ProcResult execSmRegProgram(String programPath, String[] params) throws  IOException {
+        if (programPath == null || programPath.length() < 1)
             return null;
-        File file = new File(program);
-        return file.exists() && file.canExecute() ? file : null;
+        File program = new File(programPath);
+        if(!program.exists() || !program.canExecute()) {
+            throw new IOException("Unable to find " + program);
+        }
+
+        logger.log(Level.FINE, "executing program: " + program);
+
+        return ProcUtils.exec(program, params, null, false);
     }
+
 
     /**
      * Converts SiteMinder UserCredentials to String format

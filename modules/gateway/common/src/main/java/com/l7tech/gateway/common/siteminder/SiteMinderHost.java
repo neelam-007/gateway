@@ -142,4 +142,11 @@ public class SiteMinderHost implements Serializable {
     public void setSecurityZone(SecurityZone securityZone) {
         this.securityZone = securityZone;
     }
+
+    @Override
+    public String toString() {
+        return "[" + HOST_NAME + ":"+ hostname + "],[" + HOST_CONFIG_OBJECT + ":" + hostConfigObject + "],[" + POLICY_SERVER + ":" + policyServer + "],[" +
+                REQUEST_TIMEOUT + ":" + requestTimeout + "],[" + SHARED_SECRET + ":" + sharedSecret + "],[" + FIPS_MODE + ":" + fipsMode + "]";
+    }
+
 }
