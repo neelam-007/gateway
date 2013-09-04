@@ -12,6 +12,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -48,8 +49,14 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
     private Message requestMsg;
     private PolicyEnforcementContext pec;
 
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        System.setProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode","false");
+    }
+
     @Before
     public void setUp() throws Exception {
+
         System.setProperty(AbstractServerSiteMinderAssertion.SYSTEM_PROPERTY_SITEMINDER_ENABLED, "true");
         when(mockAppCtx.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class)).thenReturn(mockHla);
         when(mockAppCtx.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class)).thenReturn(mockSiteMinderConfigurationManager);

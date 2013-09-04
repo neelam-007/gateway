@@ -1,6 +1,7 @@
 package com.ca.siteminder;
 
 import com.ca.siteminder.util.SiteMinderUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import netegrity.siteminder.javaagent.*;
 
@@ -40,7 +41,9 @@ public class SiteMinderLowLevelAgent {
 
 
     static{
+        if(ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode", true)){
             AgentAPI.enableJavaCompatibilityMode();//fix clustering issue by enabling java compatibility mode so it can
+        }
     }
 
     private boolean initialize() throws SiteMinderApiClassException {

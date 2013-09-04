@@ -19,6 +19,7 @@ import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -43,6 +44,8 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     @Mock
     SiteMinderHighLevelAgent mockHla;
     @Mock
+    SiteMinderLowLevelAgent mockLla;
+    @Mock
     ApplicationContext mockAppCtx;
 
     ServerSiteMinderAuthenticateAssertion fixture;
@@ -52,9 +55,15 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     private PolicyEnforcementContext pec;
     private TestHttpRequestKnob httpRequestKnob;
 
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        System.setProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode","false");
+    }
+
 
     @Before
     public void setUp() throws Exception {
+
         smAuthenticateAssertion = new SiteMinderAuthenticateAssertion();
         System.setProperty(AbstractServerSiteMinderAssertion.SYSTEM_PROPERTY_SITEMINDER_ENABLED, "true");
 
@@ -85,7 +94,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
 
-        when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
+        when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
         authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
@@ -112,7 +121,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         pec.setVariable("cookie.SMSESSION", SSO_TOKEN);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
-        when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
+        when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
         authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
@@ -140,7 +149,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         pec.setVariable("cookie.SMSESSION", SSO_TOKEN);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
-        when(mockContext.getAgent()).thenReturn(new SiteMinderLowLevelAgent());
+        when(mockContext.getAgent()).thenReturn(mockLla);
         List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
         authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
