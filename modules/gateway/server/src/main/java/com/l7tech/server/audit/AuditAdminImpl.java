@@ -224,6 +224,11 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
+    public String getFindHeadersJobStatus(JobId<AuditRecordHeader[]> jobId) {
+        return super.getJobStatus(jobId);
+    }
+
+    @Override
     public AuditRecordHeader[] getFindHeadersHeaderJobResult(JobId<AuditRecordHeader[]> jobId) throws FindException, UnknownJobException, JobStillActiveException {
         JobResult<AuditRecordHeader[]> result = super.getJobResult(jobId);
         if(result.result == null){
@@ -283,6 +288,16 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
         }, 0L);
 
         return registerJob( queryTask,Long.class);
+    }
+
+    @Override
+    public JobResult<Long> getNewAuditsJobResult(JobId<Long> jobId) throws JobStillActiveException, UnknownJobException {
+        return super.getJobResult(jobId);
+    }
+
+    @Override
+    public String getNewAuditsJobStatus(JobId<Long> jobId) {
+        return super.getJobStatus(jobId);
     }
 
     @Override

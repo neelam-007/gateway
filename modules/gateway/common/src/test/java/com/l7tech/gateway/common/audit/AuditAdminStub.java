@@ -33,6 +33,11 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
+    public String getFindHeadersJobStatus(JobId<AuditRecordHeader[]> jobId) {
+        throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    @Override
     public AuditRecordHeader[] getFindHeadersHeaderJobResult(JobId<AuditRecordHeader[]> jobId) throws FindException, UnknownJobException, JobStillActiveException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
@@ -119,6 +124,16 @@ public class AuditAdminStub implements AuditAdmin {
 
     @Override
     public AsyncAdminMethods.JobId<Long> hasNewAudits(Date date, Level level) {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    @Override
+    public JobResult<Long> getNewAuditsJobResult(JobId<Long> jobId) throws JobStillActiveException, UnknownJobException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    @Override
+    public String getNewAuditsJobStatus(JobId<Long> jobId) {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 

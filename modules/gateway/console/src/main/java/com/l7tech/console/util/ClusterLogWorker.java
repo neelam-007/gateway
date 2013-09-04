@@ -239,7 +239,7 @@ public class ClusterLogWorker extends SwingWorker {
                 logService.cancelJob(jobId, true);
                 return new AuditRecordHeader[0];
             }
-            final String status = logService.getJobStatus( jobId );
+            final String status = logService.getFindHeadersJobStatus( jobId );
             if ( status == null ) {
                 throw new  AsyncAdminMethods.UnknownJobException( "Unknown job" );
             } else if ( !status.startsWith( "a" ) ) {

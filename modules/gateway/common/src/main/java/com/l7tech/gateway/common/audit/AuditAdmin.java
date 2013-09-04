@@ -50,12 +50,21 @@ public interface AuditAdmin extends AsyncAdminMethods{
      *
      * @param criteria  an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @return the job identifier for the find headers by criteria job.
-     *          Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *          Call {@link #getFindHeadersJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId)} to poll for job completion
      *         and {@link #getFindHeadersHeaderJobResult} to pick up the result in the form of an array of AuditRecordHeader matching the criteria
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Administrative(licensed=false, background = true)
     AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Retrieves the status for the async job that is filterable by the secured interceptor
+     * @param jobId the ID of the job whose result to pick up.  Required.
+     * @return a job status string in the format specified in {@link AsyncAdminMethods#getJobStatus}
+     */
+    @Secured(stereotype=FIND_HEADERS)
+    @Administrative(licensed=false, background = true)
+    String getFindHeadersJobStatus(JobId<AuditRecordHeader[]> jobId);
 
     /**
      * Retrieves a collection of {@link AuditRecordHeader}s for the aync job that is filterable by the secured interceptor
@@ -87,12 +96,31 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @param date  Starting date consider to be new audits
      * @param level The auditing level to be queried for
      * @return the job identifier for the date of the first available audit or 0 if none are available.
-     *          Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
-     *         and {@link #getJobResult(JobId)} to pick up the result
+     *          Call {@link #getNewAuditsJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId)}} to poll for job completion
+     *         and {@link #getNewAuditsJobResult(com.l7tech.gateway.common.AsyncAdminMethods.JobId)}} to pick up the result
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
     AsyncAdminMethods.JobId<Long> hasNewAudits(Date date, Level level);
+
+    /**
+     * Retrieves the status for the async job
+     * @param jobId the ID of the job whose result to pick up.  Required.
+     * @return a job status string in the format specified in {@link AsyncAdminMethods#getJobStatus}
+     */
+    @Administrative(licensed=false, background = true)
+    String getNewAuditsJobStatus(JobId<Long> jobId);
+
+    /**
+     * The date of the first available audit for the aync job that is filterable by the secured interceptor
+     * @param jobId the ID of the job whose result to pick up.  Required.
+     * @return the date of the first available audit or 0 if none are available
+     * @throws UnknownJobException if the specified jobId is unknown or has already been picked up.
+     * @throws JobStillActiveException if the specified job is not inactive.
+     * @throws FindException if there was a problem with @link #hasNewAudits(AuditSearchCriteria) findHeaders
+     */
+    @Administrative(licensed=false, background = true)
+    AsyncAdminMethods.JobResult<Long>  getNewAuditsJobResult(JobId<Long> jobId) throws JobStillActiveException, UnknownJobException;
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.

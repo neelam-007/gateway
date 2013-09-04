@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
@@ -11,6 +12,7 @@ import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.dashboard.ServiceMetricsPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jfree.*;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.MetricsBin;
@@ -41,15 +43,19 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -1063,12 +1069,7 @@ public class MetricsChartPanel extends ChartPanel {
                     nodeId(nodeSelected == null ? null : nodeSelected.getId()).
                     serviceName(serviceSelected == null ? null : serviceSelected.getName()).build();
             try {
-                final Either<String, AuditRecordHeader[]> recordsEither = doAsyncAdmin(auditAdmin,
-                        SwingUtilities.getWindowAncestor(MetricsChartPanel.this),
-                        "Show Audits",
-                        "Retrieving Audits",
-                        auditAdmin.findHeaders(criteria));
-                AuditRecordHeader[] records = recordsEither.right();
+                AuditRecordHeader[] records =  getHeaders(auditAdmin, criteria);
 
                 if (_gatewayAuditWindow == null) {
                     _gatewayAuditWindow = new GatewayAuditWindow(false);
@@ -1099,6 +1100,46 @@ public class MetricsChartPanel extends ChartPanel {
         if (errDialogMsg != null) {
             // ? Should I use ExceptionDialog instead ?
             JOptionPane.showMessageDialog(this, "Failed to get audit events from gateway: " + errDialogMsg, "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private AuditRecordHeader[] getHeaders(final AuditAdmin admin,AuditSearchCriteria criteria ) throws InterruptedException, InvocationTargetException, FindException {
+        final String taskTitle =  "Show Audits";
+        final String taskInfo = "Retrieving Audits";
+        final AsyncAdminMethods.JobId<AuditRecordHeader[]> jobId = admin.findHeaders(criteria);
+        final JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        final CancelableOperationDialog cancelDialog =
+                new CancelableOperationDialog(SwingUtilities.getWindowAncestor(MetricsChartPanel.this), taskTitle, taskInfo, progressBar);
+        cancelDialog.pack();
+        cancelDialog.setModal(true);
+        Utilities.centerOnParentWindow(cancelDialog);
+
+        final Callable< AuditRecordHeader[]> callable = new Callable< AuditRecordHeader[]>() {
+            @Override
+            public AuditRecordHeader[] call() throws Exception {
+                Thread.sleep( 350L );
+
+                while( true ) {
+                    final String status = admin.getFindHeadersJobStatus( jobId );
+                    if ( status == null ) {
+                        throw new FindException("Find headers job status not found");
+                    } else if ( !status.startsWith( "a" ) ) {
+                        return admin.getFindHeadersHeaderJobResult( jobId );
+                    } else {
+                        Thread.sleep( 5000L );
+                    }
+                }
+
+            }
+        };
+
+
+        try{
+            return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
+        }catch (InterruptedException e){
+            admin.cancelJob(jobId, true);
+            throw e;
         }
     }
 

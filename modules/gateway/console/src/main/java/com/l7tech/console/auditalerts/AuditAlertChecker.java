@@ -189,12 +189,12 @@ public class AuditAlertChecker {
         try{
             Thread.sleep((long)delay);
             while( true ) {
-                final String status = admin.getJobStatus( jobId );
+                final String status = admin.getNewAuditsJobStatus( jobId );
                 if ( status == null ) {
                     logger.warning("Server could not find our new audits query job ID");
                     break;
                 } else if ( !status.startsWith( "a" ) ) {
-                    final AsyncAdminMethods.JobResult<Long> jobResult = admin.getJobResult( jobId );
+                    final AsyncAdminMethods.JobResult<Long> jobResult = admin.getNewAuditsJobResult( jobId );
                     if ( jobResult.result != null ) {
                         return  jobResult.result ;
                     } else {
