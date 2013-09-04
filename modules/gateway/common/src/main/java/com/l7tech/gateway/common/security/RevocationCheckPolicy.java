@@ -2,10 +2,7 @@ package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.SafeXMLDecoder;
-import com.l7tech.util.SafeXMLDecoderBuilder;
+import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -181,7 +178,10 @@ public class RevocationCheckPolicy extends ZoneableNamedEntityImp implements Clo
         this.revocationCheckPolicyXml = xml;
 
         if ( xml != null && xml.length() > 0 ) {
-            final SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING))).build();
+            final SafeXMLDecoder xd = new SafeXMLDecoderBuilder(
+                    FILTER_BUILDER,
+                    new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)))
+                .build();
             //noinspection unchecked
             this.revocationCheckItems = Collections.unmodifiableList(new ArrayList((List<RevocationCheckPolicyItem>)xd.readObject()));
         }
@@ -197,4 +197,6 @@ public class RevocationCheckPolicy extends ZoneableNamedEntityImp implements Clo
     private boolean defaultSuccess;
     private boolean continueOnServerUnavailable;  
 
+    private static final ClassFilterBuilder FILTER_BUILDER = new ClassFilterBuilder().allowDefaults()
+            .addMethods("com.l7tech.gateway.common.security.RevocationCheckPolicyItem$Type.valueOf(java.lang.String)");
 }

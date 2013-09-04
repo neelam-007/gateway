@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.XmlSafe;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
  * @author Steve Jones
  * @see RevocationCheckPolicy
  */
+@XmlSafe
 public class RevocationCheckPolicyItem implements Serializable {
 
     //- PUBLIC
@@ -19,6 +21,7 @@ public class RevocationCheckPolicyItem implements Serializable {
     /**
      * Revocation checking type for a policy item.
      */
+    @XmlSafe
     public enum Type {
         /**
          * Type for checking against a CRL from a URL contained in an X.509 Certificate
@@ -40,13 +43,13 @@ public class RevocationCheckPolicyItem implements Serializable {
         private final boolean urlSpecified;
 
         private Type(boolean urlSpecified) {
-            this.urlSpecified = urlSpecified;    
+            this.urlSpecified = urlSpecified;
         }
 
         /**
          * Is the URL specifed as part of the policy?
          *
-         * @return true if the URL is specified, false if from an X.509 Certificate 
+         * @return true if the URL is specified, false if from an X.509 Certificate
          */
         public boolean isUrlSpecified() {
             return urlSpecified;
@@ -56,6 +59,7 @@ public class RevocationCheckPolicyItem implements Serializable {
     /**
      * Create an uninitialized RevocationCheckPolicyItem
      */
+    @XmlSafe
     public RevocationCheckPolicyItem() {
         trustedSigners = new ArrayList<Goid>();
     }
@@ -65,6 +69,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @return the Type (may be null)
      */
+    @XmlSafe
     public Type getType() {
         return type;
     }
@@ -74,6 +79,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @param type The type to use
      */
+    @XmlSafe
     public void setType(Type type) {
         this.type = type;
     }
@@ -83,6 +89,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @return The url/url regex (may be null)
      */
+    @XmlSafe
     public String getUrl() {
         return url;
     }
@@ -92,6 +99,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @param url The url/url regex
      */
+    @XmlSafe
     public void setUrl(String url) {
         this.url = url;
     }
@@ -101,6 +109,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @return true if an issuer or issuer delegated signer is accepted
      */
+    @XmlSafe
     public boolean isAllowIssuerSignature() {
         return allowIssuerSignature;
     }
@@ -110,6 +119,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @param allowIssuerSignature true to permit an issuer or issuer delegated signer
      */
+    @XmlSafe
     public void setAllowIssuerSignature(boolean allowIssuerSignature) {
         this.allowIssuerSignature = allowIssuerSignature;
     }
@@ -119,6 +129,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @return The list of Signers (will not be null)
      */
+    @XmlSafe
     public List<Goid> getTrustedSigners() {
         return new ArrayList<Goid>(trustedSigners);
     }
@@ -128,6 +139,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      *
      * @param trustedSigners The list of signers
      */
+    @XmlSafe
     public void setTrustedSigners(List<Goid> trustedSigners) {
         if (trustedSigners == null) {
             this.trustedSigners = new ArrayList<Goid>();
