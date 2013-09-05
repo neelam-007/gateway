@@ -90,12 +90,21 @@ public final class SafeXMLDecoderBuilder {
      * @return a new SafeXMLDecoder instance using the current builder configuration.
      */
     public SafeXMLDecoder build(){
-        ExceptionListener exl = exceptionListener != null ? exceptionListener : new ExceptionListener() {
+        ExceptionListener exl = exceptionListener != null ? exceptionListener : getFatalExceptionListener();
+        return new SafeXMLDecoder(classFilterBuilder.build(), inputStream, owner, exl, classLoader);
+    }
+
+    /**
+     * Get an exception listener that rethrows every exception wrapped in a RuntimeException.
+     *
+     * @return an ExceptionListener that always rethrows every exception.
+     */
+    public static ExceptionListener getFatalExceptionListener() {
+        return new ExceptionListener() {
             @Override
             public void exceptionThrown(Exception e) {
                 throw new RuntimeException(e.getMessage(), e);
             }
         };
-        return new SafeXMLDecoder(classFilterBuilder.build(), inputStream, owner, exl, classLoader);
     }
 }
