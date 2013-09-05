@@ -234,8 +234,15 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
         }
         final boolean configuredToEncrypt = includeNameCheckBox.isSelected() && encryptNameIdentifierCheckBox.isSelected();
         sia.setEncryptNameIdentifier(configuredToEncrypt);
-        // If not configured to encrypt, then remove any previously encryption configuration so it is not persisted.
-        sia.setXmlEncryptConfig((configuredToEncrypt)? xmlElementEncryptionConfig: new XmlElementEncryptionConfig());
+        if(configuredToEncrypt){
+            sia.setXmlEncryptConfig(xmlElementEncryptionConfig);
+        } else {
+            // If not configured to encrypt, then remove any previously encryption configuration so it is not persisted.
+            final XmlElementEncryptionConfig xmlEncryptConfig = new XmlElementEncryptionConfig();
+            //preserve the use OAEP setting (SSG-7583)
+            xmlEncryptConfig.setUseOaep(xmlElementEncryptionConfig.isUseOaep());
+            sia.setXmlEncryptConfig(xmlEncryptConfig);
+        }
     }
 
     private void initialize() {
