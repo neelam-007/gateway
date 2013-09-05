@@ -1,7 +1,6 @@
 package com.l7tech.server.util;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.RandomUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -84,13 +83,15 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
             //Do not need to increment hi on low rollover. Preforming the increment could lead to race conditions without proper locking.
             // Also it is extremely unlikely a gateway will create 2^64 entities without restarting.
 
-            // use an existing goid if one is given.
-            if (o instanceof PersistentEntity &&
-                    (((PersistentEntity) o).getGoid()!=null &&
-                    !PersistentEntity.DEFAULT_GOID.equals(((PersistentEntity) o).getGoid()))) {
-                return ((PersistentEntity) o).getGoid();
-            }
-            //TODO: is there a more efficient way of creating a new goid?
+            // The commented code below will reuse the goid a persistent entity has. However for now we want to always generate a new goid.
+            // In Icefish this logic will change as we will want to save entities with a specific Goid during migration. This will likely be done
+            // by using a different save method in com.l7tech.server.HibernateEntityManager.
+            //            if (o instanceof PersistentEntity &&
+            //                    (((PersistentEntity) o).getGoid()!=null &&
+            //                    !PersistentEntity.DEFAULT_GOID.equals(((PersistentEntity) o).getGoid()))) {
+            //                return ((PersistentEntity) o).getGoid();
+            //            }
+
             return new Goid(hi.get(), low.getAndIncrement());
         }
     }
