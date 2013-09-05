@@ -98,6 +98,7 @@ public class RolePermissionsPanel extends JPanel {
         this.role = null;
         this.permissions = permissions;
         loadTable();
+        loadCount();
     }
 
     private void initButtons() {
