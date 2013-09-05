@@ -3,6 +3,9 @@ package com.l7tech.console.util;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -29,6 +32,7 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,13 +60,15 @@ public class EntityNameResolverTest {
     @Mock
     private FolderAdmin folderAdmin;
     @Mock
+    private ClusterStatusAdmin clusterStatusAdmin;
+    @Mock
     private AssertionRegistry assertionRegistry;
     @Mock
     private PaletteFolderRegistry folderRegistry;
 
     @Before
     public void setup() {
-        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, assertionRegistry, folderRegistry, "localhost");
+        resolver = new EntityNameResolver(serviceAdmin, policyAdmin, trustedCertAdmin, resourceAdmin, folderAdmin, clusterStatusAdmin, assertionRegistry, folderRegistry, "localhost");
     }
 
     @Test
@@ -378,6 +384,64 @@ public class EntityNameResolverTest {
         publishedService.setName("test");
         when(serviceAdmin.findServiceByID(publishedServiceGoid.toHexString())).thenReturn(publishedService);
         assertEquals("test (/test)", resolver.getNameForHeader(header, true));
+    }
+
+    @BugId("SSM-4491")
+    @Test
+    public void getNameForTrustedEsmHeader() throws Exception {
+        final TrustedCert trustedCert = new TrustedCert();
+        trustedCert.setSubjectDn("CN=test");
+        final Goid trustedEsmGoid = new Goid(1, 2);
+        final TrustedEsm trustedEsm = new TrustedEsm();
+        trustedEsm.setGoid(trustedEsmGoid);
+        trustedEsm.setTrustedCert(trustedCert);
+        final EntityHeader header = new EntityHeader(trustedEsmGoid, EntityType.TRUSTED_ESM, "thisnameshouldbeignored", null, null);
+        when(clusterStatusAdmin.findTrustedEsm(trustedEsmGoid)).thenReturn(trustedEsm);
+        assertEquals("CN=test", resolver.getNameForHeader(header, true));
+    }
+
+    @Test(expected = FindException.class)
+    public void getNameForTrustedEsmHeaderNotFound() throws Exception {
+        final Goid trustedEsmGoid = new Goid(1, 2);
+        final EntityHeader header = new EntityHeader(trustedEsmGoid, EntityType.TRUSTED_ESM, "thisnameshouldbeignored", null, null);
+        when(clusterStatusAdmin.findTrustedEsm(trustedEsmGoid)).thenReturn(null);
+        resolver.getNameForHeader(header);
+    }
+
+    @Test
+    public void getNameForTrustedEsmHeaderNoTrustedCert() throws Exception {
+        final Goid trustedEsmGoid = new Goid(1, 2);
+        final TrustedEsm trustedEsm = new TrustedEsm();
+        trustedEsm.setName("backupname");
+        trustedEsm.setGoid(trustedEsmGoid);
+        trustedEsm.setTrustedCert(null);
+        final EntityHeader header = new EntityHeader(trustedEsmGoid, EntityType.TRUSTED_ESM, "thisnameshouldbeignored", null, null);
+        when(clusterStatusAdmin.findTrustedEsm(trustedEsmGoid)).thenReturn(trustedEsm);
+        assertEquals("backupname", resolver.getNameForHeader(header, true));
+    }
+
+    @BugId("SSM-4491")
+    @Test
+    public void getNameForTrustedEsmUserHeader() throws Exception {
+        final Goid trustedEsmUserGoid = new Goid(1, 2);
+        final TrustedEsmUser user = new TrustedEsmUser();
+        user.setGoid(trustedEsmUserGoid);
+        user.setEsmUserDisplayName("test");
+        final EntityHeader header = new EntityHeader(trustedEsmUserGoid, EntityType.TRUSTED_ESM_USER, null, null);
+        when(clusterStatusAdmin.findTrustedEsmUser(trustedEsmUserGoid)).thenReturn(user);
+        assertEquals("test", resolver.getNameForHeader(header, true));
+    }
+
+    @Test
+    public void getNameForTrustedEsmUserHeaderNoDisplayName() throws Exception {
+        final Goid trustedEsmUserGoid = new Goid(1, 2);
+        final TrustedEsmUser user = new TrustedEsmUser();
+        user.setGoid(trustedEsmUserGoid);
+        user.setEsmUserDisplayName(null);
+        user.setSsgUserId("userId");
+        final EntityHeader header = new EntityHeader(trustedEsmUserGoid, EntityType.TRUSTED_ESM_USER, null, null);
+        when(clusterStatusAdmin.findTrustedEsmUser(trustedEsmUserGoid)).thenReturn(user);
+        assertEquals("userId", resolver.getNameForHeader(header, true));
     }
 
     @Test
@@ -785,6 +849,38 @@ public class EntityNameResolverTest {
     public void getNameForFolderAncestryPredicateNullEntityType() throws Exception {
         final EntityFolderAncestryPredicate predicate = new EntityFolderAncestryPredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), null, new Goid(0, 1234));
         assertTrue(resolver.getNameForEntity(predicate, false).isEmpty());
+    }
+
+    @Test
+    public void getNameForTrustedEsm() throws Exception {
+        final TrustedCert trustedCert = new TrustedCert();
+        trustedCert.setSubjectDn("CN=test");
+        final TrustedEsm trustedEsm = new TrustedEsm();
+        trustedEsm.setTrustedCert(trustedCert);
+        assertEquals("CN=test", resolver.getNameForEntity(trustedEsm, true));
+    }
+
+    @Test
+    public void getNameForTrustedEsmNoTrustedCert() throws Exception {
+        final TrustedEsm trustedEsm = new TrustedEsm();
+        trustedEsm.setName("backupname");
+        trustedEsm.setTrustedCert(null);
+        assertEquals("backupname", resolver.getNameForEntity(trustedEsm, true));
+    }
+
+    @Test
+    public void getNameForTrustedEsmUser() throws Exception {
+        final TrustedEsmUser trustedEsmUser = new TrustedEsmUser();
+        trustedEsmUser.setEsmUserDisplayName("test");
+        assertEquals("test", resolver.getNameForEntity(trustedEsmUser, true));
+    }
+
+    @Test
+    public void getNameForTrustedEsmUserNoDisplayName() throws Exception {
+        final TrustedEsmUser trustedEsmUser = new TrustedEsmUser();
+        trustedEsmUser.setEsmUserDisplayName(null);
+        trustedEsmUser.setSsgUserId("userId");
+        assertEquals("userId", resolver.getNameForEntity(trustedEsmUser, true));
     }
 
     private Folder createRootFolder() {

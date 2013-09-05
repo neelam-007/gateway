@@ -410,6 +410,7 @@ public final class RegistryImpl extends Registry
                     getTrustedCertManager(),
                     getResourceAdmin(),
                     getFolderAdmin(),
+                    getClusterStatusAdmin(),
                     TopComponents.getInstance().getAssertionRegistry(),
                     TopComponents.getInstance().getPaletteFolderRegistry(),
                     TopComponents.getInstance().getRootNode().getName());

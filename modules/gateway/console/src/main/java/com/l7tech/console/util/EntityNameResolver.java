@@ -3,6 +3,9 @@ package com.l7tech.console.util;
 import com.l7tech.console.tree.PaletteFolderRegistry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -32,9 +35,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,21 +57,31 @@ public class EntityNameResolver {
     private static final String NO_PROTOCOL = "<no protocol>";
     private static final String NO_PORT = "<no port>";
     private static final String NO_HTTP_CONFIG_PATH = "<no path>";
+    private static final Set<EntityType> IGNORE_HEADER_NAMES;
 
     private final ServiceAdmin serviceAdmin;
     private final PolicyAdmin policyAdmin;
     private final TrustedCertAdmin trustedCertAdmin;
     private final ResourceAdmin resourceAdmin;
     private final FolderAdmin folderAdmin;
+    private final ClusterStatusAdmin clusterStatusAdmin;
     private final AssertionRegistry assertionRegistry;
     private final PaletteFolderRegistry folderRegistry;
     private final String rootFolderName;
+
+    static {
+        IGNORE_HEADER_NAMES = new HashSet<>();
+        IGNORE_HEADER_NAMES.add(EntityType.ASSERTION_ACCESS);
+        IGNORE_HEADER_NAMES.add(EntityType.TRUSTED_ESM);
+        IGNORE_HEADER_NAMES.add(EntityType.TRUSTED_ESM_USER);
+    }
 
     public EntityNameResolver(@NotNull final ServiceAdmin serviceAdmin,
                               @NotNull final PolicyAdmin policyAdmin,
                               @NotNull final TrustedCertAdmin trustedCertAdmin,
                               @NotNull final ResourceAdmin resourceAdmin,
                               @NotNull final FolderAdmin folderAdmin,
+                              @NotNull final ClusterStatusAdmin clusterStatusAdmin,
                               @NotNull final AssertionRegistry assertionRegistry,
                               @NotNull final PaletteFolderRegistry folderRegistry,
                               @NotNull final String rootFolderName) {
@@ -79,6 +90,7 @@ public class EntityNameResolver {
         this.trustedCertAdmin = trustedCertAdmin;
         this.resourceAdmin = resourceAdmin;
         this.folderAdmin = folderAdmin;
+        this.clusterStatusAdmin = clusterStatusAdmin;
         this.assertionRegistry = assertionRegistry;
         this.folderRegistry = folderRegistry;
         this.rootFolderName = rootFolderName;
@@ -101,7 +113,7 @@ public class EntityNameResolver {
      */
     @NotNull
     public String getNameForHeader(@NotNull final EntityHeader header, final boolean includePath) throws FindException {
-        final String nameOnHeader = header.getType() == EntityType.ASSERTION_ACCESS ? null : header.getName();
+        final String nameOnHeader = IGNORE_HEADER_NAMES.contains(header.getType()) ? null : header.getName();
         String name = nameOnHeader == null ? StringUtils.EMPTY : nameOnHeader;
         // entity referenced by the header
         Entity entity = null;
@@ -192,6 +204,15 @@ public class EntityNameResolver {
                         }
                     }
                     break;
+                case TRUSTED_ESM:
+                    final TrustedEsm trustedEsm = clusterStatusAdmin.findTrustedEsm(header.getGoid());
+                    validateFoundEntity(header, trustedEsm);
+                    entity = trustedEsm;
+                    break;
+                case TRUSTED_ESM_USER:
+                    final TrustedEsmUser trustedEsmUser = clusterStatusAdmin.findTrustedEsmUser(header.getGoid());
+                    validateFoundEntity(header, trustedEsmUser);
+                    entity = trustedEsmUser;
                 default:
                     logger.log(Level.WARNING, "Name on header is null or empty but entity type is not supported: " + header.getType());
                     name = StringUtils.EMPTY;
@@ -288,6 +309,12 @@ public class EntityNameResolver {
             }
         } else if (entity instanceof Folder && isRootFolder((Folder) entity)) {
             name = rootFolderName;
+        } else if (entity instanceof TrustedEsm) {
+            final TrustedEsm trustedEsm = (TrustedEsm) entity;
+            name = trustedEsm.getTrustedCert() != null ? trustedEsm.getTrustedCert().getSubjectDn() : trustedEsm.getName();
+        } else if (entity instanceof TrustedEsmUser) {
+            final TrustedEsmUser trustedEsmUser = (TrustedEsmUser) entity;
+            name = trustedEsmUser.getEsmUserDisplayName() != null ? trustedEsmUser.getEsmUserDisplayName() : trustedEsmUser.getSsgUserId();
         } else if (entity instanceof ObjectIdentityPredicate) {
             final ObjectIdentityPredicate predicate = (ObjectIdentityPredicate) entity;
             final EntityHeader header = predicate.getHeader();

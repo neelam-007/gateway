@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITY;
 import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -526,6 +528,17 @@ public interface ClusterStatusAdmin {
     Collection<TrustedEsm> getTrustedEsmInstances() throws FindException;
 
     /**
+     * Find a TrustedEsm by its goid.
+     *
+     * @param trustedEsmGoid the goid of the TrustedEsm.
+     * @return the TrustedEsm or null if none was found.
+     * @throws FindException if an error occurs when trying to retrieve the TrustedEsm.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types = TRUSTED_ESM, stereotype = MethodStereotype.FIND_ENTITY)
+    TrustedEsm findTrustedEsm(@NotNull final Goid trustedEsmGoid) throws FindException;
+
+    /**
      * Delete an ESM registration and all its user mappings.
      *
      * @param trustedEsmGoid the object ID of the TrustedEsm instance to delete.
@@ -554,6 +567,16 @@ public interface ClusterStatusAdmin {
     @Secured(types=EntityType.TRUSTED_ESM_USER, stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<TrustedEsmUser> getTrustedEsmUserMappings(Goid trustedEsmGoid) throws FindException;
 
+    /**
+     * Find a TrustedEsmUser by its goid.
+     *
+     * @param trustedEsmUserGoid the goid of the TrustedEsmUser.
+     * @return the TrustedEsmUser or null if none found.
+     * @throws FindException if an error occurs while trying to retrieve the TrustedEsmUser.
+     */
+    @Transactional(readOnly = true)
+    @Secured(types = EntityType.TRUSTED_ESM_USER, stereotype = FIND_ENTITY)
+    TrustedEsmUser findTrustedEsmUser(@NotNull final Goid trustedEsmUserGoid) throws FindException;
 
     /**
      * Retrieve all the failover strategies

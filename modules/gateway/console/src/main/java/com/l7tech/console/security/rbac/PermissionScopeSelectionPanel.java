@@ -548,7 +548,11 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             @Override
             public Component getListCellRendererComponent(final JList<?> list, Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
                 if (value instanceof EntityHeader) {
-                    value = ((EntityHeader) value).getName();
+                    try {
+                        value = Registry.getDefault().getEntityNameResolver().getNameForHeader((EntityHeader) value);
+                    } catch (final FindException e) {
+                        value = ((EntityHeader) value).getName();
+                    }
                 } else {
                     value = SELECT;
                 }
@@ -615,7 +619,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             try {
                 final Collection<TrustedEsmUser> trustedEsmUsers = Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(selected.getGoid());
                 for (final TrustedEsmUser trustedEsmUser : trustedEsmUsers) {
-                    userHeaders.add(new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, trustedEsmUser.getEsmUserId(), null));
+                    final String name = Registry.getDefault().getEntityNameResolver().getNameForEntity(trustedEsmUser, true);
+                    userHeaders.add(new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, name, null));
                 }
             } catch (final FindException ex) {
                 logger.log(Level.WARNING, "Unable to retrieve trusted esm users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));

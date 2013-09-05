@@ -500,6 +500,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
+    public TrustedEsm findTrustedEsm(@NotNull final Goid trustedEsmGoid) throws FindException {
+        return trustedEsmManager.findByPrimaryKey(trustedEsmGoid);
+    }
+
+    @Override
     public void deleteTrustedEsmInstance(Goid trustedEsmGoid) throws DeleteException, FindException {
         trustedEsmManager.delete(trustedEsmGoid);
     }
@@ -512,6 +517,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     @Override
     public Collection<TrustedEsmUser> getTrustedEsmUserMappings(Goid trustedEsmGoid) throws FindException {
         return trustedEsmUserManager.findByEsmId(trustedEsmGoid);
+    }
+
+    @Override
+    public TrustedEsmUser findTrustedEsmUser(@NotNull final Goid trustedEsmUserGoid) throws FindException {
+        return trustedEsmUserManager.findByPrimaryKey(trustedEsmUserGoid);
     }
 
     @Override
