@@ -755,6 +755,10 @@ public class GatewayFeatureSets {
                 mass("assertion:NcesDecorator"),
                 mass("assertion:NcesValidator"));
 
+        GatewayFeatureSet sophosAssertions = fsr("set:Sophos:Assertions",
+                "Sophos AntiMalware Assertion",
+                mass("assertion:Sophos"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -869,10 +873,12 @@ public class GatewayFeatureSets {
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
             fs(genericIdentityManagementServiceAssertion),
+            fs(icapAntivirusScannerAssertions),
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
+            fs(sophosAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
@@ -936,6 +942,7 @@ public class GatewayFeatureSets {
             fs(policyBundleInstaller),
             fs(splitJoinAssertions),
             fs(siteMinderAssertions),
+            fs(sophosAssertions),
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1001,6 +1008,7 @@ public class GatewayFeatureSets {
             fs(splitJoinAssertions),
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
+            fs(sophosAssertions),
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1008,6 +1016,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Api", "Layer 7 API Proxy",
             "Same as Data Screen with some additional features",
                 fs(dataScreen),
+                fs(uiRbacRoleEditor),
                 fs(mtomDecodeAssertions),
                 fs(mtomEncodeAssertions),
                 fs(mtomValidateAssertions),
@@ -1044,6 +1053,7 @@ public class GatewayFeatureSets {
                 fs(genericIdentityManagementServiceAssertion),
                 fs(identityAttributesAssertion),
                 fs(apiPortalIntegration),
+                fs(icapAntivirusScannerAssertions),
                 fs(policyBundleInstaller),
                 ass(CookieCredentialSourceAssertion.class),
                 ass(WssReplayProtection.class),
@@ -1051,6 +1061,7 @@ public class GatewayFeatureSets {
                 mass("assertion:ValidateNonSoapSamlToken"),
                 fs(trustStore),
                 fs(siteMinderAssertions),
+                fs(sophosAssertions),
                 fs(csrfProtectionAssertion));
 
         /**
@@ -1121,7 +1132,7 @@ public class GatewayFeatureSets {
          */
 
         PROFILE_ALL = fsp("set:Profile:Development", "Development Mode",
-                "Everything everywhere, including experimental features.",
+                "Everything everywhere, including extension packs and experimental features.",
                 fs(profileGateway),
                 fs(profileFederal),
                 fs(profileUs),
