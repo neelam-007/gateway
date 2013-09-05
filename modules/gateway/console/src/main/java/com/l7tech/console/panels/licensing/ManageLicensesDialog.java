@@ -18,6 +18,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import org.xml.sax.SAXException;
+import sun.security.util.Resources;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -32,9 +33,11 @@ import java.io.*;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,12 +50,15 @@ import static com.l7tech.gui.util.TableUtil.*;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public class ManageLicensesDialog extends JDialog {
-    private static final String TITLE = "Manage Gateway Licenses";
-    private static final String INVALID_LICENSE = "INVALID LICENSE";
-    private static final String EXPIRED = "EXPIRED";
-    private static final String NA = "N/A";
-
     protected static final Logger logger = Logger.getLogger(ManageLicensesDialog.class.getName());
+
+    private static final ResourceBundle RESOURCES =
+            Resources.getBundle("com.l7tech.console.panels.ManageLicensesDialog");
+
+    private static final String TITLE = RESOURCES.getString("dialog.title");
+    private static final String INVALID_LICENSE = RESOURCES.getString("table.label.invalid");
+    private static final String EXPIRED = RESOURCES.getString("table.label.expired");
+    private static final String NA = RESOURCES.getString("table.label.na");
 
     private JButton installButton;
     private JButton closeButton;
@@ -158,13 +164,17 @@ public class ManageLicensesDialog extends JDialog {
             licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
         } catch (IOException e) {
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    "The license file could not be read:\n" + ExceptionUtils.getMessage(e),
-                    "Unable to read license file", JOptionPane.ERROR_MESSAGE, null);
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.read.io.message"),
+                            ExceptionUtils.getMessage(e)),
+                    RESOURCES.getString("dialog.install.error.read.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         } catch (SAXException e) {
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    "The specified license file is not well-formed XML:\n" + ExceptionUtils.getMessage(e),
-                    "Unable to read license file", JOptionPane.ERROR_MESSAGE, null);
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.read.parsing.message"),
+                            ExceptionUtils.getMessage(e)),
+                    RESOURCES.getString("dialog.install.error.read.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -178,16 +188,21 @@ public class ManageLicensesDialog extends JDialog {
             admin.validateLicense(newLicense);
         } catch (InvalidLicenseException e) {
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    "That license is invalid and cannot be installed:\n" + ExceptionUtils.getMessage(e),
-                    "Invalid license", JOptionPane.ERROR_MESSAGE, null);
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.invalid.message"),
+                            ExceptionUtils.getMessage(e)),
+                    RESOURCES.getString("dialog.install.error.invalid.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
         CompositeLicense currentComposite = ConsoleLicenseManager.getInstance().getLicense();
 
         if (null != currentComposite && currentComposite.containsLicenseWithId(newLicense.getId())) {
-            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this, "License " + newLicense.getId() + " is already installed.",
-                    "Invalid license", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                    MessageFormat.format(RESOURCES.getString("dialog.install.error.invalid.duplicate.message"),
+                            Long.toString(newLicense.getId())),
+                    RESOURCES.getString("dialog.install.error.invalid.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -203,10 +218,12 @@ public class ManageLicensesDialog extends JDialog {
         } catch (LicenseInstallationException e) {
             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
-            logger.log(Level.SEVERE, "Unable to install license:\n" + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.SEVERE, "Unable to install license: " + ExceptionUtils.getMessage(e), e);
 
-            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this, ExceptionUtils.getMessage(e),
-                    "Unable to install license", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                    ExceptionUtils.getMessage(e),
+                    RESOURCES.getString("dialog.install.error.failure.title"),
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -226,24 +243,22 @@ public class ManageLicensesDialog extends JDialog {
 
         updateConsoleLicenseManager();
         populateLicenseTable();
-        selectTableRowByLicenseId(newLicense.getId());
+        selectTableRowByLicense(newLicense);
 
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
     private void doRemoveSelectedLicense() {
-        final LicenseDocument selected = getSelectedRow().getLicenseDocument();
+        LicenseTableRow selectedRow = getSelectedTableRow();
 
-        String confirmationDialogTitle = "Confirm License Removal";
-        String confirmationDialogMessage = "This will irrevocably destroy the existing gateway license and cannot\n" +
-                "be undone. It will also cause the Policy Manager to disconnect when\n" +
-                "you are finished managing licenses.\n" +
-                "Are you sure you want to remove this Gateway license?";
+        if (selectedRow == null) return; // shouldn't happen, as the Remove button is only enabled when a row is selected
+
+        final LicenseDocument selected = selectedRow.getLicenseDocument();
 
         DialogDisplayer.showSafeConfirmDialog(
                 this,
-                confirmationDialogMessage,
-                confirmationDialogTitle,
+                RESOURCES.getString("dialog.remove.confirm.message"),
+                RESOURCES.getString("dialog.remove.confirm.title"),
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
@@ -257,8 +272,10 @@ public class ManageLicensesDialog extends JDialog {
                             admin.uninstallLicense(selected);
                             disconnectManagerOnClose = true;
                         } catch (LicenseRemovalException e) {
-                            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this, ExceptionUtils.getMessage(e),
-                                    "Unable to remove license", JOptionPane.ERROR_MESSAGE, null);
+                            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
+                                    ExceptionUtils.getMessage(e),
+                                    RESOURCES.getString("dialog.remove.error.title"),
+                                    JOptionPane.ERROR_MESSAGE, null);
                             return;
                         }
 
@@ -270,11 +287,13 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private void viewDetails() {
-        FeatureLicense featureLicense = getSelectedRow().getFeatureLicense();
+        FeatureLicense featureLicense = getSelectedTableRow().getFeatureLicense();
 
         if (featureLicense == null) {
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    "That license could not be parsed.", "Cannot view invalid license", JOptionPane.OK_OPTION, null);
+                    RESOURCES.getString("dialog.view.error.message"),
+                    RESOURCES.getString("dialog.view.error.title"),
+                    JOptionPane.OK_OPTION, null);
         } else {
             LicenseDetailsDialog detailsDialog = new LicenseDetailsDialog(this, featureLicense);
             Utilities.centerOnParentWindow(detailsDialog);
@@ -288,7 +307,9 @@ public class ManageLicensesDialog extends JDialog {
         if (disconnectManagerOnClose) {
             // warn/remind user
             DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    "The Policy Manager will now disconnect.", "Disconnection Required", JOptionPane.OK_OPTION, null);
+                    RESOURCES.getString("dialog.disconnect.message"),
+                    RESOURCES.getString("dialog.disconnect.title"),
+                    JOptionPane.OK_OPTION, null);
 
             // disconnect from SSG
             TopComponents.getInstance().setConnectionLost(true);
@@ -324,8 +345,10 @@ public class ManageLicensesDialog extends JDialog {
                         return getLicenseStreamFromFile();
                     } catch (IOException e) {
                         DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                                "The license file could not be read:\n" + ExceptionUtils.getMessage(e),
-                                "Unable to read license file", JOptionPane.ERROR_MESSAGE, null);
+                                MessageFormat.format(RESOURCES.getString("dialog.install.error.read.io.message"),
+                                        ExceptionUtils.getMessage(e)),
+                                RESOURCES.getString("dialog.install.error.read.title"),
+                                JOptionPane.ERROR_MESSAGE, null);
                     }
 
                     return null;
@@ -337,16 +360,18 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private InputStream getLicenseStreamFromTextBox() {
-        final JDialog textEntryDialog = new JDialog(this, "License XML", true);
+        final JDialog textEntryDialog =
+                new JDialog(this, RESOURCES.getString("licenseTextInputDialog.title"), true);
 
         textEntryDialog.setLayout(new BorderLayout());
-        textEntryDialog.add(new JLabel("Paste the new license XML below:"), BorderLayout.NORTH);
+        textEntryDialog.add(new JLabel(RESOURCES.getString("licenseTextInputDialog.instructions")),
+                BorderLayout.NORTH);
 
         final TextArea licenseTextArea = new TextArea(15, 80);
         textEntryDialog.add(licenseTextArea, BorderLayout.CENTER);
 
-        JButton okButton = new JButton("OK");
-        JButton cancelButton = new JButton("Cancel");
+        JButton okButton = new JButton(RESOURCES.getString("button.ok"));
+        JButton cancelButton = new JButton(RESOURCES.getString("button.cancel"));
 
         JPanel buttons = new JPanel();
         buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
@@ -396,18 +421,18 @@ public class ManageLicensesDialog extends JDialog {
     private InputStream getLicenseStreamFromFile() throws AccessControlException, IOException {
         JFileChooser fc = FileChooserUtil.createJFileChooser();
 
-        fc.setDialogTitle("Select license file to install");
+        fc.setDialogTitle(RESOURCES.getString("licenseFileChooser.title"));
 
         fc.setFileFilter(new FileFilter() {
             @Override
             public String getDescription() {
-                return "License files (*.xml)";
+                return RESOURCES.getString("licenseFileChooser.filter.description");
             }
 
             @Override
             public boolean accept(File f) {
                 final String name = f.getName().toLowerCase();
-                return f.isDirectory() || name.endsWith(".xml");
+                return f.isDirectory() || name.endsWith(RESOURCES.getString("licenseFileChooser.filter.extension"));
             }
         });
 
@@ -429,11 +454,16 @@ public class ManageLicensesDialog extends JDialog {
         Registry.getDefault().getLicenseManager().setLicense(admin.getCompositeLicense());
     }
 
-    private void selectTableRowByLicenseId(long id) {
+    private void selectTableRowByLicense(FeatureLicense license) {
+        long id = license.getId();
+
         for (LicenseTableRow row : licenseTableModel.getRows()) {
             if (id == row.getFeatureLicense().getId()) {
-                int index = licenseTableModel.getRowIndex(row);
-                licenseTable.setRowSelectionInterval(index, index);
+                int modelRowIndex = licenseTableModel.getRowIndex(row);
+                int viewRowIndex = licenseTable.convertRowIndexToView(modelRowIndex);
+
+                licenseTable.setRowSelectionInterval(viewRowIndex, viewRowIndex);
+
                 return;
             }
         }
@@ -441,17 +471,23 @@ public class ManageLicensesDialog extends JDialog {
         // shouldn't ever reach here, and it's not a disaster if the row can't be found
     }
 
-    private LicenseTableRow getSelectedRow() {
-        return licenseTableModel.getRowObject(licenseTable.getSelectedRow());
+    private LicenseTableRow getSelectedTableRow() {
+        int viewRowIndex = licenseTable.getSelectedRow();
+
+        return viewRowIndex < 0
+                ? null
+                : licenseTableModel.getRowObject(licenseTable.convertRowIndexToModel(viewRowIndex));
     }
 
     private void configureLicenseTable() {
         licenseTable.setAutoCreateRowSorter(true);
 
-        Col<LicenseTableRow> descriptionCol = column("Description", 100, 200, 1000,
-                Functions.<String, LicenseTableRow>propertyTransform(LicenseTableRow.class, "description"), String.class);
-        Col<LicenseTableRow> expiryCol = column("Expiry", 100, 300, 1000,
-                Functions.<Date, LicenseTableRow>propertyTransform(LicenseTableRow.class, "expiry"), Date.class);
+        Col<LicenseTableRow> descriptionCol =
+                column(RESOURCES.getString("table.column.description.name"), 100, 200, 1000,
+                        Functions.<String, LicenseTableRow>propertyTransform(LicenseTableRow.class, "description"), String.class);
+        Col<LicenseTableRow> expiryCol =
+                column(RESOURCES.getString("table.column.expiry.name"), 100, 300, 1000,
+                        Functions.<Date, LicenseTableRow>propertyTransform(LicenseTableRow.class, "expiry"), Date.class);
 
         licenseTableModel = configureTable(licenseTable, descriptionCol, expiryCol);
 
@@ -561,6 +597,8 @@ public class ManageLicensesDialog extends JDialog {
     }
 
     private class ExpiryWarningRenderer extends WarningRenderer {
+        private static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd";
+
         public ExpiryWarningRenderer() {
             super();
         }
@@ -579,7 +617,7 @@ public class ManageLicensesDialog extends JDialog {
                 } else {
                     Date expiry = (Date) value;
 
-                    setPlainText(new SimpleDateFormat("yyyy-MM-dd").format(expiry) +
+                    setPlainText(new SimpleDateFormat(DATE_FORMAT_PATTERN).format(expiry) +
                             " (" + DateUtils.makeRelativeDateMessage(expiry, false) + ")");
                 }
             }
