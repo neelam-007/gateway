@@ -2739,30 +2739,37 @@
         </copy>
 
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/lib"/>
-        <copy file="${build.dir}/layer7-api-${build.api.version}.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/lib/layer7-api-${build.api.version}.jar"/>
-
-
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
-        <copy file="${src.root}/CustomAssertionSample/build.sh" todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
-        <copy file="${src.root}/CustomAssertionSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
-
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/resources"/>
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/tools"/>
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/src"/>
-
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/resources">
-          <fileset dir="${src.root}/CustomAssertionSample/resources"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/lib">
+          <fileset dir="${src.root}/CustomAssertionSample/lib"/>
         </copy>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/tools">
+        
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/tools"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/tools">
           <fileset dir="${src.root}/CustomAssertionSample/tools"/>
         </copy>
+        
+        <copy file="${src.root}/CustomAssertionSample/build.sh" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
+        <copy file="${src.root}/CustomAssertionSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
+        <copy file="${src.root}/CustomAssertionSample/build-common.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
+        
+        <!-- Traffic Logger Sample -->
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
+        <copy file="${src.root}/CustomAssertionSample/TrafficLoggerSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
+        
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/src"/>
         <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/src">
-          <fileset dir="${src.root}/CustomAssertionSample/src"/>
+          <fileset dir="${src.root}/CustomAssertionSample/TrafficLoggerSample/src"/>
         </copy>
-
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib"/>
-        <copy file="${build.dir}/layer7-api-${build.api.version}.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib/layer7-api-${build.api.version}.jar"/>
-
+        
+        <!-- Salesforce Sample -->
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample"/>
+        <copy file="${src.root}/CustomAssertionSample/SalesforceSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample"/>
+        
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample/src"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample/src">
+          <fileset dir="${src.root}/CustomAssertionSample/SalesforceSample/src"/>
+        </copy>
+        
         <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip">
             <zipfileset dir="${build.dir}" filemode="755">
                 <include name="CustomAssertionAPI-${build.version}/**/*.sh"/>
