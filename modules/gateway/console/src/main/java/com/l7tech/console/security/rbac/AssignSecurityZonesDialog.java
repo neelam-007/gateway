@@ -103,7 +103,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 enableDisable();
                 if (dataModel != null) {
                     final EntityType type = getSelectedEntityType();
-                    tablePanel.configure(dataModel, new int[]{NAME_COL_INDEX}, type == null ? null : type.getPluralName().toLowerCase());
+                    tablePanel.configure(dataModel, new int[]{NAME_COL_INDEX}, new int[]{NAME_COL_INDEX}, new boolean[]{true}, new Comparator[]{null}, type == null ? null : type.getPluralName().toLowerCase());
                 }
             }
         });
