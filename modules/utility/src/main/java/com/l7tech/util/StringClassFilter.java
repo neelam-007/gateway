@@ -31,7 +31,7 @@ public class StringClassFilter implements ClassFilter {
 
     @Override
     public boolean permitConstructor(@NotNull Constructor constructor) {
-        String name = nameForConstructor(constructor);
+        String name = ClassUtils.getConstructorName(constructor);
         if (!constructors.contains(name)) {
             logger.fine("constructor not permitted: " + name);
             return false;
@@ -41,43 +41,11 @@ public class StringClassFilter implements ClassFilter {
 
     @Override
     public boolean permitMethod(@NotNull Method method) {
-        String name = nameForMethod(method);
+        String name = ClassUtils.getMethodName(method);
         if (!methods.contains(name)) {
             logger.fine("method not permitted: " + name);
             return false;
         }
         return true;
-    }
-
-    public String nameForMethod(@NotNull Method method) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ClassUtils.getJavaTypeName(method.getDeclaringClass()));
-        sb.append('.');
-        sb.append(method.getName());
-        sb.append('(');
-        boolean first = true;
-        for (Class<?> type : method.getParameterTypes()) {
-            if (!first)
-                sb.append(',');
-            sb.append(ClassUtils.getJavaTypeName(type));
-            first = false;
-        }
-        sb.append(')');
-        return sb.toString();
-    }
-
-    public String nameForConstructor(@NotNull Constructor constructor) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ClassUtils.getJavaTypeName(constructor.getDeclaringClass()));
-        sb.append('(');
-        boolean first = true;
-        for (Class<?> type : constructor.getParameterTypes()) {
-            if (!first)
-                sb.append(',');
-            sb.append(ClassUtils.getJavaTypeName(type));
-            first = false;
-        }
-        sb.append(')');
-        return sb.toString();
     }
 }

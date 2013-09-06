@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITY;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
 import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
 import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 
@@ -111,6 +112,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     java.util.Date getCurrentClusterSystemTime();
 
     /**
@@ -120,6 +122,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String getCurrentClusterTimeZone();
 
     /**
@@ -128,6 +131,7 @@ public interface ClusterStatusAdmin {
      * @return String  The node name
      */
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String getSelfNodeName();
 
     /**
@@ -150,6 +154,7 @@ public interface ClusterStatusAdmin {
     @Deprecated
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Map getKnownProperties();
 
     /**
@@ -159,6 +164,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors();
 
     /**
@@ -191,6 +197,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     CompositeLicense getCompositeLicense();
 
     /**
@@ -202,6 +209,7 @@ public interface ClusterStatusAdmin {
      * @return The warning period, in milliseconds
      */
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     long getLicenseExpiryWarningPeriod();
 
     /**
@@ -215,6 +223,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     public FeatureLicense createLicense(LicenseDocument document) throws InvalidLicenseException;
 
     /**
@@ -225,6 +234,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     void validateLicense(FeatureLicense license) throws InvalidLicenseException;
 
     /**
@@ -258,6 +268,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Map<String,Long> getGoidUpgradeMap();
 
     /**
@@ -265,6 +276,7 @@ public interface ClusterStatusAdmin {
     */
     @Transactional(readOnly=true)
     @Administrative(background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isMetricsEnabled();
 
     /**
@@ -274,6 +286,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     int getMetricsFineInterval();
 
     /**
@@ -299,6 +312,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative( background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN) // RBAC checking done by impl
     Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
                                                     final Goid[] serviceGoids,
                                                     final Integer resolution,
@@ -331,6 +345,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN) // RBAC checking done by impl
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
                                                           final Goid[] serviceGoids,
                                                           final Integer resolution,
@@ -361,6 +376,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(background = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN) // RBAC checking done by impl
     MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                       final Goid[] serviceGoids,
                                       final int resolution,
@@ -374,6 +390,7 @@ public interface ClusterStatusAdmin {
      * @return List of configured date formats. Never null. May be empty if none are configured.
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     @NotNull List<String> getConfiguredDateFormats();
 
     /**
@@ -383,6 +400,7 @@ public interface ClusterStatusAdmin {
      * is the Simple Date Format and the right is the Regex pattern which strictly matches the format.
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     @NotNull List<Pair<String, Pattern>> getAutoDateFormats();
 
     /**
@@ -413,6 +431,7 @@ public interface ClusterStatusAdmin {
      * @return A Collection of ModuleInfo, one for each loaded module.  May be empty but never null.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Collection<ModuleInfo> getAssertionModuleInfo();
 
     /** Exception thrown when a named assertion module is not currently loaded. */
@@ -433,6 +452,7 @@ public interface ClusterStatusAdmin {
      * @return a collection of pairs of (interface classname, instance identifier) for any registered extension interface implementations.  The instance identifieres may be null.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Collection<Pair<String, String>> getExtensionInterfaceInstances();
 
     /**
@@ -443,6 +463,7 @@ public interface ClusterStatusAdmin {
      * @return true if {@link #invokeExtensionMethod} might currently succeed against this interface.  False if it would not currently succeed currently regardless of arguments.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isExtensionInterfaceAvailable(String interfaceClassname, String instanceIdentifier);
 
     /**
@@ -461,6 +482,7 @@ public interface ClusterStatusAdmin {
      * @throws NoSuchMethodException if the invocation refers to a method that does not exist on the server's version of the specified extension interface.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN) // checked by impl, before invocation is dispatched to extension method, if extension method is annotated
     Either<Throwable,Option<Object>> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException;
 
@@ -473,6 +495,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Administrative(licensed=false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String getHardwareCapability(String capability);
 
     /**
@@ -485,6 +508,7 @@ public interface ClusterStatusAdmin {
      * @throws NoSuchPropertyException if the specified hardware capability does not have or does not allow read access to the specified property.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Serializable getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException;
 
     /**
@@ -515,6 +539,7 @@ public interface ClusterStatusAdmin {
      * @throws NoSuchCapabilityException if the specified hardware capability is not available.
      * @throws KeyStoreException if the specified token cannot be accessed using the specified settings.
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     void testHardwareTokenAvailability(String capability, int slotNum, char[] tokenPin) throws NoSuchCapabilityException, KeyStoreException;
 
     /**
@@ -582,6 +607,7 @@ public interface ClusterStatusAdmin {
      * Retrieve all the failover strategies
      * @return an array of Failover strategy, should not be empty.
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     FailoverStrategy[] getAllFailoverStrategies();
 
     /**

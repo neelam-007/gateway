@@ -167,6 +167,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=TRUSTED_CERT, stereotype = TEST_CONFIGURATION)
     public X509Certificate[] retrieveCertFromUrl(String url) throws IOException, HostnameMismatchException;
 
     /**
@@ -178,6 +179,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=TRUSTED_CERT, stereotype = TEST_CONFIGURATION)
     public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws IOException, HostnameMismatchException;
 
     /**
@@ -187,6 +189,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws CertificateException if the certificate cannot be retrieved
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     public X509Certificate getSSGRootCert() throws IOException, CertificateException;
 
     /**
@@ -196,6 +199,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws CertificateException if the certificate cannot be retrieved
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     public X509Certificate getSSGSslCert() throws IOException, CertificateException;
 
     /**
@@ -208,6 +212,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws CertificateException if the certificate cannot be retrieved
      */
     @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     public X509Certificate getSSGAuditSigningCert() throws IOException, CertificateException;
 
     /**
@@ -533,6 +538,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException If the referenced secure password could not be found.
      * @throws UpdateException If the referenced secure password is not of the expected type.
      */
+    @Secured(types=SECURE_PASSWORD, stereotype = SET_PROPERTY_BY_ID, relevantArg = 0)
     public JobId<Boolean> setGeneratedSecurePassword( final Goid securePasswordGoid, final int keybits ) throws FindException, UpdateException;
 
     /**
@@ -553,6 +559,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param csrBytes raw CSR bytes
      * @return a map containing CSR properties.
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Map<String, String> getCsrProperties(byte[] csrBytes);
 
     /**

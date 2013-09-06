@@ -275,12 +275,14 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     long getXmlMaxBytes();
 
     /**
      * Find all ExternalReferenceFactory's, which have been registered when the gateway loads modular assertions.
      * @return a set of ExternalReferenceFactory's
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Set<ExternalReferenceFactory> findAllExternalReferenceFactories();
 
     /**

@@ -156,6 +156,7 @@ public interface TransportAdmin {
      * @return an array of protocol names, ie { "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" }.  Never null but may (theoretically) be empty.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String[] getAllProtocolVersions(boolean defaultProviderOnly);
 
     /**
@@ -164,6 +165,7 @@ public interface TransportAdmin {
      * @return the list of all cipher suites, ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String[] getAllCipherSuiteNames();
 
     /**
@@ -173,6 +175,7 @@ public interface TransportAdmin {
      *         ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String[] getDefaultCipherSuiteNames();
 
     /**
@@ -181,6 +184,7 @@ public interface TransportAdmin {
      * @return an array of InetAddress instances, or null if this information is unavailable.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     InetAddress[] getAvailableBindAddresses();
 
     /**
@@ -190,6 +194,7 @@ public interface TransportAdmin {
      * @return an array of protocol descriptors, ie { "http", "https", "ftp", "ftps", "svn+ssh", "itms", "l7.raw.tcp" }.  Never null.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     TransportDescriptor[] getModularConnectorInfo();
 
     /**
@@ -198,11 +203,13 @@ public interface TransportAdmin {
      * @return a Collection of PortRange instances covering ports that are reserved for system use.  Never null, but may be empty.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     PortRanges getReservedPorts();
 
     /**
      * @return true if IPv6 is enabled on the gateway
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isUseIpv6();
 
     @Transactional(readOnly=true)
@@ -217,6 +224,7 @@ public interface TransportAdmin {
      * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     long getXmlMaxBytes();
 
 
@@ -225,6 +233,7 @@ public interface TransportAdmin {
      * @return true if SNMP Query built-in service is enabled.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isSnmpQueryEnabled();
 
     /**

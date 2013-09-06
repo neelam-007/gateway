@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.EnumSet;
 
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
 import static com.l7tech.objectmodel.EntityType.JMS_CONNECTION;
 import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
 
@@ -71,6 +72,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the providers from being retrieved
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     EnumSet<JmsProviderType> getProviderTypes() throws FindException;
 
     /**
@@ -80,6 +82,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the connections from being retrieved
      */
     @Transactional(readOnly=true)
+    @Secured(types=JMS_CONNECTION, stereotype = MethodStereotype.FIND_ENTITIES)
     JmsConnection[] findAllConnections() throws FindException;
 
     /**
@@ -189,6 +192,7 @@ public interface JmsAdmin {
      * @throws JmsTestException if the test fails
      */
     @Transactional(readOnly=true)
+    @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.TEST_CONFIGURATION)
     void testConnection(JmsConnection connection) throws JmsTestException;
 
     /**
@@ -201,6 +205,7 @@ public interface JmsAdmin {
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
      */
     @Transactional(readOnly=true)
+    @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.TEST_CONFIGURATION)
     void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws JmsTestException, FindException;
 
     /**
@@ -208,6 +213,7 @@ public interface JmsAdmin {
      * @return the maximum number of bytes permitted for a JMS message, or 0 for unlimited (Integer)
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     long getDefaultJmsMessageMaxBytes();
 
 
@@ -217,6 +223,7 @@ public interface JmsAdmin {
      * @param rule The Jms Message Property rule
      * @return True if the message property is valid, False if the message property is not valid
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isValidProperty(JmsMessagePropertyRule rule);
 
     /**
@@ -224,11 +231,13 @@ public interface JmsAdmin {
      * @param size The size of the pool
      * @return True if the size is valid, False if not.
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isValidThreadPoolSize(String size);
 
     /**
      * Check to see if the dedicated thread pool is enabled
      * @return True when enable.
      */
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isDedicatedThreadPoolEnabled();
 }

@@ -4,8 +4,10 @@
 
 package com.l7tech.gateway.common.transport.ftp;
 
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public interface FtpAdmin {
      * @throws FtpTestException if connection test failed
      */
     @Transactional(readOnly=true)
+    @Secured(types= EntityType.SSG_CONNECTOR, stereotype = MethodStereotype.TEST_CONFIGURATION)
     void testConnection(boolean isFtps,
                         boolean isExplicit,
                         boolean isVerifyServerCert,

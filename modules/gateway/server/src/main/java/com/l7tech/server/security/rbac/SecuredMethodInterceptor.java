@@ -158,8 +158,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
                     checkTypes = secured.types();
                 }
 
-                if (secured.stereotype() != null && checkStereotype == null)
-                    checkStereotype = secured.stereotype();
+                if (secured.stereotype() != null) {
+                    if (checkStereotype == null) {
+                        checkStereotype = secured.stereotype();
+                    } else if (!MethodStereotype.NONE.equals(checkStereotype) &&
+                        !MethodStereotype.NONE.equals(secured.stereotype()) &&
+                        !checkStereotype.equals(secured.stereotype())) {
+                        throw new IllegalStateException("Multiple conflicting method stereotypes for method " + mname);
+                    }
+                }
 
                 if (secured.relevantArg() >= 0 && checkRelevantArg < 0)
                     checkRelevantArg = secured.relevantArg();
@@ -170,13 +177,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
 
                 if (secured.customInterceptor() != null && !secured.customInterceptor().trim().equals("")) {
                     if (customInterceptorClassName != null)
-                        throw new IllegalStateException("More than one declared @Secured customInterceptorClassName applies to this method");
+                        throw new IllegalStateException("More than one declared @Secured customInterceptorClassName applies to method " + mname);
                     customInterceptorClassName = secured.customInterceptor();
                 }
 
                 if (secured.customEntityTranslatorClassName() != null && !secured.customEntityTranslatorClassName().trim().equals("")) {
                     if (customInterceptorClassName != null)
-                        throw new IllegalStateException("More than one declared @Secured customEntityTranslatorClassName applies to this method");
+                        throw new IllegalStateException("More than one declared @Secured customEntityTranslatorClassName applies to method " + mname);
                     customEntityTranslatorClassName = secured.customEntityTranslatorClassName();
                 }
             }
@@ -192,6 +199,11 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
 
         if (customInterceptorClassName != null) {
             return invokeWithCustomInterceptor(methodInvocation, user, customInterceptorClassName, target.getClass().getClassLoader());
+        }
+
+        if (MethodStereotype.UNCHECKED_WIDE_OPEN.equals(check.stereotype)) {
+            /* BYPASS further checks */
+            return methodInvocation.proceed();
         }
 
         switch (check.stereotype) {

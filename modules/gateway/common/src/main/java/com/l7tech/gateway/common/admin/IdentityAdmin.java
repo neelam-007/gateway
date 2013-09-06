@@ -39,6 +39,7 @@ public interface IdentityAdmin {
      */
     @Transactional(propagation = Propagation.SUPPORTS)
     @Administrative(licensed = false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String echoVersion();
 
     /**
@@ -78,6 +79,7 @@ public interface IdentityAdmin {
      */
     @Transactional(propagation = Propagation.SUPPORTS)
     @Administrative(licensed = false)
+    @Secured(types = ID_PROVIDER_CONFIG, stereotype = FIND_ENTITIES)
     LdapIdentityProviderConfig[] getLdapTemplates() throws FindException;
 
     /**
@@ -338,6 +340,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Administrative(licensed = false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean doesCurrentUserHaveCert() throws FindException, AuthenticationException;
 
     /**
@@ -349,6 +352,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Administrative(licensed = false)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean currentUsersPasswordCanBeChanged() throws AuthenticationException, FindException;
 
     /**
@@ -404,9 +408,11 @@ public interface IdentityAdmin {
      * @throws com.l7tech.identity.InvalidIdProviderCfgException
      *          if the test fails
      */
+    @Secured(types = ID_PROVIDER_CONFIG, stereotype = TEST_CONFIGURATION, relevantArg = 0)
     void testIdProviderConfig(IdentityProviderConfig cfg, String testUsername, char[] testPassword)
             throws InvalidIdProviderCfgException;
-    
+
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     void testNtlmConfig(Map<String, String> props) throws InvalidIdProviderCfgException;
 
     /**
@@ -466,6 +472,7 @@ public interface IdentityAdmin {
      * @throws FindException
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     String getPasswordPolicyDescriptionForIdentityProvider() throws FindException;
 
     /**
@@ -474,6 +481,7 @@ public interface IdentityAdmin {
      * @return The account minimums.
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     AccountMinimums getAccountMinimums();
 
     /**
@@ -482,6 +490,7 @@ public interface IdentityAdmin {
      * @return the account minimums map
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Map<String, AccountMinimums> getAccountMinimumsMap();
 
     /**
@@ -492,6 +501,7 @@ public interface IdentityAdmin {
      * @return The minimums map.
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums();
 
     /**

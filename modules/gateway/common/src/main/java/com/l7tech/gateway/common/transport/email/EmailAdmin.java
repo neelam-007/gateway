@@ -1,10 +1,12 @@
 package com.l7tech.gateway.common.transport.email;
 
-import org.springframework.transaction.annotation.Transactional;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Remote interface for supporting email administrative operations.
@@ -34,6 +36,7 @@ public interface EmailAdmin {
      * @param authPassword  password for authentication
      * @throws EmailTestException   Fail to send the test email.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject, String host,
                               int port, String base64Message, EmailAlertAssertion.Protocol protocol, boolean authenticate,
                               String authUsername, String authPassword) throws EmailTestException;
@@ -44,6 +47,7 @@ public interface EmailAdmin {
      * @param eaa    Email Alert assertion
      * @throws EmailTestException   Fail to send the test email.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException;
 
 
@@ -52,6 +56,7 @@ public interface EmailAdmin {
      * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     long getXmlMaxBytes();
 
 }

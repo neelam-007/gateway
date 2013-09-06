@@ -1,10 +1,13 @@
 package com.l7tech.gateway.common;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.HexUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
 
 /**
  * Methods implemented by remote admin beans that support async method execution.
@@ -43,6 +46,7 @@ public interface AsyncAdminMethods {
      * @return a job status string in the above format, or null if the specified jobId is not recognized.
      */
     @Administrative(licensed = false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId);
 
     /**
@@ -79,6 +83,7 @@ public interface AsyncAdminMethods {
      * @throws JobStillActiveException if the specified job is not inactive.
      */
     @Administrative(licensed = false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException;
 
     /**
@@ -94,6 +99,7 @@ public interface AsyncAdminMethods {
      * @param interruptIfRunning if true the job will be interrupted if it is running
      */
     @Administrative(licensed = false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning);
 
     /**

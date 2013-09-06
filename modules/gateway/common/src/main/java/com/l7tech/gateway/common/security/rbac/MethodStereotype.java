@@ -145,7 +145,17 @@ public enum MethodStereotype {
      * on some entities of each of the declared type(s).
      */
     TEST_CONFIGURATION,
-    
+
+
+    /**
+     * The method should not be subject to any security checks.
+     * Methods annotated with this stereotype will be permitted and their argument and return values will NOT
+     * be checked or filtered in any way.
+     * <P/>
+     * Use with caution and flag new usages for code review
+     */
+    UNCHECKED_WIDE_OPEN,
+
     /**
      * The method does not conform to any known stereotype.  An exception will be thrown at runtime.
      */

@@ -62,6 +62,7 @@ public interface FolderAdmin {
      * @throws ConstraintViolationException if the move causes a contraint violation (e.g. duplicate folder name)
      * @throws com.l7tech.gateway.common.security.rbac.PermissionDeniedException if the user does not have update permission on the entity as well as both the target and desination folders.
      */
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN) // check done by impl
     void moveEntityToFolder( Folder folder, PersistentEntity entity ) throws UpdateException, ConstraintViolationException;
 
     /**

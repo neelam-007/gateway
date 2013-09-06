@@ -1,7 +1,10 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
+import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -203,6 +206,53 @@ public class ClassUtils {
         for (int i = 1; i < bracketsNeeded; ++i) {
             sb.append("[]");
         }
+        return sb.toString();
+    }
+
+    /**
+     * Return a string describing the specified method in a way that includes only relevant information
+     * for uniquely identifying it (method name, argument types).
+     *
+     * @param method method to name.  Required.
+     * @return a name for the method that includes the fully qualified class name, method name, and parenthesized argument type names
+     *         while omitting other information (such as modifiers, return type, and declared exceptions).
+     */
+    public static String getMethodName(@NotNull Method method) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getJavaTypeName(method.getDeclaringClass()));
+        sb.append('.');
+        sb.append(method.getName());
+        sb.append('(');
+        boolean first = true;
+        for (Class<?> type : method.getParameterTypes()) {
+            if (!first)
+                sb.append(',');
+            sb.append(getJavaTypeName(type));
+            first = false;
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
+    /**
+     * Return a string describing the specified constructor that is sufficient to uniquely identify it
+     * but that omits other information.
+     *
+     * @param constructor the constructor to name.  Required.
+     * @return a string containing the fully qualified class name and a parenthesized list of argument types.
+     */
+    public static String getConstructorName(@NotNull Constructor constructor) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getJavaTypeName(constructor.getDeclaringClass()));
+        sb.append('(');
+        boolean first = true;
+        for (Class<?> type : constructor.getParameterTypes()) {
+            if (!first)
+                sb.append(',');
+            sb.append(getJavaTypeName(type));
+            first = false;
+        }
+        sb.append(')');
         return sb.toString();
     }
 

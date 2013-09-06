@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.TEST_CONFIGURATION;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
@@ -70,6 +71,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @throws FindException: thrown when errors finding JDBC Connection entities.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     List<String> getAllJdbcConnectionNames() throws FindException;
 
     /**
@@ -111,6 +113,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
+    @Secured(types = EntityType.JDBC_CONNECTION, stereotype = TEST_CONFIGURATION)
     AsyncAdminMethods.JobId<String> testJdbcQuery(String connectionName, String query, @Nullable String schemaName, int queryTimeout);
 
     /**
@@ -120,6 +123,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return a list of driver classes.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     List<String> getPropertyDefaultDriverClassList();
 
     /**
@@ -129,6 +133,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return a white list of driver classes.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     List<String> getPropertySupportedDriverClass();
 
     /**
@@ -138,6 +143,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return an integer, the default maximum number of records returned by a query
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     int getPropertyDefaultMaxRecords();
 
     /**
@@ -147,6 +153,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return an integer, the default minimum pool size.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     int getPropertyDefaultMinPoolSize();
 
     /**
@@ -156,6 +163,7 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return an integer, the default maximum pool size.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     int getPropertyDefaultMaxPoolSize();
 
     /**
@@ -166,5 +174,6 @@ public interface JdbcAdmin extends AsyncAdminMethods{
      * @return True if the jdbc driver class is supported, False if the jdbc driver class is not supported.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     boolean isDriverClassSupported(String driverClass);
 }

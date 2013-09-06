@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
+
 /**
  * Remote interface to check Kerberos configuration.
  *
@@ -38,6 +40,7 @@ public interface KerberosAdmin  {
      * @return the SPN (e.g. http/gateway.qawin2003.com@QAWIN2003.COM)
      * @throws com.l7tech.kerberos.KerberosException if the log in fails.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public void validatePrincipal(String principle) throws KerberosException ;
 
     /**
@@ -49,6 +52,7 @@ public interface KerberosAdmin  {
      * @return the Keytab or null if non is available.
      * @throws KerberosException if a Keytab is present but invalid.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public List<KeyTabEntryInfo> getKeyTabEntryInfos() throws KerberosException;
 
     /**
@@ -65,6 +69,7 @@ public interface KerberosAdmin  {
      *
      * @return The configuration map (could be empty but should not be NULL)
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public Map<String,String> getConfiguration();
 
     /**
@@ -98,12 +103,14 @@ public interface KerberosAdmin  {
      * Retrieve validate required when loading the keytab file
      * @return True for validate is required, false for validate is not required.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public boolean getKeytabValidate() throws KerberosException;
 
     /**
      * Check to see if the referral is enabled
      * @return True when enable.
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isReferralEnabled();
 
 

@@ -50,7 +50,8 @@ public interface RbacAdmin {
      * the SSM can find out what functionality they can access. 
      */
     @Transactional(readOnly=true)
-    @Administrative(licensed=false) 
+    @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Collection<Permission> findCurrentUserPermissions() throws FindException;
 
     /**
@@ -65,6 +66,7 @@ public interface RbacAdmin {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Collection<Role> findRolesForUser(User user) throws FindException;
 
     /**

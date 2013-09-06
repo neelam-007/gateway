@@ -95,6 +95,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws java.net.MalformedURLException thrown on malformed WSDL url
      */
     @Transactional(propagation = SUPPORTS)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String resolveWsdlTarget(String url) throws IOException;
 
     /**
@@ -109,6 +110,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws java.net.MalformedURLException thrown on malformed WSDL url
      */
     @Transactional(propagation = SUPPORTS)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException;
 
     /**
@@ -123,6 +125,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      * @throws java.net.MalformedURLException thrown on malformed WSDL url
      */
     @Transactional(propagation = SUPPORTS)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException;
 
     /**
@@ -231,6 +234,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyValidationContext pvc);
 
     /**
@@ -250,6 +254,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyValidationContext pvc, HashMap<String, Policy> fragments);
 
     /**
@@ -362,14 +367,17 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String getPolicyURL(String serviceoid, boolean fullPolicyURL) throws FindException;
 
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String getConsumptionURL(String serviceoid ) throws FindException;
 
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
 
     @Transactional(readOnly=true)

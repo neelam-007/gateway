@@ -91,6 +91,7 @@ public interface LogSinkAdmin extends LogAccessAdmin {
      * @return The reserved space in bytes.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     long getReservedFileSize();
 
     /**
@@ -99,6 +100,7 @@ public interface LogSinkAdmin extends LogAccessAdmin {
      * @return The maximum space in bytes.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     long getMaximumFileSize();
 
     @Override

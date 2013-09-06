@@ -165,6 +165,7 @@ public interface ResourceAdmin {
      * @throws FindException
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findDefaultResources() throws FindException;
 
     /**
@@ -175,6 +176,7 @@ public interface ResourceAdmin {
      * @throws FindException If an error occurs.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     ResourceEntry findDefaultResourceByUri( final String uri ) throws FindException;
 
     /**
@@ -188,6 +190,7 @@ public interface ResourceAdmin {
      * @throws FindException If an error occurs.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     int countRegisteredSchemas( Collection<Goid> resourceGoids ) throws FindException;
 
     /**
@@ -199,6 +202,7 @@ public interface ResourceAdmin {
      * @return True if permitted.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     boolean allowSchemaDoctype();
 
     /**
@@ -274,6 +278,7 @@ public interface ResourceAdmin {
      * @throws java.net.MalformedURLException thrown on malformed url
      */
     @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     String resolveResource(String url) throws IOException;
 
 }

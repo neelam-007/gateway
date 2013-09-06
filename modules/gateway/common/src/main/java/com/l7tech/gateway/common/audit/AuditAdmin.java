@@ -55,6 +55,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     AsyncAdminMethods.JobId<AuditRecordHeader[]> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
@@ -63,6 +64,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @return a job status string in the format specified in {@link AsyncAdminMethods#getJobStatus}
      */
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String getFindHeadersJobStatus(JobId<AuditRecordHeader[]> jobId);
 
     /**
@@ -100,6 +102,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     AsyncAdminMethods.JobId<Long> hasNewAudits(Date date, Level level);
 
     /**
@@ -108,6 +111,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @return a job status string in the format specified in {@link AsyncAdminMethods#getJobStatus}
      */
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String getNewAuditsJobStatus(JobId<Long> jobId);
 
     /**
@@ -119,6 +123,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @throws FindException if there was a problem with @link #hasNewAudits(AuditSearchCriteria) findHeaders
      */
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     AsyncAdminMethods.JobResult<Long>  getNewAuditsJobResult(JobId<Long> jobId) throws JobStillActiveException, UnknownJobException;
 
     /**
@@ -127,6 +132,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(propagation=SUPPORTS)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Level serverMessageAuditThreshold();
 
     /**
@@ -135,6 +141,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(propagation=SUPPORTS)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Level serverDetailAuditThreshold();
 
     /**
@@ -156,6 +163,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
     @Secured(types=AUDIT_RECORD, stereotype = DELETE_MULTI)
     void doAuditArchive();
 
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isAuditArchiveEnabled();
 
     /**
@@ -180,6 +188,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Date getLastAcknowledgedAuditDate();
 
     /**
@@ -189,13 +198,14 @@ public interface AuditAdmin extends AsyncAdminMethods{
      *
      * @return The date or null if not set
      */
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Date markLastAcknowledgedAuditDate();
 
     /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.
      * @param fromTime          minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
      * @param toTime            maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
-     * @param serviceOids       OIDs of services (thus filtering to service events only); null for no service filtering
+     * @param serviceGoids      GOIDs of services (thus filtering to service events only); null for no service filtering
      * @param chunkSizeInBytes  number of bytes per download chunk.  If zero, default of 8192 will be used.
      * @return a OpaqueId for passing to downloadNextChunk().  never null.
      */
@@ -236,6 +246,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(propagation=SUPPORTS)
     @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     int serverMinimumPurgeAge();
 
     /**
@@ -246,6 +257,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isSigningEnabled() throws FindException;
 
     /**
@@ -256,6 +268,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     int getMaxDigestRecords();
 
     /**
@@ -264,6 +277,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @return true if available
      */
     @Transactional(readOnly = true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     boolean isAuditViewerPolicyAvailable();
 
     /**
@@ -314,6 +328,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @return: the list of entity class names.
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     Collection<String> getAllEntityClassNames();
 
     /**
@@ -322,6 +337,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
      * @return the configured refresh period (seconds).
      */
     @Transactional(propagation= Propagation.SUPPORTS)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     int getSystemLogRefresh();
 
     /**
