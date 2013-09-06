@@ -565,7 +565,7 @@ CREATE TABLE fed_user (
   version int(11) NOT NULL,
   name varchar(128) NOT NULL,
   provider_goid binary(16) NOT NULL,
-  subject_dn varchar(255),
+  subject_dn varchar(1024),
   email varchar(128) default NULL,
   login varchar(255),
   first_name varchar(32) default NULL,

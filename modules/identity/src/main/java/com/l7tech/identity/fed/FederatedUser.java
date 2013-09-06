@@ -41,7 +41,7 @@ public class FederatedUser extends PersistentUser {
     }
 
     @Override
-    @Column(name="subject_dn", length=255)
+    @Column(name="subject_dn", length=1024)
     public String getSubjectDn() {
         return super.getSubjectDn();
     }

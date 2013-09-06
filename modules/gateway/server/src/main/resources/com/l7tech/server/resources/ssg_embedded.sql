@@ -382,7 +382,7 @@ create table fed_user (
     last_name varchar(32),
     login varchar(255) not null,
     provider_goid  CHAR(16) FOR BIT DATA,
-    subject_dn varchar(255),
+    subject_dn varchar(1024),
     primary key (goid)
 );
 

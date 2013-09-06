@@ -1651,3 +1651,8 @@ alter table sample_messages
     foreign key (published_service_goid)
     references published_service
     on delete cascade;
+
+
+-- SSG-7606 not able to authenticate FIP user with cert that has a long subject DN and OID values
+alter table fed_user alter subject_dn set data type varchar(1024);
+

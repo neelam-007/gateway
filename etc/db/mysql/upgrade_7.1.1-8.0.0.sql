@@ -1866,6 +1866,10 @@ alter table trusted_esm_user modify user_id varchar(255) NOT NULL;
 DROP PROCEDURE IF EXISTS dropForeignKey;
 DROP PROCEDURE IF EXISTS dropIndexIfExists;
 
+
+-- SSG-7606 not able to authenticate FIP user with cert that has a long subject DN and OID values
+alter table fed_user modify subject_dn VARCHAR(1024);
+
 --
 -- Reenable FK at very end of script
 --
