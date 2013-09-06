@@ -12,22 +12,18 @@ import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
- * User: ymoiseyenko
+ * @author ymoiseyenko
  * Date: 7/12/13
  */
 public class SiteMinderCheckProtectedAssertion extends Assertion implements UsesVariables, SetsVariables {
-    protected static final Logger logger = Logger.getLogger(SiteMinderAuthenticateAssertion.class.getName());
-
     public static final String DEFAULT_PREFIX = "siteminder";
 
     private Goid agentGoid;
-
     private String agentId;
     private String protectedResource;
     private String action;
@@ -90,7 +86,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT
