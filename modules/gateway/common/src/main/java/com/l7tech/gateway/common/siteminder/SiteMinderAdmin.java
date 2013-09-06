@@ -60,7 +60,7 @@ public interface SiteMinderAdmin extends AsyncAdminMethods {
      * @throws com.l7tech.objectmodel.UpdateException : thrown when errors saving the SiteMinder configuration entity.
      */
     @Secured (types = EntityType.SITEMINDER_CONFIGURATION, stereotype = MethodStereotype.SAVE_OR_UPDATE)
-    Goid saveSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration) throws UpdateException;
+    Goid saveSiteMinderConfiguration(SiteMinderConfiguration siteMinderConfiguration) throws SaveException;
 
     /**
      * Delete a SiteMinder configuration entity from the database.

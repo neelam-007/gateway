@@ -77,9 +77,8 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
      * @return a Goid, the saved entity object id.
      * @throws UpdateException: thrown when errors saving the SiteMinder configuration entity.
      */
-    public Goid saveSiteMinderConfiguration(SiteMinderConfiguration configuration) throws UpdateException {
-        siteMinderConfigurationManager.update(configuration);
-        return configuration.getGoid();
+    public Goid saveSiteMinderConfiguration(SiteMinderConfiguration configuration) throws SaveException {
+        return siteMinderConfigurationManager.save(configuration);
     }
 
     /**

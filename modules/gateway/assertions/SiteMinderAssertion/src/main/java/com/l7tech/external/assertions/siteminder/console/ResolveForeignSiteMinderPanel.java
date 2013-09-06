@@ -10,7 +10,8 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -160,29 +161,25 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
                     //Save the connection
                     SiteMinderAdmin admin = getSiteMinderAdmin();
+                    SiteMinderConfiguration config = new SiteMinderConfiguration();
                     if (admin == null) return;
                     try{
-                        admin.saveSiteMinderConfiguration(newConfig);
-                    } catch (UpdateException ex){
+                        config.copyFrom(newConfig);
+                        config.setGoid(Goid.DEFAULT_GOID);
+                        config.setGoid(admin.saveSiteMinderConfiguration(config));
+                    } catch (SaveException ex){
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
                                 ex,
                                 reedit);
                         return;
                     }
-                    siteMinderSelectorComboBox.setSelectedItem(newConfig.getName());
 
                     // refresh the list of connectors
                     populateSiteMinderComboBox();
 
-                    // Set the selected item as the new connector just created.
-                    for (int idx = 0; idx < siteMinderSelectorComboBox.getModel().getSize(); idx++) {
-                        String item = (String) siteMinderSelectorComboBox.getItemAt(idx);
-                        if (item.equals(newConfig.getName())) {
-                            siteMinderSelectorComboBox.setSelectedItem(item);
-                            break;
-                        }
-                    }
+                    siteMinderSelectorComboBox.setSelectedItem(new SiteMinderConfigurationKey(config));
+
                     changeRadioButton.setEnabled(true);
                     changeRadioButton.setSelected(true);
                     siteMinderSelectorComboBox.setEnabled(true);
