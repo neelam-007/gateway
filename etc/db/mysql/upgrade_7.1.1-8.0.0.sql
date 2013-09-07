@@ -653,9 +653,7 @@ CALL dropIndexIfExists('fed_group_virtual', 'i_provider_oid');
 ALTER TABLE fed_group_virtual ADD COLUMN old_objectid BIGINT(20);
 UPDATE fed_group_virtual SET old_objectid=objectid;
 ALTER TABLE fed_group_virtual CHANGE COLUMN objectid goid binary(16) NOT NULL;
--- For manual runs use: set @fed_group_virtual_prefix=createUnreservedPoorRandomPrefix();
-SET @fed_group_virtual_prefix=#RANDOM_LONG_NOT_RESERVED#;
-UPDATE fed_group_virtual SET goid = toGoid(@fed_group_virtual_prefix, old_objectid);
+UPDATE fed_group_virtual SET goid = toGoid(@fed_group_prefix, old_objectid);
 ALTER TABLE fed_group_virtual DROP COLUMN old_objectid;
 
 ALTER TABLE fed_group_virtual ADD COLUMN old_provider_oid BIGINT(20);
@@ -1727,7 +1725,7 @@ update audit_admin set entity_id = toGoid(@active_connector_prefix, entity_id_ba
 update audit_admin set entity_id = toGoid(@wssc_session_prefix, entity_id_backup) where entity_class='com.l7tech.server.secureconversation.StoredSecureConversationSession';
 update audit_admin set entity_id = toGoid(@identity_provider_prefix, entity_id_backup) where entity_class='com.l7tech.identity.ldap.LdapIdentityProviderConfig';
 update audit_admin set entity_id = toGoid(@password_policy_prefix, entity_id_backup) where entity_class='com.l7tech.identity.IdentityProviderPasswordPolicy';
-update audit_admin set entity_id = toGoid(@fed_group_virtual_prefix, entity_id_backup) where entity_class='com.l7tech.identity.fed.VirtualGroup';
+update audit_admin set entity_id = toGoid(@fed_group_prefix, entity_id_backup) where entity_class='com.l7tech.identity.fed.VirtualGroup';
 update audit_admin set entity_id = toGoid(@published_service_prefix, entity_id_backup) where entity_class='com.l7tech.gateway.common.service.PublishedService';
 update audit_admin set entity_id = toGoid(@internal_group_prefix, entity_id_backup) where entity_class='com.l7tech.identity.internal.InternalGroup';
 update audit_admin set entity_id = toGoid(@cluster_properties_prefix, entity_id_backup) where entity_class='com.l7tech.gateway.common.cluster.ClusterProperty';
@@ -1806,7 +1804,7 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('fed_user', @fed_user_prefix),
       ('internal_user', @internal_user_prefix),
       ('fed_group', @fed_group_prefix),
-      ('fed_group_virtual', @fed_group_virtual_prefix),
+      ('fed_group_virtual', @fed_group_prefix),
       ('internal_user_group', @internal_user_group_prefix),
       ('internal_group', @internal_group_prefix),
       ('audit_main', @audit_main_prefix),

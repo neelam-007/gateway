@@ -434,7 +434,6 @@ call setVariable('internal_user_group_prefix', cast(randomLongNotReserved() as c
 call setVariable('fed_user_prefix', cast(randomLongNotReserved() as char(21)));
 call setVariable('fed_group_prefix', cast(randomLongNotReserved() as char(21)));
 call setVariable('fed_user_group_prefix', cast(randomLongNotReserved() as char(21)));
-call setVariable('fed_group_virtual_prefix', cast(randomLongNotReserved() as char(21)));
 
 ALTER TABLE audit_main ADD COLUMN provider_oid_backup bigint;
 update audit_main set provider_oid_backup = provider_oid;
@@ -483,7 +482,7 @@ ALTER TABLE fed_group_virtual ADD COLUMN objectid_backup bigint;
 update fed_group_virtual set objectid_backup = objectid;
 ALTER TABLE fed_group_virtual DROP COLUMN objectid;
 ALTER TABLE fed_group_virtual ADD COLUMN goid CHAR(16) FOR BIT DATA;
-update fed_group_virtual set goid = toGoid(cast(getVariable('fed_group_virtual_prefix') as bigint), objectid_backup);
+update fed_group_virtual set goid = toGoid(cast(getVariable('fed_group_prefix') as bigint), objectid_backup);
 ALTER TABLE fed_group_virtual ALTER COLUMN goid NOT NULL;
 ALTER TABLE fed_group_virtual DROP COLUMN objectid_backup;
 ALTER TABLE fed_group_virtual ADD PRIMARY KEY (goid);
@@ -1504,7 +1503,7 @@ update audit_admin set entity_id = toGoid(cast(getVariable('active_connector_pre
 update audit_admin set entity_id = toGoid(cast(getVariable('wssc_session_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.server.secureconversation.StoredSecureConversationSession';
 update audit_admin set entity_id = toGoid(cast(getVariable('identity_provider_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.ldap.LdapIdentityProviderConfig';
 update audit_admin set entity_id = toGoid(cast(getVariable('password_policy_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.IdentityProviderPasswordPolicy';
-update audit_admin set entity_id = toGoid(cast(getVariable('fed_group_virtual_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.VirtualGroup';
+update audit_admin set entity_id = toGoid(cast(getVariable('fed_group_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.fed.VirtualGroup';
 update audit_admin set entity_id = toGoid(cast(getVariable('published_service_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.service.PublishedService';
 update audit_admin set entity_id = toGoid(cast(getVariable('internal_group_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.identity.internal.InternalGroup';
 update audit_admin set entity_id = toGoid(cast(getVariable('cluster_properties_prefix') as bigint), entity_id_backup) where entity_class='com.l7tech.gateway.common.cluster.ClusterProperty';
@@ -1584,7 +1583,7 @@ INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('internal_user_group', cast(getVariable('internal_user_group_prefix') as bigint)),
       ('fed_user', cast(getVariable('fed_user_prefix') as bigint)),
       ('fed_group', cast(getVariable('fed_group_prefix') as bigint)),
-      ('fed_group_virtual', cast(getVariable('fed_group_virtual_prefix') as bigint)),
+      ('fed_group_virtual', cast(getVariable('fed_group_prefix') as bigint)),
       ('fed_user_group', cast(getVariable('fed_user_group_prefix') as bigint)),
       ('audit_main', cast(getVariable('audit_main_prefix') as bigint)),
       ('audit_detail', cast(getVariable('audit_detail_prefix') as bigint)),
