@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -39,6 +40,29 @@ public class RevocationCheckPolicyTest {
             "  </void> \n" +
             " </object> \n" +
             "</java> \n";
+
+    private static final String POLICY_XML_WITH_ENUM =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<java version=\"1.7.0_21\" class=\"java.beans.XMLDecoder\">\n" +
+            "<object class=\"java.util.ArrayList\">\n" +
+            "  <void method=\"add\">\n" +
+            "   <object class=\"com.l7tech.gateway.common.security.RevocationCheckPolicyItem\">\n" +
+            "    <void property=\"allowIssuerSignature\">\n" +
+            "     <boolean>true</boolean>\n" +
+            "    </void>\n" +
+            "    <void property=\"type\">\n" +
+            "     <object class=\"java.lang.Enum\" method=\"valueOf\">\n" +
+            "      <class>com.l7tech.gateway.common.security.RevocationCheckPolicyItem$Type</class>\n" +
+            "      <string>CRL_FROM_CERTIFICATE</string>\n" +
+            "     </object>\n" +
+            "    </void>\n" +
+            "    <void property=\"url\">\n" +
+            "     <string>.*</string>\n" +
+            "    </void>\n" +
+            "   </object>\n" +
+            "  </void>\n" +
+            "</object>\n" +
+            "</java>\n";
 
     @Before
     public void setup() {
@@ -79,10 +103,24 @@ public class RevocationCheckPolicyTest {
     }
 
     @Test
+    @BugId("SSG-7414")
     public void testLoadPolicyXml(){
 
         RevocationCheckPolicy r = new RevocationCheckPolicy();
         r.setRevocationCheckPolicyXml(POLICY_XML);
+        assertEquals(1, r.getRevocationCheckItems().size());
+
+        RevocationCheckPolicyItem item = r.getRevocationCheckItems().get(0);
+        assertTrue(item.isAllowIssuerSignature());
+        assertEquals(RevocationCheckPolicyItem.Type.CRL_FROM_CERTIFICATE, item.getType());
+    }
+
+    @Test
+    @BugId("SSG-7414")
+    public void testLoadPolicyXmlWithEnum(){
+
+        RevocationCheckPolicy r = new RevocationCheckPolicy();
+        r.setRevocationCheckPolicyXml(POLICY_XML_WITH_ENUM);
         assertEquals(1, r.getRevocationCheckItems().size());
 
         RevocationCheckPolicyItem item = r.getRevocationCheckItems().get(0);

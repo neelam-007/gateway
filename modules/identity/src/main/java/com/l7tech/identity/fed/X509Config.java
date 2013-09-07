@@ -6,6 +6,8 @@
 
 package com.l7tech.identity.fed;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 
 /**
@@ -17,6 +19,7 @@ import java.io.Serializable;
  * @author alex
  * @version $Revision$
  */
+@XmlSafe(allowAllConstructors = true, allowAllSetters = true)
 public class X509Config implements Serializable {
     public X509Config() {
     }

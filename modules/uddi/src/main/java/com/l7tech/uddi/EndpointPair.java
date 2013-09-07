@@ -1,5 +1,7 @@
 package com.l7tech.uddi;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -15,6 +17,7 @@ import java.net.URL;
  *
  * @author darmstrong
  */
+@XmlSafe(allowAllConstructors = true, allowAllSetters = true)
 public class EndpointPair implements Serializable {
 
     // - PUBLIC
