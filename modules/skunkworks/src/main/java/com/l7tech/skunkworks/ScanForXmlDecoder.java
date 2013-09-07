@@ -83,7 +83,9 @@ public class ScanForXmlDecoder {
             XmlUtil.stringToDocument(data);
 
             ExceptionListener fatalListener = SafeXMLDecoderBuilder.getFatalExceptionListener();
-            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(new ByteArrayInputStream(data.getBytes(Charsets.UTF8))).setExceptionListener(fatalListener).build();
+            ClassFilterBuilder classFilterBuilder = new ClassFilterBuilder().allowDefaults()
+                .addMethods("com.l7tech.gateway.common.security.RevocationCheckPolicyItem$Type.valueOf(java.lang.String)");
+            SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(classFilterBuilder, new ByteArrayInputStream(data.getBytes(Charsets.UTF8))).setExceptionListener(fatalListener).build();
             while (true) {
                 Object obj;
                 try {
