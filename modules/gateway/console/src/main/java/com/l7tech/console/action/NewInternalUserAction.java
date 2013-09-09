@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -22,7 +23,7 @@ import java.awt.*;
  */
 public class NewInternalUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewInternalUserAction.class.getName());
-    private AttemptedCreateSpecific attemptedCreateUser;
+    private AttemptedCreate attemptedCreateUser;
 
     public NewInternalUserAction(IdentityProviderNode node) {
         super(node, SpecificUser.class, null);
@@ -38,7 +39,7 @@ public class NewInternalUserAction extends NodeAction {
     @Override
     public boolean isAuthorized() {
         if (attemptedCreateUser == null) {
-            attemptedCreateUser = new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, "<new user>"));
+            attemptedCreateUser = new AttemptedCreate(EntityType.USER);
         }
         return canAttemptOperation(attemptedCreateUser);
     }
