@@ -10,6 +10,9 @@ import java.util.logging.Logger;
 
 /**
  * Utilities for safely reading system properties from within code that might have to run as an Applet.
+ * <p/>
+ * Any code able to reach this class can read and set arbitrary system properties.
+ * When running with a non-trivial SecurityManager access to this class must be restricted.
  */
 public class SyspropUtil {
     private static final Logger logger = Logger.getLogger(SyspropUtil.class.getName());
@@ -104,10 +107,9 @@ public class SyspropUtil {
     }
 
     public static void clearProperty(final String name) {
-        //noinspection unchecked
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
-            public Object run() {
+            public Void run() {
                 try {
                     System.clearProperty(name);
                     ConfigFactory.clearCachedConfig();
@@ -120,8 +122,22 @@ public class SyspropUtil {
     }
 
     public static void clearProperties(final String... names) {
-        for (String name : names) {
-            clearProperty(name);
-        }
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                try {
+                    for (String name : names) {
+                        try {
+                            System.clearProperty(name);
+                        } catch (AccessControlException e) {
+                            logger.warning("Unable to clear system property " + name);
+                        }
+                    }
+                } finally {
+                    ConfigFactory.clearCachedConfig();
+                }
+                return null;
+            }
+        });
     }
 }

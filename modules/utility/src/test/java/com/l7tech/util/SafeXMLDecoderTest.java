@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,11 +11,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.beans.ExceptionListener;
 import java.beans.Introspector;
 import java.beans.XMLEncoder;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
@@ -51,31 +54,14 @@ public class SafeXMLDecoderTest {
         when(openFilter.permitConstructor(Matchers.<Constructor>anyObject())).thenReturn(true);
     }
 
-    private InputStream getCodedXML(Class clazz, String xmlFile)
-        throws Exception {
-        InputStream refIn;
-
-        String version = System.getProperty("java.version");
-
-        refIn = SafeXMLDecoderTest.class.getResourceAsStream(xmlFile);
-        if (refIn == null) {
-            throw new Error("resource " + xmlFile + " not exist in "
-                + SafeXMLDecoderTest.class.getPackage());
-        }
-        BufferedReader br = new BufferedReader(new InputStreamReader(refIn,
-            "UTF-8"));
-        StringBuilder sb = new StringBuilder();
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            sb.append(line + "\n");
-        }
-        refIn.close();
-        String refString = sb.toString();
-        refString = refString.replace("${version}", version);
-        if (clazz != null) {
-            refString = refString.replace("${classname}", clazz.getName());
-        }
-        return new ByteArrayInputStream(refString.getBytes("UTF-8"));
+    @After
+    public void cleanup() {
+        SyspropUtil.clearProperties(
+            SafeXMLDecoder.PROP_DISABLE_FILTER,
+            ClassFilterBuilder.PROP_WHITELIST_CLASSES,
+            ClassFilterBuilder.PROP_WHITELIST_CONSTRUCTORS,
+            ClassFilterBuilder.PROP_WHITELIST_METHODS
+        );
     }
 
     static byte xml123bytes[] = null;
@@ -88,19 +74,6 @@ public class SafeXMLDecoderTest {
         enc.writeObject(Integer.valueOf("3"));
         enc.close();
         xml123bytes = byteout.toByteArray();
-    }
-
-    static class MockClassLoader extends ClassLoader {
-        @Override
-        public Class<?> loadClass(String name) throws ClassNotFoundException {
-            throw new ClassNotFoundException();
-        }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            throw new ClassNotFoundException();
-        }
-
     }
 
     /*
@@ -160,15 +133,12 @@ public class SafeXMLDecoderTest {
         xmlDecoder = new SafeXMLDecoder(openFilter, new ByteArrayInputStream(xml123bytes));
         assertEquals(null, xmlDecoder.getOwner());
 
-        final Vector<Exception> exceptions = new Vector<Exception>();
         ExceptionListener el = new ExceptionListener() {
             public void exceptionThrown(Exception e) {
-                exceptions.addElement(e);
             }
         };
 
-        xmlDecoder = new SafeXMLDecoder(openFilter, new ByteArrayInputStream(xml123bytes),
-            this, el);
+        xmlDecoder = new SafeXMLDecoder(openFilter, new ByteArrayInputStream(xml123bytes), this, el);
         assertEquals(el, xmlDecoder.getExceptionListener());
         assertEquals(this, xmlDecoder.getOwner());
     }
@@ -213,20 +183,20 @@ public class SafeXMLDecoderTest {
 
     @Test
     public void testReadObject_Repeated() throws Exception {
-        final Vector<Exception> exceptionList = new Vector<Exception>();
+        final List<Exception> exceptionList = new ArrayList<>();
 
         final ExceptionListener exceptionListener = new ExceptionListener() {
             public void exceptionThrown(Exception e) {
-                exceptionList.addElement(e);
+                exceptionList.add(e);
             }
         };
 
         SafeXMLDecoder xmlDecoder = new SafeXMLDecoder(openFilter, new ByteArrayInputStream(
             xml123bytes));
         xmlDecoder.setExceptionListener(exceptionListener);
-        assertEquals(new Integer(1), xmlDecoder.readObject());
-        assertEquals(new Integer(2), xmlDecoder.readObject());
-        assertEquals(new Integer(3), xmlDecoder.readObject());
+        assertEquals(1, xmlDecoder.readObject());
+        assertEquals(2, xmlDecoder.readObject());
+        assertEquals(3, xmlDecoder.readObject());
         xmlDecoder.close();
         assertEquals(0, exceptionList.size());
     }
@@ -300,7 +270,7 @@ public class SafeXMLDecoderTest {
         when(classFilter.permitClass("com.l7tech.util.SafeXMLDecoderTest$SampleBean")).thenReturn(true);
         when(classFilter.permitConstructor(Matchers.<Constructor>any())).thenReturn(true);
 
-        Introspector.setBeanInfoSearchPath(new String[] {});
+        Introspector.setBeanInfoSearchPath(new String[]{});
 
         try (SafeXMLDecoder d = new SafeXMLDecoder(classFilter, new ByteArrayInputStream(beanXml(makeSampleBean()).getBytes()), null, failListener)) {
             SampleBean bean;
@@ -335,6 +305,53 @@ public class SafeXMLDecoderTest {
             } catch (SafeXMLDecoder.ClassNotPermittedException e) {
                 // Ok
             }
+        }
+    }
+
+    @Test
+    public void testDecodeReference_constructorNotWhitelisted() throws Exception {
+        when(classFilter.permitMethod(Matchers.<Method>any())).thenReturn(true);
+        when(classFilter.permitClass(anyString())).thenReturn(true);
+        when(classFilter.permitConstructor(Matchers.<Constructor>any())).thenReturn(false);
+
+        try (SafeXMLDecoder d = new SafeXMLDecoder(classFilter, new ByteArrayInputStream(beanXml(makeSampleBean()).getBytes()), null, failListener)) {
+            try {
+                d.readObject();
+                fail("expected ConstructorNotPermittedException");
+            } catch (SafeXMLDecoder.ConstructorNotPermittedException e) {
+                // Ok
+            }
+        }
+    }
+
+    @Test
+    public void testDecodeReference_methodNotWhitelisted() throws Exception {
+        when(classFilter.permitMethod(Matchers.<Method>any())).thenReturn(false);
+        when(classFilter.permitClass(anyString())).thenReturn(true);
+        when(classFilter.permitConstructor(Matchers.<Constructor>any())).thenReturn(true);
+
+        try (SafeXMLDecoder d = new SafeXMLDecoder(classFilter, new ByteArrayInputStream(beanXml(makeSampleBean()).getBytes()), null, failListener)) {
+            try {
+                d.readObject();
+                fail("expected MethodNotPermittedException");
+            } catch (SafeXMLDecoder.MethodNotPermittedException e) {
+                // Ok
+            }
+        }
+    }
+
+    @Test
+    public void testDecodeReference_strictFilter_filteringDisabled() throws Exception {
+        when(classFilter.permitMethod(Matchers.<Method>any())).thenReturn(false);
+        when(classFilter.permitClass(anyString())).thenReturn(false);
+        when(classFilter.permitConstructor(Matchers.<Constructor>any())).thenReturn(false);
+
+        SyspropUtil.setProperty("com.l7tech.util.SafeXMLDecoder.disableAllFiltering", "true");
+        try (SafeXMLDecoder d = new SafeXMLDecoder(classFilter, new ByteArrayInputStream(beanXml(makeSampleBean()).getBytes()), null, failListener)) {
+            Object got = d.readObject();
+            assertNotNull(got);
+        } finally {
+            SyspropUtil.clearProperty("com.l7tech.util.SafeXMLDecoder.disableAllFiltering");
         }
     }
 
@@ -437,24 +454,6 @@ public class SafeXMLDecoderTest {
         assertEquals("Size mismatch", 3, Array.getLength(obj));
     }
 
-    private void decode(String resourceName) throws Exception {
-        SafeXMLDecoder d = null;
-        try {
-            Introspector.setBeanInfoSearchPath(new String[] {});
-            d = new SafeXMLDecoder(openFilter, new BufferedInputStream(ClassLoader
-                .getSystemClassLoader().getResourceAsStream(resourceName)));
-            while (true) {
-                d.readObject();
-            }
-        } catch (ArrayIndexOutOfBoundsException aibe) {
-            assertTrue(true);
-        } finally {
-            if (d != null) {
-                d.close();
-            }
-        }
-    }
-
     public static class SampleBean {
         String myid = "default ID";
 
@@ -492,8 +491,6 @@ public class SafeXMLDecoderTest {
 
         @Override
         public String toString() {
-            String superResult = super.toString();
-            superResult.substring(superResult.indexOf("@"));
             return "myid=" + myid;
         }
     }

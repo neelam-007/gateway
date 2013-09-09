@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.beans.ExceptionListener;
 import java.io.File;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,7 +21,9 @@ public class SsgFinderTest {
     public void testReadConfig() throws Exception {
         SsgFinderImpl.exceptionListener = new FatalExceptionListener();
         SsgFinderImpl ssgFinder = new SsgFinderImpl();
-        ssgFinder.storePath = new File(getClass().getClassLoader().getResource("com/l7tech/proxy/datamodel/halibut_ssgs.xml").toURI()).getPath();
+        final URL resource = getClass().getClassLoader().getResource("com/l7tech/proxy/datamodel/halibut_ssgs.xml");
+        assertNotNull("halibut_ssgs.xml must be available", resource);
+        ssgFinder.storePath = new File(resource.toURI()).getPath();
 
 
         final List ssgList = ssgFinder.getSsgList();

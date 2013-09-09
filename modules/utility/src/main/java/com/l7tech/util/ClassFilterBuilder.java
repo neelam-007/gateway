@@ -4,13 +4,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * A builder for a composite ClassFilter to use with a SafeXMLDecoder to recognize classes, constructors
  * and methods that are safe to invoke while decoding untrusted XML.
  */
 public class ClassFilterBuilder {
+    public static final String PROP_WHITELIST_CLASSES = "com.l7tech.util.SafeXMLDecoder.allowClasses";
+    public static final String PROP_WHITELIST_CONSTRUCTORS = "com.l7tech.util.SafeXMLDecoder.allowConstructors";
+    public static final String PROP_WHITELIST_METHODS = "com.l7tech.util.SafeXMLDecoder.allowMethods";
 
+    private static final Pattern SEMI_PATTERN = Pattern.compile("\\s*;\\s*");
     private final List<ClassFilter> classFilters = new ArrayList<>();
 
     private boolean includeAnnotationFilter = false;
@@ -47,6 +52,10 @@ public class ClassFilterBuilder {
         classes.addAll(DEFAULT_CLASSES);
         constructors.addAll(DEFAULT_CONSTRUCTORS);
         methods.addAll(DEFAULT_METHODS);
+
+        classes.addAll(extract(PROP_WHITELIST_CLASSES));
+        constructors.addAll(extract(PROP_WHITELIST_CONSTRUCTORS));
+        methods.addAll(extract(PROP_WHITELIST_METHODS));
 
         return this;
     }
@@ -177,11 +186,33 @@ public class ClassFilterBuilder {
         return new CompositeClassFilter(filters.toArray(new ClassFilter[filters.size()]));
     }
 
-    private final List<String> DEFAULT_ANNOTATION_PACKAGE_PREFIXES = Arrays.asList(
+    private Collection<String> extract(String propName) {
+        Collection<String> strings = new ArrayList<>();
+
+        String val = SyspropUtil.getString(propName, null);
+        if (val != null && val.length() > 0) {
+            String[] split = SEMI_PATTERN.split(val);
+            if (split != null) {
+                for (String s : split) {
+                    if (s != null) {
+                        s = s.trim();
+                        if (s.length() > 0) {
+                            strings.add(s);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return strings;
+    }
+
+    final List<String> DEFAULT_ANNOTATION_PACKAGE_PREFIXES = Arrays.asList(
         "com.l7tech."
     );
 
-    private static final Set<String> DEFAULT_CLASSES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    static final Set<String> DEFAULT_CLASSES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "java.lang.Object",
         "java.lang.Enum",
         "java.lang.String",
@@ -194,7 +225,7 @@ public class ClassFilterBuilder {
         "java.util.TreeMap"
     )));
 
-    private static final Set<String> DEFAULT_CONSTRUCTORS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    static final Set<String> DEFAULT_CONSTRUCTORS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "java.lang.Object()",
         "java.util.TreeSet()",
         "java.util.HashMap()",
@@ -204,7 +235,7 @@ public class ClassFilterBuilder {
         "java.util.LinkedHashMap()",
         "java.util.TreeMap()"
     )));
-    private static final Set<String> DEFAULT_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    static final Set<String> DEFAULT_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "java.lang.Enum.valueOf(java.lang.Class,java.lang.String)",
         "java.lang.reflect.Array.set(java.lang.Object,int,java.lang.Object)",
         "java.util.ArrayList.add(java.lang.Object)",

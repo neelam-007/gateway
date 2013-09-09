@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class CompositeClassFilter implements ClassFilter {
 
-    private final List<ClassFilter> delegates;
+    final List<ClassFilter> delegates;
 
     /**
      * Create a CompositeClassFilter that delegates to the specified delegates.
@@ -21,8 +21,6 @@ public class CompositeClassFilter implements ClassFilter {
      * @param delegates class filters to which to delegate queries.
      */
     public CompositeClassFilter(ClassFilter... delegates) {
-        if (delegates.length < 1)
-            throw new IllegalArgumentException("At least one delegate must be specified.");
         for (ClassFilter delegate : delegates) {
             if (delegate == null)
                 throw new NullPointerException("None of the delegates may be null");

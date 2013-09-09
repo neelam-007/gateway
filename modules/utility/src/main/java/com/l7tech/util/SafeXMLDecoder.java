@@ -34,6 +34,7 @@ import java.lang.reflect.*;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * An XMLDecoder that is very strict about the constructors and methods it will invoke.
@@ -45,8 +46,15 @@ import java.util.*;
  * </p>
  */
 public class SafeXMLDecoder implements Closeable {
+    private static final Logger logger = Logger.getLogger(SafeXMLDecoder.class.getName());
+
+    public static final String PROP_DISABLE_FILTER = "com.l7tech.util.SafeXMLDecoder.disableAllFiltering";
 
     private static final String SYSTEM_ID_XMLOBJ = "http://layer7tech.com/ns/xmlobj";
+
+    private static boolean isDisableAllFiltering() {
+        return SyspropUtil.getBoolean(PROP_DISABLE_FILTER, false);
+    }
 
     public static class ClassFilterException extends SecurityException {
         public ClassFilterException(String s) {
@@ -656,6 +664,27 @@ public class SafeXMLDecoder implements Closeable {
         this.owner = owner;
         this.listener = listener != null ? listener : new DefaultExceptionListener();
         defaultClassLoader = cl;
+
+        if (isDisableAllFiltering()) {
+            logger.warning("SafeXMLDecoder security filtering disabled");
+            classFilter = new ClassFilter() {
+                @Override
+                public boolean permitClass(@NotNull String classname) {
+                    return true;
+                }
+
+                @Override
+                public boolean permitConstructor(@NotNull Constructor<?> constructor) {
+                    return true;
+                }
+
+                @Override
+                public boolean permitMethod(@NotNull Method method) {
+                    return true;
+                }
+            };
+        }
+
         this.classFilter = classFilter;
     }
 
@@ -755,7 +784,7 @@ public class SafeXMLDecoder implements Closeable {
      * @param listener
      *            an exception listener
      */
-    public void setExceptionListener(ExceptionListener listener) {
+    public void setExceptionListener(@Nullable ExceptionListener listener) {
         if (listener != null) {
             this.listener = listener;
         }
@@ -767,7 +796,7 @@ public class SafeXMLDecoder implements Closeable {
      * @param owner
      *            the owner of this decoder
      */
-    public void setOwner(Object owner) {
+    public void setOwner(@Nullable Object owner) {
         this.owner = owner;
     }
 
