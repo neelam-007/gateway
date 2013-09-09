@@ -25,17 +25,17 @@ import java.util.logging.Logger;
  * Wizard panel which displays a summary of the permissions that will be added.
  */
 public class PermissionSummaryPanel extends WizardStepPanel {
+    public static final String PROVIDER_ID = "providerId";
+    public static final String ID = "id";
+    public static final String SERVICE_ID = "serviceid";
+    public static final String NODE_ID = "nodeid";
     private static final Logger logger = Logger.getLogger(PermissionSummaryPanel.class.getName());
     private static final String SUMMARY = "Summary";
     private static final String NAME = "name";
-    private static final String PROVIDER_ID = "providerId";
-    private static final String ID = "id";
     private static final String ALL_OBJECT_TYPES = "All object types";
     private static final String ALL_OF_TYPE_LABEL = "All objects of the specified type";
     private static final String CONDITIONS_LABEL = "Objects matching a set of conditions";
     private static final String SPECIFIC_OBJECTS_LABEL = "A set of specific objects";
-    private static final String SERVICE_ID = "serviceid";
-    private static final String NODE_ID = "nodeid";
     private JPanel contentPanel;
     private JPanel optionsPanel;
     private RolePermissionsPanel permissionsPanel;
