@@ -100,6 +100,8 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
                 smConfiguration.setPasswordGoid(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()));
             } catch (FindException e) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
+            } catch (IllegalArgumentException ile) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }
         } else {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
