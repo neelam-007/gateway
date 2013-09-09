@@ -6,7 +6,6 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
-import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -22,6 +21,7 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -238,9 +238,23 @@ public final class EntityHeaderUtils {
                 if (!eh.getExternalId().contains(":"))
                     throw new IllegalArgumentException("Invalid ID found for external header of type " + eh.getType() + " : " + eh.getExternalId());
                 sepIndex = eh.getExternalId().indexOf(":");
+                String rawIdProviderStr = eh.getExternalId().substring(0, sepIndex);
+                Goid idProvider = GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG, rawIdProviderStr);
+                String identityStr = eh.getExternalId().substring(sepIndex + 1);
+                if (!ValidationUtils.isValidGoid(rawIdProviderStr, false)) {
+                    if (rawIdProviderStr.equals(String.valueOf(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID))) {
+                        // need to map user/group id.
+                        idProvider = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
+                        identityStr = GoidUpgradeMapper.mapId(eh.getType().equals(USER) ? "internal_user" : "internal_group", identityStr).toString();
+                    }
+                    // if it smells like an oid, then map to fed
+                    if (ValidationUtils.isValidLong(identityStr, false, Long.MIN_VALUE, Long.MAX_VALUE)) {
+                        identityStr = GoidUpgradeMapper.mapId(eh.getType().equals(USER) ? "fed_user" : "fed_group", identityStr).toString();
+                    }
+                }
                 header = new IdentityHeader(
-                        Goid.parseGoid(eh.getExternalId().substring(0, sepIndex)),
-                        eh.getExternalId().substring(sepIndex + 1),
+                        idProvider,
+                        identityStr,
                         eh.getType(),
                         eh.getName(),
                         eh.getDescription(),
@@ -260,7 +274,7 @@ public final class EntityHeaderUtils {
                 break;
 
             case JMS_ENDPOINT:
-                header = new JmsEndpointHeader(eh.getStrId(), eh.getName(), eh.getDescription(), eh.getVersion(), Boolean.parseBoolean(eh.getProperty("messageSource")));
+                header = new JmsEndpointHeader(GoidUpgradeMapper.mapId(EntityType.JMS_ENDPOINT, eh.getStrId()).toString(), eh.getName(), eh.getDescription(), eh.getVersion(), Boolean.parseBoolean(eh.getProperty("messageSource")));
                 break;
 
             case RESOURCE_ENTRY:
@@ -275,7 +289,7 @@ public final class EntityHeaderUtils {
                 } else {
                     resourceType = ResourceType.valueOf(resourceTypeStr);
                 }
-                header = new ResourceEntryHeader(eh.getStrId(), eh.getName(), eh.getDescription(), resourceType, eh.getProperty("resourceKey1"), eh.getProperty("resourceKey2"), eh.getProperty("resourceKey3"), eh.getVersion(), null);
+                header = new ResourceEntryHeader(GoidUpgradeMapper.mapId(EntityType.RESOURCE_ENTRY, eh.getStrId()).toString(), eh.getName(), eh.getDescription(), resourceType, eh.getProperty("resourceKey1"), eh.getProperty("resourceKey2"), eh.getProperty("resourceKey3"), eh.getVersion(), null);
                 break;
 
             case VALUE_REFERENCE:
@@ -288,7 +302,7 @@ public final class EntityHeaderUtils {
                 break;
 
             default:
-                header = new EntityHeader(eh.getExternalId(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
+                header = new EntityHeader(GoidUpgradeMapper.mapId(eh.getType(), eh.getExternalId()).toString(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
                 break;
         }
         return header;

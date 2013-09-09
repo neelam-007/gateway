@@ -1,12 +1,14 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.imp.*;
 import com.l7tech.test.BugId;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -231,6 +233,35 @@ public class EntityHeaderUtilsTest {
         assertEquals(VERSION, header.getVersion());
         assertEquals(NAME, header.getName());
         assertFalse(header instanceof ZoneableEntityHeader);
+    }
+
+    @Test
+    public void fromExternalOldOidIdentityEntity(){
+        final IdentityHeader idHeader = (IdentityHeader) EntityHeaderUtils.fromExternal(new ExternalEntityHeader("-2:1", EntityType.USER, null , NAME, DESCRIPTION, VERSION));
+        assertEquals(EntityType.USER, idHeader.getType());
+        assertEquals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, idHeader.getProviderGoid());
+        assertEquals(GoidUpgradeMapper.mapId("internal_user","1").toString(), idHeader.getStrId());
+
+        final IdentityHeader idGoidHeader = (IdentityHeader) EntityHeaderUtils.fromExternal(new ExternalEntityHeader(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString()+":"+GOID.toString(), EntityType.USER, null , NAME, DESCRIPTION, VERSION));
+        assertEquals(EntityType.USER, idGoidHeader.getType());
+        assertEquals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, idGoidHeader.getProviderGoid());
+        assertEquals(GOID.toString(), idGoidHeader.getStrId());
+
+        final IdentityHeader fedIdHeader = (IdentityHeader) EntityHeaderUtils.fromExternal(new ExternalEntityHeader("123:123", EntityType.USER, null , NAME, DESCRIPTION, VERSION));
+        assertEquals(EntityType.USER, fedIdHeader.getType());
+        assertEquals(GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,"123"), fedIdHeader.getProviderGoid());
+        assertEquals(GoidUpgradeMapper.mapId("fed_user","123").toString(), fedIdHeader.getStrId());
+
+        final IdentityHeader fedGoidIdHeader = (IdentityHeader) EntityHeaderUtils.fromExternal(new ExternalEntityHeader(GOID.toString()+":"+GOID.toString(), EntityType.USER, null , NAME, DESCRIPTION, VERSION));
+        assertEquals(EntityType.USER, fedGoidIdHeader.getType());
+        assertEquals(GOID, fedGoidIdHeader.getProviderGoid());
+        assertEquals(GOID.toString(), fedGoidIdHeader.getStrId());
+
+        final IdentityHeader LDAPIdHeader = (IdentityHeader) EntityHeaderUtils.fromExternal(new ExternalEntityHeader("123:cn=asdf", EntityType.USER, null , NAME, DESCRIPTION, VERSION));
+        assertEquals(EntityType.USER, LDAPIdHeader.getType());
+        assertEquals(GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,"123"), LDAPIdHeader.getProviderGoid());
+        assertEquals("cn=asdf", LDAPIdHeader.getStrId());
+
     }
 
     private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final Goid goid, final String guid, final String name, final Integer version, final SecurityZone zone) {
