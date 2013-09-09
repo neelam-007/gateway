@@ -3776,6 +3776,14 @@ public class ServerGatewayManagementAssertionTest {
                 }
             }
         }
+
+        if(type == IdentityProviderType.LDAP){
+            LdapIdentityProviderConfig ldap = (LdapIdentityProviderConfig)provider;
+            Map<String,String> ntlmProps = new TreeMap<String,String>();
+            ntlmProps.put("prop","val");
+            ntlmProps.put("prop1","val1");
+            ldap.setNtlmAuthenticationProviderProperties(ntlmProps);
+        }
         return provider;
     }
 

@@ -221,6 +221,16 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             detail.setUserMappings( buildMappings( ldapIdentityProviderConfig.getUserMappings() ) );
             detail.setGroupMappings( buildMappings( ldapIdentityProviderConfig.getGroupMappings() ) );
             detail.setSpecifiedAttributes( ldapIdentityProviderConfig.getReturningAttributes()==null ? null : Arrays.asList(ldapIdentityProviderConfig.getReturningAttributes()) );
+
+            if(!ldapIdentityProviderConfig.getNtlmAuthenticationProviderProperties().isEmpty()){
+                Map<String,Object> ntlmProps = new HashMap<String,Object>();
+                Map<String, String> props = ldapIdentityProviderConfig.getNtlmAuthenticationProviderProperties();
+                for(String key: props.keySet()){
+                    ntlmProps.put(key,props.get(key));
+                }
+                detail.setNtlmProperties(ntlmProps);
+            }
+
         }
     }
 
@@ -418,6 +428,16 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             ldapIdentityProviderConfig.setUserMappings( detail.hasUserMappings() ? buildUserMappings( detail.getUserMappings() ) : template.getUserMappings() );
             ldapIdentityProviderConfig.setGroupMappings( detail.hasGroupMappings() ? buildGroupMappings( detail.getGroupMappings() ) : template.getGroupMappings() );
             ldapIdentityProviderConfig.setReturningAttributes( detail.getSpecifiedAttributes()==null ? null : detail.getSpecifiedAttributes().toArray(new String[detail.getSpecifiedAttributes().size()]) );
+
+            if(detail.getNtlmProperties()!=null){
+                Map<String, Object> ntlmProps = detail.getNtlmProperties();
+                Map<String,String > props = new TreeMap<String,String>();
+                for(String key: ntlmProps.keySet()){
+                    props.put(key,(String)ntlmProps.get(key));
+
+                }
+                ldapIdentityProviderConfig.setNtlmAuthenticationProviderProperties(props);
+            }
         }
 
         return ldapIdentityProviderConfig;

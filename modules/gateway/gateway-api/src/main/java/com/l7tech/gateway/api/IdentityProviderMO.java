@@ -1,11 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.AttributeExtensibleReferenceList;
-import com.l7tech.gateway.api.impl.AttributeExtensibleType;
-import com.l7tech.gateway.api.impl.ElementExtensionSupport;
-import com.l7tech.gateway.api.impl.ManagedObjectReference;
-import com.l7tech.gateway.api.impl.PropertiesMapType;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.util.Functions;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
@@ -20,10 +15,8 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import javax.xml.namespace.QName;
+import java.util.*;
 
 /**
  * The IdentityProviderMO managed object represents an identity provider.
@@ -426,7 +419,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
      *   <li><code>TivoliLDAP</code></li>
      * </ul>
      */
-    @XmlType(name="LdapIdentityProviderDetailType", propOrder={"sourceTypeValue", "serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", "searchBaseValue", "bindDnValue", "bindPasswordValue", "userMappingValues", "groupMappingValues", "specifiedAttributeValues"})
+    @XmlType(name="LdapIdentityProviderDetailType", propOrder={"sourceTypeValue", "serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", "searchBaseValue", "bindDnValue", "bindPasswordValue", "userMappingValues", "groupMappingValues", "specifiedAttributeValues","ntlmProperties"})
     public static class LdapIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleString sourceType;
 
@@ -441,6 +434,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private AttributeExtensibleLdapIdentityProviderMappingList groupMappings;
 
         private AttributeExtensibleStringList specifiedAttributes;
+        private Map<String,Object> ntlmProperties;
 
         /**
          * Get the source type for the provider.
@@ -646,6 +640,16 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          */
         public void setSpecifiedAttributes( List<String> specifiedAttributes ) {
             this.specifiedAttributes = set( this.specifiedAttributes, wrap(specifiedAttributes,AttributeExtensibleStringBuilder) );
+        }
+
+        @XmlElement(name="NtlmProperties")
+        @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
+        public Map<String, Object> getNtlmProperties() {
+            return ntlmProperties;
+        }
+
+        public void setNtlmProperties(Map<String, Object> ntlmProperties) {
+            this.ntlmProperties = ntlmProperties;
         }
 
         protected LdapIdentityProviderDetail() {

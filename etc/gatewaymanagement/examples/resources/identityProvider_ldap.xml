@@ -93,6 +93,7 @@
                 </Mapping>
             </GroupMappings>
             <SpecifiedAttributes/>
-        </LdapIdentityProviderDetail>
+            <NtlmProperties/>
+    </LdapIdentityProviderDetail>
     </Extension>
 </IdentityProvider>
