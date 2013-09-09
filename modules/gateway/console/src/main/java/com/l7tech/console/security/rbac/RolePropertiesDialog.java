@@ -46,7 +46,7 @@ public class RolePropertiesDialog extends JDialog {
 
     public RolePropertiesDialog(@NotNull final Window owner, @NotNull final Role role, final boolean readOnly, @NotNull final Set<String> reservedNames, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
 
-        super(owner, readOnly ? "Role Properties" : role.isUnsaved() ? "Create Role" : "Update Role", DEFAULT_MODALITY_TYPE);
+        super(owner, readOnly ? "Role Properties" : role.isUnsaved() ? "Create Role" : "Edit Role", DEFAULT_MODALITY_TYPE);
         this.role = role;
         this.operation = role.isUnsaved() ? "Create" : "Update";
         this.reservedNames = new HashSet<>();
