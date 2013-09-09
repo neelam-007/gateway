@@ -116,6 +116,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private Component foldersTab;
     private Component zonesTab;
     private NotifyListener notifyListener;
+    private Map<EntityHeader, String> specificObjectNames = new HashMap<>();
 
     static {
         validComparisons.put(EQUALS, EQ);
@@ -235,22 +236,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         }
 
                         if (config.getSelectedEntities().isEmpty()) {
-                            if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
-                                final List<EntityHeader> entities = new ArrayList<>();
-                                try {
-                                    entities.addAll(EntityUtils.getEntities(config.getType()));
-                                } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                }
-                                specificObjectsModel.setSelectableObjects(entities);
-                                specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, typePlural);
-                            } else {
-                                if (type == EntityType.TRUSTED_ESM_USER) {
-                                    loadTrustedEsmUsers();
-                                } else {
-                                    loadIdentities(type);
-                                }
-                            }
+                            loadSpecificObjects(type, typePlural);
                         }
                         break;
                     default:
@@ -323,13 +309,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                 column(NAME, 30, 600, MAX_WIDTH, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
-                        String name = UNAVAILABLE;
-                        try {
-                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, true);
-                        } catch (final FindException | PermissionDeniedException e) {
-                            logger.log(Level.WARNING, "Unable to resolve name for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        }
-                        return name;
+                        return specificObjectNames.containsKey(header) ? specificObjectNames.get(header) : UNAVAILABLE;
                     }
                 }));
         specificObjectsModel.addTableModelListener(notifyListener);
@@ -597,16 +577,61 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         comboBox.setModel(new DefaultComboBoxModel(selection.toArray()));
     }
 
+    private void loadSpecificObjects(final EntityType type, final String typePlural) {
+        specificObjectNames.clear();
+        if (!isIdentityType(type) && type != EntityType.TRUSTED_ESM_USER) {
+            loadEntities(typePlural);
+        } else {
+            if (type == EntityType.TRUSTED_ESM_USER) {
+                loadTrustedEsmUsers();
+            } else {
+                loadIdentities(type);
+            }
+        }
+    }
+
+    private void loadEntities(final String typePlural) {
+        final List<EntityHeader> entities = new ArrayList<>();
+        try {
+            final EntityHeaderSet<EntityHeader> foundEntities = EntityUtils.getEntities(config.getType());
+            for (final EntityHeader foundEntity : foundEntities) {
+                try {
+                    specificObjectNames.put(foundEntity, Registry.getDefault().getEntityNameResolver().getNameForHeader(foundEntity, true));
+                    entities.add(foundEntity);
+                } catch (final FindException | PermissionDeniedException e) {
+                    // skip entities for which we cannot resolve a name as the user needs this info to make an informed decision
+                    logger.log(Level.WARNING, "Unable to resolve name for header " + foundEntity.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        specificObjectsModel.setSelectableObjects(entities);
+        specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, typePlural);
+    }
+
     private void loadIdentities(final EntityType type) {
         final String pluralName = type.getPluralName();
         if (comboBox.getSelectedItem() instanceof EntityHeader) {
             final EntityHeader selected = (EntityHeader) comboBox.getSelectedItem();
             final List<EntityHeader> identities = new ArrayList<>();
             try {
+                EntityHeaderSet<IdentityHeader> foundHeaders = null;
                 if (type == EntityType.USER) {
-                    identities.addAll(Registry.getDefault().getIdentityAdmin().findAllUsers(selected.getGoid()));
+                    foundHeaders = Registry.getDefault().getIdentityAdmin().findAllUsers(selected.getGoid());
                 } else if (type == EntityType.GROUP) {
-                    identities.addAll(Registry.getDefault().getIdentityAdmin().findAllGroups(selected.getGoid()));
+                    foundHeaders = Registry.getDefault().getIdentityAdmin().findAllGroups(selected.getGoid());
+                }
+                if (foundHeaders != null) {
+                    for (final IdentityHeader foundHeader : foundHeaders) {
+                        try {
+                            specificObjectNames.put(foundHeader, Registry.getDefault().getEntityNameResolver().getNameForHeader(foundHeader, true));
+                            identities.add(foundHeader);
+                        } catch (final FindException | PermissionDeniedException e) {
+                            // skip identities for which we cannot resolve a name as the user needs this info to make an informed decision
+                            logger.log(Level.WARNING, "Unable to resolve name for header " + foundHeader.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                    }
                 }
             } catch (final FindException ex) {
                 logger.log(Level.WARNING, "Unable to retrieve identities: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
@@ -627,8 +652,15 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             try {
                 final Collection<TrustedEsmUser> trustedEsmUsers = Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(selected.getGoid());
                 for (final TrustedEsmUser trustedEsmUser : trustedEsmUsers) {
-                    final String name = Registry.getDefault().getEntityNameResolver().getNameForEntity(trustedEsmUser, true);
-                    userHeaders.add(new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, name, null));
+                    try {
+                        final String name = Registry.getDefault().getEntityNameResolver().getNameForEntity(trustedEsmUser, true);
+                        final EntityHeader trustedEsmUserHeader = new EntityHeader(trustedEsmUser.getId(), EntityType.TRUSTED_ESM_USER, name, null);
+                        userHeaders.add(trustedEsmUserHeader);
+                        specificObjectNames.put(trustedEsmUserHeader, name);
+                    } catch (final FindException | PermissionDeniedException e) {
+                        // skip trusted esm users for which we cannot resolve a name as the user needs this info to make an informed decision
+                        logger.log(Level.WARNING, "Unable to resolve name for trusted esm user " + trustedEsmUser + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
                 }
             } catch (final FindException ex) {
                 logger.log(Level.WARNING, "Unable to retrieve trusted esm users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));

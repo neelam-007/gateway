@@ -53,6 +53,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private static final int ZONE_COL_INDEX = 2;
     private static final int PATH_COL_INDEX = 3;
     private static final String NO_SECURITY_ZONE = RESOURCES.getString("no.zone.label");
+    private static final String UNAVAILABLE = "unavailable";
     private JPanel contentPanel;
     private JComboBox typeComboBox;
     private JComboBox zoneComboBox;
@@ -66,6 +67,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
     private Map<Goid, String> assertionNames = new HashMap<>();
+    private Map<EntityHeader, String> entityNames = new HashMap<>();
 
     /**
      * @param owner       owner of this Dialog.
@@ -158,13 +160,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                 column("Name", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
-                        String name = "unavailable";
-                        try {
-                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
-                        } catch (final FindException | PermissionDeniedException e) {
-                            logger.log(Level.WARNING, "Error resolving name for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        }
-                        return name;
+                        return entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE;
                     }
                 }),
                 column("Current Zone", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
@@ -225,6 +221,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void loadTable() {
+        entityNames.clear();
         EntityType selected = getSelectedEntityType();
         if (selected != null) {
             selected = convertToBackingEntityType(selected);
@@ -248,7 +245,14 @@ public class AssignSecurityZonesDialog extends JDialog {
                         }
                         assertionNames.put(header.getGoid(), assertionClassName);
                     }
-                    headers.add(header);
+
+                    try {
+                        entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+                        headers.add(header);
+                    } catch (final FindException | PermissionDeniedException e) {
+                        // skip entities that we cannot resolve a name for since users shouldn't be able to modify an entity without this information
+                        logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
                 }
                 dataModel.setSelectableObjects(headers);
                 boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderId || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
