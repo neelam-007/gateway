@@ -8,7 +8,7 @@ import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -40,6 +40,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private JComboBox<SiteMinderConfigurationKey> agentComboBox;
     private JComboBox<String> actionComboBox;
     private TargetVariablePanel prefixTargetVariablePanel;
+    private InputValidator inputValidator;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
         super(SiteMinderCheckProtectedAssertion.class, owner, assertion, true);
@@ -49,6 +50,8 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     @Override
     protected void initComponents() {
         super.initComponents();
+
+        inputValidator = new InputValidator(this, getTitle());
 
         prefixTargetVariablePanel.setVariable(SiteMinderCheckProtectedAssertion.DEFAULT_PREFIX);
         prefixTargetVariablePanel.setDefaultVariableOrPrefix(SiteMinderCheckProtectedAssertion.DEFAULT_PREFIX);
@@ -114,7 +117,18 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             }
         });
 
-        getOkButton().addActionListener(createOkAction());
+        inputValidator.constrainTextFieldToBeNonEmpty("Protected Resource", resourceTextField, null);
+        inputValidator.ensureComboBoxSelection("Action", actionComboBox);
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (0 == getSelectedAction().trim().length()) {
+                    return "The Action field must not be empty.";
+                }
+
+                return null;
+            }
+        });
 
         enableDisableComponents();
     }
@@ -210,11 +224,18 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
      */
     @Override
     public SiteMinderCheckProtectedAssertion getData(SiteMinderCheckProtectedAssertion assertion) throws ValidationException {
+        String validationErrorMessage = inputValidator.validate();
+
+        if (null != validationErrorMessage) {
+            throw new ValidationException(validationErrorMessage);
+        }
+
         assertion.setAgentGoid(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getGoid());
         assertion.setAgentId(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getAgentId());
-        assertion.setProtectedResource(resourceTextField.getText());
-        assertion.setAction((String) actionComboBox.getSelectedItem());
+        assertion.setProtectedResource(resourceTextField.getText().trim());
+        assertion.setAction(((String) actionComboBox.getSelectedItem()).trim());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
+
         return assertion;
     }
 
