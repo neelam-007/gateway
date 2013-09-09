@@ -299,7 +299,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
                         if (admin == null) return;
                         try{
                             admin.saveSiteMinderConfiguration(configuration);
-                        } catch (SaveException ex) {
+                        } catch (UpdateException | SaveException ex) {
                             showErrorMessage(resources.getString("errors.saveFailed.title"),
                                     resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
                                     ex,

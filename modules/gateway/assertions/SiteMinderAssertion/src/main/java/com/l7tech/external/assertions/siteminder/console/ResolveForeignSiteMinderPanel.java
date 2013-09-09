@@ -12,6 +12,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -167,7 +168,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
                         config.copyFrom(newConfig);
                         config.setGoid(Goid.DEFAULT_GOID);
                         config.setGoid(admin.saveSiteMinderConfiguration(config));
-                    } catch (SaveException ex){
+                    } catch (UpdateException | SaveException ex){
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
                                 ex,
