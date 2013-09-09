@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +20,7 @@ import java.util.Set;
  * POJO to store user input for AddPermissionsWizard.
  */
 public class PermissionsConfig {
+    public static final String TYPE = "type";
     private final Role role;
     private EntityType type = EntityType.ANY;
     private Set<OperationType> operations = new HashSet<>();
@@ -33,6 +36,7 @@ public class PermissionsConfig {
     private Set<EntityHeader> selectedEntities = new HashSet<>();
     private Set<Permission> generatedPermissions = new HashSet<>();
     private Set<EntityType> selectedAuditTypes = null;
+    private Set<PropertyChangeListener> listeners = new HashSet<>();
 
     public PermissionsConfig(@NotNull final Role role) {
         this.role = role;
@@ -52,7 +56,9 @@ public class PermissionsConfig {
     }
 
     public void setType(@NotNull final EntityType type) {
+        final EntityType oldType = this.type;
         this.type = type;
+        propertyChanged(TYPE, oldType, type);
     }
 
     /**
@@ -218,6 +224,15 @@ public class PermissionsConfig {
     }
 
     /**
+     * Add a PropertyChangeListener to the PermissionsConfig.
+     *
+     * @param listener the PropertyChangeListener to add.
+     */
+    public void addPropertyChangeListener(@NotNull final PropertyChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    /**
      * The type of scope that applies to the permissions.
      */
     public enum ScopeType {
@@ -225,5 +240,12 @@ public class PermissionsConfig {
         SPECIFIC_OBJECTS,
         // scope applies to a set of conditions
         CONDITIONAL;
+    }
+
+    private void propertyChanged(@NotNull final String propertyName, @Nullable Object oldValue, @Nullable Object newValue) {
+        for (final PropertyChangeListener listener : listeners) {
+            final PropertyChangeEvent event = new PropertyChangeEvent(this, propertyName, oldValue, newValue);
+            listener.propertyChange(event);
+        }
     }
 }

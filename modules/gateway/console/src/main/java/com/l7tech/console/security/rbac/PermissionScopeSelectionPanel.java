@@ -25,10 +25,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import java.beans.*;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.List;
@@ -169,6 +166,17 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     public void readSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof PermissionsConfig) {
             config = (PermissionsConfig) settings;
+            config.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
+                public void propertyChange(final PropertyChangeEvent evt) {
+                    if (evt.getPropertyName().equals(PermissionsConfig.TYPE)) {
+                        zonesModel.deselectAll();
+                        foldersModel.deselectAll();
+                        specificObjectsModel.deselectAll();
+                        attributesModel.setRows(Collections.<AttributePredicate>emptyList());
+                    }
+                }
+            });
             final EntityType type = config.getType();
             if (config.getScopeType() != null) {
                 switch (config.getScopeType()) {
