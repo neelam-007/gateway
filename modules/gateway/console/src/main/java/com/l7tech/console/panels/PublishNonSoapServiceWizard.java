@@ -4,9 +4,11 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -19,6 +21,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
@@ -129,11 +132,15 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     private void handlePublishError( final PublishedService service, final Exception e ) {
         final String message = "Unable to save the service '" + service.getName() + "'\n";
-        logger.log( Level.INFO, message, e);
-        JOptionPane.showMessageDialog(this,
-          message,
-          "Error",
-          JOptionPane.ERROR_MESSAGE);
+        logger.log( Level.INFO, message, ExceptionUtils.getDebugException(e));
+        if (e instanceof PermissionDeniedException) {
+            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
+        } else {
+            JOptionPane.showMessageDialog(this,
+              message,
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void notify(EntityHeader header) {

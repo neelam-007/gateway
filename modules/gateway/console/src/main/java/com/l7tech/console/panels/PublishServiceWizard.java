@@ -5,6 +5,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -289,13 +290,13 @@ public class PublishServiceWizard extends Wizard {
     private void handlePublishError( final Exception e ) {
         logger.log( Level.WARNING, "Cannot publish service as is", e);
         if (e instanceof PermissionDeniedException) {
-            // let PermissionDeniedErrorHandler handle it
-            throw (PermissionDeniedException) e;
+            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
+        } else {
+            DialogDisplayer.showMessageDialog(null,
+              "Unable to save the service '" + saBundle.service.getName() + "'\n",
+              "Error",
+              JOptionPane.ERROR_MESSAGE, null);
         }
-        DialogDisplayer.showMessageDialog(null,
-          "Unable to save the service '" + saBundle.service.getName() + "'\n",
-          "Error",
-          JOptionPane.ERROR_MESSAGE, null);
     }
 
     /**

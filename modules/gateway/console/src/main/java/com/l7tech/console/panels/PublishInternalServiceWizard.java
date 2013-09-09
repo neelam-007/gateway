@@ -6,14 +6,17 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -110,11 +113,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
             }, new Functions.UnaryVoid<Exception>(){
                 @Override
                 public void call( final Exception e ) {
-                    logger.log(Level.WARNING, "Cannot publish service as is", e);
-                    JOptionPane.showMessageDialog(null,
-                      "Unable to save the service '" + newService.getName() + "'\n",
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
+                    handlePublishServiceError(parent, newService, e);
                 }
             });
         }
@@ -184,11 +183,15 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
 
     private void handlePublishServiceError(final Frame parent, final PublishedService service, final Exception e) {
         final String message = "Unable to save the service '" + service.getName() + "'\n";
-        logger.log( Level.INFO, message, e);
-        JOptionPane.showMessageDialog(parent,
-          message,
-          "Error",
-          JOptionPane.ERROR_MESSAGE);
+        logger.log( Level.INFO, message, ExceptionUtils.getDebugException(e));
+        if (e instanceof PermissionDeniedException) {
+            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException)e, logger);
+        } else {
+            JOptionPane.showMessageDialog(parent,
+              message,
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static WizardStepPanel<InputHolder> getSteps() {

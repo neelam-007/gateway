@@ -4,9 +4,11 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -32,12 +34,14 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
  * Wizard that guides the administrator through the publication of a RESTful Service Proxy.
  */
 public class PublishRestServiceWizard extends Wizard {
+    private static final Logger logger = Logger.getLogger(PublishRestServiceWizard.class.getName());
     private IdentityProviderWizardPanel authorizationPanel;
 
     private Option<Folder> folder = Option.none();
@@ -142,7 +146,11 @@ public class PublishRestServiceWizard extends Wizard {
                         Thread.sleep(1000);
                         PublishRestServiceWizard.this.notify(new ServiceHeader(service));
                     } catch ( Exception e ) {
-                        DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() + "'"), getParent(), "Error", null);
+                        if (e instanceof PermissionDeniedException) {
+                            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
+                        } else {
+                            DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() + "'"), getParent(), "Error", null);
+                        }
                     }
                 }
             };
