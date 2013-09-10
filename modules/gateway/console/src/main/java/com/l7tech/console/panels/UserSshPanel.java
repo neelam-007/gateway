@@ -55,7 +55,7 @@ public class UserSshPanel extends JPanel {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             @Override
             public void useFileChooser(JFileChooser fc) {
-                FileFilter pubFilter = FileChooserUtil.buildFilter(".pub", "(*.pub) SSH private key files");
+                FileFilter pubFilter = FileChooserUtil.buildFilter(".pub", "(*.pub) SSH public key files");
                 fc.setFileFilter(pubFilter);
                 doRead(fc);
             }
