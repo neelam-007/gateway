@@ -262,7 +262,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     @Override
     public boolean isMember( final User user,
                              final LdapGroup group ) throws FindException {
-        if (user.getProviderId().equals(getProviderOid())){
+        if (!user.getProviderId().equals(getProviderOid())){
             logger.log(Level.FINE, "User is not from this Identity Provider");
             return false;
         }
