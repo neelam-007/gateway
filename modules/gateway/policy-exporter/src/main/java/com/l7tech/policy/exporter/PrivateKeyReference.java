@@ -3,8 +3,8 @@ package com.l7tech.policy.exporter;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.GoidRange;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
@@ -145,7 +145,11 @@ public class PrivateKeyReference extends ExternalReference {
             if (keystoreId != null) {
                 output.keystoreGoid = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreId);
                 try {
-                    output.keystoreOid = Long.parseLong(keystoreId);
+                    // check if the length is less 21 (the max length of a long with a '-')
+                    // This check is needed because a goid that looks like this will be parsed as a valid long and we don't want that! 00000000000000000000000000000002
+                    if(keystoreId.length() <= 20){
+                        output.keystoreOid = Long.parseLong(keystoreId);
+                    }
                 } catch(NumberFormatException e) {
                     //do nothing. If it isn't a oid then that's ok.
                 }

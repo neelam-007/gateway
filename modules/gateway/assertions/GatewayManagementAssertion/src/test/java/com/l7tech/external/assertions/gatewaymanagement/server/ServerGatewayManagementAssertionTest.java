@@ -51,8 +51,6 @@ import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.policy.AssertionAccessManager;
-import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -3135,6 +3133,81 @@ public class ServerGatewayManagementAssertionTest {
         assertEquals("Imported policy ref GUID", "006ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
         assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
     }
+
+    @Test
+    @BugId("SSG-7627")
+    public void testPolicyImportWithInstructionsForSSG7627() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+                        "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+                        "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+                        "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+                        "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+                        "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                        "    <env:Header>\n" +
+                        "        <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicy</wsa:Action>\n" +
+                        "        <wsa:ReplyTo>\n" +
+                        "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+                        "        </wsa:ReplyTo>\n" +
+                        "        <wsa:MessageID env:mustUnderstand=\"true\">uuid:6ad066ea-9473-4417-a2d0-0ff24f7d4b4b</wsa:MessageID>\n" +
+                        "        <wsa:To env:mustUnderstand=\"true\">http://halibut-api1.l7tech.com:8080/wsman</wsa:To>\n" +
+                        "        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>\n" +
+                        "        <wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout>\n" +
+                        "        <wsman:SelectorSet>\n" +
+                        "            <wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector>\n" +
+                        "        </wsman:SelectorSet>\n" +
+                        "    </env:Header>\n" +
+                        "    <env:Body>\n" +
+                        "        <l7:PolicyImportContext xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "            <l7:Properties/>\n" +
+                        "            <l7:Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References&gt;\n" +
+                        "        &lt;PrivateKeyReference RefType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"&gt;\n" +
+                        "            &lt;IsDefaultKey&gt;false&lt;/IsDefaultKey&gt;\n" +
+                        "            &lt;KeystoreOID&gt;00000000000000000000000000000002&lt;/KeystoreOID&gt;\n" +
+                        "            &lt;KeyAlias&gt;import-test1&lt;/KeyAlias&gt;\n" +
+                        "        &lt;/PrivateKeyReference&gt;\n" +
+                        "    &lt;/exp:References&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:WssSignElement&gt;\n" +
+                        "                &lt;L7p:KeyAlias stringValue=\"import-test1\"/&gt;\n" +
+                        "                &lt;L7p:NonDefaultKeystoreId goidValue=\"00000000000000000000000000000002\"/&gt;\n" +
+                        "                &lt;L7p:Target target=\"REQUEST\"/&gt;\n" +
+                        "                &lt;L7p:UsesDefaultKeyStore booleanValue=\"false\"/&gt;\n" +
+                        "                &lt;L7p:XpathExpression xpathExpressionValue=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Expression stringValue=\"/s:Envelope/s:Body\"/&gt;\n" +
+                        "                    &lt;L7p:Namespaces mapValue=\"included\"&gt;\n" +
+                        "                        &lt;L7p:entry&gt;\n" +
+                        "                            &lt;L7p:key stringValue=\"s\"/&gt;\n" +
+                        "                            &lt;L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/&gt;\n" +
+                        "                        &lt;/L7p:entry&gt;\n" +
+                        "                    &lt;/L7p:Namespaces&gt;\n" +
+                        "                &lt;/L7p:XpathExpression&gt;\n" +
+                        "            &lt;/L7p:WssSignElement&gt;\n" +
+                        "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</l7:Resource>\n" +
+                        "            <l7:PolicyReferenceInstructions>\n" +
+                        "                <l7:PolicyReferenceInstruction mappedReferenceId=\"00000000000000000000000000000002:importkeytest\"\n" +
+                        "                    referenceId=\"00000000000000000000000000000002:import-test1\"\n" +
+                        "                    referenceType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\" type=\"Map\"/>\n" +
+                        "            </l7:PolicyReferenceInstructions>\n" +
+                        "        </l7:PolicyImportContext>\n" +
+                        "    </env:Body>\n" +
+                        "</env:Envelope>\n" +
+                        "\n";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+    }
+
     @Test
     public void testPolicyImportExistingPolicyReference() throws Exception {
         final String message =
