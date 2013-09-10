@@ -6,6 +6,7 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -26,7 +27,12 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
-    public void registerClass(@NotNull Class<? extends GenericEntity> entityClass) throws IllegalArgumentException {
+    public <ET extends GenericEntity> void registerClass(@NotNull Class<ET> entityClass) throws IllegalArgumentException {
+        throw new UnsupportedOperationException("Not yet implemented for stub");
+    }
+
+    @Override
+    public <ET extends GenericEntity> void registerClass(@NotNull Class<ET> entityClass, @Nullable GenericEntityMetadata metadata) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 

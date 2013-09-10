@@ -93,7 +93,7 @@ public class AnnotationClassFilter implements ClassFilter {
             return true;
 
         if (classSafety.allowDefaultConstructor() &&
-            constructor.getParameterTypes().length == 0) {
+            isDefaultConstructor(constructor)) {
             return true;
         }
 
@@ -120,13 +120,22 @@ public class AnnotationClassFilter implements ClassFilter {
         return false;
     }
 
-    protected boolean isSetter(@NotNull Method method) {
-        return !Modifier.isStatic(method.getModifiers()) && method.getName().startsWith("set") && method.getParameterTypes().length == 1;
+    protected static boolean isDefaultConstructor(Constructor<?> constructor) {
+        return constructor.getParameterTypes().length == 0;
     }
 
-    protected boolean isGetter(@NotNull Method method) {
-        return !Modifier.isStatic(method.getModifiers()) &&
+    protected static boolean isSetter(@NotNull Method method) {
+        return isPublicNonStatic(method) && method.getName().startsWith("set") && method.getParameterTypes().length == 1;
+    }
+
+    protected static boolean isGetter(@NotNull Method method) {
+        return isPublicNonStatic(method) &&
             (method.getName().startsWith("get") || (method.getName().startsWith("is") && boolean.class.equals(method.getReturnType()))) &&
             method.getParameterTypes().length == 0;
+    }
+
+    protected static boolean isPublicNonStatic(Method method) {
+        final int mods = method.getModifiers();
+        return !Modifier.isStatic(mods) && Modifier.isPublic(mods);
     }
 }

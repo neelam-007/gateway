@@ -13,6 +13,7 @@ import com.l7tech.util.*;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.XMLEncoder;
@@ -52,7 +53,25 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             " WHERE " + getTableName() + "." + F_GOID + " = ?" +
             "   AND " + getTableName() + "." + F_CLASSNAME + " = ?";
 
-    private final ConcurrentMap<String, Class<? extends GenericEntity>> registeredClasses = new ConcurrentHashMap<String, Class<? extends GenericEntity>>();
+    private static class ClassInfo<ET extends GenericEntity> {
+        private final Class<ET> clazz;
+        private final GenericEntityMetadata meta;
+
+        private ClassInfo(Class<ET> clazz, GenericEntityMetadata meta) {
+            this.clazz = clazz;
+            this.meta = meta;
+        }
+
+        Class<ET> getEntityClass() {
+            return clazz;
+        }
+
+        GenericEntityMetadata getEntityMetadata() {
+            return meta;
+        }
+    }
+
+    private final ConcurrentMap<String, ClassInfo<?>> registeredClasses = new ConcurrentHashMap<>();
 
     @Override
     @Transactional(readOnly=true)
@@ -67,20 +86,25 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     }
 
     @Override
-    public void registerClass(@NotNull Class<? extends GenericEntity> entityClass) throws IllegalArgumentException {
+    public <ET extends GenericEntity> void registerClass(@NotNull Class<ET> entityClass) throws IllegalArgumentException {
+        registerClass(entityClass, null);
+    }
+
+    @Override
+    public <ET extends GenericEntity> void registerClass(@NotNull Class<ET> entityClass, @Nullable GenericEntityMetadata metadata) throws IllegalArgumentException {
         if (!GenericEntity.class.isAssignableFrom(entityClass))
             throw new IllegalArgumentException("Specified entity class is not assignable to GenericEntity");
         if (entityClass == GenericEntity.class)
             throw new IllegalArgumentException("Specified entity class is GenericEntity itself; concrete entity class should be a subclass of GenericEntity");
         String name = entityClass.getName();
-        final Class<? extends GenericEntity> prev = registeredClasses.putIfAbsent(name, entityClass);
+        final ClassInfo prev = registeredClasses.putIfAbsent(name, new ClassInfo<>(entityClass, metadata));
         if (null != prev)
             throw new IllegalArgumentException("Specified entity classname is already registered");
     }
 
     @Override
     public boolean unRegisterClass(String entityClassName) {
-        final Class<? extends GenericEntity> prev = registeredClasses.remove(entityClassName);
+        final ClassInfo prev = registeredClasses.remove(entityClassName);
         return prev != null;
     }
 
@@ -187,8 +211,9 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> Collection<ET> findAll(final @NotNull Class<ET> entityClass) throws FindException {
-        if (!isRegistered(entityClass))
-            throw new FindException(regmsg(entityClass));
+        @SuppressWarnings("unchecked")
+        final ClassInfo<ET> classInfo = getClassInfo(entityClass);
+
         try {
             return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Collection<ET>>() {
                 @Override
@@ -197,10 +222,10 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
                     criteria.add(Restrictions.eq("entityClassName", entityClass.getName()));
 
                     List list = criteria.list();
-                    List<ET> ret = new ArrayList<ET>();
+                    List<ET> ret = new ArrayList<>();
                     for (Object obj : list) {
                         try {
-                            ret.add(asConcreteEntity((GenericEntity)obj, entityClass));
+                            ret.add(asConcreteEntity((GenericEntity)obj, classInfo));
                         } catch (InvalidGenericEntityException e) {
                             logger.log(Level.INFO, "Ignoring invalid generic entity", e);
                         }
@@ -211,6 +236,18 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         } catch (HibernateException e) {
             throw new FindException("Couldn't find all generic entities of type " + entityClass.getName(), e);
         }
+    }
+
+    @NotNull
+    private <ET extends GenericEntity> ClassInfo<ET> getClassInfo(Class<ET> entityClass) throws FindException {
+        final ClassInfo<?> classInfo = registeredClasses.get(entityClass.getName());
+        if (classInfo == null)
+            throw new FindException(regmsg(entityClass));
+        if (!classInfo.getEntityClass().equals(entityClass))
+            throw new FindException("Class does not match for generic entity of type " + entityClass); // shouldn't be possible, but better this now than ClassCastException later
+
+        //noinspection unchecked
+        return (ClassInfo<ET>) classInfo;
     }
 
     @Override
@@ -226,7 +263,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
                     criteria.add(Restrictions.eq("entityClassName", entityClass.getName()));
 
                     List list = criteria.list();
-                    List<GenericEntityHeader> ret = new ArrayList<GenericEntityHeader>();
+                    List<GenericEntityHeader> ret = new ArrayList<>();
                     for (Object obj : list) {
                         ret.add(new GenericEntityHeader((GenericEntity)obj));
                     }
@@ -253,7 +290,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
                     criteria.add(Restrictions.eq("entityClassName", entityClass.getName()));
 
                     List list = criteria.list();
-                    List<GenericEntityHeader> ret = new ArrayList<GenericEntityHeader>();
+                    List<GenericEntityHeader> ret = new ArrayList<>();
                     for (Object obj : list) {
                         ret.add(new GenericEntityHeader((GenericEntity)obj));
                     }
@@ -309,7 +346,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         if (!isRegistered(entityClass))
             throw new FindException(regmsg(entityClass));
 
-        Map<Goid, Integer> result = new HashMap<Goid, Integer>();
+        Map<Goid, Integer> result = new HashMap<>();
         if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
@@ -358,7 +395,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     @Transactional(readOnly=true)
     protected GenericEntity checkAndCache(GenericEntity thing) throws FindException {
         String className = thing.getEntityClassName();
-        Class<? extends GenericEntity> entityClass = registeredClasses.get(className);
+        ClassInfo<?> entityClass = registeredClasses.get(className);
         if (entityClass == null)
             throw new FindException("No generic entity class named " + className + " is registered");
 
@@ -369,27 +406,25 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> ET getCachedEntity(@NotNull Class<ET> entityClass, Goid goid, int maxAge) throws FindException {
-        if (!isRegistered(entityClass))
-            throw new FindException(regmsg(entityClass));
+        ClassInfo<ET> classInfo = getClassInfo(entityClass);
 
         GenericEntity ret = super.getCachedEntity(goid, maxAge);
         if (ret == null)
             return null;
 
-        return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, entityClass);
+        return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, classInfo);
     }
 
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> ET findByUniqueName(@NotNull Class<ET> entityClass, String name) throws FindException {
-        if (!isRegistered(entityClass))
-            throw new FindException(regmsg(entityClass));
+        ClassInfo<ET> classInfo = getClassInfo(entityClass);
 
         GenericEntity ret = doFindByUniqueName(entityClass.getName(), name);
         if (ret == null)
             return null;
 
-        return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, entityClass);
+        return entityClass.isInstance(ret) ? entityClass.cast(ret) : asConcreteEntity(ret, classInfo);
     }
 
     @Override
@@ -457,29 +492,27 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> ET findByHeader(@NotNull Class<ET> entityClass, EntityHeader header) throws FindException {
-        if (!isRegistered(entityClass))
-            throw new FindException(regmsg(entityClass));
+        ClassInfo<ET> classInfo = getClassInfo(entityClass);
 
         GenericEntity ret = findByHeader(header);
         if (ret == null)
             return null;
         if (!entityClass.getName().equals(ret.getEntityClassName()))
             return null;
-        return asConcreteEntity(ret, entityClass);
+        return asConcreteEntity(ret, classInfo);
     }
 
     @Override
     @Transactional(readOnly=true)
     public <ET extends GenericEntity> ET findByGenericClassAndPrimaryKey(@NotNull Class<ET> entityClass, Goid goid) throws FindException {
-        if (!isRegistered(entityClass))
-            throw new FindException(regmsg(entityClass));
+        ClassInfo<ET> classInfo = getClassInfo(entityClass);
 
         GenericEntity ret = findByPrimaryKey(goid);
         if (ret == null)
             return null;
         if (!entityClass.getName().equals(ret.getEntityClassName()))
             return null;
-        return asConcreteEntity(ret, entityClass);
+        return asConcreteEntity(ret, classInfo);
     }
 
     @Override
@@ -488,7 +521,10 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     }
 
     <ET extends GenericEntity>
-    ET asConcreteEntity(GenericEntity that, Class<ET> entityClass) throws InvalidGenericEntityException {
+    ET asConcreteEntity(GenericEntity that, ClassInfo<ET> classInfo) throws InvalidGenericEntityException {
+        Class<ET> entityClass = classInfo.getEntityClass();
+        GenericEntityMetadata meta = classInfo.getEntityMetadata();
+
         final String entityClassName = that.getEntityClassName();
         if (!entityClass.getName().equals(entityClassName))
             throw new InvalidGenericEntityException("generic entity is not of expected class " + entityClassName + ": actual classname is " + entityClass.getName());
@@ -505,11 +541,12 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
         }
 
-        SafeXMLDecoder decoder = null;
-        try {
-             decoder = new SafeXMLDecoderBuilder(makeClassFilterBuilder(entityClass), new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
-                    .setClassLoader(entityClass.getClassLoader()).build();
-
+        final ClassFilterBuilder filterBuilder = makeClassFilterBuilder(entityClass, meta);
+        final ByteArrayInputStream input = new ByteArrayInputStream(xml.getBytes(Charsets.UTF8));
+        try (SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(filterBuilder, input)
+                .setClassLoader(entityClass.getClassLoader())
+                .build())
+        {
             Object obj = decoder.readObject();
             if (entityClass.isInstance(obj)) {
                 ET ret = entityClass.cast(obj);
@@ -518,16 +555,14 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new InvalidGenericEntityException("Stream does not contain any entities", e);
-        } finally {
-            if (decoder != null) decoder.close();
         }
 
         throw new InvalidGenericEntityException("Generic entity XML stream did not contain an instance of " + entityClassName);
     }
 
-    private <ET extends GenericEntity> ClassFilterBuilder makeClassFilterBuilder(final Class<ET> entityClass) {
+    private <ET extends GenericEntity> ClassFilterBuilder makeClassFilterBuilder(final Class<ET> entityClass, GenericEntityMetadata entityMetadata) {
         // Automatically permit the target generic entity, its default constructor, and simple getters and setters, so most simple uses of generic entities will Just Work
-        ClassFilter extraFilter = new AnnotationClassFilter(entityClass.getClassLoader(), Arrays.asList("com.l7tech.", entityClass.getPackage().getName() + ".")) {
+        ClassFilter genericEntityFilter = new AnnotationClassFilter(entityClass.getClassLoader(), Arrays.asList("com.l7tech.", entityClass.getPackage().getName() + ".")) {
             private final Class<?>[] exactPermits = {
                 PersistentEntityImp.class,
                 NamedEntityImp.class
@@ -563,9 +598,33 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
                 return false;
             }
         };
-        return new ClassFilterBuilder().
+
+        ClassFilterBuilder builder = new ClassFilterBuilder().
             allowDefaults().
-            addClassFilter(extraFilter);
+            addClassFilter(genericEntityFilter);
+
+        if (entityMetadata != null) {
+            final Set<String> safeClasses = entityMetadata.getSafeXmlClasses();
+            if (safeClasses != null)
+                builder.addClasses(false, safeClasses.toArray(new String[safeClasses.size()]));
+
+            final Set<String> safeConstructors = entityMetadata.getSafeXmlConstructors();
+            if (safeConstructors != null)
+                builder.addConstructors(safeConstructors.toArray(new String[safeConstructors.size()]));
+
+            final Set<String> safeMethods = entityMetadata.getSafeXmlMethods();
+            if (safeMethods != null)
+                builder.addMethods(safeMethods.toArray(new String[safeMethods.size()]));
+
+            final List<ClassFilter> extraFilters = entityMetadata.getSafeXmlClassFilter();
+            if (extraFilters != null) {
+                for (ClassFilter filter : extraFilters) {
+                    builder.addClassFilter(filter);
+                }
+            }
+        }
+
+        return builder;
     }
 
     static void regenerateValueXml(GenericEntity that) {
@@ -588,7 +647,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(GenericEntity entity) {
-        Map<String,Object> map = new HashMap<String, Object>();
+        Map<String,Object> map = new HashMap<>();
         map.put("name", entity.getName());
         map.put("entityClassName", entity.getEntityClassName());
         return Arrays.asList(map);

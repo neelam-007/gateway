@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +26,26 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
      * @param entityClass a generic entity subclass to allow.
      * @throws IllegalArgumentException if the specified entity class is not a subclass of GenericEntity or if its classname is already registered
      */
-    void registerClass(@NotNull Class<? extends GenericEntity> entityClass) throws IllegalArgumentException;
+    <ET extends GenericEntity>
+    void registerClass(@NotNull Class<ET> entityClass) throws IllegalArgumentException;
+
+    /**
+     * Register a generic entity class with the generic entity manager subsystem, optionally including additional
+     * metadata for the generic entity registration.
+     * <p/>
+     * This method would typically be called on startup by a modular assertion or other extension in order
+     * to mark the specified extension class as safe to use, and to register an instance of the class
+     * loaded from the appropriate ClassLoader.
+     * <p/>
+     * Metadata can be specified in case this generic entity has additional requirements such as storing
+     * instances of third-party classes within its properties that cannot be annotated as @XmlSafe.
+     *
+     * @param entityClass a generic entity subclass to allow.
+     * @param metadata additional metadata for this generic entity registration, or null.
+     * @throws IllegalArgumentException if the specified entity class is not a subclass of GenericEntity or if its classname is already registered
+     */
+    <ET extends GenericEntity>
+    void registerClass(@NotNull Class<ET> entityClass, @Nullable GenericEntityMetadata metadata) throws IllegalArgumentException;
 
     /**
      * Unregister the specified generic entity class.

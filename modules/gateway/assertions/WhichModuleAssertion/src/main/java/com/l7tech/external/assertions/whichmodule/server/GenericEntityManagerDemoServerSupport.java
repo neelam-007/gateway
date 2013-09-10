@@ -31,7 +31,7 @@ public class GenericEntityManagerDemoServerSupport {
 
     public void init(ApplicationContext context) {
         GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
-        gem.registerClass(DemoGenericEntity.class);
+        gem.registerClass(DemoGenericEntity.class, null);
         demoGenericEntityManager = gem.getEntityManager(DemoGenericEntity.class);
     }
 
