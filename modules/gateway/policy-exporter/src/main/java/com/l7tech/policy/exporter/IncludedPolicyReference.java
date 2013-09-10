@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
@@ -11,6 +12,7 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -116,7 +118,7 @@ public class IncludedPolicyReference extends ExternalReference {
     protected boolean verifyReference() throws InvalidPolicyStreamException {
         try {
             Policy policy = getFinder().findPolicyByGuid(guid);
-            
+
             if (policy == null) {
                 logger.log(Level.INFO, MessageFormat.format("Policy #{0} ({1}) does not exist on this system; importing", guid, name));
                 useType = UseType.IMPORT;
@@ -161,6 +163,10 @@ public class IncludedPolicyReference extends ExternalReference {
         } catch(InvalidPolicyStreamException e) {
             throw e;
         } catch (Exception e) {
+            if (e instanceof PermissionDeniedException) {
+                logger.log(Level.WARNING, "Reference cannot be verified because user does not have permission to read the referenced policy with guid " + guid);
+                throw (PermissionDeniedException)e;
+            }
             logger.log(Level.WARNING, "Unable to determine whether imported policy already present");
             return false;
         }
@@ -226,7 +232,10 @@ public class IncludedPolicyReference extends ExternalReference {
             ipr.setOid(oid);
         }
         ipr.soap = Boolean.TRUE.toString().equals(el.getAttribute(ATTR_SOAP));
-        ipr.type = PolicyType.valueOf(el.getAttribute(ATTR_TYPE));
+        final String policyType = el.getAttribute(ATTR_TYPE);
+        if (StringUtils.isNotBlank(policyType)) {
+            ipr.type = PolicyType.valueOf(policyType);
+        }
         Attr internalTagAttribute = el.getAttributeNode(ATTR_INTERNAL_TAG);
         if(internalTagAttribute != null) {
             ipr.internalTag = internalTagAttribute.getValue();

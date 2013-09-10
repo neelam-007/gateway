@@ -1,10 +1,14 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
@@ -18,17 +22,20 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.test.BugId;
 import com.l7tech.util.DomUtils;
+import org.junit.Before;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.*;
+import org.xml.sax.EntityResolver;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class for the policy exporter.
@@ -38,7 +45,20 @@ import static org.junit.Assert.*;
  * User: flascell<br/>
  * Date: Jul 16, 2004<br/>
  */
+@RunWith(MockitoJUnitRunner.class)
 public class PolicyExporterTest {
+    private PolicyExporter exporter;
+    @Mock
+    private ExternalReferenceFinder finder;
+    @Mock
+    private EntityResolver resolver;
+    @Mock
+    private ExternalReferenceFactory factory;
+
+    @Before
+    public void setup() {
+        exporter = new PolicyExporter(finder, resolver);
+    }
 
     static {
         AssertionRegistry.installEnhancedMetadataDefaults();
@@ -83,6 +103,26 @@ public class PolicyExporterTest {
         assertTrue("Missing PrivateKeyReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.PrivateKeyReference" ));
         assertTrue("Missing TrustedCertReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.TrustedCertReference" ));
         assertEquals("Reference count", 9, referenceTypes.size());
+    }
+
+    @BugId("SSG-7622")
+    @Test
+    public void exportToDocumentIncludeCannotReadPolicy() throws Exception {
+        final String policyGuid = "abc123";
+        final AllAssertion all = new AllAssertion();
+        final Include include = new Include();
+        include.setPolicyGuid(policyGuid);
+        all.addChild(include);
+        when(finder.findPolicyByGuid(policyGuid)).thenThrow(new PermissionDeniedException(OperationType.READ, EntityType.POLICY));
+
+        final Document document = exporter.exportToDocument(all, Collections.singleton(factory));
+        final NodeList nodes = document.getElementsByTagName("IncludedPolicyReference");
+        assertEquals(1, nodes.getLength());
+        final NamedNodeMap attributes = nodes.item(0).getAttributes();
+        assertEquals(2, attributes.getLength());
+        assertEquals("com.l7tech.console.policy.exporter.IncludedPolicyReference", attributes.getNamedItem("RefType").getTextContent());
+        assertEquals(policyGuid, attributes.getNamedItem("guid").getTextContent());
+        verify(finder).findPolicyByGuid(policyGuid);
     }
 
     private Document exportToDocument() throws Exception {

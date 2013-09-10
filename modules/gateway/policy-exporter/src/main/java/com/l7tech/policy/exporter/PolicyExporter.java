@@ -139,10 +139,10 @@ public class PolicyExporter {
                         //fragment and export it. The new added policy fragment needs to be created because it does not
                         //exist in the assertion yet.
                         if (fragmentPolicy == null) {
-                            fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                            fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap() != null ? includedReference.isSoap() : false);
                         }
                     } else {
-                        fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                        fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap() != null ? includedReference.isSoap() : false);
                     }
 
                     try {
