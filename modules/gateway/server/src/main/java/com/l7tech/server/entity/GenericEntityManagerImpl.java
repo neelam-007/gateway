@@ -2,6 +2,8 @@ package com.l7tech.server.entity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.InvalidGenericEntityException;
@@ -526,6 +528,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
     private <ET extends GenericEntity> ClassFilterBuilder makeClassFilterBuilder(final Class<ET> entityClass) {
         // Automatically permit the target generic entity, its default constructor, and simple getters and setters, so most simple uses of generic entities will Just Work
         ClassFilter extraFilter = new AnnotationClassFilter(entityClass.getClassLoader(), Arrays.asList("com.l7tech.", entityClass.getPackage().getName() + ".")) {
+            private final Class<?>[] exactPermits = {
+                PersistentEntityImp.class,
+                NamedEntityImp.class
+            };
+
             @Override
             protected boolean permitClass(@NotNull Class<?> clazz) {
                 return super.permitClass(clazz) ||
@@ -541,13 +548,24 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             @Override
             public boolean permitMethod(@NotNull Method method) {
                 return super.permitMethod(method) ||
-                    (GenericEntity.class.isAssignableFrom(method.getDeclaringClass()) && (isSetter(method) || isGetter(method)));
+                    (isGenericOrOneOf(method.getDeclaringClass(), exactPermits) && (isSetter(method) || isGetter(method)));
+            }
+
+            private boolean isGenericOrOneOf(Class<?> clazz, Class<?>... classes) {
+                return GenericEntity.class.isAssignableFrom(clazz) || isOneOfClass(clazz, classes);
+            }
+
+            private boolean isOneOfClass(Class<?> toCheck, Class<?>... classes) {
+                for (Class<?> c : classes) {
+                    if (c.equals(toCheck))
+                        return true;
+                }
+                return false;
             }
         };
         return new ClassFilterBuilder().
             allowDefaults().
-            addClassFilter(extraFilter).
-            addMethods("com.l7tech.objectmodel.imp.NamedEntityImp.setName(java.lang.String)");
+            addClassFilter(extraFilter);
     }
 
     static void regenerateValueXml(GenericEntity that) {
