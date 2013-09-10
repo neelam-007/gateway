@@ -60,17 +60,49 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
                 new TransactionInterceptor(transactionManager, new AnnotationTransactionAttributeSource());
     }
 
+    /**
+     * Register an extension interface along with a backing implementation object.
+     *
+     * @param binding  a binding that includes the extension interface, a backing objecvt that implements the
+     *                 interface, and an optional instance identifier.
+     * @param <T> the interface type
+     */
     public <T> void registerInterface(@NotNull ExtensionInterfaceBinding<T> binding) {
         registerInterface(binding.getInterfaceClass(), binding.getInstanceIdentifier(), binding.getImplementationObject());
     }
 
+    /**
+     * Register an extension interface along with a backing implementation object.
+     *
+     * @param interfaceClass   the class representing the interface.  Required.
+     * @param instanceIdentifier an optional identifier string used to disambiguate calls in case you need to
+     *                           register more than one implementation object for a given interface, or null.
+     * @param implementation   the backing object that implements this interface.  Required.
+     * @param <T> the interface type
+     */
     public <T> void registerInterface(@NotNull Class<T> interfaceClass, @Nullable String instanceIdentifier, @NotNull T implementation) {
-        try {
+        registerInterface(interfaceClass, instanceIdentifier, implementation, false);
+    }
+
+    /**
+     * Register an extension interface along with a backing implementation object.
+     *
+     * @param interfaceClass   the class representing the interface.  Required.
+     * @param instanceIdentifier an optional identifier string used to disambiguate calls in case you need to
+     *                           register more than one implementation object for a given interface, or null.
+     * @param implementation   the backing object that implements this interface.  Required.
+     * @param allowUnsecured   true if the caller promises that the implementation object does its own RBAC security checks
+     *                         (or has no RBAC implications for any of its methods).  In this case, the interface will
+     *                         not be required to explicitly declare a security policy for every method (using the @Secured annotation).
+     * @param <T> the interface type
+     */
+    public <T> void registerInterface(@NotNull Class<T> interfaceClass, @Nullable String instanceIdentifier, @NotNull T implementation, boolean allowUnsecured) {
+            try {
             lock.writeLock().lock();
             if (!interfaceClass.isAssignableFrom(implementation.getClass()))
                 throw new IllegalArgumentException("implementation object is not an instance of the interface class");
 
-            checkInterfaceClass(interfaceClass);
+            checkInterfaceClass(interfaceClass, allowUnsecured);
 
             Class existingClass = getClass(interfaceClass.getName());
             if (existingClass == null) {
@@ -97,11 +129,13 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
      * Currently this checks that every method has a @Secured annotation.
      *
      * @param interfaceClass class to examine.  Required.
-     * @param <T> type of the class
+     * @param allowUnsecured true if an interface without @Secured annotations should be permitted.
      */
-    private <T> void checkInterfaceClass(Class<T> interfaceClass) {
-        checkClassSecuredAnnotated(interfaceClass);
-        checkAllMethodsSecuredAnnotated(interfaceClass);
+    private <T> void checkInterfaceClass(Class<T> interfaceClass, boolean allowUnsecured) {
+        if (!allowUnsecured) {
+            checkClassSecuredAnnotated(interfaceClass);
+            checkAllMethodsSecuredAnnotated(interfaceClass);
+        }
     }
 
     private static <T> void checkClassSecuredAnnotated(Class<T> interfaceClass) {

@@ -1,8 +1,6 @@
 package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
@@ -23,7 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static junit.framework.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CustomAssertionsRegistrarImplTest {
@@ -61,9 +59,7 @@ public class CustomAssertionsRegistrarImplTest {
         assertFalse(extensionInterfaceManager.isInterfaceRegistered("com.l7tech.server.policy.custom.CustomAssertionsRegistrarImplTest$DoesNotExist", null));
     }
 
-    @Secured
     private interface MyInterface {
-        @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
         String echo(String in);
     }
 

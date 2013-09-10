@@ -27,13 +27,22 @@ public class ExtensionInterfaceManagerTest {
     @Test
     @BugId("SSG-5798")
     public void testRegisterInterfaceNoAnnotations() throws Exception {
-        assertFalse(manager.isInterfaceRegistered(TestFace.class.getName(), null));
+        assertFalse(manager.isInterfaceRegistered(TestFaceNoSec.class.getName(), null));
         try {
             manager.registerInterface(TestFaceNoSec.class, null, new TestFaceNoSecImpl());
             fail("Expected exception was not thrown (interface not annotated with @Secured)");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("@Secured"));
         }
+    }
+
+    @Test
+    @BugId("SSG-5798")
+    public void testRegisterInterfaceNoSecurityCheck() throws Exception {
+        // Allow registration of unannotated interface if allowUnsecured=true
+        assertFalse(manager.isInterfaceRegistered(TestFaceNoSec.class.getName(), null));
+        manager.registerInterface(TestFaceNoSec.class, null, new TestFaceNoSecImpl(), true);
+        assertTrue(manager.isInterfaceRegistered(TestFaceNoSec.class.getName(), null));
     }
 
     @Test

@@ -609,7 +609,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
         if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
             CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
-            extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject());
+            extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject(), true);
         }
     }
 
