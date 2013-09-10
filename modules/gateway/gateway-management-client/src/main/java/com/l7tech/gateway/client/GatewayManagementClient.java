@@ -1061,7 +1061,13 @@ public class GatewayManagementClient {
             String exportType = type;
 
             if ( !exportType.contains("." ) ) {
-                exportType = "com.l7tech.console.policy.exporter." + exportType;
+                if(exportType.equals("SiteMinderExternalReference")){
+                    exportType = "com.l7tech.external.assertions.siteminder.SiteMinderExternalReference";
+                }else if (exportType.equals("MqNativeExternalReference")){
+                    exportType = "com.l7tech.external.assertions.mqnative.MqNativeExternalReference";
+                }else {
+                    exportType = "com.l7tech.console.policy.exporter." + exportType;
+                }
             } else if ( exportType.startsWith( "." )) {
                 // just in case someone later adds references in the default package   
                 exportType = exportType.substring(1);
