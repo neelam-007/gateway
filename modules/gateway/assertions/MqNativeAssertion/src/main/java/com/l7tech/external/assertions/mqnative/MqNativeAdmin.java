@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mqnative;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public interface MqNativeAdmin {
      * @return the maximum number of bytes permitted for a MQ Native Queue  message, or 0 for unlimited (Integer)
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     long getDefaultMqMessageMaxBytes();
 
     /**
@@ -35,5 +37,6 @@ public interface MqNativeAdmin {
      * @throws MqNativeTestException if we can't get a handle to the destinations
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     void testSettings(SsgActiveConnector mqNativeActiveConnector) throws MqNativeTestException;
 }

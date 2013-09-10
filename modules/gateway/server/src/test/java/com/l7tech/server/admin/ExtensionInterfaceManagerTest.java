@@ -1,14 +1,15 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Either;
 import com.l7tech.util.Option;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Test case for {@link ExtensionInterfaceManager}.
@@ -21,6 +22,18 @@ public class ExtensionInterfaceManagerTest {
         assertFalse(manager.isInterfaceRegistered(TestFace.class.getName(), null));
         manager.registerInterface(TestFace.class, null, new TestImpl());
         assertTrue(manager.isInterfaceRegistered(TestFace.class.getName(), null));
+    }
+
+    @Test
+    @BugId("SSG-5798")
+    public void testRegisterInterfaceNoAnnotations() throws Exception {
+        assertFalse(manager.isInterfaceRegistered(TestFace.class.getName(), null));
+        try {
+            manager.registerInterface(TestFaceNoSec.class, null, new TestFaceNoSecImpl());
+            fail("Expected exception was not thrown (interface not annotated with @Secured)");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("@Secured"));
+        }
     }
 
     @Test
@@ -87,12 +100,33 @@ public class ExtensionInterfaceManagerTest {
         assertTrue(manager.getRegisteredInterfaces().isEmpty());
     }
 
+    @Secured
     public static interface TestFace {
+        @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+        String echo(String in);
+
+        @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+        void fail(String msg) throws IOException;
+    }
+
+    public static interface TestFaceNoSec {
         String echo(String in);
         void fail(String msg) throws IOException;
     }
 
     public static class TestImpl implements TestFace {
+        @Override
+        public String echo(String in) {
+            return "Echo: " + in;
+        }
+
+        @Override
+        public void fail(String msg) throws IOException {
+            throw new IOException(msg);
+        }
+    }
+
+    public static class TestFaceNoSecImpl implements TestFaceNoSec {
         @Override
         public String echo(String in) {
             return "Echo: " + in;

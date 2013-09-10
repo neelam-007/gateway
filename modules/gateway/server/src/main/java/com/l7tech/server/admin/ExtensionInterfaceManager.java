@@ -1,9 +1,11 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice;
+import com.l7tech.util.ClassUtils;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.AnnotationTransactionAttribute
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
 import javax.inject.Inject;
+import java.lang.annotation.Annotation;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -67,6 +70,8 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
             if (!interfaceClass.isAssignableFrom(implementation.getClass()))
                 throw new IllegalArgumentException("implementation object is not an instance of the interface class");
 
+            checkInterfaceClass(interfaceClass);
+
             Class existingClass = getClass(interfaceClass.getName());
             if (existingClass == null) {
                 classesByName.put(interfaceClass.getName(), new WeakReference<Class>(interfaceClass));
@@ -83,6 +88,59 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
             implsByInterfaceClassAndId.put(key, new InterfaceImpl(key, implementation, implementation));
         } finally {
             lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Check if the interface class passes muster for being regisered as an admin extension interface.
+     * <p/>
+     * Currently this checks that every method has a @Secured annotation.
+     *
+     * @param interfaceClass class to examine.  Required.
+     * @param <T> type of the class
+     */
+    private <T> void checkInterfaceClass(Class<T> interfaceClass) {
+        checkClassSecuredAnnotated(interfaceClass);
+        checkAllMethodsSecuredAnnotated(interfaceClass);
+    }
+
+    private static <T> void checkClassSecuredAnnotated(Class<T> interfaceClass) {
+        List<Secured> annotations = new ArrayList<>();
+        collectClassAnnotations(interfaceClass, annotations);
+
+        if (annotations.size() < 1)
+            throw new IllegalArgumentException("Extension interface must declare class-level @Secured annotation");
+    }
+
+    private static <T> void checkAllMethodsSecuredAnnotated(Class<T> interfaceClass) {
+        Method[] methods = interfaceClass.getMethods();
+        for (Method method : methods) {
+            Secured secured = method.getAnnotation(Secured.class);
+            if (secured == null)
+                throw new IllegalArgumentException("Extension interface method lacks @Secured annotation: " + ClassUtils.getMethodName(method));
+
+            int numSecured = 0;
+            Annotation[] annotations = method.getAnnotations();
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof Secured) {
+                    numSecured++;
+                }
+            }
+
+            if (numSecured < 1)
+                throw new IllegalArgumentException("Extension interface method @Secured annotation count is zero: " + ClassUtils.getMethodName(method)); // can't happen
+
+            if (numSecured != 1)
+                throw new IllegalArgumentException("Extension interface method has multiple @Secured annotations: " + ClassUtils.getMethodName(method));
+        }
+    }
+
+    private static void collectClassAnnotations(Class clazz, List<Secured> annotations) {
+        //noinspection unchecked
+        Secured secured = (Secured) clazz.getAnnotation(Secured.class);
+        if (secured != null) annotations.add(secured);
+        for (Class intf : clazz.getInterfaces()) {
+            collectClassAnnotations(intf, annotations);
         }
     }
 

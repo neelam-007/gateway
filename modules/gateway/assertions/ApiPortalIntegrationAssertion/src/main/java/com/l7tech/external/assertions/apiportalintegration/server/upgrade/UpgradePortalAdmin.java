@@ -15,6 +15,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  */
 @Transactional(propagation = REQUIRED, rollbackFor = Throwable.class)
 @Administrative
+@Secured
 public interface UpgradePortalAdmin {
     /**
      * Upgrades service policies. Requires RBAC permissions.

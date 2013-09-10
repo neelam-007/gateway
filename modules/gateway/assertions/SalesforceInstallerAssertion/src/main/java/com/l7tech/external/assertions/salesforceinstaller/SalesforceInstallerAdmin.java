@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -31,6 +32,7 @@ public interface SalesforceInstallerAdmin extends AsyncAdminMethods {
      * @return String representing the version.
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     String getVersion() throws SalesforceInstallationException;
 
     /**
@@ -39,6 +41,7 @@ public interface SalesforceInstallerAdmin extends AsyncAdminMethods {
      * @throws SalesforceInstallationException
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     List<BundleInfo> getAllComponents() throws SalesforceInstallationException;
 
     /**
@@ -59,6 +62,7 @@ public interface SalesforceInstallerAdmin extends AsyncAdminMethods {
      *         the list of items which have conflicts.
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION, types=EntityType.FOLDER)
     JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> otkComponentId,
                                                   @NotNull Map<String, BundleMapping> bundleMappings,
                                                   @Nullable String installationPrefix);

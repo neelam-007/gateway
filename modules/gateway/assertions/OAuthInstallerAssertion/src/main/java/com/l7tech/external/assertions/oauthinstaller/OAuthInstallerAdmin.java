@@ -30,6 +30,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @return String representing the version.
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     String getOAuthToolkitVersion() throws OAuthToolkitInstallationException;
 
     /**
@@ -38,6 +39,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @throws OAuthToolkitInstallationException
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     List<BundleInfo> getAllOtkComponents() throws OAuthToolkitInstallationException;
 
     /**
@@ -45,6 +47,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      * @return
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     String getOAuthDatabaseSchema();
 
     /**
@@ -98,6 +101,7 @@ public interface OAuthInstallerAdmin extends AsyncAdminMethods{
      *         the list of items which have conflicts.
      */
     @NotNull
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
     JobId<PolicyBundleDryRunResult> dryRunOtkInstall(@NotNull Collection<String> otkComponentId,
                                                      @NotNull Map<String, BundleMapping> bundleMappings,
                                                      @Nullable String installationPrefix,

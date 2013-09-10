@@ -58,7 +58,7 @@ public class ExtensionInterfaceBinding<T> {
     }
 
     /**
-     * @return an instance identifier to distinguise between multiple implementors of a single extension interface, or null if this will never happen.
+     * @return an instance identifier to distinguish between multiple implementors of a single extension interface, or null if this will never happen.
      */
     @Nullable
     public String getInstanceIdentifier() {

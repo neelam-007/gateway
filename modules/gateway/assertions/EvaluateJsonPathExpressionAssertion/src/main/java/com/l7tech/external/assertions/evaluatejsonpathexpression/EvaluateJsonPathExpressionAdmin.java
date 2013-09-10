@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpression;
 
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+
 /**
  * <p>
  *     An admin interface to the {@link EvaluateJsonPathExpressionAssertion} to allow testing of an expression from
  *     the {@link com.l7tech.external.assertions.evaluatejsonpathexpression.console.EvaluateJsonPathExpressionPropertiesDialog}.
  * </p>
  */
+@Secured
 public interface EvaluateJsonPathExpressionAdmin {
 
     /**
@@ -16,6 +20,7 @@ public interface EvaluateJsonPathExpressionAdmin {
      * @return {@link JsonPathExpressionResult}
      * @throws EvaluateJsonPathExpressionTestException if any error(s) occur while evaluating the expression.
      */
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     public JsonPathExpressionResult testEvaluation(final Evaluator evaluator, final String source, final String expression) throws EvaluateJsonPathExpressionTestException;
 
     /**
