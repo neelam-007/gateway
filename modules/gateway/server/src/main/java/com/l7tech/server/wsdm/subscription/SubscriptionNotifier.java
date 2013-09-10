@@ -392,7 +392,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         final List<ServiceStatusNotificationContext> callbacks = new ArrayList<ServiceStatusNotificationContext>();
         final long now = System.currentTimeMillis();
         for (Subscription s : subs) {
-            if (Goid.equals(s.getPublishedServiceGoid(), serviceGoid)) continue; // Shouldn't be here anyway
+            if (!Goid.equals(s.getPublishedServiceGoid(), serviceGoid)) continue; // Shouldn't be here anyway
 
             if (s.getTermination() < now) {
                 logger.info(MessageFormat.format("Ignoring subscription {0} because it expired {1} seconds ago", s.getUuid(), (System.currentTimeMillis() - s.getTermination()) / 1000));
