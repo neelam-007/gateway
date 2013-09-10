@@ -1,6 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SafeXMLDecoder;
 import org.springframework.jdbc.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.orm.hibernate3.HibernateSystemException;
@@ -75,6 +76,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             // our own server side exceptions
             com.l7tech.server.policy.ServerPolicyException.class,
             com.l7tech.server.identity.ldap.BindOnlyLdapUserManager.BadUsernamePatternException.class,
+            SafeXMLDecoder.ClassFilterException.class,
             // java
             javax.naming.NamingException.class, // can contain non-serializable objects, see bug 4738
             // java internals
