@@ -1509,17 +1509,19 @@
         <constructor-arg index="0" ref="resourceEntryManager"/>
     </bean>
 
+    <bean id="httpSchemaSourceResolver" class="com.l7tech.server.communityschemas.HttpSchemaSourceResolver">
+        <constructor-arg index="0" ref="schemaConfiguration"/>
+        <constructor-arg index="1" ref="httpClientFactory"/>
+        <constructor-arg index="2" ref="resourceEntrySchemaSourceResolver"/>
+    </bean>
+
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
         <constructor-arg index="0" ref="schemaConfiguration"/>
         <constructor-arg index="1" ref="schemaMaintenanceTimer"/>
         <constructor-arg index="2">
             <list>
                 <ref bean="resourceEntrySchemaSourceResolver"/>
-                <bean class="com.l7tech.server.communityschemas.HttpSchemaSourceResolver">
-                    <constructor-arg index="0" ref="schemaConfiguration"/>
-                    <constructor-arg index="1" ref="httpClientFactory"/>
-                    <constructor-arg index="2" ref="resourceEntrySchemaSourceResolver"/>
-                </bean>
+                <ref bean="httpSchemaSourceResolver"/>
             </list>
         </constructor-arg>
         <constructor-arg index="3" ref="resourceEntrySchemaSourceResolver"/>
