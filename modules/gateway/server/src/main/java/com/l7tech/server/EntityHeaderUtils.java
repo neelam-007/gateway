@@ -241,6 +241,9 @@ public final class EntityHeaderUtils {
                 String rawIdProviderStr = eh.getExternalId().substring(0, sepIndex);
                 Goid idProvider = GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG, rawIdProviderStr);
                 String identityStr = eh.getExternalId().substring(sepIndex + 1);
+                //This is here in order to handle eternal entity references with oid's
+                // It will first check in the identity provider is an internal identity provider. if it is it will use the prefix from either the internal_user or _group table
+                // If its not and the id appears to be a long then it will use the prefix from the fed_user or fed_group table.
                 if (!ValidationUtils.isValidGoid(rawIdProviderStr, false)) {
                     if (rawIdProviderStr.equals(String.valueOf(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID))) {
                         // need to map user/group id.
