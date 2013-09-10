@@ -10,7 +10,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -18,8 +17,6 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * 
  */
 public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVariables, SetsVariables {
-    protected static final Logger logger = Logger.getLogger(SiteMinderAuthenticateAssertion.class.getName());
-
     public static final String DEFAULT_PREFIX = "siteminder";
 
     private String cookieSourceVar;
@@ -27,7 +24,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     private String prefix;
     private boolean isLastCredential = true;
     private String login;
-
 
     public String getLogin() {
         return login;
@@ -61,7 +57,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         this.useSMCookie = useSMCookie;
     }
 
-
     public String getPrefix() {
         return prefix;
     }
@@ -75,12 +70,14 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
     public String[] getVariablesUsed() {
         List<String> varsUsed = new ArrayList<>();
         varsUsed.add(prefix + ".smcontext");
+
         if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
             varsUsed.add(cookieSourceVar);
         }
+
         String[] refNames =  Syntax.getReferencedNames(/*cookieName, */login);
         varsUsed.addAll(Arrays.asList(refNames));
-        return varsUsed.toArray(new String[0]);
+        return varsUsed.toArray(new String[varsUsed.size()]);
     }
 
     //
@@ -94,7 +91,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT
