@@ -67,9 +67,9 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.address"), addressTextField, null);
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.hostName"), hostnameTextField, null);
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.hostConfiguration"), hostConfigurationTextField, null);
+        validator.ensureComboBoxSelection(RESOURCES.getString("property.siteminder.fipsMode"), fipsModeComboBox);
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.username"), userNameTextField, null);
         validator.ensureComboBoxSelection(RESOURCES.getString("property.siteminder.password"), securePasswordComboBox);
-        validator.ensureComboBoxSelection(RESOURCES.getString("property.siteminder.fipsMode"), fipsModeComboBox);
 
         securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
 

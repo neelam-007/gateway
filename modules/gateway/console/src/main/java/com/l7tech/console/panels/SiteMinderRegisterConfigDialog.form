@@ -101,7 +101,7 @@
               </grid>
             </constraints>
             <properties>
-              <text resource-bundle="com/l7tech/console/panels/resources/JdbcConnectionPropertiesDialog" key="label.password"/>
+              <text resource-bundle="com/l7tech/console/panels/resources/SiteMinderRegisterConfigDialog" key="label.siteminder.password"/>
             </properties>
           </component>
           <component id="69ee2" class="com.l7tech.console.panels.SecurePasswordComboBox" binding="securePasswordComboBox">

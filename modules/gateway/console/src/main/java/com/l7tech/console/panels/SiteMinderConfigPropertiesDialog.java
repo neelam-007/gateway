@@ -47,7 +47,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
     private static final int MAX_TABLE_COLUMN_NUM = 2;
     private static final int CLUSTER_THRESHOLD_MIN = 1;
-    private static final int CLUSTER_THRESHOLD_MAX = 1000;
+    private static final int CLUSTER_THRESHOLD_MAX = 100;
     private static final int CLUSTER_SERVER_CONN_MIN = 1;
     private static final int CLUSTER_SERVER_CONN_MAX = 3;
     private static final int CLUSTER_SERVER_CONN_STEP = 1;
@@ -143,19 +143,19 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         InputValidator okValidator =
                 new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.configuration.properties"));
 
-        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.name"), agentNameTextField, null);
         okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.configurationName"), configurationNameTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.name"), agentNameTextField, null);
         okValidator.constrainPasswordFieldToBeNonEmpty(RESOURCES.getString("property.agent.secret"), secretPasswordField);
+        okValidator.addRule(ipCheckBoxRule);
+        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
         okValidator.ensureComboBoxSelection(RESOURCES.getString("property.agent.fipsMode"), fipsModeComboBox);
         okValidator.addRule(clusterThresholdRule);
-        okValidator.addRule(ipCheckBoxRule);
 
-        testValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
         testValidator.constrainPasswordFieldToBeNonEmpty(RESOURCES.getString("property.agent.secret"), secretPasswordField);
+        testValidator.addRule(ipCheckBoxRule);
+        testValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
         testValidator.ensureComboBoxSelection(RESOURCES.getString("property.agent.fipsMode"), fipsModeComboBox);
         testValidator.addRule(clusterThresholdRule);
-        testValidator.addRule(ipCheckBoxRule);
 
         okValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -331,6 +331,11 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         });
     }
 
+    /**
+     * Assign model values to view.
+     *
+     * N.B. Security zone configuration is already handled in initialization.
+     */
     private void modelToView() {
         configurationNameTextField.setText(configuration.getName());
         agentNameTextField.setText(configuration.getAgentName());
@@ -347,6 +352,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         fipsModeComboBox.setSelectedItem(mode == null ? SiteMinderFipsModeOption.COMPAT : mode);
 
         enableFailoverCheckBox.setSelected(configuration.isNonClusterFailover());
+        clusterThresholdSpinner.setValue(configuration.getClusterThreshold());
         clusterSettingsMap.clear();
 
         if (configuration.getProperties() != null) {
@@ -372,8 +378,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         configuration.setFipsmode(mode.getCode());
         configuration.setNonClusterFailover(enableFailoverCheckBox.isSelected());
         configuration.setClusterThreshold((Integer) clusterThresholdSpinner.getValue());
-        configuration.setProperties(clusterSettingsMap);
         configuration.setSecurityZone(zoneControl.getSelectedZone());
+        configuration.setProperties(clusterSettingsMap);
     }
 
     private void initClusterSettingsTable() {

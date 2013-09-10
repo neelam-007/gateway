@@ -33,7 +33,6 @@ public class SiteMinderConfigurationWindow extends JDialog {
     private static final Logger logger = Logger.getLogger(SiteMinderConfigurationWindow.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigurationManagerWindow");
 
-
     private JPanel mainPanel;
     private JButton addButton;
     private JButton editButton;
@@ -297,6 +296,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
                         //Save the connection
                         SiteMinderAdmin admin = getSiteMinderAdmin();
                         if (admin == null) return;
+
                         try{
                             admin.saveSiteMinderConfiguration(configuration);
                         } catch (UpdateException | SaveException ex) {
@@ -304,7 +304,6 @@ public class SiteMinderConfigurationWindow extends JDialog {
                                     resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(ex),
                                     ex,
                                     reedit);
-                            return;
                         }
                     }
                 } finally {
