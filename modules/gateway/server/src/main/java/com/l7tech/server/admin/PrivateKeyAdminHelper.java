@@ -250,7 +250,7 @@ public class PrivateKeyAdminHelper {
      * @param keyStoreType  the type of key store, eg "PKCS12" or "JKS"
      * @param keyStorePass The keystore password, or null to pass null as the second argument to KeyStore.load()
      * @param entryPass  The per-entry password protecting the private key entry, or null to pass null as the second argument to KeyStore.getKey()
-     * @param entryAlias The alias of the key in the keystore
+     * @param entryAlias The alias of the key in the keystore, or null to use the first entry found
      * @return The newly imported key
      */
     public SsgKeyEntry doImportKeyFromKeyStoreFile( final Goid keystoreId,
@@ -260,12 +260,20 @@ public class PrivateKeyAdminHelper {
                                               String keyStoreType, 
                                               @Nullable final char[] keyStorePass, 
                                               final char[] entryPass, 
-                                              String entryAlias )
+                                              @Nullable String entryAlias )
             throws KeyStoreException, NoSuchProviderException, IOException, NoSuchAlgorithmException, CertificateException,
                 AliasNotFoundException, MultipleAliasesException, UnrecoverableKeyException, SaveException, InterruptedException, ExecutionException, ObjectNotFoundException
     {
-        KeyStore inks = createKeyStoreForParsingKeyStoreFile(keyStoreType);
-        inks.load(new ByteArrayInputStream(keyStoreBytes), keyStorePass);
+        final KeyStore inks;
+        //noinspection CaughtExceptionImmediatelyRethrown
+        try {
+            inks = createKeyStoreForParsingKeyStoreFile(keyStoreType);
+            inks.load(new ByteArrayInputStream(keyStoreBytes), keyStorePass);
+        } catch (KeyStoreException|IOException|NoSuchAlgorithmException|CertificateException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new KeyStoreException("Unable to read KeyStore: " + ExceptionUtils.getMessage(e), e);
+        }
 
         if (entryAlias == null) {
             List<String> aliases = new ArrayList<String>( Collections.list( inks.aliases() ));

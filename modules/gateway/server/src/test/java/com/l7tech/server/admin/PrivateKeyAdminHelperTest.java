@@ -1,6 +1,7 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.TestKeys;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
@@ -12,6 +13,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.NotFuture;
@@ -72,6 +74,13 @@ public class PrivateKeyAdminHelperTest {
                         PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType(specialKeyType));
             }
         });
+    }
+
+    @Test(expected = KeyStoreException.class)
+    @BugId("SSM-4370")
+    public void testImportCertificateAsKeyStore() throws Exception {
+        byte[] certFileBytes = TestKeys.getCert(TestKeys.RSA_1024_CERT_X509_B64).getEncoded();
+        helper.doImportKeyFromKeyStoreFile(GOID, "newalias", null, certFileBytes, "PKCS12", "password".toCharArray(), "password".toCharArray(), null);
     }
 
     @Test
