@@ -246,7 +246,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
             } else if (EntityType.GENERIC == type) {
-                return (ET) genericEntityManager.findByGenericClassAndPrimaryKey((Class<GenericEntity>)clazz, (pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.GENERIC, pk.toString()));
+                return (ET) genericEntityManager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.GENERIC, pk.toString()));
             } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
                 try {
                     tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());
