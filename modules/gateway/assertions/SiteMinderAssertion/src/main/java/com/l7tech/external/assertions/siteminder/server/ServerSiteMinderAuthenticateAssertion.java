@@ -16,6 +16,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -108,11 +109,13 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         }
         else{
             String userName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getLogin(), variableMap, getAudit());
-            List<LoginCredentials> creds = context.getCredentials();
-            for(LoginCredentials cred : creds){
-                if(cred.getName().equals(userName)){
-                    loginCredentials = cred;
-                    break;
+            if(StringUtils.isNotBlank(userName)){
+                List<LoginCredentials> creds = context.getCredentials();
+                for(LoginCredentials cred : creds){
+                    if(userName.equals(cred.getName())){
+                        loginCredentials = cred;
+                        break;
+                    }
                 }
             }
         }
