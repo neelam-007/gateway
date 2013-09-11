@@ -64,6 +64,16 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         identityProviderFactory = ctx.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        checkIdentityProviderExists();
+    }
+
+    private void checkIdentityProviderExists() throws PolicyAssertionException {
+        try {
+            if( identityProviderFactory.getProvider(assertion.getLdapProviderOid()) ==null)
+                throw new PolicyAssertionException(assertion, "Identity Provider Instance not Found");
+        } catch (FindException e) {
+            throw new PolicyAssertionException(assertion, ExceptionUtils.getMessage(e));
+        }
     }
 
     @Override
@@ -131,6 +141,7 @@ public class ServerNtlmAuthenticationAssertion extends ServerHttpCredentialSourc
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        checkIdentityProviderExists();
         AssertionStatus status = super.checkRequest(context);
         if (status != AssertionStatus.NONE)
             return status;

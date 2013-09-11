@@ -88,6 +88,12 @@ public class ServerNtlmAuthenticationAssertionTest {
         fixture = new TestServerNtlmAuthenticationAssertion(assertion, applicationContext);
     }
 
+    @Test(expected = PolicyAssertionException.class)
+    public void testInvalidIdentityProvider() throws Exception {
+       assertion.setLdapProviderOid(new Goid(1,1));
+       assertion.setLdapProviderName("UNKNOWN");
+       new ServerNtlmAuthenticationAssertion(assertion, applicationContext);
+    }
 
     @Test
     public void testNoAuthentication() throws Exception {
@@ -155,12 +161,12 @@ public class ServerNtlmAuthenticationAssertionTest {
         assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
     }
 
-    @Test
+    @Test(expected = PolicyAssertionException.class)
     public void testInvalidProvider() throws Exception {
         //set invalid provider
         assertion.setLdapProviderOid(new Goid(0,9999999));
         sendNegotiateMsg("NTLM");
-        assertTrue(fixture.checkRequest(context) == AssertionStatus.AUTH_FAILED);
+        fixture.checkRequest(context);
     }
 
     @Test
