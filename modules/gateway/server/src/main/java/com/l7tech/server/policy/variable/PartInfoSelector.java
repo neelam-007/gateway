@@ -5,6 +5,7 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -59,8 +60,11 @@ class PartInfoSelector implements ExpandVariables.Selector<PartInfo> {
     private static final String HEADER_PREFIX = "header.";
     private static final String SIZE_NAME = "size";
 
-    private static final String PROP_PART_MAX_SIZE = "com.l7tech.server.policy.variable.partInfoBodyMaxSize";
-    private static final int PART_MAX_SIZE = ConfigFactory.getIntProperty( PROP_PART_MAX_SIZE, 1024 * 1024 );
+    private static final int DEFAULT_PART_MAX_SIZE = 1024 * 1024;
+
+    private static int getPartMaxSize() {
+        return ConfigFactory.getIntProperty(ServerConfigParams.PARAM_TEMPLATE_PART_MAX_SIZE, DEFAULT_PART_MAX_SIZE);
+    }
 
     private String name( final String root, final String suffix ) {
         String name = root +  "." + suffix;
@@ -79,7 +83,7 @@ class PartInfoSelector implements ExpandVariables.Selector<PartInfo> {
         try {
             final ContentTypeHeader contentTypeHeader = partInfo.getContentType();
             if ( contentTypeHeader.isTextualContentType() ) {
-                byte[] bytes = IOUtils.slurpStream( in = partInfo.getInputStream(false), PART_MAX_SIZE );
+                byte[] bytes = IOUtils.slurpStream( in = partInfo.getInputStream(false), getPartMaxSize() );
                 return new Selection(new String(bytes, contentTypeHeader.getEncoding()));
             } else {
                 String msg = handler.handleBadVariable("Part is not text");

@@ -77,6 +77,9 @@ import static org.junit.Assert.*;
 @SuppressWarnings({"JavaDoc"})
 public class ServerVariablesTest {
     private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
+
+    public static final String PROP_TEMPLATE_MAX_SIZE = "com.l7tech.server.policy.variable.partInfoBodyMaxSize";
+
     private TestAudit auditor;
     private static final String REQUEST_BODY = "<myrequest/>";
     private static final String RESPONSE_BODY = "<myresponse/>";
@@ -96,7 +99,8 @@ public class ServerVariablesTest {
     @AfterClass
     public static void cleanupSystemProperties() {
         SyspropUtil.clearProperties(
-            Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT
+            Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT,
+            PROP_TEMPLATE_MAX_SIZE
         );
     }
 
@@ -999,6 +1003,23 @@ public class ServerVariablesTest {
         expandAndCheck(context, "${ssgnode.build.version.major}", BuildInfo.getProductVersionMajor());
         expandAndCheck(context, "${ssgnode.build.version.minor}", BuildInfo.getProductVersionMinor());
         expandAndCheck(context, "${ssgnode.build.version.subminor}", BuildInfo.getProductVersionSubMinor());
+    }
+
+    @Test
+    public void testMessagePartMaxSize() throws Exception {
+        final PolicyEnforcementContext context = context();
+        expandAndCheck(context, "${request.parts.1.body}", "<myrequest/>");
+        expandAndCheck(context, "${response.parts.1.body}", "<myresponse/>");
+
+        SyspropUtil.setProperty(PROP_TEMPLATE_MAX_SIZE, "12");
+
+        expandAndCheck(context, "${request.parts.1.body}", "<myrequest/>");
+        expandAndCheck(context, "${response.parts.1.body}", "");
+
+        SyspropUtil.setProperty(PROP_TEMPLATE_MAX_SIZE, "5");
+
+        expandAndCheck(context, "${request.parts.1.body}", "");
+        expandAndCheck(context, "${response.parts.1.body}", "");
     }
 
     @Test

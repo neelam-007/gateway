@@ -105,6 +105,7 @@ public interface ServerConfigParams {
     String PARAM_POLICY_VALIDATION_MAX_CONCURRENCY = "serverPolicyValidation.maxConcurrency";
     String PARAM_POLICY_VERSIONING_MAX_REVISIONS = "policyVersioningMaxRevisions";
     String PARAM_TEMPLATE_STRICTMODE = "template.strictMode";
+    String PARAM_TEMPLATE_PART_MAX_SIZE = "template.partBodyMaxSize";
     String PARAM_TEMPLATE_MULTIVALUE_DELIMITER = "template.defaultMultivalueDelimiter";
     String PARAM_SOAP_REJECT_MUST_UNDERSTAND = "soapRejectMustUnderstand";
     String PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE = "authCacheSuccessCacheSize";
