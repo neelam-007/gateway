@@ -288,7 +288,7 @@ public class PublishServiceWizard extends Wizard {
     }
 
     private void handlePublishError( final Exception e ) {
-        logger.log( Level.WARNING, "Cannot publish service as is", e);
+        logger.log( Level.WARNING, "Cannot publish service as is", ExceptionUtils.getDebugException(e));
         if (e instanceof PermissionDeniedException) {
             PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
         } else {
