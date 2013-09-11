@@ -10,18 +10,12 @@ import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,67 +56,15 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
         actionComboBox.setModel(new DefaultComboBoxModel<>(ACTIONS));
 
-        prefixTargetVariablePanel.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        agentComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        actionComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        actionComboBox.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {
-                enableDisableComponents();
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                enableDisableComponents();
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        resourceTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                enableDisableComponents();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                enableDisableComponents();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                enableDisableComponents();
-            }
-        });
-
+        inputValidator.ensureComboBoxSelection("Agent ID", agentComboBox);
         inputValidator.constrainTextFieldToBeNonEmpty("Protected Resource", resourceTextField, null);
-        inputValidator.ensureComboBoxSelection("Action", actionComboBox);
+
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (0 == getSelectedAction().trim().length()) {
+                String action = getSelectedAction();
+
+                if (action == null || action.length() == 0) {
                     return "The Action field must not be empty.";
                 }
 
@@ -130,7 +72,18 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             }
         });
 
-        enableDisableComponents();
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (StringUtils.isBlank(prefixTargetVariablePanel.getVariable())) {
+                    return "SiteMinder Variable Prefix must not be empty!";
+                } else if(!VariableMetadata.isNameValid(prefixTargetVariablePanel.getVariable())) {
+                    return "SiteMinder Variable Prefix must have valid name";
+                }
+
+                return null;
+            }
+        });
     }
 
     /**
@@ -150,26 +103,13 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         }
     }
 
-    private void enableDisableComponents() {
-        String action = getSelectedAction();
-
-        getOkButton().setEnabled(!isReadOnly() &&
-                prefixTargetVariablePanel.isEntryValid() &&
-                action != null &&
-                action.length() > 0 &&
-                !resourceTextField.getText().isEmpty() &&
-                agentComboBox.getSelectedIndex() > -1 &&
-                agentComboBox.getSelectedItem() != null
-        );
-    }
-
     private String getSelectedAction() {
         String selectedAction = null;
 
         if (actionComboBox.getSelectedIndex() > -1) {
             selectedAction = (String) actionComboBox.getSelectedItem();
         } else if (actionComboBox.getEditor().getItem() != null) {
-            selectedAction = ((JTextField) actionComboBox.getEditor().getEditorComponent()).getText();
+            selectedAction = ((JTextField) actionComboBox.getEditor().getEditorComponent()).getText().trim();
         }
 
         return selectedAction;
@@ -233,7 +173,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         assertion.setAgentGoid(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getGoid());
         assertion.setAgentId(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getAgentId());
         assertion.setProtectedResource(resourceTextField.getText().trim());
-        assertion.setAction(((String) actionComboBox.getSelectedItem()).trim());
+        assertion.setAction(getSelectedAction());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
 
         return assertion;

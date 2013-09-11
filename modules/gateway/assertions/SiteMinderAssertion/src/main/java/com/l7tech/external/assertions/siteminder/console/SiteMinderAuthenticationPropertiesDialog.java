@@ -7,11 +7,10 @@ import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion
 
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
-
+import com.l7tech.policy.variable.VariableMetadata;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -41,68 +40,60 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     protected void initComponents() {
         super.initComponents();
+
         siteminderPrefixVariablePanel.setVariable(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
         siteminderPrefixVariablePanel.setDefaultVariableOrPrefix(SiteMinderAuthenticateAssertion.DEFAULT_PREFIX);
-
-        siteminderPrefixVariablePanel.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                enableDisableComponents();
-            }
-        });
-
         useLastCredentialsRadioButton.setSelected(true);
-        useLastCredentialsRadioButton.addActionListener(new ActionListener() {
+
+        ActionListener buttonSwitchListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableComponents();
             }
-        });
+        };
 
-        specifyCredentialsRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableComponents();
-            }
-        });
+        useLastCredentialsRadioButton.addActionListener(buttonSwitchListener);
+        specifyCredentialsRadioButton.addActionListener(buttonSwitchListener);
+        authenticateViaSiteMinderCookieCheckBox.addActionListener(buttonSwitchListener);
 
-        authenticateViaSiteMinderCookieCheckBox.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        cookieVariablePanel.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                enableDisableComponents();
-            }
-        });
-
-        inputValidator.constrainTextField(credentialsTextField, new InputValidator.ValidationRule() {
+        inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (specifyCredentialsRadioButton.isSelected()) {
-                    if (credentialsTextField.getText().isEmpty()) {
-                        return "User credentials must not be empty";
-                    }
+                if (StringUtils.isBlank(siteminderPrefixVariablePanel.getVariable())) {
+                    return "SiteMinder Variable Prefix must not be empty!";
+                } else if(!VariableMetadata.isNameValid(siteminderPrefixVariablePanel.getVariable())) {
+                    return "SiteMinder Variable Prefix must have valid name";
                 }
+
                 return null;
             }
         });
 
-        inputValidator.attachToButton(getOkButton(), super.createOkAction());
+        inputValidator.constrainTextFieldToBeNonEmpty("Specify Credentials", credentialsTextField, null);
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (cookieVariablePanel.isEnabled()) {
+                    if (StringUtils.isBlank(cookieVariablePanel.getVariable())) {
+                        return "SSO Token Context Variable must not be empty!";
+                    } else if(!VariableMetadata.isNameValid(cookieVariablePanel.getVariable())) {
+                        return "SSO Token Context Variable must have valid name";
+                    }
+                }
+
+                return null;
+            }
+        });
 
         enableDisableComponents();
+
         pack();
     }
 
     private void enableDisableComponents() {
         cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
         credentialsTextField.setEnabled(specifyCredentialsRadioButton.isSelected());
-        getOkButton().setEnabled(siteminderPrefixVariablePanel.isEntryValid() &&
-                (!cookieVariablePanel.isEnabled() || cookieVariablePanel.isEntryValid()));
     }
     /**
      * Configure the view with the data from the specified assertion bean.
@@ -124,6 +115,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         useLastCredentialsRadioButton.setSelected(assertion.isLastCredential());
         specifyCredentialsRadioButton.setSelected(!assertion.isLastCredential());
         credentialsTextField.setText(assertion.getLogin());
+
+        enableDisableComponents();
     }
 
     /**
@@ -139,6 +132,12 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
      */
     @Override
     public SiteMinderAuthenticateAssertion getData(SiteMinderAuthenticateAssertion assertion) throws ValidationException {
+        String validationErrorMessage = inputValidator.validate();
+
+        if (null != validationErrorMessage) {
+            throw new ValidationException(validationErrorMessage);
+        }
+
         assertion.setUseSMCookie(authenticateViaSiteMinderCookieCheckBox.isSelected());
         assertion.setCookieSourceVar(cookieVariablePanel.getVariable());
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
@@ -158,11 +157,5 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     @Override
     protected JPanel createPropertyPanel() {
         return propertyPanel;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected ActionListener createOkAction() {
-        // returns a no-op action so we can add our own Ok listener
-        return new RunOnChangeListener();
     }
 }
