@@ -58,6 +58,11 @@ public class CertDetailsPanel extends WizardStepPanel {
         return false;
     }
 
+    @Override
+    public boolean canAdvance() {
+        return cert != null;
+    }
+
     /**
      * Provide the description for the step being taken on this panel.
      *
