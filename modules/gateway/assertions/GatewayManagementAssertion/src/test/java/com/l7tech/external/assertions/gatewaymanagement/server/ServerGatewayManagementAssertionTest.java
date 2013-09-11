@@ -3208,6 +3208,127 @@ public class ServerGatewayManagementAssertionTest {
         final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
     }
 
+
+    @BugId("SSG-7634")
+    @Test
+    public void testPolicyImportWithInstructionsPre80() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References>\n" +
+                        "        &lt;IDProviderReference RefType=\"com.l7tech.console.policy.exporter.IdProviderReference\">\n" +
+                        "            &lt;OID&gt;200&lt;/OID&gt;\n" +
+                        "            &lt;Name&gt;Internal Identity Provider&lt;/Name&gt;\n" +
+                        "            &lt;TypeVal&gt;2&lt;/TypeVal&gt;\n" +
+                        "        &lt;/IDProviderReference&gt;\n" +
+                        "        &lt;JdbcConnectionReference RefType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\"&gt;\n" +
+                        "            &lt;ConnectionName&gt;Invalid Connection&lt;/ConnectionName&gt;\n" +
+                        "            &lt;DriverClass&gt;invalid&lt;/DriverClass&gt;\n" +
+                        "            &lt;JdbcUrl&gt;invalid&lt;/JdbcUrl&gt;\n" +
+                        "            &lt;UserName&gt;invalid&lt;/UserName&gt;\n" +
+                        "        &lt;/JdbcConnectionReference&gt;\n" +
+                        "        &lt;ExternalSchema\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" schemaLocation=\"invalid.xsd\" targetNamespace=\"urn:invalid\"/&gt;\n" +
+                        "        &lt;IncludedPolicyReference\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\"\n" +
+                        "            guid=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" included=\"true\"\n" +
+                        "            name=\"Imported Policy Include Fragment\" soap=\"false\" type=\"INCLUDE_FRAGMENT\"&gt;\n" +
+                        "            &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "                &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "                    &lt;L7p:AuditDetailAssertion&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"Policy Fragment: Imported Policy Include Fragment\"/&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"This extra assertion makes the policy conflict\"/&gt;\n" +
+                        "                    &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                        "                &lt;/wsp:All&gt;\n" +
+                        "            &lt;/wsp:Policy&gt;\n" +
+                        "        &lt;/IncludedPolicyReference&gt;\n" +
+                        "        &lt;TrustedCertificateReference RefType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"&gt;\n" +
+                        "            &lt;OID&gt;129630208&lt;/OID&gt;\n" +
+                        "            &lt;CertificateName&gt;Invalid&lt;/CertificateName&gt;\n" +
+                        "            &lt;CertificateIssuerDn&gt;CN=Invalid&lt;/CertificateIssuerDn&gt;\n" +
+                        "            &lt;CertificateSerialNum&gt;997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
+                        "        &lt;/TrustedCertificateReference&gt;\n" +
+                        "        &lt;JMSConnectionReference RefType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"&gt;\n" +
+                        "            &lt;OID&gt;33&lt;/OID&gt;\n" +
+                        "            &lt;InitialContextFactoryClassname&gt;com.context.OtherClassname&lt;/InitialContextFactoryClassname&gt;\n" +
+                        "            &lt;JndiUrl&gt;ldap://host/&lt;/JndiUrl&gt;\n" +
+                        "            &lt;QueueFactoryUrl&gt;qcf2&lt;/QueueFactoryUrl&gt;\n" +
+                        "            &lt;TopicFactoryUrl/&gt;\n" +
+                        "            &lt;DestinationFactoryUrl/&gt;\n" +
+                        "            &lt;Name&gt;Invalid Test Endpoint&lt;/Name&gt;\n" +
+                        "            &lt;DestinationName&gt;Invalid Test Endpoint&lt;/DestinationName&gt;\n" +
+                        "        &lt;/JMSConnectionReference&gt;\n" +
+                        "        &lt;PrivateKeyReference RefType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"&gt;\n" +
+                        "            &lt;IsDefaultKey&gt;false&lt;/IsDefaultKey&gt;\n" +
+                        "            &lt;KeystoreOID&gt;2&lt;/KeystoreOID&gt;\n" +
+                        "            &lt;KeyAlias&gt;invalid&lt;/KeyAlias&gt;\n" +
+                        "        &lt;/PrivateKeyReference&gt;\n" +
+                        "    &lt;/exp:References&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:AuditAssertion/&gt;\n" +
+                        "            &lt;L7p:Authentication&gt;\n" +
+                        "                &lt;L7p:IdentityProviderOid longValue=\"200\"/&gt;\n" +
+                        "            &lt;/L7p:Authentication&gt;\n" +
+                        "            &lt;L7p:JdbcQuery&gt;\n" +
+                        "                &lt;L7p:ConnectionName stringValue=\"Invalid Connection\"/&gt;\n" +
+                        "                &lt;L7p:SqlQuery stringValue=\"SELECT 1\"/&gt;\n" +
+                        "            &lt;/L7p:JdbcQuery&gt;\n" +
+                        "            &lt;L7p:SchemaValidation&gt;\n" +
+                        "                &lt;L7p:ResourceInfo globalResourceInfo=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Id stringValue=\"invalid.xsd\"/&gt;\n" +
+                        "                &lt;/L7p:ResourceInfo&gt;\n" +
+                        "                &lt;L7p:Target target=\"REQUEST\"/&gt;\n" +
+                        "            &lt;/L7p:SchemaValidation&gt;\n" +
+                        "            &lt;L7p:Include&gt;\n" +
+                        "                &lt;L7p:PolicyGuid stringValue=\"006ece03-a64c-4c17-93cf-ce49e7265daa\"/&gt;\n" +
+                        "            &lt;/L7p:Include&gt;\n" +
+                        "            &lt;L7p:WsSecurity&gt;\n" +
+                        "                &lt;L7p:RecipientTrustedCertificateOid longValue=\"129630208\"/&gt;\n" +
+                        "            &lt;/L7p:WsSecurity&gt;\n" +
+                        "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
+                        "                &lt;L7p:EndpointName stringValue=\"Invalid Test Endpoint\"/&gt;\n" +
+                        "                &lt;L7p:EndpointOid boxedLongValue=\"33\"/&gt;\n" +
+                        "                &lt;L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:RequestJmsMessagePropertyRuleSet&gt;\n" +
+                        "                &lt;L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:ResponseJmsMessagePropertyRuleSet&gt;\n" +
+                        "            &lt;/L7p:JmsRoutingAssertion&gt;\n" +
+                        "            &lt;L7p:WssSignElement&gt;\n" +
+                        "                &lt;L7p:KeyAlias stringValue=\"invalid\"/&gt;\n" +
+                        "                &lt;L7p:NonDefaultKeystoreId longValue=\"2\"/&gt;\n" +
+                        "                &lt;L7p:UsesDefaultKeyStore booleanValue=\"false\"/&gt;\n" +
+                        "            &lt;/L7p:WssSignElement&gt;\n" +
+                        "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource>\n" +
+                        "<PolicyReferenceInstructions>\n" +
+                        "    <PolicyReferenceInstruction type=\"Map\"    referenceType=\"com.l7tech.console.policy.exporter.IdProviderReference\"     referenceId=\"200\" mappedReferenceId=\"0000000000000000fffffffffffffffe\"/>\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:70ab8caf-35e4-3c3f-a3ae-3685e4b296e0\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"129630208\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"    referenceId=\"33\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"     referenceId=\"2:invalid\" />\n" +
+                        "</PolicyReferenceInstructions>\n" +
+                        "</PolicyImportContext></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
+        final Element importedPolicyRef = XmlUtil.findExactlyOneChildElementByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
+
+        assertEquals("Imported policy ref GUID", "006ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
+        assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+    }
+
     @Test
     public void testPolicyImportExistingPolicyReference() throws Exception {
         final String message =

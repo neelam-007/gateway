@@ -46,10 +46,7 @@ import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import com.sun.istack.Nullable;
@@ -926,7 +923,7 @@ public class PolicyHelper {
 
                     boolean handled = false;
                     for ( final PolicyReferenceInstruction instruction : instructions ) {
-                        if ( type.equals( instruction.getReferenceType() ) && id.equals( instruction.getReferenceId() ) ) {
+                        if ( type.equals( instruction.getReferenceType() ) && id.equals(handleReferenceId(instruction)) ) {
                             switch ( instruction.getPolicyReferenceInstructionType() ) {
                                 case DELETE:
                                     handled = reference.setLocalizeDelete();
@@ -971,6 +968,27 @@ public class PolicyHelper {
                     }
                 }
                 return unresolvedReferences.isEmpty();
+            }
+
+            private String handleReferenceId(PolicyReferenceInstruction instruction) {
+                // map reference id if it smells like an old id
+                if(!ValidationUtils.isValidGoid(instruction.getReferenceId(),false) && ValidationUtils.isValidLong(instruction.getReferenceId(),false,Long.MIN_VALUE,Long.MAX_VALUE))
+                {
+                    if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IdProviderReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,instruction.getReferenceId()).toString();
+                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.FederatedIdProviderReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,instruction.getReferenceId()).toString();
+                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IncludedPolicyReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.POLICY,instruction.getReferenceId()).toString();
+                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.JMSEndpointReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.JMS_ENDPOINT,instruction.getReferenceId()).toString();
+                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.TrustedCertReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT,instruction.getReferenceId()).toString();
+                    }else if(instruction.getReferenceType().equals("com.l7tech.external.assertions.mqnative.MqNativeExternalReference")){
+                        return GoidUpgradeMapper.mapId(EntityType.SSG_ACTIVE_CONNECTOR,instruction.getReferenceId()).toString();
+                    }
+                }
+                return instruction.getReferenceId();
             }
 
             @Override
