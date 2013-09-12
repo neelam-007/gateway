@@ -7,12 +7,15 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.identity.IdProviderConfigUpgradeHelper;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.email.EmailListenerManager;
@@ -24,6 +27,7 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -42,7 +46,6 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
         JmsConnectionManager jmsConnectionManager = getBean("jmsConnectionManager", JmsConnectionManager.class);
         EmailListenerManager emailListenerManager = getBean("emailListenerManager", EmailListenerManager.class);
         IdentityProviderConfigManager identityProviderConfigManager = getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
-        TrustedCertManager trustedCertManager = getBean("trustedCertManager", TrustedCertManager.class);
 
         try {
             for(SsgConnector ssgConnector : ssgConnectorManager.findAll()){
@@ -119,10 +122,25 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
 
         try {
             for (IdentityProviderConfig idProviderConfig : identityProviderConfigManager.findAll()) {
+                boolean updated = false;
                 long[] oids = IdProviderConfigUpgradeHelper.getProperty(idProviderConfig, "trustedCertOids");
                 if (oids != null) {
                     final Goid[] goids = GoidUpgradeMapper.mapOids(EntityType.TRUSTED_CERT, ArrayUtils.box(oids));
                     IdProviderConfigUpgradeHelper.setProperty(idProviderConfig, FederatedIdentityProviderConfig.PROP_CERT_GOIDS, goids);
+                    updated = true;
+                }
+                if(IdentityProviderType.LDAP.toVal() == idProviderConfig.getTypeVal()){
+                    // upgrade "service.passwordOid" NTLM configuration
+                    LdapIdentityProviderConfig ldap = (LdapIdentityProviderConfig)idProviderConfig;
+                    Map<String, String> ntlmProperties =  ldap.getNtlmAuthenticationProviderProperties();
+                    if(ntlmProperties.containsKey("service.passwordOid")){
+                        final Goid passwordGoid = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD,ntlmProperties.get("service.passwordOid"));
+                        ntlmProperties.put("service.passwordOid",passwordGoid.toString());
+                        ldap.setNtlmAuthenticationProviderProperties(ntlmProperties);
+                        updated = true;
+                    }
+                }
+                if(updated){
                     try {
                         identityProviderConfigManager.update(idProviderConfig);
                     } catch (UpdateException e) {
