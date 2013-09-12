@@ -68,6 +68,9 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
         else if(lname.equals("ssotoken")){
             return new Selection(context.getSsoToken());
         }
+        else if(lname.equals("transactionid")) {
+            return new Selection(context.getTransactionId());
+        }
         else if(lname.startsWith("authschemes")){
             List<SiteMinderContext.AuthenticationScheme> authSchemeList = context.getAuthSchemes();
             if(lname.equals("authschemes.length")){

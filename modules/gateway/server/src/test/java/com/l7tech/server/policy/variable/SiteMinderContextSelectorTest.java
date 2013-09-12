@@ -23,6 +23,7 @@ import static junit.framework.Assert.assertTrue;
 public class SiteMinderContextSelectorTest {
 
     public static final String SSO_TOKEN = "abcdefghijklmnopqrstuvwxyz01234567890==";
+    public static final String TRANSACTION_ID = "12345656790transactionid";
     SiteMinderContext context;
     SiteMinderContextSelector fixture;
     List<SiteMinderContext.AuthenticationScheme> authschemes;
@@ -38,6 +39,7 @@ public class SiteMinderContextSelectorTest {
         attrs.add(new Pair<String, Object>("ATTR_USERNAME", "User Name"));
         context.setAttrList(attrs);
         context.setSsoToken(SSO_TOKEN);
+        context.setTransactionId(TRANSACTION_ID);
         authschemes = new ArrayList<>();
         authschemes.add(SiteMinderContext.AuthenticationScheme.FORM);
         authschemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
@@ -100,6 +102,13 @@ public class SiteMinderContextSelectorTest {
     public void shouldReturnAuthenticationSchemeLength() throws Exception {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "authschemes.length", mockSyntaxErrorHandler, false);
         assertEquals("4", actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnTransactionId() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "transactionid", mockSyntaxErrorHandler, false);
+        assertEquals(TRANSACTION_ID, actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
 
