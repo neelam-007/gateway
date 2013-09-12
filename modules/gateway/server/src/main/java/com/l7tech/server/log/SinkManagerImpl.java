@@ -518,11 +518,25 @@ public class SinkManagerImpl
      * Remove any startup aware Handlers
      */
     private void closeMarkedHandlers() {
-        Logger rootLogger = Logger.getLogger("");
-        for ( Handler handler : rootLogger.getHandlers() )  {
-            if ( handler instanceof StartupAwareHandler ) {
-                rootLogger.removeHandler( handler );
-                handler.close();
+        //remove them from the root logger.
+        removeStartupAwareHandlers(Logger.getLogger(""));
+        // Starting with jdk 1.7_u25 the initial root logger is in a different context from the root logger used by the ssg
+        // We also need to remove any StartupAwareHandler handlers from the initial root context otherwise the lock on the
+        // initial logging file will remain and a different one will be used.
+        removeStartupAwareHandlers(JdkLogConfig.getInitialRootLogger());
+    }
+
+    /**
+     * Removes StartupAwareHandler's from the given logger.
+     * @param logger the logger to remove StartupAwareHandler's from.
+     */
+    private void removeStartupAwareHandlers(Logger logger) {
+        if(logger != null){
+            for ( Handler handler : logger.getHandlers() )  {
+                if ( handler instanceof StartupAwareHandler) {
+                    logger.removeHandler( handler );
+                    handler.close();
+                }
             }
         }
     }

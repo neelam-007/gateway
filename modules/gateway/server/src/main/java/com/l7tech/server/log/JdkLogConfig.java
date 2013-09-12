@@ -7,6 +7,7 @@ import com.l7tech.util.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.*;
 
 /**
@@ -174,6 +175,8 @@ public class JdkLogConfig {
 
         if ( !logFileConfigurations.isEmpty() ) {
             Logger rootLogger = Logger.getLogger("");
+            //Save the root logger that was used.
+            initialRootLogger.set(rootLogger);
             for ( LogFileConfiguration logFileConfiguration : logFileConfigurations ) {
                 try {
                     rootLogger.addHandler( logFileConfiguration.buildFileHandler() );
@@ -182,6 +185,20 @@ public class JdkLogConfig {
                 }
             }
         }
+    }
+
+    // Starting with jdk 1.7_u25 the are 2 different loggerContexts created one when the server is starting up and
+    // one is created when the application context is refreshed. Because of this there will be two root loggers, one in
+    // each context. Once the SinkManager is initialized it will need to remove any StartupAwareHandler from the root
+    // loggers and so will need to access the initial root logger to remove this.
+    private static final AtomicReference<Logger> initialRootLogger = new AtomicReference<>();
+
+    /**
+     * Returns the root logger used when the server starts up. (Before the application context is created)
+     * @return The root logger used when the server starts up
+     */
+    public static Logger getInitialRootLogger(){
+        return initialRootLogger.get();
     }
 
     /**
