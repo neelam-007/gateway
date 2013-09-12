@@ -20,7 +20,6 @@ public interface SiteMinderConfig {
     static final int DEFAULT_CONNECTION_STEP = 1;
     static final int DEFAULT_TIMEOUT = 75;
 
-    public String getAgentName();
 
     public String getAddress();
 

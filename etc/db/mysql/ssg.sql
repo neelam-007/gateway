@@ -1082,7 +1082,6 @@ CREATE TABLE siteminder_configuration (
   goid binary(16) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
-  agent_name varchar(256) NOT NULL,
   address varchar(128) NOT NULL,
   secret varchar(4096) NOT NULL,
   ipcheck boolean DEFAULT false NOT NULL,

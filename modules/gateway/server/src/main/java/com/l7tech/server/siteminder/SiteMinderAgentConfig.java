@@ -101,11 +101,6 @@ public class SiteMinderAgentConfig implements SiteMinderConfig {
     }
 
     @Override
-    public String getAgentName() {
-        return config.getAgentName();
-    }
-
-    @Override
     public String getAddress() {
         return config.getAddress();
     }

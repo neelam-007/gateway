@@ -7,7 +7,7 @@ import com.ca.siteminder.SiteMinderHighLevelAgent;
 
 public class SiteMinderHighLevelAgentStub extends SiteMinderHighLevelAgent {
     @Override
-    public boolean checkProtected(String userIp, String resource, String action, SiteMinderContext context) throws SiteMinderApiClassException {
+    public boolean checkProtected(String userIp, String smAgentName, String resource, String action, SiteMinderContext context) throws SiteMinderApiClassException {
         return true;
     }
 

@@ -32,7 +32,6 @@ import java.util.Map;
 @Table(name="siteminder_configuration")
 public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements Comparable {
 
-    private String agentName;
     private String address;
     private String secret;
     private Boolean ipcheck;
@@ -49,7 +48,6 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
 
     public SiteMinderConfiguration() {
         _name = "";
-        agentName = "";
         address = "";
         secret = "";
         ipcheck = false;
@@ -69,17 +67,6 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     @Transient
     public String getName() {
         return super.getName();
-    }
-
-    @NotNull
-    @Size(min=1,max=256)
-    @Column(name="agent_name",nullable=false)
-    public String getAgentName() {
-        return agentName;
-    }
-
-    public void setAgentName(String agentName) {
-        this.agentName = agentName;
     }
 
     @NotNull
@@ -283,7 +270,6 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
     public void copyFrom(SiteMinderConfiguration other) {
         this.setGoid(other.getGoid());
         this.setName(other.getName());
-        this.setAgentName(other.getAgentName());
         this.setAddress(other.getAddress());
         this.setSecret(other.getSecret());
         this.setIpcheck(other.isIpcheck());

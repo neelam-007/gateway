@@ -27,7 +27,16 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
     private String agentId;
     private String protectedResource;
     private String action;
+    private String smAgentName;
     private String prefix;
+
+    public String getSmAgentName() {
+        return smAgentName;
+    }
+
+    public void setSmAgentName(String smAgentName) {
+        this.smAgentName = smAgentName;
+    }
 
     public Goid getAgentGoid() {
         return agentGoid;
@@ -72,7 +81,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Uses
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource);
+        return Syntax.getReferencedNames(action, protectedResource, smAgentName);
     }
 
     //

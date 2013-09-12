@@ -730,11 +730,9 @@ public class ServerGatewayManagementAssertionTest {
         final Element soapBody = SoapUtil.getBodyElement(result);
         final Element siteminderConfigurationElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SiteMinderConfiguration");
         final Element nameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "Name");
-        final Element agentNameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "AgentName");
         final Element addressElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigurationElm, NS_GATEWAY_MANAGEMENT, "Address");
 
         assertEquals("Config 1", DomUtils.getTextValue(nameElm));
-        assertEquals("agent 1", DomUtils.getTextValue(agentNameElm));
     }
 
     @Test
@@ -1515,7 +1513,6 @@ public class ServerGatewayManagementAssertionTest {
         String payload =
                 "<l7:SiteMinderConfiguration xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "   <l7:Name>New Config</l7:Name>\n" +
-                "   <l7:AgentName>agent name</l7:AgentName>\n" +
                 "   <l7:Address>0.0.0.999</l7:Address>\n" +
                 "   <l7:Hostname>localhost</l7:Hostname>\n" +
                 "   <l7:HostConfiguration>55</l7:HostConfiguration>\n" +
@@ -2488,7 +2485,6 @@ public class ServerGatewayManagementAssertionTest {
                         "  <s:Body> \n" +
                         "     <l7:SiteMinderConfiguration xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                         "       <l7:Name>New Config 1</l7:Name>\n" +
-                        "       <l7:AgentName>agent 1</l7:AgentName>\n" +
                         "       <l7:Address>0.0.0.999</l7:Address>\n" +
                         "       <l7:Hostname>localhost</l7:Hostname>\n" +
                         "       <l7:HostConfiguration>55</l7:HostConfiguration>\n" +
@@ -2512,10 +2508,8 @@ public class ServerGatewayManagementAssertionTest {
                 final Element soapBody = SoapUtil.getBodyElement(result);
                 final Element siteminderConfigElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "SiteMinderConfiguration");
                 final Element nameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigElm, NS_GATEWAY_MANAGEMENT, "Name");
-                final Element agentNameElm = XmlUtil.findExactlyOneChildElementByName(siteminderConfigElm, NS_GATEWAY_MANAGEMENT, "AgentName");
 
                 assertEquals("New Config 1", DomUtils.getTextValue(nameElm));
-                assertEquals("agent 1", DomUtils.getTextValue(agentNameElm));
             }
         };
 
@@ -3875,8 +3869,8 @@ public class ServerGatewayManagementAssertionTest {
 
         // siteminder
         beanFactory.addBean("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub(
-                siteminderConfiguration(new Goid(0, 1L), "Config 1","agent 1","0.0.0.0","secret","localhost",3),
-                siteminderConfiguration(new Goid(0, 2L), "Config 2","agent 2","0.0.0.0","secret","localhost",3)));
+                siteminderConfiguration(new Goid(0, 1L), "Config 1","0.0.0.0","secret","localhost",3),
+                siteminderConfiguration(new Goid(0, 2L), "Config 2","0.0.0.0","secret","localhost",3)));
 
         // assertion security zone
         final AssertionAccess assAccess1 = new AssertionAccess();
@@ -4085,7 +4079,6 @@ public class ServerGatewayManagementAssertionTest {
 
     private static SiteMinderConfiguration siteminderConfiguration(final Goid goid,
                                                                    final String name,
-                                                                   final String agentName,
                                                                    final String address,
                                                                    final String secret,
                                                                    final String hostname,
@@ -4094,7 +4087,6 @@ public class ServerGatewayManagementAssertionTest {
         final SiteMinderConfiguration configuration = new SiteMinderConfiguration();
         configuration.setGoid(goid);
         configuration.setName(name);
-        configuration.setAgentName(agentName);
         configuration.setAddress(address);
         configuration.setSecret(secret);
         configuration.setHostname(hostname);

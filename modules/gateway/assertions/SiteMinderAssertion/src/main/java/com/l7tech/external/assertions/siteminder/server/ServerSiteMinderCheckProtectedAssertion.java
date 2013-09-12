@@ -47,6 +47,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         AssertionStatus status = AssertionStatus.FALSIFIED;
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
+        String smAgentName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSmAgentName(), variableMap, getAudit());
         String resource = SiteMinderAssertionUtil.extractContextVarValue(assertion.getProtectedResource(), variableMap, getAudit());
         String action = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAction(), variableMap, getAudit());
         SiteMinderContext smContext = null;
@@ -67,7 +68,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         smContext.setTransactionId(transactionId);
         try {
             //check if protected and return AssertionStatus.NONE if it is
-            if(hla.checkProtected(getClientIp(context), resource, action, smContext)) {
+            if(hla.checkProtected(getClientIp(context), smAgentName, resource, action, smContext)) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
                 status = AssertionStatus.NONE;
             }

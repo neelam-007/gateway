@@ -17,7 +17,7 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
  * The SiteMinderConfigurationMO object represents a Siteminder configuration.
  */
 @XmlRootElement(name="SiteMinderConfiguration")
-@XmlType(name="SiteMinderConfigurationType", propOrder={"nameValue", "agentNameValue", "addressValue", "hostnameValue", "hostConfigurationValue", "userNameValue", "passwordIdValue", "enabledValue", "fipsModeValue", "ipCheckValue", "updateSsoTokenValue", "clusterThresholdValue", "nonClusterFailoverValue", "secretValue", "properties", "extension", "extensions"})
+@XmlType(name="SiteMinderConfigurationType", propOrder={"nameValue", "addressValue", "hostnameValue", "hostConfigurationValue", "userNameValue", "passwordIdValue", "enabledValue", "fipsModeValue", "ipCheckValue", "updateSsoTokenValue", "clusterThresholdValue", "nonClusterFailoverValue", "secretValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "siteMinderConfigurations")
 public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject {
 
@@ -41,23 +41,6 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.name = set(this.name, name);
     }
 
-    /**
-     * Get the agent name for the Siteminder configuration (case insensitive, required)
-     *
-     * @return  The agent name of the Siteminder configuration (may be null)
-     */
-    public String getAgentName() {
-        return get(agentName);
-    }
-
-    /**
-     * Set the agent name for the Siteminder configuration. (required)
-     *
-     * @param agentName The agent name to use.
-     */
-    public void setAgentName(String agentName) {
-        this.agentName = set(this.agentName, agentName);
-    }
 
     /**
      * Get the address for the Siteminder configuration.
@@ -328,14 +311,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.name = name;
     }
 
-    @XmlElement(name="AgentName",required=true)
-    protected AttributeExtensibleString getAgentNameValue() {
-        return agentName;
-    }
 
-    protected void setAgentNameValue(AttributeExtensibleString agentName) {
-        this.agentName = agentName;
-    }
 
     @XmlElement(name="Address",required=true)
     protected AttributeExtensibleString getAddressValue() {
@@ -453,7 +429,6 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
     //- PRIVATE
 
     private AttributeExtensibleString name;
-    private AttributeExtensibleString agentName;
     private AttributeExtensibleString address;
     private AttributeExtensibleString secret;
     private AttributeExtensibleString hostname;

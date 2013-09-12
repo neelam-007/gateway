@@ -29,7 +29,6 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
     private JPanel contentPane;
     private JPanel mainPanel;
-    private JTextField agentNameTextField;
     private JTextField hostNameTextField;
     private JTextField configurationNameTextField;
     private JButton createSiteMinderConfigurationButton;
@@ -92,7 +91,6 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
         SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
 
         configurationNameTextField.setText(config.getName());
-        agentNameTextField.setText(config.getAgentName());
         hostNameTextField.setText(config.getHostname());
 
         // default is delete

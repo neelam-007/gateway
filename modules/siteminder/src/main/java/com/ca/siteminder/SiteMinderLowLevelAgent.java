@@ -24,7 +24,6 @@ public class SiteMinderLowLevelAgent {
     private boolean initialized = false;
 
     private AgentAPI agentApi;
-    private String agentName;
     private String agentIP;
     private boolean agentCheckSessionIP;
     private boolean updateCookie;
@@ -49,8 +48,6 @@ public class SiteMinderLowLevelAgent {
     private boolean initialize() throws SiteMinderApiClassException {
         initialized = false;
         try {
-
-            agentName = agentConfig.getAgentName();
             agentIP = agentConfig.getAddress();
             agentCheckSessionIP = agentConfig.isIpCheck();
             updateCookie = agentConfig.isUpdateSSOToken();
@@ -93,7 +90,7 @@ public class SiteMinderLowLevelAgent {
             int cryptoOpMode = agentConfig.getFipsMode();
 
             initDef.setCryptoOpMode(cryptoOpMode);
-            agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
+//            agentApi.getConfig(initDef, agentName, null); //the last parameter is used to configure ACO
 
             int retCode = agentApi.init(initDef);
 
@@ -127,10 +124,10 @@ public class SiteMinderLowLevelAgent {
             }
             else {
                 if(retCode == AgentAPI.NOCONNECTION) {
-                    logger.log(Level.SEVERE, "The SiteMinder Agent " + agentName + " cannot connect to the Policy Server");
+                    logger.log(Level.SEVERE, "The SiteMinder Agent " + agentConfig.getHostname() + " cannot connect to the Policy Server");
                 }
                 else {
-                    logger.log(Level.SEVERE, "The SiteMinder Agent name and/or the secret is incorrect.");
+                    logger.log(Level.SEVERE, "The SiteMinder Agent hostname and/or the secret is incorrect.");
                 }
             }
 
@@ -621,13 +618,5 @@ public class SiteMinderLowLevelAgent {
         else {
             return null;
         }
-    }
-
-    public String getName() {
-        return agentName;
-    }
-
-    public String getAgentIp() {
-        return agentIP;
     }
 }

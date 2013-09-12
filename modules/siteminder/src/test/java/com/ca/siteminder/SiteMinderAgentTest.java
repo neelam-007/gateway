@@ -27,10 +27,6 @@ public class SiteMinderAgentTest {
     @Before
     public void setUp() throws Exception {
        SiteMinderConfig config = new SiteMinderConfig() {
-           @Override
-           public String getAgentName() {
-               return "layer7-agent";
-           }
 
            @Override
            public String getAddress() {
@@ -115,7 +111,7 @@ public class SiteMinderAgentTest {
         SiteMinderContext context = new SiteMinderContext();
         context.setAgent(agent);
 
-        assertTrue(fixture.checkProtected("127.0.0.1", "/resfilter*", "POST", context));
+        assertTrue(fixture.checkProtected("127.0.0.1", "layer7-agent", "/resfilter*", "POST", context));
 
         SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
         assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context));

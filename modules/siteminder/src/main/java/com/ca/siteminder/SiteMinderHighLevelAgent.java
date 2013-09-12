@@ -21,16 +21,16 @@ public class SiteMinderHighLevelAgent {
      * @throws SiteMinderApiClassException
      */
     public boolean checkProtected(final String userIp,
-                              final String resource,
-                              final String action,
-                              SiteMinderContext context) throws SiteMinderApiClassException {
+                                  String smAgentName, final String resource,
+                                  final String action,
+                                  SiteMinderContext context) throws SiteMinderApiClassException {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
         if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
 
         // The realmDef object will contain the realm handle for the resource if the resource is protected.
-        ResourceContextDef resCtxDef = new ResourceContextDef(agent.getName(), "", resource, action);
+        ResourceContextDef resCtxDef = new ResourceContextDef(smAgentName, "", resource, action);
         RealmDef realmDef = new RealmDef();
 
         // check the requested resource/action is actually protected by SiteMinder

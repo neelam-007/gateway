@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  */
 public class SiteMinderConfigurationWindow extends JDialog {
 
-    private static final int MAX_TABLE_COLUMN_NUM = 5;
+    private static final int MAX_TABLE_COLUMN_NUM = 4;
     private static final Logger logger = Logger.getLogger(SiteMinderConfigurationWindow.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigurationManagerWindow");
 
@@ -242,12 +242,10 @@ public class SiteMinderConfigurationWindow extends JDialog {
                 case 0:
                     return configuration.getName();
                 case 1:
-                    return configuration.getAgentName();
-                case 2:
                     return configuration.getAddress();
-                case 3:
+                case 2:
                     return configuration.getHostname();
-                case 4:
+                case 3:
                     return configuration.isEnabled()? "Yes" : "No";
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");
@@ -260,12 +258,10 @@ public class SiteMinderConfigurationWindow extends JDialog {
                 case 0:
                     return resources.getString("column.label.configuration.name");   // Column: Configuration Name
                 case 1:
-                    return resources.getString("column.label.agent.name");           // Column: Agent Name
-                case 2:
                     return resources.getString("column.label.agent.address");        // Column: Agent Address
-                case 3:
+                case 2:
                     return resources.getString("column.label.agent.hostname");       // Column: Agent Hostname
-                case 4:
+                case 3:
                     return resources.getString("column.label.enabled");              // Column: Enabled
                 default:
                     throw new IndexOutOfBoundsException("Out of the maximum column number, " + MAX_TABLE_COLUMN_NUM + ".");

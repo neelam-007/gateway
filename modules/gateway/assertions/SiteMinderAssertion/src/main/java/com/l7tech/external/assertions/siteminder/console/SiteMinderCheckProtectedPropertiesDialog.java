@@ -34,6 +34,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private JComboBox<SiteMinderConfigurationKey> agentComboBox;
     private JComboBox<String> actionComboBox;
     private TargetVariablePanel prefixTargetVariablePanel;
+    private JTextField smAgentTextField;
     private InputValidator inputValidator;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
@@ -56,7 +57,8 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
         actionComboBox.setModel(new DefaultComboBoxModel<>(ACTIONS));
 
-        inputValidator.ensureComboBoxSelection("Agent ID", agentComboBox);
+        inputValidator.ensureComboBoxSelection("Configuration Name", agentComboBox);
+        inputValidator.constrainTextFieldToBeNonEmpty("Agent", smAgentTextField, null);
         inputValidator.constrainTextFieldToBeNonEmpty("Protected Resource", resourceTextField, null);
 
         inputValidator.addRule(new InputValidator.ValidationRule() {
@@ -66,7 +68,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
 
                 if (action == null || action.length() == 0) {
                     return "The Action field must not be empty.";
-                }
+            }
 
                 return null;
             }
@@ -141,6 +143,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             agentComboBox.setSelectedItem(null);
         }
 
+        smAgentTextField.setText(assertion.getSmAgentName());
         resourceTextField.setText(assertion.getProtectedResource());
         actionComboBox.getModel().setSelectedItem(assertion.getAction());
 
@@ -173,6 +176,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         assertion.setAgentGoid(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getGoid());
         assertion.setAgentId(((SiteMinderConfigurationKey) agentComboBox.getSelectedItem()).getAgentId());
         assertion.setProtectedResource(resourceTextField.getText().trim());
+        assertion.setSmAgentName(smAgentTextField.getText().trim());
         assertion.setAction(getSelectedAction());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
 

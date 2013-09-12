@@ -59,7 +59,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
     private PermissionFlags flags;
     private SiteMinderConfiguration configuration;
     private SquigglyTextField configurationNameTextField;
-    private JTextField agentNameTextField;
     private JTextField addressTextField;
     private JCheckBox checkIPCheckBox;
     private JTextField hostNameTextField;
@@ -106,7 +105,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         configurationNameTextField.setDocument(new MaxLengthDocument(128));
-        agentNameTextField.setDocument(new MaxLengthDocument(256));
         secretPasswordField.setDocument(new MaxLengthDocument(4096));
         addressTextField.setDocument(new MaxLengthDocument(128));
         hostNameTextField.setDocument(new MaxLengthDocument(255));
@@ -144,7 +142,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                 new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.configuration.properties"));
 
         okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.configurationName"), configurationNameTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.name"), agentNameTextField, null);
         okValidator.constrainPasswordFieldToBeNonEmpty(RESOURCES.getString("property.agent.secret"), secretPasswordField);
         okValidator.addRule(ipCheckBoxRule);
         okValidator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.agent.hostname"), hostNameTextField, null);
@@ -338,7 +335,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
      */
     private void modelToView() {
         configurationNameTextField.setText(configuration.getName());
-        agentNameTextField.setText(configuration.getAgentName());
         secretPasswordField.setText(configuration.getSecret());
         addressTextField.setText(configuration.getAddress());
         checkIPCheckBox.setSelected(configuration.isIpcheck());
@@ -364,7 +360,6 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
     private void viewToModel() {
         configuration.setName(configurationNameTextField.getText().trim());
-        configuration.setAgentName(agentNameTextField.getText().trim());
         configuration.setSecret(new String(secretPasswordField.getPassword()));
         configuration.setAddress(addressTextField.getText().trim());
         configuration.setIpcheck(checkIPCheckBox.isSelected());
@@ -507,10 +502,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
     private String checkDuplicateProperty(String newPropName, final String originalPropName) {
         // Check if there exists a duplicate with Basic Connection Configuration.
-        if ("name".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.name"));
-        } else if ("address".compareToIgnoreCase(newPropName) == 0) {
+        if ("address".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
                     RESOURCES.getString("property.agent.address"));
         } else if ("hostname".compareToIgnoreCase(newPropName) == 0) {

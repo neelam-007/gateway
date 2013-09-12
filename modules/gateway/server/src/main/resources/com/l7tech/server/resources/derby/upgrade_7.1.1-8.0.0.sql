@@ -44,7 +44,6 @@ create table siteminder_configuration (
   goid CHAR(16) FOR BIT DATA not null,
   version integer,
   name varchar(128) not null,
-  agent_name varchar(256) not null,
   address varchar(128) not null,
   secret varchar(4096) not null,
   ipcheck smallint default 0,
