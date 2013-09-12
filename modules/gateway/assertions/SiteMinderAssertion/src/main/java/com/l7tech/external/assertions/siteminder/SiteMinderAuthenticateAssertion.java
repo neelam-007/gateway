@@ -71,12 +71,15 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements UsesVa
         List<String> varsUsed = new ArrayList<>();
         varsUsed.add(prefix + ".smcontext");
 
-        if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
+        if (useSMCookie && cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
             varsUsed.add(cookieSourceVar);
         }
 
-        String[] refNames =  Syntax.getReferencedNames(/*cookieName, */login);
-        varsUsed.addAll(Arrays.asList(refNames));
+        if (!isLastCredential) {
+            String[] refNames = Syntax.getReferencedNames(login);
+            varsUsed.addAll(Arrays.asList(refNames));
+        }
+
         return varsUsed.toArray(new String[varsUsed.size()]);
     }
 

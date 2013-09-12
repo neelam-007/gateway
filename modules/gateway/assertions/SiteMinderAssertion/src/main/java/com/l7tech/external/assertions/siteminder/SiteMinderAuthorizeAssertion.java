@@ -128,7 +128,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     }
 
     public boolean isSetSMCookie() {
-        return setSMCookie;  //To change body of created methods use File | Settings | File Templates.
+        return setSMCookie;
     }
 
     public void setSetSMCookie(boolean val) {
@@ -140,11 +140,17 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     public String[] getVariablesUsed() {
         List<String> varsUsed = new ArrayList<>();
         varsUsed.add(prefix + ".smcontext");
-        if(cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
+
+        if (useVarAsCookieSource && cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
             varsUsed.add(cookieSourceVar);
         }
-        String[] refNames = Syntax.getReferencedNames(cookieName, cookieDomain, cookieComment, cookiePath, cookieSecure, cookieVersion);
-        varsUsed.addAll(Arrays.asList(refNames));
+
+        if (setSMCookie) {
+            String[] refNames = Syntax.getReferencedNames(cookieName, cookieDomain,
+                    cookiePath, cookieVersion, cookieMaxAge, cookieSecure, cookieComment);
+            varsUsed.addAll(Arrays.asList(refNames));
+        }
+
         return varsUsed.toArray(new String[varsUsed.size()]);
     }
 
