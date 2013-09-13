@@ -6,6 +6,7 @@ import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.util.Pair;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -43,7 +44,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
+    public Map<String, Pair<byte[],byte[]>> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 

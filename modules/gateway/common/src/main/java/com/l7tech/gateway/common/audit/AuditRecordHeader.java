@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Pair;
 
 import java.util.logging.Level;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.Arrays;
 public class AuditRecordHeader extends EntityHeader {
 
     private String signature;
-    private byte[] signatureDigest;
+    private Pair<byte[],byte[]> signatureDigest;
     private String nodeId;
     private long timestamp;
     private Level level;
@@ -43,7 +44,7 @@ public class AuditRecordHeader extends EntityHeader {
     }
 
     //todo: version should not be required.
-    public AuditRecordHeader(Goid id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
+    public AuditRecordHeader(Goid id, String name, String description, Pair<byte[],byte[]> signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super(id, EntityType.AUDIT_RECORD, name, description, version);
         this.signatureDigest = signatureDigest;
         this.signature = signature;
@@ -52,11 +53,11 @@ public class AuditRecordHeader extends EntityHeader {
         this.level = level;
     }
 
-    public byte[] getSignatureDigest() {
+    public Pair<byte[],byte[]> getSignatureDigest() {
         return signatureDigest;
     }
 
-    public void setSignatureDigest(byte[] signatureDigest) {
+    public void setSignatureDigest(Pair<byte[],byte[]> signatureDigest) {
         this.signatureDigest = signatureDigest;
     }
 
@@ -97,7 +98,7 @@ public class AuditRecordHeader extends EntityHeader {
 
         final AuditRecordHeader that = (AuditRecordHeader) o;
 
-        if(signatureDigest != null ? !Arrays.equals(signatureDigest, that.signatureDigest) : that.getSignatureDigest() != null) return false;
+        if(signatureDigest != null ? !Arrays.equals(signatureDigest.right, that.signatureDigest.right) || !Arrays.equals(signatureDigest.left, that.signatureDigest.left) : that.getSignatureDigest() != null) return false;
         if(signature != null ? !signature.equals(that.getSignature()) : that.getSignature() != null) return false;
         if (nodeId != null ? !nodeId.equals(that.getNodeId()) : that.getNodeId() != null) return false;
         if (timestamp != that.getTimestamp()) return false;
@@ -110,7 +111,7 @@ public class AuditRecordHeader extends EntityHeader {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (signature != null ? signature.hashCode() : 0);
-        result = 31 * result + (signatureDigest != null ? Arrays.hashCode(signatureDigest) : 0);
+        result = 31 * result + (signatureDigest != null ? Arrays.hashCode(signatureDigest.right) + Arrays.hashCode(signatureDigest.left) : 0);
         result = 31 * result + (nodeId != null ? nodeId.hashCode() : 0);
         result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
         result = 31 * result + (level != null ? level.hashCode() : 0);

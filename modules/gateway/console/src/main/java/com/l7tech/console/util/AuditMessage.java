@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -75,8 +76,8 @@ public class AuditMessage extends AbstractAuditMessage {
     }
 
     @Override
-    public byte[] getSignatureDigest() throws IOException {
-        byte[] digestvalue = null;
+    public Pair<byte[],byte[]> getSignatureDigest() throws IOException {
+        Pair<byte[],byte[]> digestvalue = null;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         MessageDigest digest;
@@ -87,8 +88,13 @@ public class AuditMessage extends AbstractAuditMessage {
         }
 
         try {
-            auditRecord.serializeSignableProperties(baos);
-            digestvalue = digest.digest(baos.toByteArray());
+            auditRecord.serializeSignableProperties(baos,false);
+            byte[] currentDigest = digest.digest(baos.toByteArray());
+
+            auditRecord.serializeSignableProperties(baos,true);
+            byte[] oldDigest =  digest.digest(baos.toByteArray());
+
+            digestvalue = new Pair<byte[],byte[]>(currentDigest,oldDigest);
         }  finally {
             ResourceUtils.closeQuietly( baos );
         }

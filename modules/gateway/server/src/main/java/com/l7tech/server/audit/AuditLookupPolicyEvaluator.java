@@ -479,15 +479,15 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
         }
     }
 
-    public Map<String, byte[]> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException  {
-        final Map<String, byte[]> returnMap = new HashMap<String, byte[]>();
+    public Map<String, Pair<byte[],byte[]>> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException  {
+        final Map<String, Pair<byte[],byte[]>> returnMap = new HashMap<String, Pair<byte[],byte[]>>();
 
         final int maxRecords = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
         final List<String> auditsToRetrieve = new ArrayList<String>();
         for(String guid: auditRecordIds){
             AuditRecord record = getAuditRecordFromCache(guid,null);
             if(record !=null && record.getSignature()!=null)
-                returnMap.put(guid, record.computeSignatureDigest());
+                returnMap.put(guid, new Pair<>(record.computeSignatureDigest(),record.computeOldIdSignatureDigest()));
             else if(auditsToRetrieve.size()< maxRecords)
                 auditsToRetrieve.add(guid);
         }
@@ -522,7 +522,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
             for(String guid: auditsToRetrieve){
                 AuditRecord record = getAuditRecordFromCache(guid,null);
                 if(record !=null && record.getSignature()!=null){
-                    returnMap.put(guid,record.computeSignatureDigest());
+                    returnMap.put(guid, new Pair<>(record.computeSignatureDigest(), record.computeOldIdSignatureDigest()));
                 }
             }
 

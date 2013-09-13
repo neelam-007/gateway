@@ -405,7 +405,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     private SecurityZone securityZone;
 
     @Override
-    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
+    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException {
         // status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
         // response_zipxml:response_status:routing_latency
 
@@ -415,7 +415,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
         if (requestId != null) out.write(requestId.getBytes());
         out.write(SERSEP.getBytes());
 
-        out.write(Goid.toString(serviceGoid).getBytes());
+        out.write(useOldId?Long.toString(serviceGoid.getLow()).getBytes():Goid.toString(serviceGoid).getBytes());
         out.write(SERSEP.getBytes());
 
         if (getOperationName() != null) out.write(getOperationName().getBytes()); // this is lazy, must use getter

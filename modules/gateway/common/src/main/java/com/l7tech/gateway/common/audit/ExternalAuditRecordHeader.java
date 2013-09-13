@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Pair;
 
 import java.util.logging.Level;
 
@@ -44,7 +45,7 @@ public class ExternalAuditRecordHeader extends AuditRecordHeader {
      *
      * @param name should be empty if not an message summary audit record
      */
-    public ExternalAuditRecordHeader(String guid, String recordType, Goid id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
+    public ExternalAuditRecordHeader(String guid, String recordType, Goid id, String name, String description, Pair<byte[],byte[]> signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super( id, name, description,  signatureDigest, signature, nodeId, timestamp, level, version);
         this.guid = guid;
         this.recordType = recordType;

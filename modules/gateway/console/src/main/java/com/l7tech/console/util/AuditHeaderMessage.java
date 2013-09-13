@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.audit.ExternalAuditRecordHeader;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Pair;
 
 import java.io.IOException;
 
@@ -58,11 +59,11 @@ public class AuditHeaderMessage extends AbstractAuditMessage {
     }
 
     @Override
-    public byte[] getSignatureDigest() throws IOException {
+    public Pair<byte[],byte[]> getSignatureDigest() throws IOException {
         return header.getSignatureDigest();
     }
 
-    public void setSignatureDigest(byte [] signatureDigest) {
+    public void setSignatureDigest(Pair<byte[],byte[]> signatureDigest) {
         header.setSignatureDigest(signatureDigest);
     }
 

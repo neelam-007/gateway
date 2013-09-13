@@ -238,7 +238,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
     }
 
     @Override
-    public Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
+    public Map<String, Pair<byte[],byte[]>> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException {
         if(fromPolicy){
             return auditLookupPolicyEvaluator.getDigestForAuditRecords(auditRecordIds);
         }

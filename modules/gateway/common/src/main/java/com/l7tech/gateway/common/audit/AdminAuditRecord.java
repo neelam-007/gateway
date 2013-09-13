@@ -118,13 +118,15 @@ public class AdminAuditRecord extends AuditRecord {
     protected char action;
 
     @Override
-    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
+    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException {
         // entity_class:entity_id:action
 
         if (entityClassname != null) out.write(entityClassname.getBytes());
         out.write(SERSEP.getBytes());
 
-        if(entityGoid != null) out.write(Goid.toString(entityGoid).getBytes());
+        if (entityGoid != null)
+            out.write(useOldId ? Long.toString(entityGoid.getLow()).getBytes() : Goid.toString(entityGoid).getBytes());
+        else if(useOldId)out.write("0".getBytes());
         out.write(SERSEP.getBytes());
 
         out.write(action);

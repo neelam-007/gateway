@@ -1404,7 +1404,7 @@ public class LogPanel extends JPanel {
                 public void call(AuditRecord auditRecord) {
                     if (logHeader instanceof AuditHeaderMessage ) {
                         AuditHeaderMessage actualHeader = (AuditHeaderMessage) logHeader;
-                        actualHeader.setSignatureDigest(auditRecord.computeSignatureDigest());
+                        actualHeader.setSignatureDigest(new Pair<byte[], byte[]>(auditRecord.computeSignatureDigest(),auditRecord.computeOldIdSignatureDigest()));
                         auditModel.fireTableRowsUpdated(row, row);
                     }
                 }

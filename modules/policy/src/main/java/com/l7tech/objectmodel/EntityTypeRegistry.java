@@ -2,6 +2,7 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -85,6 +86,21 @@ public class EntityTypeRegistry {
                 final EntityType value = entry.getValue();
                 Class<? extends Entity> entityClazz = entry.getKey();
                 if ( entityClazz.isAssignableFrom(clazz) && entry.getValue() != EntityType.ANY) {
+                    type = value;
+                    break;
+                }
+            }
+        }
+        return type;
+    }
+
+    public static EntityType getEntityType(final String classStr) {
+        EntityType type = EntityType.ANY;
+        if ( classStr != null ) {
+            for ( Map.Entry<Class<? extends Entity>,EntityType> entry : YRTSIGER.entrySet() ) {
+                final EntityType value = entry.getValue();
+                Class<? extends Entity> entityClazz = entry.getKey();
+                if ( entityClazz.getName().equals(classStr)) {
                     type = value;
                     break;
                 }

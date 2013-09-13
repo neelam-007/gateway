@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Config;
+import com.l7tech.util.Pair;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -28,7 +29,7 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditR
     }
 
     @Override
-    public Map<String, byte[]> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException {
+    public Map<String, Pair<byte[],byte[]>> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException {
         throw new UnsupportedOperationException();
     }
 

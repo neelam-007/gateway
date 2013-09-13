@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.ValidationUtils;
 
 import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlTransient;
@@ -344,14 +345,14 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         out.defaultWriteObject();
     }
 
-    public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException;
+    public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException;
     
     // NOTE: AuditExporterImpl must use the same columns and ordering as this method
-    public final void serializeSignableProperties(OutputStream out) throws IOException {
-        outputProperties(out, true);
+    public final void serializeSignableProperties(OutputStream out, boolean useOldId) throws IOException {
+        outputProperties(out, true, useOldId);
     }
 
-    private void outputProperties(OutputStream out, boolean includeAllOthers) throws IOException {
+    private void outputProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException {
         // previous format:
         // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:
         //
@@ -383,10 +384,20 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         if (userName != null) out.write(userName.getBytes());
         out.write(SERSEP.getBytes());
 
-        if (userId != null) out.write(userId.getBytes());
+        if (userId != null){
+            if(useOldId){
+                if(ValidationUtils.isValidGoid(userId, false))
+                    out.write( Long.toString(Goid.parseGoid(userId).getLow()).getBytes());
+                else{
+                    out.write(userId.getBytes());
+                }
+            }else
+                out.write(userId.getBytes());
+        }
         out.write(SERSEP.getBytes());
 
-        if (identityProviderGoid != null) out.write(Goid.toString(identityProviderGoid).getBytes());
+        if (identityProviderGoid != null) out.write(useOldId?Long.toString(identityProviderGoid.getLow()).getBytes():Goid.toString(identityProviderGoid).getBytes());
+        else if(useOldId)out.write("-1".getBytes());
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action
@@ -394,7 +405,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         //      authenticated:authenticationType:request_length:response_length:request_zipxml:
         //      response_zipxml:response_status:routing_latency
         // SystemAuditRecord component_id:action
-        serializeOtherProperties(out, includeAllOthers);
+        serializeOtherProperties(out, includeAllOthers, useOldId);
 
         if (details != null && details.size() > 0) {
             List<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
@@ -414,7 +425,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     public String toString() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            outputProperties(baos, false);
+            outputProperties(baos, false, false);
         } catch (IOException e) {
             // should not happen on a byte array; fallback to super
             return super.toString();
@@ -430,6 +441,31 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         this.signature = signature;
     }
 
+    public byte[] computeOldIdSignatureDigest() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-512");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("should not happen", e);
+        }
+        byte[] digestvalue = null;
+        try {
+            serializeSignableProperties(baos,true);
+            digestvalue = digest.digest(baos.toByteArray());
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "could not serialize audit record", e);
+        } finally {
+            try {
+                baos.close();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "error closing stream", e);
+            }
+        }
+
+        return digestvalue;
+    }
+
     public byte[] computeSignatureDigest() {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MessageDigest digest;
@@ -440,7 +476,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
             }
             byte[] digestvalue = null;
             try {
-                serializeSignableProperties(baos);
+                serializeSignableProperties(baos,false);
                 digestvalue = digest.digest(baos.toByteArray());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "could not serialize audit record", e);

@@ -3,7 +3,10 @@ package com.l7tech.server.audit;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityTypeRegistry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.KeyUsageException;
@@ -14,6 +17,8 @@ import com.l7tech.server.jdbc.JdbcQueryUtils;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.CompressedStringType;
+import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.ValidationUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -270,12 +275,12 @@ public class ExternalAuditsUtils {
             record = new AdminAuditRecord(
                     Level.parse(auditLevel),
                     nodeid,
-                    getGoid(entityId),
+                    getGoid(entityClass,entityId),
                     entityClass,
                     name,
                     action.charAt(0),
                     message,
-                    getGoid(providerOid),
+                    getProviderId(providerOid),
                     userName,
                     userId,
                     ip_addr) ;
@@ -302,12 +307,12 @@ public class ExternalAuditsUtils {
                     responseLength,
                     responseStatus,
                     latency,
-                    getGoid(serviceGoid),
+                    GoidUpgradeMapper.mapId(EntityType.SERVICE,serviceGoid),
                     name,
                     operationName,
                     authenticated,
                     tokenType,
-                    getGoid(providerOid),
+                    getIdProviderGoid(providerOid),
                     userName,
                     userId ,
                     null ) ;  //mappingValueOidHaver
@@ -321,7 +326,7 @@ public class ExternalAuditsUtils {
                     Component.fromId(componentId),
                     message,
                     false, // alwaysAudit - not displayed, only used in flush
-                    getGoid(providerOid),
+                    getIdProviderGoid(providerOid),
                     userName,
                     userId,
                     action,
@@ -334,16 +339,42 @@ public class ExternalAuditsUtils {
         return record;
     }
 
-    private static Goid getGoid(String toGoid) {
+    private static Goid getProviderId(String providerOid) {
+        if(ValidationUtils.isValidLong(providerOid,false,-3L,0)){
+            if(Long.parseLong(providerOid)== IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OLD_OID)
+                return IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID;
+        }
+        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,providerOid);
+    }
+
+    private static Goid getGoid(String entityClass,String toGoid) {
         if(toGoid.isEmpty())
             return null;
         try{
             return Goid.parseGoid(toGoid);
         }catch(IllegalArgumentException e){
             // must be an old oid
-            return new Goid(0,Long.parseLong(toGoid));
+            if(Long.parseLong(toGoid)<0)
+                return new Goid(0,Long.parseLong(toGoid));
+            EntityType type = EntityTypeRegistry.getEntityType(entityClass);
+            return GoidUpgradeMapper.mapId(type,toGoid);
         }
     }
+
+    private static Goid getIdProviderGoid(String toGoid) {
+        if(toGoid.isEmpty())
+            return null;
+        try{
+            return Goid.parseGoid(toGoid);
+        }catch(IllegalArgumentException e){
+            // must be an old oid
+            if(Long.parseLong(toGoid)<0)
+                return new Goid(0,Long.parseLong(toGoid));
+            return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,toGoid);
+        }
+    }
+
+
 
     private static String getDecompressedString(byte[] in){
         try {

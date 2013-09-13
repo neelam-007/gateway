@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Config;
+import com.l7tech.util.Pair;
 
 import java.util.Collection;
 import java.sql.SQLException;
@@ -60,7 +61,7 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
      * an entry for the record object id. Returned map may be empty but never null
      * @throws FindException any problems searching the db. Note FindExceptions are not thrown when records do not exist.
      */
-    Map<String, byte[]> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException;
+    Map<String, Pair<byte[],byte[]>> getDigestForAuditRecords(Collection<String> auditRecordIds) throws FindException;
 
     /**
      * Delete old audit records.

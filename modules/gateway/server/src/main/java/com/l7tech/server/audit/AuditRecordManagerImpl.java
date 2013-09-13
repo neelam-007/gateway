@@ -77,10 +77,10 @@ public class AuditRecordManagerImpl
     }
 
     @Override
-    public Map<String, byte[]> getDigestForAuditRecords(final Collection<String> auditRecordIds) throws FindException {
+    public Map<String, Pair<byte[],byte[]>> getDigestForAuditRecords(final Collection<String> auditRecordIds) throws FindException {
         if(auditRecordIds == null) throw new NullPointerException("auditRecordIds is null");
 
-        final Map<String, byte[]> returnMap = new HashMap<String, byte[]>();
+        final Map<String, Pair<byte[],byte[]>> returnMap = new HashMap<String, Pair<byte[],byte[]>>();
 
         if (auditRecordIds.isEmpty()) {
             return returnMap;
@@ -123,7 +123,7 @@ public class AuditRecordManagerImpl
                 String sig = record.getSignature();
                 if (sig != null && !sig.isEmpty()) {
                     final byte[] digest = record.computeSignatureDigest();
-                    returnMap.put(Goid.toString(record.getGoid()), digest);
+                    returnMap.put(Goid.toString(record.getGoid()),new Pair<>(digest,record.computeOldIdSignatureDigest()));
                 }
                 session.evict(record);
             }
@@ -305,7 +305,7 @@ public class AuditRecordManagerImpl
     protected AuditRecordHeader newHeader(final AuditRecord auditRecord) {
         AuditRecordHeader arh = new AuditRecordHeader(auditRecord);
         String sig = auditRecord.getSignature();
-        arh.setSignatureDigest(sig != null && sig.length() > 0 ? auditRecord.computeSignatureDigest() : null);
+        arh.setSignatureDigest(sig != null && sig.length() > 0 ? new Pair<byte[], byte[]>(auditRecord.computeSignatureDigest(),auditRecord.computeOldIdSignatureDigest()) : null);
         return arh;
     }
 

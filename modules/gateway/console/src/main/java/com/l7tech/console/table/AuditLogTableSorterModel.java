@@ -12,6 +12,7 @@ import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -203,7 +204,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                         AbstractAuditMessage oldMsg = rawLogCache.get(key);
                         if(oldMsg instanceof AuditHeaderMessage){
                             String oldGuid = ((AuditHeaderMessage) oldMsg).getGuid();
-                            byte[] sigDigest = null;
+                            Pair<byte[],byte[]> sigDigest = null;
                             try {
                                 sigDigest = oldMsg.getSignatureDigest();
                             } catch (IOException e) {
@@ -276,7 +277,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                         final List<String> auditRecordIds = new ArrayList<String>(auditHeaders.keySet());//keySet is not serializable
                         if (!auditRecordIds.isEmpty()) {
                             //update digests
-                            final Map<String, byte[]> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds, fromPolicy);
+                            final Map<String, Pair<byte[],byte[]>> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds, fromPolicy);
                             if (logger.isLoggable(Level.FINE)) {
                                 logger.log(Level.FINE, "Validated " + digestsForRecords.size()+" records. Requested " + auditRecordIds.size()+" records.");
                             }
@@ -889,7 +890,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
 
     private DigitalSignatureUIState compareSignatureDigests( AbstractAuditMessage msg ) throws IOException {
         final String signatureToVerify = msg.getSignature();
-        final byte[] digestValue =  msg.getSignatureDigest();
+        final Pair<byte[],byte[]> digestValue =  msg.getSignatureDigest();
 
         if (signatureToVerify != null && digestValue == null) {
             if (msg instanceof AuditHeaderMessage ) {
@@ -915,7 +916,8 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         }
 
         try {
-            boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue);
+            boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue.left) ||
+                    new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue.right);
             return result ? DigitalSignatureUIState.VALID : DigitalSignatureUIState.INVALID;
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot verify signature", e);

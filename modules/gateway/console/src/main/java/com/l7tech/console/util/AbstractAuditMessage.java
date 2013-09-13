@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Pair;
 
 import java.io.IOException;
 
@@ -37,7 +38,7 @@ public abstract class AbstractAuditMessage implements Comparable {
 
     public abstract String getSignature();
 
-    public abstract byte[] getSignatureDigest() throws IOException;
+    public abstract Pair<byte[],byte[]> getSignatureDigest() throws IOException;
 
     @SuppressWarnings({"RedundantIfStatement"})
     @Override

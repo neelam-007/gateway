@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.OpaqueId;
+import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,7 +91,7 @@ public interface AuditAdmin extends AsyncAdminMethods{
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
-    Map<String, byte[]> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
+    Map<String, Pair<byte[],byte[]>> getDigestsForAuditRecords(Collection<String> auditRecordIds, boolean fromPolicy) throws FindException;
 
     /**
      * Asynchronously checks if there are any audits found given the date and level to search for.
