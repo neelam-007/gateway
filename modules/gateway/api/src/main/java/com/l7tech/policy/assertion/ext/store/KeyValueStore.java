@@ -20,8 +20,12 @@ import java.util.Map;
  * For example,
  *    keyValueStoreServices.findAllWithKeyPrefix(&lt;prefix&gt;);
  *
- * Is is the responsibility of the Custom Assertions developer to serialize and
- * de-serialize the object they want to store/retrieve from the key value store.
+ * Is is the responsibility of the Custom Assertions developer to encode and
+ * decode objects they want to store/retrieve from the key value store.
+ * It is up to the Custom Assertions developer to be aware of any issues with the
+ * specific encoding/decoding implementations (eg. XMLDecoder allows near-arbitrary code
+ * execution).
+ *
  * </pre>
  */
 public interface KeyValueStore {
