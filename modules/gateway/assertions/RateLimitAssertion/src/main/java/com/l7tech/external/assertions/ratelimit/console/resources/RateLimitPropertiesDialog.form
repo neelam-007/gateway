@@ -250,6 +250,7 @@
               </grid>
             </constraints>
             <properties>
+              <columns value="20"/>
               <text value="RateLimit-${request.clientid}"/>
             </properties>
           </component>
