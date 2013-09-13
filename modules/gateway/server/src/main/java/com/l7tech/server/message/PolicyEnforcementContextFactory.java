@@ -85,7 +85,7 @@ public class PolicyEnforcementContextFactory {
      * @return the new child PEC.  Never null.
      */
     public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource) );
+        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null, timeSource, parent.getRequestId()) );
     }
 
     /**

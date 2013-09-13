@@ -91,8 +91,12 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private @Nullable AuditContext auditContext;
 
     protected PolicyEnforcementContextImpl(@Nullable Message request, @Nullable Message response, @NotNull TimeSource timeSource) {
+        this(request, response, timeSource, RequestIdGenerator.next());
+    }
+
+    protected PolicyEnforcementContextImpl(@Nullable Message request, @Nullable Message response, @NotNull TimeSource timeSource, @NotNull final RequestId requestId) {
         super(request, response);
-        this.requestId = RequestIdGenerator.next();
+        this.requestId = requestId;
         this.startTime = timeSource.currentTimeMillis();
     }
 
