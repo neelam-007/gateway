@@ -513,7 +513,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
             return;
 
         for (int i = 0; i < tlsTrustedCertGoids.length; i++) {
-            if (tlsTrustedCertGoids[i] == oldEntityHeader.getGoid()) {
+            if (Goid.equals(tlsTrustedCertGoids[i], oldEntityHeader.getGoid())) {
                 tlsTrustedCertGoids[i] = newEntityHeader.getGoid();
                 if (tlsTrustedCertNames != null && tlsTrustedCertNames.length > i)
                     tlsTrustedCertNames[i] = newEntityHeader.getName();
