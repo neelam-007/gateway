@@ -6,6 +6,8 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.cluster.ExternalEntityHeaderEnhancer;
@@ -115,6 +117,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MigrationBundle exportBundle(final Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException {
         if ( headers == null || headers.isEmpty() ) throw new MigrationApi.MigrationException("Missing required parameter.");        
         MigrationMetadata metadata = findDependencies(headers);
@@ -125,6 +128,26 @@ public class MigrationManagerImpl implements MigrationManager {
                 continue;
             }
             Entity ent = loadEntity(header);
+            //reload the policy xml on published services and policies. This will allow old oid's to be properly automatically upgraded. See EM-977
+            if(ent instanceof PublishedService) {
+                PublishedService publishedService = new PublishedService((PublishedService)ent);
+                try {
+                    publishedService.getPolicy().setXml(WspWriter.getPolicyXml(publishedService.getPolicy().getAssertion()));
+                    ent = publishedService;
+                } catch (IOException e) {
+                    //If this happens the original entity will still be returned.
+                    logger.log(Level.WARNING, "Exception reading published service: " + publishedService.displayName(), e);
+                }
+            } else if(ent instanceof Policy) {
+                Policy policy = new Policy((Policy)ent);
+                try {
+                    policy.setXml(WspWriter.getPolicyXml(policy.getAssertion()));
+                    ent = policy;
+                } catch (IOException e) {
+                    //If this happens the original entity will still be returned.
+                    logger.log(Level.WARNING, "Exception reading policy: " + policy.getName(), e);
+                }
+            }
             logger.log(Level.FINE, "Entity value for header {0} : {1}", new Object[] {header.toStringVerbose(), ent});
             bundle.addExportedItem(new ExportedItem(header, ent));
         }
