@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidAdapter;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -8,6 +9,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
@@ -51,6 +53,7 @@ public class ServiceDocument extends PersistentEntityImp {
      * @return The service identifier
      */
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE)
+    @XmlJavaTypeAdapter(GoidAdapter.class)
     public Goid getServiceId() {
         return serviceId;
     }
