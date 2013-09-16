@@ -38,6 +38,23 @@ public class SsgFinderTest {
         assertEquals(true, firstSsg.isSavePasswordToDisk());
     }
 
+    @Test
+    public void testReadConfig01() throws Exception {
+        SsgFinderImpl.exceptionListener = new FatalExceptionListener();
+        SsgFinderImpl ssgFinder = new SsgFinderImpl();
+        final URL resource = getClass().getClassLoader().getResource("com/l7tech/proxy/datamodel/all_assertions_ssgs.xml");
+        assertNotNull("all_assertions_ssgs.xml must be available", resource);
+        ssgFinder.storePath = new File(resource.toURI()).getPath();
+
+        final List ssgList = ssgFinder.getSsgList();
+        assertNotNull(ssgList);
+        assertTrue("not empty", !ssgList.isEmpty());
+        Iterator it = ssgList.iterator();
+        Ssg firstSsg = (Ssg) it.next();
+        assertNotNull(firstSsg);
+        assertEquals("solarissmoke", firstSsg.getHostname());
+    }
+
     static class FatalExceptionListener implements ExceptionListener {
         @Override
         public void exceptionThrown(Exception e) {

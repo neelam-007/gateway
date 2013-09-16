@@ -1,11 +1,14 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.util.XmlSafe;
+
 import java.io.Serializable;
 
 /**
  * The <code>SamlAuthenticationStatementAssertion</code> assertion describes
  * the SAML Authentication Statement constraints.
  */
+@XmlSafe(allowAllSetters = true)
 public class SamlAuthenticationStatement implements Cloneable, Serializable {
     private String[] authenticationMethods = new String[] {};
     private String customAuthenticationMethods = "";

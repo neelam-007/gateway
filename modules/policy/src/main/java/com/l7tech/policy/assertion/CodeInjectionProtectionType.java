@@ -4,6 +4,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.util.EnumTranslator;
+import com.l7tech.util.XmlSafe;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
  * @author rmak
  * @since SecureSpan 3.7
  */
+@XmlSafe
 public class CodeInjectionProtectionType implements Serializable, Cloneable {
     private static int _nextOrdinal = 0;
 
@@ -125,6 +127,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
             LDAP_SEARCH_INJECTION,
             XPATH_INJECTION};
 
+    @XmlSafe
     public static CodeInjectionProtectionType[] values() {
         return _values.clone();
     }
@@ -136,10 +139,12 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
      * @return the enum constant with the specified wspName; <code>null</code> if
      *         this enum type has no constant with the specified wspName
      */
+    @XmlSafe
     public static CodeInjectionProtectionType fromWspName(final String wspName) {
         return _byWspName.get(wspName);
     }
 
+    @XmlSafe
     public static CodeInjectionProtectionType fromDisplayName(final String displayName) {
         return _byDisplayName.get(displayName);
     }
@@ -174,6 +179,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return string representation used in XML serialization
      */
+    @XmlSafe
     public String getWspName() {
         return _wspName;
     }
@@ -181,6 +187,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return name for UI display
      */
+    @XmlSafe
     public String getDisplayName() {
         return _displayName;
     }
@@ -188,6 +195,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return long description for UI display (suitable for tooltip or help)
      */
+    @XmlSafe
     public String getDescription() {
         return _description;
     }
@@ -195,6 +203,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return the regular expression pattern used to detect code injection
      */
+    @XmlSafe
     public Pattern getPattern() {
         return _pattern;
     }
@@ -202,6 +211,7 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return whether this type of protection is applicable to request messages
      */
+    @XmlSafe
     public boolean isApplicableToRequest() {
         return _applicableToRequest;
     }
@@ -209,10 +219,12 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     /**
      * @return whether this type of protection is applicable to response messages
      */
+    @XmlSafe
     public boolean isApplicableToResponse() {
         return _applicableToResponse;
     }
 
+    @XmlSafe
     public boolean containsNonIdentifiableCharacters() {
         return _containsNonIdentifiableCharacters;
     }
@@ -224,11 +236,13 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
         return _displayName;
     }
 
+    @XmlSafe
     protected Object readResolve() throws ObjectStreamException {
         return _values[_ordinal];
     }
 
     // This method is invoked reflectively by WspEnumTypeMapping
+    @XmlSafe
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
             @Override

@@ -121,20 +121,28 @@ public class SsgFinderImpl implements SsgFinder {
             "java.util.TreeSet",
             "java.util.HashMap",
             "java.util.LinkedList",
-            "java.util.LinkedHashMap"
+            "java.util.LinkedHashMap",
+            "java.lang.Enum",
+            "java.util.Collections",
+            "java.util.HashSet"
         ));
         Set<String> constructors = new HashSet<>(Arrays.asList(
             "java.util.TreeSet()",
             "java.util.HashMap()",
             "java.util.LinkedList()",
-            "java.util.LinkedHashMap()"
+            "java.util.LinkedHashMap()",
+            "java.util.Collections()",
+            "java.util.HashSet()"
         ));
         Set<String> methods = new HashSet<>(Arrays.asList(
             "java.lang.reflect.Array.set(java.lang.Object,int,java.lang.Object)",
             "java.util.LinkedList.add(java.lang.Object)",
             "java.util.TreeSet.add(java.lang.Object)",
             "java.util.HashMap.remove(java.lang.Object)", // TODO do we really need to allow remove?
-            "java.util.HashMap.put(java.lang.Object,java.lang.Object)"
+            "java.util.HashMap.put(java.lang.Object,java.lang.Object)",
+            "java.lang.Enum.valueOf(java.lang.Class,java.lang.String)",
+            "java.util.HashSet.add(java.lang.Object)",
+            "java.util.Collections.unmodifiableSet(java.util.Set)"
         ));
 
         ClassFilter staticFilter = new StringClassFilter(classes, constructors, methods);

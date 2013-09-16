@@ -3,6 +3,8 @@ package com.l7tech.policy.assertion;
 import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.ConfigFactory.getProperty;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.XmlSafe;
+
 import static com.l7tech.util.Functions.grep;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Functions.then;
@@ -26,6 +28,7 @@ import java.util.List;
  * User: flascell<br/>
  * Date: Jan 8, 2007<br/>
  */
+@XmlSafe
 public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
 
     public static final int ORIGINAL_PASSTHROUGH = 0;
@@ -42,30 +45,35 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;
 
-
+    @XmlSafe
     public HttpPassthroughRuleSet() {
         this.forwardAll = false;
         this.rules = new HttpPassthroughRule[]{};
     }
 
+    @XmlSafe
     public HttpPassthroughRuleSet(boolean forwardAll, HttpPassthroughRule[] rules) {
         this.forwardAll = forwardAll;
         this.rules = rules;
         if (rules == null) throw new IllegalArgumentException("don't pass null arrays");
     }
 
+    @XmlSafe
     public boolean isForwardAll() {
         return forwardAll;
     }
 
+    @XmlSafe
     public void setForwardAll(boolean forwardAll) {
         this.forwardAll = forwardAll;
     }
 
+    @XmlSafe
     public HttpPassthroughRule[] getRules() {
         return rules;
     }
 
+    @XmlSafe
     public void setRules(HttpPassthroughRule[] rules) {
         this.rules = rules;
     }
@@ -74,6 +82,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
      * remove a customized header/parameter
      * @param name the name of the header/parameter to remove
      */
+    @XmlSafe
     public void remove(String name) {
         if (rules != null) {
             int deleted = 0;
@@ -102,6 +111,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
      * @param name the name of the header/parameter
      * @return one of ORIGINAL_PASSTHROUGH, CUSTOM_PASSTHROUGH, CUSTOM_AND_ORIGINAL_PASSTHROUGH or BLOCK
      */
+    @XmlSafe
     public int ruleForName(String name) {
         if (forwardAll) {
             return ORIGINAL_PASSTHROUGH;

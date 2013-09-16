@@ -1,0 +1,2908 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.7.0_25" class="java.beans.XMLDecoder">
+ <object class="java.util.TreeSet">
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>1</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://solarissmoke:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>mayweather.1</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>2</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://solarissmoke:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk01</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>3</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://ssgfang-04.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk01</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>4</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://ssgfang-04.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk02</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>5</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://ssgfang-04.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk03</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>6</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://ssgfang-05.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>julia</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>7</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://jkc01.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jrand</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>8</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://ssgfang-beta1.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>juliak</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>9</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-01.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>julia09</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>10</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://aw80.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>test</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>11</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-02.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk05</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="defaultSsg">
+     <boolean>true</boolean>
+    </void>
+    <void property="id">
+     <long>12</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://davidssg.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jk01</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>13</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-01.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jkCA03_EEP01_04</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>14</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-01.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jkCA03_EEP01_05</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>15</long>
+    </void>
+    <void property="persistPassword">
+     <array class="byte" length="16">
+      <void index="0">
+       <byte>99</byte>
+      </void>
+      <void index="1">
+       <byte>71</byte>
+      </void>
+      <void index="2">
+       <byte>70</byte>
+      </void>
+      <void index="3">
+       <byte>122</byte>
+      </void>
+      <void index="4">
+       <byte>99</byte>
+      </void>
+      <void index="5">
+       <byte>51</byte>
+      </void>
+      <void index="6">
+       <byte>100</byte>
+      </void>
+      <void index="7">
+       <byte>118</byte>
+      </void>
+      <void index="8">
+       <byte>99</byte>
+      </void>
+      <void index="9">
+       <byte>109</byte>
+      </void>
+      <void index="10">
+       <byte>81</byte>
+      </void>
+      <void index="11">
+       <byte>119</byte>
+      </void>
+      <void index="12">
+       <byte>77</byte>
+      </void>
+      <void index="13">
+       <byte>81</byte>
+      </void>
+      <void index="14">
+       <byte>61</byte>
+      </void>
+      <void index="15">
+       <byte>61</byte>
+      </void>
+     </array>
+    </void>
+    <void property="savePasswordToDisk">
+     <boolean>true</boolean>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-02.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jktest</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>16</long>
+    </void>
+    <void property="serverUrl">
+     <string>http://jkTest.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string>jkazakova</string>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="com.l7tech.proxy.datamodel.Ssg">
+    <void property="id">
+     <long>17</long>
+    </void>
+    <void property="kerberosName">
+     <string></string>
+    </void>
+    <void property="overrideIpAddresses">
+     <array class="java.lang.String" length="0"/>
+    </void>
+    <void property="persistentPolicyManager">
+     <void property="wildcardMatches">
+      <void method="put">
+       <object class="com.l7tech.proxy.datamodel.PolicyAttachmentKey">
+        <void property="beginsWithMatch">
+         <boolean>true</boolean>
+        </void>
+        <void property="persistent">
+         <boolean>true</boolean>
+        </void>
+        <void property="proxyUri">
+         <string>/AllAssertions_01</string>
+        </void>
+        <void property="soapAction">
+         <string>http://warehouse.acme.com/ws/listProducts</string>
+        </void>
+        <void property="uri">
+         <string>http://warehouse.acme.com/ws/</string>
+        </void>
+       </object>
+       <object class="com.l7tech.proxy.datamodel.Policy">
+        <void property="alwaysValid">
+         <boolean>true</boolean>
+        </void>
+        <void property="assertion">
+         <object class="com.l7tech.policy.assertion.composite.AllAssertion">
+          <void property="children">
+           <object class="java.util.LinkedList">
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NonSoapDecryptElement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NonSoapDecryptElement/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NonSoapEncryptElement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NonSoapEncryptElement&gt;
+                &lt;L7p:RecipientCertContextVariableName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:Target target=&quot;REQUEST&quot;/&gt;
+                &lt;L7p:UseOaep booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:XpathExpression xpathExpressionValue=&quot;included&quot;&gt;
+                    &lt;L7p:Expression stringValue=&quot;//ElementsToEncrypt&quot;/&gt;
+                    &lt;L7p:Namespaces mapValue=&quot;included&quot;&gt;
+                        &lt;L7p:entry&gt;
+                            &lt;L7p:key stringValue=&quot;xenc&quot;/&gt;
+                            &lt;L7p:value stringValue=&quot;http://www.w3.org/2001/04/xmlenc#&quot;/&gt;
+                        &lt;/L7p:entry&gt;
+                        &lt;L7p:entry&gt;
+                            &lt;L7p:key stringValue=&quot;ds&quot;/&gt;
+                            &lt;L7p:value stringValue=&quot;http://www.w3.org/2000/09/xmldsig#&quot;/&gt;
+                        &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                    &lt;L7p:XpathVersion xpathVersion=&quot;XPATH_1_0&quot;/&gt;
+                &lt;/L7p:XpathExpression&gt;
+            &lt;/L7p:NonSoapEncryptElement&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.http.HttpBasic"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NonSoapSignElement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NonSoapSignElement&gt;
+                &lt;L7p:Target target=&quot;REQUEST&quot;/&gt;
+            &lt;/L7p:NonSoapSignElement&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion">
+              <void id="TargetMessageType0" property="target"/>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: HttpFormPost</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:HttpFormPost&gt;
+                &lt;L7p:FieldInfos fieldInfoArray=&quot;included&quot;/&gt;
+            &lt;/L7p:HttpFormPost&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: AddHeader</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:AddHeader&gt;
+                &lt;L7p:HeaderName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:HeaderValue stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:AddHeader&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NonSoapCheckVerifyResults</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NonSoapCheckVerifyResults&gt;
+                &lt;L7p:PermittedDigestMethodUris stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2000/09/xmldsig#sha1&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmlenc#sha512&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#sha384&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmlenc#sha256&quot;/&gt;
+                &lt;/L7p:PermittedDigestMethodUris&gt;
+                &lt;L7p:PermittedSignatureMethodUris stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2000/09/xmldsig#dsa-sha1&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2000/09/xmldsig#rsa-sha1&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#rsa-sha256&quot;/&gt;
+                    &lt;L7p:item stringValue=&quot;http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384&quot;/&gt;
+                &lt;/L7p:PermittedSignatureMethodUris&gt;
+            &lt;/L7p:NonSoapCheckVerifyResults&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MessageBuffering</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MessageBuffering/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EncodeDecode</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:EncodeDecode&gt;
+                &lt;L7p:LineBreakInterval intValue=&quot;76&quot;/&gt;
+                &lt;L7p:SourceVariableName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:TargetDataType variableDataType=&quot;string&quot;/&gt;
+                &lt;L7p:TargetVariableName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:TransformType transformType=&quot;BASE64_ENCODE&quot;/&gt;
+            &lt;/L7p:EncodeDecode&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EchoRoutingAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:EchoRoutingAssertion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: HardcodedResponse</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:HardcodedResponse/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequestWssKerberos"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MqNativeRouting</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MqNativeRouting&gt;
+                &lt;L7p:RequestMessageAdvancedProperties mapValueNull=&quot;null&quot;/&gt;
+                &lt;L7p:RequestMqNativeMessagePropertyRuleSet mappingRuleSet=&quot;included&quot;/&gt;
+                &lt;L7p:ResponseMessageAdvancedProperties mapValueNull=&quot;null&quot;/&gt;
+                &lt;L7p:ResponseMqNativeMessagePropertyRuleSet mappingRuleSet=&quot;included&quot;/&gt;
+                &lt;L7p:ResponseTarget MessageTarget=&quot;included&quot;&gt;
+                    &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+                &lt;/L7p:ResponseTarget&gt;
+                &lt;L7p:SsgActiveConnectorGoid goidValue=&quot;4ea42fd7e7d7159ad242236517b775ef&quot;/&gt;
+                &lt;L7p:SsgActiveConnectorId goidValue=&quot;4ea42fd7e7d7159ad242236517b775ef&quot;/&gt;
+                &lt;L7p:SsgActiveConnectorName stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:MqNativeRouting&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SamlpResponseEvaluation</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SamlpResponseEvaluation&gt;
+                &lt;L7p:AuthorizationStatement samlpAuthorizationInfo=&quot;included&quot;&gt;
+                    &lt;L7p:Actions stringArrayValue=&quot;included&quot;/&gt;
+                &lt;/L7p:AuthorizationStatement&gt;
+                &lt;L7p:AuthzDecisionOption boxedIntegerValue=&quot;1&quot;/&gt;
+                &lt;L7p:AuthzDecisionVariable stringValue=&quot;Permit&quot;/&gt;
+                &lt;L7p:OtherTargetMessageVariable stringValueNull=&quot;null&quot;/&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+                &lt;L7p:Version boxedIntegerValue=&quot;1&quot;/&gt;
+            &lt;/L7p:SamlpResponseEvaluation&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSaml2">
+              <void property="authenticationStatement">
+               <object class="com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement">
+                <void property="authenticationMethods">
+                 <array class="java.lang.String" length="27">
+                  <void index="0">
+                   <string>urn:ietf:rfc:1510</string>
+                  </void>
+                  <void index="1">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract</string>
+                  </void>
+                  <void index="2">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:unspecified</string>
+                  </void>
+                  <void index="3">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:SPKI</string>
+                  </void>
+                  <void index="4">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:X509-PKI</string>
+                  </void>
+                  <void index="5">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard</string>
+                  </void>
+                  <void index="6">
+                   <string>urn:ietf:rfc:3075</string>
+                  </void>
+                  <void index="7">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</string>
+                  </void>
+                  <void index="8">
+                   <string>urn:ietf:rfc:2945</string>
+                  </void>
+                  <void index="9">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI</string>
+                  </void>
+                  <void index="10">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PreviousSession</string>
+                  </void>
+                  <void index="11">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorUnregistered</string>
+                  </void>
+                  <void index="12">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorContract</string>
+                  </void>
+                  <void index="13">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony</string>
+                  </void>
+                  <void index="14">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered</string>
+                  </void>
+                  <void index="15">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:AuthenticatedTelephony</string>
+                  </void>
+                  <void index="16">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:XKMS</string>
+                  </void>
+                  <void index="17">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:PGP</string>
+                  </void>
+                  <void index="18">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:HardwareToken</string>
+                  </void>
+                  <void index="19">
+                   <string>urn:ietf:rfc:2246</string>
+                  </void>
+                  <void index="20">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PersonalizedTelephony</string>
+                  </void>
+                  <void index="21">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocol</string>
+                  </void>
+                  <void index="22">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:Telephony</string>
+                  </void>
+                  <void index="23">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocolPassword</string>
+                  </void>
+                  <void index="24">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</string>
+                  </void>
+                  <void index="25">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI</string>
+                  </void>
+                  <void index="26">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:password</string>
+                  </void>
+                 </array>
+                </void>
+               </object>
+              </void>
+              <void property="nameFormats">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:2.0:nameid-format:entity</string>
+                </void>
+               </array>
+              </void>
+              <void property="nameQualifier">
+               <string></string>
+              </void>
+              <void property="requireHolderOfKeyWithMessageSignature">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmationDataCheckAddress">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmations">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</string>
+                </void>
+               </array>
+              </void>
+              <void property="target">
+               <object class="java.lang.Enum" id="TargetMessageType1" method="valueOf">
+                <class>com.l7tech.policy.assertion.TargetMessageType</class>
+                <string>RESPONSE</string>
+               </object>
+              </void>
+              <void property="version">
+               <int>0</int>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SetSamlStatus</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SetSamlStatus&gt;
+                &lt;L7p:SamlStatus samlStatus=&quot;SAML_SUCCESS&quot;/&gt;
+            &lt;/L7p:SetSamlStatus&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="target">
+               <object idref="TargetMessageType0"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.JmsRoutingAssertion">
+              <void property="endpointName">
+               <string>test</string>
+              </void>
+              <void property="requestJmsMessagePropertyRuleSet">
+               <object class="com.l7tech.policy.assertion.JmsMessagePropertyRuleSet">
+                <void id="JmsMessagePropertyRuleArray0" property="rules"/>
+               </object>
+              </void>
+              <void property="responseJmsMessagePropertyRuleSet">
+               <object class="com.l7tech.policy.assertion.JmsMessagePropertyRuleSet">
+                <void property="rules">
+                 <object idref="JmsMessagePropertyRuleArray0"/>
+                </void>
+               </object>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SamlBrowserArtifact</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SamlBrowserArtifact&gt;
+                &lt;L7p:AuthenticationProperties authenticationInfo=&quot;included&quot;/&gt;
+                &lt;L7p:SsoEndpointUrl stringValue=&quot;https://test&quot;/&gt;
+            &lt;/L7p:SamlBrowserArtifact&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.HttpRoutingAssertion">
+              <void property="protectedServiceUrl">
+               <string>http://hugh/ACMEWarehouseWS/Service1.asmx</string>
+              </void>
+              <void property="samlAssertionVersion">
+               <int>2</int>
+              </void>
+              <void property="requestParamRules">
+               <void id="HttpPassthroughRuleArray0" property="rules"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: HardcodedResponse</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:HardcodedResponse&gt;
+                &lt;L7p:Base64ResponseBody stringValue=&quot;dGVzdA==&quot;/&gt;
+            &lt;/L7p:HardcodedResponse&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SetSamlStatus</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SetSamlStatus&gt;
+                &lt;L7p:SamlStatus samlStatus=&quot;SAML_SUCCESS&quot;/&gt;
+            &lt;/L7p:SetSamlStatus&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SamlBrowserArtifact</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SamlBrowserArtifact&gt;
+                &lt;L7p:AuthenticationProperties authenticationInfo=&quot;included&quot;/&gt;
+                &lt;L7p:SsoEndpointUrl stringValue=&quot;http://test&quot;/&gt;
+            &lt;/L7p:SamlBrowserArtifact&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EstablishOutboundSecureConversation</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:EstablishOutboundSecureConversation&gt;
+                &lt;L7p:ServiceUrl stringValue=&quot;http://test&quot;/&gt;
+            &lt;/L7p:EstablishOutboundSecureConversation&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessSamlAttributeQueryRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessSamlAttributeQueryRequest&gt;
+                &lt;L7p:AttributeNameFormats stringValue=&quot;urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified &quot;/&gt;
+                &lt;L7p:CustomAttributeNameFormats stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CustomSubjectFormats stringValue=&quot;&quot;/&gt;
+                &lt;L7p:SubjectFormats stringValue=&quot;urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified &quot;/&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:ProcessSamlAttributeQueryRequest&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessSamlAuthnRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessSamlAuthnRequest&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:ProcessSamlAuthnRequest&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: IcapAntivirusScanner</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:IcapAntivirusScanner&gt;
+                &lt;L7p:FailoverStrategy stringValue=&quot;ordered&quot;/&gt;
+                &lt;L7p:IcapServers stringListValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;icap://icaptest&quot;/&gt;
+                &lt;/L7p:IcapServers&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:IcapAntivirusScanner&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SamlIssuer</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SamlIssuer/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: FtpRoutingAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:FtpRoutingAssertion&gt;
+                &lt;L7p:CredentialsSource credentialsSource=&quot;passThru&quot;/&gt;
+                &lt;L7p:Directory stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:FileNamePattern stringValue=&quot;&quot;/&gt;
+                &lt;L7p:FileNameSource fileNameSource=&quot;auto&quot;/&gt;
+                &lt;L7p:HostName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:Password stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Security security=&quot;ftp&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:FtpRoutingAssertion&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xml.SchemaValidation">
+              <void property="resourceInfo">
+               <void property="document">
+                <string>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;s:schema elementFormDefault=&quot;qualified&quot;
+    targetNamespace=&quot;http://warehouse.acme.com/ws&quot;
+    xmlns:http=&quot;http://schemas.xmlsoap.org/wsdl/http/&quot;
+    xmlns:mime=&quot;http://schemas.xmlsoap.org/wsdl/mime/&quot;
+    xmlns:s=&quot;http://www.w3.org/2001/XMLSchema&quot;
+    xmlns:soap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot;
+    xmlns:soap12=&quot;http://schemas.xmlsoap.org/wsdl/soap12/&quot;
+    xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot;
+    xmlns:tm=&quot;http://microsoft.com/wsdl/mime/textMatching/&quot;
+    xmlns:tns=&quot;http://warehouse.acme.com/ws&quot; xmlns:wsdl=&quot;http://schemas.xmlsoap.org/wsdl/&quot;&gt;
+    &lt;s:element name=&quot;listProducts&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;delay&quot; type=&quot;s:int&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:element name=&quot;listProductsResponse&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;
+                    name=&quot;listProductsResult&quot; type=&quot;tns:ArrayOfProductListHeader&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:complexType name=&quot;ArrayOfProductListHeader&quot;&gt;
+        &lt;s:sequence&gt;
+            &lt;s:element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot;
+                name=&quot;ProductListHeader&quot; nillable=&quot;true&quot; type=&quot;tns:ProductListHeader&quot;/&gt;
+        &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+    &lt;s:complexType name=&quot;ProductListHeader&quot;&gt;
+        &lt;s:sequence&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot; name=&quot;productName&quot; type=&quot;s:string&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productId&quot; type=&quot;s:long&quot;/&gt;
+        &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+    &lt;s:element name=&quot;getProductDetails&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productid&quot; type=&quot;s:long&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;delay&quot; type=&quot;s:int&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:element name=&quot;getProductDetailsResponse&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;
+                    name=&quot;getProductDetailsResult&quot; type=&quot;tns:ProductDetails&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:complexType name=&quot;ProductDetails&quot;&gt;
+        &lt;s:complexContent mixed=&quot;false&quot;&gt;
+            &lt;s:extension base=&quot;tns:ProductListHeader&quot;&gt;
+                &lt;s:sequence&gt;
+                    &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;
+                        name=&quot;description&quot; type=&quot;s:string&quot;/&gt;
+                    &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;
+                    &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot;
+                        name=&quot;inStock&quot; type=&quot;s:boolean&quot;/&gt;
+                &lt;/s:sequence&gt;
+            &lt;/s:extension&gt;
+        &lt;/s:complexContent&gt;
+    &lt;/s:complexType&gt;
+    &lt;s:element name=&quot;placeOrder&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productid&quot; type=&quot;s:long&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;amount&quot; type=&quot;s:long&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountid&quot; type=&quot;s:long&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;delay&quot; type=&quot;s:int&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:element name=&quot;placeOrderResponse&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot;
+                    name=&quot;placeOrderResult&quot; type=&quot;s:long&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:element name=&quot;currentOrders&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountid&quot; type=&quot;s:long&quot;/&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;delay&quot; type=&quot;s:int&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:element name=&quot;currentOrdersResponse&quot;&gt;
+        &lt;s:complexType&gt;
+            &lt;s:sequence&gt;
+                &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;0&quot;
+                    name=&quot;currentOrdersResult&quot; type=&quot;tns:ArrayOfOrder&quot;/&gt;
+            &lt;/s:sequence&gt;
+        &lt;/s:complexType&gt;
+    &lt;/s:element&gt;
+    &lt;s:complexType name=&quot;ArrayOfOrder&quot;&gt;
+        &lt;s:sequence&gt;
+            &lt;s:element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot; name=&quot;Order&quot;
+                nillable=&quot;true&quot; type=&quot;tns:Order&quot;/&gt;
+        &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+    &lt;s:complexType name=&quot;Order&quot;&gt;
+        &lt;s:sequence&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;date&quot; type=&quot;s:dateTime&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;accountId&quot; type=&quot;s:long&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;productId&quot; type=&quot;s:long&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;amount&quot; type=&quot;s:long&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;price&quot; type=&quot;s:float&quot;/&gt;
+            &lt;s:element maxOccurs=&quot;1&quot; minOccurs=&quot;1&quot; name=&quot;confirmationId&quot; type=&quot;s:long&quot;/&gt;
+        &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+&lt;/s:schema&gt;</string>
+               </void>
+               <void property="originalUrl">
+                <string>file:/D:/Users/jkazakova/Documents/Test%20Services/Warehouse.xml#.xsd1</string>
+               </void>
+              </void>
+              <void property="target">
+               <object idref="TargetMessageType0"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.HttpRoutingAssertion">
+              <void property="protectedServiceUrl">
+               <string>http://hugh/ACMEWarehouseWS/Service1.asmx</string>
+              </void>
+              <void property="requestParamRules">
+               <void property="rules">
+                <object idref="HttpPassthroughRuleArray0"/>
+               </void>
+              </void>
+              <void property="samlAssertionVersion">
+               <int>2</int>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.RequestSwAAssertion">
+              <void property="bindings">
+               <void method="put">
+                <string>WarehouseSoap</string>
+                <object class="com.l7tech.wsdl.BindingInfo">
+                 <void property="bindingName">
+                  <string>WarehouseSoap</string>
+                 </void>
+                </object>
+               </void>
+               <void method="put">
+                <string>WarehouseSoap12</string>
+                <object class="com.l7tech.wsdl.BindingInfo">
+                 <void property="bindingName">
+                  <string>WarehouseSoap12</string>
+                 </void>
+                </object>
+               </void>
+              </void>
+              <void property="namespaceMap">
+               <void method="put">
+                <string>s</string>
+                <string>http://www.w3.org/2003/05/soap-envelope</string>
+               </void>
+               <void method="put">
+                <string>tns</string>
+                <string>http://warehouse.acme.com/ws</string>
+               </void>
+               <void method="put">
+                <string>xsd</string>
+                <string>http://www.w3.org/2001/XMLSchema</string>
+               </void>
+               <void method="put">
+                <string>xsi</string>
+                <string>http://www.w3.org/2001/XMLSchema-instance</string>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: FtpRoutingAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:FtpRoutingAssertion&gt;
+                &lt;L7p:CredentialsSource credentialsSource=&quot;passThru&quot;/&gt;
+                &lt;L7p:Directory stringValue=&quot;&quot;/&gt;
+                &lt;L7p:FileNamePattern stringValue=&quot;&quot;/&gt;
+                &lt;L7p:FileNameSource fileNameSource=&quot;auto&quot;/&gt;
+                &lt;L7p:HostName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:Password stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Security security=&quot;ftp&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:FtpRoutingAssertion&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.HtmlFormDataAssertion">
+              <void property="allowGet">
+               <boolean>true</boolean>
+              </void>
+              <void property="allowPost">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ContentType</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ContentType/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ValidateCertificate</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ValidateCertificate&gt;
+                &lt;L7p:SourceVariable stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:ValidateCertificate&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MTOMValidateAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MTOMValidateAssertion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EvaluateJsonPathExpression</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:EvaluateJsonPathExpression&gt;
+                &lt;L7p:Expression stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:EvaluateJsonPathExpression&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: JSONSchema</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:JSONSchema&gt;
+                &lt;L7p:ResourceInfo singleUrlResourceInfo=&quot;included&quot;&gt;
+                    &lt;L7p:Url stringValue=&quot;https://tewt&quot;/&gt;
+                &lt;/L7p:ResourceInfo&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:JSONSchema&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MTOMDecodeAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MTOMDecodeAssertion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: InverseHttpFormPost</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:InverseHttpFormPost&gt;
+                &lt;L7p:FieldNames stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;test&quot;/&gt;
+                &lt;/L7p:FieldNames&gt;
+            &lt;/L7p:InverseHttpFormPost&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.WsiSamlAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.WsspAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessSamlAuthnRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessSamlAuthnRequest/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessSamlAttributeQueryRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessSamlAttributeQueryRequest&gt;
+                &lt;L7p:AttributeNameFormats stringValue=&quot;urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified &quot;/&gt;
+                &lt;L7p:CustomAttributeNameFormats stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CustomSubjectFormats stringValue=&quot;&quot;/&gt;
+                &lt;L7p:SubjectFormats stringValue=&quot;urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified &quot;/&gt;
+            &lt;/L7p:ProcessSamlAttributeQueryRequest&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.Operation">
+              <void property="operationName">
+               <string>listProducts</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.ResponseXpathAssertion">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WsAddressing</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WsAddressing/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken">
+              <void property="target">
+               <object idref="TargetMessageType0"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.RequestXpathAssertion">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.Regex">
+              <void property="autoTarget">
+               <boolean>false</boolean>
+              </void>
+              <void property="regex">
+               <string>test</string>
+              </void>
+              <void property="regexName">
+               <string>test</string>
+              </void>
+              <void property="replacement">
+               <string></string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: AddWsAddressing</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:AddWsAddressing&gt;
+                &lt;L7p:Action stringValue=&quot;&amp;lt;Obtain from target message&gt;&quot;/&gt;
+                &lt;L7p:WsaNamespaceUri stringValue=&quot;http://www.w3.org/2005/08/addressing&quot;/&gt;
+            &lt;/L7p:AddWsAddressing&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ValidateNonSoapSamlToken</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ValidateNonSoapSamlToken&gt;
+                &lt;L7p:AuthenticationStatement samlAuthenticationInfo=&quot;included&quot;&gt;
+                    &lt;L7p:AuthenticationMethods stringArrayValue=&quot;included&quot;&gt;
+                        &lt;L7p:item stringValue=&quot;urn:ietf:rfc:1510&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:unspecified&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:SPKI&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:X509-PKI&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:ietf:rfc:3075&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:ietf:rfc:2945&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:XKMS&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:PGP&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:HardwareToken&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:ietf:rfc:2246&quot;/&gt;
+                        &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:am:password&quot;/&gt;
+                    &lt;/L7p:AuthenticationMethods&gt;
+                &lt;/L7p:AuthenticationStatement&gt;
+                &lt;L7p:NameFormats stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName&quot;/&gt;
+                &lt;/L7p:NameFormats&gt;
+                &lt;L7p:NameQualifier stringValue=&quot;&quot;/&gt;
+                &lt;L7p:SubjectConfirmations stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;urn:oasis:names:tc:SAML:1.0:cm:holder-of-key&quot;/&gt;
+                &lt;/L7p:SubjectConfirmations&gt;
+                &lt;L7p:Version boxedIntegerValue=&quot;1&quot;/&gt;
+            &lt;/L7p:ValidateNonSoapSamlToken&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MTOMEncodeAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MTOMEncodeAssertion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: RemoveElement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:RemoveElement&gt;
+                &lt;L7p:ElementFromVariable stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:ElementToInsertVariable stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:RemoveElement&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray0" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray0"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: JsonTransformation</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:JsonTransformation&gt;
+                &lt;L7p:RootTagString stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Target target=&quot;REQUEST&quot;/&gt;
+            &lt;/L7p:JsonTransformation&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WssVersion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WssVersion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="target">
+               <object idref="TargetMessageType0"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.WsiBspAssertion">
+              <void property="checkRequestMessages">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.transport.PreemptiveCompression"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xml.XslTransformation">
+              <void property="resourceInfo">
+               <void property="document">
+                <string>&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+  &lt;!-- Identity transform --&gt;
+  &lt;xsl:template match=&quot;@*|*|processing-instruction()|comment()&quot;&gt;
+    &lt;xsl:copy&gt;
+      &lt;xsl:apply-templates select=&quot;*|@*|text()|processing-instruction()|comment()&quot;/&gt;
+    &lt;/xsl:copy&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</string>
+               </void>
+              </void>
+              <void property="transformName">
+               <string></string>
+              </void>
+              <void property="xsltVersion">
+               <string>1.0</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: LookupOutboundSecureConversationSession</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:LookupOutboundSecureConversationSession&gt;
+                &lt;L7p:ServiceUrl stringValue=&quot;http://test&quot;/&gt;
+            &lt;/L7p:LookupOutboundSecureConversationSession&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: BuildRstSoapRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:BuildRstSoapRequest&gt;
+                &lt;L7p:SoapVersion soapVersion=&quot;SOAP_1_2&quot;/&gt;
+                &lt;L7p:WsTrustNamespace stringValue=&quot;http://docs.oasis-open.org/ws-sx/ws-trust/200512&quot;/&gt;
+            &lt;/L7p:BuildRstSoapRequest&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: GenerateOAuthSignatureBaseString</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:GenerateOAuthSignatureBaseString/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.AddWssTimestamp">
+              <void property="target">
+               <object idref="TargetMessageType0"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessRstrSoapResponse</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessRstrSoapResponse/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequestWssKerberos"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WsSecurity</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WsSecurity/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NonSoapVerifyElement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NonSoapVerifyElement/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: LookupTrustedCertificate</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:LookupTrustedCertificate&gt;
+                &lt;L7p:TrustedCertificateName stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:LookupTrustedCertificate&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WssConfiguration</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WssConfiguration&gt;
+                &lt;L7p:Target target=&quot;REQUEST&quot;/&gt;
+            &lt;/L7p:WssConfiguration&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SiteMinderAuthenticate</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SiteMinderAuthenticate&gt;
+                &lt;L7p:CookieSourceVar stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Login stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Prefix stringValue=&quot;siteminder&quot;/&gt;
+            &lt;/L7p:SiteMinderAuthenticate&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: Authentication</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:Authentication&gt;
+                &lt;L7p:IdentityProviderOid goidValue=&quot;0000000000000000fffffffffffffffe&quot;/&gt;
+            &lt;/L7p:Authentication&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: GenerateSecurityHash</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:GenerateSecurityHash&gt;
+                &lt;L7p:Base64Data stringValue=&quot;dGVzdA==&quot;/&gt;
+                &lt;L7p:KeyText stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:LineBreak lineBreak=&quot;CR-LF&quot;/&gt;
+                &lt;L7p:TargetOutputVariable stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:GenerateSecurityHash&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: XacmlRequestBuilderAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:XacmlRequestBuilderAssertion&gt;
+                &lt;L7p:Action action=&quot;included&quot;/&gt;
+                &lt;L7p:Environment environment=&quot;included&quot;/&gt;
+                &lt;L7p:Resources resourceList=&quot;included&quot;&gt;
+                    &lt;L7p:item resource=&quot;included&quot;/&gt;
+                &lt;/L7p:Resources&gt;
+                &lt;L7p:Subjects subjectList=&quot;included&quot;&gt;
+                    &lt;L7p:item subject=&quot;included&quot;/&gt;
+                &lt;/L7p:Subjects&gt;
+            &lt;/L7p:XacmlRequestBuilderAssertion&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: BuildRstrSoapResponse</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:BuildRstrSoapResponse&gt;
+                &lt;L7p:ResponseForIssuance booleanValue=&quot;false&quot;/&gt;
+            &lt;/L7p:BuildRstrSoapResponse&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CreateSecurityContextToken</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CreateSecurityContextToken/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CancelSecurityContext</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CancelSecurityContext/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.ResponseXpathAssertion">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.identity.SpecificUser">
+              <void property="userLogin">
+               <string>jk02</string>
+              </void>
+              <void property="userName">
+               <string>jk02</string>
+              </void>
+              <void property="userUid">
+               <string>18f12abdcce3b7cbed08e1ccf67f5a04</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SiteMinderAuthorize</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SiteMinderAuthorize&gt;
+                &lt;L7p:CookieComment stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieDomain stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieMaxAge stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieName stringValue=&quot;SMSESSION&quot;/&gt;
+                &lt;L7p:CookiePath stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieSecure stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieSourceVar stringValue=&quot;&quot;/&gt;
+                &lt;L7p:CookieVersion stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Prefix stringValue=&quot;siteminder&quot;/&gt;
+                &lt;L7p:SetSMCookie booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:UseCustomCookieName booleanValue=&quot;true&quot;/&gt;
+            &lt;/L7p:SiteMinderAuthorize&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: VariableCredentialSource</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:VariableCredentialSource&gt;
+                &lt;L7p:VariableName stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:VariableCredentialSource&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: XpathCredentialSource</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:XpathCredentialSource&gt;
+                &lt;L7p:PasswordExpression xpathExpressionValue=&quot;included&quot;&gt;
+                    &lt;L7p:Expression stringValue=&quot;/s:Envelope/s:Body//Password&quot;/&gt;
+                    &lt;L7p:Namespaces mapValue=&quot;included&quot;&gt;
+                        &lt;L7p:entry&gt;
+                            &lt;L7p:key stringValue=&quot;s&quot;/&gt;
+                            &lt;L7p:value stringValue=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;/&gt;
+                        &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                &lt;/L7p:PasswordExpression&gt;
+                &lt;L7p:XpathExpression xpathExpressionValue=&quot;included&quot;&gt;
+                    &lt;L7p:Expression stringValue=&quot;/s:Envelope/s:Body//Username&quot;/&gt;
+                    &lt;L7p:Namespaces mapValue=&quot;included&quot;&gt;
+                        &lt;L7p:entry&gt;
+                            &lt;L7p:key stringValue=&quot;s&quot;/&gt;
+                            &lt;L7p:value stringValue=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;/&gt;
+                        &lt;/L7p:entry&gt;
+                    &lt;/L7p:Namespaces&gt;
+                &lt;/L7p:XpathExpression&gt;
+            &lt;/L7p:XpathCredentialSource&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.SecureConversation"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WsFederationPassiveTokenRequest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WsFederationPassiveTokenRequest&gt;
+                &lt;L7p:Context stringValue=&quot;&quot;/&gt;
+                &lt;L7p:IpStsUrl stringValue=&quot;https://test&quot;/&gt;
+                &lt;L7p:Realm stringValue=&quot;&quot;/&gt;
+                &lt;L7p:ReplyUrl stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:WsFederationPassiveTokenRequest&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.WsTrustCredentialExchange">
+              <void property="appliesTo">
+               <string>test</string>
+              </void>
+              <void property="issuer">
+               <string>test</string>
+              </void>
+              <void property="tokenServiceUrl">
+               <string>https://jktest.com</string>
+              </void>
+              <void property="wsTrustNamespace">
+               <string>http://docs.oasis-open.org/ws-sx/ws-trust/200512</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.wss.WssBasic"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: IdentityAttributes</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:IdentityAttributes&gt;
+                &lt;L7p:IdentityProviderOid goidValue=&quot;0000000000000000fffffffffffffffe&quot;/&gt;
+                &lt;L7p:LookupAttributes identityMappingArray=&quot;included&quot;&gt;
+                    &lt;L7p:item internalAttributeMapping=&quot;included&quot;&gt;
+                        &lt;L7p:AttributeConfig attributeConfig=&quot;included&quot;&gt;
+                            &lt;L7p:Header header=&quot;included&quot;&gt;
+                                &lt;L7p:Name stringValue=&quot;Unique ID&quot;/&gt;
+                                &lt;L7p:Type variableDataType=&quot;string&quot;/&gt;
+                                &lt;L7p:UsersOrGroups usersOrGroups=&quot;BOTH&quot;/&gt;
+                                &lt;L7p:VariableName stringValue=&quot;id&quot;/&gt;
+                            &lt;/L7p:Header&gt;
+                            &lt;L7p:VariableName stringValue=&quot;id&quot;/&gt;
+                        &lt;/L7p:AttributeConfig&gt;
+                        &lt;L7p:ProviderOid goidValue=&quot;0000000000000000fffffffffffffffe&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:LookupAttributes&gt;
+            &lt;/L7p:IdentityAttributes&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CertificateAttributes</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CertificateAttributes/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequestWssKerberos"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.http.HttpNegotiate"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: JdbcQuery</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:JdbcQuery&gt;
+                &lt;L7p:ConnectionName stringValue=&quot;jkTest&quot;/&gt;
+                &lt;L7p:ConvertVariablesToStrings booleanValue=&quot;false&quot;/&gt;
+                &lt;L7p:SqlQuery stringValue=&quot;select * from jdbc_connection;&quot;/&gt;
+            &lt;/L7p:JdbcQuery&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SimpleRawTransport</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SimpleRawTransport&gt;
+                &lt;L7p:TargetHost stringValue=&quot;10.7.21.12&quot;/&gt;
+            &lt;/L7p:SimpleRawTransport&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: WssDigest</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:WssDigest/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MessageContextAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MessageContextAssertion&gt;
+                &lt;L7p:Mappings mappingInfoArray=&quot;included&quot;&gt;
+                    &lt;L7p:item mappingInfo=&quot;included&quot;&gt;
+                        &lt;L7p:Key stringValue=&quot;IP_ADDRESS&quot;/&gt;
+                        &lt;L7p:MappingType mappingType=&quot;IP_ADDRESS&quot;/&gt;
+                        &lt;L7p:Value stringValue=&quot;(SYSTEM DEFINED)&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item mappingInfo=&quot;included&quot;&gt;
+                        &lt;L7p:Key stringValue=&quot;AUTH_USER&quot;/&gt;
+                        &lt;L7p:MappingType mappingType=&quot;AUTH_USER&quot;/&gt;
+                        &lt;L7p:Value stringValue=&quot;(SYSTEM DEFINED)&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:Mappings&gt;
+            &lt;/L7p:MessageContextAssertion&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MqNativeRouting</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MqNativeRouting&gt;
+                &lt;L7p:RequestMessageAdvancedProperties mapValueNull=&quot;null&quot;/&gt;
+                &lt;L7p:RequestMqNativeMessagePropertyRuleSet mappingRuleSet=&quot;included&quot;/&gt;
+                &lt;L7p:ResponseMessageAdvancedProperties mapValueNull=&quot;null&quot;/&gt;
+                &lt;L7p:ResponseMqNativeMessagePropertyRuleSet mappingRuleSet=&quot;included&quot;/&gt;
+                &lt;L7p:ResponseTarget MessageTarget=&quot;included&quot;&gt;
+                    &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+                &lt;/L7p:ResponseTarget&gt;
+                &lt;L7p:SsgActiveConnectorGoid goidValue=&quot;4ea42fd7e7d7159ad242236517b775ef&quot;/&gt;
+                &lt;L7p:SsgActiveConnectorId goidValue=&quot;4ea42fd7e7d7159ad242236517b775ef&quot;/&gt;
+                &lt;L7p:SsgActiveConnectorName stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:MqNativeRouting&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.BridgeRoutingAssertion">
+              <void property="protectedServiceUrl">
+               <string>http://hugh/ACMEWarehouseWS/Service1.asmx</string>
+              </void>
+              <void property="requestParamRules">
+               <void property="rules">
+                <object idref="HttpPassthroughRuleArray0"/>
+               </void>
+              </void>
+              <void property="samlAssertionVersion">
+               <int>2</int>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.alert.EmailAlertAssertion">
+              <void property="targetEmailAddress">
+               <string>test</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.AuditDetailAssertion">
+              <void property="detail">
+               <string>test</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: RateLimit</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:RateLimit&gt;
+                &lt;L7p:CounterName stringValue=&quot;PRESET(7d209a1c11133603)${request.clientid}&quot;/&gt;
+            &lt;/L7p:RateLimit&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SshRouteAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SshRouteAssertion&gt;
+                &lt;L7p:CommandTypeVariableName stringValue=&quot;&quot;/&gt;
+                &lt;L7p:Directory stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:DownloadContentType stringValue=&quot;text/xml; charset=utf-8&quot;/&gt;
+                &lt;L7p:FileName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:Host stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:NewFileName stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:SshRouteAssertion&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.AuditAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ThroughputQuota</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ThroughputQuota&gt;
+                &lt;L7p:CounterName stringValue=&quot;PRESET(248d3456b7b71bc8)${request.authenticateduser.id}-${request.authenticateduser.providerid}&quot;/&gt;
+                &lt;L7p:Global booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:Synchronous booleanValue=&quot;false&quot;/&gt;
+            &lt;/L7p:ThroughputQuota&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ExecuteRoutingStrategy</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ExecuteRoutingStrategy/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: TimeRange</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:TimeRange&gt;
+                &lt;L7p:ControlTime booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:EndDayOfWeek intValue=&quot;6&quot;/&gt;
+                &lt;L7p:StartDayOfWeek intValue=&quot;2&quot;/&gt;
+                &lt;L7p:TimeRange timeOfDayRange=&quot;included&quot;&gt;
+                    &lt;L7p:From timeOfDay=&quot;included&quot;&gt;
+                        &lt;L7p:Hour intValue=&quot;15&quot;/&gt;
+                    &lt;/L7p:From&gt;
+                    &lt;L7p:To timeOfDay=&quot;included&quot;/&gt;
+                &lt;/L7p:TimeRange&gt;
+            &lt;/L7p:TimeRange&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SnmpTrap</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SnmpTrap&gt;
+                &lt;L7p:Community stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:Oid stringValue=&quot;02&quot;/&gt;
+                &lt;L7p:TargetHostname stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:SnmpTrap&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CacheLookup</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CacheLookup/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CustomizeErrorResponse</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CustomizeErrorResponse&gt;
+                &lt;L7p:ExtraHeaders nameValuePairArray=&quot;included&quot;/&gt;
+            &lt;/L7p:CustomizeErrorResponse&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ExportVariables</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ExportVariables&gt;
+                &lt;L7p:ExportedVars stringArrayValue=&quot;included&quot;/&gt;
+            &lt;/L7p:ExportVariables&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: RateLimitQuery</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:RateLimitQuery&gt;
+                &lt;L7p:CounterName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:VariablePrefix stringValue=&quot;set&quot;/&gt;
+            &lt;/L7p:RateLimitQuery&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: LDAPQuery</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:LDAPQuery&gt;
+                &lt;L7p:AllowMultipleResults booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:AttrNames stringArrayValue=&quot;included&quot;&gt;
+                    &lt;L7p:item stringValue=&quot;test&quot;/&gt;
+                &lt;/L7p:AttrNames&gt;
+                &lt;L7p:CacheSize intValue=&quot;100&quot;/&gt;
+                &lt;L7p:LdapProviderOid goidValue=&quot;4ea42fd7e7d7159ad242236517b77510&quot;/&gt;
+                &lt;L7p:QueryMappings queryAttributeMappings=&quot;included&quot;&gt;
+                    &lt;L7p:item mapping=&quot;included&quot;&gt;
+                        &lt;L7p:AttributeName stringValue=&quot;test&quot;/&gt;
+                        &lt;L7p:JoinMultivalued booleanValue=&quot;false&quot;/&gt;
+                        &lt;L7p:MatchingContextVariableName stringValue=&quot;test&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:QueryMappings&gt;
+                &lt;L7p:SearchFilter stringValue=&quot;rwar&quot;/&gt;
+                &lt;L7p:SearchFilterInjectionProtected booleanValue=&quot;true&quot;/&gt;
+            &lt;/L7p:LDAPQuery&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ThroughputQuotaQuery</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ThroughputQuotaQuery&gt;
+                &lt;L7p:CounterName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:VariablePrefix stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:ThroughputQuotaQuery&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ResolveService</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ResolveService&gt;
+                &lt;L7p:Uri stringValue=&quot;/test&quot;/&gt;
+            &lt;/L7p:ResolveService&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: FaultLevel</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:FaultLevel&gt;
+                &lt;L7p:LevelInfo soapFaultLevel=&quot;included&quot;/&gt;
+            &lt;/L7p:FaultLevel&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.RemoteIpRange"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.TrueAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CreateRoutingStrategy</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CreateRoutingStrategy&gt;
+                &lt;L7p:Routes routes=&quot;included&quot;&gt;
+                    &lt;L7p:item route=&quot;included&quot;&gt;
+                        &lt;L7p:Name stringValue=&quot;test&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:Routes&gt;
+                &lt;L7p:StrategyDescription stringValue=&quot;Ordered Sticky with Failover&quot;/&gt;
+                &lt;L7p:StrategyName stringValue=&quot;ordered&quot;/&gt;
+            &lt;/L7p:CreateRoutingStrategy&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: UUIDGenerator</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:UUIDGenerator&gt;
+                &lt;L7p:TargetVariable stringValue=&quot;resar&quot;/&gt;
+            &lt;/L7p:UUIDGenerator&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CacheStorage</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CacheStorage/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SetVariable</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SetVariable&gt;
+                &lt;L7p:Base64Expression stringValue=&quot;dGVzdA==&quot;/&gt;
+                &lt;L7p:VariableToSet stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:SetVariable&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: Split</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:Split&gt;
+                &lt;L7p:InputVariable stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:OutputVariable stringValue=&quot;e&quot;/&gt;
+            &lt;/L7p:Split&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: Include</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:Include&gt;
+                &lt;L7p:PolicyGuid stringValue=&quot;f8225870-fdb7-4263-8667-edeacafea51b&quot;/&gt;
+            &lt;/L7p:Include&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: Join</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:Join&gt;
+                &lt;L7p:InputVariable stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:OutputVariable stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:Join&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: SshCredential</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:SshCredential&gt;
+                &lt;L7p:PermitPasswordCredential booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:PermitPublicKeyCredential booleanValue=&quot;true&quot;/&gt;
+            &lt;/L7p:SshCredential&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: LookupDynamicContextVariables</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:LookupDynamicContextVariables&gt;
+                &lt;L7p:SourceVariable stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:TargetDataType variableDataType=&quot;string&quot;/&gt;
+            &lt;/L7p:LookupDynamicContextVariables&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: RequestSizeLimit</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:RequestSizeLimit/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ItemLookupByIndex</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ItemLookupByIndex/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: MapValue</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:MapValue&gt;
+                &lt;L7p:InputExpr stringValue=&quot;rser&quot;/&gt;
+                &lt;L7p:Mappings nameValuePairArray=&quot;included&quot;&gt;
+                    &lt;L7p:item nameValuePair=&quot;included&quot;&gt;
+                        &lt;L7p:Key stringValue=&quot;test&quot;/&gt;
+                        &lt;L7p:Value stringValue=&quot;test&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:Mappings&gt;
+                &lt;L7p:OutputVar stringValue=&quot;&quot;/&gt;
+            &lt;/L7p:MapValue&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: IndexLookupByItem</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:IndexLookupByItem/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ManipulateMultiValuedVariable</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ManipulateMultiValuedVariable&gt;
+                &lt;L7p:SourceVariableName stringValue=&quot;sret&quot;/&gt;
+                &lt;L7p:TargetVariableName stringValue=&quot;test&quot;/&gt;
+            &lt;/L7p:ManipulateMultiValuedVariable&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: CsrfProtection</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:CsrfProtection&gt;
+                &lt;L7p:CookieName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:ParameterName stringValue=&quot;trest&quot;/&gt;
+            &lt;/L7p:CsrfProtection&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ProcessRoutingStrategyResult</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ProcessRoutingStrategyResult/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.CodeInjectionProtectionAssertion">
+              <void property="protections">
+               <array class="com.l7tech.policy.assertion.CodeInjectionProtectionType" length="3"/>
+              </void>
+              <void property="target">
+               <object idref="TargetMessageType1"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ConcurrentAll</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;wsp:ConcurrentAll wsp:Usage=&quot;Required&quot;/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SqlAttackAssertion">
+              <void property="includeUrl">
+               <boolean>true</boolean>
+              </void>
+              <void property="protections">
+               <object class="java.util.Collections" method="unmodifiableSet">
+                <object class="java.util.HashSet">
+                 <void method="add">
+                  <string>SqlMetaText</string>
+                 </void>
+                 <void method="add">
+                  <string>OraSql</string>
+                 </void>
+                 <void method="add">
+                  <string>SqlMeta</string>
+                 </void>
+                </object>
+               </object>
+              </void>
+              <void property="target">
+               <object idref="TargetMessageType1"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: ESMAssertion</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:ESMAssertion/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: OversizedText</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:OversizedText&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:OversizedText&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssReplayProtection">
+              <void property="target">
+               <object idref="TargetMessageType1"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: NtlmAuthentication</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:NtlmAuthentication&gt;
+                &lt;L7p:LdapProviderName stringValue=&quot;test&quot;/&gt;
+                &lt;L7p:LdapProviderOid goidValue=&quot;4ea42fd7e7d7159ad242236517b77510&quot;/&gt;
+            &lt;/L7p:NtlmAuthentication&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: AuditRecordToXml</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:AuditRecordToXml&gt;
+                &lt;L7p:Target target=&quot;RESPONSE&quot;/&gt;
+            &lt;/L7p:AuditRecordToXml&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: UDDINotification</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:UDDINotification/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.http.HttpBasic"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: FtpCredential</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:FtpCredential/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: GatewayManagement</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:GatewayManagement/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.composite.OneOrMoreAssertion">
+              <void property="children">
+               <object class="java.util.LinkedList">
+                <void method="add">
+                 <object class="com.l7tech.policy.assertion.FalseAssertion"/>
+                </void>
+               </object>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.RequestXpathAssertion">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EsmSubscription</string>
+              </void>
+              <void property="originalXml">
+               <string>&lt;L7p:EsmSubscription/&gt;</string>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.SecureConversation"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.TrueAssertion"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssReplayProtection"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSaml">
+              <void property="authenticationStatement">
+               <object class="com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement">
+                <void property="authenticationMethods">
+                 <array class="java.lang.String" length="11">
+                  <void index="0">
+                   <string>urn:ietf:rfc:1510</string>
+                  </void>
+                  <void index="1">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:unspecified</string>
+                  </void>
+                  <void index="2">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:SPKI</string>
+                  </void>
+                  <void index="3">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:X509-PKI</string>
+                  </void>
+                  <void index="4">
+                   <string>urn:ietf:rfc:3075</string>
+                  </void>
+                  <void index="5">
+                   <string>urn:ietf:rfc:2945</string>
+                  </void>
+                  <void index="6">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:XKMS</string>
+                  </void>
+                  <void index="7">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:PGP</string>
+                  </void>
+                  <void index="8">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:HardwareToken</string>
+                  </void>
+                  <void index="9">
+                   <string>urn:ietf:rfc:2246</string>
+                  </void>
+                  <void index="10">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:password</string>
+                  </void>
+                 </array>
+                </void>
+               </object>
+              </void>
+              <void property="nameFormats">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</string>
+                </void>
+               </array>
+              </void>
+              <void property="nameQualifier">
+               <string></string>
+              </void>
+              <void property="requireHolderOfKeyWithMessageSignature">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmationDataCheckAddress">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmations">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</string>
+                </void>
+               </array>
+              </void>
+              <void property="version">
+               <int>1</int>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssReplayProtection"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssSignElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.transport.PreemptiveCompression"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.credential.wss.WssBasic"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert"/>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement">
+              <void id="StringArray1" property="acceptedDigestAlgorithms"/>
+              <void property="acceptedDigestAlgorithms">
+               <object idref="StringArray1"/>
+              </void>
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssReplayProtection">
+              <void property="target">
+               <object idref="TargetMessageType1"/>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssSaml2">
+              <void property="authenticationStatement">
+               <object class="com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement">
+                <void property="authenticationMethods">
+                 <array class="java.lang.String" length="25">
+                  <void index="0">
+                   <string>urn:ietf:rfc:1510</string>
+                  </void>
+                  <void index="1">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract</string>
+                  </void>
+                  <void index="2">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:unspecified</string>
+                  </void>
+                  <void index="3">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:SPKI</string>
+                  </void>
+                  <void index="4">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:X509-PKI</string>
+                  </void>
+                  <void index="5">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard</string>
+                  </void>
+                  <void index="6">
+                   <string>urn:ietf:rfc:3075</string>
+                  </void>
+                  <void index="7">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken</string>
+                  </void>
+                  <void index="8">
+                   <string>urn:ietf:rfc:2945</string>
+                  </void>
+                  <void index="9">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI</string>
+                  </void>
+                  <void index="10">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PreviousSession</string>
+                  </void>
+                  <void index="11">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorUnregistered</string>
+                  </void>
+                  <void index="12">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorContract</string>
+                  </void>
+                  <void index="13">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony</string>
+                  </void>
+                  <void index="14">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered</string>
+                  </void>
+                  <void index="15">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:AuthenticatedTelephony</string>
+                  </void>
+                  <void index="16">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:PGP</string>
+                  </void>
+                  <void index="17">
+                   <string>urn:ietf:rfc:2246</string>
+                  </void>
+                  <void index="18">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PersonalizedTelephony</string>
+                  </void>
+                  <void index="19">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocol</string>
+                  </void>
+                  <void index="20">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:Telephony</string>
+                  </void>
+                  <void index="21">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocolPassword</string>
+                  </void>
+                  <void index="22">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</string>
+                  </void>
+                  <void index="23">
+                   <string>urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI</string>
+                  </void>
+                  <void index="24">
+                   <string>urn:oasis:names:tc:SAML:1.0:am:password</string>
+                  </void>
+                 </array>
+                </void>
+               </object>
+              </void>
+              <void property="nameFormats">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</string>
+                </void>
+               </array>
+              </void>
+              <void property="nameQualifier">
+               <string></string>
+              </void>
+              <void property="requireHolderOfKeyWithMessageSignature">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmationDataCheckAddress">
+               <boolean>true</boolean>
+              </void>
+              <void property="subjectConfirmations">
+               <array class="java.lang.String" length="1">
+                <void index="0">
+                 <string>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</string>
+                </void>
+               </array>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.WssEncryptElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement">
+              <void property="xpathExpression">
+               <void property="expression">
+                <string>/s:Envelope/s:Body</string>
+               </void>
+               <void property="namespaces">
+                <void method="remove">
+                 <string>soapenv</string>
+                </void>
+                <void method="put">
+                 <string>s</string>
+                 <string>http://schemas.xmlsoap.org/soap/envelope/</string>
+                </void>
+               </void>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.SslAssertion">
+              <void property="requireClientAuthentication">
+               <boolean>true</boolean>
+              </void>
+             </object>
+            </void>
+            <void method="add">
+             <object class="com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp"/>
+            </void>
+           </object>
+          </void>
+         </object>
+        </void>
+       </object>
+      </void>
+     </void>
+    </void>
+    <void property="serverUrl">
+     <string>http://jk80-nightly.l7tech.com:8080/ssg/soap</string>
+    </void>
+    <void property="username">
+     <string></string>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>
