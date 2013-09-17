@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.whichmodule.console;
 
+import com.l7tech.console.panels.ServiceComboBox;
 import com.l7tech.external.assertions.whichmodule.DemoGenericEntity;
 import com.l7tech.gui.NumberField;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -15,9 +18,12 @@ public class DemoGenericEntityDialog extends JDialog {
     private JTextField nameField;
     private JTextField ageField;
     private JCheckBox enabledCheckBox;
+    private ServiceComboBox serviceComboBox;
+    private JCheckBox enableServiceSelection;
 
     final DemoGenericEntity entity;
     boolean confirmed = false;
+    private boolean readOnly = false;
 
     public DemoGenericEntityDialog(Window owner, DemoGenericEntity entity) {
         super(owner);
@@ -35,6 +41,12 @@ public class DemoGenericEntityDialog extends JDialog {
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+
+        enableServiceSelection.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                serviceComboBox.setEnabled(enableServiceSelection.isSelected() && !readOnly);
             }
         });
 
@@ -56,13 +68,19 @@ public class DemoGenericEntityDialog extends JDialog {
         nameField.setText(entity.getName());
         ageField.setText(String.valueOf(entity.getAge()));
         playsTromboneCheckBox.setSelected(entity.isPlaysTrombone());
+        enableServiceSelection.setSelected(entity.getServiceId() != null);
+        serviceComboBox.populateAndSelect(entity.getServiceId() != null ? true : false, entity.getServiceId());
+        serviceComboBox.setEnabled(entity.getServiceId() != null);
         enabledCheckBox.setSelected(entity.isEnabled());
     }
 
     public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
         nameField.setEnabled(!readOnly);
         ageField.setEnabled(!readOnly);
         playsTromboneCheckBox.setEnabled(!readOnly);
+        enableServiceSelection.setEnabled(!readOnly);
+        serviceComboBox.setEnabled(enableServiceSelection.isSelected() && !readOnly);
         enabledCheckBox.setEnabled(!readOnly);
     }
 
@@ -78,6 +96,7 @@ public class DemoGenericEntityDialog extends JDialog {
         entity.setName(nameField.getText());
         entity.setAge(Integer.valueOf(ageField.getText()));
         entity.setPlaysTrombone(playsTromboneCheckBox.isSelected());
+        entity.setServiceId((enableServiceSelection.isSelected() && serviceComboBox.getSelectedPublishedService() != null) ? serviceComboBox.getSelectedPublishedService().getGoid() : null);
         entity.setEnabled(enabledCheckBox.isSelected());
         confirmed = true;
         dispose();
