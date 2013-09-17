@@ -83,10 +83,10 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
         });
     }
 
-    private static Set<InterfaceTag> loadCurrentInterfaceTagsFromServer() {
+    protected static Set<InterfaceTag> loadCurrentInterfaceTagsFromServer() {
         try {
             ClusterProperty property = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
-            if (property == null)
+            if (property == null || property.getValue() == null)
                 return Collections.emptySet();
             return InterfaceTag.parseMultiple(property.getValue());
         } catch (FindException e) {

@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
  */
 public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     private static CompositeLicense license = null;
+    private HashMap<String, ClusterProperty> properties = new HashMap<>();
 
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5000, 10, null) {
@@ -156,17 +157,18 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     @Override
     public ClusterProperty findPropertyByName(String key) throws FindException {
-        throw new UnsupportedOperationException();
+        return properties.get(key);
     }
 
     @Override
     public Goid saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
-        throw new UnsupportedOperationException();
+        properties.put(clusterProperty.getName(), clusterProperty);
+        return clusterProperty.getGoid();
     }
 
     @Override
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
-        throw new UnsupportedOperationException();
+        properties.remove(clusterProperty.getName());
     }
 
     @Override

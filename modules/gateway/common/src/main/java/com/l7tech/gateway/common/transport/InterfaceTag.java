@@ -5,6 +5,7 @@ import com.l7tech.util.TextUtils;
 
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -66,6 +67,9 @@ public class InterfaceTag {
      * @throws ParseException
      */
     public static Set<InterfaceTag> parseMultiple(String in) throws ParseException {
+        if(in.isEmpty()) {
+            return Collections.emptySet();
+        }
         String[] tagStrings = in.split("\\;");
         Set<InterfaceTag> ret = new LinkedHashSet<InterfaceTag>();
         for (String tagString : tagStrings)

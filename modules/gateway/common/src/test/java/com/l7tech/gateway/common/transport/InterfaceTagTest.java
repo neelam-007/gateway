@@ -1,14 +1,15 @@
 package com.l7tech.gateway.common.transport;
 
-import static com.l7tech.gateway.common.transport.InterfaceTag.isValidName;
-import static com.l7tech.gateway.common.transport.InterfaceTag.isValidPattern;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.l7tech.gateway.common.transport.InterfaceTag.isValidName;
+import static com.l7tech.gateway.common.transport.InterfaceTag.isValidPattern;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -62,6 +63,11 @@ public class InterfaceTagTest {
         assertEquals(tags(a), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a))));
         assertEquals(tags(a, c), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a, c))));
         assertEquals(tags(a, b, c), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a, b, c))));
+    }
+
+    @Test
+    public void testParseMultiEmptyTest() throws Exception {
+        assertTrue(InterfaceTag.parseMultiple("").isEmpty());
     }
     
     @Test
