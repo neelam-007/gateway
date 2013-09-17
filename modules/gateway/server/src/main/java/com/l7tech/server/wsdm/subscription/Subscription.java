@@ -1,9 +1,11 @@
 package com.l7tech.server.wsdm.subscription;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.wsdm.faults.TopicNotSupportedFaultException;
 import com.l7tech.server.wsdm.method.Subscribe;
+import com.l7tech.util.GoidUpgradeMapper;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -48,7 +50,7 @@ public class Subscription extends PersistentEntityImp {
     public Subscription(Subscribe method, String uuid, String ownerNodeId) throws TopicNotSupportedFaultException {
         this.uuid = uuid;
         this.esmServiceGoid = method.getEsmServiceGoid();
-        this.publishedServiceGoid = Goid.parseGoid(method.getServiceId());
+        this.publishedServiceGoid = GoidUpgradeMapper.mapId(EntityType.SERVICE, method.getServiceId());
         this.ownerNodeId = ownerNodeId;
         if (method.isTerminationParsed()) {
             termination = method.getTermination();
