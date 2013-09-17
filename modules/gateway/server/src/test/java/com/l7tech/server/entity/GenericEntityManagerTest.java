@@ -39,6 +39,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         entity.setAge(27);
         entity.setPlaysTrombone(true);
         entity.setEnabled(true);
+        entity.setTestGoid(new Goid(123, 456));
 
         testId = gem.save(entity);
 
@@ -55,6 +56,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         assertEquals("descr of test1", found.getDescription());
         assertEquals(27, found.getAge());
         assertEquals(true, found.isPlaysTrombone());
+        assertEquals(new Goid(123, 456), found.getTestGoid());
     }
 
     @Test
@@ -67,6 +69,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         entity.setAge(41);
         entity.setPlaysTrombone(false);
         entity.setEnabled(true);
+        entity.setTestGoid(new Goid(789, 999));
 
         Goid goid = gem.save(entity);
         session.flush();
@@ -78,6 +81,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         assertEquals("descr of test2", found.getDescription());
         assertEquals(41, found.getAge());
         assertEquals(false, found.isPlaysTrombone());
+        assertEquals(new Goid(789, 999), found.getTestGoid());
     }
 
     @Test
@@ -91,6 +95,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         found.setName("EditedTest1");
         found.setDescription("Test1 that has been edited and resaved");
         found.setEnabled(true);
+        found.setTestGoid(new Goid(789, 999));
         gem.update(found);
         session.flush();
 
@@ -99,6 +104,7 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         assertEquals(92, found.getAge());
         assertEquals("Test1 that has been edited and resaved", found.getDescription());
         assertEquals("EditedTest1", found.getName());
+        assertEquals(new Goid(789, 999), found.getTestGoid());
     }
 
     @Test

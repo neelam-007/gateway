@@ -635,6 +635,8 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         try {
             that.setValueXml(""); // set to empty while serializing to prevent including the XML in the XML
             XMLEncoder encoder = new XMLEncoder(new NonCloseableOutputStream(baos));
+            //allowing Goid's to be serialization by default
+            encoder.setPersistenceDelegate( Goid.class, Goid.getPersistenceDelegate() );
             encoder.writeObject(that);
             encoder.close();
             xml = baos.toString(Charsets.UTF8);
