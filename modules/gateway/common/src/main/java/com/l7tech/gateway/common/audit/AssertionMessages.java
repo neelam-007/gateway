@@ -112,7 +112,9 @@ public class AssertionMessages extends Messages {
     public static final Messages.M RESOLVE_SERVICE_NOT_FOUND = m(4152, Level.INFO, "No service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FOUND_MULTI = m(4153, Level.INFO, "More than one service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FAILED = m(4154, Level.WARNING, "Service resolution failed: {0}");
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4155, Level.INFO, "Resolved to service GOID: {0}");
+    @Deprecated
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED_OID = m(4155, Level.INFO, "Resolved to service OID: {0}");
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4156, Level.INFO, "Resolved to service GOID: {0}");
 
     // ServerIdentityAssertion
     /**
@@ -126,7 +128,8 @@ public class AssertionMessages extends Messages {
      */
     @Deprecated
     public static final M _UNUSED_IDENTITY_ALREADY_AUTHENTICATED = m(4202, Level.FINEST, "Request already authenticated");
-    public static final M IDENTITY_PROVIDER_NOT_SET = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider GOID has been set!");
+    @Deprecated
+    public static final M IDENTITY_PROVIDER_NOT_SET_OID = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
     public static final M IDENTITY_PROVIDER_NOT_FOUND = m(4204, Level.WARNING, "Could not find identity provider! ");
     public static final M IDENTITY_PROVIDER_NOT_EXIST = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
     public static final M IDENTITY_AUTHENTICATED = m(4206, Level.FINE, "Authentication success {0}");
@@ -142,6 +145,7 @@ public class AssertionMessages extends Messages {
     public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4216, Level.WARNING, "{0} message is authenticated but has no login credentials!");
     public static final M IDENTITY_CREDENTIAL_FAILED = m(4217, Level.FINE, "Credentials failed for {0} due to ''{1}''");
     public static final M MEMBEROFGROUP_GROUP_DISALBED = m(4218, Level.WARNING, "Authentication failed because the group {0} is disabled");
+    public static final M IDENTITY_PROVIDER_NOT_SET = m(4219, Level.WARNING, "Cannot call checkRequest() when no valid identity provider GOID has been set!");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
@@ -630,7 +634,7 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
     public static final M EMAILALERT_BAD_TO_ADDR = m(6701, Level.WARNING, "Bad destination email address(es)");
     public static final M EMAILALERT_BAD_FROM_ADDR = m(6702, Level.WARNING, "Bad source email address");
-    public static final M SNMP_BAD_TRAP_OID = m(6703, Level.WARNING, "The GOID ending with zero is reserved for the message field: Using .1 for the trap GOID instead");
+    public static final M SNMP_BAD_TRAP_OID = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field: Using .1 for the trap OID instead");
     public static final M EMAILALERT_AUTH_FAIL = m(6704, Level.WARNING, "Authentication failure, message not sent");
     public static final M EMAILALERT_SSL_FAIL = m(6705, Level.WARNING, "SSL connection failure, message not sent");
     public static final M EMAILALERT_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
@@ -638,7 +642,7 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
     public static final M EMAILALERT_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
     public static final M EMAILALERT_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
-    public static final M SNMP_INVALID_TRAP_OID = m(6711, Level.WARNING, "Invalid GOID (value={0}). Using .1 for the trap GOID instead");
+    public static final M SNMP_INVALID_TRAP_OID = m(6711, Level.WARNING, "Invalid OID (value={0}). Using .1 for the trap OID instead");
     public static final M SNMP_BAD_HOST = m(6712, Level.WARNING, "Bad smtp host set or not set at all (value={0})");
 
 

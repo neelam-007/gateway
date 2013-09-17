@@ -438,7 +438,7 @@ ALTER TABLE audit_main ADD COLUMN provider_oid_backup bigint;
 update audit_main set provider_oid_backup = provider_oid;
 ALTER TABLE audit_main DROP COLUMN provider_oid;
 ALTER TABLE audit_main ADD COLUMN provider_goid CHAR(16) FOR BIT DATA;
-update audit_main set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup)where provider_oid_backup > 0;
+update audit_main set provider_goid = toGoid(cast(getVariable('identity_provider_prefix') as bigint), provider_oid_backup);
 update audit_main set provider_goid = toGoid(0,-2) where provider_oid_backup = -2;
 ALTER TABLE audit_main DROP COLUMN provider_oid_backup;
 

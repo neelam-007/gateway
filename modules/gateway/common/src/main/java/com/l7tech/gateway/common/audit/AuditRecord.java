@@ -397,7 +397,6 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         out.write(SERSEP.getBytes());
 
         if (identityProviderGoid != null) out.write(useOldId?Long.toString(identityProviderGoid.getLow()).getBytes():Goid.toString(identityProviderGoid).getBytes());
-        else if(useOldId)out.write("-1".getBytes());
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action

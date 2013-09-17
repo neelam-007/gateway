@@ -716,7 +716,7 @@ ALTER TABLE message_context_mapping_values DROP COLUMN old_auth_user_provider_id
 ALTER TABLE audit_main ADD COLUMN old_provider_oid BIGINT(20);
 UPDATE audit_main SET old_provider_oid=provider_oid;
 ALTER TABLE audit_main CHANGE COLUMN provider_oid provider_goid binary(16);
-UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid) where old_provider_oid > 0;
+UPDATE audit_main SET provider_goid = toGoid(@identity_provider_prefix, old_provider_oid);
 UPDATE audit_main SET provider_goid = toGoid(0, -2) where old_provider_oid = -2;
 ALTER TABLE audit_main DROP COLUMN old_provider_oid;
 
