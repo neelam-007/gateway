@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -82,19 +83,23 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         AdminInfo adminInfo = AdminInfo.find(false);
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
 
-        // If the most recent PolicyVersion matches then this was a do-nothing policy change
-        // and should be ignored (Bug #4569, #10662)
-        final PolicyVersion last = findLatestRevisionForPolicy( policyGoid );
-        if ( last!=null ) {
-            if ( last.getXml()!=null && last.getXml().equals( newPolicy.getXml() ) ) {
-                if ( activated && !last.isActive() ) {
-                    last.setActive( true );
-                    update( last );
-                    deactivateVersions(policyGoid, last.getGoid());
+        // If the most active or most recent PolicyVersion matches then this was a do-nothing policy change
+        // and should be ignored (Bug #4569, #10662, SSG-7672)
+        PolicyVersion found = findActiveVersionForPolicy(policyGoid);
+        if (found == null) {
+            logger.log(Level.WARNING, "Unable to find active version for policy with goid " + policyGoid);
+            found = findLatestRevisionForPolicy( policyGoid );
+        }
+        if ( found!=null ) {
+            if ( found.getXml()!=null && found.getXml().equals( newPolicy.getXml() ) ) {
+                if ( activated && !found.isActive() ) {
+                    found.setActive( true );
+                    update( found );
+                    deactivateVersions(policyGoid, found.getGoid());
                 }
-                return last;
-            } else if ( ver.getOrdinal() <= last.getOrdinal() ) {
-                ver.setOrdinal( last.getOrdinal() + 1L );
+                return found;
+            } else if ( ver.getOrdinal() <= found.getOrdinal() ) {
+                ver.setOrdinal( found.getOrdinal() + 1L );
             }
         }
 
