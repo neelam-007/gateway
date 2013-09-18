@@ -61,8 +61,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(okButton);
 
-        InputValidator validator =
-                new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.register.properties"));
+        InputValidator validator = new InputValidator(this, RESOURCES.getString("dialog.title.siteminder.register.properties"));
 
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.address"), addressTextField, null);
         validator.constrainTextFieldToBeNonEmpty(RESOURCES.getString("property.siteminder.hostName"), hostnameTextField, null);
@@ -94,7 +93,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
 
         fipsModeComboBox.setModel(new DefaultComboBoxModel<>(SiteMinderFipsModeOption.values()));
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 register();
