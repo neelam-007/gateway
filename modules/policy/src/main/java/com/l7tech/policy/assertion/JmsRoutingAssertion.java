@@ -271,7 +271,7 @@ public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements U
 
     private static final String META_INITIALIZED = JmsRoutingAssertion.class.getName() + ".metadataInitialized";
 
-    private Goid endpointGoid = PersistentEntity.DEFAULT_GOID;
+    private Goid endpointGoid = null;
     private String endpointName = null;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;

@@ -818,7 +818,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
 
     private JmsEndpoint getJmsEndpoint() throws FindException {
-        Goid endpointGoid = new Goid(assertion.getEndpointOid());
+        Goid endpointGoid = assertion.getEndpointOid() == null ? null : new Goid(assertion.getEndpointOid());
         return jmsEndpointManager.findByPrimaryKey(endpointGoid);
     }
 

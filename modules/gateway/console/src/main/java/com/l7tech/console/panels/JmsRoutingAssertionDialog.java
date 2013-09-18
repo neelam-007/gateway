@@ -778,17 +778,19 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
 
-        Goid endpointGoid = new Goid(assertion.getEndpointOid());
-        try {
-            JmsEndpoint serviceEndpoint = null;
-            if (endpointGoid != null) {
-                serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointGoid);
-            }
-            JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
-            applyDynamicAssertionPropertyOverrides();
+        if(assertion.getEndpointOid()!=null){
+            Goid endpointGoid = new Goid(assertion.getEndpointOid());
+            try {
+                JmsEndpoint serviceEndpoint = null;
+                if (endpointGoid != null) {
+                    serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointGoid);
+                }
+                JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
+                applyDynamicAssertionPropertyOverrides();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
+            }
         }
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
