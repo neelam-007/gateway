@@ -76,7 +76,7 @@ public class ServiceComboBox extends JComboBox {
      * @return true if the requested service was selected.
      */
     public static boolean populateAndSelect(JComboBox serviceCombo, boolean selectService, Goid serviceIdToSelect) {
-        final boolean selected;
+        boolean selected = false;
 
         serviceCombo.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
 
@@ -91,11 +91,21 @@ public class ServiceComboBox extends JComboBox {
         if (allServices == null || allServices.length == 0) {
             // Case 1: the queue associated with a published service and the user may be with a role of Manage JMS Queue.
             if (selectService) {
-                String message = "Service " + serviceIdToSelect + " is selected, but cannot be displayed.";
-                ServiceComboItem item = new ServiceComboItem(message, serviceIdToSelect);
-                serviceCombo.addItem(item);
-                serviceCombo.setSelectedItem(item);
-                selected = true;
+                try{
+                    ServiceAdmin sa = Registry.getDefault().getServiceManager();
+                    sa.findServiceByID(serviceIdToSelect.toString());
+                }catch (FindException e) {
+                    // We just want to show the message "No published services available." in the combo box.
+                    // So "DEFAULT_GOID" is just a dummy ServiceGOID and it won't be used since the checkbox is set to disabled.
+                    serviceCombo.addItem(new ServiceComboItem("No published services available.", PublishedService.DEFAULT_GOID));
+                    selected = false;
+                } catch (final PermissionDeniedException e) {
+                    String message = "Service " + serviceIdToSelect + " is selected, but cannot be displayed.";
+                    ServiceComboItem item = new ServiceComboItem(message, serviceIdToSelect);
+                    serviceCombo.addItem(item);
+                    serviceCombo.setSelectedItem(item);
+                    selected = true;
+                }
             }
             // Case 2: There are no any published services at all.
             else {
@@ -124,11 +134,19 @@ public class ServiceComboBox extends JComboBox {
                 serviceCombo.setSelectedItem(selectMe);
                 selected = true;
             } else if (selectService) {
-                // oid not found in available services - may not be readable by the current user
-                comboItems.add(0, new ServiceComboItem("Service " + serviceIdToSelect + " is selected, but cannot be displayed.", serviceIdToSelect));
-                serviceCombo.setModel(new DefaultComboBoxModel(comboItems.toArray()));
-                serviceCombo.setSelectedIndex(0);
-                selected = true;
+                // check if service does not exist or is not readable by current user
+                try{
+                    ServiceAdmin sa = Registry.getDefault().getServiceManager();
+                    sa.findServiceByID(serviceIdToSelect.toString());
+                }catch (FindException e) {
+                    selected = false;
+                } catch (final PermissionDeniedException e) {
+                    // service exists but user does not have permission to read it
+                    comboItems.add(0, new ServiceComboItem("Service " + serviceIdToSelect + " is selected, but cannot be displayed.", serviceIdToSelect));
+                    serviceCombo.setModel(new DefaultComboBoxModel(comboItems.toArray()));
+                    serviceCombo.setSelectedIndex(0);
+                    selected = true;
+                }
             } else {
                 selected = false;
             }

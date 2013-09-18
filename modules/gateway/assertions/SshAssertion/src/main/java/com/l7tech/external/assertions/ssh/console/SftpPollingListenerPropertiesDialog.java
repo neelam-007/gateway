@@ -402,13 +402,14 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         enableResponsesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES ) );
         deleteProcessedMessagesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE ) );
 
+        boolean selected = false;
         if( connector.getHardwiredServiceGoid() != null ) {
             hardwiredServiceCheckBox.setSelected(true);
-            ServiceComboBox.populateAndSelect(serviceNameComboBox, true, connector.getHardwiredServiceGoid());
+            selected = ServiceComboBox.populateAndSelect(serviceNameComboBox, true, connector.getHardwiredServiceGoid());
         } else {
             hardwiredServiceCheckBox.setSelected(false);
         }
-        serviceNameComboBox.setEnabled(hardwiredServiceCheckBox.isSelected());
+        serviceNameComboBox.setEnabled(selected && hardwiredServiceCheckBox.isSelected());
 
         final TransportAdmin transportAdmin = getTransportAdmin();
         if ( transportAdmin != null ) {
