@@ -243,6 +243,8 @@ public class SiteMinderLowLevelAgent {
 
             result = decodeSsoToken(ssoToken, context, attrList);
 
+            storeDecodedAttributes(attributes, attrList);
+
             if (result != AgentAPI.SUCCESS) {
                 logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
                 return result;
@@ -257,15 +259,43 @@ public class SiteMinderLowLevelAgent {
         //might be some other context variables that needs to be set
         storeAttributes(attributes, attributeList);
 
-        if (result != AgentAPI.YES) {
-            logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
-            attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sd)));
-            return result;
-        }
+        if (result == AgentAPI.YES) {
+            if(!isAttributePresent(attributes, SiteMinderAgentConstants.ATTR_DEVICENAME)){
+                attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_DEVICENAME, agentConfig.getHostname()));
+            }
+            addSessionAttributes(attributes, sd);
 
-        logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
+            if(ssoToken != null) {
+                context.setSsoToken(ssoToken);//user this one instead of the token set during authentication
+            }
+
+            logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
+        }
+        else {
+            logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
+        }
+        // add sessionDef reason code
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sd)));
 
         return result;
+    }
+
+    private void addSessionAttributes(List<Pair<String, Object>> attributes, SessionDef sd) {
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONID, sd.id));
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_SESSIONSPEC, sd.spec));
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, sd.sessionStartTime));
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, sd.sessionLastTime));
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, sd.idleTimeout));
+        attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, sd.maxTimeout));
+    }
+
+    private boolean isAttributePresent(List<Pair<String, Object>> attributes, String id) {
+        for(Pair<String, Object> attr: attributes) {
+            if(attr.left.equals(id)){
+                return true;
+            }
+        }
+        return  false;
     }
 
     private SessionDef getSiteMinderSessionDefFromContext(SiteMinderContext context) {
@@ -349,6 +379,8 @@ public class SiteMinderLowLevelAgent {
             result =  AgentAPI.FAILURE; //this should never happen but it does
         }
 
+        storeDecodedAttributes(attributes, attrList);
+
         if (result != AgentAPI.SUCCESS) {
             if (result == AgentAPI.FAILURE) {
                 logger.log(Level.WARNING, "Unable to decode the token - invalid SSO token!");
@@ -404,6 +436,19 @@ public class SiteMinderLowLevelAgent {
         return result;
     }
 
+    private void storeDecodedAttributes(List<Pair<String, Object>> attributes, AttributeList attrList) {
+        for(int i=0;i <attrList.getAttributeCount(); i++) {
+            Attribute att = attrList.getAttributeAt(i);
+            final int attrId = att.id;
+            if(attrId == AgentAPI.ATTR_CLIENTIP){
+                attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_CLIENTIP, SiteMinderUtil.chopNull(new String(att.value))));
+            }
+            else if(attrId == AgentAPI.ATTR_DEVICENAME){
+                attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_DEVICENAME, SiteMinderUtil.chopNull(new String(att.value))));
+            }
+        }
+    }
+
     /**
      * creates sessionDef object from session attributes
      * @param attrList list of attributes extracted from SMSESSION cookie object
@@ -428,9 +473,6 @@ public class SiteMinderLowLevelAgent {
             else if (AgentAPI.ATTR_STARTSESSIONTIME == attrId) {
                 sd.sessionStartTime = SiteMinderUtil.convertAttributeValueToInt(att);
                 sd.currentServerTime = sd.sessionStartTime;
-            }
-            else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
-                sd.sessionLastTime = SiteMinderUtil.convertAttributeValueToInt(att);
             }
             else if(AgentAPI.ATTR_LASTSESSIONTIME == attrId) {
                 sd.sessionLastTime = SiteMinderUtil.convertAttributeValueToInt(att);
@@ -512,6 +554,12 @@ public class SiteMinderLowLevelAgent {
                     break;
                 case AgentAPI.ATTR_LASTSESSIONTIME:
                     attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, value));
+                    break;
+                case AgentAPI.ATTR_STARTSESSIONTIME:
+                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, value));
+                    break;
+                case AgentAPI.ATTR_IDLESESSIONTIMEOUT:
+                    attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, value));
                     break;
                 case AgentAPI.ATTR_MAXSESSIONTIMEOUT:
                     attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, value));
