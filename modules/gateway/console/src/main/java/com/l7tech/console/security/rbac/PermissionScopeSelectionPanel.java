@@ -18,6 +18,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -258,20 +259,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     config.setFolderTransitive(transitiveCheckBox.isSelected());
                     config.setGrantReadFolderAncestry(ancestryCheckBox.isSelected());
                     config.setAttributePredicates(new HashSet<>(attributesModel.getRows()));
-                    Set<EntityType> auditTypes = null;
-                    if (config.getType() == EntityType.AUDIT_RECORD && selectedAuditsRadioButton.isSelected()) {
-                        auditTypes = new HashSet<>();
-                        if (systemAuditsCheckBox.isSelected()) {
-                            auditTypes.add(EntityType.AUDIT_SYSTEM);
-                        }
-                        if (adminAuditsCheckBox.isSelected()) {
-                            auditTypes.add(EntityType.AUDIT_ADMIN);
-                        }
-                        if (messageAuditsCheckBox.isSelected()) {
-                            auditTypes.add(EntityType.AUDIT_MESSAGE);
-                        }
-                    }
-                    config.setSelectedAuditTypes(auditTypes);
+                    final Set<EntityType> auditTypes = getSelectedAuditTypes(config);
+                    config.setSelectedAuditTypes(getSelectedAuditTypes(config));
                     if (config.getType() == EntityType.AUDIT_RECORD && (auditTypes == null || auditTypes.contains(EntityType.AUDIT_ADMIN) || auditTypes.contains(EntityType.AUDIT_SYSTEM))) {
                         // clear any selected zones as they are not valid
                         config.getSelectedZones().clear();
@@ -289,6 +278,24 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         } else {
             logger.log(Level.WARNING, "Cannot store settings because received invalid settings object: " + settings);
         }
+    }
+
+    @Nullable
+    private Set<EntityType> getSelectedAuditTypes(final PermissionsConfig config) {
+        Set<EntityType> auditTypes = null;
+        if (config != null && config.getType() == EntityType.AUDIT_RECORD && selectedAuditsRadioButton.isSelected()) {
+            auditTypes = new HashSet<>();
+            if (systemAuditsCheckBox.isSelected()) {
+                auditTypes.add(EntityType.AUDIT_SYSTEM);
+            }
+            if (adminAuditsCheckBox.isSelected()) {
+                auditTypes.add(EntityType.AUDIT_ADMIN);
+            }
+            if (messageAuditsCheckBox.isSelected()) {
+                auditTypes.add(EntityType.AUDIT_MESSAGE);
+            }
+        }
+        return auditTypes;
     }
 
     private void initTables() {
@@ -410,7 +417,12 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private void reloadAttributeComboBox() {
-        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(config == null ? EntityType.ANY : config.getType()).toArray()));
+        EntityType type = config == null ? EntityType.ANY : config.getType();
+        final Set<EntityType> auditTypes = getSelectedAuditTypes(config);
+        if (auditTypes != null && auditTypes.size() == 1) {
+            type = auditTypes.iterator().next();
+        }
+        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(type).toArray()));
     }
 
     private void initFoldersTable() {
@@ -512,7 +524,8 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                                 CharSequence.class.isAssignableFrom(rtype) ||
                                 rtype == Boolean.TYPE ||
                                 Boolean.class.isAssignableFrom(rtype) ||
-                                Enum.class.isAssignableFrom(rtype)) {
+                                Enum.class.isAssignableFrom(rtype) ||
+                                Goid.class.isAssignableFrom(rtype)) {
                             //there is a getter for this property, so use it in the list
                             names.add(propertyDescriptor.getName());
                         }
@@ -682,6 +695,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableAuditTypes();
+                reloadAttributeComboBox();
                 notifyListeners();
             }
         };
