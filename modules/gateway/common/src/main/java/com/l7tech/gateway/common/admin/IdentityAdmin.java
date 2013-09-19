@@ -79,7 +79,7 @@ public interface IdentityAdmin {
      */
     @Transactional(propagation = Propagation.SUPPORTS)
     @Administrative(licensed = false)
-    @Secured(types = ID_PROVIDER_CONFIG, stereotype = FIND_ENTITIES)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
     LdapIdentityProviderConfig[] getLdapTemplates() throws FindException;
 
     /**
