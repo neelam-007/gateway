@@ -117,17 +117,19 @@ public class SecurityZonePropertiesDialog extends JDialog {
         this.entitiesToRemoveFromZone.clear();
         final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         for (EntityType removedType : removedEntityTypes) {
-            final Collection<EntityHeader> entitiesInZone = new ArrayList<>();
-            if (removedType == EntityType.SSG_KEY_ENTRY) {
-                removedType = EntityType.SSG_KEY_METADATA;
-            }
-            entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(removedType, securityZone.getGoid()));
-            if (!entitiesInZone.isEmpty()) {
-                final List<Serializable> ids = new ArrayList<>(entitiesInZone.size());
-                for (final EntityHeader entity : entitiesInZone) {
-                    ids.add(entity.getStrId());
+            if (removedType != EntityType.AUDIT_MESSAGE) {
+                final Collection<EntityHeader> entitiesInZone = new ArrayList<>();
+                if (removedType == EntityType.SSG_KEY_ENTRY) {
+                    removedType = EntityType.SSG_KEY_METADATA;
                 }
-                this.entitiesToRemoveFromZone.put(removedType, ids);
+                entitiesInZone.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(removedType, securityZone.getGoid()));
+                if (!entitiesInZone.isEmpty()) {
+                    final List<Serializable> ids = new ArrayList<>(entitiesInZone.size());
+                    for (final EntityHeader entity : entitiesInZone) {
+                        ids.add(entity.getStrId());
+                    }
+                    this.entitiesToRemoveFromZone.put(removedType, ids);
+                }
             }
         }
     }
