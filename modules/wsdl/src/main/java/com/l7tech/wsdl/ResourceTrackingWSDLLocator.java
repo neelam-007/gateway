@@ -391,7 +391,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      * Load a WSDL string from the given URL
      */
     private static String loadFromUrl(InputSource inputSource, URLConnection connection, InputStream in) throws IOException {
-        Charset encoding = Charset.isSupported(inputSource.getEncoding()) ? Charset.forName(inputSource.getEncoding()) : null;
+        Charset encoding = (inputSource.getEncoding() != null && Charset.isSupported(inputSource.getEncoding())) ? Charset.forName(inputSource.getEncoding()) : null;
         in = new ByteOrderMarkInputStream(in);
         if (encoding == null) {
             encoding = ((ByteOrderMarkInputStream)in).getEncoding();

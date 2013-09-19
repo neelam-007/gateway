@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.Config;
+import com.l7tech.util.Functions;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
@@ -19,6 +20,7 @@ import javax.wsdl.WSDLException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -94,27 +96,6 @@ public class ServiceWsdlImportChecker implements InitializingBean {
     private final ServiceDocumentManager serviceDocumentManager;
 
     /**
-     * See if we need to check imports for the given service.
-     *
-     * <p>If there are no service documents we have to check the WSDL since
-     * there is no way to know if it has missing imports or just no imports.</p>
-     */
-    private boolean checkImportsForService(final PublishedService service) {
-        boolean checkImports = false;
-        try {
-            Collection<ServiceDocument> serviceDocuments =
-                    serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT");
-
-            if (serviceDocuments.isEmpty()) {
-                checkImports = true;
-            }
-        } catch(FindException fe) {
-            logger.log(Level.WARNING, "Unable to load service documents.", fe);
-        }
-        return checkImports;
-    }
-
-    /**
      * Create a ServiceDocument from the given WSDL resource.
      */
     private ServiceDocument buildServiceDocument(Goid serviceId, ResourceTrackingWSDLLocator.WSDLResource wsdlResource) {
@@ -135,35 +116,50 @@ public class ServiceWsdlImportChecker implements InitializingBean {
     private void checkWsdlImports(final PublishedService service) {
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             protected void doInTransactionWithoutResult(TransactionStatus status) {
-                if (checkImportsForService(service)) {
-                    try {
-                        // Set up input
-                        InputSource is = new InputSource();
-                        String url = service.getWsdlUrl();
-                        if (url != null && url.trim().length() > 0) {
-                            is.setSystemId(url);
-                        }
-                        is.setCharacterStream(new StringReader(service.getWsdlXml()));
-
-                        // Parse to process imports
-                        ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(Wsdl.getWSDLLocator(is, false), false, true, true);
-                        Wsdl.newInstance(wloc);
-
-                        for (ResourceTrackingWSDLLocator.WSDLResource wsdlResource : wloc.getWSDLResources()) {
-                            try {
-                                logger.info("Saving imported WSDL '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.");
-                                serviceDocumentManager.save(buildServiceDocument(service.getGoid(), wsdlResource));
-                            } catch(SaveException se) {
-                                logger.log(Level.WARNING, "Error saving service document '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.", se);
-                                status.setRollbackOnly();
-                                break;
-                            }
-                        }
-                    } catch (WSDLException we) {
-                        logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getGoid()+"'.", we);
+                try {
+                    // Set up input
+                    InputSource is = new InputSource();
+                    String url = service.getWsdlUrl();
+                    if (url != null && url.trim().length() > 0) {
+                        is.setSystemId(url);
                     }
+                    is.setCharacterStream(new StringReader(service.getWsdlXml()));
+
+                    // Parse to process imports
+                    ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(Wsdl.getWSDLLocator(is, false), false, true, true);
+                    Wsdl.newInstance(wloc);
+
+                    Collection<String> cached = asString.call(serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT"));
+                    for (ResourceTrackingWSDLLocator.WSDLResource wsdlResource : wloc.getWSDLResources()) {
+                        if(cached.contains(wsdlResource.getUri())){
+                            continue;
+                        }
+                        try {
+                            logger.info("Saving imported WSDL '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.");
+                            serviceDocumentManager.save(buildServiceDocument(service.getGoid(), wsdlResource));
+                        } catch(SaveException se) {
+                            logger.log(Level.WARNING, "Error saving service document '"+wsdlResource.getUri()+"' for service '"+service.getGoid()+"'.", se);
+                            status.setRollbackOnly();
+                            break;
+                        }
+                    }
+                } catch (WSDLException we) {
+                    logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getGoid()+"'.", we);
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Could not retrieve cached service documents for service '"+service.getGoid()+"'.", e);
                 }
             }
         });
     }
+
+    private final Functions.Unary<Collection<String>, Collection<ServiceDocument>> asString = new Functions.Unary<java.util.Collection<java.lang.String>, java.util.Collection<com.l7tech.gateway.common.service.ServiceDocument>>() {
+        @Override
+        public Collection<String> call(Collection<ServiceDocument> serviceDocuments) {
+            Collection<String> ret = new HashSet<String>();
+            for(ServiceDocument s : serviceDocuments){
+                ret.add(s.getUri());
+            }
+            return ret;
+        }
+    };
 }
