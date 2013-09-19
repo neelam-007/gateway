@@ -97,7 +97,7 @@ public class CertPropertiesWindow extends JDialog {
      * @param owner    The parent component.
      * @param tc       The trusted certificate.
      * @param editable TRUE if the properties are editable
-     * @param options  TRUE to display the options and validity tabs
+     * @param options  TRUE to display the options, validity tabs, and zone widget.
      */
     public CertPropertiesWindow(Window owner, TrustedCert tc, boolean editable, boolean options) {
         this(owner, tc, editable, options, null);
@@ -198,7 +198,11 @@ public class CertPropertiesWindow extends JDialog {
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
-        zoneControl.configure(trustedCert.isUnsaved() ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
+        if (options) {
+            zoneControl.configure(trustedCert.isUnsaved() ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
+        } else {
+            zoneControl.setVisible(false);
+        }
 
         populateData();
         setRevocationCheckPolicyComboState(editable);

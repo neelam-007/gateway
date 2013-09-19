@@ -221,7 +221,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         });
         aliasField.setText(subject.getAlias());
 
-        zoneControl.configure(subject.getKeyEntry());
+        zoneControl.configure(OperationType.UPDATE, subject.getKeyEntry());
 
         String location = subject.getKeystore().getName();
         if (subject.getKeystore().isReadonly())
