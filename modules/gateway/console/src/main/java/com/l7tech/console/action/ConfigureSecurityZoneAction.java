@@ -31,12 +31,14 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
     private ET entity;
     private final EntityType entityType;
     private final EntitySaver<ET> entitySaver;
+    private SecurityZoneValidatedPanel zonePanel;
 
     public ConfigureSecurityZoneAction(@NotNull ET entity, @NotNull EntitySaver<ET> saver) {
         super(null, UI_MANAGE_SECURITY_ZONES);
         this.entity = entity;
         this.entityType = EntityType.findTypeByEntity(entity.getClass());
         this.entitySaver = saver;
+        this.zonePanel = new SecurityZoneValidatedPanel(entity);
     }
 
     @Override
@@ -51,22 +53,7 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
 
     @Override
     public boolean isAuthorized() {
-        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        final EntityType type = EntityType.findTypeByEntity(entity.getClass());
-        final boolean canRead = securityProvider.hasPermission(new AttemptedReadSpecific(type, entity));
-        final boolean canUpdate = securityProvider.hasPermission(new AttemptedUpdate(type, entity));
-        final boolean canReadAtLeastOneZone = !SecurityZoneUtil.getSortedReadableSecurityZones().isEmpty();
-        final boolean zoneIsSetOnEntity = entity instanceof ZoneableEntity && entity.getSecurityZone() != null;
-
-        boolean authorized = false;
-        if (canUpdate && (canReadAtLeastOneZone || zoneIsSetOnEntity)) {
-            // when updating, must be able to read at least one zone or a zone must be set on the entity
-            authorized = true;
-        } else if (canRead && zoneIsSetOnEntity) {
-            // when reading, zone must be set on entity
-            authorized = true;
-        }
-        return authorized;
+        return zonePanel.hasZones();
     }
 
     @Override
@@ -75,7 +62,7 @@ public class ConfigureSecurityZoneAction<ET extends ZoneableEntity> extends Secu
         final OkCancelDialog<SecurityZone> dlg = new OkCancelDialog<SecurityZone>(TopComponents.getInstance().getTopParent(),
                 "Security Zone for " + entityType.getName(),
                 true,
-                new SecurityZoneValidatedPanel(entityType, entity.getSecurityZone(), canChange ? OperationType.UPDATE : OperationType.READ),
+                zonePanel,
                 !canChange);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
