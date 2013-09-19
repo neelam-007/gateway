@@ -265,10 +265,6 @@ public class SiteMinderLowLevelAgent {
             }
             addSessionAttributes(attributes, sd);
 
-            if(ssoToken != null) {
-                context.setSsoToken(ssoToken);//user this one instead of the token set during authentication
-            }
-
             logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
         }
         else {
@@ -327,6 +323,9 @@ public class SiteMinderLowLevelAgent {
             if(updateCookie) {
                 context.setSsoToken(sb.toString());//set only if the token is successfully decoded
             }
+            else {
+                context.setSsoToken(ssoToken);
+            }
         }
 
         return result;
@@ -366,18 +365,8 @@ public class SiteMinderLowLevelAgent {
         RealmDef realmDef = getSiteMinderRealmDefFromContext(context);
 
         AttributeList attrList = new AttributeList();
-        //TODO: why version is set to 0?
-        //since this is a 3rd party cookie should the last parameter set to true?
-        TokenDescriptor td = new TokenDescriptor(0, false);
-        StringBuffer newToken = new StringBuffer();
 
-        int result; //validation does not change the token
-
-        try {
-            result = agentApi.decodeSSOToken(ssoToken, td, attrList, false, newToken);
-        } catch (Exception e) {
-            result =  AgentAPI.FAILURE; //this should never happen but it does
-        }
+        int result = decodeSsoToken(ssoToken, context, attrList);
 
         storeDecodedAttributes(attributes, attrList);
 
@@ -390,9 +379,6 @@ public class SiteMinderLowLevelAgent {
             return result;
         }
 
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Third party token? '" + td.bThirdParty + "'; Version '" + td.ver + "'.");
-        }
 
         if (userCreds.name != null) {
             final String sessName = getUserIdentifier(attrList);
@@ -400,10 +386,7 @@ public class SiteMinderLowLevelAgent {
             if (sessName == null) {
                 logger.log(Level.WARNING, "Could not get user for session.");
                 return SiteMinderAgentConstants.SM_AGENT_API_INVALID_SESSIONID;
-                //TODO: do we need to check credentials of the user if sd is not null?
-/*            } else if (!sameUser(credName, sessName)) {
-                throw new InvalidSessionCookieException("Session user '" + sessName + "' does not match credentials in request '" + credName + "'.");
-           */ }
+            }
         }
 
         SessionDef sessionDef = createSmSessionFromAttributes(attrList);
@@ -419,9 +402,6 @@ public class SiteMinderLowLevelAgent {
                 logger.log(Level.WARNING,"Session Cookie expired!");
                 //TODO: logout session?
             }
-        }
-        else {
-            context.setSsoToken(ssoToken);
         }
         //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization
         context.setSessionDef(new SiteMinderContext.SessionDef(sessionDef.reason,
@@ -633,19 +613,6 @@ public class SiteMinderLowLevelAgent {
         return retCode;
     }
 
-    /**
-     * return agent API error message
-     * @param errCode a SSO Token creation error code
-     * @return the corresponding error message for the specified error code
-     */
-    private String getCreateSSOTokenErrorMessage(int errCode) {
-        if(errCode == AgentAPI.FAILURE) {
-            return "Unable to create SSO token";
-        }
-
-        // if not any of the above return codes, check common failures
-        return getCommonErrorMessage(errCode);
-    }
 
     private String getCommonErrorMessage(int errCode) {
         if(errCode == AgentAPI.NOCONNECTION) {
