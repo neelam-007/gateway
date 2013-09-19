@@ -2515,8 +2515,6 @@ public class ServerGatewayManagementAssertionTest {
                         "       <l7:Address>0.0.0.999</l7:Address>\n" +
                         "       <l7:Hostname>localhost</l7:Hostname>\n" +
                         "       <l7:HostConfiguration>55</l7:HostConfiguration>\n" +
-                        "       <l7:UserName>user</l7:UserName>\n" +
-                        "       <l7:PasswordId>00000000000000000000000000000001</l7:PasswordId>\n" +
                         "       <l7:Enabled>true</l7:Enabled>\n" +
                         "       <l7:FipsMode>3</l7:FipsMode>\n" +
                         "       <l7:IpCheck>false</l7:IpCheck>\n" +

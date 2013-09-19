@@ -101,8 +101,6 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
             } catch (IllegalArgumentException ile) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }
-        } else {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
         }
         smConfiguration.setIpcheck( smResource.getIpCheck() );
         smConfiguration.setUpdateSSOToken( smResource.getUpdateSsoToken() );

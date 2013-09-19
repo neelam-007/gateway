@@ -349,7 +349,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.hostConfiguration = hostConfiguration;
     }
 
-    @XmlElement(name="UserName",required=true)
+    @XmlElement(name="UserName")
     protected AttributeExtensibleString getUserNameValue() {
         return userName;
     }
@@ -358,7 +358,7 @@ public class SiteMinderConfigurationMO extends ElementExtendableAccessibleObject
         this.userName = userName;
     }
 
-    @XmlElement(name="PasswordId",required=true)
+    @XmlElement(name="PasswordId")
     protected AttributeExtensibleString getPasswordIdValue() {
         return passwordId;
     }
