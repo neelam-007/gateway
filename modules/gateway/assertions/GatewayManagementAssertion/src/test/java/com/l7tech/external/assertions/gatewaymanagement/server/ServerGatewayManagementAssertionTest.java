@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
@@ -20,6 +21,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.HttpRequestKnob;
@@ -93,6 +95,9 @@ import java.text.MessageFormat;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test the GatewayManagementAssertion.
@@ -1688,6 +1693,28 @@ public class ServerGatewayManagementAssertionTest {
                 final Element value = XmlUtil.findExactlyOneChildElementByName(clusterProperty, NS_GATEWAY_MANAGEMENT, "Value");
 
                 assertEquals("Property value", "value2", XmlUtil.getTextValue(value));
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+
+    @Test
+    public void testPutClusterPropertyUpdateRoleOnly() throws Exception {
+
+        when(rbacService.isPermittedForEntity(any(User.class), any(ClusterProperty.class),eq(OperationType.READ), anyString())).thenReturn(false);
+        when(rbacService.isPermittedForEntity(any(User.class), any(ClusterProperty.class),eq(OperationType.CREATE), anyString())).thenReturn(false);
+        when(rbacService.isPermittedForEntity(any(User.class), any(ClusterProperty.class),eq(OperationType.DELETE), anyString())).thenReturn(false);
+
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:ClusterProperty id=\""+new Goid(0,1).toHexString()+"\" version=\"0\"><n1:Name>test</n1:Name><n1:Value>value2</n1:Value></n1:ClusterProperty>  </s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                assertEquals("Soap body is not empty", 0 , soapBody.getChildNodes().getLength());
             }
         };
 
@@ -3721,6 +3748,7 @@ public class ServerGatewayManagementAssertionTest {
     private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private ServerGatewayManagementAssertion managementAssertion;
     private static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
+    private RbacServicesStub rbacService;
     private static final String NS_WS_TRANSFER = "http://schemas.xmlsoap.org/ws/2004/09/transfer";
     private static final String NS_WS_ADDRESSING = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
     private static final String NS_WS_ENUMERATION = "http://schemas.xmlsoap.org/ws/2004/09/enumeration";
@@ -3791,9 +3819,15 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
                 testPolicy1,
                 policy( new Goid(0,2L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
-        beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
-                key( new Goid(0,0), "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
-        beanFactory.addBean( "rbacServices", new RbacServicesStub() );
+        beanFactory.addBean("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub(Arrays.asList(
+                key(new Goid(0, 0), "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey())))));
+        rbacService = mock( RbacServicesStub.class);
+        when(rbacService.isPermittedForAnyEntityOfType(any(User.class),any(OperationType.class),any(EntityType.class))).thenReturn(true);
+        when(rbacService.isPermittedForEntitiesOfTypes(any(User.class), any(OperationType.class), anySetOf(EntityType.class))).thenReturn(true);
+        when(rbacService.isPermittedForEntity(any(User.class), any(Entity.class),any(OperationType.class), anyString())).thenReturn(true);
+        when(rbacService.isPermittedForSomeEntityOfType(any(User.class),any(OperationType.class), any(EntityType.class))).thenReturn(true);
+
+        beanFactory.addBean("rbacServices", rbacService);
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
         beanFactory.addBean( "serviceManager", new MockServiceManager(

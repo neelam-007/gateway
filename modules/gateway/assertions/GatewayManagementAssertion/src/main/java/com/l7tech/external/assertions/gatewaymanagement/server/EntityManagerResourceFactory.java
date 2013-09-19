@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -190,7 +191,12 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             }
         }, false ) );
 
-        return getResource( Collections.singletonMap( IDENTITY_SELECTOR, id )); // re-select to get updated version#
+        try{
+            return getResource( Collections.singletonMap( IDENTITY_SELECTOR, id )); // re-select to get updated version#
+        }catch ( PermissionDeniedException e1){
+            // return nothing if have no read permission
+            return null;
+        }
     }
 
     @Override

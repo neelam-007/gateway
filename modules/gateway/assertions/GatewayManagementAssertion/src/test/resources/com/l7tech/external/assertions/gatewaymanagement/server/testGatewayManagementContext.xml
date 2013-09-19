@@ -51,8 +51,8 @@
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerStub"/>
 
     <bean id="entityResourceFactoryParent" abstract="true">
-        <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
-        <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
+        <constructor-arg index="0" ref="rbacServices"/>
+        <constructor-arg index="1" ref="securityFilter"/>
         <constructor-arg index="2"><bean class="com.l7tech.server.PlatformTransactionManagerStub"/></constructor-arg>
     </bean>
 
