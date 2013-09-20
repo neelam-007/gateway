@@ -185,7 +185,7 @@ public class SecurityZoneWidget extends JPanel {
      * Hides the widget if there are no zones to display or displays the zone as static text if readonly.
      */
     private void customizeDisplay() {
-        if (hideIfNoZones && !hasZones()) {
+        if (hideIfNoZones && (loadedZones.isEmpty() || (loadedZones.size() == 1 && loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())))) {
             logger.log(Level.FINER, "Hiding the SecurityZoneWidget because no zones are available");
             setVisible(false);
         } else {
@@ -244,13 +244,6 @@ public class SecurityZoneWidget extends JPanel {
      */
     public void setHideIfNoZones(boolean hideIfNoZones) {
         this.hideIfNoZones = hideIfNoZones;
-    }
-
-    /**
-     * @return true if there is at least one zone available which is not the 'null zone'.
-     */
-    public boolean hasZones() {
-        return (loadedZones.size() > 1 || (loadedZones.size() == 1 && !loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())));
     }
 
     public void addComboBoxActionListener(@NotNull final ActionListener actionListener) {
