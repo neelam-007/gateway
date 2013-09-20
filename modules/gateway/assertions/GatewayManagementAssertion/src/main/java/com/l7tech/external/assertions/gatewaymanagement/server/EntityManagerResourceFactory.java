@@ -85,7 +85,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                         validate(entity);
                     }
 
-                    final Goid goid = manager.save(entityBag.getEntity());
+                    final Goid goid = doSaveEntity(entityBag.getEntity());
                     afterCreateEntity(entityBag, goid);
 
                     if (manager instanceof RoleAwareEntityManager) {
@@ -102,6 +102,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         }, false));
 
         return Collections.singletonMap( IDENTITY_SELECTOR, goid.toString() );
+    }
+
+    // save the entity to the manager
+    protected Goid doSaveEntity(E entity) throws SaveException {
+        return manager.save(entity);
     }
 
     @Override

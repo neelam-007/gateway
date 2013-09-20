@@ -16,6 +16,7 @@ import java.util.*;
 public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, GenericEntityHeader> implements GenericEntityManager {
 
     private List<GenericEntity> entities;
+    private List<String> registeredClasses;
 
     public GenericEntityManagerStub() {
         entities = Collections.emptyList();
@@ -24,6 +25,10 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     public GenericEntityManagerStub(GenericEntity... entitiesIn) {
         super(entitiesIn);
         this.entities = new ArrayList(Arrays.asList(entitiesIn));
+    }
+
+    public void setRegistedClasses(String... registedClasses){
+        this.registeredClasses = new ArrayList(Arrays.asList(registedClasses));
     }
 
     @Override
@@ -38,12 +43,12 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
 
     @Override
     public boolean unRegisterClass(String entityClassName) {
-        return false;
+        return registeredClasses.remove(entityClassName);
     }
 
     @Override
     public boolean isRegistered(String entityClassName) {
-        return false;
+        return registeredClasses.contains(entityClassName);
     }
 
     @Override

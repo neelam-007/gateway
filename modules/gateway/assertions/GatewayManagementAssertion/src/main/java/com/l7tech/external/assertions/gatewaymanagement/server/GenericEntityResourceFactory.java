@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.gateway.api.GenericEntityMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.entity.GenericEntityManager;
@@ -99,6 +101,14 @@ public class GenericEntityResourceFactory extends EntityManagerResourceFactory<G
         }
 
         return entity;
+    }
+
+    @Override
+    protected Goid doSaveEntity( GenericEntity entity) throws SaveException {
+        if(!genericEntityManager.isRegistered(entity.getEntityClassName())){
+            throw new SaveException("No generic entity class named " + entity.getEntityClassName() + " is registered");
+        }
+        return genericEntityManager.save(entity);
     }
 
     //- PRIVATE

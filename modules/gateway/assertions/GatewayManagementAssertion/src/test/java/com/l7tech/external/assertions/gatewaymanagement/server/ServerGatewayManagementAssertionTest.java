@@ -906,6 +906,15 @@ public class ServerGatewayManagementAssertionTest {
         doCreate( resourceUri, payload, new Goid(0,1).toHexString(), new Goid(0,2).toHexString() );
     }
 
+    @BugId("SSG-6839")
+    @Test
+    public void testCreateGenericEntityUnregisteredClass() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/genericEntities";
+        String payload = "<l7:GenericEntity xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><l7:Name>My Test Entity</l7:Name><l7:Description>My test entity description</l7:Description><l7:EntityClassName>com.l7tech.external.assertions.gatewaymanagement.server.OtherClass</l7:EntityClassName><l7:Enabled>true</l7:Enabled><l7:ValueXml>&lt;xml&gt;xml value&lt;/xml&gt;</l7:ValueXml></l7:GenericEntity>";
+
+        doCreateFail( resourceUri, payload,"wsman:InternalError");
+    }
+
     @Test
     public void testCreateFolder() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
@@ -3872,7 +3881,9 @@ public class ServerGatewayManagementAssertionTest {
         genericEntity.setEntityClassName(this.getClass().getName());
         genericEntity.setValueXml("<xml>xml value</xml>");
 
-        beanFactory.addBean("genericEntityManagerWithData", new GenericEntityManagerStub(genericEntity));
+        GenericEntityManagerStub genericEntityManager = new GenericEntityManagerStub(genericEntity);
+        genericEntityManager.setRegistedClasses("com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTest");
+        beanFactory.addBean("genericEntityManagerWithData",genericEntityManager );
 
         beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
             customKeyValue(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
