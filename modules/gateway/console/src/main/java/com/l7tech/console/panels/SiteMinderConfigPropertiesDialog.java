@@ -16,6 +16,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MutablePair;
+import org.apache.commons.lang.StringUtils;
 import sun.security.util.Resources;
 
 import javax.swing.*;
@@ -42,7 +43,7 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 public class SiteMinderConfigPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SiteMinderConfigPropertiesDialog.class.getName());
 
-    private static final ResourceBundle RESOURCES =
+    private static final ResourceBundle  RESOURCES =
             Resources.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigPropertiesDialog");
 
     private static final int MAX_TABLE_COLUMN_NUM = 2;
@@ -205,7 +206,16 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
 
         zoneControl.configure(this.configuration);
 
+        disableCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                testButton.setEnabled(!disableCheckBox.isSelected());
+            }
+        });
+
         modelToView();
+
+        testButton.setEnabled(!disableCheckBox.isSelected());//set initial state of the test button
 
         Utilities.setMinimumSize(this);
     }
@@ -474,66 +484,40 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
-                    String warningMessage = checkDuplicateProperty(property.left, originalPropName);
-                    if (warningMessage != null) {
-                        DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this, warningMessage,
-                                RESOURCES.getString("dialog.title.duplicate.property"), JOptionPane.WARNING_MESSAGE, null);
-                        return;
+                    if(StringUtils.isEmpty(originalPropName) && clusterSettingsMap.containsKey(property.left)){
+                        DialogDisplayer.showConfirmDialog(SiteMinderConfigPropertiesDialog.this, "Duplicate property " + property.left + " is found\nWould you like to replace existing one?",
+                                RESOURCES.getString("dialog.title.duplicate.property"), JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if(option == JOptionPane.YES_OPTION) {
+                                    propertyToMap(originalPropName, property);
+                                }
+                            }
+                        });
                     }
-
-                    // Save the property into the map
-                    if (!originalPropName.isEmpty()) { // This is for doEdit
-                        clusterSettingsMap.remove(originalPropName);
+                    else {
+                        propertyToMap(originalPropName, property);
                     }
-                    clusterSettingsMap.put(property.left, property.right);
-
-                    // Refresh the table
-                    clusterSettingTableModel.fireTableDataChanged();
-
-                    // Refresh the selection highlight
-                    ArrayList<String> keySet = new ArrayList<>();
-                    keySet.addAll(clusterSettingsMap.keySet());
-                    int currentRow = keySet.indexOf(property.left);
-                    clusterSettingsTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
                 }
             }
         });
     }
 
-    private String checkDuplicateProperty(String newPropName, final String originalPropName) {
-        // Check if there exists a duplicate with Basic Connection Configuration.
-        if ("address".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.address"));
-        } else if ("hostname".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.hostname"));
-        } else if ("secret".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.secret"));
-        } else if ("ipcheck".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.checkIP"));
-        } else if ("fipsmode".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.fipsMode"));
-        } else if ("noncluster_failover".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.enableFailover"));
-        } else if ("cluster_threshold".compareToIgnoreCase(newPropName) == 0) {
-            return MessageFormat.format(RESOURCES.getString("warning.basic.config.prop.configured"),
-                    RESOURCES.getString("property.agent.clusterThreshold"));
+    private void propertyToMap(String originalPropName, MutablePair<String, String> property) {
+        // Save the property into the map
+        if (!originalPropName.isEmpty()) { // This is for doEdit
+            clusterSettingsMap.remove(originalPropName);
         }
+        clusterSettingsMap.put(property.left, property.right);
 
-        // Check if there exists a duplicate with other properties.
-        for (String key: clusterSettingsMap.keySet()) {
-            if (originalPropName.compareToIgnoreCase(key) != 0 // make sure not to compare itself
-                    && newPropName.compareToIgnoreCase(key) == 0) {
-                return MessageFormat.format(RESOURCES.getString("warning.message.duplicated.property"), newPropName);
-            }
-        }
+        // Refresh the table
+        clusterSettingTableModel.fireTableDataChanged();
 
-        return null;
+        // Refresh the selection highlight
+        ArrayList<String> keySet = new ArrayList<>();
+        keySet.addAll(clusterSettingsMap.keySet());
+        int currentRow = keySet.indexOf(property.left);
+        clusterSettingsTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
     }
 
     private boolean validateSiteMinderConfigurationNameUnique() {
