@@ -491,6 +491,17 @@ public class CertUtilsTest {
     }
 
     @Test
+    @BugNumber(13589)
+    public void testMatchUsesCanonicalForm() throws Exception {
+        // The match should ignore the case of the DN attribute names as well as formatting details (whitespace around commas, etc)
+        // Non-regex matches should canonicalize the DN pattern.  Regex matches should compile the regex in case_insensitive mode.
+        assertTrue(CertUtils.dnMatchesPattern("cn=tester1.xml-gw.mastercard.com,ou=xml gw client1,o=layer7,st=missouri,c=us", "CN=tester*.xml-gw.mastercard.com, OU=XML GW client*", false));
+        assertTrue(CertUtils.dnMatchesPattern("cn=tester1.xml-gw.mastercard.com,ou=xml gw client1,o=layer7,st=missouri,c=us", "CN=tester.*.xml-gw.mastercard.com, OU=XML GW client.*", true));
+        assertFalse(CertUtils.dnMatchesPattern("cn=tester1.xml-gw.mastercard.com,ou=xml gw client1,o=layer7,st=missouri,c=us", "CN=tester*.xml-gw.mastercard.com, OU=XML GW client*", true));
+        assertFalse(CertUtils.dnMatchesPattern("cn=tester1.xml-gw.mastercard.com,ou=xml gw client1,o=layer7,st=missouri,c=us", "CN=tester.*.xml-gw.mastercard.com, OU=XML GW client.*", false));
+    }
+
+    @Test
     @BugNumber(11722)
     public void testSAN() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(BUG_11722_SHOW_SAN);

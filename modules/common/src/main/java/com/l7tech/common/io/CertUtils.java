@@ -868,8 +868,8 @@ public class CertUtils {
      * @throws IllegalArgumentException if the pattern is not a valid DN.
      */
     public static boolean dnMatchesPattern(String dn, String pattern, boolean useRegex) {
-        Map<String, List<String>> dnMap = dnToAttributeMap(dn);
-        Map<String, List<String>> patternMap = dnToAttributeMap(pattern);
+        Map<String, List<String>> dnMap = dnToAttributeMap(formatDN(dn));
+        Map<String, List<String>> patternMap = dnToAttributeMap(useRegex ? pattern : formatDN(pattern));
 
         boolean matches = true;
 
@@ -884,7 +884,7 @@ public class CertUtils {
             for (String patternValue : patternValues) {
                 Pattern p;
                 if(useRegex){
-                    p = Pattern.compile(patternValue);
+                    p = Pattern.compile(patternValue, Pattern.CASE_INSENSITIVE);
                 }
                 else {
                     //we need to escape all period as it's a regex wildcard which matches any char, we want a period to stay as a period
