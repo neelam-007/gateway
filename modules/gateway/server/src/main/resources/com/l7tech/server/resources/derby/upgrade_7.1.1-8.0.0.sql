@@ -1064,7 +1064,6 @@ ALTER TABLE active_connector DROP COLUMN hardwired_service_oid;
 ALTER TABLE rbac_predicate_folder ADD COLUMN folder_goid CHAR(16) FOR BIT DATA;
 update rbac_predicate_folder set folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), folder_oid);
 update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(cast(getVariable('folder_prefix') as bigint), -5002);
-ALTER TABLE rbac_predicate_folder ALTER COLUMN folder_goid NOT NULL;
 alter table rbac_predicate_folder add constraint FKF111A643DB935A63 foreign key (folder_goid) references folder on delete cascade;
 ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid;
 
