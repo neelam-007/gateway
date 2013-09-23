@@ -7,9 +7,10 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import java.io.Serializable;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * @author alex

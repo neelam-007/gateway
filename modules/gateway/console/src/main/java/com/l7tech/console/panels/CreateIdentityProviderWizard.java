@@ -30,6 +30,8 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
 
         if(wizardInput.type() == IdentityProviderType.BIND_ONLY_LDAP) {
             setTitle("Create Simple LDAP Identity Provider Wizard");
+        } else if ( wizardInput.type() == IdentityProviderType.POLICY_BACKED ) {
+            setTitle("Create Policy-Backed Identity Provider");
         } else {
             setTitle("Create LDAP Identity Provider Wizard");
         }

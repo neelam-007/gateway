@@ -100,6 +100,7 @@
                 <value>com.l7tech.identity.internal.InternalUser</value>
                 <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
                 <value>com.l7tech.identity.internal.InternalGroupMembership</value>
+                <value>com.l7tech.identity.external.PolicyBackedIdentityProviderConfig</value>
                 <value>com.l7tech.identity.ldap.LdapIdentityProviderConfig</value>
                 <value>com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig</value>
                 <value>com.l7tech.identity.fed.FederatedIdentityProviderConfig</value>

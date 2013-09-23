@@ -5,10 +5,13 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.identity.HasDefaultRole;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -17,10 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Inject;
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +39,9 @@ public class RbacAdminImpl implements RbacAdmin {
 
     @Inject
     private EntityCrud entityCrud;
+
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
 
     public RbacAdminImpl(RoleManager roleManager) {
         this.roleManager = roleManager;
@@ -69,7 +72,30 @@ public class RbacAdminImpl implements RbacAdmin {
                 perms.add(perm2);
             }
         }
+
+        // TODO move this hack into the roleManager
+        if (perms.isEmpty()) {
+            // Check for an IDP that declares a default role
+            Role role = findDefaultRole(u.getProviderId());
+            for (Permission perm : role.getPermissions()) {
+                Permission perm2 = perm.getAnonymousClone();
+                perms.add(perm2);
+            }
+        }
+
         return perms;
+    }
+
+    private Role findDefaultRole(Goid providerId) throws FindException {
+        // TODO move this hack into the roleManager
+        IdentityProvider prov = identityProviderFactory.getProvider(providerId);
+        if (prov instanceof HasDefaultRole) {
+            HasDefaultRole hasDefaultRole = (HasDefaultRole) prov;
+            Goid roleId = hasDefaultRole.getDefaultRoleId();
+            if (roleId != null)
+                return roleManager.findByPrimaryKey(roleId);
+        }
+        return null;
     }
 
     /**
@@ -78,7 +104,16 @@ public class RbacAdminImpl implements RbacAdmin {
      */
     public Collection<Role> findRolesForUser(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("User cannot be null.");
-        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(user, true, false);
+        List<Role> assignedRoles = new ArrayList<>();
+        assignedRoles.addAll(roleManager.getAssignedRoles(user, true, false));
+
+        // TODO move this hack into the roleManager
+        if (assignedRoles.isEmpty()) {
+            Role defaultRole = findDefaultRole(user.getProviderId());
+            if (defaultRole != null)
+                assignedRoles.add(defaultRole);
+        }
+
         for (final Role assignedRole : assignedRoles) {
             attachEntities(assignedRole);
         }
@@ -91,9 +126,13 @@ public class RbacAdminImpl implements RbacAdmin {
     @Override
     public Collection<Role> findRolesForGroup(@NotNull final Group group) throws FindException {
         final Collection<Role> assignedRoles = roleManager.getAssignedRoles(group);
+
+        // No support for "default role" hack for groups currently
+
         for (final Role assignedRole : assignedRoles) {
             attachEntities(assignedRole);
         }
+
         return assignedRoles;
     }
 

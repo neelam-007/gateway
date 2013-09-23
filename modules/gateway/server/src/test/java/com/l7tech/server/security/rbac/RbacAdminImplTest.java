@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
@@ -42,6 +43,8 @@ public class RbacAdminImplTest {
     private AssertionAccessManager assertionAccessManager;
     @Mock
     private AssertionRegistry assertionRegistry;
+    @Mock
+    private IdentityProviderFactory identityProviderFactory;
     private List<SecurityZone> zones;
     private SecurityZone zone;
 
@@ -52,10 +55,12 @@ public class RbacAdminImplTest {
         zones = new ArrayList<SecurityZone>();
         zones.add(zone);
         ApplicationContexts.inject(admin, CollectionUtils.<String, Object>mapBuilder()
-                .put("securityZoneManager", securityZoneManager)
-                .put("assertionRegistry", assertionRegistry)
-                .put("assertionAccessManager", assertionAccessManager)
-                .put("entityCrud", entityCrud).unmodifiableMap());
+            .put("securityZoneManager", securityZoneManager)
+            .put("assertionRegistry", assertionRegistry)
+            .put("assertionAccessManager", assertionAccessManager)
+            .put("entityCrud", entityCrud)
+            .put("identityProviderFactory", identityProviderFactory)
+            .unmodifiableMap());
     }
 
     @Test

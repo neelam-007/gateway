@@ -65,6 +65,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP );
                 asResource( identityProvider, (BindOnlyLdapIdentityProviderConfig) identityProviderConfig );
                 break;
+            // TODO case 5: PolicyBackedIdentityProvider
             default:
                 throw new ResourceAccessException("Unknown identity provider type '"+identityProviderConfig.getTypeVal()+"'.");
         }

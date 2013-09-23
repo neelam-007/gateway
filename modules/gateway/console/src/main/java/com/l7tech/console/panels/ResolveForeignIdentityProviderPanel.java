@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.NewBindOnlyLdapProviderAction;
 import com.l7tech.console.action.NewFederatedIdentityProviderAction;
 import com.l7tech.console.action.NewLdapProviderAction;
+import com.l7tech.console.action.NewPolicyBackedIdentityProviderAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
@@ -10,6 +11,7 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -216,13 +218,25 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             NewBindOnlyLdapProviderAction action = new NewBindOnlyLdapProviderAction(ldapConfig);
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
+        } else if (IdentityProviderType.POLICY_BACKED.toVal() == unresolvedRef.getIdProviderTypeVal()) {
+            PolicyBackedIdentityProviderConfig policyConfig = new PolicyBackedIdentityProviderConfig();
+            policyConfig.setName(unresolvedRef.getProviderName());
+            policyConfig.setSerializedProps(unresolvedRef.getIdProviderConfProps());
+            NewPolicyBackedIdentityProviderAction action = new NewPolicyBackedIdentityProviderAction(policyConfig);
+            action.addEntityListener(updateProviderListCallback);
+            action.invoke();
         } else {
             DialogDisplayer.showInputDialog(this,
                     "Select type:",
                     "Select Identity Provider Type",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { IdentityProviderType.FEDERATED.description(), IdentityProviderType.LDAP.description(), IdentityProviderType.BIND_ONLY_LDAP.description() },
+                    new Object[] {
+                        IdentityProviderType.FEDERATED.description(),
+                        IdentityProviderType.LDAP.description(),
+                        IdentityProviderType.BIND_ONLY_LDAP.description(),
+                        IdentityProviderType.POLICY_BACKED.description()
+                    },
                     "",
                     new DialogDisplayer.InputListener(){
                         @Override
@@ -234,6 +248,10 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
                                     action.invoke();
                                 } else if (IdentityProviderType.BIND_ONLY_LDAP.description().equals(option)) {
                                     NewBindOnlyLdapProviderAction action = new NewBindOnlyLdapProviderAction();
+                                    action.addEntityListener(updateProviderListCallback);
+                                    action.invoke();
+                                } else if (IdentityProviderType.POLICY_BACKED.description().equals(option)) {
+                                    NewPolicyBackedIdentityProviderAction action = new NewPolicyBackedIdentityProviderAction();
                                     action.addEntityListener(updateProviderListCallback);
                                     action.invoke();
                                 } else {

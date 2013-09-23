@@ -123,13 +123,11 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                     im = new LdapAttributeMapping(ac, previousProvider.getGoid(), uog);
                 } else if (previousProvider.type() == IdentityProviderType.FEDERATED) {
                     im = new FederatedAttributeMapping(ac, previousProvider.getGoid(), uog);
-                } else if (previousProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+                } else {
                     DialogDisplayer.showMessageDialog(addButton,
                             MessageFormat.format("Identity Provider #{0} ({1}) is of type \"{2}\" and does not support attribute mappings.",
                                     previousProvider.getGoid(), previousProvider.getName(), previousProvider.type().description()), null);
                     return;
-                } else {
-                    throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", previousProvider.getGoid(), previousProvider.getName(), previousProvider.type().description()));
                 }
                 
                 if (edit(im)) {

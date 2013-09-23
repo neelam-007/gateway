@@ -34,22 +34,22 @@ public class RbacServicesTest {
         service.setGoid(new Goid(0,123));
         service.setName( "Test Service" );
 
-        final boolean permitted1 = rbacServices.isPermittedForEntity( new UserBean("none"), service, OperationType.READ, null );
+        final boolean permitted1 = rbacServices.isPermittedForEntity( newUserBean("none"), service, OperationType.READ, null );
         assertFalse("No permissions", permitted1);
 
-        final boolean permitted2 = rbacServices.isPermittedForEntity( new UserBean("any"), service, OperationType.READ, null );
+        final boolean permitted2 = rbacServices.isPermittedForEntity( newUserBean("any"), service, OperationType.READ, null );
         assertTrue("Any permission", permitted2);
 
-        final boolean permitted3 = rbacServices.isPermittedForEntity( new UserBean("some"), service, OperationType.READ, null );
+        final boolean permitted3 = rbacServices.isPermittedForEntity( newUserBean("some"), service, OperationType.READ, null );
         assertTrue("Some permission", permitted3);
 
-        final boolean permitted4 = rbacServices.isPermittedForEntity( new UserBean("some-other"), service, OperationType.READ, null );
+        final boolean permitted4 = rbacServices.isPermittedForEntity( newUserBean("some-other"), service, OperationType.READ, null );
         assertFalse("Some other entity permission", permitted4);
 
-        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other entity type permission", permitted5);
 
-        final boolean permitted6 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted6 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other operation permission", permitted6);
     }
 
@@ -57,19 +57,19 @@ public class RbacServicesTest {
     public void testPermittedForAnyEntity() throws Exception {
         final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
 
-        final boolean permitted1 = rbacServices.isPermittedForAnyEntityOfType( new UserBean("none"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted1 = rbacServices.isPermittedForAnyEntityOfType( newUserBean("none"), OperationType.READ, EntityType.SERVICE );
         assertFalse("No permissions", permitted1);
 
-        final boolean permitted2 = rbacServices.isPermittedForAnyEntityOfType( new UserBean("any"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted2 = rbacServices.isPermittedForAnyEntityOfType( newUserBean("any"), OperationType.READ, EntityType.SERVICE );
         assertTrue("Any permission", permitted2);
 
-        final boolean permitted3 = rbacServices.isPermittedForAnyEntityOfType( new UserBean("some"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted3 = rbacServices.isPermittedForAnyEntityOfType( newUserBean("some"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Some permission", permitted3);
 
-        final boolean permitted4 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted4 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other entity permission", permitted4);
 
-        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other operation permission", permitted5);
     }
 
@@ -77,19 +77,19 @@ public class RbacServicesTest {
     public void testPermittedForSomeEntity() throws Exception {
         final RbacServices rbacServices = new RbacServicesImpl(roleManager , entityFinder );
 
-        final boolean permitted1 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("none"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted1 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("none"), OperationType.READ, EntityType.SERVICE );
         assertFalse("No permissions", permitted1);
 
-        final boolean permitted2 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("any"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted2 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("any"), OperationType.READ, EntityType.SERVICE );
         assertTrue("Any permission", permitted2);
 
-        final boolean permitted3 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("some"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted3 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("some"), OperationType.READ, EntityType.SERVICE );
         assertTrue("Some permission", permitted3);
 
-        final boolean permitted4 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted4 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-ent"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other entity permission", permitted4);
 
-        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( new UserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
+        final boolean permitted5 = rbacServices.isPermittedForSomeEntityOfType( newUserBean("other-perm"), OperationType.READ, EntityType.SERVICE );
         assertFalse("Other operation permission", permitted5);
     }
 
@@ -134,4 +134,11 @@ public class RbacServicesTest {
                 }
             }
         };
+    
+    private static UserBean newUserBean(String login) {
+        UserBean ret = new UserBean(login);
+        ret.setUniqueIdentifier(login);
+        return ret;
+    }
+    
 }

@@ -746,6 +746,20 @@
         </property>
     </bean>
 
+    <!-- Non-listable identity provider that executes a dogfood policy to authenticate users  -->
+    <bean id="policyBackedIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl"/>
+        <constructor-arg value="policyBackedIdentityProvider"/>
+    </bean>
+    <bean id="policyBackedIdentityProvider" class="com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl" scope="prototype">
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.external.PolicyBackedUserManagerImpl" scope="prototype"/>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.external.PolicyBackedGroupManagerImpl" scope="prototype"/>
+        </property>
+    </bean>
+
     <!-- server side Cluster ID manager -->
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
         <property name="sessionFactory" ref="sessionFactory"/>

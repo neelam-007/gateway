@@ -122,6 +122,9 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         } else if (iProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
             boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
             w = new EditIdentityProviderWizard(f, new BindOnlyLdapGeneralPanel(null, readOnly), iProvider);
+        } else if (iProvider.type() == IdentityProviderType.POLICY_BACKED) {
+            boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
+            w = new EditIdentityProviderWizard(f, new PolicyBackedIdentityGeneralPanel(null, readOnly), iProvider);
         } else {
             throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
         }

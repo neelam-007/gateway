@@ -35,6 +35,8 @@ public class EditIdentityProviderWizard extends IdentityProviderWizard {
             setTitle("Edit LDAP Identity Provider Wizard");
         } else if (iProvider.type() == IdentityProviderType.INTERNAL) {
             setTitle("Edit Internal Identity Provider Wizard");
+        } else if (iProvider.type() == IdentityProviderType.POLICY_BACKED) {
+            setTitle("Edit Policy-Backed Identity Provider Wizard");
         } else {
             setTitle("Edit Identity Provider Wizard");
         }

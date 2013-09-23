@@ -32,6 +32,10 @@ public class IdentityProviderType implements Serializable {
             new IdentityProviderType( id++, "Simple LDAP",
                                       "com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl");
 
+    public static final IdentityProviderType POLICY_BACKED =
+            new IdentityProviderType( id++, "Policy-Backed",
+                                      "com.l7tech.server.identity.external.PolicyBackedIdentityProviderImpl");
+
     public static IdentityProviderType fromVal(int val) {
         switch (val) {
             case 1:
@@ -42,6 +46,8 @@ public class IdentityProviderType implements Serializable {
                 return FEDERATED;
             case 4:
                 return BIND_ONLY_LDAP;
+            case 5:
+                return POLICY_BACKED;
         }
         throw new IllegalArgumentException("Unknown type id " + val);
     }
@@ -98,7 +104,8 @@ public class IdentityProviderType implements Serializable {
         INTERNAL,
         LDAP,
         FEDERATED,
-        BIND_ONLY_LDAP
+        BIND_ONLY_LDAP,
+        POLICY_BACKED
     };
 
     private static final long serialVersionUID = 5766402770013082083L;

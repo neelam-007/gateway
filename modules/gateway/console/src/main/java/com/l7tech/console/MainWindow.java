@@ -52,7 +52,6 @@ import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.*;
-import javax.swing.plaf.FontUIResource;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLEditorKit;
@@ -186,6 +185,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
     private NewBindOnlyLdapProviderAction newBindOnlyLdapProviderAction;
+    private NewPolicyBackedIdentityProviderAction newPolicyBackedIdentityProviderAction;
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
@@ -1076,6 +1076,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             newProviderSubMenu.add(getNewProviderAction());
             newProviderSubMenu.add(getNewBindOnlyLdapProviderAction());
             newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
+            newProviderSubMenu.add(getNewPolicyBackedIdentityProviderAction());
         }
         return newProviderSubMenu;
     }
@@ -1476,6 +1477,23 @@ public class MainWindow extends JFrame implements SheetHolder {
         newBindOnlyLdapProviderAction.setEnabled(false);
         addPermissionRefreshListener(newBindOnlyLdapProviderAction);
         return newBindOnlyLdapProviderAction;
+    }
+
+    private NewPolicyBackedIdentityProviderAction getNewPolicyBackedIdentityProviderAction() {
+        if (newPolicyBackedIdentityProviderAction != null) return newPolicyBackedIdentityProviderAction;
+        newPolicyBackedIdentityProviderAction = new NewPolicyBackedIdentityProviderAction() {
+            @Override
+            public void onLogon(LogonEvent e) {
+                super.onLogon(e);
+                final DefaultMutableTreeNode root =
+                    (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode) root;
+            }
+        };
+        MainWindow.this.addLogonListener(newPolicyBackedIdentityProviderAction);
+        newPolicyBackedIdentityProviderAction.setEnabled(false);
+        addPermissionRefreshListener(newPolicyBackedIdentityProviderAction);
+        return newPolicyBackedIdentityProviderAction;
     }
 
     /**

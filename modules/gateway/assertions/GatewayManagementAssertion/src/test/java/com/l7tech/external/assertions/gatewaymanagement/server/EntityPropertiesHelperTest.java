@@ -189,6 +189,7 @@ public class EntityPropertiesHelperTest {
                     IdentityProviderConfig.class,
                     LdapIdentityProviderConfig.class,
                     BindOnlyLdapIdentityProviderConfig.class
+                    // TODO PolicyBackedIdentityProvider.class
             );
         } else {
             return Collections.<Class<? extends Entity>>singleton( type.getEntityClass() );

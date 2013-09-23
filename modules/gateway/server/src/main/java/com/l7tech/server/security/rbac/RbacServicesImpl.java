@@ -1,17 +1,23 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.identity.HasDefaultRole;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 
 import java.text.MessageFormat;
@@ -23,7 +29,7 @@ import java.util.logging.Logger;
 import static com.l7tech.objectmodel.EntityType.ANY;
 
 /** @author alex */
-public class RbacServicesImpl implements RbacServices, InitializingBean, PostStartupApplicationListener {
+public class RbacServicesImpl implements RbacServices, InitializingBean, PostStartupApplicationListener, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(RbacServicesImpl.class.getName());
               
     private final Map<Class<? extends ScopePredicate>, ScopeEvaluatorFactory> scopeEvaluatorFactories = new HashMap<Class<? extends ScopePredicate>, ScopeEvaluatorFactory>() {{
@@ -33,6 +39,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
     private RoleManager roleManager;
     private EntityFinder entityFinder;
+    private ApplicationContext applicationContext;
 
     public RbacServicesImpl(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
@@ -50,7 +57,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
 
         final Map<EntityType, Boolean> permittedTypes = new HashMap<EntityType, Boolean>();
 
-        for (Role role : roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
+        for (Role role : getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
@@ -91,7 +98,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                                                 final OperationType requiredOperation,
                                                 final EntityType requiredType,
                                                 final boolean allEntities ) throws FindException {
-        for ( final Role role : roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
+        for ( final Role role : getAssignedRoles(makeKey(authenticatedUser), authenticatedUser)) {
             for ( final Permission perm : role.getPermissions() ) {
                 if (allEntities && perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
@@ -109,7 +116,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
         logger.log(Level.FINE, String.format("Checking for permission to %s %s #%s", operation.getName(), entity.getClass().getSimpleName(), entity.getId()));
 
-        return isPermitted(roleManager.getAssignedRoles(makeKey(user), user), entity, operation, otherOperationName);
+        return isPermitted(getAssignedRoles(makeKey(user), user), entity, operation, otherOperationName);
     }
 
     @Override
@@ -125,7 +132,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                 && isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.POLICY)) return headers;
 
         // Do this outside the loop so performance isn't appalling
-        final Collection<Role> userRoles = roleManager.getAssignedRoles(makeKey(authenticatedUser), authenticatedUser);
+        final Collection<Role> userRoles = getAssignedRoles(makeKey(authenticatedUser), authenticatedUser);
         if (userRoles.isEmpty()) return Collections.emptyList();
 
         final List<T> result = new LinkedList<T>();
@@ -171,7 +178,32 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
             logger.log(Level.INFO, "Administrative access for '" + user.getLogin() + "' denied due to: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
 
+        // TODO move this hack into the roleManager
+        if (!hasPermission) {
+            // Check for an identity-provider-level default role
+            hasPermission = findDefaultRole(user.getProviderId()) != null;
+        }
+
         return hasPermission;
+    }
+
+    private Role findDefaultRole(Goid idProviderId) throws FindException {
+        // TODO this is REALLY fugly, should think of a better way to handle non-listable IDPs that want to have admiun users
+
+        // TODO move this hack into the roleManager
+        if (applicationContext == null)
+            return null;
+        IdentityProviderFactory identityProviderFactory = applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        IdentityProvider provider = identityProviderFactory.getProvider(idProviderId);
+        if (provider instanceof HasDefaultRole) {
+            HasDefaultRole hasDefaultRole = (HasDefaultRole) provider;
+            Goid roleId = hasDefaultRole.getDefaultRoleId();
+            if (roleId != null) {
+                return roleManager.findByPrimaryKey(roleId);
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -183,7 +215,17 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
         if (!(user.getProviderId()).equals(providerAndUserId.left))
             throw new IllegalArgumentException("provider ID mismatch");
 
-        return Collections.unmodifiableCollection(roleManager.getAssignedRoles(user));
+        ArrayList<Role> roles = new ArrayList<>();
+        roles.addAll(roleManager.getAssignedRoles(user));
+
+        // TODO move this hack into the roleManager
+        if (roles.isEmpty()) {
+            Role defaultRole = findDefaultRole(user.getProviderId());
+            if (defaultRole != null)
+                roles.add(defaultRole);
+        }
+
+        return Collections.unmodifiableCollection(roles);
     }
 
     private static Pair<Goid, String> makeKey(User user) {
@@ -279,6 +321,11 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, PostSta
                 }
             }
         }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     private class EntityAncestryEvaluator implements ScopeEvaluator {

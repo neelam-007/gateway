@@ -192,6 +192,8 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          * Simple bind-only LDAP based provider.
          */
         @XmlEnumValue("Simple LDAP") BIND_ONLY_LDAP
+
+        // TODO POLICY_BACKED
     }
 
     /**
