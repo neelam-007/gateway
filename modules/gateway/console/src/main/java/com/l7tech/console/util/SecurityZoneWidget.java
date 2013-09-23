@@ -35,7 +35,6 @@ public class SecurityZoneWidget extends JPanel {
     private SecurityZone initialZone;
     private java.util.List<SecurityZone> loadedZones = Collections.emptyList();
     private JComboBox<SecurityZone> zonesComboBox = new JComboBox<>();
-    private JLabel securityZoneLabel = new JLabel("Security Zone:");
     private ZoneableEntity specificEntity;
 
     public SecurityZoneWidget() {
@@ -47,7 +46,7 @@ public class SecurityZoneWidget extends JPanel {
         bottom.weightx = 1;
         bottom.weighty = 1;
         bottom.fill = GridBagConstraints.HORIZONTAL;
-        add(securityZoneLabel, top);
+        add(new JLabel("Security Zone:"), top);
         add(zonesComboBox, bottom);
         zonesComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -185,7 +184,7 @@ public class SecurityZoneWidget extends JPanel {
      * Hides the widget if there are no zones to display or displays the zone as static text if readonly.
      */
     private void customizeDisplay() {
-        if (hideIfNoZones && (loadedZones.isEmpty() || (loadedZones.size() == 1 && loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())))) {
+        if (hideIfNoZones && !hasZones()) {
             logger.log(Level.FINER, "Hiding the SecurityZoneWidget because no zones are available");
             setVisible(false);
         } else {
@@ -246,6 +245,13 @@ public class SecurityZoneWidget extends JPanel {
         this.hideIfNoZones = hideIfNoZones;
     }
 
+    /**
+     * @return true if there is at least one zone available which is not the 'null zone'.
+     */
+    public boolean hasZones() {
+        return (loadedZones.size() > 1 || (loadedZones.size() == 1 && !loadedZones.iterator().next().equals(SecurityZoneUtil.getNullZone())));
+    }
+
     public void addComboBoxActionListener(@NotNull final ActionListener actionListener) {
         zonesComboBox.addActionListener(actionListener);
     }
@@ -284,7 +290,7 @@ public class SecurityZoneWidget extends JPanel {
      */
     private void setEntityTypes(@Nullable final Collection<EntityType> entityTypes) {
         if (entityTypes != null) {
-            this.entityTypes = new ArrayList<EntityType>(entityTypes);
+            this.entityTypes = new ArrayList<>(entityTypes);
         } else {
             this.entityTypes = null;
         }

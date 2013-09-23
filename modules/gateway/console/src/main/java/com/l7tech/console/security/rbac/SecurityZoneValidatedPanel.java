@@ -2,13 +2,11 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import org.jetbrains.annotations.Nullable;
+import com.l7tech.objectmodel.ZoneableEntity;
+import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.awt.*;
 
 /**
@@ -21,9 +19,9 @@ import java.awt.*;
 public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
     private SecurityZoneWidget zoneWidget;
 
-    public SecurityZoneValidatedPanel(EntityType entityType, SecurityZone zone, @Nullable OperationType operation) {
+    public SecurityZoneValidatedPanel(@NotNull final ZoneableEntity entity) {
         init();
-        zoneWidget.configure(entityType, operation, zone);
+        zoneWidget.configure(entity);
         checkSyntax();
     }
 
@@ -50,6 +48,13 @@ public class SecurityZoneValidatedPanel extends ValidatedPanel<SecurityZone> {
     public void focusFirstComponent() {
         if (zoneWidget != null)
             zoneWidget.requestFocusInWindow();
+    }
+
+    /**
+     * @return true if there is at least one zone available which is not the 'null zone'.
+     */
+    public boolean hasZones() {
+        return zoneWidget.hasZones();
     }
 
     @Override
