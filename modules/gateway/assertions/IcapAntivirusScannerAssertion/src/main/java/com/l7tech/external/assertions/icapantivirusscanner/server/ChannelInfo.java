@@ -20,6 +20,8 @@ public final class ChannelInfo {
 
     private final Channel channel;
 
+    private long lastUsed;
+
     /**
      * <p>
      *     Construct a new ChannelInfo with the given Channel and information that describe it's connection.
@@ -38,6 +40,7 @@ public final class ChannelInfo {
         this.port = port;
         this.serviceName = serviceName;
         this.headers = Collections.unmodifiableMap(headers);
+        this.lastUsed = System.currentTimeMillis();
     }
 
     /**
@@ -96,5 +99,11 @@ public final class ChannelInfo {
         return (channel != null && (channel.isConnected() && channel.isOpen()) && (channel.isReadable() || channel.isWritable()));
     }
 
+    public long getLastUsed() {
+        return lastUsed;
+    }
 
+    public void setLastUsed(long lastUsed) {
+        this.lastUsed = lastUsed;
+    }
 }

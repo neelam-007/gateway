@@ -17,10 +17,10 @@ public class MockIcapChannelPipeline implements ChannelPipelineFactory  {
     @Override
     public ChannelPipeline getPipeline() {
         ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("encoder", new IcapRequestEncoder());
+/*        pipeline.addLast("encoder", new IcapRequestEncoder());
         pipeline.addLast("chunkSeparator", new IcapChunkSeparator(DEFAULT_BUFFER_SIZE));
         pipeline.addLast("decoder", new IcapResponseDecoder());
-        pipeline.addLast("chunkAggregator", new IcapChunkAggregator(DEFAULT_BUFFER_SIZE));
+        pipeline.addLast("chunkAggregator", new IcapChunkAggregator(DEFAULT_BUFFER_SIZE));*/
         pipeline.addLast("handler", new MockIcapResponseHandler());
         return pipeline;
     }

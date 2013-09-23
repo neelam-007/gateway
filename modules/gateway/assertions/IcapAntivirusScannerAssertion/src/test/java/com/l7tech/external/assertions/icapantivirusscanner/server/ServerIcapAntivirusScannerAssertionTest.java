@@ -14,12 +14,14 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Triple;
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.net.SocketAddress;
@@ -99,7 +101,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
 
     private PolicyEnforcementContext policyEnforcementContext;
 
-    private ChannelInfo channel;
+    private ClientBootstrap client;
 
     @Before
     public void setUp() {
@@ -110,10 +112,12 @@ public class ServerIcapAntivirusScannerAssertionTest {
         try {
             policyEnforcementContext = makeContext("<myrequest/>", "<myresponse/>");
             serverAssertion = new ServerIcapAntivirusScannerAssertion(assertion, ApplicationContexts.getTestApplicationContext());
-            ClientBootstrap client = new ClientBootstrap(){
+            client = new ClientBootstrap(){
                 @Override
                 public ChannelFuture connect() {
-                    return Channels.succeededFuture(new DefaultLocalClientChannelFactory().newChannel(new MockIcapChannelPipeline().getPipeline()));
+                    Channel mockedChannel = Mockito.mock(Channel.class);
+                    Mockito.when(mockedChannel.getPipeline()).thenReturn(new MockIcapChannelPipeline().getPipeline());
+                    return Channels.succeededFuture(mockedChannel);
                 }
 
                 @Override
@@ -126,7 +130,6 @@ public class ServerIcapAntivirusScannerAssertionTest {
                     return connect();
                 }
             };
-            channel = serverAssertion.getChannel(client, policyEnforcementContext);
         } catch (PolicyAssertionException e) {
             Assert.fail("Error creating server assertion: " + e.getMessage());
         }
@@ -172,27 +175,13 @@ public class ServerIcapAntivirusScannerAssertionTest {
     }
 
     @Test
-    public void testScanMessageSingleCleanPayload() {
-        assertion.setContinueOnVirusFound(false);
-        try {
-            ByteArrayStashManager basm = new ByteArrayStashManager();
-            basm.stash(0, CLEAN_PAYLOAD);
-            Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(CLEAN_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
-            Assert.assertEquals("testScanMessageSingleCleanPayload()", AssertionStatus.NONE, status);
-        } catch (Exception e) {
-            Assert.fail("testScanMessageSingleCleanPayload failed: " + e.getMessage());
-        }
-    }
-
-    @Test
     public void testScanMessageForContextVariables() {
         assertion.setContinueOnVirusFound(false);
         try {
             ByteArrayStashManager basm = new ByteArrayStashManager();
             basm.stash(0, EICAR_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(EICAR_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, client);
             String prefix = assertion.getVariablePrefix();
             String[] infectedFiles = (String[]) policyEnforcementContext.getVariable(prefix+"."+IcapAntivirusScannerAssertion.INFECTED_PARTS);
             Assert.assertEquals("Expected infection size", 1, infectedFiles.length);
@@ -213,7 +202,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             ByteArrayStashManager basm = new ByteArrayStashManager();
             basm.stash(0, EICAR_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(EICAR_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, client);
             Assert.assertEquals("testInfectedMessageWithoutContinue()", AssertionStatus.FAILED, status);
         } catch (Exception e) {
             Assert.fail("testInfectedMessageWithoutContinue failed: " + e.getMessage());
@@ -227,7 +216,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             Message request = new Message(new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                     new ByteArrayInputStream(MESS2.getBytes()));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, channel);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, client);
             Assert.assertEquals("testMimePartsInfected()", AssertionStatus.FAILED, status);
         } catch (Exception e) {
             Assert.fail("testMimePartsInfected failed: " + e.getMessage());
@@ -241,7 +230,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             Message request = new Message(new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                     new ByteArrayInputStream(MESS2.getBytes()));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, channel);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, client);
             Assert.assertEquals("testMimePartsInfected()", AssertionStatus.NONE, status);
         } catch (Exception e) {
             Assert.fail("testMimePartsInfected failed: " + e.getMessage());

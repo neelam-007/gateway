@@ -6,6 +6,7 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.util.Functions.UnaryVoid;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
+import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 
 import java.io.IOException;
@@ -26,108 +27,51 @@ import java.util.logging.Logger;
 public final class IcapResponseHandler extends AbstractIcapResponseHandler {
 
     private static final Logger LOGGER = Logger.getLogger(IcapResponseHandler.class.getName());
-    private final UnaryVoid<Integer> callback;
-    private final BlockingQueue<IcapResponse> responseQueue = new LinkedBlockingQueue<IcapResponse>(10);
-    private final AtomicInteger activeExchanges = new AtomicInteger(0);
-    private volatile Channel channel;
 
-    public IcapResponseHandler(final UnaryVoid<Integer> callback) {
-        this.callback = callback;
-    }
+    private final BlockingQueue<IcapResponse> responseQueue = new LinkedBlockingQueue<IcapResponse>(10);
 
     @Override
-    public IcapResponse sendOptionsCommand(final String icapUri, final String host) {
-        IcapRequest request = new DefaultIcapRequest(IcapVersion.ICAP_1_0, IcapMethod.OPTIONS,
-                icapUri,
-                host);
-        return sendRequest(request);
-    }
-
-    private IcapResponse sendRequest(IcapRequest request){
-        IcapResponse response = null;
+    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) {
         boolean interrupted = false;
-        activeExchanges.incrementAndGet();
         try {
-            final ChannelFuture fut = channel.write(request);
-            fut.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(final ChannelFuture channelFuture) throws Exception {
-                    if(channelFuture.isDone() && channelFuture.isSuccess()){
-                        return;
-                    }
-                    responseQueue.put( new DefaultIcapResponse( IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE ) );
-                }
-            });
-            response = responseQueue.take();
-        } catch (InterruptedException e) {
+            responseQueue.put( (IcapResponse) e.getMessage() );
+        } catch (InterruptedException e1) {
             interrupted = true;
-        } finally {
-            activeExchanges.decrementAndGet();
         }
-
-        if (interrupted) {
+        if(interrupted){
             Thread.currentThread().interrupt();
         }
-        return response;
     }
 
     @Override
-    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo, final Map<String, String> headers) throws NoSuchPartException, IOException {
-
-        final IcapRequest request = new DefaultIcapRequest(IcapVersion.ICAP_1_0, IcapMethod.RESPMOD,
-                icapUri,
-                host);
-        request.addHeader(HttpHeaders.Names.ALLOW, "204");
-        for(Map.Entry<String, String> ent : headers.entrySet()){
-            request.addHeader(ent.getKey(), ent.getValue());
-        }
-        final HttpResponse httpResponse = new StreamedHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
-        ((StreamedHttpResponse)httpResponse).setContent(partInfo.getInputStream(false));
-        httpResponse.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-        request.setHttpResponse(httpResponse);
-        final HttpRequest httpRequest = new DefaultHttpRequest(HttpVersion.HTTP_1_0, HttpMethod.GET, "/");
-        request.setHttpRequest(httpRequest);
-        return sendRequest(request);
-    }
-
-
-    @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        channel = e.getChannel();
-        LOGGER.finer("opened channel " + channel);
-    }
-
-    @Override
-    public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception {
-        responseQueue.put( (IcapResponse) e.getMessage() );
-    }
-
-    @Override
-    public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e) throws Exception {
+    public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e) {
         LOGGER.warning(e.toString());
-        e.getChannel().close();
-        responseQueue.put( new DefaultIcapResponse( IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE ) );
+        boolean interrupted = false;
+        try {
+            responseQueue.put(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
+            Channels.close(e.getChannel());
+        } catch (InterruptedException e1) {
+            interrupted = true;
+        }
+        if(interrupted){
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
-    public void channelIdle(final ChannelHandlerContext ctx, final IdleStateEvent e) throws Exception {
-        LOGGER.finer("closing idle channel " + channel);
-        // Ensure any exchange blocked on reading the response queue is unblocked.
-        // One cause for this is insufficent threads to service the number of open
-        // connections.
-        while ( activeExchanges.getAndDecrement() > 0 ) {
-            responseQueue.put( new DefaultIcapResponse( IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE ) );
+    public IcapResponse getResponse() {
+        boolean interrupted;
+        for(;;){
+            try {
+                return responseQueue.take();
+            } catch (InterruptedException e) {
+                interrupted = true;
+                break;
+            }
         }
-        callback.call(channel.getId());
-        channel.close();
-    }
-
-    @Override
-    public void channelClosed(final ChannelHandlerContext ctx, final ChannelStateEvent e) throws Exception {
-        LOGGER.finer("channel closed " + e);
-        while ( activeExchanges.getAndDecrement() > 0 ) {
-            responseQueue.put( new DefaultIcapResponse( IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE ) );
+        if(interrupted){
+            Thread.currentThread().interrupt();
         }
-        callback.call(channel.getId());
+        return new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE);
     }
 }

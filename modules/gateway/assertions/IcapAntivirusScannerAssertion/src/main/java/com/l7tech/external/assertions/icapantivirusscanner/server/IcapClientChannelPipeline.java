@@ -21,28 +21,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class IcapClientChannelPipeline implements ChannelPipelineFactory {
 
-    private static final int DEFAULT_BUFFER_SIZE = 4096;
-
-    private final Timer timer;
-    private final UnaryVoid<Integer> callback;
-
-    private final long idleTimeout;
-
-    public IcapClientChannelPipeline(Timer timer, UnaryVoid<Integer> callback, long idleTimeout){
-        this.timer = timer;
-        this.callback = callback;
-        this.idleTimeout = idleTimeout;
-    }
+    private static final int DEFAULT_BUFFER_SIZE = 204800;
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("idleHandler", new IdleStateHandler(timer, 0L, 0L, idleTimeout, TimeUnit.MILLISECONDS));
         pipeline.addLast("encoder", new IcapRequestEncoder());
         pipeline.addLast("chunkSeparator", new IcapChunkSeparator(DEFAULT_BUFFER_SIZE));
         pipeline.addLast("decoder", new IcapResponseDecoder());
         pipeline.addLast("chunkAggregator", new IcapChunkAggregator(DEFAULT_BUFFER_SIZE));
-        pipeline.addLast("handler", new IcapResponseHandler(callback));
+        pipeline.addLast("handler", new IcapResponseHandler());
         return pipeline;
     }
 
