@@ -1429,7 +1429,7 @@ CREATE TABLE rbac_predicate_oid (
 DROP TABLE IF EXISTS rbac_predicate_folder;
 CREATE TABLE rbac_predicate_folder (
   goid binary(16) NOT NULL,
-  folder_goid binary(16),
+  folder_goid binary(16) NOT NULL,
   transitive boolean NOT NULL,
   PRIMARY KEY (goid),
   FOREIGN KEY (goid) REFERENCES rbac_predicate (goid) ON DELETE CASCADE,

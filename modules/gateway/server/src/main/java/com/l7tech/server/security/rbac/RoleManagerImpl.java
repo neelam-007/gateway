@@ -436,6 +436,8 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
         Set<Role> rolesToUpdate = new HashSet<Role>();
         for (Permission permission : permissionsToDelete) {
+            // SSG-7679 explicitly delete the permission before updating the role to avoid cascade issues
+            getHibernateTemplate().delete(permission);
             final Role role = permission.getRole();
             if (!rolesAlreadyDeleted.contains(role)) {
                 role.getPermissions().remove(permission);

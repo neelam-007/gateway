@@ -730,7 +730,7 @@ create table rbac_predicate_entityfolder (
 
 create table rbac_predicate_folder (
     goid CHAR(16) FOR BIT DATA not null,
-    folder_goid CHAR(16) FOR BIT DATA,
+    folder_goid CHAR(16) FOR BIT DATA not null,
     transitive smallint not null,
     primary key (goid)
 );

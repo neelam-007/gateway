@@ -1173,7 +1173,7 @@ ALTER TABLE active_connector DROP COLUMN hardwired_service_oid_backup;
 
 ALTER TABLE rbac_predicate_folder ADD COLUMN folder_oid_backup BIGINT(20);
 update rbac_predicate_folder set folder_oid_backup=folder_oid;
-ALTER TABLE rbac_predicate_folder CHANGE COLUMN folder_oid folder_goid binary(16);
+ALTER TABLE rbac_predicate_folder CHANGE COLUMN folder_oid folder_goid binary(16) NOT NULL;
 update rbac_predicate_folder set folder_goid = toGoid(@folder_prefix,folder_oid_backup);
 update rbac_predicate_folder set folder_goid = toGoid(0, -5002) where folder_goid = toGoid(@folder_prefix, -5002);
 ALTER TABLE rbac_predicate_folder DROP COLUMN folder_oid_backup;
