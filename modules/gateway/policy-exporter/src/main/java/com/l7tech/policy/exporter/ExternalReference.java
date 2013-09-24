@@ -355,6 +355,7 @@ public abstract class ExternalReference {
         IncludedPolicyReference.class,
         TrustedCertReference.class,
         PrivateKeyReference.class,
-        JdbcConnectionReference.class
+        JdbcConnectionReference.class,
+        EncapsulatedAssertionReference.class
     )) );
 }

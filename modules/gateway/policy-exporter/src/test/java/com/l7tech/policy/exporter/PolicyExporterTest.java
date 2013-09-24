@@ -77,6 +77,8 @@ public class PolicyExporterTest {
         assertEquals("ID provider reference type", "com.l7tech.console.policy.exporter.IdProviderReference", idProvRefEle.getAttribute( "RefType" ));
         Element jmsConnRefEle = XmlUtil.findExactlyOneChildElementByName( referencesEle, "JMSConnectionReference" );
         assertEquals("Jms reference type", "com.l7tech.console.policy.exporter.JMSEndpointReference", jmsConnRefEle.getAttribute( "RefType" ));
+        Element encassRefEle = XmlUtil.findExactlyOneChildElementByName( referencesEle, "EncapsulatedAssertionReference" );
+        assertEquals("Encass reference type", "com.l7tech.console.policy.exporter.EncapsulatedAssertionReference", encassRefEle.getAttribute( "RefType" ));
     }
 
     @Test
@@ -102,6 +104,7 @@ public class PolicyExporterTest {
         assertTrue("Missing JMSEndpointReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.JMSEndpointReference" ));
         assertTrue("Missing PrivateKeyReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.PrivateKeyReference" ));
         assertTrue("Missing TrustedCertReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.TrustedCertReference" ));
+        assertFalse("Found EncapsulatedAssertionReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.EncapsulatedAssertionReference" ));
         assertEquals("Reference count", 9, referenceTypes.size());
     }
 
@@ -182,6 +185,12 @@ public class PolicyExporterTest {
         WsSecurity wsass = new WsSecurity();
         wsass.setRecipientTrustedCertificateGoid(new Goid(0, 1234L));
         root.addChild( wsass );
+
+        // EncapsulatedAssertionReference
+        EncapsulatedAssertion encass = new EncapsulatedAssertion();
+        encass.setEncapsulatedAssertionConfigGuid("encass-guid");
+        encass.setEncapsulatedAssertionConfigName("encass-name");
+        root.addChild( encass );
 
         return root;
     }

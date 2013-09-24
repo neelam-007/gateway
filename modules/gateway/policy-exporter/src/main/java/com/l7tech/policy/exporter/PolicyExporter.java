@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -175,6 +176,8 @@ public class PolicyExporter {
                     addReference( new JMSEndpointReference( finder, entityHeader.getGoid()), refs);
                 } else if( entityHeader.getType().equals(EntityType.TRUSTED_CERT) ) {
                     addReference( new TrustedCertReference( finder, entityHeader.getGoid()), refs);
+                } else if( entityHeader.getType().equals(EntityType.ENCAPSULATED_ASSERTION) ) {
+                    addReference( new EncapsulatedAssertionReference( finder, (GuidEntityHeader)entityHeader), refs);
                 }
             }
         }
