@@ -70,6 +70,7 @@ public class CertPropertiesWindow extends JDialog {
     private JComboBox revocationCheckPolicyComboBox;
     private JCheckBox certificateIsATrustCheckBox;
     private JTextPane validationDescriptionText;
+    private boolean allowSecurityZoneSelection = true;
     private SecurityZoneWidget zoneControl;
 
     private final TrustedCert trustedCert;
@@ -109,7 +110,7 @@ public class CertPropertiesWindow extends JDialog {
      * @param owner    The parent component.
      * @param tc       The trusted certificate.
      * @param editable TRUE if the properties are editable
-     * @param options  TRUE to display the options and validity tabs
+     * @param options  TRUE to display the options, validity tabs, and zone widget.
      */
     public CertPropertiesWindow(Window owner, TrustedCert tc, boolean editable, boolean options, Collection<RevocationCheckPolicy> policies) {
         super(owner, resources.getString("cert.properties.dialog.title"), CertPropertiesWindow.DEFAULT_MODALITY_TYPE);
@@ -198,7 +199,8 @@ public class CertPropertiesWindow extends JDialog {
         });
         revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
-        if (options) {
+        allowSecurityZoneSelection = options;
+        if (allowSecurityZoneSelection) {
             zoneControl.configure(trustedCert.isUnsaved() ? OperationType.CREATE : editable ? OperationType.UPDATE : OperationType.READ, trustedCert);
         } else {
             zoneControl.setVisible(false);
@@ -542,7 +544,9 @@ public class CertPropertiesWindow extends JDialog {
                 tc.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
                 tc.setRevocationCheckPolicyOid(null);
             }
-            tc.setSecurityZone(zoneControl.getSelectedZone());
+            if (allowSecurityZoneSelection) {
+                tc.setSecurityZone(zoneControl.getSelectedZone());
+            }
         }
     }
 

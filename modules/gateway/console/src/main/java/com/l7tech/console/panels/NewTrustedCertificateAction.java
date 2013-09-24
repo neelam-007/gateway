@@ -82,7 +82,7 @@ public class NewTrustedCertificateAction extends SecureAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                CertImportMethodsPanel importPanel = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(new CertValidationPanel(null))), true);
+                CertImportMethodsPanel importPanel = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(new CertValidationPanel(null))), true, true);
                 Wizard w = parent instanceof Frame ?
                         new AddCertificateWizard((Frame) parent, importPanel) :
                         new AddCertificateWizard((Dialog) parent, importPanel);

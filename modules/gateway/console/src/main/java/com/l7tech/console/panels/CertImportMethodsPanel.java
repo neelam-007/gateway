@@ -68,6 +68,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private SecurityZoneWidget zoneControl;
     private X509Certificate[] certChain = null;
     private boolean defaultToSslOption;
+    private boolean allowSecurityZoneSelection = false;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertImportMethodsPanel.class.getName());
 
@@ -78,8 +79,19 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * @param defaultToSslOption if true, defaults to "read from SSL connection"
      */
     public CertImportMethodsPanel(WizardStepPanel next, boolean defaultToSslOption) {
+        this(next, defaultToSslOption, false);
+    }
+
+    /**
+     *
+     * @param next The next step panel
+     * @param defaultToSslOption if true, defaults to "read from SSL connection"
+     * @param allowSecurityZoneSelection if true, shows security zone widget for zone selection.
+     */
+    public CertImportMethodsPanel(WizardStepPanel next, boolean defaultToSslOption, boolean allowSecurityZoneSelection) {
         super(next);
         this.defaultToSslOption = defaultToSslOption;
+        this.allowSecurityZoneSelection = allowSecurityZoneSelection;
         initialize();
     }
 
@@ -154,7 +166,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         urlConnRadioButton.addChangeListener(enableListener);
         trustedCertRadioButton.addChangeListener(enableListener);
         privateKeyRadioButton.addChangeListener(enableListener);
-        zoneControl.configure(EntityType.TRUSTED_CERT, OperationType.CREATE, null);
+        if (allowSecurityZoneSelection) {
+            zoneControl.configure(EntityType.TRUSTED_CERT, OperationType.CREATE, null);
+        } else {
+            zoneControl.setVisible(false);
+        }
     }
 
     private static class CertComboEntry {
@@ -459,7 +475,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         if (settings instanceof TrustedCert) {
             TrustedCert tc = (TrustedCert) settings;
             tc.setCertificate(certChain[0]);
-            tc.setSecurityZone(zoneControl.getSelectedZone());
+            if (allowSecurityZoneSelection) {
+                tc.setSecurityZone(zoneControl.getSelectedZone());
+            }
         } else if (settings instanceof SsgKeyEntry) {
             SsgKeyEntry ssgKeyEntry = (SsgKeyEntry)settings;
             ssgKeyEntry.setCertificateChain(certChain);
