@@ -1,4 +1,4 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.Goid;
@@ -10,7 +10,11 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.variable.DataType;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.TransformerException;
@@ -20,6 +24,7 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class EncapsulatedAssertionConfigExportUtilTest {
     // very simple policy with no references
     private static final String POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" " +
@@ -28,17 +33,20 @@ public class EncapsulatedAssertionConfigExportUtilTest {
             "        <L7p:TrueAssertion/>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
-    private EncapsulatedAssertionConfigExportUtil util;
     private EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
     private Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "myPolicy", POLICY_XML, false);
     private Set<EncapsulatedAssertionArgumentDescriptor> ins = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
     private Set<EncapsulatedAssertionResultDescriptor> outs = new HashSet<EncapsulatedAssertionResultDescriptor>();
     private Map<String, String> properties = new HashMap<String, String>();
     private DOMResult result = new DOMResult();
+    @Mock
+    private ExternalReferenceFinder finder;
+    @Mock
+    private EntityResolver resolver;
+
 
     @Before
     public void setup() throws Exception {
-        util = new EncapsulatedAssertionConfigExportUtil();
         setupConfig();
         policy.setGuid("policyGuid");
         ins.add(createInput());
@@ -74,7 +82,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     public void exportConfigAndPolicy() throws Exception {
         // ensure there is no existing artifact version
         config.removeProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
-        final Document document = util.exportConfigAndPolicy(config);
+        final Document document = EncapsulatedAssertionExportUtil.exportEncass(config, finder, resolver);
         final String xml = XmlUtil.nodeToFormattedString(document);
         assertEquals(xmlFromConfig(config, true, false), xml);
         // ensure there is now an artifact version
@@ -86,7 +94,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     public void exportConfigAndPolicyExistingArtifactVersion() throws Exception {
         final String existingArtifactVersion = "shouldBeReplaced";
         config.putProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION, existingArtifactVersion);
-        final Document document = util.exportConfigAndPolicy(config);
+        final Document document = EncapsulatedAssertionExportUtil.exportEncass(config, finder, resolver);
         final String xml = XmlUtil.nodeToFormattedString(document);
         assertEquals(xmlFromConfig(config, true, false), xml);
         assertTrue(xml.contains(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION));
@@ -96,27 +104,27 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     @Test(expected = IllegalArgumentException.class)
     public void exportConfigAndPolicyNullPolicy() throws Exception {
         config.setPolicy(null);
-        util.exportConfigAndPolicy(config);
+        EncapsulatedAssertionExportUtil.exportEncass(config, finder, resolver);
     }
 
     @Test
     public void generateArtifactVersion() throws Exception {
         final String xml = "<xml>someXml</xml>";
-        final String artifactVersion = util.generateArtifactVersion(XmlUtil.parse(xml));
+        final String artifactVersion = EncapsulatedAssertionExportUtil.generateArtifactVersion(XmlUtil.parse(xml));
         assertFalse(artifactVersion.isEmpty());
 
         // if xml has not changed, artifact version should be the same
-        final String noChange = util.generateArtifactVersion(XmlUtil.parse(xml));
+        final String noChange = EncapsulatedAssertionExportUtil.generateArtifactVersion(XmlUtil.parse(xml));
         assertEquals(artifactVersion, noChange);
 
         // if xml has changed, artifact version should also have changed
-        final String changed = util.generateArtifactVersion(XmlUtil.parse("<xml>xmlHasChanged</xml>"));
+        final String changed = EncapsulatedAssertionExportUtil.generateArtifactVersion(XmlUtil.parse("<xml>xmlHasChanged</xml>"));
         assertFalse(artifactVersion.equals(changed));
     }
 
     @Test
     public void importFromNode() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)));
+        final EncapsulatedAssertionConfig imported = EncapsulatedAssertionExportUtil.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)));
         assertEquals(config.getName(), imported.getName());
         assertEquals(config.getProperties(), imported.getProperties());
         assertEquals(config.getResultDescriptors(), imported.getResultDescriptors());
@@ -145,7 +153,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
         config.setResultDescriptors(null);
         config.setProperties(null);
         final String xmlWithMissingFields = xmlFromConfig(config, false, true);
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlWithMissingFields));
+        final EncapsulatedAssertionConfig imported = EncapsulatedAssertionExportUtil.importFromNode(XmlUtil.parse(xmlWithMissingFields));
         assertNull(imported.getGuid());
         assertNull(imported.getName());
         assertNull(imported.getPolicy());
@@ -156,7 +164,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
 
     @Test
     public void importFromNodeResetOidsAndVersions() throws Exception {
-        final EncapsulatedAssertionConfig imported = util.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)), true);
+        final EncapsulatedAssertionConfig imported = EncapsulatedAssertionExportUtil.importFromNode(XmlUtil.parse(xmlFromConfig(config, false, true)), true);
         assertEquals(EncapsulatedAssertionConfig.DEFAULT_GOID, imported.getGoid());
         assertEquals(0, imported.getVersion());
         for (final EncapsulatedAssertionArgumentDescriptor in : imported.getArgumentDescriptors()) {
@@ -170,7 +178,7 @@ public class EncapsulatedAssertionConfigExportUtilTest {
     }
 
     private void testExportConfig() throws IOException, TransformerException, SAXException {
-        util.exportConfig(config, result);
+        EncapsulatedAssertionExportUtil.exportConfig(config, result);
         final String xml = XmlUtil.nodeToFormattedString(result.getNode());
         assertEquals(xmlFromConfig(config, false, false), xml);
     }

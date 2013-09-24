@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.exporter.EncapsulatedAssertionExportUtil;
 import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.policy.exporter.PolicyImporter;
@@ -65,8 +66,8 @@ public class PolicyExportUtils {
             }
 
             final List<Element> encassElements = XmlUtil.findChildElementsByName(readDoc.getDocumentElement(),
-                    EncapsulatedAssertionConfigExportUtil.ENCASS_NS,
-                    EncapsulatedAssertionConfigExportUtil.ENCAPSULATED_ASSERTION);
+                    EncapsulatedAssertionExportUtil.ENCASS_NS,
+                    EncapsulatedAssertionExportUtil.ENCAPSULATED_ASSERTION);
             if (encassElements.size() > 0) {
                 // found an exported encass
                 final int result = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),

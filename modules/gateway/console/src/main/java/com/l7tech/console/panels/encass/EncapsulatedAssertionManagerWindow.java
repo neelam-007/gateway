@@ -194,7 +194,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 if (encassElement == null) {
                     throw new IOException("Export document does not contain an EncapsulatedAssertionConfig element");
                 }
-                final EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.getInstance().importFromNode(encassElement, true);
+                final EncapsulatedAssertionConfig config = EncapsulatedAssertionConfigExportUtil.importFromNode(encassElement, true);
 
                 try {
                     // check guid
@@ -357,9 +357,9 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 @Override
                 public void doSave(FileOutputStream fos) throws IOException {
                     try {
-                        final Document exportDoc = EncapsulatedAssertionConfigExportUtil.getInstance().exportConfigAndPolicy(config);
+                        final Document exportDoc = EncapsulatedAssertionConfigExportUtil.exportConfigAndPolicy(config);
                         XmlUtil.nodeToFormattedOutputStream(exportDoc, fos);
-                    } catch (final SAXException e) {
+                    } catch (final SAXException | FindException e) {
                         throw new IOException(e);
                     }
                 }

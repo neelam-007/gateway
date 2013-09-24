@@ -25,6 +25,7 @@ ServiceMO
 StoredPasswordMO
 TrustedCertificateMO
 EncapsulatedAssertionMO
+EncapsulatedAssertionExportResult
 GenericEntityMO
 ActiveConnectorMO
 CustomKeyValueStoreMO

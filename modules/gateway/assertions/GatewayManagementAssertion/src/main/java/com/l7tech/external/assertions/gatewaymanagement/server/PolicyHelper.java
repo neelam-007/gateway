@@ -125,7 +125,7 @@ public class PolicyHelper {
         if ( policyImportContext.getResource() == null )
             throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "missing policy export resource" );
         final Resource resource = policyImportContext.getResource();
-        if ( !ResourceHelper.POLICY_EXPORT_TYPE.equals( resource.getType() )) {
+        if ( !(ResourceHelper.POLICY_EXPORT_TYPE.equals( resource.getType() ) || ResourceHelper.ENCASS_EXPORT_TYPE.equals( resource.getType() ))) {
             throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "unexpected resource type" );
         }
         final String exportXml = resource.getContent();
@@ -807,6 +807,8 @@ public class PolicyHelper {
         }
     }
 
+    // Todo: the logic in the method below doesn't make much sense. Why are we getting the real internal id of an
+    // entity when we only want the referenced id?
     private String getId( final ExternalReference reference ) {
         String refId = reference.getRefId();
 

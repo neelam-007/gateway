@@ -1,26 +1,29 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.EncassImportContext;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import com.l7tech.util.Either;
+import com.l7tech.util.Functions;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
+
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.*;
 
 /**
  *
@@ -35,9 +38,164 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                                                  final PlatformTransactionManager transactionManager,
                                                  final EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager,
                                                  final PolicyManager policyManager,
+                                                 final EncapsulatedAssertionHelper encapsulatedAssertionHelper,
+                                                 final PolicyHelper policyHelper,
                                                  final SecurityZoneManager securityZoneManager) {
         super(false, true, true, services, securityFilter, transactionManager, encapsulatedAssertionConfigManager, securityZoneManager);
         this.policyManager = policyManager;
+        this.encapsulatedAssertionHelper = encapsulatedAssertionHelper;
+        this.policyHelper = policyHelper;
+        this.encapsulatedAssertionConfigManager = encapsulatedAssertionConfigManager;
+    }
+
+    /**
+     * The import encass method. This will import an encass into the gateway.
+     * @param selectorMap The selector map to import into an existing encass. This is optional
+     * @param resource The Encass export to import. Required.
+     * @return Returns the import results
+     * @throws ResourceNotFoundException
+     * @throws InvalidResourceException
+     */
+    @ResourceMethod(name="ImportEncass", selectors=true, resource=true)
+    public PolicyImportResult importEncass( final Map<String,String> selectorMap,
+                                            final EncassImportContext resource ) throws ResourceNotFoundException, InvalidResourceException {
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException,PolicyImportResult>>(){
+            @Override
+            public E2<ResourceNotFoundException, InvalidResourceException,PolicyImportResult> execute() throws ObjectModelException {
+                try {
+                    //extract the encass from the resource
+                    EncapsulatedAssertionConfig encass = EncapsulatedAssertionHelper.importFromNode(resource, true);
+                    final Policy policy;
+                    final PolicyImportResult result;
+
+                    //check if selectors are provided
+                    if(selectorMap != null && !selectorMap.isEmpty()) {
+                        //If selectors are provided we are importing into an existing encass.
+                        EncapsulatedAssertionConfig existingEncass = selectEntity(selectorMap);
+                        checkPermitted( OperationType.UPDATE, null, encass );
+                        //set the goid of the given encass policy so the the update can happen properly
+                        encass.getPolicy().setGoid(existingEncass.getPolicy().getGoid());
+                        updateEntity(existingEncass, encass);
+                        encass = existingEncass;
+                        //use the existing encassed policy
+                        policy = encass.getPolicy();
+                        policyHelper.checkPolicyAssertionAccess( policy );
+                        result = policyHelper.importPolicy( policy, resource );
+                    } else {
+                        //import into a new encass
+                        //check if an encass with the same name or guid exists
+                        if(encapsulatedAssertionConfigManager.findByGuid(encass.getGuid())!=null || encapsulatedAssertionConfigManager.findByUniqueName(encass.getName()) != null){
+                            throw new DuplicateResourceAccessException("EncapsulatedAssertion already exists: Guid: " + encass.getGuid() + " Name: " + encass.getName());
+                        }
+
+                        //check if policy exists.
+                        if(encass.getPolicy() == null || (encass.getPolicy().getGuid() == null && encass.getPolicy().getName() == null)) {
+                            throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "EncapsulatedAssertion is missing Policy element");
+                        }
+
+                        // Get any provided PolicyReferenceInstruction
+                        PolicyReferenceInstruction policyReferenceInstructions = findPolicyReferenceInstructions(resource.getPolicyReferenceInstructions(), encass.getPolicy().getGuid());
+                        if(policyReferenceInstructions!=null) {
+                            switch(policyReferenceInstructions.getPolicyReferenceInstructionType()){
+                                case MAP: // This will use the mapped policy
+                                    //check that the referenced policy exists
+                                    policy = policyManager.findByGuid(policyReferenceInstructions.getMappedReferenceId());
+                                    if(policy == null){
+                                        throw new ResourceNotFoundException("Policy not found Guid: " + policyReferenceInstructions.getReferenceId());
+                                    }
+                                    result = ManagedObjectFactory.createPolicyImportResult();
+                                    //add the ImportedPolicyReference to the results
+                                    PolicyImportResult.ImportedPolicyReference importPolicyReference = ManagedObjectFactory.createImportedPolicyReference();
+                                    importPolicyReference.setType(PolicyImportResult.ImportedPolicyReferenceType.MAPPED);
+                                    importPolicyReference.setReferenceType("com.l7tech.policy.exporter.IncludedPolicyReference");
+                                    importPolicyReference.setReferenceId(encass.getPolicy().getGuid());
+                                    importPolicyReference.setId(policy.getId());
+                                    importPolicyReference.setGuid(policy.getGuid());
+                                    result.setImportedPolicyReferences(Arrays.asList(importPolicyReference));
+                                    break;
+                                case RENAME: // This will create a new policy with the given name
+                                    //check that a policy does not already exist with the name given.
+                                    if(policyManager.findByUniqueName(policyReferenceInstructions.getMappedName())!=null) {
+                                        throw new DuplicateResourceAccessException("EncapsulatedAssertion backing policy already exists: Guid: " + encass.getPolicy().getGuid() + " Name: " + encass.getPolicy().getName());
+                                    }
+                                    //create a new policy and import into it.
+                                    policy = new Policy(PolicyType.INCLUDE_FRAGMENT, policyReferenceInstructions.getMappedName(), "", false);
+                                    result = policyHelper.importPolicy( policy, resource );
+                                    UUID guid = UUID.randomUUID();
+                                    policy.setGuid(guid.toString());
+                                    policyManager.save(policy);
+                                    break;
+                                default: // not opther operations are supported.
+                                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "EncapsulatedAssertion PolicyReferenceInstruction uses unsupported instruction type: " + policyReferenceInstructions.getPolicyReferenceInstructionType());
+                            }
+                        } else if(policyManager.findByGuid(encass.getPolicy().getGuid())!=null|| policyManager.findByUniqueName(encass.getPolicy().getName())!=null) {
+                            // if no PolicyReferenceInstruction is specified and the policy exists then fail
+                            throw new DuplicateResourceAccessException("EncapsulatedAssertion backing policy already exists: Guid: " + encass.getPolicy().getGuid() + " Name: " + encass.getPolicy().getName());
+                        } else {
+                            //There is no existing policy with the same name or guid so create a new one.
+                            policy = new Policy(PolicyType.INCLUDE_FRAGMENT, encass.getPolicy().getName(), "", false);
+                            policy.setGuid(encass.getPolicy().getGuid());
+                            result = policyHelper.importPolicy( policy, resource );
+                            policyManager.save(policy);
+                        }
+                    }
+
+                    //set the encass's policy
+                    encass.setPolicy(policy);
+                    //save or update the encass
+                    if(Goid.isDefault(encass.getGoid())){
+                        encapsulatedAssertionConfigManager.save( encass );
+                    } else {
+                        encapsulatedAssertionConfigManager.update( encass );
+                    }
+                    //return the result
+                    return right2( result );
+                } catch ( ResourceNotFoundException e ) {
+                    return left2_1( e );
+                } catch ( InvalidResourceException e ) {
+                    return left2_2( e );
+                }
+            }
+        }, false ) );
+    }
+
+    /**
+     * This will find a PolicyReferenceInstruction of type IncludedPolicyReference referencing a policy with the given Guid.
+     * @param policyReferenceInstructions The list of PolicyReferenceInstruction's to search
+     * @param guid The Guid of the referenced policy to find
+     * @return The PolicyReferenceInstruction for the IncludedPolicyReference with a reference to the given policy guid. Or null if no such reference exists.
+     */
+    private static PolicyReferenceInstruction findPolicyReferenceInstructions(List<PolicyReferenceInstruction> policyReferenceInstructions, final String guid) {
+        return guid == null || policyReferenceInstructions ==null ? null : Functions.grepFirst(policyReferenceInstructions, new Functions.Unary<Boolean, PolicyReferenceInstruction>() {
+            @Override
+            public Boolean call(PolicyReferenceInstruction policyReferenceInstruction) {
+                return guid.equals(policyReferenceInstruction.getReferenceId()) && "com.l7tech.policy.exporter.IncludedPolicyReference".equals(policyReferenceInstruction.getReferenceType());
+            }
+        });
+    }
+
+
+    /**
+     * This will export an encass. It will return the same export xml generated by the policy manager encass export
+     *
+     * @param selectorMap The selector map used to select the encass to export
+     * @return The encass export result
+     * @throws ResourceNotFoundException
+     */
+    @ResourceMethod(name="ExportEncass", selectors=true)
+    public EncapsulatedAssertionExportResult exportEncass( final Map<String,String> selectorMap ) throws ResourceNotFoundException {
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,EncapsulatedAssertionExportResult>>(){
+            @Override
+            public Either<ResourceNotFoundException,EncapsulatedAssertionExportResult> execute() throws ObjectModelException {
+                try {
+                    final EncapsulatedAssertionConfig encass = selectEntity( selectorMap );
+                    checkPermitted( OperationType.READ, null, encass );
+                    return right( encapsulatedAssertionHelper.exportEncass(encass) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
     }
 
     //- PROTECTED
@@ -253,4 +411,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
     }
 
     private final PolicyManager policyManager;
+    private EncapsulatedAssertionHelper encapsulatedAssertionHelper;
+    private PolicyHelper policyHelper;
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 }

@@ -38,6 +38,7 @@ class ResourceHelper {
     static final String DTD_TYPE = "dtd";
     static final String POLICY_TYPE = "policy";
     static final String POLICY_EXPORT_TYPE = "policyexport";
+    static final String ENCASS_EXPORT_TYPE = "encassexport";
     static final String WSDL_TYPE = "wsdl";
     static final String SCHEMA_TYPE = "xmlschema";    
 

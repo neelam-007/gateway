@@ -224,6 +224,10 @@ public class ManagedObjectFactory {
         return new PolicyExportResult();
     }
 
+    public static EncapsulatedAssertionExportResult createEncapsulatedAssertionExportResult() {
+        return new EncapsulatedAssertionExportResult();
+    }
+
     /**
      * Create a new PolicyImportResult instance.
      *

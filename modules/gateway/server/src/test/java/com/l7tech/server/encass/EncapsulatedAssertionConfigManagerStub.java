@@ -3,7 +3,6 @@ package com.l7tech.server.encass;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GuidEntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityManagerStub;
@@ -44,6 +43,12 @@ public class EncapsulatedAssertionConfigManagerStub extends EntityManagerStub<En
             if (confGuid != null && confGuid.equals(guid))
                 return conf;
         }
-        throw new ObjectNotFoundException("No encapsulated assertion config foudn with guid " + guid);
+        //return null do not throw. EncapsulatedAssertionConfigImpl will return null if no such encass exists.
+        return null;
+    }
+
+    @Override
+    public Class<EncapsulatedAssertionConfig> getImpClass() {
+        return EncapsulatedAssertionConfig.class;
     }
 }

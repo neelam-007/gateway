@@ -24,28 +24,32 @@
                 <property name="staticMethod" value="com.l7tech.policy.wsp.WspReader.getDefault"/>
             </bean>            
         </constructor-arg>
-        <constructor-arg index="3">
-            <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
-                <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
-                <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
-                <constructor-arg index="2"><null/></constructor-arg>
-                <constructor-arg index="3" ref="identityProviderConfigManager"/>
-                <constructor-arg index="4"><bean class="com.l7tech.server.identity.IdentityProviderFactory"><constructor-arg index="0" ref="identityProviderConfigManager"/></bean></constructor-arg>
-                <constructor-arg index="5" ref="jdbcConnectionManager"/>
-                <constructor-arg index="6" ref="jmsConnectionManager"/>
-                <constructor-arg index="7" ref="jmsEndpointManager"/>
-                <constructor-arg index="8" ref="policyManager"/>
-                <constructor-arg index="9" ref="resourceEntryManager"/>
-                <constructor-arg index="10" ref="ssgKeyStoreManager"/>
-                <constructor-arg index="11" ref="trustedCertManager"/>
-                <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
-                <constructor-arg index="13" ref="policyExporterImporterManager"/>
-                <constructor-arg index="14"><bean class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub" /></constructor-arg>
-                <constructor-arg index="15" ref="genericEntityManager" />
-            </bean>
-        </constructor-arg>
+        <constructor-arg index="3" ref="gatewayExternalReferenceFinder"/>
         <constructor-arg index="4"><null/></constructor-arg>
         <constructor-arg index="5"><null/></constructor-arg>
+    </bean>
+    <bean id="encapsulatedAssertionHelper" class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionHelper">
+        <constructor-arg index="0" ref="gatewayExternalReferenceFinder"/>
+        <constructor-arg index="1"><null/></constructor-arg>
+    </bean>
+
+    <bean id="gatewayExternalReferenceFinder" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
+        <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
+        <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
+        <constructor-arg index="2"><null/></constructor-arg>
+        <constructor-arg index="3" ref="identityProviderConfigManager"/>
+        <constructor-arg index="4"><bean class="com.l7tech.server.identity.IdentityProviderFactory"><constructor-arg index="0" ref="identityProviderConfigManager"/></bean></constructor-arg>
+        <constructor-arg index="5" ref="jdbcConnectionManager"/>
+        <constructor-arg index="6" ref="jmsConnectionManager"/>
+        <constructor-arg index="7" ref="jmsEndpointManager"/>
+        <constructor-arg index="8" ref="policyManager"/>
+        <constructor-arg index="9" ref="resourceEntryManager"/>
+        <constructor-arg index="10" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="11" ref="trustedCertManager"/>
+        <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
+        <constructor-arg index="13" ref="policyExporterImporterManager"/>
+        <constructor-arg index="14"><bean class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub" /></constructor-arg>
+        <constructor-arg index="15" ref="genericEntityManager" />
     </bean>
 
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerStub"/>
@@ -127,7 +131,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
                     <constructor-arg index="4" ref="policyManager"/>
-                    <constructor-arg index="5" ref="securityZoneManager"/>
+                    <constructor-arg index="5" ref="encapsulatedAssertionHelper"/>
+                    <constructor-arg index="6" ref="policyHelper"/>
+                    <constructor-arg index="7" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="genericEntityManagerWithData" />

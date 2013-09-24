@@ -33,38 +33,42 @@
             </bean>
         </constructor-arg>
         <constructor-arg index="2" ref="wspReader"/>
-        <constructor-arg index="3">
-            <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
-                <constructor-arg index="0" ref="rbacServices"/>
-                <constructor-arg index="1">
-                    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                        <property name="targetObject" ref="rbacAdvice"/>
-                        <property name="targetMethod" value="getSecurityFilter"/>
-                    </bean>
-                </constructor-arg>
-                <constructor-arg index="2" ref="customAssertionRegistrar"/>
-                <constructor-arg index="3" ref="identityProviderConfigManager"/>
-                <constructor-arg index="4" ref="identityProviderFactory"/>
-                <constructor-arg index="5" ref="jdbcConnectionManager"/>
-                <constructor-arg index="6" ref="jmsConnectionManager"/>
-                <constructor-arg index="7" ref="jmsEndpointManager"/>
-                <constructor-arg index="8">
-                    <bean class="com.l7tech.server.policy.VersioningPolicyManager">
-                        <constructor-arg index="0" ref="policyManager"/>
-                        <constructor-arg index="1" ref="policyVersionManager"/>
-                    </bean> 
-                </constructor-arg>
-                <constructor-arg index="9" ref="resourceEntryManager"/>
-                <constructor-arg index="10" ref="ssgKeyStoreManager"/>
-                <constructor-arg index="11" ref="trustedCertManager"/>
-                <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
-                <constructor-arg index="13" ref="policyExporterImporterManager"/>
-                <constructor-arg index="14" ref="siteMinderConfigurationManager"/>
-                <constructor-arg index="15" ref="genericEntityManager" />
-            </bean>
-        </constructor-arg>
+        <constructor-arg index="3" ref="gatewayExternalReferenceFinder"/>
         <constructor-arg index="4" ref="resourceEntrySchemaSourceResolver"/>
         <constructor-arg index="5" ref="policyAssertionRbacChecker"/>
+    </bean>
+    <bean id="encapsulatedAssertionHelper" class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionHelper">
+        <constructor-arg index="0" ref="gatewayExternalReferenceFinder"/>
+        <constructor-arg index="1" ref="resourceEntrySchemaSourceResolver"/>
+    </bean>
+
+    <bean id="gatewayExternalReferenceFinder" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
+        <constructor-arg index="0" ref="rbacServices"/>
+        <constructor-arg index="1">
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="rbacAdvice"/>
+                <property name="targetMethod" value="getSecurityFilter"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="2" ref="customAssertionRegistrar"/>
+        <constructor-arg index="3" ref="identityProviderConfigManager"/>
+        <constructor-arg index="4" ref="identityProviderFactory"/>
+        <constructor-arg index="5" ref="jdbcConnectionManager"/>
+        <constructor-arg index="6" ref="jmsConnectionManager"/>
+        <constructor-arg index="7" ref="jmsEndpointManager"/>
+        <constructor-arg index="8">
+            <bean class="com.l7tech.server.policy.VersioningPolicyManager">
+                <constructor-arg index="0" ref="policyManager"/>
+                <constructor-arg index="1" ref="policyVersionManager"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="9" ref="resourceEntryManager"/>
+        <constructor-arg index="10" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="11" ref="trustedCertManager"/>
+        <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
+        <constructor-arg index="13" ref="policyExporterImporterManager"/>
+        <constructor-arg index="14" ref="siteMinderConfigurationManager"/>
+        <constructor-arg index="15" ref="genericEntityManager" />
     </bean>
 
     <bean id="resourceFactoryParent" abstract="true">
@@ -165,7 +169,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
                     <constructor-arg index="4" ref="policyManager"/>
-                    <constructor-arg index="5" ref="securityZoneManager"/>
+                    <constructor-arg index="5" ref="encapsulatedAssertionHelper"/>
+                    <constructor-arg index="6" ref="policyHelper"/>
+                    <constructor-arg index="7" ref="securityZoneManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.GenericEntityResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="genericEntityManager" />

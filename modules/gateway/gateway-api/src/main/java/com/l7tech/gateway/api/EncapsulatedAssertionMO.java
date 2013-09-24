@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.impl.*;
 import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -17,7 +18,7 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
  * The EncapsulatedAssertionMO object represents an encapsulated assertion configuration.
  */
 @XmlRootElement(name="EncapsulatedAssertion")
-@XmlType(name="EncapsulatedAssertionType", propOrder={"nameValue", "guidValue", "policyReference", "encapsulatedArgumentsValues", "encapsulatedResultsValues", "properties", "extension", "extensions"})
+@XmlType(name="EncapsulatedAssertionType", propOrder={"nameValue", "guidValue", "policyReference", "encapsulatedArgumentsValues", "encapsulatedResultsValues", "properties", "resourceSets", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "encapsulatedAssertions")
 public class EncapsulatedAssertionMO extends ElementExtendableAccessibleObject {
 
@@ -336,6 +337,29 @@ public class EncapsulatedAssertionMO extends ElementExtendableAccessibleObject {
         this.encapsulatedResults = encapsulatedResults;
     }
 
+    /**
+     * Get the resource sets for the service (optional)
+     *
+     * <p>The encass document for an encass is a ResourceSet with tag 'encassexport'
+     * containing a Resource of type 'encassexport'.</p>
+     *
+     * @return The resources or null.
+     */
+    @XmlElementWrapper(name="Resources", required=false)
+    @XmlElement(name="ResourceSet", required=false)
+    public List<ResourceSet> getResourceSets() {
+        return resourceSets;
+    }
+
+    /**
+     * Set the resource sets for the service.
+     *
+     * @param resourceSets The resource sets to use.
+     */
+    public void setResourceSets( final List<ResourceSet> resourceSets ) {
+        this.resourceSets = resourceSets;
+    }
+
         //- PACKAGE
 
     EncapsulatedAssertionMO() {
@@ -349,4 +373,5 @@ public class EncapsulatedAssertionMO extends ElementExtendableAccessibleObject {
     private AttributeExtensibleEncapsulatedArgumentList encapsulatedArguments;
     private AttributeExtensibleEncapsulatedResultList encapsulatedResults;
     private Map<String,String> properties;
+    private List<ResourceSet> resourceSets;
 }
