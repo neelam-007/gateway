@@ -43,6 +43,7 @@ import static com.l7tech.gui.util.TableUtil.column;
 public class SecurityZoneEntitiesPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
     private static final int PATH_COL_INDEX = 1;
+    private static final String UNAVAILABLE = "unavailable";
     private JPanel contentPanel;
     private JTable entitiesTable;
     private JScrollPane scrollPane;
@@ -52,6 +53,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private SimpleTableModel<EntityHeader> entitiesTableModel;
     private SecurityZone securityZone;
     private TableColumn pathColumn;
+    private Map<EntityHeader, String> entityNames = new HashMap<>();
 
     public SecurityZoneEntitiesPanel() {
         initTable();
@@ -105,15 +107,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                 column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
-                        try {
-                            return Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
-                        } catch (final FindException e) {
-                            logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            return "unknown entity";
-                        } catch (final PermissionDeniedException e) {
-                            logger.log(Level.WARNING, "Unable to determine name for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            return "name unavailable";
-                        }
+                        return entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE;
                     }
                 }),
                 column("Path", 60, 60, 99999, new Functions.Unary<String, EntityHeader>() {
@@ -181,11 +175,12 @@ public class SecurityZoneEntitiesPanel extends JPanel {
             }
             entityTypes.removeAll(SecurityZoneUtil.getHiddenZoneableEntityTypes());
         }
-        entityTypeComboBox.setModel(new DefaultComboBoxModel<EntityType>(entityTypes.toArray(new EntityType[entityTypes.size()])));
+        entityTypeComboBox.setModel(new DefaultComboBoxModel<>(entityTypes.toArray(new EntityType[entityTypes.size()])));
         entityTypeComboBox.setSelectedItem(previouslySelected);
     }
 
     private void loadTable() {
+        entityNames.clear();
         if (securityZone != null) {
             EntityType selected = getSelectedEntityType();
             if (selected != null) {
@@ -195,19 +190,17 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
                         selected = EntityType.SSG_KEY_METADATA;
                     }
-                    entities.addAll(rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(selected, securityZone.getGoid()));
-                    final List<EntityHeader> servicePolicies = new ArrayList<>();
-                    if (EntityType.POLICY == selected) {
-                        for (final EntityHeader entity : entities) {
-                            if (entity instanceof PolicyHeader) {
-                                final PolicyHeader policy = (PolicyHeader) entity;
-                                if (PolicyType.PRIVATE_SERVICE == policy.getPolicyType()) {
-                                    servicePolicies.add(entity);
-                                }
+                    for (final EntityHeader header : rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(selected, securityZone.getGoid())) {
+                        if (EntityType.POLICY != selected || !(header instanceof PolicyHeader && PolicyType.PRIVATE_SERVICE == ((PolicyHeader) header).getPolicyType())) {
+                            try {
+                                entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+                                entities.add(header);
+                            } catch (final FindException | PermissionDeniedException e) {
+                                // don't show entities that we cannot resolve a name for
+                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             }
                         }
                     }
-                    entities.removeAll(servicePolicies);
                     entitiesTableModel.setRows(entities);
                 } catch (final FindException e) {
                     logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
