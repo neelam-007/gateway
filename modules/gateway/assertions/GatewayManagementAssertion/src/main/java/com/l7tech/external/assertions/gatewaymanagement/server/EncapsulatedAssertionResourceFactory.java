@@ -97,22 +97,6 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                         PolicyReferenceInstruction policyReferenceInstructions = findPolicyReferenceInstructions(resource.getPolicyReferenceInstructions(), encass.getPolicy().getGuid());
                         if(policyReferenceInstructions!=null) {
                             switch(policyReferenceInstructions.getPolicyReferenceInstructionType()){
-                                case MAP: // This will use the mapped policy
-                                    //check that the referenced policy exists
-                                    policy = policyManager.findByGuid(policyReferenceInstructions.getMappedReferenceId());
-                                    if(policy == null){
-                                        throw new ResourceNotFoundException("Policy not found Guid: " + policyReferenceInstructions.getReferenceId());
-                                    }
-                                    result = ManagedObjectFactory.createPolicyImportResult();
-                                    //add the ImportedPolicyReference to the results
-                                    PolicyImportResult.ImportedPolicyReference importPolicyReference = ManagedObjectFactory.createImportedPolicyReference();
-                                    importPolicyReference.setType(PolicyImportResult.ImportedPolicyReferenceType.MAPPED);
-                                    importPolicyReference.setReferenceType("com.l7tech.policy.exporter.IncludedPolicyReference");
-                                    importPolicyReference.setReferenceId(encass.getPolicy().getGuid());
-                                    importPolicyReference.setId(policy.getId());
-                                    importPolicyReference.setGuid(policy.getGuid());
-                                    result.setImportedPolicyReferences(Arrays.asList(importPolicyReference));
-                                    break;
                                 case RENAME: // This will create a new policy with the given name
                                     //check that a policy does not already exist with the name given.
                                     if(policyManager.findByUniqueName(policyReferenceInstructions.getMappedName())!=null) {

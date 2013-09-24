@@ -3946,61 +3946,6 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testEncassImportNewExistingPolicyMapInstruction() throws Exception {
-        PolicyManagerStub policyManager = beanFactory.getBean("policyManager", PolicyManagerStub.class);
-        Policy policy = policyManager.findByPrimaryKey(new Goid(0, 3));
-
-        final String message =
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout></env:Header><env:Body><EncassImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"encassexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
-                        "&lt;exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
-                        "    &lt;exp:References/&gt;\n" +
-                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
-                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
-                        "            &lt;L7p:testEncassImportNewExistingPolicyMapInstruction/&gt;\n" +
-                        "        &lt;/wsp:All&gt;\n" +
-                        "    &lt;/wsp:Policy&gt;\n" +
-                        "    &lt;enc:EncapsulatedAssertion guid=\"ABCD-0002\"\n" +
-                        "        xmlns:L7=\"http://ns.l7tech.com/secureSpan/1.0/core\"\n" +
-                        "        xmlns:enc=\"http://ns.l7tech.com/secureSpan/1.0/encass\"\n" +
-                        "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"&gt;\n" +
-                        "        &lt;L7:name&gt;Test Encass Config 2&lt;/L7:name&gt;\n" +
-                        "        &lt;enc:Policy guid=\"e629f196-dc61-3509-aa9a-61df552423a0\" name=\"Test Policy\"/&gt;\n" +
-                        "        &lt;enc:EncapsulatedAssertionArguments/&gt;\n" +
-                        "        &lt;enc:EncapsulatedAssertionResults/&gt;\n" +
-                        "        &lt;enc:Properties&gt;\n" +
-                        "            &lt;entry&gt;\n" +
-                        "                &lt;key xsi:type=\"xs:string\"&gt;artifactVersion&lt;/key&gt;\n" +
-                        "                &lt;value xsi:type=\"xs:string\"&gt;6b38371b5ce7a8dda67cc6f827fffc29765ea334&lt;/value&gt;\n" +
-                        "            &lt;/entry&gt;\n" +
-                        "            &lt;entry&gt;\n" +
-                        "                &lt;key xsi:type=\"xs:string\"&gt;policyGuid&lt;/key&gt;\n" +
-                        "                &lt;value xsi:type=\"xs:string\"&gt;e629f196-dc61-3509-aa9a-61df552423a0&lt;/value&gt;\n" +
-                        "            &lt;/entry&gt;\n" +
-                        "        &lt;/enc:Properties&gt;\n" +
-                        "    &lt;/enc:EncapsulatedAssertion&gt;\n" +
-                        "&lt;/exp:Export&gt;" +
-                        "</Resource>" +
-                        "            <PolicyReferenceInstructions>\n" +
-                        "                <PolicyReferenceInstruction mappedReferenceId=\""+policy.getGuid()+"\"" +
-                        "                    referenceId=\"e629f196-dc61-3509-aa9a-61df552423a0\"\n" +
-                        "                    referenceType=\"com.l7tech.policy.exporter.IncludedPolicyReference\" type=\"Map\"/>\n" +
-                        "            </PolicyReferenceInstructions></EncassImportContext></env:Body></env:Envelope>";
-
-        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass", message );
-
-        final Element soapBody = SoapUtil.getBodyElement(result);
-        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
-
-        EncapsulatedAssertionConfigManagerStub encassManager = beanFactory.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
-        EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0002");
-        Assert.assertNotNull(encapsulatedAssertionConfig);
-        Assert.assertEquals(policy.getGuid(), encapsulatedAssertionConfig.getPolicy().getGuid());
-        Assert.assertTrue(!encapsulatedAssertionConfig.getPolicy().getXml().contains("testEncassImportNewExistingPolicyMapInstruction"));
-    }
-
-    @Test
     public void testEncassImportNewExistingPolicyRenameInstruction() throws Exception {
         final String message =
                 "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout></env:Header><env:Body><EncassImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"encassexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
