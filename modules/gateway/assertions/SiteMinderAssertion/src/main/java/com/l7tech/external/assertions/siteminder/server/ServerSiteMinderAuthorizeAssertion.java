@@ -6,6 +6,8 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -83,7 +85,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 if(assertion.isSetSMCookie()) {
                     //set session cookie
-                    setSessionCookie(context, smContext, variableMap);
+                    if(!setSessionCookie(context, smContext, variableMap)) return AssertionStatus.FALSIFIED;
                 }
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is authorized");
                 status = AssertionStatus.NONE;
@@ -108,12 +110,12 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
     * @param ssoCookie
     * @param cookieParams
     */
-    void setSessionCookie(PolicyEnforcementContext pec, SiteMinderContext smContext, Map<String, Object> varMap) {
-        //TODO: use logAndAudit instead
+    boolean setSessionCookie(PolicyEnforcementContext pec, SiteMinderContext smContext, Map<String, Object> varMap) {
+        boolean result = false;
         String ssoCookie = smContext.getSsoToken();
         if(StringUtils.isBlank(ssoCookie)) {
             logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
-            return;
+            return false;
         }
 
         logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
@@ -144,8 +146,17 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
 
         HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment);
+        Message response = pec.getResponse();
+        HttpResponseKnob httpResponseKnob = response.getKnob(HttpResponseKnob.class);
+        if(httpResponseKnob != null) {
+            httpResponseKnob.addCookie(cookie);
+            result = true;
+        }
+        else {
+           logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to set Http Cookie: response is not HTTP type");
+        }
 
-        pec.getResponse().getHttpResponseKnob().addCookie(cookie);
+        return result;
 
     }
 

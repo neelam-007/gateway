@@ -6,7 +6,9 @@ import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.message.AbstractHttpResponseKnob;
+import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -137,6 +139,26 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertEquals("SMSESSION", response.getTestHttpCookie().getCookieName());
         assertEquals(SSO_TOKEN, response.getTestHttpCookie().getCookieValue());
 
+    }
+
+    @Test
+    public void shouldFalsifyWhenResponseIsNotHttp() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setUseVarAsCookieSource(true);
+        assertion.setCookieSourceVar("test");
+        assertion.setSetSMCookie(true);
+        assertion.setCookieName("SMSESSION");
+        //Setup Policy Enforcement Context
+        Message requestMsg = new Message();
+        Message responseMsg = new Message();
+        responseMsg.attachJmsKnob(new JmsKnobStub(Goid.DEFAULT_GOID, false, "SOAP-Action"));
+        pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
+        pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
+        pec.setVariable("test", SSO_TOKEN);
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
+        assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
 
     @Test
