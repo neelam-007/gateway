@@ -334,10 +334,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             return Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
                         }
                     });
-                    if (isEditingRequest()) {
-                        soapMessages = sg.generateRequests(serviceWsdl);
-                    } else {
-                        soapMessages = sg.generateResponses(serviceWsdl);
+                    try {
+                        if (isEditingRequest()) {
+                            soapMessages = sg.generateRequests(serviceWsdl);
+                        } else {
+                            soapMessages = sg.generateResponses(serviceWsdl);
+                        }
+                    } catch (SOAPException e) {
+                        soapMessages = new SoapMessageGenerator.Message[0];
                     }
                     if (soapMessages.length > 0) {
                         // Try to find a message that matches the service's SOAP version for the default
@@ -480,7 +484,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                         if (currentOperation == null) {
                             displayMessage(blankMessage);
                         } else {
-                            displayMessage(forOperation(currentOperation).getSOAPMessage());
+                            final SoapMessageGenerator.Message mess = forOperation(currentOperation);
+                            final SOAPMessage smess = mess == null ? null : mess.getSOAPMessage();
+                            if (smess != null) {
+                                displayMessage(smess);
+                            } else {
+                                displayMessage(blankMessage);
+                            }
                         }
                     } else {
                         displayMessage(entry.message.getXml());

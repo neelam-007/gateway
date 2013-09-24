@@ -236,8 +236,8 @@ public class SoapMessageGenerator {
         SOAPMessage soapMessage;
         try {
             soapMessage = messageFactory.createMessage(getMimeHeadersForSoapProtocol(soapProtocol), getTemplateForSoapProtocol(soapProtocol));
-        } catch(IOException ioe) {
-            throw new RuntimeException(ioe);
+        } catch(Exception ioe) {
+            throw new SOAPException(ioe);
         }
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
