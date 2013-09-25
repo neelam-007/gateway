@@ -11,10 +11,7 @@ import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -221,7 +218,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         });
         aliasField.setText(subject.getAlias());
 
-        zoneControl.configure(OperationType.UPDATE, subject.getKeyEntry());
+        final boolean canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SSG_KEY_ENTRY, subject.getKeyEntry()));
+        zoneControl.configure(canUpdate ? OperationType.UPDATE : OperationType.READ, subject.getKeyEntry());
 
         String location = subject.getKeystore().getName();
         if (subject.getKeystore().isReadonly())
@@ -264,12 +262,15 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!ObjectUtils.equals(subject.getKeyEntry().getSecurityZone(), zoneControl.getSelectedZone())) {
+                final SecurityZone initialZone = subject.getKeyEntry().getSecurityZone();
+                if (!ObjectUtils.equals(initialZone, zoneControl.getSelectedZone())) {
                     subject.getKeyEntry().setSecurityZone(zoneControl.getSelectedZone());
                     try {
                         Registry.getDefault().getTrustedCertManager().updateKeyEntry(subject.getKeyEntry());
                         securityZoneChanged = true;
-                    } catch (final UpdateException ex) {
+                    } catch (final UpdateException | PermissionDeniedException ex) {
+                        subject.getKeyEntry().setSecurityZone(initialZone);
+                        securityZoneChanged = false;
                         showErrorMessage("Unable to Set Security Zone", "Error: " + ExceptionUtils.getMessage(ex), ex);
                     }
                 }
