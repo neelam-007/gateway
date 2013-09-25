@@ -67,7 +67,7 @@
                     </constraints>
                     <properties>
                       <labelFor value="78d2a"/>
-                      <text value="Service GOID:"/>
+                      <text value="Service &amp;ID:"/>
                     </properties>
                   </component>
                   <component id="99446" class="javax.swing.JCheckBox" binding="enableWSSSecurityProcessingCheckBox">
