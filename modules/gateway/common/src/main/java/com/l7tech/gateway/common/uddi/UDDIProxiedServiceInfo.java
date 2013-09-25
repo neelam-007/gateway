@@ -419,12 +419,12 @@ public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
             SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
-/*                    .setExceptionListener(new ExceptionListener() {
+                    .setExceptionListener(new ExceptionListener() {
                         @Override
                         public void exceptionThrown( final Exception e ) {
                             logger.log( Level.WARNING, "Error loading properties '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                         }
-                    })*/
+                    })
                     .build();
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();

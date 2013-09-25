@@ -5,12 +5,16 @@ import org.jetbrains.annotations.Nullable;
 
 import java.beans.ExceptionListener;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>A builder to build an instance of {@link SafeXMLDecoder}, this is a convenient method of creating and adding
  * new filters to the decoder.</p>
  */
 public final class SafeXMLDecoderBuilder {
+    private static final Logger logger = Logger.getLogger(SafeXMLDecoderBuilder.class.getName());
+    public static final String PROP_ERRORS_FATAL_BY_DEFAULT = "com.l7tech.util.SafeXMLDecoder.errorsFatalByDefault";
 
     private InputStream inputStream;
     private ClassFilterBuilder classFilterBuilder;
@@ -90,8 +94,34 @@ public final class SafeXMLDecoderBuilder {
      * @return a new SafeXMLDecoder instance using the current builder configuration.
      */
     public SafeXMLDecoder build(){
-        ExceptionListener exl = exceptionListener != null ? exceptionListener : getFatalExceptionListener();
+        ExceptionListener exl = exceptionListener != null ? exceptionListener : getDefaultExceptionListener();
         return new SafeXMLDecoder(classFilterBuilder.build(), inputStream, owner, exl, classLoader);
+    }
+
+    /**
+     * Get the default error listener that will be used if a specific error listener is not specified
+     * using {@link #setExceptionListener(java.beans.ExceptionListener)} before {@link #build()} is called.
+     *
+     * @return the default error listener, if one not specified.
+     */
+    public static ExceptionListener getDefaultExceptionListener() {
+        return SyspropUtil.getBoolean(PROP_ERRORS_FATAL_BY_DEFAULT, false)
+            ? getFatalExceptionListener()
+            : getLoggingExceptionListener();
+    }
+
+    /**
+     * Get an exception listener that logs the exception and continues.
+     *
+     * @return an ExceptionListener that logs the error but takes no further action, allowing decoding to (attempt to) proceed.
+     */
+    public static ExceptionListener getLoggingExceptionListener() {
+        return new ExceptionListener() {
+            @Override
+            public void exceptionThrown(Exception e) {
+                logger.log(Level.WARNING, "Error while decoding XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        };
     }
 
     /**

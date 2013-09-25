@@ -144,12 +144,12 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
             final SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
                     .addClassFilter(new StringClassFilter(classes, constructors, methods))
-/*                    .setExceptionListener(new ExceptionListener() {
+                    .setExceptionListener(new ExceptionListener() {
                         @Override
                         public void exceptionThrown(final Exception e) {
                             logger.log(Level.WARNING, "Error loading configuration '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
                         }
-                    })*/
+                    })
                     .build();
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();

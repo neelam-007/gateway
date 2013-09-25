@@ -33,12 +33,12 @@ public class DefaultHttpProxyManager {
         if ( httpProxyXml != null && !httpProxyXml.isEmpty() ) {
             final ByteArrayInputStream in = new ByteArrayInputStream( httpProxyXml.getBytes( Charsets.UTF8));
             final SafeXMLDecoder decoder = new SafeXMLDecoderBuilder(in)
-                    /*.setExceptionListener(new ExceptionListener() {
+                    .setExceptionListener(new ExceptionListener() {
                         @Override
                         public void exceptionThrown( final Exception e ) {
                             logger.log( Level.WARNING, "Error loading configuration '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                         }
-                    })*/
+                    })
                     .build();
             try {
                 final Object httpProxyObject = decoder.readObject();

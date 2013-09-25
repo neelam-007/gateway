@@ -547,9 +547,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            final SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)))
-                    .addClassFilter(new StringClassFilter(classes, constructors, methods))
-                    .build();
+            final SafeXMLDecoder xd = new SafeXMLDecoderBuilder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING))).build();
             final Object parsedObject = xd.readObject();
             if ( parsedObject instanceof Object[] ) {
                 Object[] readProperties = (Object[]) parsedObject;
@@ -575,15 +573,6 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
     private Map<String, String> properties;
     private List<String> syslogHosts;
     private Map<String, List<String>> filters = emptyMap();
-
-    private static final Set<String> classes = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "java.lang.Object"
-    )));
-
-    private static final Set<String> constructors = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "java.lang.Object()"
-    )));
-    private static final Set<String> methods = Collections.unmodifiableSet(Collections.EMPTY_SET);
 
     private Map<String, List<String>> immutable( final Map<String, List<String>> map ) {
         return unmodifiableMap( map( map, null, Functions.<String>identity(), new Unary<List<String>, List<String>>() {
