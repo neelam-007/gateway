@@ -1,8 +1,11 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -87,6 +90,17 @@ public class MessagesUtil {
     }
 
     /**
+     * Get the detail message from a snapshot taken pre-8.0, for checking signatures on pre-8.0 audit records,
+     * which (incorrectly) included the detail message text as part of the signature hash.
+     *
+     * @param id the detail message ID code.
+     * @return the detail message as it appeared pre-8.0, or null.
+     */
+    public static String getAuditDetailMessageByIdPre80(int id) {
+        return auditDetailMessagesPre80.getProperty(String.valueOf(id));
+    }
+
+    /**
      * Register a filter which can modify the <code>Level</code> returned by getAuditDetailMessageById(int).
      * Only one filter can be set.
      *
@@ -124,6 +138,15 @@ public class MessagesUtil {
 
     final private static AtomicReference<AuditDetailLevelFilter> auditMessageLevelFilter = new AtomicReference<AuditDetailLevelFilter>();
     final private static Logger logger = Logger.getLogger(MessagesUtil.class.getName());
+    final private static String AUDIT_MESSAGES_PRE_80_PROPERTIES = "com/l7tech/gateway/common/audit/auditMessagesPre80.properties";
+    final private static Properties auditDetailMessagesPre80 = new Properties();
+    static {
+        try (InputStream in = MessagesUtil.class.getClassLoader().getResourceAsStream(AUDIT_MESSAGES_PRE_80_PROPERTIES)) {
+            auditDetailMessagesPre80.load(in);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Unable to load pre-8.0 audit detail messages for signature checking compatibility: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
 
     // Make sure these always get loaded, so the static intializers run (1.5 safe)
     private static void registerWellKnownMessages() {

@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import java.util.logging.Level;
 
+import static org.junit.Assert.assertEquals;
+
 public class MessagesUtilTest {
 
     private static Functions.Binary<Level, Integer, Level> filterFunction;
@@ -60,5 +62,10 @@ public class MessagesUtilTest {
         Assert.assertTrue("Property exists", pair.left);
 
         Assert.assertEquals("Audit level should be changed", Level.FINEST, pair.right.getLevel());
+    }
+
+    @Test
+    public void testGetAuditDetailMessageByIdPre80() throws Exception {
+        assertEquals("Valid license found", MessagesUtil.getAuditDetailMessageByIdPre80(2013));
     }
 }
