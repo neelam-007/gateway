@@ -38,7 +38,7 @@ public interface FtpAdmin {
      * @throws FtpTestException if connection test failed
      */
     @Transactional(readOnly=true)
-    @Secured(types= EntityType.SSG_CONNECTOR, stereotype = MethodStereotype.TEST_CONFIGURATION)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     void testConnection(boolean isFtps,
                         boolean isExplicit,
                         boolean isVerifyServerCert,
