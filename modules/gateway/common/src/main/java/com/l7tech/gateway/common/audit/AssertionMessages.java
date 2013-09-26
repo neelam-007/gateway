@@ -114,8 +114,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M RESOLVE_SERVICE_FAILED = m(4154, Level.WARNING, "Service resolution failed: {0}");
     @Deprecated
     public static final Messages.M RESOLVE_SERVICE_SUCCEEDED_OID = m(4155, Level.INFO, "Resolved to service OID: {0}");
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED_GOID = m(4156, Level.INFO, "Resolved to service GOID: {0}");
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4157, Level.INFO, "Resolved to service ID: {0}");
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4156, Level.INFO, "Resolved to service ID: {0}");
 
     // ServerIdentityAssertion
     /**
@@ -146,8 +145,7 @@ public class AssertionMessages extends Messages {
     public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4216, Level.WARNING, "{0} message is authenticated but has no login credentials!");
     public static final M IDENTITY_CREDENTIAL_FAILED = m(4217, Level.FINE, "Credentials failed for {0} due to ''{1}''");
     public static final M MEMBEROFGROUP_GROUP_DISALBED = m(4218, Level.WARNING, "Authentication failed because the group {0} is disabled");
-    public static final M IDENTITY_PROVIDER_NOT_SET_GOID = m(4219, Level.WARNING, "Cannot call checkRequest() when no valid identity provider GOID has been set!");
-    public static final M IDENTITY_PROVIDER_NOT_SET = m(4220, Level.WARNING, "Cannot call checkRequest() when no valid identity provider ID has been set!");
+    public static final M IDENTITY_PROVIDER_NOT_SET = m(4219, Level.WARNING, "Cannot call checkRequest() when no valid identity provider ID has been set!");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
