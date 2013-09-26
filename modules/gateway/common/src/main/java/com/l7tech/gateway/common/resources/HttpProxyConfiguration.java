@@ -9,6 +9,9 @@ import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
@@ -37,6 +40,7 @@ public class HttpProxyConfiguration implements Serializable {
         }
     }
 
+    @Size(max = 128)
     @XmlSafe
     @Column(name="proxy_host", length=128)
     public String getHost() {
@@ -49,6 +53,8 @@ public class HttpProxyConfiguration implements Serializable {
         this.host = host;
     }
 
+    @Min(0)
+    @Max(0xFFFF)
     @XmlSafe
     @Column(name="proxy_port")
     public int getPort() {
@@ -61,6 +67,7 @@ public class HttpProxyConfiguration implements Serializable {
         this.port = port;
     }
 
+    @Size(max = 255)
     @XmlSafe
     @Column(name="proxy_username", length=255)
     public String getUsername() {

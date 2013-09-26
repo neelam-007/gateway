@@ -9,6 +9,8 @@ import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import javax.validation.Valid;
+import javax.validation.constraints.*;
 
 /**
  * HTTP configuration persistent entity.
@@ -104,6 +106,8 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         return super.getVersion();
     }
 
+    @NotNull
+    @Size(min=1, max = 128)
     @Column(name="host", nullable=false, length=128)
     public String getHost() {
         return host;
@@ -114,6 +118,8 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.host = host;
     }
 
+    @Min(0)
+    @Max(0xFFFF)
     @Column(name="port")
     public int getPort() {
         return port;
@@ -135,6 +141,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.protocol = protocol;
     }
 
+    @Size(max = 4096)
     @Column(name="path", length=4096)
     public String getPath() {
         return path;
@@ -145,6 +152,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.path = path;
     }
 
+    @Size(max = 255)
     @Column(name="username", length=255)
     public String getUsername() {
         return username;
@@ -172,6 +180,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.passwordGoid = passwordGoid;
     }
 
+    @Size(max = 128)
     @Column(name="ntlm_host", length=128)
     public String getNtlmHost() {
         return ntlmHost;
@@ -182,6 +191,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.ntlmHost = ntlmHost;
     }
 
+    @Size(max = 255)
     @Column(name="ntlm_domain", length=255)
     public String getNtlmDomain() {
         return ntlmDomain;
@@ -192,6 +202,8 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.ntlmDomain = ntlmDomain;
     }
 
+    @Size(max = 8)
+    @Pattern(regexp="ANY|SSLv3|TLSv1|TLSv1.1|TLSv1.2")
     @Column(name="tls_version", length=8)
     public String getTlsVersion() {
         return tlsVersion;
@@ -224,6 +236,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.tlsKeystoreGoid = tlsKeystoreGoid;
     }
 
+    @Size(max = 255)
     @Column(name="tls_key_alias", length=255)
     public String getTlsKeystoreAlias() {
         return tlsKeystoreAlias;
@@ -237,6 +250,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
     /**
      * @return TLS cipher suite names to enable, comma delimited, or null to use global defaults.
      */
+    @Size(max = 4096)
     @Column(name="tls_cipher_suites", length=4096)
     public String getTlsCipherSuites() {
         return tlsCipherSuites;
@@ -293,6 +307,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.proxyUse = proxyUse;
     }
 
+    @Valid
     @Embedded
     @Dependency(searchObject = true)
     public HttpProxyConfiguration getProxyConfiguration() {

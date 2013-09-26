@@ -437,6 +437,10 @@ public class ManagedObjectFactory {
         return new AssertionSecurityZoneMO();
     }
 
+    public static HttpConfigurationMO createHttpConfiguration() {
+        return new HttpConfigurationMO();
+    }
+
     /**
      * Read a managed object from the given data.
      *
@@ -528,7 +532,8 @@ public class ManagedObjectFactory {
                 ActiveConnectorMO.class,
                 SecurityZoneMO.class,
                 SiteMinderConfigurationMO.class,
-                AssertionSecurityZoneMO.class
+                AssertionSecurityZoneMO.class,
+                HttpConfigurationMO.class
         };
     }
 

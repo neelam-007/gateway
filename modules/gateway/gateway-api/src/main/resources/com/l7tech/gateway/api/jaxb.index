@@ -3,6 +3,7 @@ ClusterPropertyMO
 FolderMO
 IdentityProviderMO
 InterfaceTagMO
+HttpConfigurationMO
 JDBCConnectionMO
 JMSConnection
 JMSDestinationDetail

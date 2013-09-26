@@ -32,6 +32,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.entity.GenericEntityManager;
+import com.l7tech.server.globalresources.HttpConfigurationManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -360,6 +361,7 @@ public class PolicyHelper {
         private final PolicyExporterImporterManager policyExporterImporterManager;
         private final SiteMinderConfigurationManager siteMinderConfigurationManager;
         private final GenericEntityManager genericEntityManager;
+        private final HttpConfigurationManager httpConfigurationManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -376,7 +378,8 @@ public class PolicyHelper {
                                                final SsgActiveConnectorManager ssgActiveConnectorManager,
                                                final PolicyExporterImporterManager policyExporterImporterManager,
                                                final SiteMinderConfigurationManager siteMinderConfigurationManager,
-                                               final GenericEntityManager genericEntityManager) {
+                                               final GenericEntityManager genericEntityManager,
+                                               final HttpConfigurationManager httpConfigurationManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -393,6 +396,7 @@ public class PolicyHelper {
             this.policyExporterImporterManager = policyExporterImporterManager;
             this.siteMinderConfigurationManager = siteMinderConfigurationManager;
             this.genericEntityManager = genericEntityManager;
+            this.httpConfigurationManager = httpConfigurationManager;
         }
 
         private User getUser() {

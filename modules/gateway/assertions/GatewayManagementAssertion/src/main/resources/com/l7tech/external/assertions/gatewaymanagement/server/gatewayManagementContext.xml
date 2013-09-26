@@ -69,6 +69,7 @@
         <constructor-arg index="13" ref="policyExporterImporterManager"/>
         <constructor-arg index="14" ref="siteMinderConfigurationManager"/>
         <constructor-arg index="15" ref="genericEntityManager" />
+        <constructor-arg index="16" ref="httpConfigurationManager" />
     </bean>
 
     <bean id="resourceFactoryParent" abstract="true">
@@ -193,6 +194,10 @@
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.AssertionSecurityZoneResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="assertionAccessManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.HttpConfigurationResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="httpConfigurationManager"/>
                     <constructor-arg index="4" ref="securityZoneManager"/>
                 </bean>
             </list>
