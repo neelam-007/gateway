@@ -374,7 +374,10 @@ public class ManagerAppletFilter implements Filter {
                 AdditionalSessionInfo sessionInfo = new AdditionalSessionInfo();
                 sessionInfo.port = hreq.getServerPort();
                 String sessionId = adminSessionManager.createSession(user, sessionInfo);
-                auditor.logAndAudit(ServiceMessages.APPLET_SESSION_CREATED, getName(user));
+                final String auditUsername = getName(user);
+                auditor.logAndAudit(ServiceMessages.APPLET_SESSION_CREATED, auditUsername);
+                String remoteAddr = hreq.getRemoteAddr() + ":" + hreq.getRemotePort();
+                auditor.logAndAudit(ServiceMessages.APPLET_SESSION_INFO, auditUsername, remoteAddr);
 
                 Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
                 sessionCookie.setSecure(true);
