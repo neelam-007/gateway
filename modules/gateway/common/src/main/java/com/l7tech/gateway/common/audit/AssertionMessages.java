@@ -112,9 +112,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M RESOLVE_SERVICE_NOT_FOUND = m(4152, Level.INFO, "No service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FOUND_MULTI = m(4153, Level.INFO, "More than one service matched the specified parameters");
     public static final Messages.M RESOLVE_SERVICE_FAILED = m(4154, Level.WARNING, "Service resolution failed: {0}");
-    @Deprecated
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED_OID = m(4155, Level.INFO, "Resolved to service OID: {0}");
-    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4156, Level.INFO, "Resolved to service ID: {0}");
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4155, Level.INFO, "Resolved to service ID: {0}");
 
     // ServerIdentityAssertion
     /**
@@ -128,8 +126,7 @@ public class AssertionMessages extends Messages {
      */
     @Deprecated
     public static final M _UNUSED_IDENTITY_ALREADY_AUTHENTICATED = m(4202, Level.FINEST, "Request already authenticated");
-    @Deprecated
-    public static final M IDENTITY_PROVIDER_NOT_SET_OID = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
+    public static final M IDENTITY_PROVIDER_NOT_SET = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider ID has been set!");
     public static final M IDENTITY_PROVIDER_NOT_FOUND = m(4204, Level.WARNING, "Could not find identity provider! ");
     public static final M IDENTITY_PROVIDER_NOT_EXIST = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
     public static final M IDENTITY_AUTHENTICATED = m(4206, Level.FINE, "Authentication success {0}");
@@ -145,7 +142,6 @@ public class AssertionMessages extends Messages {
     public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4216, Level.WARNING, "{0} message is authenticated but has no login credentials!");
     public static final M IDENTITY_CREDENTIAL_FAILED = m(4217, Level.FINE, "Credentials failed for {0} due to ''{1}''");
     public static final M MEMBEROFGROUP_GROUP_DISALBED = m(4218, Level.WARNING, "Authentication failed because the group {0} is disabled");
-    public static final M IDENTITY_PROVIDER_NOT_SET = m(4219, Level.WARNING, "Cannot call checkRequest() when no valid identity provider ID has been set!");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
