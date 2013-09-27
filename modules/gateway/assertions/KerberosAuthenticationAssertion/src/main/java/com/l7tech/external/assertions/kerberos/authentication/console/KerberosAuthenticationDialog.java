@@ -46,16 +46,13 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JLabel passwordLabel;
     private JLabel realmLabel;
     private JTextField userRealmTextField;
-    private JLabel userRealmLabel;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
         super(KerberosAuthenticationAssertion.class, owner, assertion, true);
         inputValidator = new InputValidator(this, getTitle());
         initComponents();
-
     }
-
 
     @Override
     protected void initComponents() {
@@ -111,14 +108,6 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         specifyUserRadioButton.addChangeListener(enableDisableListener);
         protocolTransitionRadioButton.addChangeListener(enableDisableListener);
 
-
-        KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
-        userRealmLabel.setVisible(false);
-        userRealmTextField.setVisible(false);
-        if (kerberosAdmin.isReferralEnabled()) {
-            userRealmLabel.setVisible(true);
-            userRealmTextField.setVisible(true);
-        }
     }
 
     private void enableDisableComponents() {

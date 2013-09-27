@@ -106,15 +106,5 @@ public interface KerberosAdmin  {
     @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     public boolean getKeytabValidate() throws KerberosException;
 
-    /**
-     * Check to see if the referral is enabled
-     * @return True when enable.
-     */
-    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
-    boolean isReferralEnabled();
-
-
-
-
 
 }

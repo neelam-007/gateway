@@ -185,11 +185,6 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
     }
 
-    @Override
-    public boolean isReferralEnabled() {
-        return ConfigFactory.getBooleanProperty("kerberos.referral.enabled", false);
-    }
-
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosAdminImpl.class.getName());
