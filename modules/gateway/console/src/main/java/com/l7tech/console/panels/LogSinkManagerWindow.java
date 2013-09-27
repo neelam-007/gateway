@@ -4,6 +4,7 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -227,7 +228,11 @@ public class LogSinkManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SinkConfiguration sinkConfiguration, final boolean selectNameField) {
-        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration, !(flags.canCreateSome() || flags.canUpdateSome()));
+        boolean readOnly = false;
+        if (!sinkConfiguration.isUnsaved()) {
+            readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.LOG_SINK, sinkConfiguration));
+        }
+        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration, readOnly);
         dlg.pack();
         Utilities.centerOnScreen( dlg );
         if(selectNameField)
