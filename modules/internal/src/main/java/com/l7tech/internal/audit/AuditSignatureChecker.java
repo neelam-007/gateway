@@ -238,7 +238,7 @@ public class AuditSignatureChecker extends JFrame {
                                     final boolean verbose)
             throws IOException {
         Status result = Status.PASS;
-        final BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        final BufferedReader in = new BufferedReader(new InputStreamReader(is,"UTF-8"));
         String readrecord;
         int numValid = 0, numInvalid = 0, numUnsigned = 0, numError = 0, numTotal = 0;
         int i = 0;
