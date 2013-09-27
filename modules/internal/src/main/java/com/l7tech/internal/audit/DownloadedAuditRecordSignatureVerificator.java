@@ -24,6 +24,7 @@ public class DownloadedAuditRecordSignatureVerificator {
     private Logger logger = Logger.getLogger(DownloadedAuditRecordSignatureVerificator.class.getName());
 
     private static final boolean ENABLE_COMPAT_52 = SyspropUtil.getBoolean("audit.signature.verifier.compat52.enable", true);
+    private static final boolean ENABLE_COMPAT_PRE_80 = SyspropUtil.getBoolean("audit.signature.verifier.compatPre80.enable", true);
 
     private boolean isSigned;
     private String signature;
@@ -147,6 +148,12 @@ public class DownloadedAuditRecordSignatureVerificator {
                 // Note that this needs to go all the way back to the raw record.
                 try{
                     result = new AuditRecordCompatibilityVerifier52(cert).verifyAuditRecordSignature(signature, recordInExportedFormat);
+                }catch(Exception e){/* intentionally ignore compatibility check errors, overwrites original error*/ };
+            }
+            if (!result && ENABLE_COMPAT_PRE_80) {
+                // Try again in compatibility mode with records signed using the format used for pre 8.0.
+                try{
+                    result = new AuditRecordCompatibilityVerifierPre80(cert).verifyAuditRecordSignature(signature, recordInExportedFormat, type);
                 }catch(Exception e){/* intentionally ignore compatibility check errors, overwrites original error*/ };
             }
 

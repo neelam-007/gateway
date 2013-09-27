@@ -2,8 +2,6 @@ package com.l7tech.server.audit;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
@@ -394,6 +392,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             int detailsToExpand = -1;
             int columns = md.getColumnCount();
             boolean[] zipColumns = new boolean[columns];
+            boolean[] goidColumns = new boolean[columns];
             for (int i = 1; i <= columns; ++i) {
                 final String columnName = quoteMeta(md.getColumnName(i));
                 if ("time".equalsIgnoreCase(columnName))
@@ -404,6 +403,12 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     detailsToExpand = i;
                 else if (columnName.indexOf("_zip") > -1)
                     zipColumns[i-1] = true;
+                else if ("goid".equalsIgnoreCase(columnName) ||
+                         "entity_id".equalsIgnoreCase(columnName)||
+                         "service_goid".equalsIgnoreCase(columnName)||
+                         "provider_goid".equalsIgnoreCase(columnName)){
+                    goidColumns[i-1] = true;
+                }
                 out.print(columnName.toLowerCase());
                 if (i < columns) out.print(DELIM);
             }
@@ -435,6 +440,11 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                         byte[] data = rs.getBytes(i);
                         if (data != null) {
                             out.print(quoteMeta( CompressedStringType.decompress(data)));
+                        }
+                    } else if (goidColumns[i-1]) {
+                        byte[] data = rs.getBytes(i);
+                        if (data != null) {
+                            out.print(HexUtils.hexDump(data));
                         }
                     } else {
                         String data = rs.getString(i);
@@ -539,7 +549,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             boolean isFirst = true;
 
             String[] detailParts = details.split(SEPARATOR);
-            String currentMessage = null;
             String currentMessageId = null;
             List<String> paramList = new ArrayList<String>();
             for (String detailPart : detailParts) {
@@ -547,39 +556,37 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     Object[] paramArray = paramList.toArray();
                     paramList.clear();
 
-                    if (currentMessage != null) {
+                    if (currentMessageId != null) {
                         if (!isFirst)
                             buffer.append(",");
                         else
                             isFirst = false;
-                        String formatted = MessageFormat.format(currentMessage, paramArray);
                         buffer.append(currentMessageId);
                         buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
-                        buffer.append(formatted);
+                        for(Object param: paramArray){
+                            if(!param.equals("")){
+                                buffer.append(param);
+                                buffer.append(":");
+                            }
+                        }
                     }
 
-                    try {
-                        int id = Integer.parseInt(detailPart.substring(AUDITDETAILMESSAGEID.length()));
-                        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(id);
-                        currentMessage = message==null? null : message.getMessage();
-                        currentMessageId = detailPart.substring(AUDITDETAILMESSAGEID.length());
-                    } catch (NumberFormatException nfe) {
-                        currentMessage = null;
-                        currentMessageId = null;
-                    }
+                    currentMessageId = detailPart.substring(AUDITDETAILMESSAGEID.length());
 
                 } else {
                     paramList.add(detailPart);
                 }
             }
 
-            if (currentMessage != null) {
+            if (currentMessageId != null) {
                 if (!isFirst)
                     buffer.append(",");
-                String formatted = MessageFormat.format(currentMessage, paramList.toArray());
                 buffer.append(currentMessageId);
                 buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
-                buffer.append(formatted);
+                for(String param: paramList){
+                    buffer.append(param);
+                    buffer.append(":");
+                }
             }
 
             buffer.append("]");

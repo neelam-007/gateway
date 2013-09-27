@@ -345,14 +345,14 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         out.defaultWriteObject();
     }
 
-    public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException;
+    public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers, boolean calculatePre80) throws IOException;
     
     // NOTE: AuditExporterImpl must use the same columns and ordering as this method
     public final void serializeSignableProperties(OutputStream out, boolean useOldId) throws IOException {
         outputProperties(out, true, useOldId);
     }
 
-    private void outputProperties(OutputStream out, boolean includeAllOthers, boolean useOldId) throws IOException {
+    private void outputProperties(OutputStream out, boolean includeAllOthers, boolean calculatePre80) throws IOException {
         // previous format:
         // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:
         //
@@ -385,7 +385,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         out.write(SERSEP.getBytes());
 
         if (userId != null){
-            if(useOldId){
+            if(calculatePre80){
                 if(ValidationUtils.isValidGoid(userId, false))
                     out.write( Long.toString(Goid.parseGoid(userId).getLow()).getBytes());
                 else{
@@ -396,7 +396,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         }
         out.write(SERSEP.getBytes());
 
-        if (identityProviderGoid != null) out.write(useOldId?Long.toString(identityProviderGoid.getLow()).getBytes():Goid.toString(identityProviderGoid).getBytes());
+        if (identityProviderGoid != null) out.write(calculatePre80?Long.toString(identityProviderGoid.getLow()).getBytes():Goid.toString(identityProviderGoid).getBytes());
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action
@@ -404,7 +404,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         //      authenticated:authenticationType:request_length:response_length:request_zipxml:
         //      response_zipxml:response_status:routing_latency
         // SystemAuditRecord component_id:action
-        serializeOtherProperties(out, includeAllOthers, useOldId);
+        serializeOtherProperties(out, includeAllOthers, calculatePre80);
 
         if (details != null && details.size() > 0) {
             List<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
@@ -413,7 +413,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
             out.write("[".getBytes());
             for (Iterator itor = sorteddetails.iterator(); itor.hasNext();) {
                 AuditDetail ad = (AuditDetail)itor.next();
-                ad.serializeSignableProperties(out);
+                ad.serializeSignableProperties(out,calculatePre80);
                 if (itor.hasNext()) out.write(",".getBytes());
             }
             out.write("]".getBytes());

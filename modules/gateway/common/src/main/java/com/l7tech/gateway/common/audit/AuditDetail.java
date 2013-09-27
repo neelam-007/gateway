@@ -174,21 +174,27 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         return result;
     }
 
-    public void serializeSignableProperties(OutputStream out) throws IOException {
+    public void serializeSignableProperties(OutputStream out, boolean calculatePre80) throws IOException {
         out.write(Integer.toString(messageId).getBytes());
         out.write("\\".getBytes());
         out.write(AuditRecord.SERSEP.getBytes());
 
-        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(messageId);
-        String reConstructedMsg = message==null ? null : message.getMessage();
-        StringBuffer tmp = new StringBuffer();
-        if (reConstructedMsg != null && params != null) {
-            MessageFormat mf = new MessageFormat(reConstructedMsg);
-            mf.format(params, tmp, new FieldPosition(0));
-            reConstructedMsg = tmp.toString();
-        }
-        if (reConstructedMsg != null && reConstructedMsg.length() > 0) {
-            out.write(reConstructedMsg.getBytes());
+        if(calculatePre80){
+            String reConstructedMsg = MessagesUtil.getAuditDetailMessageByIdPre80(messageId);
+            StringBuffer tmp = new StringBuffer();
+            if (reConstructedMsg != null && params != null) {
+                MessageFormat mf = new MessageFormat(reConstructedMsg);
+                mf.format(params, tmp, new FieldPosition(0));
+                reConstructedMsg = tmp.toString();
+            }
+            if (reConstructedMsg != null && reConstructedMsg.length() > 0) {
+                out.write(reConstructedMsg.getBytes());
+            }
+        }else if (params!=null){
+            for(String param: params){
+                out.write(param.getBytes());
+                out.write(AuditRecord.SERSEP.getBytes());
+            }
         }
     }
 
