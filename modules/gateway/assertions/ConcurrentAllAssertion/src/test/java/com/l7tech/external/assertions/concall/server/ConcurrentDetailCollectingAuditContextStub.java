@@ -53,7 +53,7 @@ class ConcurrentDetailCollectingAuditContextStub extends AuditContextStub implem
     private String detailToString(AuditDetail detail) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            detail.serializeSignableProperties(baos);
+            detail.serializeSignableProperties(baos,false);
             return baos.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
