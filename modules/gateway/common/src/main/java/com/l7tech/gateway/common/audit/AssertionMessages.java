@@ -228,6 +228,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_PATTERN_IS = m(4718, Level.FINE, "XPath is ''{0}''");
     public static final M XPATH_MESSAGE_NOT_XML = m(4719, Level.WARNING, "{0} not XML; cannot evaluate XPath expression");
     public static final M XPATH_UNRESOLVABLE_PREFIX = m(4720, Level.WARNING, "Cannot resolve namespace prefix {0}");
+    public static final M XPATH_DYNAMIC_PATTERN_INVALID = m(4721, Level.WARNING, "Assertion has failed because the fully-dynamic XPath pattern variable is missing or invalid");
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing");

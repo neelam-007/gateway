@@ -1380,14 +1380,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         if (!haveTarari) {
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
-            String n = hardwareFeedBack == null ? "" : " be too complex to";
-            speedIndicator.setToolTipText("Accelerated XPath not present on Gateway, but if it were, this expression would" + n + " be accelerated at full speed");
+            if (hardwareFeedBack != null && hardwareFeedBack.fullyDynamic) {
+                speedIndicator.setToolTipText("Expression is fully-dynamic and not eligible for parallel acceleration");
+            } else {
+                String n = hardwareFeedBack == null ? "" : " be too complex to";
+                speedIndicator.setToolTipText("Accelerated XPath not present on Gateway, but if it were, this expression would" + n + " be accelerated at full speed");
+            }
             return;
         }
 
         if (hardwareFeedBack == null) {
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
             speedIndicator.setToolTipText("Expression will be accelerated at full speed");
+        } else if (hardwareFeedBack.fullyDynamic) {
+            speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
+            speedIndicator.setToolTipText("Expression is fully-dynamic and will not be accelerated");
         } else {
             speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
             speedIndicator.setToolTipText("Expression will be accelerated, but is too complex to run at full speed");
@@ -1443,6 +1450,19 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private XpathFeedBack getFeedBackMessage(Map nsMap, JTextField xpathField) {
         String xpath = xpathField.getText();
         if (xpath == null) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
+
+        if (assertion.permitsFullyDynamicExpression() && XpathBasedAssertion.isFullyDynamicXpath(xpath)) {
+            String dynamicVar = XpathBasedAssertion.getFullyDynamicXpathVariableName(xpath);
+            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            if (variables != null && !variables.contains(dynamicVar)) {
+                return new XpathFeedBack(-1, xpath, "Fully-dynamic XPath context variable is not set by any previous policy assertion", null);
+            }
+            XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
+            feedback.hardwareAccelFeedback = new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for fully-dynamic XPath from context variable", null);
+            feedback.hardwareAccelFeedback.fullyDynamic = true;
+            return feedback;
+        }
+
         xpath = xpath.trim();
         if (xpath.length() < 1) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
         if (isEncryption && (xpath.equals("/soapenv:Envelope") || xpath.equals("/s:Envelope"))) {
@@ -1541,6 +1561,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String detailedMessage = null;
         String xpathExpression = null;
         XpathFeedBack hardwareAccelFeedback = null;
+        boolean fullyDynamic = false;
 
         private XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
             this.errorPosition = errorPosition;

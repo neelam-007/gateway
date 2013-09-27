@@ -30,6 +30,11 @@ public class RequestXpathAssertion extends SimpleXpathAssertion {
         setXpathExpression( xpath );
     }
 
+    @Override
+    public boolean permitsFullyDynamicExpression() {
+        return true;
+    }
+
     protected String defaultVariablePrefix() {
         return DEFAULT_VAR_PREFIX;
     }

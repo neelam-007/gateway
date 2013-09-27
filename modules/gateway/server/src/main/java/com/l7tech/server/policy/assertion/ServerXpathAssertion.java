@@ -58,8 +58,8 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         staticCountVar = variablesUsedBySuccessors.contains(assertion.countVariable()) ? assertion.countVariable() : null;
         staticElementVar = variablesUsedBySuccessors.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
         staticMultipleElementsVar = variablesUsedBySuccessors.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
-        xpathContainsVariables = getCompiledXpath() == null || getCompiledXpath().usesVariables();
-        xpathReferencesTargetDocument = getCompiledXpath() == null || getCompiledXpath().requiresTargetDocument();
+        xpathContainsVariables = compiledXpathUsesVariables();
+        xpathReferencesTargetDocument = compiledXpathReferencesTargetDocument();
     }
 
     @Override
@@ -129,7 +129,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         context.setVariable(velement, null);
         context.setVariable(vmultipleElements, null);
 
-        CompiledXpath compiledXpath = getCompiledXpath();
+        CompiledXpath compiledXpath = getCompiledXpath(context);
         if (compiledXpath == null) {
             logAndAudit( AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, getXpath() );
             //the xpath could not be compiled, so the assertion cannot work ... FAILED

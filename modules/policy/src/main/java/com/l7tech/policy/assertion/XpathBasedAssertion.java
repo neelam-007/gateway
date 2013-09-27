@@ -15,6 +15,8 @@ import javax.xml.soap.SOAPConstants;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -103,6 +105,25 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     public Set<String> findNamespaceUrisUsed() {
         XpathExpression xpath = getXpathExpression();
         return xpath == null ? Collections.<String>emptySet() : xpath.findNamespaceUrisUsed();
+    }
+
+    public boolean permitsFullyDynamicExpression() {
+        return false;
+    }
+
+    public static boolean isFullyDynamicXpath(String expression) {
+        return getFullyDynamicXpathVariableName(expression) != null;
+    }
+
+    private static final Pattern SINGLE_VAR_PATTERN = Pattern.compile("^\\$\\{([a-zA-Z_][a-zA-Z0-9_\\-\\.]*)\\}$");
+
+    public static String getFullyDynamicXpathVariableName(String expression) {
+        if (expression == null)
+            return null;
+        Matcher matcher = SINGLE_VAR_PATTERN.matcher(expression);
+        if (!matcher.matches())
+            return null;
+        return matcher.group(1);
     }
 
     protected VariablesUsed doGetVariablesUsed() {

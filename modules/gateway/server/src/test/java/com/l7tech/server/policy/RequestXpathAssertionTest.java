@@ -171,6 +171,34 @@ public class RequestXpathAssertionTest {
     }
 
     @Test
+    @BugId("FR-753")
+    public void testFullyDynamicXpath() throws Exception {
+        ContextPreparer preparer = new ContextPreparer() {
+            @Override
+            public PolicyEnforcementContext prepareContext(PolicyEnforcementContext context) {
+                context.setVariable("dynamicVar", "/soap:Envelope/soap:Body/ware:placeOrder/productid");
+                return context;
+            }
+        };
+        AssertionStatus ret = getResultForXPath("${dynamicVar}", preparer, null);
+        assertEquals(AssertionStatus.NONE, ret);
+    }
+
+    @Test
+    @BugId("FR-753")
+    public void testFullyDynamicXpathInvalid() throws Exception {
+        ContextPreparer preparer = new ContextPreparer() {
+            @Override
+            public PolicyEnforcementContext prepareContext(PolicyEnforcementContext context) {
+                context.setVariable("dynamicVar", "/soap:Envelope/soap:Body/ware:placeOrder/productid[");
+                return context;
+            }
+        };
+        AssertionStatus ret = getResultForXPath("${dynamicVar}", preparer, null);
+        assertEquals(AssertionStatus.FAILED, ret);
+    }
+
+    @Test
     @BugId("SSM-4246")
     public void testVariablesSetWhenDeclaredAsOutputsInAChildPec() throws Exception {
 
