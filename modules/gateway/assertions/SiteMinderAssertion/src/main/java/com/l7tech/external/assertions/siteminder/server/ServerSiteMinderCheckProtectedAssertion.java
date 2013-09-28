@@ -4,10 +4,12 @@ import com.ca.siteminder.*;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
@@ -43,7 +45,10 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
      *                             as an alternate mechanism to return an assertion status other than AssertionStatus.NONE.
      */
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                        final Message message,
+                                        final String messageDescription,
+                                        final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
@@ -68,7 +73,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         smContext.setTransactionId(transactionId);
         try {
             //check if protected and return AssertionStatus.NONE if it is
-            if(hla.checkProtected(getClientIp(context), smAgentName, resource, action, smContext)) {
+            if(hla.checkProtected(getClientIp(message), smAgentName, resource, action, smContext)) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
                 status = AssertionStatus.NONE;
             }

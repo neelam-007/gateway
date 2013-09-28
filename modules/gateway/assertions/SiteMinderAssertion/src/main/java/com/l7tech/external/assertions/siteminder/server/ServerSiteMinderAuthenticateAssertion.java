@@ -1,10 +1,12 @@
 package com.l7tech.external.assertions.siteminder.server;
 
 import com.ca.siteminder.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -39,14 +41,19 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    @Override
+    protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                             final Message message,
+                                             final String messageDescription,
+                                             final AuthenticationContext authContext)  throws IOException, PolicyAssertionException {
+
         AssertionStatus status = AssertionStatus.FALSIFIED;
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
         String ssoToken = extractSsoToken(variableMap);
 
-        SiteMinderContext smContext = null;
+      SiteMinderContext smContext = null;
         try {
             try {
                 smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
@@ -63,8 +70,8 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             }
 
             //first check what credentials are accepted by the policy server
-            SiteMinderCredentials credentials = collectCredentials(context, variableMap, smContext);
-            int result = hla.processAuthenticationRequest(credentials, getClientIp(context), ssoToken, smContext);
+            SiteMinderCredentials credentials = collectCredentials(context, message, variableMap, smContext);
+            int result = hla.processAuthenticationRequest(credentials, getClientIp(message), ssoToken, smContext);
             if(result == SM_YES) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 status = AssertionStatus.NONE;
@@ -93,7 +100,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
     }
 
 
-    private SiteMinderCredentials collectCredentials(PolicyEnforcementContext pec, Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
+    SiteMinderCredentials collectCredentials(PolicyEnforcementContext pec, Message message, Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
         //determine the type of authentication scheme
         List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes = smContext.getAuthSchemes();
         if(supportedAuthSchemes.size() == 1 && supportedAuthSchemes.iterator().next() == SiteMinderContext.AuthenticationScheme.NONE) {
@@ -103,7 +110,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
         //get Credentials
         LoginCredentials loginCredentials = null;
-        AuthenticationContext context = pec.getDefaultAuthenticationContext();
+        AuthenticationContext context = pec.getAuthenticationContext(message);
         if(assertion.isLastCredential()) {
             loginCredentials = context.getLastCredentials();
         }
@@ -120,11 +127,11 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             }
         }
 
-        return buildSiteMinderCredentials(pec, supportedAuthSchemes, loginCredentials);
+        return buildSiteMinderCredentials(message, supportedAuthSchemes, loginCredentials);
 
     }
 
-    private SiteMinderCredentials buildSiteMinderCredentials(PolicyEnforcementContext pec, List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
+    private SiteMinderCredentials buildSiteMinderCredentials(Message message, List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
         if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERT)
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
@@ -140,7 +147,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             else {
                 //now try to extract from httpRequestKnob. This is a legacy compatibility piece
                 //TODO: I don't know if anyone was using this functionality in Site Minder R12 custom assertion. Might need to remove it
-                HttpRequestKnob httpRequestKnob = pec.getRequest().getHttpRequestKnob();
+                HttpRequestKnob httpRequestKnob = message.getHttpRequestKnob();
                 if(httpRequestKnob != null) {
                     try {
                         X509Certificate[] clientCerts = httpRequestKnob.getClientCertificate();

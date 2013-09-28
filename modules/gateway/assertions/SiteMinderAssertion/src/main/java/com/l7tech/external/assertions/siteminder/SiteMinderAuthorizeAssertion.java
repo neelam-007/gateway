@@ -19,7 +19,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * User: ymoiseyenko
  * Date: 7/15/13
  */
-public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class SiteMinderAuthorizeAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(SiteMinderAuthenticateAssertion.class.getName());
 
     public static final String DEFAULT_SMSESSION_NAME = "SMSESSION";
@@ -38,6 +38,15 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
     private String cookieVersion;
     private String cookieMaxAge;
     private boolean setSMCookie;
+    protected final MessageTargetableSupport messageTargetableSupport;
+
+    public SiteMinderAuthorizeAssertion() {
+        this( TargetMessageType.REQUEST );
+    }
+
+    public SiteMinderAuthorizeAssertion(TargetMessageType defaultTargetMessageType) {
+        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, false);
+    }
 
     public String getCookieDomain() {
         return cookieDomain;
@@ -234,6 +243,61 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         return new VariableMetadata[] {new VariableMetadata(getPrefix() + "." + SiteMinderAssertionUtil.SMCONTEXT, true, false, null, false, DataType.BINARY)};
     }
 
+    /**
+     * The type of message this assertion targets.  Defaults to {@link com.l7tech.policy.assertion.TargetMessageType#REQUEST}. Never null.
+     */
+    @Override
+    public TargetMessageType getTarget() {
+        return messageTargetableSupport.getTarget();
+    }
+
+    /**
+     * The type of message this assertion targets.  Defaults to {@link com.l7tech.policy.assertion.TargetMessageType#REQUEST}. Never null.
+     */
+    @Override
+    public void setTarget(TargetMessageType target) {
+        messageTargetableSupport.setTarget(target);
+    }
+
+    /**
+     * If {@link #getTarget} is {@link com.l7tech.policy.assertion.TargetMessageType#OTHER}, the name of some other message-typed variable to use as
+     * this assertion's target.
+     */
+    @Override
+    public String getOtherTargetMessageVariable() {
+        return messageTargetableSupport.getOtherTargetMessageVariable();
+    }
+
+    /**
+     * If {@link #getTarget} is {@link com.l7tech.policy.assertion.TargetMessageType#OTHER}, the name of some other message-typed variable to use as
+     * this assertion's target.
+     */
+    @Override
+    public void setOtherTargetMessageVariable(String otherMessageVariable) {
+        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
+    }
+
+    /**
+     * A short, descriptive name for the target, i.e. "request", "response" or {@link #getOtherTargetMessageVariable()}
+     * <p/>
+     * <p>Almost all MessageTargetable implementations will never return null,
+     * in a few null is necessary for backwards compatibility.</p>
+     *
+     * @return the target name or null if no target is set.
+     */
+    @Override
+    public String getTargetName() {
+        return messageTargetableSupport.getTargetName();
+    }
+
+    /**
+     * @return true if the target message might be modified; false if the assertion only reads the target message.
+     */
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     private final static String baseName = "Authorize via SiteMinder";
     private static final int MAX_DISPLAY_LENGTH = 80;
 
@@ -242,7 +306,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements UsesVaria
         public String getAssertionName( final SiteMinderAuthorizeAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            StringBuffer name = new StringBuffer(baseName + ": [");
+            StringBuffer name = new StringBuffer(assertion.getTargetName() + ": " + baseName + ": [");
             name.append(assertion.getPrefix());
             name.append(']');
             if(name.length() > MAX_DISPLAY_LENGTH) {

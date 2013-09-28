@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
@@ -50,7 +51,10 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
      *                             as an alternate mechanism to return an assertion status other than AssertionStatus.NONE.
      */
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                          final Message message,
+                                          final String messageDescription,
+                                          final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
@@ -80,7 +84,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         }
 
         try {
-            int result = hla.processAuthorizationRequest(getClientIp(context), ssoToken, smContext);
+            int result = hla.processAuthorizationRequest(getClientIp(message), ssoToken, smContext);
             if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 if(assertion.isSetSMCookie()) {

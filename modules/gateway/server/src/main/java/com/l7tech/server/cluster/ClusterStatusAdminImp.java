@@ -435,7 +435,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                 return "true";
             }
         } else if (ClusterStatusAdmin.CAPABILITY_SITEMINDER.equals(capability)) {
-            boolean enabled =  ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enabled",true);
+            boolean enabled =  ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enabled",false);
             return Boolean.toString(enabled);
         }
         return null;

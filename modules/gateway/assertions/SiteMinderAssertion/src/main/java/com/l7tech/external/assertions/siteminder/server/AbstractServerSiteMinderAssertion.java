@@ -11,8 +11,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.util.ConfigFactory;
@@ -25,7 +27,7 @@ import org.springframework.context.ApplicationContext;
  * User: ymoiseyenko
  * Date: 7/16/13
  */
-public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>{
+public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & MessageTargetable> extends AbstractMessageTargetableServerAssertion<AT> {
     public static final String SYSTEM_PROPERTY_SITEMINDER_ENABLED = "com.l7tech.server.siteminder.enabled";
     static final int SM_SUCCESS = 0;
     static final int SM_YES = 1;
@@ -65,15 +67,14 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
         pac.setVariable(prefix + "." + SiteMinderAssertionUtil.SMCONTEXT, context);
     }
 
-    protected String getClientIp(PolicyEnforcementContext context) {
-        //TODO: use message targetable setting to get remote address
+    protected String getClientIp(Message target) {
         //in case we don't have tcp knob use predefined address from the SiteMinderConfig
         String address = null;
-        Message target = context.getRequest();
-        try {
-            TcpKnob tcpKnob = target.getTcpKnob();
+        TcpKnob tcpKnob = target.getKnob(TcpKnob.class);
+        if(tcpKnob != null) {
             address = tcpKnob.getRemoteAddress();
-        } catch (IllegalStateException e) {
+        }
+        else {
             logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
         }
 
@@ -81,7 +82,7 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion> ex
     }
 
     protected void checkSiteMinderEnabled() throws  PolicyAssertionException {
-        if(!ConfigFactory.getBooleanProperty(SYSTEM_PROPERTY_SITEMINDER_ENABLED, true)) {
+        if(!ConfigFactory.getBooleanProperty(SYSTEM_PROPERTY_SITEMINDER_ENABLED, false)) {
             logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder SDK is not installed or misconfigured! Assertion failed");
             throw new PolicyAssertionException(assertion, "SiteMinder SDK not installed or misconfigured!");
         }
