@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.apache.ftpserver.ftplet.FileSystemView;
 import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.ftpserver.ftplet.FileObject;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Per user virtual file system.
@@ -16,7 +17,12 @@ import org.apache.ftpserver.ftplet.FileObject;
  */
 class VirtualFileSystem implements FileSystemView {
 
-    //- PUBLIC
+    /**
+     * The current path, initially null. This will start with "/" but not end with it (null for "/").
+     */
+    private String currentPath;
+
+    private String changedDirectory;
 
     public boolean changeDirectory(String dir) throws FtpException {
         boolean changed = false;                                      
@@ -47,17 +53,62 @@ class VirtualFileSystem implements FileSystemView {
         return buildDirectoryFileObject(buildCurrentPath());
     }
 
+    public String getChangedDirectory() throws FtpException {
+        if (this.changedDirectory == null || this.changedDirectory.isEmpty()) {
+            return "/";
+        } else if (!this.changedDirectory.startsWith("/")) {
+            return  "/" +  this.changedDirectory;
+        } else {
+            return this.changedDirectory;
+        }
+    }
+
+    public void setChangedDirectory(String changedDirectory) throws FtpException {
+        if (changedDirectory.endsWith("/") && !changedDirectory.equals("/")){
+            this.changedDirectory = changedDirectory.substring(0, changedDirectory.lastIndexOf("/"));
+        } else {
+            this.changedDirectory = changedDirectory;
+        }
+    }
+
+    public String getParentDirectory() {
+        if (this.changedDirectory != null )
+            return this.changedDirectory.contains("/") ? this.changedDirectory.substring(0, this.changedDirectory.lastIndexOf("/")) : "/";
+        else
+            return "/";
+    }
+
+    public void setCombinedChangedDirectory (String changedDirectory) throws FtpException {
+        if (this.changedDirectory == null){
+            this.changedDirectory = changedDirectory;
+        } else {
+            if (this.changedDirectory.equals("/")) {
+                this.changedDirectory = "/" + changedDirectory;
+            } else if (changedDirectory.startsWith("/") || this.changedDirectory.endsWith("/")){
+                this.changedDirectory = this.changedDirectory + changedDirectory;
+            } else {
+                this.changedDirectory = this.changedDirectory + "/" + changedDirectory;
+            }
+        }
+    }
+
     public FileObject getFileObject(String file) throws FtpException {
         FileObject fileObject;
-        if (file.equals(".") || file.equals("./")) {
-            fileObject = buildDirectoryFileObject(buildCurrentPath());
+
+        switch (file) {
+            case ".":
+            case "./":
+                fileObject = buildDirectoryFileObject(buildCurrentPath());
+                break;
+            case "..":
+            case "../":
+                fileObject = buildDirectoryFileObject(combinePaths(buildCurrentPath(), ".."));
+                break;
+            default:
+                fileObject = buildFileObject(buildCurrentPath(), file);
+                break;
         }
-        else if (file.equals("..") || file.equals("../")) {
-            fileObject = buildDirectoryFileObject(combinePaths(buildCurrentPath(), ".."));
-        }
-        else {
-            fileObject = buildFileObject(buildCurrentPath(), file);
-        }
+
         return fileObject;
     }
 
@@ -67,13 +118,6 @@ class VirtualFileSystem implements FileSystemView {
 
     public void dispose() {
     }
-
-    //- PRIVATE
-
-    /**
-     * The current path, initially null. This will start with "/" but not end with it (null for "/").
-     */
-    private String currentPath;
 
     private String buildCurrentPath() {
         return currentPath == null ? "/" : currentPath;
@@ -85,8 +129,8 @@ class VirtualFileSystem implements FileSystemView {
      * @param current the current directory (could be null)
      * @param path the new path (not "/")
      */
-    private String combinePaths(String current, String path) {
-        String outPath = null;
+    private String combinePaths(@Nullable String current, String path) {
+        String outPath;
         String cdPath = normalize(path, false);
 
         if (cdPath.endsWith("/"))
@@ -97,8 +141,7 @@ class VirtualFileSystem implements FileSystemView {
                 outPath = cdPath;
             else
                 outPath = "/" + cdPath;
-        }
-        else {
+        } else {
             if (cdPath.startsWith("/"))
                 outPath = cdPath;
             else
@@ -120,34 +163,38 @@ class VirtualFileSystem implements FileSystemView {
 
         if (normalized != null) {
             String[] parts = normalized.split("/");
-            List<String> partList = new ArrayList(parts.length);
+            List<String> partList = new ArrayList<>(parts.length);
 
-            for (int p=0; p<parts.length; p++) {
-                if (".".equals(parts[p]) || "".equals(parts[p])) {
-                    continue;
-                }
-                else if ("..".equals(parts[p])) {
-                    if (!absolute && (partList.isEmpty() || "..".equals(partList.get(partList.size()-1)))) {
-                        partList.add(parts[p]);
-                    }
-                    else {
-                        if (!partList.isEmpty())
-                            partList.remove(partList.size()-1);
-                    }
-                }
-                else {
-                    partList.add(parts[p]);
+            for (String part1 : parts) {
+                switch (part1) {
+                    case ".":
+                    case "":
+                        break;
+                    case "..":
+                        if (!absolute && (partList.isEmpty() || "..".equals(partList.get(partList.size() - 1)))) {
+                            partList.add(part1);
+                        } else {
+                            if (!partList.isEmpty())
+                                partList.remove(partList.size() - 1);
+                        }
+                        break;
+                    default:
+                        partList.add(part1);
+                        break;
                 }
             }
 
-            StringBuffer pathBuffer = new StringBuffer();
+            StringBuilder pathBuffer = new StringBuilder();
+
             if (absolute) pathBuffer.append('/');
+
             for (String part : partList) {
-                pathBuffer.append(part);    
+                pathBuffer.append(part);
                 pathBuffer.append('/');
             }
 
             normalized = pathBuffer.toString();
+
             if (normalized.length() > 1) {
                 normalized = normalized.substring(0, normalized.length()-1);
             }

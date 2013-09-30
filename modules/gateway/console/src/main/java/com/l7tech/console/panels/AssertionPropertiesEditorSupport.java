@@ -145,14 +145,14 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         return policyPosition==null ? null : policyPosition.getPreviousAssertion();
     }
 
-    protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion ) {
+    protected ComboBoxModel<MessageTargetableSupport> buildMessageSourceComboBoxModel( final Assertion assertion ) {
         return buildMessageSourceComboBoxModel( assertion, true, true );
     }
 
-    protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion,
+    protected ComboBoxModel<MessageTargetableSupport> buildMessageSourceComboBoxModel( final Assertion assertion,
                                                              final boolean includeRequest,
                                                              final boolean includeResponse ) {
-        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+        final DefaultComboBoxModel<MessageTargetableSupport> comboBoxModel = new DefaultComboBoxModel<>();
 
         if ( includeRequest ) {
             comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
@@ -167,7 +167,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
                 (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
                 Collections.<String, VariableMetadata>emptyMap();
 
-        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        final SortedSet<String> predecessorVariableNames = new TreeSet<>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
                 final MessageTargetableSupport item = new MessageTargetableSupport( TargetMessageType.OTHER );
@@ -180,7 +180,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     }
 
     protected ComboBoxModel buildMessageTargetComboBoxModel( final boolean includeDefault ) {
-        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+        final DefaultComboBoxModel<MessageTargetableSupport> comboBoxModel = new DefaultComboBoxModel<>();
         if (includeDefault) comboBoxModel.addElement( null );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );

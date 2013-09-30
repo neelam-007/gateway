@@ -4,6 +4,7 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
+import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
@@ -15,15 +16,19 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.GoidUpgradeMapper;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -32,12 +37,26 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * <code>FtpRoutingAssertion</code> is an assertion that routes the request
  * content to an FTP server.
  *
- * @author rmak
  * @since SecureSpan 4.0
+ * @author rmak
+ * @author nilic
+ * @author jwilliams
  */
-public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, UsesPrivateKeys {
+public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesPrivateKeys {
 
     private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
+
+    // ServerConfig property names and cluster property names for our dynamically-registered cluster properties
+    public static final String SC_MAX_CONC = "ftpGlobalMaxConcurrency";
+    private static final String CP_MAX_CONC = "ftp.globalMaxConcurrency";
+
+    public static final String SC_CORE_CONC = "ftpGlobalCoreConcurrency";
+    private static final String CP_CORE_CONC = "ftp.globalCoreConcurrency";
+
+    public static final String SC_MAX_QUEUE = "ftpGlobalMaxWorkQueue";
+    private static final String CP_MAX_QUEUE = "ftp.globalMaxWorkQueue";
+
+    public static final String CP_BINDING_TIMEOUT = "ftp.identityBindingTimeout";
 
     public static final int DEFAULT_FTP_PORT = 21;
     public static final int DEFAULT_FTPS_IMPLICIT_PORT = 990;
@@ -48,6 +67,10 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private FtpSecurity _security;
 
     private boolean _verifyServerCert;
+
+    private String _ftpMethodOtherCommand;
+
+    private boolean _otherCommand;
 
     /** FTP server host name. Can contain context variables. */
     private String _hostName;
@@ -61,8 +84,8 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Where the file name on server will come from. */
     private FtpFileNameSource _fileNameSource;
 
-    /** File name pattern if {@link #_fileNameSource} is {@link FtpFileNameSource#PATTERN}; can contain context variables. */
-    private String _fileNamePattern;
+//    /** File name pattern if {@link #_fileNameSource} is {@link FtpFileNameSource#PATTERN}; can contain context variables. */
+//    private String _fileNamePattern;
 
     /** Where the login credentials wil come from. */
     private FtpCredentialsSource _credentialsSource;
@@ -72,6 +95,9 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     /** Password to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. Can contain context variables. */
     private String _password;
+
+    /** Password GOID */
+    private Goid passwordGoid = null;
 
     /** Explicit flag, in order to allow "${foo}" literal passwords */
     private boolean _passwordUsesContextVariables;
@@ -88,7 +114,19 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Timeout for opening connection to FTP server (in milliseconds). */
     private int _timeout = DEFAULT_TIMEOUT;
 
-    private MessageTargetableSupport requestTarget = defaultRequestTarget();
+    /** FTP Command to use to upload or download the file*/
+    private FtpMethod _ftpMethod;
+
+    private String _arguments;
+
+    private String _downloadedContentType;
+
+    private MessageTargetableSupport _requestTarget = defaultRequestTarget();
+
+    @NotNull
+    private MessageTargetableSupport _responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
+
+    private String _responseByteLimit;
 
     private MessageTargetableSupport defaultRequestTarget() {
         return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
@@ -128,7 +166,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return _clientCertKeyAlias;
     }
 
-    public void setClientCertKeyAlias(String clientCertKeyAlias) {
+    public void setClientCertKeyAlias(@Nullable String clientCertKeyAlias) {
         _clientCertKeyAlias = clientCertKeyAlias;
     }
 
@@ -136,11 +174,12 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return _clientCertKeystoreId;
     }
 
-    public void setClientCertKeystoreId(Goid clientCertKeystoreId) {
+    public void setClientCertKeystoreId(@Nullable Goid clientCertKeystoreId) {
         _clientCertKeystoreId = clientCertKeystoreId;
     }
 
     @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
     public void setClientCertKeystoreId(long clientCertKeystoreId) {
         _clientCertKeystoreId = GoidUpgradeMapper.mapOid(EntityType.SSG_KEYSTORE, clientCertKeystoreId);
     }
@@ -151,14 +190,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setDirectory(String directory) {
         _directory = directory;
-    }
-
-    public String getFileNamePattern() {
-        return _fileNamePattern;
-    }
-
-    public void setFileNamePattern(String fileNamePattern) {
-        _fileNamePattern = fileNamePattern;
     }
 
     public FtpFileNameSource getFileNameSource() {
@@ -183,7 +214,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return _password;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(@Nullable String password) {
         _password = password;
     }
 
@@ -205,6 +236,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     /** @deprecated Used for deserialization of pre-bug5987 assertions */
     @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
     public void setPort(int port) {
         _port = Integer.toString(port);
     }
@@ -233,12 +265,78 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _userName = userName;
     }
 
-    public MessageTargetableSupport getRequestTarget() {
-        return requestTarget != null ? requestTarget : defaultRequestTarget();
+    public MessageTargetableSupport get_requestTarget() {
+        return _requestTarget != null ? _requestTarget : defaultRequestTarget();
     }
 
-    public void setRequestTarget(MessageTargetableSupport requestTarget) {
-        this.requestTarget = requestTarget;
+    public void set_requestTarget(MessageTargetableSupport _requestTarget) {
+        this._requestTarget = _requestTarget;
+    }
+
+    @NotNull
+    public MessageTargetableSupport getResponseTarget() {
+        return _responseTarget;
+    }
+
+    public void setResponseTarget(@NotNull final MessageTargetableSupport responseTarget) {
+        this._responseTarget = responseTarget;
+    }
+
+    public FtpMethod getFtpMethod() {
+        return _ftpMethod;
+    }
+
+    public void setFtpMethod(@Nullable FtpMethod ftpMethod) {
+        this._ftpMethod = ftpMethod;
+    }
+
+    public String getArguments() {
+        return _arguments;
+    }
+
+    public void setArguments(String arguments) {
+        this._arguments = arguments;
+    }
+
+    public String getDownloadedContentType() {
+        return _downloadedContentType;
+    }
+
+    public void setDownloadedContentType(String downloadedContentType) {
+        this._downloadedContentType = downloadedContentType;
+    }
+
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
+    public Goid getPasswordGoid() {
+        return passwordGoid;
+    }
+
+    public void setPasswordGoid(@Nullable Goid passwordGoid) {
+        this.passwordGoid = passwordGoid;
+    }
+
+    public boolean getOtherCommand() {
+        return _otherCommand;
+    }
+
+    public void setOtherCommand( boolean otherCommand ) {
+        this._otherCommand = otherCommand;
+    }
+
+    public String getFtpMethodOtherCommand() {
+        return _ftpMethodOtherCommand;
+    }
+
+    public void setFtpMethodOtherCommand( String ftpMethodOtherCommand ) {
+        this._ftpMethodOtherCommand = ftpMethodOtherCommand;
+    }
+
+    public String getResponseByteLimit() {
+        return _responseByteLimit;
+    }
+
+    public void setResponseByteLimit(String responseByteLimit) {
+        this._responseByteLimit = responseByteLimit;
     }
 
     @Override
@@ -248,7 +346,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public boolean needsInitializedRequest() {
-        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
+        return _requestTarget == null || TargetMessageType.REQUEST == _requestTarget.getTarget();
     }
 
     @Override
@@ -258,7 +356,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public boolean needsInitializedResponse() {
-        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+        return _requestTarget != null && TargetMessageType.RESPONSE == _requestTarget.getTarget();
     }
 
     private final static String baseName = "Route via FTP(S)";
@@ -271,6 +369,9 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Route requests from the Gateway to a backend FTP(S) server, using passive mode FTP.");
+
+        // ensure inbound FTP transport gets wired up
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ftprouting.server.FtpServerModuleLoadListener");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
@@ -294,8 +395,40 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         });
 
         meta.put(PROPERTIES_ACTION_NAME, "FTP(S) Routing Properties");
+
+        // Cluster properties used by this assertion
+        Map<String, String[]> props = new HashMap<>();
+
+        props.put(CP_MAX_CONC, new String[] {
+                "Maximum number of threads that can be used in the thread pool.  " +
+                        "This is a global limit across all such assertions. (default=64)",
+                "64"
+        });
+
+        props.put(CP_CORE_CONC, new String[] {
+                "Core number of threads that can be used in the thread pool.  " +
+                        "This is a soft limit that may be temporarily exceeded if necessary. " +
+                        "This is a global limit across all such assertions. (default=32)",
+                "32"
+        });
+
+        props.put(CP_MAX_QUEUE, new String[] {
+                "Maximum number of working threads in the thread pool.  " +
+                        "This is a global limit across all such assertions. (default=64)",
+                "64"
+        });
+
+        props.put(CP_BINDING_TIMEOUT, new String[] {
+                "Time interval during which if ftp connection is not used, will terminate.  " +
+                        "Time out interval for ftp connection. (default=30000)",
+                "30000"
+        });
+
+        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(WSP_EXTERNAL_NAME, "FtpRoutingAssertion");
-        final TypeMapping typeMapping = (TypeMapping)meta.get(WSP_TYPE_MAPPING_INSTANCE);
+
+        final TypeMapping typeMapping = (TypeMapping) meta.get(WSP_TYPE_MAPPING_INSTANCE);
+
         meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
             put("FtpRouting", typeMapping);
         }});
@@ -303,7 +436,8 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
             new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
-            new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource")
+            new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
+            new WspEnumTypeMapping(FtpMethod.class, "ftpCommand")
         )));
 
         // request default feature set name for our class name, since we are a known optional module
@@ -317,21 +451,32 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
-            _hostName,
-            _port,
-            _directory,
-            _userName,
-            _passwordUsesContextVariables ? _password : null,
-            _fileNamePattern
-        ).asArray();
+        return _requestTarget.getMessageTargetVariablesUsed()
+                .with(_responseTarget.getMessageTargetVariablesUsed())
+                .withExpressions(
+                        _ftpMethodOtherCommand,
+                        _hostName,
+                        _port,
+                        _directory,
+                        _userName,
+                        _passwordUsesContextVariables ? _password : null,
+//                        _fileNamePattern,
+                        _arguments,
+                        _responseByteLimit
+                ).asArray();
     }
 
     @Override
     public SsgKeyHeader[] getPrivateKeysUsed() {
         if (isUseClientCert()) {
-            return new SsgKeyHeader[]{new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(), getClientCertKeystoreId(), getClientCertKeyAlias(), getClientCertKeyAlias())};
+            return new SsgKeyHeader[] {new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(),
+                    getClientCertKeystoreId(), getClientCertKeyAlias(), getClientCertKeyAlias())};
         }
         return null;
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return _requestTarget.getMessageTargetVariablesSet().with(_responseTarget.getMessageTargetVariablesSet()).asArray();
     }
 }

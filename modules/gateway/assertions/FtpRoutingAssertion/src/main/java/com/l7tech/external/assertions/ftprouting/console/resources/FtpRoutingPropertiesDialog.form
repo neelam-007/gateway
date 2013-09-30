@@ -1,206 +1,373 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.ftprouting.console.FtpRoutingPropertiesDialog">
-  <grid id="dc500" binding="_mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="8" bottom="0" right="8"/>
+  <grid id="dc500" binding="_mainPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="26" y="23" width="835" height="629"/>
+      <xy x="20" y="20" width="822" height="489"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="5d64" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
+      <tabbedpane id="11cbd" default-binding="true">
         <constraints>
-          <grid row="0" column="0" row-span="2" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="600" height="200"/>
+          </grid>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="d9834" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="5d64" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="connectionTab"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <hspacer id="4d535">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </hspacer>
-              <component id="52d9a" class="javax.swing.JButton" binding="_testButton">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="testConnectionLabel"/>
-                </properties>
-              </component>
-            </children>
-          </grid>
-          <grid id="67fb" layout-manager="GridLayoutManager" row-count="8" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-            <border type="etched" title="FTP Settings"/>
-            <children>
-              <component id="241a5" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="securityLabel"/>
-                </properties>
-              </component>
-              <component id="4f706" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="hostNameLabel"/>
-                </properties>
-              </component>
-              <component id="de597" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="portNumberLabel"/>
-                </properties>
-              </component>
-              <component id="b9728" class="javax.swing.JTextField" binding="_hostNameTextField">
-                <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="200" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="48ec8" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="directoryLabel"/>
-                </properties>
-              </component>
-              <component id="f0f56" class="javax.swing.JTextField" binding="_directoryTextField">
-                <constraints>
-                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="16093" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="fileNameLabel"/>
-                </properties>
-              </component>
-              <component id="b1896" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="credentialsLabel"/>
-                </properties>
-              </component>
-              <component id="be152" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <requestFocusEnabled value="false"/>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="timeoutLabel"/>
-                </properties>
-              </component>
-              <grid id="4a2e7" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+              <grid id="4955d" layout-manager="GridLayoutManager" row-count="6" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
                 </constraints>
                 <properties/>
-                <border type="none"/>
+                <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="commandSettingsTitle"/>
                 <children>
-                  <component id="25645" class="javax.swing.JRadioButton" binding="_ftpUnsecuredRadioButton">
+                  <component id="8c3d6" class="javax.swing.JLabel">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="ftpUnsecuredLabel"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="commandLabel"/>
                     </properties>
                   </component>
-                  <component id="72430" class="javax.swing.JRadioButton" binding="_ftpsExplicitRadioButton">
+                  <component id="45236" class="com.l7tech.gui.widgets.BetterComboBox" binding="commandComboBox">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false">
+                        <minimum-size width="200" height="-1"/>
+                      </grid>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="explicitSslLabel"/>
+                      <model/>
                     </properties>
                   </component>
-                  <component id="1d8f3" class="javax.swing.JRadioButton" binding="_ftpsImplicitRadioButton">
+                  <component id="119b3" class="javax.swing.JLabel">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="implicitSslLabel"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="commandVariableLabel"/>
                     </properties>
                   </component>
-                  <component id="1c14f" class="javax.swing.JCheckBox" binding="_verifyServerCertCheckBox">
+                  <component id="b61a9" class="javax.swing.JLabel">
                     <constraints>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="verifyServerCertLabel"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="messageTargetLabel"/>
+                    </properties>
+                  </component>
+                  <component id="d4376" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="messageSourceLabel"/>
+                    </properties>
+                  </component>
+                  <component id="8e4c1" class="javax.swing.JComboBox" binding="messageSourceComboBox">
+                    <constraints>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false">
+                        <minimum-size width="200" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="db4ed" class="javax.swing.JComboBox" binding="messageTargetComboBox">
+                    <constraints>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false">
+                        <minimum-size width="200" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="89894" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="targetMessageVariableLabel"/>
+                    </properties>
+                  </component>
+                  <component id="1fa7b" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="directoryLabel"/>
+                    </properties>
+                  </component>
+                  <component id="583b7" class="javax.swing.JTextField" binding="directoryTextField">
+                    <constraints>
+                      <grid row="3" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="85ee8" class="javax.swing.JTextField" binding="argumentsTextField">
+                    <constraints>
+                      <grid row="5" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="13978" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="argumentsLabel"/>
+                    </properties>
+                  </component>
+                  <grid id="c4b64" binding="targetVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children/>
+                  </grid>
+                  <grid id="a789a" binding="commandVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children/>
+                  </grid>
+                  <component id="dfc35" class="javax.swing.JCheckBox" binding="autoFilenameCheckBox">
+                    <constraints>
+                      <grid row="4" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="autoGenerateFileNameCheckBox"/>
                     </properties>
                   </component>
                 </children>
               </grid>
-              <grid id="9d3d3" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+              <vspacer id="31ce0">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+              <grid id="6ace4" layout-manager="GridLayoutManager" row-count="5" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
-                <border type="none"/>
+                <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="connectionSettingsTitle"/>
                 <children>
-                  <component id="dd314" class="javax.swing.JRadioButton" binding="_credentialsPassThruRadioButton">
+                  <component id="ca2d1" class="javax.swing.JLabel">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="passThroughCredsLabel"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="protocolLabel"/>
                     </properties>
                   </component>
-                  <grid id="1f55e" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+                  <component id="d70cb" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="hostNameLabel"/>
+                    </properties>
+                  </component>
+                  <component id="db92d" class="javax.swing.JTextField" binding="hostNameTextField">
+                    <constraints>
+                      <grid row="1" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="5baff" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="portNumberLabel"/>
+                    </properties>
+                  </component>
+                  <grid id="c45ca" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="3393f" class="javax.swing.JRadioButton" binding="_credentialsSpecifyRadioButton">
+                      <component id="ce810" class="javax.swing.JTextField" binding="portNumberTextField">
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
                         </constraints>
                         <properties>
-                          <margin top="0" left="0" bottom="0" right="3"/>
-                          <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="specifyLabel"/>
+                          <columns value="10"/>
                         </properties>
                       </component>
-                      <grid id="4d304" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+                    </children>
+                  </grid>
+                  <component id="4c6b8" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="timeoutLabel"/>
+                    </properties>
+                  </component>
+                  <grid id="c519c" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="3" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="66bd0" class="javax.swing.JTextField" binding="timeoutTextField">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                            <preferred-size width="50" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <component id="945ac" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="secondsLabel"/>
+                        </properties>
+                      </component>
+                      <hspacer id="458dc">
+                        <constraints>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                    </children>
+                  </grid>
+                  <component id="5be73" class="javax.swing.JCheckBox" binding="verifyServerCertCheckBox">
+                    <constraints>
+                      <grid row="4" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="verifyServerCertCheckBox"/>
+                    </properties>
+                  </component>
+                  <component id="784bb" class="javax.swing.JButton" binding="testConnectionButton">
+                    <constraints>
+                      <grid row="4" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="testConnectionLabel"/>
+                    </properties>
+                  </component>
+                  <hspacer id="29f7c">
+                    <constraints>
+                      <grid row="4" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </hspacer>
+                  <grid id="9cbf9" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="3917b" class="javax.swing.JComboBox" binding="protocolComboBox">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                            <preferred-size width="300" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <hspacer id="26f59">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+            </children>
+          </grid>
+          <grid id="15cff" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="authenticationTab"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="a73a1" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="authenticationTitle"/>
+                <children>
+                  <component id="7b8d4" class="javax.swing.JRadioButton" binding="passThroughCredsRadioButton">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="passThroughCredsRadioButton"/>
+                    </properties>
+                  </component>
+                  <component id="d0ba8" class="javax.swing.JRadioButton" binding="specifyUserCredsRadioButton">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="specifyUserCredentialsRadioButton"/>
+                    </properties>
+                  </component>
+                  <grid id="1b4e6" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <vspacer id="fbd31">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                            <preferred-size width="30" height="-1"/>
+                          </grid>
+                        </constraints>
+                      </vspacer>
+                      <hspacer id="33fc1">
+                        <constraints>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                      <grid id="16993" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="0" left="0" bottom="0" right="0"/>
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -208,263 +375,248 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="1203f" class="javax.swing.JLabel">
+                          <grid id="eb796" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
                             <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="usernameLabel"/>
-                            </properties>
-                          </component>
-                          <component id="d26f7" class="javax.swing.JTextField" binding="_userNameTextField">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                                <preferred-size width="100" height="-1"/>
-                              </grid>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties/>
-                          </component>
-                          <component id="ca408" class="javax.swing.JLabel">
+                            <border type="none"/>
+                            <children>
+                              <component id="82ce4" class="javax.swing.JLabel" binding="userNameLabel">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="usernameLabel"/>
+                                </properties>
+                              </component>
+                              <hspacer id="1ddf7">
+                                <constraints>
+                                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                              </hspacer>
+                              <component id="c9a41" class="javax.swing.JTextField" binding="userNameTextField">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="6e7cb" class="javax.swing.JButton" binding="manageStoredPasswordsButton">
+                                <constraints>
+                                  <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="manageStoredPasswordsButton"/>
+                                </properties>
+                              </component>
+                              <component id="6ad13" class="com.l7tech.console.panels.SecurePasswordComboBox" binding="storedPasswordComboBox">
+                                <constraints>
+                                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                                    <minimum-size width="100" height="-1"/>
+                                    <preferred-size width="200" height="-1"/>
+                                  </grid>
+                                </constraints>
+                              </component>
+                              <component id="1ec13" class="javax.swing.JPasswordField" binding="plaintextPasswordField">
+                                <constraints>
+                                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <component id="f9fdd" class="javax.swing.JRadioButton" binding="storedPasswordRadioButton" default-binding="true">
+                                <constraints>
+                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="storedPasswordRadioButton"/>
+                                </properties>
+                              </component>
+                              <component id="5c142" class="javax.swing.JRadioButton" binding="plaintextPasswordRadioButton" default-binding="true">
+                                <constraints>
+                                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="plaintextPasswordRadioButton"/>
+                                </properties>
+                              </component>
+                              <component id="595dc" class="javax.swing.JCheckBox" binding="contextVariableInPasswordCheckBox">
+                                <constraints>
+                                  <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="contextVariableInPasswordCheckBox"/>
+                                </properties>
+                              </component>
+                            </children>
+                          </grid>
+                          <component id="4ca2" class="javax.swing.JLabel" binding="plainTextPasswordWarningLabel">
                             <constraints>
                               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
-                              <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="passwordLabel"/>
-                            </properties>
-                          </component>
-                          <component id="f8bae" class="javax.swing.JPasswordField" binding="_passwordField">
-                            <constraints>
-                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                                <preferred-size width="100" height="-1"/>
-                              </grid>
-                            </constraints>
-                            <properties/>
-                          </component>
-                          <component id="2a65c" class="javax.swing.JCheckBox" binding="contextVariableInPassword">
-                            <constraints>
-                              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="passwordInCtxVarLabel"/>
+                              <foreground color="-65536"/>
+                              <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="plaintextPasswordWarning"/>
                             </properties>
                           </component>
                         </children>
                       </grid>
                     </children>
                   </grid>
-                  <grid id="18990" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
-                    <margin top="3" left="0" bottom="0" right="0"/>
+                  <component id="ef3e" class="javax.swing.JCheckBox" binding="supplyClientCertCheckBox">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="supplyDigitalCertForClientAuthLabel"/>
+                    </properties>
+                  </component>
+                  <hspacer id="33d33">
+                    <constraints>
+                      <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </hspacer>
+                  <component id="7f83e" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="clientCertComboBox">
+                    <constraints>
+                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="35e47" class="javax.swing.JCheckBox" binding="_useClientCertCheckBox">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <margin top="2" left="0" bottom="2" right="3"/>
-                          <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="supplyDigCertForClientAuthLabel"/>
-                        </properties>
-                      </component>
-                      <hspacer id="d0d90">
-                        <constraints>
-                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                      </hspacer>
-                      <component id="a0a04" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="_clientCertsComboBox">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties/>
-                      </component>
-                    </children>
-                  </grid>
+                  </component>
                 </children>
               </grid>
-              <grid id="9aacd" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+              <vspacer id="1e8d5">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <grid id="a94b0" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="advancedTab"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="6d0c1" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
-                <border type="none"/>
+                <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="currentWssHeaderHandlingLabel"/>
                 <children>
-                  <grid id="63db4" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
-                    <margin top="0" left="0" bottom="0" right="0"/>
+                  <component id="9cfed" class="javax.swing.JRadioButton" binding="wssCleanupRadio">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="bf273" class="javax.swing.JRadioButton" binding="_filenamePatternRadioButton">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <margin top="0" left="0" bottom="0" right="3"/>
-                          <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="specifyPatternLabel"/>
-                        </properties>
-                      </component>
-                      <component id="72257" class="javax.swing.JTextField" binding="_filenamePatternTextField">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                    </children>
-                  </grid>
-                  <component id="9d417" class="javax.swing.JRadioButton" binding="_filenameAutoRadioButton">
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="removeL7ActorAndMustUnderstandLabel"/>
+                    </properties>
+                  </component>
+                  <component id="deb78" class="javax.swing.JRadioButton" binding="wssIgnoreRadio">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <margin top="0" left="0" bottom="0" right="3"/>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="autoGenerateFileNameLabel"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="dontModifyRequestSecurityHeader"/>
+                    </properties>
+                  </component>
+                  <component id="7c25e" class="javax.swing.JRadioButton" binding="wssRemoveRadio">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <selected value="true"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="removeProcessedSecurityHeaderLabel"/>
                     </properties>
                   </component>
                 </children>
               </grid>
-              <grid id="4af85" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <vspacer id="c38c5">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+              <grid id="eb330" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
-                <border type="none"/>
+                <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="advancedCommandSettingsTitle"/>
                 <children>
-                  <component id="a8455" class="javax.swing.JTextField" binding="_timeoutTextField">
+                  <component id="446a" class="javax.swing.JLabel">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <horizontalAlignment value="4"/>
+                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="contentTypeLabel"/>
                     </properties>
                   </component>
-                  <component id="34ea6" class="javax.swing.JLabel">
+                  <grid id="bb6ce" binding="responseLimitHolderPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="4" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="timeoutSecondsLabel"/>
-                    </properties>
-                  </component>
+                    <properties/>
+                    <border type="none"/>
+                    <children/>
+                  </grid>
+                  <grid id="b95d" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="2a8c4" class="javax.swing.JComboBox" binding="contentTypeComboBox">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <hspacer id="97460">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </hspacer>
+                    </children>
+                  </grid>
                 </children>
               </grid>
-              <grid id="bcc06" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="ab1d1" class="javax.swing.JTextField" binding="_portNumberTextField">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="4"/>
-                      <text value=""/>
-                    </properties>
-                  </component>
-                </children>
-              </grid>
-              <component id="4b01c" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="messageSourceLabel"/>
-                </properties>
-              </component>
-              <component id="c64b2" class="javax.swing.JComboBox" binding="messageSource">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-              </component>
             </children>
           </grid>
-          <grid id="6d0c1" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-            <border type="etched" title-resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" title-key="currentWssHeaderHandlingLabel"/>
-            <children>
-              <component id="7c25e" class="javax.swing.JRadioButton" binding="wssRemoveRadio">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <selected value="true"/>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="removeProcessedSecurityHeaderLabel"/>
-                </properties>
-              </component>
-              <component id="9cfed" class="javax.swing.JRadioButton" binding="wssCleanupRadio">
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="removeL7ActorAndMustUnderstandLabel"/>
-                </properties>
-              </component>
-              <component id="deb78" class="javax.swing.JRadioButton" binding="wssIgnoreRadio">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text resource-bundle="com/l7tech/external/assertions/ftprouting/console/FtpRoutingPropertiesDialog" key="dontModifyRequestSecurityHeader"/>
-                </properties>
-              </component>
-            </children>
-          </grid>
-          <vspacer id="1a29c">
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-            </constraints>
-          </vspacer>
         </children>
-      </grid>
+      </tabbedpane>
     </children>
   </grid>
   <buttonGroups>
-    <group name="_ftpSecurityButtonGroup">
-      <member id="1d8f3"/>
-      <member id="1d8f3"/>
-      <member id="72430"/>
-      <member id="1d8f3"/>
-      <member id="72430"/>
-      <member id="25645"/>
-    </group>
-    <group name="_filenameButtonGroup">
-      <member id="9d417"/>
-      <member id="9d417"/>
-      <member id="bf273"/>
-    </group>
-    <group name="_credentialsButtonGroup">
+    <group name="credentialsButtonGroup">
       <member id="3393f"/>
       <member id="3393f"/>
       <member id="dd314"/>
+      <member id="d0ba8"/>
+      <member id="7b8d4"/>
     </group>
-    <group name="_wssButtonGroup">
+    <group name="wssButtonGroup">
       <member id="e6522"/>
       <member id="e6522"/>
       <member id="287c1"/>
       <member id="deb78"/>
       <member id="9cfed"/>
       <member id="7c25e"/>
+    </group>
+    <group name="passwordButtonGroup">
+      <member id="f9fdd"/>
+      <member id="f9fdd"/>
+      <member id="5c142"/>
     </group>
   </buttonGroups>
 </form>

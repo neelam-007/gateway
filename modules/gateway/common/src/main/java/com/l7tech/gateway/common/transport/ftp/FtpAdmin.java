@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -47,7 +48,7 @@ public interface FtpAdmin {
                         String userName,
                         String password,
                         boolean useClientCert,
-                        Goid clientCertKeystoreId,
+                        @Nullable Goid clientCertKeystoreId,
                         String clientCertKeyAlias,
                         String directory,
                         int timeout) throws FtpTestException;

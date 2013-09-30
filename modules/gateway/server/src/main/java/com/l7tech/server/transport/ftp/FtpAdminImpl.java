@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.X509TrustManager;
@@ -58,7 +59,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                String userName,
                                String password,
                                boolean useClientCert,
-                               Goid clientCertKeystoreId,
+                               @Nullable Goid clientCertKeystoreId,
                                String clientCertKeyAlias,
                                String directory,
                                int timeout) throws FtpTestException {
@@ -71,11 +72,13 @@ public class FtpAdminImpl implements FtpAdmin {
             password = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), password);
         } catch (FindException e) {
             final String msg = "Unable to look up secure password reference: " + ExceptionUtils.getMessage(e);
-            throw (FtpTestException)new FtpTestException(msg, msg).initCause(e);
+            throw (FtpTestException) new FtpTestException(msg, msg).initCause(e);
         }
+
         config.setPort(port).setUser(userName).setPass(password).setDirectory(directory).setTimeout(timeout);
 
         X509TrustManager trustManager = null;
+
         if (isVerifyServerCert) {
             config.setVerifyServerCert(true);
             trustManager = _x509TrustManager;

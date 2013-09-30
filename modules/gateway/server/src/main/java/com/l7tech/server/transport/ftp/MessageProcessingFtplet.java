@@ -2,11 +2,12 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HasServiceId;
-import com.l7tech.message.HasServiceIdImpl;
-import com.l7tech.message.Message;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.message.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
@@ -15,6 +16,7 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
@@ -26,13 +28,14 @@ import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.interfaces.FtpServerSession;
 import org.apache.ftpserver.listener.AbstractListener;
+import org.w3c.dom.Document;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
+import java.net.SocketException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,84 +44,9 @@ import java.util.logging.Logger;
  * Ftplet implementation backed by our MessageProcessor.
  *
  * @author Steve Jones
+ * @author jwilliams
  */
 class MessageProcessingFtplet extends DefaultFtplet {
-
-    //- PUBLIC
-
-    /*
-     * Bean constructor
-     */
-    MessageProcessingFtplet( final FtpServerManager ftpServerManager,
-                             final MessageProcessor messageProcessor,
-                             final SoapFaultManager soapFaultManager,
-                             final StashManagerFactory stashManagerFactory,
-                             final EventChannel messageProcessingEventChannel,
-                             final ContentTypeHeader overriddenContentType,
-                             final Goid hardwiredServiceGoid,
-                             final long maxRequestSize,
-                             final Goid connectorGoid ) {
-        this.ftpServerManager = ftpServerManager;
-        this.messageProcessor = messageProcessor;
-        this.soapFaultManager = soapFaultManager;
-        this.stashManagerFactory = stashManagerFactory;
-        this.messageProcessingEventChannel = messageProcessingEventChannel;
-        this.overriddenContentType = overriddenContentType;
-        this.hardwiredServiceGoid = hardwiredServiceGoid;
-        this.maxRequestSize = maxRequestSize;
-        this.connectorGoid = connectorGoid;
-    }
-
-    /**
-     * Ensure that on initial connection the data connection is secure if the control connection is.
-     */
-    @Override
-    public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
-        DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
-        if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
-            ServerDataConnectionFactory sdcf = (ServerDataConnectionFactory) dataConnectionFactory;
-
-            boolean controlSecure = false;
-
-            if (ftpSession instanceof FtpServerSession) {
-                FtpServerSession ftpServerSession = (FtpServerSession) ftpSession;
-                controlSecure = ((AbstractListener)ftpServerSession.getListener()).isImplicitSsl();
-            }
-
-            // init data connection security to the same as the control connection
-            sdcf.setSecure( controlSecure );
-        }
-
-        return super.onConnect(ftpSession, ftpReplyOutput);
-    }
-
-    /**
-     * Override the default SITE extensions. 
-     */
-    @Override
-    public FtpletEnum onSite(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
-        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_502_COMMAND_NOT_IMPLEMENTED, "Command SITE not implemented for " + ftpRequest.getArgument()));
-        return FtpletEnum.RET_SKIP;
-    }
-
-    /**
-     * Redirect uploads to the message processor
-     */
-    @Override
-    public FtpletEnum onUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
-        return handleUploadStart(ftpSession, ftpRequest, ftpReplyOutput, false);
-    }
-
-    /**
-     * Redirect uploads to the message processor
-     */
-    @Override
-    public FtpletEnum onUploadUniqueStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
-        return handleUploadStart(ftpSession, ftpRequest, ftpReplyOutput, true);
-    }
-
-    //- PRIVATE
-
     private static final Logger logger = Logger.getLogger(MessageProcessingFtplet.class.getName());
 
     private static final int STORE_RESULT_OK = 0;
@@ -134,82 +62,382 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final Goid hardwiredServiceGoid;
     private final long maxRequestSize;
     private final Goid connectorGoid;
+    private final ServiceManager serviceManager;
+    private final String initServiceUri;
 
     /*
-     * Process a file upload 
+     * Bean constructor
      */
-    private FtpletEnum handleUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique) throws FtpException, IOException {
+    public MessageProcessingFtplet(final FtpServerManager ftpServerManager,
+                                   final MessageProcessor messageProcessor,
+                                   final SoapFaultManager soapFaultManager,
+                                   final StashManagerFactory stashManagerFactory,
+                                   final EventChannel messageProcessingEventChannel,
+                                   final ContentTypeHeader overriddenContentType,
+                                   final Goid hardwiredServiceGoid,
+                                   final long maxRequestSize,
+                                   final Goid connectorGoid,
+                                   final ServiceManager serviceManager,
+                                   final String initServiceUri) {
+        this.ftpServerManager = ftpServerManager;
+        this.messageProcessor = messageProcessor;
+        this.soapFaultManager = soapFaultManager;
+        this.stashManagerFactory = stashManagerFactory;
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
+        this.overriddenContentType = overriddenContentType;
+        this.hardwiredServiceGoid = hardwiredServiceGoid;
+        this.maxRequestSize = maxRequestSize;
+        this.connectorGoid = connectorGoid;
+        this.serviceManager = serviceManager;
+        this.initServiceUri = initServiceUri;
+    }
+
+    /**
+     * Ensure that on initial connection the data connection is secure if the control connection is.
+     */
+    @Override
+    public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
+
+        if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
+            ServerDataConnectionFactory connectionFactory = (ServerDataConnectionFactory) dataConnectionFactory;
+
+            boolean controlSecure = false;
+
+            if (ftpSession instanceof FtpServerSession) {
+                FtpServerSession ftpServerSession = (FtpServerSession) ftpSession;
+                controlSecure = ((AbstractListener) ftpServerSession.getListener()).isImplicitSsl();
+            }
+
+            // init data connection security to the same as the control connection
+            connectionFactory.setSecure(controlSecure);
+        }
+
+        return super.onConnect(ftpSession, ftpReplyOutput);
+    }
+
+    /**
+     * Override the default SITE extensions. 
+     */
+    @Override
+    public FtpletEnum onSite(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        return handleCommandStart(ftpSession, ftpRequest, ftpReplyOutput, false, FtpMethod.FTP_SITE);
+    }
+
+    /**
+     * Redirect uploads to the message processor
+     */
+    @Override
+    public FtpletEnum onUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        return handleTransportStart(ftpSession, ftpRequest, ftpReplyOutput, false, FtpMethod.FTP_PUT);
+    }
+
+    /**
+     * Redirect uploads to the message processor
+     */
+    @Override
+    public FtpletEnum onUploadUniqueStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        return handleTransportStart(ftpSession, ftpRequest, ftpReplyOutput, true, FtpMethod.FTP_PUT);
+    }
+
+    @Override
+    public FtpletEnum onDownloadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        return handleTransportStart(ftpSession, ftpRequest, ftpReplyOutput, false, FtpMethod.FTP_GET);
+    }
+
+    @Override
+    public FtpletEnum onDeleteStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        return handleCommandStart(ftpSession, ftpRequest, ftpReplyOutput, false, FtpMethod.FTP_DELE);
+    }
+
+    @Override
+    public FtpletEnum onLogin(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException  {
+        return handleLogin(ftpSession, ftpRequest, ftpReplyOutput, false);
+    }
+
+    public FtpletEnum onListStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, FtpMethod method) throws FtpException, IOException {
+        return handleTransportStart(ftpSession, ftpRequest, ftpReplyOutput, false, method);
+    }
+
+    public FtpletEnum onCommandStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, FtpMethod ftpMethod) throws FtpException, IOException{
+        return handleCommandStart(ftpSession, ftpRequest, ftpReplyOutput, false, ftpMethod);
+    }
+
+    private FtpletEnum handleTransportStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique, FtpMethod ftpMethod) throws FtpException, IOException {
+
         FtpletEnum result = FtpletEnum.RET_SKIP;
         String fileName = ftpRequest.getArgument();
 
-        if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Handling STOR for file ''{0}'' (unique:{1}).", new Object[]{fileName, unique});
+        logger.log(Level.FINE, "Handling " + ftpMethod.getWspName() + " for file ''{0}'' (unique:{1}).", new Object[] {fileName, unique});
 
         if (!ftpServerManager.isLicensed()) {
-            if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Failing STOR (FTP server not licensed).");
+            logger.log(Level.INFO, "Failing (FTP server not licensed).");
 
             ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
                     "Service not available (not licensed)."));
-        }
-        else {
-            if (!ftpSession.getDataType().equals(DataType.BINARY)) {
-                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
-                        "Type '"+ftpSession.getDataType().toString()+"' not supported for this action."));
-            }
-            else {
-                // request data
-                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
-                DataConnectionFactory dataConnectionFactory = null;
-                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString() );
-                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress() );
+        } else {
+            DataConnectionFactory dataConnectionFactory = null;
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString());
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress());
+
+            try {
+                dataConnectionFactory = ftpSession.getDataConnection();
+                DataConnection dataConnection = null;
+
                 try {
-                    dataConnectionFactory = ftpSession.getDataConnection();
-                    DataConnection dataConnection = null;
+                    dataConnection = dataConnectionFactory.openConnection();
+                } catch(Exception ex) {
+                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_425_CANT_OPEN_DATA_CONNECTION, "Can't open data connection."));
+                }
+
+                if (dataConnection != null) {
+                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
+                    // transfer data
                     try {
-                        dataConnection = dataConnectionFactory.openConnection();
-                    }
-                    catch(Exception ex) {
-                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_425_CANT_OPEN_DATA_CONNECTION, "Can't open data connection."));
-                    }
+                        User user = ftpSession.getUser();
+                        String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
 
-                    if (dataConnection != null) {
-                        try {
-                            String[] message = {"Failed."};
-                            User user = ftpSession.getUser();
-                            String file = ftpRequest.getArgument();
-                            String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
-                            boolean secure = isSecure(dataConnectionFactory, ftpSession);
-
-                            if (unique) {
-                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
-                            }
-
-                            int storeResult = onStore(dataConnection, ftpSession, user, path, file, secure, unique);
-
-                            if ( storeResult == STORE_RESULT_DROP ) {
-                                result = FtpletEnum.RET_DISCONNECT;
-                            } else if ( storeResult == STORE_RESULT_FAULT ) {
-                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, fileName + ": " + message[0]));
-                            } else {
-                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer complete."));
-                            }
+                        if (initServiceUri != null && path.equals("/")) {
+                            ftpSession.getFileSystemView().changeDirectory(initServiceUri);
+                            path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
                         }
-                        catch(IOException ioe) {
-                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_426_CONNECTION_CLOSED_TRANSFER_ABORTED, "Data connection error."));
+
+                        String directory = ((VirtualFileSystem) ftpSession.getFileSystemView()).getChangedDirectory();
+
+                        boolean secure = isSecure(dataConnectionFactory, ftpSession);
+
+                        if (unique) {
+                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, fileName + ": Transfer started."));
                         }
+
+                        int storeResult = onStore(dataConnection, ftpSession, user, path, fileName, secure, unique, ftpMethod, directory, ftpReplyOutput);
+
+                        if (storeResult == STORE_RESULT_DROP) {   // TODO jwilliams: this may be a bug introduced with the changes to stealth mode response code - STORE_RESULT_DROP doesn't get set anywhere
+                            result = FtpletEnum.RET_DISCONNECT;
+                        } else if (storeResult == STORE_RESULT_FAULT) {
+                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, fileName + ": " + "Failed."));
+                        } else {
+                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer complete."));
+                        }
+                    } catch(IOException ioe) {
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_426_CONNECTION_CLOSED_TRANSFER_ABORTED, "Data connection error."));
                     }
                 }
-                finally {
-                    HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.LISTEN_PORT_ID );
-                    HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.CLIENT_IP );
-                    if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
+            } finally {
+                HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.LISTEN_PORT_ID);
+                HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.CLIENT_IP);
+
+                if (dataConnectionFactory != null) {
+                    dataConnectionFactory.closeDataConnection();
                 }
             }
         }
 
         return result;
     }
+
+    /*
+    * Process a file command
+    */
+    private FtpletEnum handleCommandStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique, FtpMethod ftpMethod) throws FtpException, IOException {
+        FtpletEnum result = FtpletEnum.RET_SKIP;
+        String fileName = ftpRequest.getArgument();
+
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Handling " + ftpMethod.getWspName() + " for file ''{0}'' (unique:{1}).", new Object[]{fileName, unique});
+
+        if (!ftpServerManager.isLicensed()) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Failing " + ftpMethod.getWspName() + " (FTP server not licensed).");
+
+            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
+                    "Service not available (not licensed)."));
+        } else {
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString());
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress());
+
+            User user = ftpSession.getUser();
+            String file = ftpRequest.getArgument();
+
+            if (initServiceUri != null) {
+                ftpSession.getFileSystemView().changeDirectory(initServiceUri);
+            }
+
+            String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
+            VirtualFileSystem vfs = (VirtualFileSystem)ftpSession.getFileSystemView();
+            String directory;
+            String previousDirectory = vfs.getChangedDirectory();
+
+            if (ftpMethod == FtpMethod.FTP_CWD) {
+                String uri = file;
+                if (!file.startsWith("/")) {
+                    uri = "/" + file;
+                }
+                if (isService(uri)) {
+                    file = uri;
+                    ftpSession.getFileSystemView().changeDirectory(file);
+                    path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
+                    directory = "/";
+                } else if (file.startsWith("/")) {
+                    directory = file;
+                    vfs.setChangedDirectory(file);
+                } else if (file.equals("..") || file.equals("../")) {
+                    directory = vfs.getParentDirectory();
+                    vfs.setChangedDirectory(directory);
+                } else if (file.equals(".")) {
+                    directory = vfs.getChangedDirectory();
+                } else {
+                    directory = vfs.getChangedDirectory();
+                    vfs.setCombinedChangedDirectory(file);
+                }
+            } else if (ftpMethod == FtpMethod.FTP_CDUP) {
+                directory = vfs.getParentDirectory();
+                vfs.setChangedDirectory(directory);
+            } else {
+                directory = vfs.getChangedDirectory();
+            }
+
+            boolean secure = isSecureSession(ftpSession);
+
+            if (unique) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
+            }
+
+            int storeResult = process(ftpSession, user, path, file, secure, unique, ftpMethod.getWspName(), ftpReplyOutput, directory);
+
+            if (storeResult == STORE_RESULT_DROP) {
+                result = FtpletEnum.RET_DISCONNECT;
+            } else if (storeResult == STORE_RESULT_FAULT) {
+                if (ftpMethod == FtpMethod.FTP_CWD) {
+                    vfs.setChangedDirectory(previousDirectory);
+                }
+            }
+
+            HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.LISTEN_PORT_ID);
+            HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.CLIENT_IP);
+        }
+
+        return result;
+    }
+
+    private FtpletEnum handleLogin(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique) throws FtpException, IOException {
+
+        FtpletEnum result = FtpletEnum.RET_SKIP;
+        String fileName = ftpRequest.getArgument();
+
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Handling " + FtpMethod.FTP_LOGIN.getWspName() + " for file ''{0}'' (unique:{1}).", new Object[] {fileName, unique});
+
+        if (!ftpServerManager.isLicensed()) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Failing " + FtpMethod.FTP_LOGIN.getWspName() + " (FTP server not licensed).");
+
+            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
+                    "Service not available (not licensed)."));
+        } else {
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString());
+            HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress());
+            User user = ftpSession.getUser();
+            String file = ftpRequest.getArgument();
+
+            String path = initServiceUri;
+
+            boolean secure = isSecureSession(ftpSession);
+
+            if (unique) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
+            }
+
+            int storeResult = process(ftpSession, user, path, file, secure, unique, FtpMethod.FTP_LOGIN.getWspName(), ftpReplyOutput, "/");
+
+            if (storeResult == STORE_RESULT_FAULT) {
+                result = FtpletEnum.RET_DISCONNECT;
+            } else {
+                result = null;
+            }
+
+            HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.LISTEN_PORT_ID);
+            HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.CLIENT_IP);
+        }
+
+        return result;
+    }
+
+    /*
+     * Process a file upload 
+     */
+//    private FtpletEnum handleUploadStart(FtpSession ftpSession, FtpRequest ftpRequest, FtpReplyOutput ftpReplyOutput, boolean unique) throws FtpException, IOException {
+//        FtpletEnum result = FtpletEnum.RET_SKIP;
+//        String fileName = ftpRequest.getArgument();
+//
+//        if (logger.isLoggable(Level.FINE))
+//            logger.log(Level.FINE, "Handling STOR for file ''{0}'' (unique:{1}).", new Object[]{fileName, unique});
+//
+//        if (!ftpServerManager.isLicensed()) {
+//            if (logger.isLoggable(Level.INFO))
+//                logger.log(Level.INFO, "Failing STOR (FTP server not licensed).");
+//
+//            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
+//                    "Service not available (not licensed)."));
+//        }
+//        else {
+//            if (!ftpSession.getDataType().equals(DataType.BINARY)) {
+//                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
+//                        "Type '"+ftpSession.getDataType().toString()+"' not supported for this action."));
+//            }
+//            else {
+//                // request data
+//                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
+//                DataConnectionFactory dataConnectionFactory = null;
+//                HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.LISTEN_PORT_ID, connectorGoid.toString());
+//                HybridDiagnosticContext.put(GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress());
+//                try {
+//                    dataConnectionFactory = ftpSession.getDataConnection();
+//                    DataConnection dataConnection = null;
+//                    try {
+//                        dataConnection = dataConnectionFactory.openConnection();
+//                    }
+//                    catch(Exception ex) {
+//                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_425_CANT_OPEN_DATA_CONNECTION, "Can't open data connection."));
+//                    }
+//
+//                    if (dataConnection != null) {
+//                        try {
+//                            String[] message = {"Failed."};
+//                            User user = ftpSession.getUser();
+//                            String file = ftpRequest.getArgument();
+//                            String path = ftpSession.getFileSystemView().getCurrentDirectory().getFullName();
+//                            boolean secure = isSecure(dataConnectionFactory, ftpSession);
+//
+//                            if (unique) {
+//                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
+//                            }
+//
+//                            int storeResult = onStore(dataConnection, ftpSession, user, path, file, secure, unique);
+//
+//                            if (storeResult == STORE_RESULT_DROP) {
+//                                result = FtpletEnum.RET_DISCONNECT;
+//                            } else if (storeResult == STORE_RESULT_FAULT) {
+//                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, fileName + ": " + message[0]));
+//                            } else {
+//                                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer complete."));
+//                            }
+//                        }
+//                        catch(IOException ioe) {
+//                            ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_426_CONNECTION_CLOSED_TRANSFER_ABORTED, "Data connection error."));
+//                        }
+//                    }
+//                }
+//                finally {
+//                    HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.LISTEN_PORT_ID);
+//                    HybridDiagnosticContext.remove(GatewayDiagnosticContextKeys.CLIENT_IP);
+//                    if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
+//                }
+//            }
+//        }
+//
+//        return result;
+//    }
 
     /**
      * Check if the session is secure.
@@ -235,13 +463,36 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 controlSecure = ((AbstractListener)ftpServerSession.getListener()).isImplicitSsl();
             }
 
-            if (logger.isLoggable(Level.FINE))
-                logger.log(Level.INFO, "Security levels, control secure ''{0}'', data secure ''{1}''.",
-                        new Object[] {controlSecure, dataSecure});
+            logger.log(Level.FINE, "Security levels, control secure ''{0}'', data secure ''{1}''.",
+                    new Object[] {controlSecure, dataSecure});
 
             secure = dataSecure && controlSecure;
         }
         return secure;
+    }
+
+    /**
+     * Check if the session is secure.
+     *
+     * <p>To be secure for delete control must be secured.</p>
+     *
+     * <p>NOTE: This will NOT WORK for explicit FTP, which is currently fine
+     * since that is not enabled.</p>
+     * @param ftpSession ftp session to check whether control connection is secure
+     * @return whether the connection is secure
+     */
+    private boolean isSecureSession(FtpSession ftpSession) {
+        boolean controlSecure = false;
+
+        if (ftpSession instanceof FtpServerSession) {
+            FtpServerSession ftpServerSession = (FtpServerSession) ftpSession;
+            controlSecure = ((AbstractListener)ftpServerSession.getListener()).isImplicitSsl();
+        }
+
+        logger.log(Level.FINE, "Security levels, control secure ''{0}'', data secure ''{1}''.",
+                new Object[] {controlSecure});
+
+        return controlSecure;
     }
 
     /*
@@ -253,20 +504,30 @@ class MessageProcessingFtplet extends DefaultFtplet {
                         final String path,
                         final String file,
                         final boolean secure,
-                        final boolean unique) throws IOException {
+                        final boolean unique,
+                        final FtpMethod ftpMethod,
+                        final String directory,
+                        final FtpReplyOutput ftpReplyOutput) throws IOException {
         int storeResult = STORE_RESULT_FAULT;
 
-        if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[]{path, file});
+        logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[] {path, file});
 
-        long maxSize = maxRequestSize == -1 ? Message.getMaxBytes() :maxRequestSize;
+        long maxSize = maxRequestSize == -1 ? Message.getMaxBytes() : maxRequestSize;
+
+        ContentTypeHeader ctype = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
 
         // Create request message
-        Message request;
-        ContentTypeHeader ctype = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
-        Message requestMessage = new Message();
-        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)),maxSize);
-        requestMessage.attachFtpKnob(buildFtpKnob(
+        Message request = new Message();
+
+        if (ftpMethod == FtpMethod.FTP_PUT || ftpMethod == FtpMethod.FTP_APPE) {
+            request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)), maxSize);
+        } else {
+            request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(new byte[0]), maxSize);
+        }
+
+        request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)),maxSize);
+
+        request.attachFtpKnob(buildFtpKnob(
                     ftpSession.getServerAddress(),
                     ftpSession.getServerPort(),
                     ftpSession.getClientAddress(),
@@ -275,59 +536,250 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     secure,
                     unique,
                     user));
+
+        if (!Goid.isDefault(hardwiredServiceGoid)) {
+            request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
+        }
+
+        // Create response message
+        Message response = new Message();
+
+        // process request message
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
+
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        String faultXml = null;
+
+        //set the context variable to check the ftp method
+        context.setVariable("ftp.command", ftpMethod.getWspName());
+        context.setVariable("ftp.directory", directory);
+
+        try {
+            try {
+                status = messageProcessor.processMessage(context);
+
+                logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
+            } catch (PolicyVersionException pve) {
+                logger.log(Level.INFO, "Request referred to an outdated version of policy");
+                faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "Exception while processing FTP message: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+                faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
+            }
+
+            if (status != AssertionStatus.NONE) {
+                faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+            }
+
+            if (faultXml != null) {
+                messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+            }
+
+            if (!context.isStealthResponseMode() && status == AssertionStatus.NONE) {
+                storeResult = STORE_RESULT_OK;
+
+                if (ftpMethod != FtpMethod.FTP_GET && !containListCommand(ftpMethod)) {
+                    logger.log(Level.INFO, "FTP " + ftpMethod.getWspName() + " completed");
+                } else {
+                    Message responseContext = context.getResponse();
+
+                    if (responseContext.getKnob(MimeKnob.class) != null && responseContext.isInitialized()) {
+                        try {
+                            InputStream responseStream = responseContext.getMimeKnob().getEntireMessageBodyAsInputStream();
+
+                            if (responseStream != null) {
+                                if (ftpMethod == FtpMethod.FTP_GET) {
+                                    if (status == AssertionStatus.NONE) {
+                                        long readLength = readFile(dataConnection, responseStream);
+
+                                        if (readLength < 0) {
+                                            logger.log(Level.WARNING, "Error during reading the file");
+                                            storeResult = STORE_RESULT_FAULT;
+                                        }
+                                    } else {
+                                        logger.log(Level.WARNING, "Error during reading the file");
+                                        storeResult = STORE_RESULT_FAULT;
+                                    }
+                                } else if (containListCommand(ftpMethod)) {
+                                    FtpListUtil ftpListUtil = new FtpListUtil(responseStream);
+                                    String responseMessage = ftpListUtil.writeMessageToOutput();
+                                    if (!responseMessage.isEmpty()) {
+                                        String rawMessage = responseMessage;
+                                        
+                                        if (ftpMethod != FtpMethod.FTP_NLST) {
+                                            Document doc = FtpListUtil.createDoc(responseMessage);
+                                            if (doc != null) {
+                                                rawMessage = FtpListUtil.getRawListData(doc);
+                                            }
+                                        }
+                                        
+                                        boolean success = listFiles(dataConnection, rawMessage);
+                                        
+                                        if (!success) {
+                                            logger.log(Level.WARNING, "Error during list FTP");
+                                            storeResult = STORE_RESULT_FAULT;
+                                        }
+                                    }
+                                }
+                            } else {
+                                logger.log(Level.WARNING, "Error during processing FTP");
+                                storeResult = STORE_RESULT_FAULT;
+                            }
+                        } catch(NoSuchPartException nsp) {
+                            logger.log(Level.WARNING, "Exception while processing FTP message: "+ ExceptionUtils.getMessage(nsp), ExceptionUtils.getDebugException(nsp));
+                            storeResult = STORE_RESULT_FAULT;
+                        }
+                    } else  {
+                        logger.log(Level.WARNING, "Error during processing FTP. Response is not initialized");
+                        storeResult = STORE_RESULT_FAULT;
+                    }
+                }
+            } else {
+                logger.log(Level.WARNING, "Error during processing FTP. Context is empty");
+                storeResult = STORE_RESULT_FAULT;
+            }
+
+// TODO jwilliams: old code replaced by above chunk, keeping here until question of the unset 'DROP' result is resolved
+//            if (!context.isStealthResponseMode()) {
+//                if (status == AssertionStatus.NONE) {
+//                    storeResult = STORE_RESULT_OK;
+//                }
+//            } else {
+//                storeResult = STORE_RESULT_DROP;
+//            }
+        } finally {
+            ResourceUtils.closeQuietly(context);
+        }
+
+        return storeResult;
+    }
+
+    /*
+     *  Process commands that don't require Data Transaction
+     */
+
+    private int process(final FtpSession ftpSession,
+                        final User user,
+                        final String path,
+                        final String file,
+                        final boolean secure,
+                        final boolean unique,
+                        final String command,
+                        final FtpReplyOutput ftpReplyOutput,
+                        final String directory) throws IOException {
+        int storeResult = STORE_RESULT_FAULT;
+
+        logger.log(Level.FINE, "Processing " + command + " for path ''{0}'' and file ''{1}''.", new String[]{path, file});
+
+        long maxSize = maxRequestSize == -1 ? Message.getMaxBytes() : maxRequestSize;
+
+        // Create request message
+        Message request;
+        ContentTypeHeader cType = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
+        Message requestMessage = new Message();
+
+        requestMessage.initialize(stashManagerFactory.createStashManager(), cType, new ByteArrayInputStream(new byte[0]), maxSize);
+
+        requestMessage.attachFtpKnob(buildFtpKnob(
+                ftpSession.getServerAddress(),
+                ftpSession.getServerPort(),
+                ftpSession.getClientAddress(),
+                file,
+                path,
+                secure,
+                unique,
+                user));
         request = requestMessage;
 
         if (!Goid.isDefault(hardwiredServiceGoid)) {
             requestMessage.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
         }
 
+        // Create response message
+        Message response = new Message();
+
         // process request message
-        if (request != null) {
-            final PolicyEnforcementContext context =
-                    PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
-            AssertionStatus status = AssertionStatus.UNDEFINED;
-            String faultXml = null;
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        String faultXml = null;
 
+        //set the context variable to check the ftp method
+        context.setVariable("ftp.command", command);
+        context.setVariable("ftp.directory", directory);
+
+        try {
             try {
-                try {
-                    status = messageProcessor.processMessage(context);
+                status = messageProcessor.processMessage(context);
 
-                    if (logger.isLoggable(Level.FINER))
-                        logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
+                logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
+            } catch (PolicyVersionException pve) {
+                logger.log(Level.INFO, "Request referred to an outdated version of policy");
+                faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "Exception while processing FTP message: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+                faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
+            }
 
-                } catch ( PolicyVersionException pve ) {
-                    logger.log( Level.INFO, "Request referred to an outdated version of policy" );
-                    faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
-                } catch ( Throwable t ) {
-                    logger.log( Level.WARNING, "Exception while processing FTP message: "+ ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException( t ) );
-                    faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
+            if (status != AssertionStatus.NONE) {
+                faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+            }
+
+            if (faultXml != null)
+                messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+
+            if (!context.isStealthResponseMode()) {
+                String responseMessage = null;
+
+                if (status == AssertionStatus.NONE) {
+                    storeResult = STORE_RESULT_OK;
+                    logger.log(Level.INFO, "FTP " + command + " completed");
+                } else {
+                    storeResult = STORE_RESULT_FAULT;
                 }
 
-                if ( status != AssertionStatus.NONE ) {
-                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
-                }
+                Message responseContext = context.getResponse();
 
-                if (faultXml != null)
-                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                if (responseContext.getKnob(MimeKnob.class) != null && responseContext.isInitialized()) {
+                    try {
+                        InputStream responseStream = responseContext.getMimeKnob().getEntireMessageBodyAsInputStream();
 
-                if (!context.isStealthResponseMode()) {
+                        if (responseStream != null) {
+                            FtpListUtil ftpListUtil = new FtpListUtil(responseStream);
+                            responseMessage = ftpListUtil.writeMessageToOutput();
+                            createReplyOutput(command, ftpReplyOutput, responseMessage, directory, storeResult);
+                        }
+                    } catch(NoSuchPartException nsp) {
+                        logger.log(Level.WARNING, "Exception while processing FTP message: " + ExceptionUtils.getMessage(nsp), ExceptionUtils.getDebugException(nsp));
+                        storeResult = STORE_RESULT_FAULT;
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, "Error in FTP(S) " + command + " Request."));
+                    }
+                } else if (!command.equals("APPE") && !command.equals("DELE")) {
+                    logger.log(Level.WARNING, "Error during processing FTP. Response is not initialized");
+                    storeResult = STORE_RESULT_FAULT;
+                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, "Error in FTP(S) " + command + " Request."));
+                } else {
                     if (status == AssertionStatus.NONE) {
-                        storeResult = STORE_RESULT_OK;
+                        createReplyOutput(command, ftpReplyOutput, responseMessage, directory, storeResult);
+                    } else {
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, "Error in FTP(S) " + command + " Request."));
                     }
                 }
-                else {
-                    storeResult = STORE_RESULT_DROP;
-                }
-            } finally {
-                ResourceUtils.closeQuietly(context);
+            } else {
+                logger.log(Level.WARNING, "Error during processing FTP. Context is empty");
+                storeResult = STORE_RESULT_FAULT;
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, "Error in FTP(S) " + command + " Request."));
             }
+        } finally {
+            ResourceUtils.closeQuietly(context);
         }
 
         return storeResult;
     }
 
-    private String buildUri(String path, String file) {
+    private String buildUri(String path, String file) { // TODO jwilliams: is this necessary?
         String uri = path;
 
         if (!uri.endsWith("/")) {
@@ -339,11 +791,99 @@ class MessageProcessingFtplet extends DefaultFtplet {
         return uri;
     }
 
+    private void createReplyOutput(final String command, final FtpReplyOutput ftpReplyOutput, final String responseMessage, String directory, int storeResult) throws IOException {
+        if (directory != null && !directory.startsWith("/")) {
+            directory = "/" + directory;
+        }
+
+        if (storeResult == STORE_RESULT_OK && !command.equals(FtpMethod.FTP_LOGIN.getWspName())) {
+            if (command.equals(FtpMethod.FTP_APPE.getWspName())) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_226_CLOSING_DATA_CONNECTION, "Transfer OK"));
+            } else if (command.equals(FtpMethod.FTP_CDUP.getWspName())) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, "CDUP successful. \"" + directory + "\" is current directory."));
+            } else if (command.equals(FtpMethod.FTP_PWD.getWspName())) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_257_PATHNAME_CREATED, "\"" + directory + "\" is current directory."));
+            } else if (command.equals(FtpMethod.FTP_MDTM.getWspName())) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_213_FILE_STATUS, org.apache.ftpserver.util.DateUtils.getFtpDate(Long.parseLong(responseMessage))));
+            } else if (command.equals(FtpMethod.FTP_SIZE.getWspName())) {
+                ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, responseMessage));
+            } else {
+                if (responseMessage != null && !responseMessage.isEmpty()) {
+                    int result = createReplyMessage(ftpReplyOutput, responseMessage);
+
+                    if (result == -1) {
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, responseMessage));
+                    }
+                } else {
+                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, "OK"));
+                }
+            }
+        } else {
+            if (command.equals(FtpMethod.FTP_LOGIN.getWspName())) {
+                createReplyMessage(ftpReplyOutput, responseMessage);
+            } else {
+                if (responseMessage != null && !responseMessage.isEmpty()) {
+                    int result = createReplyMessage(ftpReplyOutput, responseMessage);
+
+                    if (result == -1) {
+                        ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, responseMessage));
+                    }
+                } else {
+                    ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, "Requested action not taken"));
+                }
+            }
+        }
+    }
+
+    private int createReplyMessage(final FtpReplyOutput ftpReplyOutput, final String responseMessage) throws IOException {
+        try {
+            int replyCode = Integer.parseInt(responseMessage.substring(0, 3));
+            String replyMessage = responseMessage.substring(4, responseMessage.length());
+
+            if (replyMessage.endsWith("\r\n")) {
+                replyMessage = replyMessage.substring(0, replyMessage.indexOf("\r\n"));
+            }
+
+            ftpReplyOutput.write(new DefaultFtpReply(replyCode, replyMessage));
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    private boolean isService(String uri) {
+        boolean isService = false;
+        int countService = 0;
+
+        try {
+            Collection<PublishedService> publishedServices = serviceManager.findByRoutingUri(uri);
+
+            for (PublishedService publishedService : publishedServices) {
+                if (uri.equals(publishedService.getRoutingUri()) && !publishedService.isDisabled()) {
+                    countService++;
+                }
+            }
+        } catch (FindException fe) {
+            return false;
+        }
+
+        if (countService == 0) {
+            logger.log(Level.WARNING, "There is no service with uri " + uri);
+        } else if (countService == 1) {
+            isService = true;
+        } else {
+            logger.log(Level.WARNING, "There is more then one enabled service with the uri " + uri);
+        }
+
+        return isService;
+    }
+
     /*
      * Create an FtpKnob for the given info. 
      */
     private FtpRequestKnob buildFtpKnob(final InetAddress serverAddress, final int port, final InetAddress clientAddress, final String file, final String path, final boolean secure, final boolean unique, final User user) {
-        return new FtpRequestKnob(){
+        return new FtpRequestKnob() {
             @Override
             public int getLocalPort() {
                 return getLocalListenerPort();
@@ -382,45 +922,53 @@ class MessageProcessingFtplet extends DefaultFtplet {
             public String getFile() {
                 return file;
             }
+
             @Override
             public String getPath() {
                 return path;
             }
+
             @Override
             public String getRequestUri() {
                 return path;
             }
+
             @Override
             public String getRequestUrl() {
-                StringBuffer urlBuffer = new StringBuffer();
+                StringBuilder urlBuilder = new StringBuilder();
 
-                urlBuffer.append(secure ? "ftps" : "ftp");
-                urlBuffer.append("://");
-                urlBuffer.append(InetAddressUtil.getHostForUrl(serverAddress.getHostAddress()));
-                urlBuffer.append(":");
-                urlBuffer.append(port);
-                urlBuffer.append(path);
+                urlBuilder.append(secure ? "ftps" : "ftp");
+                urlBuilder.append("://");
+                urlBuilder.append(InetAddressUtil.getHostForUrl(serverAddress.getHostAddress()));
+                urlBuilder.append(":");
+                urlBuilder.append(port);
+                urlBuilder.append(path);
                 if (!path.endsWith("/"))
-                    urlBuffer.append("/");
-                urlBuffer.append(file);
+                    urlBuilder.append("/");
+                urlBuilder.append(file);
 
-                return urlBuffer.toString();
+                return urlBuilder.toString();
             }
+
             @Override
             public boolean isSecure() {
                 return secure;
             }
+
             @Override
             public boolean isUnique() {
                 return unique;
             }
+
             @Override
             public PasswordAuthentication getCredentials() {
                 PasswordAuthentication passwordAuthentication = null;
-                if (user.getPassword()!=null) {
+
+                if (user.getPassword() != null) {
                     passwordAuthentication =
                             new PasswordAuthentication(user.getName(), user.getPassword().toCharArray());
                 }
+
                 return passwordAuthentication;
             }
         };
@@ -434,7 +982,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         final PipedInputStream pis = new PipedInputStream();
 
         final CountDownLatch startedSignal = new CountDownLatch(1);
-        Thread thread = new Thread(new Runnable(){
+        Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 PipedOutputStream pos = null;
@@ -472,5 +1020,55 @@ class MessageProcessingFtplet extends DefaultFtplet {
         }
 
         return pis;
+    }
+
+    private boolean listFiles(final DataConnection dataConnection, String dirList) {
+        boolean success = false;
+
+        try {
+            dataConnection.transferToClient(dirList);
+            success = true;
+        } catch (SocketException ex) {
+            logger.log(Level.WARNING, "Socket exception during list transfer", ex);
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "IOException during list transfer", ex);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.WARNING, "Illegal list syntax: ", e);
+        }
+
+        return success;
+    }
+
+    /*
+    * Read the file from InputStream
+    */
+    private long readFile(final DataConnection dataConnection, final InputStream is) throws IOException {
+        long length = 0L;
+
+        try {
+            logger.log(Level.FINE, "Starting data transfer");
+
+            length = dataConnection.transferToClient(is);
+
+            logger.log(Level.FINE, "Completed data transfer");
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Data transfer error", e);
+            length = -1;
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
+
+        return length;
+    }
+
+    private boolean containListCommand(FtpMethod ftpMethod) {
+        String[] listCommands = new String[] { // TODO jwilliams: handle better in the refactored FtpMethod/FtpMethodEnum
+                FtpMethod.FTP_LIST.getWspName(),
+                FtpMethod.FTP_MDTM.getWspName(),
+                FtpMethod.FTP_MLSD.getWspName(),
+                FtpMethod.FTP_NLST.getWspName()
+        };
+
+        return Arrays.asList(listCommands).contains(ftpMethod.getWspName());
     }
 }

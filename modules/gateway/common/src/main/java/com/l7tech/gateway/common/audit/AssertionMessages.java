@@ -552,6 +552,8 @@ public class AssertionMessages extends Messages {
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
+    //TODO refactor 6053 with 9703? Same use, same message and arguments.
+    public static final M FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD = m(6053, Level.WARNING, "Unable to find stored gateway account password: {0}");
     public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
 
     // ServerRequestWssSaml

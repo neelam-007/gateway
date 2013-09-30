@@ -12,8 +12,15 @@ import org.apache.ftpserver.ftplet.FileObject;
  * @author Steve Jones
  */
 class VirtualFileObject implements FileObject {
+    private static final long date = System.currentTimeMillis();
 
-    //- PUBLIC
+    private final boolean file;
+    private final String path;
+
+    VirtualFileObject(boolean file, String path) {
+        this.file = file;
+        this.path = path;
+    }
 
     public InputStream createInputStream(long offset) throws IOException {
         throw new IOException();
@@ -101,17 +108,4 @@ class VirtualFileObject implements FileObject {
     public boolean move(FileObject destination) {
         return false;
     }
-
-    //- PACKAGE
-
-    VirtualFileObject(boolean file, String path) {
-        this.file = file;
-        this.path = path;
-    }
-
-    //- PRIVATE
-
-    private static final long date = System.currentTimeMillis();
-    private final boolean file;
-    private final String path;
 }

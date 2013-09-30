@@ -10,8 +10,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.*;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -69,18 +71,22 @@ public class FtpServerManager extends TransportModule {
                             final TrustedCertServices trustedCertServices,
                             final SsgConnectorManager ssgConnectorManager,
                             final EventChannel messageProcessingEventChannel,
-                            final Timer timer) {
-        super("FTP Server Manager", Component.GW_FTPSERVER, logger, SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, config );
+                            final Timer timer,
+                            final ClusterPropertyManager clusterPropertyManager,
+                            final ServiceManager serviceManager) {
+        super("FTP Server Manager", Component.GW_FTPSERVER, logger, SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, config);
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.timer = timer;
+        this.clusterPropertyManager = clusterPropertyManager;
+        this.serviceManager = serviceManager;
     }
 
     @Override
-    public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
+    public void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if (TransportModule.isEventIgnorable(applicationEvent)) {
             return;
         }
@@ -94,7 +100,7 @@ public class FtpServerManager extends TransportModule {
             try {
                 startInitialConnectors();
             } catch (LifecycleException e) {
-                auditError( "FTP(S)", "Error during startup.", e );
+                auditError("FTP(S)", "Error during startup.", e);
             }
         }
     }
@@ -108,7 +114,7 @@ public class FtpServerManager extends TransportModule {
             public void run() {
                 updateControlConnectionAccessTimes();
             }
-        }, 30000L, 30000L );
+        }, 30000L, 30000L);
     }
 
     @Override
@@ -136,12 +142,12 @@ public class FtpServerManager extends TransportModule {
         if (!connectorIsOwnedByThisModule(connector))
             return;
         final FtpServer ftpServer = createFtpServer(connector);
-        auditStart( connector.getScheme(), describe( connector ) );
+        auditStart(connector.getScheme(), describe(connector));
         try {
             ftpServer.start();
             ftpServers.put(connector.getGoid(), pair(connector,ftpServer));
         } catch (Exception e) {
-            throw new ListenerException("Unable to start FTP server " + describe( connector ) + ": " + ExceptionUtils.getMessage(e), e);
+            throw new ListenerException("Unable to start FTP server " + describe(connector) + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -151,8 +157,8 @@ public class FtpServerManager extends TransportModule {
         if (ftpServer == null)
             return;
 
-        String listener = describe( ftpServer.left );
-        auditStop( ftpServer.left.getScheme(), listener);
+        String listener = describe(ftpServer.left);
+        auditStop(ftpServer.left.getScheme(), listener);
         try {
             ftpServer.right.stop();
         } catch (Exception e) {
@@ -184,7 +190,7 @@ public class FtpServerManager extends TransportModule {
         try {
             unregisterProtocols();
             List<Goid> oidsToStop;
-            oidsToStop = new ArrayList<Goid>(ftpServers.keySet());
+            oidsToStop = new ArrayList<>(ftpServers.keySet());
             for (Goid goid : oidsToStop) {
                 removeConnector(goid);
             }
@@ -201,15 +207,31 @@ public class FtpServerManager extends TransportModule {
     private static final String DEFAULT_PROPS = "com/l7tech/server/transport/ftp/ftpserver-normal.properties";
     private static final String SSL_PROPS = "com/l7tech/server/transport/ftp/ftpserver-ssl.properties";
     private static final String PROP_FTP_LISTENER = "config.listeners.";
+    private static final String PROP_FTP_IDLE_TIME = "config.connection-manager.default-idle-time";
+    private static final String PROP_FTP_POLL_INTERVAL = "config.connection-manager.timeout-poll-interval";
+    private static final String PROP_FTP_MAX_CONNECTIONS = "config.connection-manager.max-connection";
+    private static final String PROP_FTP_MAX_LOGIN = "config.connection-manager.max-login";
+    private static final String CP_FTP_IDLE_TIME = "ftp.connection.idle_timeout";
+    private static final String CP_FTP_TIMEOUT_POLL_INTERVAL = "ftp.connection.timeout_poll_interval";
+    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max";
+    private static final String CP_FTP_MAX_LOGIN = "ftp.connection.max_login";
 
-    private final Set<String> schemes = caseInsensitiveSet( SCHEME_FTP, SCHEME_FTPS );
+    private final Timer timer;
     private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
-    private final Timer timer;
-    private final Map<Goid, Pair<SsgConnector,FtpServer>> ftpServers = new ConcurrentHashMap<Goid, Pair<SsgConnector,FtpServer>>();
+    private final ClusterPropertyManager clusterPropertyManager;
+    private final ServiceManager serviceManager;
+
+    private final Set<String> schemes = caseInsensitiveSet(SCHEME_FTP, SCHEME_FTPS);
+    private final Map<Goid, Pair<SsgConnector,FtpServer>> ftpServers = new ConcurrentHashMap<>();
+
+    private String ftpServerDefaultIdleTimeout;
+    private String ftpServerTimeoutPoolInterval;
+    private String maxConnections;
+    private String maxLogin;
 
     private int toInt(String str, String name) throws ListenerException {
         try {
@@ -222,6 +244,7 @@ public class FtpServerManager extends TransportModule {
     private Properties asFtpProperties(SsgConnector connector) throws ListenerException {
         String propsFile;
         String prefix;
+
         if (SsgConnector.SCHEME_FTPS.equals(connector.getScheme())) {
             propsFile = SSL_PROPS;
             prefix = "secure.";
@@ -240,17 +263,18 @@ public class FtpServerManager extends TransportModule {
             throw new RuntimeException(e); // shouldn't be possible
         }
 
-        for ( final String propertyName : connector.getPropertyNames() ) {
+        for (final String propertyName : connector.getPropertyNames()) {
             if (propertyName.equals(SsgConnector.PROP_BIND_ADDRESS) ||
-                propertyName.equals(SsgConnector.PROP_PORT_RANGE_START) ||
-                propertyName.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
-                propertyName.equals(SsgConnector.PROP_TLS_CIPHERLIST) ||
-                propertyName.equals(SsgConnector.PROP_TLS_PROTOCOLS))
+                    propertyName.equals(SsgConnector.PROP_PORT_RANGE_START) ||
+                    propertyName.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
+                    propertyName.equals(SsgConnector.PROP_TLS_CIPHERLIST) ||
+                    propertyName.equals(SsgConnector.PROP_TLS_PROTOCOLS)) {
                 continue;
+            }
 
-            final String propertyValue = connector.getProperty( propertyName );
-            if ( propertyValue != null ) {
-                props.setProperty( propertyName, propertyValue );
+            final String propertyValue = connector.getProperty(propertyName);
+            if (propertyValue != null) {
+                props.setProperty(propertyName, propertyValue);
             }
         }
 
@@ -266,6 +290,32 @@ public class FtpServerManager extends TransportModule {
         props.setProperty(p + "port", String.valueOf(connector.getPort()));
         props.setProperty(p + "server-address", address);
         props.setProperty(p + "data-connection.passive.ports", passiveRange);
+
+        try {
+            ftpServerDefaultIdleTimeout = clusterPropertyManager.getProperty(CP_FTP_IDLE_TIME);
+            ftpServerTimeoutPoolInterval = clusterPropertyManager.getProperty(CP_FTP_TIMEOUT_POLL_INTERVAL);
+            maxConnections = clusterPropertyManager.getProperty(CP_FTP_MAX_CONNECTIONS);
+            maxLogin = clusterPropertyManager.getProperty(CP_FTP_MAX_LOGIN);
+        } catch (FindException fe){
+            //Ignore it
+        }
+
+        if (ftpServerDefaultIdleTimeout != null) {
+            props.setProperty(PROP_FTP_IDLE_TIME, ftpServerDefaultIdleTimeout);
+        }
+
+        if (ftpServerTimeoutPoolInterval != null) {
+            props.setProperty(PROP_FTP_POLL_INTERVAL, ftpServerTimeoutPoolInterval);
+        }
+
+        if (maxConnections != null) {
+            props.setProperty(PROP_FTP_MAX_CONNECTIONS, maxConnections);
+        }
+
+        if (maxLogin != null) {
+            props.setProperty(PROP_FTP_MAX_LOGIN, maxLogin);
+        }
+
         return props;
     }
 
@@ -278,9 +328,11 @@ public class FtpServerManager extends TransportModule {
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
         Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+
         long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L);
         String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader overrideContentType = null;
+
         try {
             if (overrideContentTypeStr != null)
                 overrideContentType = ContentTypeHeader.parseValue(overrideContentTypeStr);
@@ -301,7 +353,10 @@ public class FtpServerManager extends TransportModule {
                 overrideContentType,
                 hardwiredServiceGoid,
                 maxRequestSize,
-                connector.getGoid());
+                connector.getGoid(),
+                serviceManager,
+                connector.getProperty("service")); // the 'service' property is set in the advanced config, tying the ftplet's VFS to an endpoint (?)
+        // TODO jwilliams: review use of property to tie connector to service
 
         Properties props = asFtpProperties(connector);
 
@@ -345,7 +400,7 @@ public class FtpServerManager extends TransportModule {
 
     private List<SsgConnector> findAllEnabledFtpConnectors() throws FindException {
         Collection<SsgConnector> all = ssgConnectorManager.findAll();
-        List<SsgConnector> ret = new ArrayList<SsgConnector>();
+        List<SsgConnector> ret = new ArrayList<>();
         for (SsgConnector connector : all) {
             if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
                 ret.add(connector);
@@ -381,19 +436,14 @@ public class FtpServerManager extends TransportModule {
             throw new IllegalStateException("Unexpected Ssl implementation of class: " + ssl.getClass());
     }
 
-    @Override
-    protected String describe( final SsgConnector connector ) {
-        return connector.getName() + " (#" +connector.getGoid() + ",v" + connector.getVersion() + ") on control port " + connector.getPort();
-    }
-
     private void registerProtocols() {
-        final TransportDescriptor ftp = new TransportDescriptor( SCHEME_FTP, false);
+        final TransportDescriptor ftp = new TransportDescriptor(SCHEME_FTP, false);
         ftp.setFtpBased(true);
         ftp.setSupportsHardwiredServiceResolution(true);
         ftp.setSupportsSpecifiedContentType(true);
         ssgConnectorManager.registerTransportProtocol(ftp, this);
 
-        final TransportDescriptor ftps = new TransportDescriptor( SCHEME_FTPS, true);
+        final TransportDescriptor ftps = new TransportDescriptor(SCHEME_FTPS, true);
         ftps.setFtpBased(true);
         ftps.setSupportsHardwiredServiceResolution(true);
         ftps.setSupportsSpecifiedContentType(true);
@@ -413,8 +463,8 @@ public class FtpServerManager extends TransportModule {
      * timeout when there are active data connections.
      */
     private void updateControlConnectionAccessTimes() {
-        if ( logger.isLoggable(Level.FINER) )
-            logger.log( Level.FINER, "Updating FTP control connection usage for active data connections.");
+        if (logger.isLoggable(Level.FINER))
+            logger.log(Level.FINER, "Updating FTP control connection usage for active data connections.");
 
         // just ignore this bit ...
         Field field = null;
@@ -425,26 +475,26 @@ public class FtpServerManager extends TransportModule {
             logger.warning("IoSession field not found for MINA connection, not updating control connection usage for active data connections.");
         }
 
-        if ( field != null) {
-            for ( final Pair<SsgConnector,FtpServer> server : ftpServers.values() ) {
-                if ( !server.right.isStopped() && !server.right.isSuspended() ) {
+        if (field != null) {
+            for (final Pair<SsgConnector,FtpServer> server : ftpServers.values()) {
+                if (!server.right.isStopped() && !server.right.isSuspended()) {
                     ConnectionManager cm = server.right.getServerContext().getConnectionManager();
                     List<Connection> connections = cm.getAllConnections();
 
-                    for ( Connection connection : connections ) {
+                    for (Connection connection : connections) {
                         FtpSession session = connection.getSession();
                         FtpRequest request = session.getCurrentRequest();
 
-                         if ( connection instanceof MinaConnection &&
+                         if (connection instanceof MinaConnection &&
                                  request != null &&
-                                  ( "STOR".equals(request.getCommand()) ||
+                                  ("STOR".equals(request.getCommand()) ||
                                     "STOU".equals(request.getCommand()))) {
                             logger.log(Level.FINE,
                                     "Updating FTP control connection usage for data connection ''{0}''",
                                     request.getArgument());
 
-                            synchronized ( connection ) {
-                                if ( session instanceof FtpSessionImpl) {
+                            synchronized (connection) {
+                                if (session instanceof FtpSessionImpl) {
                                     ((FtpSessionImpl)session).updateLastAccessTime();
                                 }
 
@@ -455,7 +505,7 @@ public class FtpServerManager extends TransportModule {
                                 } catch (IllegalAccessException iae) {
                                     logger.log(Level.WARNING,
                                             "Error updating FTP control connection usage for data connection ''{0}'', message is ''{1}''",
-                                            new String[]{ request.getArgument(), iae.getMessage()});
+                                            new String[]{request.getArgument(), iae.getMessage()});
                                 }
                             }
                         }

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport.ftp;
 
 import com.l7tech.objectmodel.Goid;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -20,7 +21,7 @@ public class FtpAdminStub implements FtpAdmin {
                                String userName,
                                String password,
                                boolean useClientCert,
-                               Goid clientCertKeystoreId,
+                               @Nullable Goid clientCertKeystoreId,
                                String clientCertKeyAlias,
                                String directory,
                                int timeout) throws FtpTestException {

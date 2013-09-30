@@ -18,7 +18,7 @@ import java.awt.*;
  * @author rmak
  * @since SecureSpan 5.0
  */
-public class BetterComboBox extends JComboBox {
+public class BetterComboBox<E> extends JComboBox<E> {
 
     @Override
     public void firePopupMenuWillBecomeVisible() {

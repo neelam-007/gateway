@@ -15,19 +15,22 @@ import org.apache.ftpserver.usermanager.UsernamePasswordAuthentication;
 import org.apache.ftpserver.usermanager.ConcurrentLoginPermission;
 import org.apache.ftpserver.usermanager.TransferRatePermission;
 import org.apache.ftpserver.usermanager.WritePermission;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * UserManager that defers authentication.
  *
- * <p>This class will permit any username/password combination in the
- * expectation that credentials will be checked when a policy is exectuted (if
- * required)</p>
+ * <p>This class will permit any username/password combination in the expectation
+ * that credentials will be checked when a policy is executed (if required)</p>
  *
  * @author Steve Jones
  */
 class FtpUserManager implements UserManager {
+    private static final Logger logger = Logger.getLogger(FtpUserManager.class.getName());
 
-    //- PUBLIC
+    private static final String USER_ANONYMOUS = "anonymous";
+
+    private final FtpServerManager ftpServerManager;
 
     public FtpUserManager(FtpServerManager ftpServerManager) {
         this.ftpServerManager = ftpServerManager;
@@ -43,34 +46,32 @@ class FtpUserManager implements UserManager {
     public User authenticate(Authentication authentication) throws AuthenticationFailedException {
         User user;
 
-        if ( !ftpServerManager.isLicensed() ) {
+        if (!ftpServerManager.isLicensed()) {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "Failing authentication, FTP server not licensed.");
-            throw new AuthenticationFailedException("Authentication failed (FTP server not licensed).");                
+            throw new AuthenticationFailedException("Authentication failed (FTP server not licensed).");
         }
 
         // check input
         if (authentication instanceof AnonymousAuthentication) {
             user = buildUser(USER_ANONYMOUS, null);
+
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Authenticated anonymous user.");
-        }
-        else if (authentication instanceof UsernamePasswordAuthentication) {
+        } else if (authentication instanceof UsernamePasswordAuthentication) {
             UsernamePasswordAuthentication upAuthentication = (UsernamePasswordAuthentication) authentication;
             String login = upAuthentication.getUsername();
             String password = upAuthentication.getPassword();
 
-            if( (login != null) && (password != null) ) {
+            if((login != null) && (password != null)) {
                 user = buildUser(login, password);
 
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "Authenticated user ''{0}''.", login);
+            } else {
+                throw new AuthenticationFailedException("Authentication failed (no credentials).");
             }
-            else {
-                throw new AuthenticationFailedException("Authentication failed (no credentials).");                
-            }
-        }
-        else {
+        } else {
             throw new AuthenticationFailedException("Unsupported credential format.");
         }
 
@@ -134,29 +135,21 @@ class FtpUserManager implements UserManager {
         throw new FtpException("Save not supported.");
     }
 
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(FtpUserManager.class.getName());
-
-    private static final String USER_ANONYMOUS = "anonymous";
-
-    private final FtpServerManager ftpServerManager;
-
     /**
      * Create generic user permissions.
      */
     private Authority[] getPermissions() {
         return new Authority[] {
-            new ConcurrentLoginPermission(10, 10),
-            new TransferRatePermission(0, 0),
-            new WritePermission("/"),
+                new ConcurrentLoginPermission(10, 10),
+                new TransferRatePermission(0, 0),
+                new WritePermission("/"),
         };
     }
 
     /**
      * Build user information
      */
-    private User buildUser(String login, String password) {
+    private User buildUser(String login, @Nullable String password) {
         BaseUser baseUser = new BaseUser();
         baseUser.setEnabled(true);
         baseUser.setName(login);
