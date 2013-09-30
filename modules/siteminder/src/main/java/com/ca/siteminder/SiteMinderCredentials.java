@@ -5,6 +5,7 @@ import netegrity.siteminder.javaagent.UserCredentials;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 
 /**
@@ -74,13 +75,31 @@ public final class SiteMinderCredentials {
 
         SiteMinderCredentials that = (SiteMinderCredentials) o;
 
-        if (credentials != null ? !credentials.equals(that.credentials) : that.credentials != null) return false;
+        if (credentials != null ) {
+            if(that.credentials == null) return false;
+
+            if (!Arrays.equals(credentials.certBinary, that.credentials.certBinary)) return false;
+            if (credentials.certIssuerDN != null ? !credentials.certIssuerDN.equals(that.credentials.certIssuerDN) : that.credentials.certIssuerDN != null)
+                return false;
+            if (credentials.certUserDN != null ? !credentials.certUserDN.equals(that.credentials.certUserDN) : that.credentials.certUserDN != null) return false;
+            if (credentials.name != null ? !credentials.name.equals(that.credentials.name) : that.credentials.name != null) return false;
+            if (credentials.password != null ? !credentials.password.equals(that.credentials.password) : that.credentials.password != null) return false;
+        }
+        else if(that.credentials != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return credentials != null ? credentials.hashCode() : 0;
+        int result = 0;
+        if(credentials != null) {
+            result = credentials.name != null ? credentials.name.hashCode() : 0;
+            result = 31 * result + (credentials.password != null ? credentials.password.hashCode() : 0);
+            result = 31 * result + (credentials.certUserDN != null ? credentials.certUserDN.hashCode() : 0);
+            result = 31 * result + (credentials.certIssuerDN != null ? credentials.certIssuerDN.hashCode() : 0);
+            result = 31 * result + (credentials.certBinary != null ? Arrays.hashCode(credentials.certBinary) : 0);
+        }
+        return result;
     }
 }

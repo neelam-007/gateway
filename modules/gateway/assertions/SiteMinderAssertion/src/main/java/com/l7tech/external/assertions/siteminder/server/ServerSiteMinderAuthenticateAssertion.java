@@ -70,7 +70,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             }
 
             //first check what credentials are accepted by the policy server
-            SiteMinderCredentials credentials = collectCredentials(context, message, variableMap, smContext);
+            SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);
             int result = hla.processAuthenticationRequest(credentials, getClientIp(message), ssoToken, smContext);
             if(result == SM_YES) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
@@ -100,17 +100,15 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
     }
 
 
-    SiteMinderCredentials collectCredentials(PolicyEnforcementContext pec, Message message, Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
+    SiteMinderCredentials collectCredentials(AuthenticationContext context,  Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
         //determine the type of authentication scheme
         List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes = smContext.getAuthSchemes();
         if(supportedAuthSchemes.size() == 1 && supportedAuthSchemes.iterator().next() == SiteMinderContext.AuthenticationScheme.NONE) {
             //logAndAudit
             return null;//anonymous credentials
         }
-
         //get Credentials
         LoginCredentials loginCredentials = null;
-        AuthenticationContext context = pec.getAuthenticationContext(message);
         if(assertion.isLastCredential()) {
             loginCredentials = context.getLastCredentials();
         }
@@ -127,11 +125,10 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             }
         }
 
-        return buildSiteMinderCredentials(message, supportedAuthSchemes, loginCredentials);
-
+        return buildSiteMinderCredentials(supportedAuthSchemes, loginCredentials);
     }
 
-    private SiteMinderCredentials buildSiteMinderCredentials(Message message, List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
+    private SiteMinderCredentials buildSiteMinderCredentials(List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
         if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERT)
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
                 || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
@@ -142,23 +139,6 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 } catch (CertificateEncodingException e) {
                     logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate for login credentials:" + loginCredentials.getName());
                     logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
-                }
-            }
-            else {
-                //now try to extract from httpRequestKnob. This is a legacy compatibility piece
-                //TODO: I don't know if anyone was using this functionality in Site Minder R12 custom assertion. Might need to remove it
-                HttpRequestKnob httpRequestKnob = message.getHttpRequestKnob();
-                if(httpRequestKnob != null) {
-                    try {
-                        X509Certificate[] clientCerts = httpRequestKnob.getClientCertificate();
-                        return  new SiteMinderCredentials(clientCerts);
-                    } catch (IOException ie) {
-                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),"Client certificate is not X509 type!");
-                        logger.log(Level.WARNING, "Client certificate is not X509 type!", ExceptionUtils.getDebugException(ie));
-                    } catch (CertificateEncodingException e) {
-                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate");
-                        logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
-                    }
                 }
             }
         }
