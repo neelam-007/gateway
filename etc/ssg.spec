@@ -70,7 +70,8 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgnodedefs.sh
 %config(noreplace) /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgruntimedefs.sh
 /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssg-utilities.sh
-%config(noreplace) %attr(755,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/xlocaldefs.sh 
+/opt/SecureSpan/Gateway/runtime/etc/profile.d/siteminder-env.sh
+%config(noreplace) %attr(755,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/xlocaldefs.sh
 
 # Other stuff
 %defattr(0444,layer7,layer7,0755)

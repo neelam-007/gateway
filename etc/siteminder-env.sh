@@ -2,13 +2,37 @@
 # SET SITEMINDER ENVIRONMENT
 
 CAROOT=/opt/CA
-export CAROOT
+CALIBS=""
+SM_JAVA_OPTS=""
 
-if [ -z "${LD_LIBRARY_PATH}" ] ; then
-    LD_LIBRARY_PATH=$CAROOT/sdk/bin64
-elif ! echo $LD_LIBRARY_PATH | /bin/egrep -q "(^|:)$CAROOT/sdk/bin64($|:)" ; then
-    LD_LIBRARY_PATH=$CAROOT/sdk/bin64:$LD_LIBRARY_PATH
+if [ -d "${CAROOT}" ] ; then
+    MYARCH=`arch`
+    case ${MYARCH} in
+        x86_64)
+            CALIBS=${CAROOT}/sdk/bin64
+            SM_JAVA_OPTS="${SM_JAVA_OPTS} -Dcom.l7tech.server.siteminder.enabled=true"
+            ;;
+        i686)
+            CALIBS=${CAROOT}/sdk/bin
+            SM_JAVA_OPTS="${SM_JAVA_OPTS} -Dcom.l7tech.server.smreghost.path=/opt/CA/sdk/bin"
+            SM_JAVA_OPTS="${SM_JAVA_OPTS} -Dcom.l7tech.server.siteminder.enabled=true"
+            ;;
+        *)
+            CALIBS=""
+            ;;
+    esac
+
+    if [ -z "${LD_LIBRARY_PATH}" ] ; then
+        LD_LIBRARY_PATH=${CALIBS}
+    elif ! echo ${LD_LIBRARY_PATH} | /bin/egrep -q "(^|:)${CALIBS}($|:)" ; then
+        LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CALIBS}
+    fi
+
+    CAPKIHOME=${CAROOT}/CAPKI
+    export CAROOT LD_LIBRARY_PATH CAPKIHOME
+
+    SSG_JAVA_OPTS="${SSG_JAVA_OPTS} ${SM_JAVA_OPTS}"
+
+    export SSG_JAVA_OPTS
+
 fi
-
-CAPKIHOME=$CAROOT/CAPKI
-export LD_LIBRARY_PATH CAPKIHOME
