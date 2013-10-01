@@ -3,6 +3,8 @@ package com.l7tech.server.policy;
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import static com.l7tech.objectmodel.EntityUtil.id;
+
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.util.Handle;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -47,6 +49,12 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
                         }
                     }
                 } ) );
+    }
+
+    public Assertion getPolicyAssertion() throws IOException {
+        final ServerPolicy target = getTarget();
+        if (target == null) throw new IllegalStateException("ServerPolicyHandle has already been closed");
+        return target.getPolicyAssertion();
     }
 
     public PolicyMetadata getPolicyMetadata() {

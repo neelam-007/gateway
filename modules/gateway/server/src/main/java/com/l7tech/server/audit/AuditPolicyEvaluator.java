@@ -51,7 +51,6 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
 
     private final Config config;
     private final PolicyCache policyCache;
-    private final PolicyManager policyManger;
     private final JdbcConnectionPoolManager jdbcConnectionPoolManager;
 
     private final AtomicBoolean sinkOpen = new AtomicBoolean(false);
@@ -60,7 +59,6 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
     public AuditPolicyEvaluator(Config config, PolicyCache policyCache,PolicyManager policyManger, JdbcConnectionPoolManager jdbcConnectionPoolManager) {
         this.config = config;
         this.policyCache = policyCache;
-        this.policyManger = policyManger;
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
     }
 
@@ -144,13 +142,17 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
     }
     private AssertionStatus executePolicy( String guid, final PolicyEnforcementContext context) throws Exception {
 
+        final ServerPolicyHandle sph = policyCache.getServerPolicy(guid);
+        if (sph == null) {
+            logger.log(Level.WARNING, "Unable to access configured audit sink policy -- no policy with GUID {0} is present in policy cache (invalid policy?)", guid);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
         DataSource ds = null ;
         String connectionName = "";
         try {
-            Policy policy = policyManger.findByGuid(guid);
-            Assertion root = policy.getAssertion();
-
-            connectionName = getConnectionNames(root);
+            Assertion root = sph.getPolicyAssertion();
+            connectionName = root != null ? getConnectionNames(root) : null;
             if( connectionName != null )
             {
                 ds = jdbcConnectionPoolManager.getDataSource(connectionName);
@@ -158,18 +160,8 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
 
         } catch (NamingException e) {
             logger.warning("Unable to get jdbc connection datasource: "+connectionName);
-        } catch (SQLException e) {
-            logger.warning("Unable to get jdbc connection datasource: "+connectionName);
         } catch (IOException e) {
-            logger.warning("Unable to retrieve audit sink policy");
-        } catch (FindException e) {
-            logger.warning("Unable to retrieve audit sink policy");
-        }
-
-        final ServerPolicyHandle sph = policyCache.getServerPolicy(guid);
-        if (sph == null) {
-            logger.log(Level.WARNING, "Unable to access configured audit sink policy -- no policy with GUID {0} is present in policy cache (invalid policy?)", guid);
-            return AssertionStatus.SERVER_ERROR;
+            logger.warning("Unable to retrieve audit sink policy: "+ e.getMessage());
         }
 
         try{

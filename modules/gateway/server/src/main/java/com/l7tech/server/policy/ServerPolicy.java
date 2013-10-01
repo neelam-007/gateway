@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -72,6 +73,11 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
 
         return result;
     }
+
+    public Assertion getPolicyAssertion() throws IOException {
+        return serverPolicyMetadata.getPolicy().getAssertion();
+    }
+
 
     //- PROTECTED
 
