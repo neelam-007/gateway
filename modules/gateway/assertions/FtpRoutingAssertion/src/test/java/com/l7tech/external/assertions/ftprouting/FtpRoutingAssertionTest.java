@@ -5,7 +5,6 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -23,8 +22,8 @@ public class FtpRoutingAssertionTest {
         "        <L7p:ClientCertKeyAlias stringValue=\"SSL\"/>\n" +
         "        <L7p:CredentialsSource credentialsSource=\"specified\"/>\n" +
         "        <L7p:Directory stringValue=\"/somepath\"/>\n" +
-        "        <L7p:FileNamePattern stringValue=\"ftp_aa\"/>\n" +
-        "        <L7p:FileNameSource fileNameSource=\"pattern\"/>\n" +
+        "        <L7p:Arguments stringValue=\"ftp_aa\"/>\n" +
+        "        <L7p:FileNameSource fileNameSource=\"argument\"/>\n" +
         "        <L7p:HostName stringValue=\"somehost\"/>\n" +
         "        <L7p:Password stringValue=\"pass123\"/>\n" +
         "        <L7p:Port intValue=\"990\"/>\n" +
@@ -35,33 +34,26 @@ public class FtpRoutingAssertionTest {
         "    </L7p:FtpRoutingAssertion>\n" +
         "</wsp:Policy>";
 
-
-    // TODO jwilliams: remove temporary test once commit is complete
     @Test
-    public void testPolicy() throws Exception {
-        assertNotNull(POLICY);
-    }
+    public void testSerialization() throws Exception {
+        AssertionRegistry registry = new AssertionRegistry();
+        registry.registerAssertion(FtpRoutingAssertion.class);
+        WspReader wspr = new WspReader(registry);
 
-//    @Test
-//    public void testFtpRoutingAssertion() throws Exception {
-//        AssertionRegistry registry = new AssertionRegistry();
-//        registry.registerAssertion(FtpRoutingAssertion.class);
-//        WspReader wspr = new WspReader(registry);
-//
-//        FtpRoutingAssertion assertion = (FtpRoutingAssertion) wspr.parseStrictly(POLICY, WspReader.INCLUDE_DISABLED);
-//
-//        assertEquals("SSL", assertion.getClientCertKeyAlias());
-//        assertEquals(FtpCredentialsSource.SPECIFIED, assertion.getCredentialsSource());
-//        assertEquals("/somepath", assertion.getDirectory());
-//        assertEquals("ftp_aa", assertion.getArguments());
-//        assertEquals(FtpFileNameSource.ARGUMENT, assertion.getFileNameSource());
-//        assertEquals("somehost", assertion.getHostName());
-//        assertEquals("990", assertion.getPort());
-//        assertEquals("someuser", assertion.getUserName());
-//        assertEquals("pass123", assertion.getPassword());
-//        assertEquals(FtpSecurity.FTPS_IMPLICIT, assertion.getSecurity());
-//        assertEquals(true, assertion.isUseClientCert());
-//        assertEquals(true, assertion.isVerifyServerCert());
-//    }
+        FtpRoutingAssertion assertion = (FtpRoutingAssertion) wspr.parseStrictly(POLICY, WspReader.INCLUDE_DISABLED);
+
+        assertEquals("SSL", assertion.getClientCertKeyAlias());
+        assertEquals(FtpCredentialsSource.SPECIFIED, assertion.getCredentialsSource());
+        assertEquals("/somepath", assertion.getDirectory());
+        assertEquals("ftp_aa", assertion.getArguments());
+        assertEquals(FtpFileNameSource.ARGUMENT, assertion.getFileNameSource());
+        assertEquals("somehost", assertion.getHostName());
+        assertEquals("990", assertion.getPort());
+        assertEquals("someuser", assertion.getUserName());
+        assertEquals("pass123", assertion.getPassword());
+        assertEquals(FtpSecurity.FTPS_IMPLICIT, assertion.getSecurity());
+        assertEquals(true, assertion.isUseClientCert());
+        assertEquals(true, assertion.isVerifyServerCert());
+    }
 
 }
