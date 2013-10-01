@@ -77,27 +77,11 @@ public class AuditMessage extends AbstractAuditMessage {
 
     @Override
     public Pair<byte[],byte[]> getSignatureDigest() throws IOException {
-        Pair<byte[],byte[]> digestvalue = null;
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-512");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("should not happen", e);
-        }
+        byte[] currentDigest =  auditRecord.computeSignatureDigest();
+        byte[] oldDigest =  auditRecord.computeOldIdSignatureDigest();
 
-        try {
-            auditRecord.serializeSignableProperties(baos,false);
-            byte[] currentDigest = digest.digest(baos.toByteArray());
-
-            auditRecord.serializeSignableProperties(baos,true);
-            byte[] oldDigest =  digest.digest(baos.toByteArray());
-
-            digestvalue = new Pair<byte[],byte[]>(currentDigest,oldDigest);
-        }  finally {
-            ResourceUtils.closeQuietly( baos );
-        }
+        Pair<byte[],byte[]> digestvalue = new Pair<byte[],byte[]>(currentDigest,oldDigest);
 
         return digestvalue;
     }
