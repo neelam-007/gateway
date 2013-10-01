@@ -2,6 +2,8 @@ package com.l7tech.server.audit;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
@@ -446,6 +448,12 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                         if (data != null) {
                             out.print(HexUtils.hexDump(data));
                         }
+                    } else if(i == detailsToExpand) {
+                        String data = rs.getString(i);
+                        if (data != null) {
+                            data = expandDetails(data);
+                            out.print(data);
+                        }
                     } else {
                         String data = rs.getString(i);
                         if (data != null) {
@@ -458,8 +466,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                             } else if (i == authenticationTypeColumn) {
                                 data = SecurityTokenType.getByNum(rs.getInt(i)).toString();
                                     // Matches MessageSummaryAuditRecord.serializeOtherProperties().
-                            } else if (i == detailsToExpand) {
-                                data = expandDetails(data);
                             }
                             out.print(quoteMeta(data));
                         }
@@ -537,9 +543,13 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     }
 
     /**
-     * Expand a string of detail messages into a set with full message text.
+     * Expand a string of detail messages into a set with full message text and message parameters.
      *
      * ADMID:4714/-/_/-/string(document('file:.../server.xml')/Server/@port)/-/_/-/ADMID:3017/-/_/-/Warehouse [524288]/-/_/-/601/-/_/-/Error in Assertion Processing
+     *
+     * Expands into:
+     * 4714\:Cannot evaluate XPath expression\: XPath pattern is invalid ''string(document('file:.../server.xml')/Server/@port''\:string(document('file:.../server.xml')/Server/@port,
+     * 3017\:Policy evaluation for service Warehouse [524288] resulted in status 601 (Error in Assertion Processing)\:Warehouse [524288]:601:Error in Assertion Processing
      */
     private static String expandDetails(String details) {
         StringBuffer buffer = new StringBuffer();
@@ -553,7 +563,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             List<String> paramList = new ArrayList<String>();
             for (String detailPart : detailParts) {
                 if (detailPart.startsWith(AUDITDETAILMESSAGEID)) {
-                    Object[] paramArray = paramList.toArray();
+                    List<String> thisParamList =  new ArrayList<String>();
+                    thisParamList.addAll(paramList);
                     paramList.clear();
 
                     if (currentMessageId != null) {
@@ -563,11 +574,15 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                             isFirst = false;
                         buffer.append(currentMessageId);
                         buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
-                        for(Object param: paramArray){
+                        buffer.append("'"+quoteMeta(getMessageDetailText(currentMessageId,thisParamList.toArray()))+"'");
+                        buffer.append(":");
+                        StringBuffer detailParams =  new StringBuffer();
+                        for(String param: thisParamList){
                             if(!param.equals("")){
-                                buffer.append(param);
-                                buffer.append(":");
+                                detailParams.append(param);
+                                detailParams.append(":");
                             }
+                            buffer.append(quoteMeta(detailParams.toString()));
                         }
                     }
 
@@ -583,16 +598,31 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     buffer.append(",");
                 buffer.append(currentMessageId);
                 buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
+                buffer.append("'"+quoteMeta(getMessageDetailText(currentMessageId,paramList.toArray()))+"'");
+                buffer.append(":");
+                StringBuffer detailParams =  new StringBuffer();
                 for(String param: paramList){
-                    buffer.append(param);
-                    buffer.append(":");
+                    detailParams.append(param);
+                    detailParams.append(":");
                 }
+                buffer.append(quoteMeta(detailParams.toString()));
             }
 
             buffer.append("]");
         }
 
         return buffer.toString();
+    }
+
+    private static String getMessageDetailText(String messageId, Object[] params ){
+        try{
+            int id = Integer.parseInt(messageId);
+            AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(id);
+            String formatted = MessageFormat.format(message.getMessage(), params);
+            return formatted;
+        }catch(NumberFormatException e){
+            return null;
+        }
     }
 
     private static void addElement(Element parent, String indent, String ns, String p, String name, String value) {

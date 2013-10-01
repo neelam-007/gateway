@@ -25,6 +25,7 @@ public class DownloadedAuditRecordSignatureVerificator {
 
     private static final boolean ENABLE_COMPAT_52 = SyspropUtil.getBoolean("audit.signature.verifier.compat52.enable", true);
     private static final boolean ENABLE_COMPAT_PRE_80 = SyspropUtil.getBoolean("audit.signature.verifier.compatPre80.enable", true);
+    private static final boolean ENABLE_COMPAT_PRE_80_EXPORTS = SyspropUtil.getBoolean("audit.signature.verifier.compatPre80Exports.enable", true);
 
     private boolean isSigned;
     private String signature;
@@ -56,13 +57,13 @@ public class DownloadedAuditRecordSignatureVerificator {
         int tmp = nextUnescapedSeparator(input, pos);
         while (tmp >= 0) {
             separatorPositions.add(tmp);
-            pos = tmp+1;
+            pos = tmp + 1;
             tmp = nextUnescapedSeparator(input, pos);
         }
 
         if (separatorPositions.size() < 30) {
             throw new InvalidAuditRecordException("This does not appear to be a valid audit record (" +
-                                                    separatorPositions.size() + ")");
+                    separatorPositions.size() + ")");
         }
 
         StringBuffer parsedTmp = new StringBuffer();
@@ -74,12 +75,12 @@ public class DownloadedAuditRecordSignatureVerificator {
             out.isSigned = false;
         } else if (out.signature.length() < 64) {
             throw new InvalidAuditRecordException("Unexpected signature length " + out.signature.length() +
-                                                  ". " + out.signature);
+                    ". " + out.signature);
         } else {
             out.isSigned = true;
         }
         out.auditID = input.substring(0, separatorPositions.get(0));
-        parsedTmp.append(input.substring(separatorPositions.get(0) +1, separatorPositions.get(9)));
+        parsedTmp.append(input.substring(separatorPositions.get(0) + 1, separatorPositions.get(9)));
 
         // append either the AdminAuditRecord, MessageSummaryAuditRecord or the SystemAuditRecord
         int tmpstart = separatorPositions.get(10);
@@ -114,17 +115,58 @@ public class DownloadedAuditRecordSignatureVerificator {
         }
 
         String parsingResult = parsedTmp.toString();
+        parsingResult = Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(parsingResult).replaceAll("$1");
 
         // Append the audit details if any
         tmpstart = input.indexOf("[", separatorPositions.get(30));
+
         if (tmpstart > 0) {
-            parsingResult = parsingResult + input.substring(tmpstart);
+            String details = input.substring(tmpstart + 1, input.length() - 2);
+            String parsedDetail = parseDetailMessages( details);
+            parsingResult = parsingResult + parsedDetail;
         }
 
-        parsingResult = Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(parsingResult).replaceAll("$1");
+
 
         out.parsedRecordInSignableFormat = parsingResult;
         return out;
+    }
+
+    static String unEscape(String input){
+        if(input==null)return null;
+        return Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(input).replaceAll("$1");
+    }
+
+    static String parseDetailMessages( String detailsStr) {
+        StringBuffer digest = new StringBuffer();
+        if (detailsStr != null) {
+            digest.append("[");
+            String[] detailPairs = detailsStr.split("\\:,");
+            boolean firstDetail = true;
+            for (String detailPair : detailPairs) {
+                if (!firstDetail) {
+                    digest.append(",");
+                }
+                String idStr;
+                int numIndex = detailPair.indexOf("\\:");
+                if (numIndex > 0) {
+                    idStr = detailPair.substring(0,numIndex);
+                    int paramStart = nextUnescapedSeparator(detailPair, numIndex+1);
+                    String fullText = paramStart > 0 ? detailPair.substring(numIndex, paramStart) :detailPair.substring(numIndex);
+                    fullText = unEscape(fullText);
+                    String params = paramStart > 0 ? (detailPair.length() > paramStart ? (detailPair.substring(paramStart + 1)+":") : null) : null;
+                    params = unEscape(params);
+                    digest.append(idStr + "\\:" + (params == null ? "" : params));
+
+                } else {
+                    // This probably won't work, but we'll try to guess as close as we can
+                    digest.append(detailPair);
+                }
+                firstDetail = false;
+            }
+            digest.append("]");
+        }
+        return digest.toString();
     }
 
     public boolean verifySignature(X509Certificate cert) throws IOException {
@@ -143,18 +185,31 @@ public class DownloadedAuditRecordSignatureVerificator {
         try {
             boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signature, digestvalue);
 
+            if (!result && ENABLE_COMPAT_PRE_80) {
+                // Try again in compatibility mode with records signed using the format used for pre 8.0.
+                try {
+                    result = new AuditRecordCompatibilityVerifierUpgradedPre80(cert).verifyAuditRecordSignature(signature, recordInExportedFormat, type);
+                } catch (Exception e) {/* intentionally ignore compatibility check errors, overwrites original error*/ }
+                ;
+            }
+
+            if (!result && ENABLE_COMPAT_PRE_80_EXPORTS) {
+                // Try again in compatibility mode with records signed using the format used for pre 8.0.
+                try {
+                    result = new AuditRecordCompatibilityVerifierPre80Exports(cert).verifyAuditRecordSignature(recordInExportedFormat);
+                } catch (Exception e) {/* intentionally ignore compatibility check errors, overwrites original error*/ }
+                ;
+            }
+
+
+
             if (!result && ENABLE_COMPAT_52) {
                 // Try again in compatibility mode with records signed using the format used for 5.2 and 5.3.
                 // Note that this needs to go all the way back to the raw record.
-                try{
+                try {
                     result = new AuditRecordCompatibilityVerifier52(cert).verifyAuditRecordSignature(signature, recordInExportedFormat);
-                }catch(Exception e){/* intentionally ignore compatibility check errors, overwrites original error*/ };
-            }
-            if (!result && ENABLE_COMPAT_PRE_80) {
-                // Try again in compatibility mode with records signed using the format used for pre 8.0.
-                try{
-                    result = new AuditRecordCompatibilityVerifierPre80(cert).verifyAuditRecordSignature(signature, recordInExportedFormat, type);
-                }catch(Exception e){/* intentionally ignore compatibility check errors, overwrites original error*/ };
+                } catch (Exception e) {/* intentionally ignore compatibility check errors, overwrites original error*/ }
+                ;
             }
 
             return result;
@@ -182,15 +237,15 @@ public class DownloadedAuditRecordSignatureVerificator {
     private static int nextUnescapedSeparator(String input, int startPos) {
         int res = input.indexOf(SEPARATOR_PATTERN, startPos);
         if (res < 1) return res;
-        if (input.charAt(res-1) == '\\') {
-            return nextUnescapedSeparator(input, res+1);
+        if (input.charAt(res - 1) == '\\') {
+            return nextUnescapedSeparator(input, res + 1);
         } else return res;
     }
 
     public String toString() {
         return "Parsed audit record: " + parsedRecordInSignableFormat + "\n" +
-               "Signed: " + isSigned + "\n" +
-               "Record Type: " + type;
+                "Signed: " + isSigned + "\n" +
+                "Record Type: " + type;
     }
 
     private static final String SEPARATOR_PATTERN = ":";

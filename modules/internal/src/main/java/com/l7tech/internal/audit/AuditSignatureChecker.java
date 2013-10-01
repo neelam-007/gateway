@@ -265,6 +265,7 @@ public class AuditSignatureChecker extends JFrame {
                     } else {
                         ++numInvalid;
                         out.println(rec.getAuditID() + " has an *INVALID* signature");
+                        if (verbose) out.println(rec.getRecordInExportedFormat());
                         if (result == Status.PASS) result = Status.FAIL;
                     }
                 } catch (Exception e) {

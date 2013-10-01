@@ -8,7 +8,6 @@ import com.l7tech.security.cert.KeyUsageException;
 import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -18,15 +17,15 @@ import java.util.regex.Pattern;
 /**
  * Utility class for verifying exported audit signatures upgraded from pre 8.0 systems.
  */
-public class AuditRecordCompatibilityVerifierPre80 {
-    private static Logger logger = Logger.getLogger(AuditRecordCompatibilityVerifierPre80.class.getName());
+public class AuditRecordCompatibilityVerifierUpgradedPre80 {
+    private static Logger logger = Logger.getLogger(AuditRecordCompatibilityVerifierUpgradedPre80.class.getName());
 
     private final X509Certificate signerCert;
 
     private static final String SEPARATOR_PATTERN = ":";
 
 
-    public AuditRecordCompatibilityVerifierPre80(X509Certificate signerCert) {
+    public AuditRecordCompatibilityVerifierUpgradedPre80(X509Certificate signerCert) {
         this.signerCert = signerCert;
     }
 
@@ -114,16 +113,17 @@ public class AuditRecordCompatibilityVerifierPre80 {
             parsedTmp.append(SEPARATOR_PATTERN);
         }
 
+        String parsingResult = parsedTmp.toString();
+        parsingResult = Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(parsingResult).replaceAll("$1");
 
         // Append the audit details if any
         tmpstart = input.indexOf("[", separatorPositions.get(30));
 
         if (tmpstart > 0) {
             String details = input.substring(tmpstart + 1, input.length() - 2);
-            updateDetailMessages(parsedTmp, details);
+            String parsedDetail = updateDetailMessages(details);
+            parsingResult = parsingResult + parsedDetail;
         }
-        String parsingResult = parsedTmp.toString();
-        parsingResult = Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(parsingResult).replaceAll("$1");
 
 
         return verify(signature, parsingResult);
@@ -146,7 +146,13 @@ public class AuditRecordCompatibilityVerifierPre80 {
         return result;
     }
 
-    void updateDetailMessages(StringBuffer digest, String detailsStr) throws SignatureException {
+    static String unEscape(String input){
+        if(input==null)return null;
+        return Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(input).replaceAll("$1");
+    }
+
+    String updateDetailMessages( String detailsStr) {
+        StringBuffer digest = new StringBuffer();
         if (detailsStr != null) {
             digest.append("[");
             String[] detailPairs = detailsStr.split("\\:,");
@@ -156,24 +162,26 @@ public class AuditRecordCompatibilityVerifierPre80 {
                     digest.append(",");
                 }
                 String idStr;
-                String[] numAndMsg = detailPair.split("\\:", 2);
-                if (numAndMsg.length > 0) {
-                    idStr = numAndMsg[0];
-                    idStr = idStr.substring(0,idStr.indexOf('\\'));
-                    String params = numAndMsg.length > 1 ? numAndMsg[1].substring(0, numAndMsg[1].length() - 1): null;
-                    String[] detailParams = params == null ? null : params.split("\\\\:");
-                    String detailMessageStr = getMessageStr(idStr, detailParams);
-                    digest.append(idStr + "\\\\:" + detailMessageStr);
+                int numIndex = detailPair.indexOf("\\:");
+                if (numIndex > 0) {
+                    idStr = detailPair.substring(0,numIndex);
+                    int paramStart = nextUnescapedSeparator(detailPair, numIndex+1);
+                    String fullText = paramStart > 0 ? detailPair.substring(numIndex, paramStart) :detailPair.substring(numIndex);
+                    fullText = unEscape(fullText);
+                    String params = paramStart > 0 ? (detailPair.length() > paramStart ? (detailPair.substring(paramStart + 1)+":") : null) : null;
+                    String[] detailParams = params == null ? null: params.split("\\\\:");
+                    String detailMessageString = getMessageStr(idStr,detailParams);
+                    digest.append(idStr + "\\:" + detailMessageString);
 
                 } else {
                     // This probably won't work, but we'll try to guess as close as we can
-                    logger.info("Malformed detail number and message pair: " + detailPair);
                     digest.append(detailPair);
                 }
                 firstDetail = false;
             }
             digest.append("]");
         }
+        return digest.toString();
     }
 
     private String getMessageStr(String idStr, String[] detailParams) {
