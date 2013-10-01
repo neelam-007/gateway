@@ -292,7 +292,14 @@ public class ExternalAuditsUtils {
             responseXml = responseXml==null ||  responseXml.isEmpty() ? null:responseXml;
             Level level = Level.parse(auditLevel);
             AssertionStatus assStatus = AssertionStatus.fromInt(status);
+            if(assStatus.getNumeric() == AssertionStatus.AUTH_FAILED.getNumeric()){
+                if(  AssertionStatus.UNAUTHORIZED.getLevel().equals(level)) assStatus = AssertionStatus.UNAUTHORIZED;
+                else if( AssertionStatus.AUTH_FAILED.getLevel().equals(level)) assStatus = AssertionStatus.AUTH_FAILED;
+            }
+
             SecurityTokenType tokenType = SecurityTokenType.getByName(authenticationType);
+            userName = userName !=null? userName.length()>0? userName: null: null;
+            userId = userId !=null? userId.length()>0? userId: null: null;
 
 
             record = new MessageSummaryAuditRecord(
