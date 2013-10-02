@@ -14,6 +14,9 @@ import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -101,6 +104,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      * the entities of type {@link #entityType}.  If unspecified, this Permission applies to all entities of
      * type {@link #entityType}.
      */
+    @Valid
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="permission")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -126,6 +130,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         this.scope = scope;
     }
 
+    @Size(max = 255)
     @Column(name="other_operation", length=255)
     public String getOtherOperationName() {
         return otherOperationName;
@@ -151,6 +156,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @NotNull
     @Deprecated
     @Column(name="operation_type", nullable=false, length=16)
     protected String getOperationTypeName() {

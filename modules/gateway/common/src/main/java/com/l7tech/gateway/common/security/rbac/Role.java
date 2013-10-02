@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.*;
 import javax.persistence.Table;
+import javax.validation.Valid;
+import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -52,6 +54,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private Tag tag;
     private boolean userCreated = false;
 
+    @Valid
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -63,6 +66,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         this.permissions = permissions;
     }
 
+    @Valid
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -258,6 +262,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         return String.CASE_INSENSITIVE_ORDER.compare( this.getName(), that.getName() );
     }
 
+    @Size(max = 255)
     @Column(name="description", length=255)
     public String getDescription() {
         return description;

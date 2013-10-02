@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 
 @javax.persistence.Entity
 @Proxy(lazy=false)
@@ -35,6 +36,7 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
         return copy;
     }
 
+    @Size(max = 255)
     @Column(name="entity_id", length=255)
     public String getEntityId() {
         return entityId;

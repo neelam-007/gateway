@@ -11,6 +11,8 @@ import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 /**
  * Statically assigns a {@link Role} to a {@link User}.
@@ -41,6 +43,8 @@ public class RoleAssignment extends PersistentEntityImp {
 
     protected RoleAssignment() { }
 
+    @NotNull
+    @Size(min=1, max = 255)
     @Column(name="identity_id", nullable=false, length=255)
     public String getIdentityId() {
         return identityId;
@@ -50,6 +54,7 @@ public class RoleAssignment extends PersistentEntityImp {
         this.identityId = identityId;
     }
 
+    @NotNull
     @Column(name="provider_goid", nullable=false)
     @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getProviderId() {
@@ -70,6 +75,8 @@ public class RoleAssignment extends PersistentEntityImp {
         this.role = role;
     }
 
+    @NotNull
+    @Size(min=1, max = 50)
     @Column(name="entity_type", nullable=false, length=50)
     public String getEntityType() {
         return entityType;

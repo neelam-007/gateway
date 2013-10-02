@@ -11,6 +11,8 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.Column;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 /**
  * Matches any {@link com.l7tech.objectmodel.Entity} that is of the expected type and whose
@@ -38,6 +40,8 @@ public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEval
         return copy;
     }
 
+    @NotNull
+    @Size(min=1, max = 255)
     @Column(name="entity_id", nullable=false, length=255)
     public String getTargetEntityId() {
         return targetEntityId;

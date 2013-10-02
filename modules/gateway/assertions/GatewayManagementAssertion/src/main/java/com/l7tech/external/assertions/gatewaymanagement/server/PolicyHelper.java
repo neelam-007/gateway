@@ -41,6 +41,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
@@ -362,6 +363,7 @@ public class PolicyHelper {
         private final SiteMinderConfigurationManager siteMinderConfigurationManager;
         private final GenericEntityManager genericEntityManager;
         private final HttpConfigurationManager httpConfigurationManager;
+        private final RoleManager roleManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -379,7 +381,8 @@ public class PolicyHelper {
                                                final PolicyExporterImporterManager policyExporterImporterManager,
                                                final SiteMinderConfigurationManager siteMinderConfigurationManager,
                                                final GenericEntityManager genericEntityManager,
-                                               final HttpConfigurationManager httpConfigurationManager) {
+                                               final HttpConfigurationManager httpConfigurationManager,
+                                               final RoleManager roleManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -397,6 +400,7 @@ public class PolicyHelper {
             this.siteMinderConfigurationManager = siteMinderConfigurationManager;
             this.genericEntityManager = genericEntityManager;
             this.httpConfigurationManager = httpConfigurationManager;
+            this.roleManager = roleManager;
         }
 
         private User getUser() {

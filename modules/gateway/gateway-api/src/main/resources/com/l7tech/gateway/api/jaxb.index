@@ -17,6 +17,10 @@ PolicyReferenceInstruction
 PolicyValidationResult
 PrivateKeyCreationContext
 PrivateKeyMO
+RbacRoleMO
+RbacRoleAssignmentMO
+RbacRolePermissionMO
+RbacRolePredicateMO
 Resource
 ResourceDocumentMO
 ResourceSet

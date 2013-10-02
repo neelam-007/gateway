@@ -70,6 +70,7 @@
         <constructor-arg index="14" ref="siteMinderConfigurationManager"/>
         <constructor-arg index="15" ref="genericEntityManager" />
         <constructor-arg index="16" ref="httpConfigurationManager" />
+        <constructor-arg index="17" ref="roleManager" />
     </bean>
 
     <bean id="resourceFactoryParent" abstract="true">
@@ -199,6 +200,13 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.HttpConfigurationResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="httpConfigurationManager"/>
                     <constructor-arg index="4" ref="securityZoneManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.RbacRoleResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="roleManager"/>
+                    <constructor-arg index="4" ref="folderManager"/>
+                    <constructor-arg index="5" ref="securityZoneManager"/>
+                    <constructor-arg index="6" ref="entityCrud"/>
+                    <constructor-arg index="7" ref="identityProviderFactory"/>
                 </bean>
             </list>
         </constructor-arg>

@@ -12,6 +12,8 @@ import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
@@ -20,10 +22,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -38,9 +37,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.server.AssertionAccessManagerStub;
-import com.l7tech.server.EntityManagerStub;
-import com.l7tech.server.MockClusterPropertyManager;
+import com.l7tech.server.*;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -50,6 +47,8 @@ import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.HttpConfigurationManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
@@ -59,6 +58,7 @@ import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
+import com.l7tech.server.security.rbac.MockRoleManager;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
@@ -80,6 +80,9 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -4191,12 +4194,315 @@ public class ServerGatewayManagementAssertionTest {
         putAndVerify( message, verifier, true );
     }
 
+    @Test
+    public void testCreateRole() throws Exception {
+        String payload =
+                "        <l7:Role xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "            <l7:name>My Role</l7:name>\n" +
+                        "            <l7:description>Test Description</l7:description>\n" +
+                        "            <l7:userCreated>false</l7:userCreated>\n" +
+                        "            <l7:permissions>\n" +
+                        "                <l7:permission id=\"0000000000000000ffffffffffffffff\" version=\"0\">\n" +
+                        "                    <l7:operationType>OTHER</l7:operationType>\n" +
+                        "                    <l7:otherOperationName>my-operation</l7:otherOperationName>\n" +
+                        "                    <l7:entityType>TRUSTED_CERT</l7:entityType>\n" +
+                        "                    <l7:predicates>\n" +
+                        "                        <l7:predicate>\n" +
+                        "                            <l7:type>ObjectIdentityPredicate</l7:type>\n" +
+                        "                            <l7:Properties>\n" +
+                        "                                <l7:Property key=\"entityId\">\n" +
+                        "                                    <l7:StringValue>"+new Goid(0, 1L)+"</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                            </l7:Properties>\n" +
+                        "                        </l7:predicate>\n" +
+                        "                    </l7:predicates>\n" +
+                        "                </l7:permission>\n" +
+                        "                <l7:permission id=\"0000000000000000ffffffffffffffff\" version=\"0\">\n" +
+                        "                    <l7:operationType>DELETE</l7:operationType>\n" +
+                        "                    <l7:entityType>SERVICE</l7:entityType>\n" +
+                        "                    <l7:predicates>\n" +
+                        "                        <l7:predicate>\n" +
+                        "                            <l7:type>FolderPredicate</l7:type>\n" +
+                        "                            <l7:Properties>\n" +
+                        "                                <l7:Property key=\"transitive\">\n" +
+                        "                                    <l7:StringValue>false</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                                <l7:Property key=\"folderId\">\n" +
+                        "                                    <l7:StringValue>"+new Goid(0,-5002L)+"</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                            </l7:Properties>\n" +
+                        "                        </l7:predicate>\n" +
+                        "                    </l7:predicates>\n" +
+                        "                </l7:permission>\n" +
+                        "                <l7:permission id=\"0000000000000000ffffffffffffffff\" version=\"0\">\n" +
+                        "                    <l7:operationType>DELETE</l7:operationType>\n" +
+                        "                    <l7:entityType>EMAIL_LISTENER</l7:entityType>\n" +
+                        "                    <l7:predicates>\n" +
+                        "                        <l7:predicate>\n" +
+                        "                            <l7:type>SecurityZonePredicate</l7:type>\n" +
+                        "                            <l7:Properties>\n" +
+                        "                                <l7:Property key=\"securityZoneId\">\n" +
+                        "                                    <l7:StringValue>"+new Goid(0,1)+"</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                            </l7:Properties>\n" +
+                        "                        </l7:predicate>\n" +
+                        "                    </l7:predicates>\n" +
+                        "                </l7:permission>\n" +
+                        "                <l7:permission id=\"0000000000000000ffffffffffffffff\" version=\"0\">\n" +
+                        "                    <l7:operationType>READ</l7:operationType>\n" +
+                        "                    <l7:entityType>FOLDER</l7:entityType>\n" +
+                        "                    <l7:predicates>\n" +
+                        "                        <l7:predicate>\n" +
+                        "                            <l7:type>EntityFolderAncestryPredicate</l7:type>\n" +
+                        "                            <l7:Properties>\n" +
+                        "                                <l7:Property key=\"entityId\">\n" +
+                        "                                    <l7:StringValue>"+new Goid(0,1)+"</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                                <l7:Property key=\"entityType\">\n" +
+                        "                                    <l7:StringValue>JDBC_CONNECTION</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                            </l7:Properties>\n" +
+                        "                        </l7:predicate>\n" +
+                        "                    </l7:predicates>\n" +
+                        "                </l7:permission>\n" +
+                        "                <l7:permission id=\"0000000000000000ffffffffffffffff\" version=\"0\">\n" +
+                        "                    <l7:operationType>CREATE</l7:operationType>\n" +
+                        "                    <l7:entityType>ANY</l7:entityType>\n" +
+                        "                    <l7:predicates>\n" +
+                        "                        <l7:predicate>\n" +
+                        "                            <l7:type>AttributePredicate</l7:type>\n" +
+                        "                            <l7:Properties>\n" +
+                        "                                <l7:Property key=\"value\">\n" +
+                        "                                    <l7:StringValue>test</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                                <l7:Property key=\"attribute\">\n" +
+                        "                                    <l7:StringValue>name</l7:StringValue>\n" +
+                        "                                </l7:Property>\n" +
+                        "                                <l7:Property key=\"mode\">\n" +
+                        "                                    <l7:Value>\n" +
+                        "                                    <l7:Item\n" +
+                        "                                    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\"/>\n" +
+                        "                                    </l7:Value>\n" +
+                        "                                </l7:Property>\n" +
+                        "                            </l7:Properties>\n" +
+                        "                        </l7:predicate>\n" +
+                        "                    </l7:predicates>\n" +
+                        "                </l7:permission>\n" +
+                        "            </l7:permissions>\n" +
+                        "            <l7:assignments>\n" +
+                        "                <l7:assignment>\n" +
+                        "                    <l7:providerId>"+new Goid(0, -2L)+"</l7:providerId>\n" +
+                        "                    <l7:identityId>00000000000000000000000000000001</l7:identityId>\n" +
+                        "                    <l7:entityType>User</l7:entityType>\n" +
+                        "                </l7:assignment>\n" +
+                        "            </l7:assignments>\n" +
+                        "        </l7:Role>";
+
+        doCreate( "http://ns.l7tech.com/2010/04/gateway-management/roles", payload, new Goid(0,3).toString() );
+    }
+
+    @Test
+    public void testDeleteRole() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
+                "<wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNotNull("SOAP Body", soapBody);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @Test
+    public void testDeleteGatewayRole() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
+                "<wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        Element faultElement = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+        Element detailElement = XmlUtil.findExactlyOneChildElementByName(faultElement, NS_SOAP_ENVELOPE, "Detail");
+
+        assertTrue( "the error message is incorrect", XmlUtil.getTextValue(XmlUtil.findExactlyOneChildElementByName(detailElement, NS_SOAP_ENVELOPE, "Text")).contains( "Cannot delete gateway managed role." ));
+
+    }
+
+    @Test
+    public void testGetRole() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element roleElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Role");
+        final Element nameElm = XmlUtil.findExactlyOneChildElementByName(roleElm, NS_GATEWAY_MANAGEMENT, "name");
+
+        assertEquals("Name", "My Role", DomUtils.getTextValue(nameElm));
+    }
+
+    @Test
+    public void testPutRole() throws Exception {
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2).toHexString()+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> "+
+                "            <l7:Role id=\"00000000000000000000000000000002\" version=\"0\">\n" +
+                "            <l7:name>My custom updated Role</l7:name>\n" +
+                "            <l7:description>Test Custom Description</l7:description>\n" +
+                "            <l7:userCreated>true</l7:userCreated>\n" +
+                "            <l7:permissions/>\n" +
+                "            <l7:assignments/>\n" +
+                "        </l7:Role>"
+                +"  </s:Body></s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element roleElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Role");
+                final Element nameElm = XmlUtil.findExactlyOneChildElementByName(roleElm, NS_GATEWAY_MANAGEMENT, "name");
+
+                assertEquals("Name", "My custom updated Role", DomUtils.getTextValue(nameElm));
+
+            }
+        };
+
+        putAndVerify( message, verifier, false );
+        putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutGatewayRole() throws Exception {
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> "+
+                "            <l7:Role id=\"00000000000000000000000000000001\" version=\"0\">\n" +
+                "            <l7:name>My updated Role</l7:name>\n" +
+                "            <l7:description>Test Custom Description</l7:description>\n" +
+                "            <l7:userCreated>true</l7:userCreated>\n" +
+                "            <l7:permissions/>\n" +
+                "            <l7:assignments/>\n" +
+                "        </l7:Role>"
+                +"  </s:Body></s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message);
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        Element faultElement = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+        Element detailElement = XmlUtil.findExactlyOneChildElementByName(faultElement, NS_SOAP_ENVELOPE, "Detail");
+
+        assertTrue("the error message is incorrect", XmlUtil.getTextValue(XmlUtil.findExactlyOneChildElementByName(detailElement, NS_SOAP_ENVELOPE, "Text")).contains("Cannot update gateway managed role."));
+
+    }
+
+    @Test
+    public void testAddAssignmentRole() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+                        "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+                        "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+                        "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+                        "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+                        "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                        "    <env:Header>\n" +
+                        "        <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles/AddAssignments</wsa:Action>\n" +
+                        "        <wsa:ReplyTo>\n" +
+                        "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+                        "        </wsa:ReplyTo>\n" +
+                        "        <wsa:MessageID env:mustUnderstand=\"true\">uuid:d9395adf-d7e7-49f3-864b-9bc570827e0b</wsa:MessageID>\n" +
+                        "        <wsa:To env:mustUnderstand=\"true\">http://halibut-api1.l7tech.com:8080/wsman</wsa:To>\n" +
+                        "        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI>\n" +
+                        "        <wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout>\n" +
+                        "   \t\t<wsman:SelectorSet>\n" +
+                        "\t\t\t<wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector> \n" +
+                        "\t\t</wsman:SelectorSet>\n" +
+                        "    </env:Header>\n" +
+                        "    <env:Body>\n" +
+                        "        <l7:AddAssignmentsContext xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "\t\t<l7:assignments>\n" +
+                        "            <l7:assignment>\n" +
+                        "               <l7:providerId>0000000000000000fffffffffffffffe</l7:providerId>\n" +
+                        "               <l7:identityId>00000000000000000000000000000003</l7:identityId>\n" +
+                        "               <l7:entityType>User</l7:entityType>\n" +
+                        "            </l7:assignment>\n" +
+                        "            <l7:assignment>\n" +
+                        "               <l7:providerId>0000000000000000fffffffffffffffe</l7:providerId>\n" +
+                        "               <l7:identityId>00000000000000000000000000000004</l7:identityId>\n" +
+                        "               <l7:entityType>Group</l7:entityType>\n" +
+                        "            </l7:assignment>\n" +
+                        "\t\t</l7:assignments>\n" +
+                        "        </l7:AddAssignmentsContext>\n" +
+                        "    </env:Body>\n" +
+                        "</env:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNotNull("SOAP Body", soapBody);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @Test
+    public void testRemoveAssignmentRole() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+                        "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+                        "    xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\"\n" +
+                        "    xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\"\n" +
+                        "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+                        "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                        "    <env:Header>\n" +
+                        "        <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles/RemoveAssignments</wsa:Action>\n" +
+                        "        <wsa:ReplyTo>\n" +
+                        "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+                        "        </wsa:ReplyTo>\n" +
+                        "        <wsa:MessageID env:mustUnderstand=\"true\">uuid:d9395adf-d7e7-49f3-864b-9bc570827e0b</wsa:MessageID>\n" +
+                        "        <wsa:To env:mustUnderstand=\"true\">http://halibut-api1.l7tech.com:8080/wsman</wsa:To>\n" +
+                        "        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI>\n" +
+                        "        <wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout>\n" +
+                        "   \t\t<wsman:SelectorSet>\n" +
+                        "\t\t\t<wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector> \n" +
+                        "\t\t</wsman:SelectorSet>\n" +
+                        "    </env:Header>\n" +
+                        "    <env:Body>\n" +
+                        "        <l7:RemoveAssignmentsContext xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "\t\t<l7:assignments>\n" +
+                        "\t\t\t<l7:assignmentId>"+new Goid(0,1)+"</l7:assignmentId>\n" +
+                        "\t\t\t<l7:assignmentId>"+new Goid(0,2)+"</l7:assignmentId>\n" +
+                        "\t\t</l7:assignments>\n" +
+                        "        </l7:RemoveAssignmentsContext>\n" +
+                        "    </env:Body>\n" +
+                        "</env:Envelope>\n";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNotNull("SOAP Body", soapBody);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
     //- PRIVATE
 
     private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private ServerGatewayManagementAssertion managementAssertion;
     private static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
     private RbacServicesStub rbacService;
+    @Mock
+    private IdentityProviderFactory identityProviderFactory;
     private static final String NS_WS_TRANSFER = "http://schemas.xmlsoap.org/ws/2004/09/transfer";
     private static final String NS_WS_ADDRESSING = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
     private static final String NS_WS_ENUMERATION = "http://schemas.xmlsoap.org/ws/2004/09/enumeration";
@@ -4220,7 +4526,9 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords",
         "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates",
         "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions",
-        "http://ns.l7tech.com/2010/04/gateway-management/customKeyValues"
+        "http://ns.l7tech.com/2010/04/gateway-management/customKeyValues",
+        "http://ns.l7tech.com/2010/04/gateway-management/httpConfigurations",
+        "http://ns.l7tech.com/2010/04/gateway-management/roles"
     };
 
     @Before
@@ -4236,31 +4544,47 @@ public class ServerGatewayManagementAssertionTest {
                 prop( new Goid(0,4), "interfaceTags", "localhost(127.0.0.1)"),
                 prop( new Goid(0,5), "keyStore.defaultSsl.alias", "0:bob" ) );
         beanFactory.addBean( "serverConfig", new MockConfig( new Properties() ) );
-        beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
-                cert( new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
-                cert( new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()) ) );
+        final TestTrustedCertManager testTrustedCertManager = new TestTrustedCertManager(
+                cert(new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
+                cert(new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()));
+        beanFactory.addBean( "trustedCertManager", testTrustedCertManager);
         beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
         beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
         beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
                 resource( new Goid(0,1L),"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
                 resource( new Goid(0,2L),"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
                 resource( new Goid(0,3L),"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
-        beanFactory.addBean( "folderManager", new FolderManagerStub(
+        final FolderManagerStub folderManagerStub = new FolderManagerStub(
                 rootFolder,
                 testFolder,
-                folder( new Goid(0,2L), testFolder, "Nested Test Folder") ) );
-        beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
-                provider( new Goid(0,-2L), IdentityProviderType.INTERNAL, "Internal Identity Provider"),
-                            provider( new Goid(0,-3L), IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
+                folder(new Goid(0, 2L), testFolder, "Nested Test Folder"));
+        beanFactory.addBean( "folderManager", folderManagerStub);
+        final IdentityProviderConfig identityProviderConfig = provider(new Goid(0, -2L), IdentityProviderType.INTERNAL, "Internal Identity Provider");
+        final TestIdentityProviderConfigManager testIdentityProviderConfigManager = new TestIdentityProviderConfigManager(
+                identityProviderConfig,
+                provider(new Goid(0, -3L), IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT"));
+        beanFactory.addBean( "identityProviderConfigManager", testIdentityProviderConfigManager);
+        final TestIdentityProvider testIdentityProvider = new TestIdentityProvider(identityProviderConfig);
+        TestIdentityProvider.addUser(new UserBean(new Goid(0, -2L), new Goid(0,1).toString()), new Goid(0,1).toString(), "password".toCharArray());
+        final GroupBean gb1 = new GroupBean(new Goid(0, -2L), new Goid(0, 2).toString());
+        gb1.setUniqueIdentifier(new Goid(0, 2).toString());
+        TestIdentityProvider.addGroup(gb1);
+        TestIdentityProvider.addUser(new UserBean(new Goid(0, -2L), new Goid(0,3).toString()), new Goid(0,3).toString(), "password".toCharArray());
+        final GroupBean gb2 = new GroupBean(new Goid(0, -2L), new Goid(0, 4).toString());
+        gb2.setUniqueIdentifier(new Goid(0, 4).toString());
+        TestIdentityProvider.addGroup(gb2);
+        Mockito.when(identityProviderFactory.getProvider(Matchers.eq(new Goid(0, -2L)))).thenReturn(testIdentityProvider);
+        beanFactory.addBean( "identityProviderFactory", identityProviderFactory);
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
                 jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));
         beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
                 jmsEndpoint( 1L, 1L, "Test Endpoint"),
                 jmsEndpoint( 2L, 2L, "Test Endpoint 2")));
-        beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
-                connection( new Goid(0,1), "A Test Connection"),
-                connection( new Goid(0,2), "Test Connection") ) );
+        final JdbcConnectionManagerStub jdbcConnectionManagerStub = new JdbcConnectionManagerStub(
+                connection(new Goid(0, 1), "A Test Connection"),
+                connection(new Goid(0, 2), "Test Connection"));
+        beanFactory.addBean( "jdbcConnectionManager", jdbcConnectionManagerStub);
         beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
         beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
         final Policy testPolicy1 = policy(new Goid(0,1L), PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
@@ -4296,6 +4620,14 @@ public class ServerGatewayManagementAssertionTest {
                 encapsulatedAssertion( new Goid(0,1L), "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
         beanFactory.addBean( "httpConfigurationManager", new HttpConfigurationManagerStub(httpConfiguration(new Goid(0, 1L))) );
+        MockRoleManager roleManager = new MockRoleManager(null);
+        roleManager.save(role());
+        final Role customRole = new Role();
+        customRole.setDescription("Test Custom Description");
+        customRole.setName("My custom Role");
+        customRole.setUserCreated(true);
+        roleManager.save(customRole);
+        beanFactory.addBean( "roleManager", roleManager );
 
         final Map<String,String> mqMap = new HashMap<String,String>();
         mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_HOST_NAME,"host");
@@ -4351,12 +4683,15 @@ public class ServerGatewayManagementAssertionTest {
         securityZone2.setDescription("Canned Testing Security Zone 0002");
         securityZone2.getPermittedEntityTypes().add(EntityType.ANY);
 
-        beanFactory.addBean("securityZoneManager", new SecurityZoneManagerStub( securityZone1, securityZone2 ));
+        final SecurityZoneManagerStub securityZoneManagerStub = new SecurityZoneManagerStub(securityZone1, securityZone2);
+        beanFactory.addBean("securityZoneManager", securityZoneManagerStub);
 
         // siteminder
         beanFactory.addBean("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub(
                 siteminderConfiguration(new Goid(0, 1L), "Config 1","0.0.0.0","secret","localhost",3),
                 siteminderConfiguration(new Goid(0, 2L), "Config 2","0.0.0.0","secret","localhost",3)));
+
+        beanFactory.addBean( "entityCrud", new EntityFinderStub(folderManagerStub, securityZoneManagerStub, jdbcConnectionManagerStub, testIdentityProviderConfigManager, testTrustedCertManager) );
 
         // assertion security zone
         final AssertionAccess assAccess1 = new AssertionAccess();
@@ -4408,6 +4743,29 @@ public class ServerGatewayManagementAssertionTest {
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
+    }
+
+    private Role role() throws SaveException {
+        final Role role = new Role();
+        role.setDescription("Test Description");
+        role.setName("My Role");
+        role.setUserCreated(false);
+
+        final RoleAssignment userAssignment = new RoleAssignment(role, new Goid(0, -2), new Goid(0, 1).toString(), EntityType.USER);
+        userAssignment.setId(new Goid(0, 1).toString());
+        role.getRoleAssignments().add(userAssignment);
+        final RoleAssignment groupAssignment = new RoleAssignment(role, new Goid(0, -2), new Goid(0, 2).toString(), EntityType.GROUP);
+        groupAssignment.setId(new Goid(0, 2).toString());
+        role.getRoleAssignments().add(groupAssignment);
+
+        role.addAttributePermission(OperationType.CREATE, EntityType.ANY, "name", "test");
+        role.addEntityFolderAncestryPermission(EntityType.JDBC_CONNECTION, new Goid(123,456));
+        role.addFolderPermission(OperationType.DELETE, EntityType.SERVICE, new Folder("temp", null), false);
+        role.addEntityOtherPermission(EntityType.AUDIT_MESSAGE, new Goid(57,79).toString(), "my-operation");
+        SecurityZone securityZone = new SecurityZone();
+        securityZone.setGoid(new Goid(123,456));
+        role.addSecurityZonePermission(OperationType.DELETE, EntityType.EMAIL_LISTENER, securityZone);
+        return role;
     }
 
     private HttpConfiguration httpConfiguration(Goid goid) {

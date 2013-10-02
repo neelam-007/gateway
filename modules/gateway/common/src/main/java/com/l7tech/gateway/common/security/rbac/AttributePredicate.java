@@ -12,6 +12,8 @@ import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -121,11 +123,14 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
             throw new IllegalArgumentException("Class " + entityClass + " has no getter for attribute " + attribute);
     }
 
+    @NotNull
+    @Size(min=1, max = 255)
     @Column(name="attribute", nullable=false, length=255)
     public String getAttribute() {
         return attribute;
     }
 
+    @Size(max = 255)
     @Column(name="value", length=255)
     public String getValue() {
         return value;
@@ -142,6 +147,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
      *
      * @return the comparison mode (e.g. "sw" or "eq").  A value of null is to be treated as the same as "eq".
      */
+    @Size(max = 255)
     @Column(name="mode", length=255)
     public String getMode() {
         return mode;

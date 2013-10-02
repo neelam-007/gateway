@@ -7,3 +7,5 @@ PrivateKeyGenerateCsrContext
 PrivateKeyGenerateCsrResult
 PrivateKeyImportContext
 PrivateKeySpecialPurposeContext
+AddAssignmentsContext
+RemoveAssignmentsContext

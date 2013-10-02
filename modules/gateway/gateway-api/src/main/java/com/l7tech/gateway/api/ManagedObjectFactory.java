@@ -437,8 +437,49 @@ public class ManagedObjectFactory {
         return new AssertionSecurityZoneMO();
     }
 
+    /**
+     * Create a new HttpConfigurationMO instance.
+     *
+     * @return The new instance
+     */
     public static HttpConfigurationMO createHttpConfiguration() {
         return new HttpConfigurationMO();
+    }
+
+    /**
+     * Create a new RbacRoleMO instance.
+     *
+     * @return The new instance
+     */
+    public static RbacRoleMO createRbacRoleMO() {
+        return new RbacRoleMO();
+    }
+
+    /**
+     * Create a new RbacRoleAssignmentMO instance.
+     *
+     * @return The new instance
+     */
+    public static RbacRoleAssignmentMO createRbacRoleAssignmentMO() {
+        return new RbacRoleAssignmentMO();
+    }
+
+    /**
+     * Create a new RbacRolePermissionMO instance.
+     *
+     * @return The new instance
+     */
+    public static RbacRolePermissionMO createRbacRolePermissionMO() {
+        return new RbacRolePermissionMO();
+    }
+
+    /**
+     * Create a new RbacRolePredicateMO instance.
+     *
+     * @return The new instance
+     */
+    public static RbacRolePredicateMO createRbacRolePredicateMO() {
+        return new RbacRolePredicateMO();
     }
 
     /**
@@ -533,7 +574,11 @@ public class ManagedObjectFactory {
                 SecurityZoneMO.class,
                 SiteMinderConfigurationMO.class,
                 AssertionSecurityZoneMO.class,
-                HttpConfigurationMO.class
+                HttpConfigurationMO.class,
+                RbacRoleMO.class,
+                RbacRoleAssignmentMO.class,
+                RbacRolePermissionMO.class,
+                RbacRolePredicateMO.class
         };
     }
 
