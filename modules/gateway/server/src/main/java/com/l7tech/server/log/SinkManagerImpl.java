@@ -779,7 +779,18 @@ public class SinkManagerImpl
         configuration.setSeverity( threshold );
         configuration.setCategories( SinkConfiguration.CATEGORY_AUDITS );
         configuration.setType( SinkConfiguration.SinkType.FILE ); // it's fileish ...
-        MessageSink sink = new ConsoleMessageSink( configuration );
+
+        //get the logToConsole system property
+        boolean logToConsole = SyspropUtil.getBoolean( JdkLogConfig.PARAM_LOG_TO_CONSOLE, false );
+        //get the root console handler
+        Handler handler = ConsoleMessageSink.getRootConsoleHandler();
+        // This check is required for SSG-7720
+        if(logToConsole && handler == null){
+            //if logging to the console is enforced and the root handle has not been set then create a new one.
+            handler = new ConsoleHandler();
+        }
+        //create the console message sink
+        ConsoleMessageSink sink = new ConsoleMessageSink( configuration, handler );
         sinks.add( sink );
     }
 

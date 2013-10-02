@@ -1,11 +1,11 @@
 package com.l7tech.server.log;
 
-import java.util.logging.LogRecord;
-import java.util.logging.Handler;
-import java.util.logging.Logger;
-import java.util.logging.ConsoleHandler;
-
 import com.l7tech.gateway.common.log.SinkConfiguration;
+
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * MessageSink for logging to the console.
@@ -24,9 +24,9 @@ public class ConsoleMessageSink extends MessageSinkSupport {
 
     //- PACKAGE
 
-    ConsoleMessageSink( final SinkConfiguration configuration ) {
+    ConsoleMessageSink( final SinkConfiguration configuration, Handler handler ) {
         super( configuration );
-        handler = getConsoleHandler();
+        this.handler = handler;
     }
 
     /**
@@ -48,7 +48,7 @@ public class ConsoleMessageSink extends MessageSinkSupport {
     /**
      * Get the root console handler if one exists.
      */
-    private Handler getConsoleHandler() {
+    static Handler getRootConsoleHandler() {
         Handler consoleHandler = null;
 
         Logger rootLogger = Logger.getLogger("");
