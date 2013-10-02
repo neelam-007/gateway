@@ -150,21 +150,22 @@ public class AuditPolicyEvaluator implements PostStartupApplicationListener {
 
         DataSource ds = null ;
         String connectionName = "";
-        try {
-            Assertion root = sph.getPolicyAssertion();
-            connectionName = root != null ? getConnectionNames(root) : null;
-            if( connectionName != null )
-            {
-                ds = jdbcConnectionPoolManager.getDataSource(connectionName);
-            }
-
-        } catch (NamingException e) {
-            logger.warning("Unable to get jdbc connection datasource: "+connectionName);
-        } catch (IOException e) {
-            logger.warning("Unable to retrieve audit sink policy: "+ e.getMessage());
-        }
 
         try{
+            try {
+                Assertion root = sph.getPolicyAssertion();
+                connectionName = root != null ? getConnectionNames(root) : null;
+                if( connectionName != null )
+                {
+                    ds = jdbcConnectionPoolManager.getDataSource(connectionName);
+                }
+
+            } catch (NamingException e) {
+                logger.warning("Unable to get jdbc connection datasource: "+connectionName);
+            } catch (IOException e) {
+                logger.warning("Unable to retrieve audit sink policy: "+ e.getMessage());
+            }
+
             if(ds!=null){
 
                 TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(ds));
