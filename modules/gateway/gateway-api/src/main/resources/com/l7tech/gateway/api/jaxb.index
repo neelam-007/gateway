@@ -9,6 +9,7 @@ JMSConnection
 JMSDestinationDetail
 JMSDestinationMO
 ListenPortMO
+PolicyAliasMO
 PolicyDetail
 PolicyExportResult
 PolicyImportResult
@@ -27,6 +28,7 @@ ResourceSet
 RevocationCheckingPolicyMO
 ServiceDetail
 ServiceMO
+ServiceAliasMO
 StoredPasswordMO
 TrustedCertificateMO
 EncapsulatedAssertionMO

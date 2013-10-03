@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
@@ -61,6 +62,8 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.MockRoleManager;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
+import com.l7tech.server.service.PolicyAliasManagerStub;
+import com.l7tech.server.service.ServiceAliasManagerStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
@@ -810,6 +813,67 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testGetPolicyAlias() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyAlias");
+        final Element policyRefElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "PolicyReference");
+
+        assertEquals("http://ns.l7tech.com/2010/04/gateway-management/policies", policyRefElm.getAttribute("resourceUri"));
+    }
+    @Test
+    public void testGetServiceAlias() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/serviceAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body/> \n" +
+                        "</s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message);
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "ServiceAlias");
+        final Element serviceRefElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "ServiceReference");
+
+        assertEquals("http://ns.l7tech.com/2010/04/gateway-management/services", serviceRefElm.getAttribute("resourceUri"));
+    }
+
+    @Test
     public void testCreateEncapsulatedAssertion() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions";
         String payload =
@@ -925,14 +989,14 @@ public class ServerGatewayManagementAssertionTest {
     public void testCreateFolder() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
         String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\""+new Goid(0,1)+"\"><n1:Name>test</n1:Name></n1:Folder>";
-        doCreate( resourceUri, payload, new Goid(0,3).toHexString() );
+        doCreate( resourceUri, payload, new Goid(0,4).toHexString() );
     }
 
     @Test
     public void testCreateFolderInOldRoot() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
         String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\"><n1:Name>test</n1:Name></n1:Folder>";
-        doCreate( resourceUri, payload, new Goid(0,3).toHexString() );
+        doCreate( resourceUri, payload, new Goid(0,4).toHexString() );
     }
 
     @Test
@@ -1578,6 +1642,107 @@ public class ServerGatewayManagementAssertionTest {
 
         String expectedId = new Goid(0,3).toString();
         doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreatePolicyAlias() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policyAliases";
+        String payload =
+                "<l7:PolicyAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:PolicyReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+                "</l7:PolicyAlias>";
+
+        String expectedId = new Goid(0,2).toString();
+        doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreatePolicyAliasFailSameFolder() throws Exception {
+
+        // same folder as original
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policyAliases";
+        String payloadFail =
+        "<l7:PolicyAlias folderId=\"0000000000000000ffffffffffffec76\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:PolicyReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+                        "</l7:PolicyAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wxf:InvalidRepresentation","Cannot create alias in the same folder as original");
+    }
+
+    @Test
+    public void testCreatePolicyAliasFailSameFolderAsAlias() throws Exception {
+        // same folder as another alias referencing same policy
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policyAliases";
+        String payloadFail =
+                "<l7:PolicyAlias folderId=\"00000000000000000000000000000001\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:PolicyReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+                        "</l7:PolicyAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wxf:InvalidRepresentation", "already exists in folder");
+    }
+
+    @Test
+    public void testCreatePolicyAliasFailNoFolderPermission() throws Exception {
+        when(rbacService.isPermittedForEntity(any(User.class), any(Folder.class),eq(OperationType.UPDATE), anyString())).thenReturn(false);
+
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policyAliases";
+        String payloadFail =
+                "<l7:PolicyAlias folderId=\"00000000000000000000000000000001\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:PolicyReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\"/>\n" +
+                        "</l7:PolicyAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wsman:AccessDenied");
+    }
+
+    @Test
+    public void testCreateServiceAlias() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/serviceAliases";
+        String payload =
+                "<l7:ServiceAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ServiceReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\"/>\n" +
+                        "</l7:ServiceAlias>";
+
+        String expectedId = new Goid(0,2).toString();
+        doCreate(resourceUri, payload, expectedId);
+    }
+
+    @Test
+    public void testCreateServiceAliasFailSameFolder() throws Exception {
+
+        // same folder as original
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/serviceAliases";
+        String payloadFail =
+                "<l7:ServiceAlias folderId=\"0000000000000000ffffffffffffec76\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ServiceReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\"/>\n" +
+                        "</l7:ServiceAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wxf:InvalidRepresentation");
+    }
+
+
+    @Test
+    public void testCreateServiceAliasFailSameFolderAsAlias() throws Exception {
+        // same folder as another alias referencing same service
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/serviceAliases";
+        String payloadFail =
+                "<l7:ServiceAlias folderId=\"00000000000000000000000000000001\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ServiceReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\"/>\n" +
+                        "</l7:ServiceAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wxf:InvalidRepresentation", "already exists in folder");
+    }
+
+    @Test
+    public void testCreateServiceAliasFailNoFolderPermission() throws Exception {
+        when(rbacService.isPermittedForEntity(any(User.class), any(Folder.class),eq(OperationType.UPDATE), anyString())).thenReturn(false);
+
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/serviceAliases";
+        String payloadFail =
+                "<l7:ServiceAlias folderId=\"00000000000000000000000000000001\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ServiceReference id=\"00000000000000000000000000000001\" resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\"/>\n" +
+                        "</l7:ServiceAlias>";
+
+        doCreateFail(resourceUri, payloadFail, "wsman:AccessDenied");
     }
 
     @Test
@@ -2644,6 +2809,378 @@ public class ServerGatewayManagementAssertionTest {
 
         putAndVerify( message, verifier, false );
         putAndVerify( message, verifier, true );
+    }
+
+    @Test
+    public void testPutPolicyAlias() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:PolicyAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:PolicyReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:PolicyAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final String messageNoIdVersionTestFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:PolicyAlias folderId=\"00000000000000000000000000000001\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:PolicyReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:PolicyAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element aliasElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyAlias");
+                final Element policyRefElm = XmlUtil.findExactlyOneChildElementByName(aliasElm, NS_GATEWAY_MANAGEMENT, "PolicyReference");
+
+                assertEquals(new Goid(0,1).toString(), policyRefElm.getAttribute("id"));
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+        putAndVerify( messageNoIdVersionTestFolder, verifier, false );
+    }
+
+
+    @Test
+    public void testPutPolicyAliasSameFolderAsOriginal() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:PolicyAlias folderId=\"0000000000000000ffffffffffffec76\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:PolicyReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:PolicyAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element faultElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+                final Element codeElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Code");
+                final Element subcodeElm = XmlUtil.findExactlyOneChildElementByName(codeElm, NS_SOAP_ENVELOPE, "Subcode");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(subcodeElm, NS_SOAP_ENVELOPE, "Value");
+                final Element detailElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Detail");
+                final Element detailTextElm = XmlUtil.findExactlyOneChildElementByName(detailElm, NS_SOAP_ENVELOPE, "Text");
+
+                assertEquals("wxf:InvalidRepresentation", valueElm.getTextContent());
+                assertTrue("Detail contains: ", detailTextElm.getTextContent().contains("same folder"));
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+    }
+
+
+    @Test
+    public void testPutPolicyAliasNoFolderPermission() throws Exception {
+        when(rbacService.isPermittedForEntity(any(User.class), any(Folder.class),eq(OperationType.UPDATE), anyString())).thenReturn(false);
+
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:PolicyAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:PolicyReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:PolicyAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element faultElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+                final Element codeElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Code");
+                final Element subcodeElm = XmlUtil.findExactlyOneChildElementByName(codeElm, NS_SOAP_ENVELOPE, "Subcode");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(subcodeElm, NS_SOAP_ENVELOPE, "Value");
+
+                assertEquals("wsman:AccessDenied", valueElm.getTextContent());
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+    }
+
+    @Test
+    public void testPutPolicyAliasNoSourceFolderPermission() throws Exception {
+        when(rbacService.isPermittedForEntity(any(User.class), same(testFolder),eq(OperationType.UPDATE), anyString())).thenReturn(false);
+
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policyAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:PolicyAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:PolicyReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/policies\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:PolicyAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element faultElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+                final Element codeElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Code");
+                final Element subcodeElm = XmlUtil.findExactlyOneChildElementByName(codeElm, NS_SOAP_ENVELOPE, "Subcode");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(subcodeElm, NS_SOAP_ENVELOPE, "Value");
+
+                assertEquals("wsman:AccessDenied", valueElm.getTextContent());
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+    }
+
+    @Test
+    public void testPutServiceAlias() throws Exception {
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/serviceAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:ServiceAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:ServiceReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:ServiceAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final String messageNoIdVersionTestFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/serviceAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+new Goid(0,1).toHexString()+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:ServiceAlias folderId=\"00000000000000000000000000000001\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:ServiceReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/services\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:ServiceAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element aliasElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "ServiceAlias");
+                final Element policyRefElm = XmlUtil.findExactlyOneChildElementByName(aliasElm, NS_GATEWAY_MANAGEMENT, "ServiceReference");
+
+                assertEquals(new Goid(0,1).toString(), policyRefElm.getAttribute("id"));
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+        putAndVerify( messageNoIdVersionTestFolder, verifier, false );
+    }
+
+    @Test
+    public void testPutServiceAliasSameFolderAsOriginal() throws Exception {
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/serviceAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:ServiceAlias folderId=\"0000000000000000ffffffffffffec76\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:ServiceReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/service\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:ServiceAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element faultElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+                final Element codeElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Code");
+                final Element subcodeElm = XmlUtil.findExactlyOneChildElementByName(codeElm, NS_SOAP_ENVELOPE, "Subcode");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(subcodeElm, NS_SOAP_ENVELOPE, "Value");
+                final Element detailElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Detail");
+                final Element detailTextElm = XmlUtil.findExactlyOneChildElementByName(detailElm, NS_SOAP_ENVELOPE, "Text");
+
+                assertEquals("wxf:InvalidRepresentation", valueElm.getTextContent());
+                assertTrue("Detail contains: ", detailTextElm.getTextContent().contains("same folder"));
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
+    }
+
+
+    @Test
+    public void testPutServiceAliasNoFolderPermission() throws Exception {
+        when(rbacService.isPermittedForEntity(any(User.class), any(Folder.class),eq(OperationType.UPDATE), anyString())).thenReturn(false);
+
+        final String idStr = Goid.toString(new Goid(0,1));
+
+        final String messageEmptyFolder =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                        "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                        "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                        "  <s:Header>\n" +
+                        "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                        "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                        "    <a:ReplyTo> \n" +
+                        "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                        "    </a:ReplyTo> \n" +
+                        "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</a:Action> \n" +
+                        "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/serviceAliases</w:ResourceURI> \n" +
+                        "    <w:SelectorSet>\n" +
+                        "      <w:Selector Name=\"id\">"+idStr+"</w:Selector> \n" +
+                        "    </w:SelectorSet>\n" +
+                        "    <w:OperationTimeout>PT60.000S</w:OperationTimeout>\n" +
+                        "  </s:Header>\n" +
+                        "  <s:Body> \n" +
+                        "     <l7:ServiceAlias folderId=\"00000000000000000000000000000003\" id=\"00000000000000000000000000000001\" version=\"0\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "         <l7:ServiceReference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/service\" id=\"00000000000000000000000000000001\"/>\n" +
+                        "     </l7:ServiceAlias>\n" +
+                        "  </s:Body>\n" +
+                        "</s:Envelope>";
+
+
+        final UnaryVoidThrows<Document,Exception> verifier = new UnaryVoidThrows<Document,Exception>(){
+            @Override
+            public void call( final Document result ) throws Exception {
+                final Element soapBody = SoapUtil.getBodyElement(result);
+                final Element faultElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+                final Element codeElm = XmlUtil.findExactlyOneChildElementByName(faultElm, NS_SOAP_ENVELOPE, "Code");
+                final Element subcodeElm = XmlUtil.findExactlyOneChildElementByName(codeElm, NS_SOAP_ENVELOPE, "Subcode");
+                final Element valueElm = XmlUtil.findExactlyOneChildElementByName(subcodeElm, NS_SOAP_ENVELOPE, "Value");
+
+                assertEquals("wsman:AccessDenied", valueElm.getTextContent());
+            }
+        };
+
+        putAndVerify( messageEmptyFolder, verifier, false );
     }
 
     @Test
@@ -4531,12 +5068,14 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/roles"
     };
 
+    Folder testFolder;
     @Before
     @SuppressWarnings({"serial"})
     public void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
         final Folder rootFolder = folder( new Goid(0,-5002L), null, "Root Node");
-        final Folder testFolder = folder( new Goid(0,1L), rootFolder, "Test Folder");
+        testFolder = folder( new Goid(0,1L), rootFolder, "Test Folder");
+        final Folder emptyFolder = folder( new Goid(0,3L), rootFolder, "Empty Folder");
         final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager(
                 prop( new Goid(0,1), "testProp1", "testValue1"),
                 prop( new Goid(0,2), "testProp2", "testValue2"),
@@ -4557,7 +5096,8 @@ public class ServerGatewayManagementAssertionTest {
         final FolderManagerStub folderManagerStub = new FolderManagerStub(
                 rootFolder,
                 testFolder,
-                folder(new Goid(0, 2L), testFolder, "Nested Test Folder"));
+                folder(new Goid(0, 2L), testFolder, "Nested Test Folder"),
+                emptyFolder);
         beanFactory.addBean( "folderManager", folderManagerStub);
         final IdentityProviderConfig identityProviderConfig = provider(new Goid(0, -2L), IdentityProviderType.INTERNAL, "Internal Identity Provider");
         final TestIdentityProviderConfigManager testIdentityProviderConfigManager = new TestIdentityProviderConfigManager(
@@ -4603,8 +5143,9 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean("rbacServices", rbacService);
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
+        final PublishedService testService1 = service( new Goid(0,1L), "Test Service 1", false, false, null, null);
         beanFactory.addBean( "serviceManager", new MockServiceManager(
-                service( new Goid(0,1L), "Test Service 1", false, false, null, null),
+                testService1,
                 service( new Goid(0,2L), "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
         beanFactory.addBean( "policyValidator", policyValidator );
         beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
@@ -4704,6 +5245,16 @@ public class ServerGatewayManagementAssertionTest {
         assAccess2.setName("Test assertion access 2");
         assAccess2.setSecurityZone(securityZone2);
         beanFactory.addBean("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
+
+        // policy alias
+        final PolicyAlias pAlias1 = new PolicyAlias(testPolicy1,testFolder);
+        pAlias1.setGoid(new Goid(0,1));
+        beanFactory.addBean("policyAliasManager", new PolicyAliasManagerStub(pAlias1));
+
+        // service alias
+        final PublishedServiceAlias sAlias1 = new PublishedServiceAlias(testService1,testFolder);
+        sAlias1.setGoid(new Goid(0,1));
+        beanFactory.addBean("serviceAliasManager", new ServiceAliasManagerStub(sAlias1));
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
@@ -4873,7 +5424,7 @@ public class ServerGatewayManagementAssertionTest {
     private static Policy policy( final Goid goid, final PolicyType type, final String name, final boolean soap, final String policyXml ) {
         final Policy policy = new Policy( type, name, policyXml, soap);
         policy.setGoid(goid);
-        policy.setGuid( UUID.nameUUIDFromBytes( Goid.toString(goid).getBytes() ).toString() );
+        policy.setGuid(UUID.nameUUIDFromBytes(Goid.toString(goid).getBytes()).toString());
         return policy;
     }
 
@@ -5009,6 +5560,14 @@ public class ServerGatewayManagementAssertionTest {
                                final String payload,
                                final String faultSubcode ) throws Exception {
 
+        doCreateFail(resourceUri, payload, faultSubcode,null);
+    }
+
+    private void doCreateFail( final String resourceUri,
+                                  final String payload,
+                                  final String faultSubcode,
+                                  final String faultDetailTextContains) throws Exception {
+
         final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", MessageFormat.format( message, resourceUri, payload ));
@@ -5022,6 +5581,13 @@ public class ServerGatewayManagementAssertionTest {
         final String code = XmlUtil.getTextValue( valueElement );
 
         assertEquals("SOAP Fault subcode", faultSubcode, code);
+
+        if(faultDetailTextContains!=null){
+            final Element detailElement = XmlUtil.findExactlyOneChildElementByName(faultElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Detail");
+            final Element textElement = XmlUtil.findExactlyOneChildElementByName(detailElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Text");
+            final String detailText = XmlUtil.getTextValue( textElement );
+            assertTrue("SOAP Fault Detail Text contains" + faultDetailTextContains, detailText.contains(faultDetailTextContains));
+        }
     }
 
     private void putAndVerify( final String message,
@@ -5070,7 +5636,7 @@ public class ServerGatewayManagementAssertionTest {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(httpServletResponse);
         response.attachHttpResponseKnob(respKnob);
 
-        PolicyEnforcementContext context = null; 
+        PolicyEnforcementContext context = null;
         try {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
@@ -5086,7 +5652,7 @@ public class ServerGatewayManagementAssertionTest {
 
             System.out.println( XmlUtil.nodeToFormattedString(responseDoc) );
 
-            return responseDoc;            
+            return responseDoc;
         } finally {
             ResourceUtils.closeQuietly( context );
         }

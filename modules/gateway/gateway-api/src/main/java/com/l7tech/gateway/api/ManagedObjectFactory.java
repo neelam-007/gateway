@@ -447,6 +447,25 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new PolicyAliasMO instance.
+     *
+     * @return The new instance
+     */
+    public static PolicyAliasMO createPolicyAlias() {
+        return new PolicyAliasMO();
+    }
+
+
+    /**
+     * Create a new ServiceAliasMO instance.
+     *
+     * @return The new instance
+     */
+    public static ServiceAliasMO createServiceAlias() {
+        return new ServiceAliasMO();
+    }
+    
+    /**
      * Create a new RbacRoleMO instance.
      *
      * @return The new instance
@@ -562,6 +581,8 @@ public class ManagedObjectFactory {
                 JDBCConnectionMO.class,
                 JMSDestinationMO.class,
                 ListenPortMO.class,
+                ServiceAliasMO.class,
+                PolicyAliasMO.class,
                 PolicyMO.class,
                 PrivateKeyMO.class,
                 ResourceDocumentMO.class,

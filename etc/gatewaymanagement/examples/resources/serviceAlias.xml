@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceAlias xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="A4353AA1ABDDA228CB36AF06D388000D" folderId="343A3AA1ABDDA228CB00AF06D388000D">
+    <ServiceReference id="5C803AA1AB51B828CB36AF06D3884F08" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/services"/>
+</ServiceAlias>

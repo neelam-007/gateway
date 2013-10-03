@@ -239,7 +239,9 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
         }
 
         if ( result == null ) {
-            checkPermittedForAnyEntity( OperationType.DELETE, EntityType.FOLDER ); // consistent with FolderAdmin permissions
+            // consistent with FolderAdmin permissions
+            checkPermitted( OperationType.UPDATE, null, newFolder );
+            if(oldFolder!=null) checkPermitted( OperationType.UPDATE, null, oldFolder );
             result = newFolder;
         }
 
