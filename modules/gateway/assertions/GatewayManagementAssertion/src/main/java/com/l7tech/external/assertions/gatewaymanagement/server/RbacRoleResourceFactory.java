@@ -76,6 +76,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                 try {
                     //Find the role
                     final Role role = selectEntity(selectorMap);
+                    checkPermitted(OperationType.UPDATE, null, role);
                     List<RbacRoleAssignmentMO> assignmentMOs = addAssignmentsContext.getAssignments();
                     Role tempRole = new Role();
                     //Convert the RbacRoleAssignmentMO's to RoleAssignment's these are added to the temp role
@@ -110,6 +111,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                 try {
                     //find the role to update
                     final Role role = selectEntity(selectorMap);
+                    checkPermitted(OperationType.UPDATE, null, role);
                     HashSet<RoleAssignment> assignmentsToRemove = new HashSet<>(removeAssignmentsContext.getAssignmentIds().size());
                     //find all the assignments to Remove
                     for (RoleAssignment assignment : Collections.unmodifiableSet(role.getRoleAssignments())) {
