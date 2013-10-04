@@ -1,5 +1,6 @@
 # LAYER 7 TECHNOLOGIES
-# SET SITEMINDER ENVIRONMENT
+# SET SITEMINDER ENVIRONMENT FOR LINUX OS
+# This script is meant to be run in the profile for the SSG
 
 CAROOT=/opt/CA
 CALIBS=""
