@@ -70,7 +70,7 @@ public class ExternalAuditPoliciesTest {
     }
 
     private String getAuditSinkXML(){
-        return ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connectionName, auditRecordTable, auditDetailTable);
+        return ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connectionName, connectionDriverClass,auditRecordTable, auditDetailTable);
     }
 
     private String getAuditLookupXML(){

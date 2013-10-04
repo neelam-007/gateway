@@ -41,6 +41,7 @@ public class AuditSinkSchemaTest {
     private String url = "jdbc:datadirect:oracle://qaoracledb.l7tech.com:1521;Database=XE";
     private String username = "TEST";
     private String password = "7layer";
+    private String dbType = "oracle";
     private String auditRecordTable = "wyn_main";
     private String auditDetailTable = "wyn_detail";
     private boolean cleanup = false;
@@ -81,7 +82,7 @@ public class AuditSinkSchemaTest {
                 "adminId");
         signAuditRecord(sar);
         context = new AuditSinkPolicyEnforcementContext(sar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        query = ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = resolveContextVariables(context, query);
         result = performJdbcQuery(query);
         success = result==1;
@@ -109,7 +110,7 @@ public class AuditSinkSchemaTest {
                 "0.0.0.0");
         signAuditRecord(aar);
         context = new AuditSinkPolicyEnforcementContext(aar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        query = ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = query.replace("${auditRecordTable}", auditRecordTable);
         query = resolveContextVariables(context, query);
         result = performJdbcQuery(query);
@@ -135,7 +136,7 @@ public class AuditSinkSchemaTest {
         signAuditRecord(record);
 
         AuditSinkPolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(record,  PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,makeContext("<myrequest/>", "<myresponse/>"));
-        String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        String query = ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = query.replace("${auditRecordTable}",auditRecordTable);
         query = query.replace("${record.guid}",guid);
         query = resolveContextVariables(context, query);

@@ -814,6 +814,7 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
 
                 final JdbcQueryingManager jdbcQueryingManager = (JdbcQueryingManager)applicationContext.getBean("jdbcQueryingManager");
                 final JdbcConnectionPoolManager jdbcConnectionPoolManager = (JdbcConnectionPoolManager)applicationContext.getBean("jdbcConnectionPoolManager");
+                final JdbcConnectionManager jdbcConnectionManager = (JdbcConnectionManager)applicationContext.getBean("jdbcConnectionManager");
 
                 final DefaultKey defaultKey = (DefaultKey)applicationContext.getBean("defaultKey");
 
@@ -824,22 +825,34 @@ public class AuditAdminImpl extends AsyncAdminMethodsImpl implements AuditAdmin,
                     return "Failed to retrieve connection data source.";
                 }
 
+                final String dbType ;
+                try{
+                    JdbcConnection conn = jdbcConnectionManager.getJdbcConnection(connectionName);
+                    if(conn == null){
+                        return "Failed to retrieve connection.";
+                    }
+                    String driverClass = conn.getDriverClass();
+                    dbType = getJdbcDbType(driverClass);
+                }catch (FindException e){
+                    return "Failed to retrieve connection.";
+                }
+
                 TransactionTemplate transactionTemplate = new TransactionTemplate(new DataSourceTransactionManager(ds));
                 return transactionTemplate.execute(new TransactionCallback<String>() {
                     @Override
                     public String doInTransaction(TransactionStatus transactionStatus) {
                         try {
-                            String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, auditRecordTableName, auditDetailTableName, jdbcQueryingManager, defaultKey);
+                            String result = ExternalAuditsUtils.testMessageSummaryRecord(connectionName, dbType, auditRecordTableName, auditDetailTableName, jdbcQueryingManager, defaultKey);
                             if(!result.isEmpty()){
                                 transactionStatus.setRollbackOnly();
                                 return result;
                             }
-                            result =  ExternalAuditsUtils.testAdminAuditRecord(connectionName, auditRecordTableName, jdbcQueryingManager,defaultKey);
+                            result =  ExternalAuditsUtils.testAdminAuditRecord(connectionName, dbType, auditRecordTableName, jdbcQueryingManager,defaultKey);
                             if(!result.isEmpty()){
                                 transactionStatus.setRollbackOnly();
                                 return result;
                             }
-                            result  =  ExternalAuditsUtils.testSystemAuditRecord(connectionName, auditRecordTableName,jdbcQueryingManager,defaultKey);
+                            result  =  ExternalAuditsUtils.testSystemAuditRecord(connectionName, dbType, auditRecordTableName,jdbcQueryingManager,defaultKey);
                             if(!result.isEmpty())
                                 transactionStatus.setRollbackOnly();
                             return result;

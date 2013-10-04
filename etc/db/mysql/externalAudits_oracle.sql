@@ -13,7 +13,7 @@ CREATE TABLE audit_main (
     signature VARCHAR2(1024),
     properties CLOB,
     entity_class VARCHAR2(255),
-    entity_id VARCHAR2(20),
+    entity_id VARCHAR2(40),
     status int,
     request_id VARCHAR2(40),
     service_oid VARCHAR2(40),

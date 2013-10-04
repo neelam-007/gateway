@@ -5,7 +5,7 @@ package com.l7tech.gateway.common.audit;
  */
 public class ExternalAuditsCommonUtils {
 
-    public static String makeDefaultAuditSinkPolicyXml(String connection, String recordTable, String detailTable) {
+    public static String makeDefaultAuditSinkPolicyXml(String connection,String dbType, String recordTable, String detailTable) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -26,7 +26,7 @@ public class ExternalAuditsCommonUtils {
                 "            <L7p:AssertionFailureEnabled booleanValue=\"false\"/>\n" +
                 "            <L7p:QueryTimeout stringValue=\"${queryTimeout}\"/>\n" +
                 "            <L7p:ConnectionName stringValue=\""+connection+"\"/>\n" +
-                "            <L7p:SqlQuery stringValue=\""+saveRecordQuery(recordTable)+"\"/>\n" +
+                "            <L7p:SqlQuery stringValue=\""+saveRecordQuery(dbType,recordTable)+"\"/>\n" +
                 "            <L7p:ResolveAsObjectList stringListValue=\"included\">\n" +
                 "                <L7p:item stringValue=\"audit.reqZip\"/>\n" +
                 "                <L7p:item stringValue=\"audit.resZip\"/>\n" +
@@ -67,8 +67,19 @@ public class ExternalAuditsCommonUtils {
                 "(${record.guid},${i.current.time},${i.current.componentId},${i.current.ordinal},${i.current.messageId},${i.current.exception},${i.current.properties})";
     }
 
-    public  static String saveRecordQuery(String recordTable){
-        return  "insert into "+recordTable+"(id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
+    public static String saveRecordQuery(String dbType, String recordTable){
+        if("oracle".equals(dbType))
+            return  "insert into "+recordTable+"(id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
+                    "entity_class,entity_id," +
+                    "status,request_id,service_oid,operation_name,authenticated,authenticationType,request_length,response_length,request_xml,response_xml,response_status,routing_latency," +
+                    "component_id,action)" +
+                    " values " +
+                    "(${record.guid},${audit.nodeId},${audit.time},${audit.type},${audit.level},${audit.name},${audit.message},${audit.ipAddress},${audit.user.name},${audit.user.id},NVL(${audit.user.idProv},'-1'),${audit.signature},${audit.properties}," +
+                    "${audit.entity.class},${audit.entity.oid}," +
+                    "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.savedRequestContentLength},${audit.savedResponseContentLength},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
+                    "${audit.componentId},${audit.action})";
+        else
+            return  "insert into "+recordTable+"(id,nodeid,time,type,audit_level,name,message,ip_address,user_name,user_id,provider_oid,signature,properties," +
                 "entity_class,entity_id," +
                 "status,request_id,service_oid,operation_name,authenticated,authenticationType,request_length,response_length,request_xml,response_xml,response_status,routing_latency," +
                 "component_id,action)" +
@@ -78,7 +89,6 @@ public class ExternalAuditsCommonUtils {
                 "${audit.status},${audit.requestId},${audit.serviceOid},${audit.operationName},${audit.authenticated},${audit.authType},${audit.savedRequestContentLength},${audit.savedResponseContentLength},${audit.reqZip},${audit.resZip},${audit.responseStatus},${audit.routingLatency}," +
                 "${audit.componentId},${audit.action})";
     }
-
 
     private static String defaultLookupGuidQuery(String recordTable,String dbType) {
         return

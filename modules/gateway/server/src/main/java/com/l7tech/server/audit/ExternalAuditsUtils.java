@@ -41,7 +41,7 @@ public class ExternalAuditsUtils {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static String[]  resolveAsObjectList  = {"audit.resZip","audit.reqZip","audit.status","audit.authenticated","audit.savedResponseContentLength","audit.savedRequestContentLength","audit.responseStatus","audit.routingLatency","audit.componentId"};
 
-    static public String testSystemAuditRecord(String connectionName, String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
+    static public String testSystemAuditRecord(String connectionName, String dbType, String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         AuditSinkPolicyEnforcementContext context;
         String query;
         Object result;
@@ -60,7 +60,7 @@ public class ExternalAuditsUtils {
                 "adminId");
         signAuditRecord(sar,defaultKey);
         context = new AuditSinkPolicyEnforcementContext(sar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        query =  ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query, Arrays.asList(resolveAsObjectList),  context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
@@ -84,7 +84,7 @@ public class ExternalAuditsUtils {
         return result == null? "" : result.toString();
     }
 
-    static public String testAdminAuditRecord(String connectionName, String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
+    static public String testAdminAuditRecord(String connectionName, String dbType,String auditRecordTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         AuditSinkPolicyEnforcementContext context;
         String query;
         Object result;
@@ -106,7 +106,7 @@ public class ExternalAuditsUtils {
                 "0.0.0.0");
         signAuditRecord(aar,defaultKey);
         context = new AuditSinkPolicyEnforcementContext(aar, PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,null);
-        query =  ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        query =  ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
         result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName,query,Arrays.asList(resolveAsObjectList),context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
@@ -139,7 +139,7 @@ public class ExternalAuditsUtils {
         new AuditRecordSigner(pk).signAuditRecord(auditRecord);
     }
 
-    static public String testMessageSummaryRecord(String connectionName, String auditRecordTable, String auditDetailTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
+    static public String testMessageSummaryRecord(String connectionName, String dbType, String auditRecordTable, String auditDetailTable, JdbcQueryingManager jdbcQueryingManager, DefaultKey defaultKey) throws Exception {
         boolean success;
         // create record
         String requestXML = "<request>blah</request>";
@@ -162,7 +162,7 @@ public class ExternalAuditsUtils {
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null) ,
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response));
 
-        String query = ExternalAuditsCommonUtils.saveRecordQuery(auditRecordTable);
+        String query = ExternalAuditsCommonUtils.saveRecordQuery(dbType,auditRecordTable);
         query = query.replace("${record.guid}", "'"+guid+"'");
         Object result = JdbcQueryUtils.performJdbcQuery(jdbcQueryingManager,connectionName, query,Arrays.asList(resolveAsObjectList), context, new LoggingAudit(logger));
         success = result instanceof Integer && (Integer)result == 1;
@@ -355,7 +355,7 @@ public class ExternalAuditsUtils {
     }
 
     private static Goid getGoid(String entityClass,String toGoid) {
-        if(toGoid.isEmpty())
+        if(toGoid == null || toGoid.isEmpty() || toGoid.equals("-1"))
             return null;
         try{
             return Goid.parseGoid(toGoid);
@@ -369,7 +369,7 @@ public class ExternalAuditsUtils {
     }
 
     private static Goid getIdProviderGoid(String toGoid) {
-        if(toGoid.isEmpty())
+        if(toGoid == null || toGoid.isEmpty()|| toGoid.equals("-1"))
             return null;
         try{
             return Goid.parseGoid(toGoid);

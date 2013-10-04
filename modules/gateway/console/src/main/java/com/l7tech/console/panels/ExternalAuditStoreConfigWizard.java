@@ -82,7 +82,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
         // create policies
         try {
-            sinkPolicyHeader = createSinkPolicyHeader(config.connection, config.auditRecordTableName, config.auditDetailTableName, config.custom);
+            sinkPolicyHeader = createSinkPolicyHeader(config.connection, config.connectionDriverClass, config.auditRecordTableName, config.auditDetailTableName, config.custom);
             lookupPolicyHeader = createLookupPolicyHeader(config.connection, config.connectionDriverClass, config.auditRecordTableName, config.auditDetailTableName, config.custom);
 
             super.finish(evt);
@@ -153,7 +153,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return sinkPolicyHeader;
     }
 
-    private PolicyHeader createSinkPolicyHeader(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
+    private PolicyHeader createSinkPolicyHeader(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) throws FindException, PolicyAssertionException, SaveException {
         PolicyHeader header = getSinkPolicyHeader();
         Policy policy;
         if(header == null){
@@ -164,7 +164,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
             policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(header.getGuid());
         }
 
-        policy.setXml(getSinkPolicyXML(connection, recordTable, detailTable, createEmptyPolicy));
+        policy.setXml(getSinkPolicyXML(connection,connectionDriverClass, recordTable, detailTable, createEmptyPolicy));
         PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
         policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyGoid());
         header = new PolicyHeader(policy);
@@ -181,8 +181,8 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
         return policy;
     }
 
-    private static String getSinkPolicyXML(String connection, String recordTable, String detailTable, boolean createEmptyPolicy) {
-        return createEmptyPolicy ? getSendToHttpSinkPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connection, recordTable, detailTable);
+    private static String getSinkPolicyXML(String connection, String connectionDriverClass, String recordTable, String detailTable, boolean createEmptyPolicy) {
+        return createEmptyPolicy ? getSendToHttpSinkPolicyXml() : ExternalAuditsCommonUtils.makeDefaultAuditSinkPolicyXml(connection, getJdbcDbType(connectionDriverClass), recordTable, detailTable);
     }
 
     private static String getSendToHttpSinkPolicyXml(){
