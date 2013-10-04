@@ -1477,6 +1477,7 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -152), 0, toGoid(0, -150), 'OTHER', 'log-viewer', 'LOG_SINK');
 
 -- Create other canned roles
+INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_goid, description, user_created) VALUES (toGoid(0,-200),0,'Manage Internal Users and Groups',null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -201),0,toGoid(0, -200),'READ',NULL,'USER');
 INSERT INTO rbac_predicate (goid, version, permission_goid) VALUES (toGoid(0, -202),0,toGoid(0, -201));
 INSERT INTO rbac_predicate_attribute (goid, attribute, value, mode) VALUES (toGoid(0, -202),'providerId',goidToString(toGoid(0,-2)),'eq');
