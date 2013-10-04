@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<HttpConfiguration id="c49e5455397863a0708cc0012dd98e9f" version="0">
+    <Host>testwsman</Host>
+    <Port>0</Port>
+    <Path>/test</Path>
+    <TlsKeyUse>default</TlsKeyUse>
+    <TlsKeystoreId>00000000000000000000000000000000</TlsKeystoreId>
+    <ConnectTimeout>-1</ConnectTimeout>
+    <ReadTimeout>-1</ReadTimeout>
+    <FollowRedirects>false</FollowRedirects>
+    <ProxyUse>default</ProxyUse>
+</HttpConfiguration>
