@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Role id="1601d72d241b17d31512f545d3c6fd03" version="4">
+    <name>testtest</name>
+    <description/>
+    <userCreated>true</userCreated>
+    <permissions>
+        <permission id="1601d72d241b17d31512f545d3c6fd38" version="1">
+            <operationType>CREATE</operationType>
+            <entityType>ANY</entityType>
+            <predicates>
+                <predicate>
+                    <type>FolderPredicate</type>
+                    <Properties>
+                        <Property key="transitive">
+                            <StringValue>true</StringValue>
+                        </Property>
+                        <Property key="folderId">
+                            <StringValue>0000000000000000ffffffffffffec76</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>asd</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>sw</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>SecurityZonePredicate</type>
+                    <Properties>
+                        <Property key="securityZoneId">
+                            <StringValue>1601d72d241b17d31512f545d3c6fba5</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>asd</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>eq</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="1601d72d241b17d31512f545d3c6fd36" version="1">
+            <operationType>READ</operationType>
+            <entityType>FOLDER</entityType>
+            <predicates>
+                <predicate>
+                    <type>EntityFolderAncestryPredicate</type>
+                    <Properties>
+                        <Property key="entityId">
+                            <StringValue>0000000000000000ffffffffffffec76</StringValue>
+                        </Property>
+                        <Property key="entityType">
+                            <StringValue>FOLDER</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="5765587f016c0b4fde5b5a237b6bae24" version="1">
+            <operationType>READ</operationType>
+            <entityType>ASSERTION_ACCESS</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <Value>
+                                <Item xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </Value>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="1601d72d241b17d31512f545d3c6fd3d" version="1">
+            <operationType>READ</operationType>
+            <entityType>FOLDER</entityType>
+            <predicates>
+                <predicate>
+                    <type>ObjectIdentityPredicate</type>
+                    <Properties>
+                        <Property key="entityId">
+                            <StringValue>0000000000000000ffffffffffffec76</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="1601d72d241b17d31512f545d3c6fd3f" version="1">
+            <operationType>READ</operationType>
+            <entityType>FOLDER</entityType>
+            <predicates>
+                <predicate>
+                    <type>FolderPredicate</type>
+                    <Properties>
+                        <Property key="transitive">
+                            <StringValue>true</StringValue>
+                        </Property>
+                        <Property key="folderId">
+                            <StringValue>0000000000000000ffffffffffffec76</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="5765587f016c0b4fde5b5a237b6bae28" version="1">
+            <operationType>UPDATE</operationType>
+            <entityType>ASSERTION_ACCESS</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>com.l7tech.external.assertions.xmlsec.NonSoapCheckVerifyResultsAssertion</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <Value>
+                                <Item xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </Value>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="5765587f016c0b4fde5b5a237b6bae2a" version="1">
+            <operationType>UPDATE</operationType>
+            <entityType>ASSERTION_ACCESS</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <Value>
+                                <Item xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </Value>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="1601d72d241b17d31512f545d3c6fd05" version="0">
+            <operationType>DELETE</operationType>
+            <entityType>ANY</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>ttest</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>id</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>eq</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>ttestttset</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>id</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>eq</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>SecurityZonePredicate</type>
+                    <Properties>
+                        <Property key="securityZoneId">
+                            <StringValue>1601d72d241b17d31512f545d3c6fb8c</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="1601d72d241b17d31512f545d3c6fd30" version="1">
+            <operationType>CREATE</operationType>
+            <entityType>ANY</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>asd</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>sw</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>SecurityZonePredicate</type>
+                </predicate>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>asd</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <StringValue>eq</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+                <predicate>
+                    <type>FolderPredicate</type>
+                    <Properties>
+                        <Property key="transitive">
+                            <StringValue>true</StringValue>
+                        </Property>
+                        <Property key="folderId">
+                            <StringValue>0000000000000000ffffffffffffec76</StringValue>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+        <permission id="5765587f016c0b4fde5b5a237b6bae5e" version="0">
+            <operationType>CREATE</operationType>
+            <entityType>ANY</entityType>
+            <predicates/>
+        </permission>
+        <permission id="5765587f016c0b4fde5b5a237b6bae26" version="1">
+            <operationType>READ</operationType>
+            <entityType>ASSERTION_ACCESS</entityType>
+            <predicates>
+                <predicate>
+                    <type>AttributePredicate</type>
+                    <Properties>
+                        <Property key="value">
+                            <StringValue>com.l7tech.external.assertions.xmlsec.NonSoapCheckVerifyResultsAssertion</StringValue>
+                        </Property>
+                        <Property key="attribute">
+                            <StringValue>name</StringValue>
+                        </Property>
+                        <Property key="mode">
+                            <Value>
+                                <Item xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </Value>
+                        </Property>
+                    </Properties>
+                </predicate>
+            </predicates>
+        </permission>
+    </permissions>
+    <assignments>
+        <assignment id="051fa67eb5ec882fb07b77276a18e0bd">
+            <providerId>0000000000000000fffffffffffffffe</providerId>
+            <identityId>5765587f016c0b4fde5b5a237b6baf51</identityId>
+            <entityType>User</entityType>
+        </assignment>
+        <assignment id="051fa67eb5ec882fb07b77276a18e0be">
+            <providerId>0000000000000000fffffffffffffffe</providerId>
+            <identityId>051fa67eb5ec882fb07b77276a18e0b8</identityId>
+            <entityType>Group</entityType>
+        </assignment>
+        <assignment id="051fa67eb5ec882fb07b77276a18e0bc">
+            <providerId>0000000000000000fffffffffffffffe</providerId>
+            <identityId>00000000000000000000000000000003</identityId>
+            <entityType>User</entityType>
+        </assignment>
+    </assignments>
+</Role>
