@@ -4,7 +4,6 @@
 -- Layer 7 Technologies, inc
 --
 
-UPDATE ssg_version SET current_version = '8.0.0';
 
 -- ****************************************************************************************************************** --
 -- ********************************* OID'S NO LONGER EXIST AFTER THIS POINT ***************************************** --
@@ -1654,3 +1653,7 @@ alter table sample_messages
 -- SSG-7606 not able to authenticate FIP user with cert that has a long subject DN and OID values
 alter table fed_user alter subject_dn set data type varchar(1024);
 
+                --
+-- Update the version at the very end, safe to start gateway
+--
+UPDATE ssg_version SET current_version = '8.0.0';

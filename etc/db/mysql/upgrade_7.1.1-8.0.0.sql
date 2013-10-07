@@ -9,10 +9,6 @@
 --
 SET FOREIGN_KEY_CHECKS=0;
 
---
--- Update the version
---
-UPDATE ssg_version SET current_version = '8.0.0';
 
 -- ****************************************************************************************************************** --
 -- ********************************* OID'S NO LONGER EXIST AFTER THIS POINT ***************************************** --
@@ -1866,6 +1862,12 @@ DROP PROCEDURE IF EXISTS dropIndexIfExists;
 
 -- SSG-7606 not able to authenticate FIP user with cert that has a long subject DN and OID values
 alter table fed_user modify subject_dn VARCHAR(1024);
+
+--
+-- Update the version at the very end, safe to start gateway
+--
+UPDATE ssg_version SET current_version = '8.0.0';
+
 
 --
 -- Reenable FK at very end of script
