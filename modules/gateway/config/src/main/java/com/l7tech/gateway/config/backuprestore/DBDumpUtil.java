@@ -216,6 +216,9 @@ class DBDumpUtil {
                 s = s.replace("\r", " ");
                 s = s.replace("\n", " ");
                 s = s.replace("`", "");
+                // The below replacement is needed because mysql will return a default byte value as the actual byte string.
+                // In the create table statement we need it to be a hex string. This is only needed in the wsdm_subscription table.
+                s = s.replace("DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0��������'", "DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF'");
                 mainOutput.write((s + ";\n").getBytes());
             }
         }finally{
