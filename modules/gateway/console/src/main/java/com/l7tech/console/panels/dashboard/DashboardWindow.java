@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.panels.dashboard;
 
+import com.l7tech.console.action.PrintAction;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -19,6 +20,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.print.PageFormat;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ResourceBundle;
@@ -134,9 +136,22 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             }
         });
 
+        final JMenuItem printItem = new JMenuItem(_commonResources.getString("Print"));
+        printItem.setMnemonic(printItem.getText().toCharArray()[0]);
+        printItem.setAccelerator(KeyStroke.getKeyStroke('P', KeyEvent.ALT_DOWN_MASK));
+        printItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final PageFormat pageFormat = new PageFormat();
+                pageFormat.setOrientation(PageFormat.LANDSCAPE);
+                new PrintAction(mainPanel, pageFormat).actionPerformed(e);
+            }
+        });
+
         final JMenu fileMenu = new JMenu(_commonResources.getString("File"));
         fileMenu.setMnemonic(fileMenu.getText().toCharArray()[0]);
         fileMenu.add(exitMenuItem);
+        fileMenu.add(printItem);
 
         final JMenuItem helpTopicsMenuItem = new JMenuItem(_commonResources.getString("Help_TopicsMenuItem_text_name"));
         helpTopicsMenuItem.setMnemonic('H');
