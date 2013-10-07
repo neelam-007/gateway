@@ -1,6 +1,5 @@
 package com.l7tech.server.upgrade;
 
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -14,9 +13,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.email.EmailListenerManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
@@ -42,7 +38,6 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
     public void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException {
         this.applicationContext = applicationContext;
         SsgConnectorManager ssgConnectorManager = getBean("ssgConnectorManager", SsgConnectorManager.class);
-        ServiceManager serviceManager = getBean("serviceManager", ServiceManager.class);
         JmsConnectionManager jmsConnectionManager = getBean("jmsConnectionManager", JmsConnectionManager.class);
         EmailListenerManager emailListenerManager = getBean("emailListenerManager", EmailListenerManager.class);
         IdentityProviderConfigManager identityProviderConfigManager = getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
@@ -51,12 +46,7 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
             for(SsgConnector ssgConnector : ssgConnectorManager.findAll()){
                 String serviceOid = ssgConnector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
                 if(serviceOid != null){
-                    PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
-                    if(service != null) {
-                        ssgConnector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());
-                    } else {
-                        throw new FatalUpgradeException("Cannot find service with old oid: " + serviceOid);
-                    }
+                    ssgConnector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)).toHexString());
                     try {
                         ssgConnectorManager.update(ssgConnector);
                     } catch (UpdateException e) {
@@ -74,14 +64,9 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
                 if (isHardwiredService != null) {
                     if (Boolean.parseBoolean(isHardwiredService)) {
                         String serviceOid = jmsConnection.properties().getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                        PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
-                        if(service != null) {
-                            Properties properties = jmsConnection.properties();
-                            properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());
-                            jmsConnection.properties(properties);
-                        } else {
-                            throw new FatalUpgradeException("Cannot find service with old oid: " + serviceOid);
-                        }
+                        Properties properties = jmsConnection.properties();
+                        properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)).toHexString());
+                        jmsConnection.properties(properties);
                         try {
                             jmsConnectionManager.update(jmsConnection);
                         } catch (UpdateException e) {
@@ -100,15 +85,10 @@ public class Upgrade71To80IdReferences implements UpgradeTask {
                 if (isHardwiredService != null) {
                     if (Boolean.parseBoolean(isHardwiredService)) {
                         String serviceOid = emailListener.properties().getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
-                        PublishedService service = serviceManager.findByPrimaryKey(GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)));
-                        if(service != null) {
-                            Properties properties = emailListener.properties();
-                            properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, service.getGoid().toHexString());
-                            emailListener.properties(properties);
-                        } else {
-                            throw new FatalUpgradeException("Cannot find service with old oid: " + serviceOid);
-                        }
-                        try {
+                        Properties properties = emailListener.properties();
+                        properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, GoidUpgradeMapper.mapOid(EntityType.SERVICE,Long.parseLong(serviceOid)).toHexString());
+                        emailListener.properties(properties);
+                         try {
                             emailListenerManager.update(emailListener);
                         } catch (UpdateException e) {
                             throw new FatalUpgradeException("Error saving emailListener", e);
