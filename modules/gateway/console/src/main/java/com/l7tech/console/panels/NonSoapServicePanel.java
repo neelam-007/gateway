@@ -2,7 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,7 +43,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         add(mainPanel);
         // set the prefix based on what host we are connected to
         String hostname = TopComponents.getInstance().ssgURL().getHost();
-        String ssgUrl = "http://" + hostname + ":8080/";
+        String ssgUrl = "http(s)://" + hostname + ":[port]/";
         prefixURL.setText(ssgUrl);
 
         ssgURLSuffix.setDocument(new FilterDocument(127, null));
@@ -84,10 +86,11 @@ public class NonSoapServicePanel extends WizardStepPanel {
             routingURI = "/" + tmp;
         }
         // check that this is a valid url
+        final String testUrl = "http://" + TopComponents.getInstance().ssgURL().getHost() + ":8080/" + tmp;
         try {
-            new URL(prefixURL.getText() + tmp);
+            new URL(testUrl);
         } catch (MalformedURLException e) {
-            String msg = prefixURL.getText() + tmp + " is not a valid url. " + e.getMessage();
+            String msg = testUrl + " is not a valid url. " + e.getMessage();
             logger.info(msg);
             bark(ssgURLSuffix, msg);
             return false;
