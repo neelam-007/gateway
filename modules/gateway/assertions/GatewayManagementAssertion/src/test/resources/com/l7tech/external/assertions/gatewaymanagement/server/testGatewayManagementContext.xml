@@ -175,6 +175,10 @@
                     <constructor-arg index="7" ref="identityProviderFactory"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.TestResourceFactory"/>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EmailListenerResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="emailListenerManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyAliasResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="policyAliasManager"/>
                     <constructor-arg index="4" ref="policyResourceFactory"/>

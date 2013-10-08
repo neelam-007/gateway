@@ -20,6 +20,8 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
@@ -69,6 +71,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
+import com.l7tech.server.transport.email.EmailListenerManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
@@ -5255,6 +5258,10 @@ public class ServerGatewayManagementAssertionTest {
         final PublishedServiceAlias sAlias1 = new PublishedServiceAlias(testService1,testFolder);
         sAlias1.setGoid(new Goid(0,1));
         beanFactory.addBean("serviceAliasManager", new ServiceAliasManagerStub(sAlias1));
+
+        // email listener
+        final EmailListener emailListener = new EmailListener(EmailServerType.POP3);
+        beanFactory.addBean("emailListenerManager", new EmailListenerManagerStub(emailListener){});
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(

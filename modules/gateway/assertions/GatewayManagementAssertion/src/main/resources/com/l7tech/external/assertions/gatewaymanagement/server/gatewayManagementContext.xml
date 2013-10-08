@@ -211,12 +211,17 @@
                     <constructor-arg index="5" ref="securityZoneManager"/>
                     <constructor-arg index="6" ref="entityCrud"/>
                     <constructor-arg index="7" ref="identityProviderFactory"/>
-                </bean>                   <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyAliasResourceFactory" parent="resourceFactoryParent">
-                <constructor-arg index="3" ref="policyAliasManager"/>
-                <constructor-arg index="4" ref="policyResourceFactory"/>
-                <constructor-arg index="5" ref="folderResourceFactory"/>
-                <constructor-arg index="6" ref="securityZoneManager"/>
-            </bean>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyAliasResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="policyAliasManager"/>
+                    <constructor-arg index="4" ref="policyResourceFactory"/>
+                    <constructor-arg index="5" ref="folderResourceFactory"/>
+                    <constructor-arg index="6" ref="securityZoneManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.EmailListenerResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="emailListenerManager"/>
+                    <constructor-arg index="4" ref="securityZoneManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceAliasResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="serviceAliasManager"/>
                     <constructor-arg index="4" ref="serviceResourceFactory"/>

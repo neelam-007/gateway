@@ -1,5 +1,6 @@
 CertificateData
 ClusterPropertyMO
+EmailListenerMO
 FolderMO
 IdentityProviderMO
 InterfaceTagMO

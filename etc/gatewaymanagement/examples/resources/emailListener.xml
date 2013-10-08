@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<EmailListener securityZoneId="7b2861ec5ead45da03a6f268cebdede6" id="7eb12b2c2e5c3bba725bb9577cad21fc" version="0">
+    <Name>name</Name>
+    <Active>false</Active>
+    <Hostname>host</Hostname>
+    <Port>1234</Port>
+    <ServerType>IMAP</ServerType>
+    <UseSsl>true</UseSsl>
+    <DeleteOnReceive>true</DeleteOnReceive>
+    <Username>asdf</Username>
+    <Password>asdf</Password>
+    <Folder>INBOX</Folder>
+    <PollInterval>60</PollInterval>
+    <Properties>
+        <Property key="com.l7tech.server.jms.prop.hardwired.service.id">
+            <StringValue>7b2861ec5ead45da03a6f268cebded80</StringValue>
+        </Property>
+        <Property key="com.l7tech.server.jms.prop.hardwired.service.bool">
+            <StringValue>true</StringValue>
+        </Property>
+        <Property key="com.l7tech.server.email.prop.request.sizeLimit">
+            <StringValue>2621440</StringValue>
+        </Property>
+    </Properties>
+</EmailListener>

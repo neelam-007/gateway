@@ -464,6 +464,15 @@ public class ManagedObjectFactory {
     public static ServiceAliasMO createServiceAlias() {
         return new ServiceAliasMO();
     }
+
+    /**
+     * Create a new EmailListenerMO instance.
+     *
+     * @return The new instance
+     */
+    public static EmailListenerMO createEmailListener() {
+        return new EmailListenerMO();
+    }
     
     /**
      * Create a new RbacRoleMO instance.
