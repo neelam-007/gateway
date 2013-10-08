@@ -67,7 +67,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
     private Map<Goid, String> assertionNames = new HashMap<>();
-    private Map<EntityHeader, String> entityNames = new TreeMap<>();
+    private Map<EntityHeader, String> entityNames = new HashMap<>();
 
     /**
      * @param owner       owner of this Dialog.
@@ -160,7 +160,19 @@ public class AssignSecurityZonesDialog extends JDialog {
                 column("Name", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
                     @Override
                     public String call(final EntityHeader header) {
-                        return entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE;
+                        String name = UNAVAILABLE;
+                        if (entityNames.containsKey(header)) {
+                            name = entityNames.get(header);
+                        } else {
+                            // header may not be in the map if it was changed since being retrieved
+                            try {
+                                name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
+                                entityNames.put(header, name);
+                            } catch (final FindException | PermissionDeniedException e) {
+                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            }
+                        }
+                        return name;
                     }
                 }),
                 column("Current Zone", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
@@ -331,6 +343,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                             final Goid savedGoid = rbacAdmin.saveAssertionAccess(assertionAccess);
                             assertionNames.remove(header.getGoid());
                             assertionNames.put(savedGoid, assertionClassName);
+                            entityNames.remove(header);
                             header.setGoid(savedGoid);
                             setZoneOnHeader(selectedZone, header);
                             dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
@@ -355,6 +368,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                                 final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
                                 final SsgKeyMetadata metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), selectedZone);
                                 final Goid savedGoid = trustedCertManager.saveOrUpdateMetadata(metadata);
+                                entityNames.remove(header);
                                 header.setGoid(savedGoid);
                                 setZoneOnHeader(selectedZone, header);
                                 dataModel.fireTableRowsUpdated(rowIndex, rowIndex);
