@@ -67,7 +67,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
     private Map<Goid, String> assertionNames = new HashMap<>();
-    private Map<EntityHeader, String> entityNames = new HashMap<>();
+    private Map<EntityHeader, String> entityNames = new TreeMap<>();
 
     /**
      * @param owner       owner of this Dialog.
