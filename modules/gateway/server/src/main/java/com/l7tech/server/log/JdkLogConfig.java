@@ -6,6 +6,7 @@ import com.l7tech.util.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.*;
@@ -102,6 +103,13 @@ public class JdkLogConfig {
                 boolean logToConsole = SyspropUtil.getBoolean( PARAM_LOG_TO_CONSOLE, false );
                 if ( logToConsole ) {
                     addSystemErrorHandler();
+                    //Remove the GatewayRootLoggingHandler from the root loggers. Leaving it here will result in double logging.
+                    Logger rootLogger = Logger.getLogger("");
+                    for ( Handler handler : rootLogger.getHandlers() ) {
+                        if ( handler instanceof GatewayRootLoggingHandler) {
+                            rootLogger.removeHandler( handler );
+                        }
+                    }
                 }
 
                 loadSerializedConfig();
@@ -177,13 +185,18 @@ public class JdkLogConfig {
             Logger rootLogger = Logger.getLogger("");
             //Save the root logger that was used.
             initialRootLogger.set(rootLogger);
+            //save the handlers used so that they can be used by the GatewayRootLoggingHandler
+            final List<Handler> handlers = new ArrayList<>();
             for ( LogFileConfiguration logFileConfiguration : logFileConfigurations ) {
                 try {
-                    rootLogger.addHandler( logFileConfiguration.buildFileHandler() );
+                    final Handler handler = logFileConfiguration.buildFileHandler();
+                    handlers.add(handler);
+                    rootLogger.addHandler(handler);
                 } catch ( IOException ioe ) {
                     // ok
                 }
             }
+            initialRootHandlers.set(handlers);
         }
     }
 
@@ -199,6 +212,14 @@ public class JdkLogConfig {
      */
     public static Logger getInitialRootLogger(){
         return initialRootLogger.get();
+    }
+
+    /**
+     * This allows the root logging handlers used to be accessed from the GatewayRootLoggingHandler
+     */
+    private static final AtomicReference<List<Handler>> initialRootHandlers = new AtomicReference<>(Collections.<Handler>emptyList());
+    protected static List<Handler> getInitialRootHandlers(){
+        return initialRootHandlers.get();
     }
 
     /**

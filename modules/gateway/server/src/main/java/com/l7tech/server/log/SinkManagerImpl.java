@@ -788,6 +788,8 @@ public class SinkManagerImpl
         if(logToConsole && handler == null){
             //if logging to the console is enforced and the root handle has not been set then create a new one.
             handler = new ConsoleHandler();
+            //Add the Logs category here as well. Otherwise not much will be logged to the console
+            configuration.setCategories(SinkConfiguration.CATEGORY_AUDITS + "," + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
         }
         //create the console message sink
         ConsoleMessageSink sink = new ConsoleMessageSink( configuration, handler );
