@@ -1,11 +1,14 @@
 package com.l7tech.external.assertions.ssh;
 
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.message.CommandKnob;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurePasswordEntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -31,7 +34,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INS
 /**
  *  Route outbound SCP & SFTP to external SSH server.
  */
-public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
+public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesEntities {
 
     public static final int DEFAULT_CONNECT_TIMEOUT = 10;  // Timeout (in seconds) when opening SSH Connection.
     public static final int DEFAULT_READ_TIMEOUT = 60;   // Timeout (in seconds) when reading a remote file.
@@ -436,5 +439,28 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public String getSaveFileSizeContextVariable() {
         return saveFileSizeContextVariable;
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        if (isCredentialsSourceSpecified()) {
+            if (usePrivateKey) {
+                return new EntityHeader[]{new SecurePasswordEntityHeader(privateKeyGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name())};
+            } else {
+                return new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+            }
+        }
+        return new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (isCredentialsSourceSpecified()) {
+            if (Goid.equals(oldEntityHeader.getGoid(), privateKeyGoid)) {
+                privateKeyGoid = newEntityHeader.getGoid();
+            } else if (Goid.equals(oldEntityHeader.getGoid(), passwordGoid)) {
+                passwordGoid = newEntityHeader.getGoid();
+            }
+        }
     }
 }

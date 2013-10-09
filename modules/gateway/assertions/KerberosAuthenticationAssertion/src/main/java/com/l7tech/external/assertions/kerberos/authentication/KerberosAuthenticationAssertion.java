@@ -1,17 +1,16 @@
 package com.l7tech.external.assertions.kerberos.authentication;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurePasswordEntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
@@ -32,7 +31,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLA
 /**
  * 
  */
-public class KerberosAuthenticationAssertion extends Assertion implements UsesVariables {
+public class KerberosAuthenticationAssertion extends Assertion implements UsesVariables, UsesEntities {
     protected static final Logger logger = Logger.getLogger(KerberosAuthenticationAssertion.class.getName());
 
     public static final Pattern spnPattern = Pattern.compile("^([a-zA-Z0-9]+)\\/([a-zA-Z0-9\\.-]+[^\\W])(@([a-zA-Z0-9-\\.]*[^\\W])){0,1}$");
@@ -150,6 +149,23 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount, userRealm);
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        if (!krbUseGatewayKeytab) {
+            return new EntityHeader[]{new SecurePasswordEntityHeader(krbSecurePasswordReference, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+        }
+        return new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (!krbUseGatewayKeytab) {
+            if (Goid.equals(oldEntityHeader.getGoid(), krbSecurePasswordReference)) {
+                krbSecurePasswordReference = newEntityHeader.getGoid();
+            }
+        }
     }
 
     //

@@ -4,13 +4,12 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
+import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -21,10 +20,10 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.GoidUpgradeMapper;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,7 +41,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author nilic
  * @author jwilliams
  */
-public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesPrivateKeys {
+public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesPrivateKeys, UsesEntities {
 
     private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
 
@@ -478,5 +477,22 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     @Override
     public VariableMetadata[] getVariablesSet() {
         return _requestTarget.getMessageTargetVariablesSet().with(_responseTarget.getMessageTargetVariablesSet()).asArray();
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        if (FtpCredentialsSource.SPECIFIED.equals(_credentialsSource) && passwordGoid != null) {
+            return new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+        }
+        return new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (FtpCredentialsSource.SPECIFIED.equals(_credentialsSource) && passwordGoid != null) {
+            if (Goid.equals(oldEntityHeader.getGoid(), passwordGoid)) {
+                passwordGoid = newEntityHeader.getGoid();
+            }
+        }
     }
 }

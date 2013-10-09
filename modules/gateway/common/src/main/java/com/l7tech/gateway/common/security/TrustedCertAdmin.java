@@ -484,6 +484,16 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     List<SecurePassword> findAllSecurePasswords() throws FindException;
 
     /**
+     * Retrieves {@link SecurePassword} by its id.
+     *
+     * @return the SecurePassword or null if no secure password for that goid
+     * @throws FindException if there was a server-side problem accessing the requested information
+     */
+    @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
+    @Secured(types = SECURE_PASSWORD, stereotype = FIND_ENTITY)
+    SecurePassword findSecurePasswordById(Goid id) throws FindException;
+
+    /**
      * Retrieves the public PEM key for PEM private key stored password.
      *
      * @param securePasswordGoid the goid of the SecurePassword to access. Required.

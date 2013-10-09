@@ -308,6 +308,8 @@ public abstract class ExternalReference {
                     references.add(PrivateKeyReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(JdbcConnectionReference.class))) {
                     references.add(JdbcConnectionReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(StoredPasswordReference.class))) {
+                    references.add(StoredPasswordReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType( GlobalResourceReference.class))) {
                     references.add( GlobalResourceReference.parseFromElement(finder, entityResolver, refEl));
                 }
@@ -356,6 +358,7 @@ public abstract class ExternalReference {
         TrustedCertReference.class,
         PrivateKeyReference.class,
         JdbcConnectionReference.class,
-        EncapsulatedAssertionReference.class
+        EncapsulatedAssertionReference.class,
+        StoredPasswordReference.class
     )) );
 }

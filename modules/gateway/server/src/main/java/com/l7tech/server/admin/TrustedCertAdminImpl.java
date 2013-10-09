@@ -610,6 +610,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
+    public SecurePassword findSecurePasswordById(Goid id) throws FindException {
+        return securePasswordManager.findByPrimaryKey(id);
+    }
+
+    @Override
     public Goid saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
         if (Goid.isDefault(securePassword.getGoid())) {
             return saveNewSecurePassword(securePassword);

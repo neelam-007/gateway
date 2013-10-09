@@ -230,6 +230,30 @@ public class DomUtils {
     }
 
     /**
+     * Finds all child {@link Element} of a parent {@link Element}
+     * with the specified name that is in the default namespace. This will never return null but it can return an empty
+     * list. If there are no child elements with the matching name.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param name the name of the element to find. Must be non-null.
+     * @return The list of child elements found with the matching name. Will never be null.
+     */
+    public static List<Element> findAllChildElementsByName( final Element parent, final String name ) {
+        if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
+        NodeList children = parent.getChildNodes();
+        List<Element> results = new ArrayList<>();
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE &&
+                    name.equals( n.getNodeName()) &&
+                    n.getNamespaceURI() == null) {
+                results.add((Element)n);
+            }
+        }
+        return results;
+    }
+
+    /**
      * Finds zero or one child {@link Element}s of a parent {@link Element}
      * with the specified name that is in the specified namespace.
      *

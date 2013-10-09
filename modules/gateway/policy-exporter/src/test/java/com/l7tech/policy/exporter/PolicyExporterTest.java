@@ -3,14 +3,13 @@ package com.l7tech.policy.exporter;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -24,18 +23,23 @@ import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.test.BugId;
 import com.l7tech.util.DomUtils;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
 import org.xml.sax.EntityResolver;
 
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class for the policy exporter.
@@ -79,6 +83,10 @@ public class PolicyExporterTest {
         assertEquals("Jms reference type", "com.l7tech.console.policy.exporter.JMSEndpointReference", jmsConnRefEle.getAttribute( "RefType" ));
         Element encassRefEle = XmlUtil.findExactlyOneChildElementByName( referencesEle, "EncapsulatedAssertionReference" );
         assertEquals("Encass reference type", "com.l7tech.console.policy.exporter.EncapsulatedAssertionReference", encassRefEle.getAttribute( "RefType" ));
+        List<Element> passwordRefElems = XmlUtil.findAllChildElementsByName(referencesEle, "StoredPasswordReference");
+        Assert.assertEquals("Incorrect number of password references", 2, passwordRefElems.size());
+        assertEquals("Stored Password reference type", "com.l7tech.console.policy.exporter.StoredPasswordReference", passwordRefElems.get(0).getAttribute("RefType"));
+        assertEquals("Stored Password reference type", "com.l7tech.console.policy.exporter.StoredPasswordReference", passwordRefElems.get(1).getAttribute("RefType"));
     }
 
     @Test
@@ -105,7 +113,8 @@ public class PolicyExporterTest {
         assertTrue("Missing PrivateKeyReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.PrivateKeyReference" ));
         assertTrue("Missing TrustedCertReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.TrustedCertReference" ));
         assertFalse("Found EncapsulatedAssertionReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.EncapsulatedAssertionReference" ));
-        assertEquals("Reference count", 9, referenceTypes.size());
+        assertTrue("Missing StoredPasswordReference", referenceTypes.contains( "com.l7tech.console.policy.exporter.StoredPasswordReference" ));
+        assertEquals("Reference count", 10, referenceTypes.size());
     }
 
     @BugId("SSG-7622")
@@ -192,6 +201,10 @@ public class PolicyExporterTest {
         encass.setEncapsulatedAssertionConfigName("encass-name");
         root.addChild( encass );
 
+        //SecurePasswordReference
+        TestSecurePasswordAssertion securePasswordAssertion = new TestSecurePasswordAssertion();
+        root.addChild( securePasswordAssertion );
+
         return root;
     }
 
@@ -233,6 +246,31 @@ public class PolicyExporterTest {
         @Override
         public String getName() {
             return "Test Custom Assertion";
+        }
+    }
+
+    public static final class TestSecurePasswordAssertion extends Assertion implements UsesEntities {
+        private Goid privateKeyGoid = new Goid(0,123);
+        private String privateKeyName = "privateKey";
+        private String privateKeyDescription = "Private Key Description";
+        private Goid passwordGoid = new Goid(0, 456);
+        private String passwordName = "Password";
+        private String passwordDescription = "My Password Description";
+
+        @Override
+        public EntityHeader[] getEntitiesUsed() {
+            return new EntityHeader[]{
+                    new SecurePasswordEntityHeader(privateKeyGoid, EntityType.SECURE_PASSWORD, privateKeyName, privateKeyDescription, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name()),
+                    new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, passwordName, passwordDescription, SecurePassword.SecurePasswordType.PASSWORD.name())};
+        }
+
+        @Override
+        public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+                if (Goid.equals(oldEntityHeader.getGoid(), privateKeyGoid)) {
+                    privateKeyGoid = newEntityHeader.getGoid();
+                } else if (Goid.equals(oldEntityHeader.getGoid(), passwordGoid)) {
+                    passwordGoid = newEntityHeader.getGoid();
+                }
         }
     }
 

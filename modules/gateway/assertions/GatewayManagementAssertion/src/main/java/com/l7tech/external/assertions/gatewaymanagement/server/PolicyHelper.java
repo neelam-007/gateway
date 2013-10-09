@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
@@ -40,6 +41,7 @@ import com.l7tech.server.policy.PolicyAssertionRbacChecker;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -364,6 +366,7 @@ public class PolicyHelper {
         private final GenericEntityManager genericEntityManager;
         private final HttpConfigurationManager httpConfigurationManager;
         private final RoleManager roleManager;
+        private SecurePasswordManager securePasswordManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -382,7 +385,8 @@ public class PolicyHelper {
                                                final SiteMinderConfigurationManager siteMinderConfigurationManager,
                                                final GenericEntityManager genericEntityManager,
                                                final HttpConfigurationManager httpConfigurationManager,
-                                               final RoleManager roleManager) {
+                                               final RoleManager roleManager,
+                                               final SecurePasswordManager securePasswordManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -401,6 +405,7 @@ public class PolicyHelper {
             this.genericEntityManager = genericEntityManager;
             this.httpConfigurationManager = httpConfigurationManager;
             this.roleManager = roleManager;
+            this.securePasswordManager = securePasswordManager;
         }
 
         private User getUser() {
@@ -615,6 +620,11 @@ public class PolicyHelper {
         @Override
         public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
             return genericEntityManager.getEntityManager(entityClass);
+        }
+
+        @Override
+        public SecurePassword findSecurePasswordById(Goid id) throws FindException {
+            return filter( securePasswordManager.findByPrimaryKey( id ) );
         }
 
         private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {

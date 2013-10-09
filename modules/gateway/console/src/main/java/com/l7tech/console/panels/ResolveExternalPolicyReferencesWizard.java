@@ -72,6 +72,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                     panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference) (ref));
                 } else if (ref instanceof JdbcConnectionReference) {
                     panel = new ResolveJdbcConnectionPanel(null, (JdbcConnectionReference) (ref));
+                } else if (ref instanceof StoredPasswordReference) {
+                    panel = new ResolveStoredPasswordPanel(null, (StoredPasswordReference) (ref));
                 } else if (ref instanceof GlobalResourceReference) { // must be after ExternalSchemaReference since that is a subclass
                     panel = new ResolveGlobalResourcePanel(null, (GlobalResourceReference) (ref));
                 }

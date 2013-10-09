@@ -73,6 +73,14 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private boolean readOnly;
 
     public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword, final boolean readOnly) {
+        this(owner, securePassword, readOnly, false);
+    }
+
+    /**
+     *  The lockPasswordType flag allow the password type combo box to be locked if it is set to true.
+     *  The Password type will be locked tot he type specified in the given secure password.
+     */
+    public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword, final boolean readOnly, final boolean lockPasswordType) {
         super(owner, "Stored Password Properties");
         setContentPane(contentPane);
         setModal(true);
@@ -95,13 +103,13 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             }
         });
 
-        
+
         nameField.getDocument().addDocumentListener(new RunOnChangeListener() {
 
 
             @Override
             public void run() {
-                
+
                 if ( (! ( CONTEXT_VARIABLE_SYNTAX.matcher(nameField.getText()).matches()
                            || nameField.getText().equals(""))  )  )  {
 
@@ -112,7 +120,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                         nameField.setToolTipText("You may set this name but you will not be able to use the " +
                                                  "corresponding Context Variable in Policy to obtain its value.");
                         nameField.setAll();
-                     
+
                     }
 
                 } else {
@@ -145,6 +153,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     }
                 } ) );
         typeComboBox.setSelectedItem(securePassword.getType() != null ? securePassword.getType() : SecurePassword.SecurePasswordType.PASSWORD);
+        if(lockPasswordType){
+            typeComboBox.setEnabled(false);
+        }
 
         generateCheckBox.addActionListener( enableDisableListener );
         generateKeyBitsComboBox.setModel( Utilities.comboBoxModel( RSA_KEY_SIZES ) );

@@ -71,6 +71,7 @@
         <constructor-arg index="15" ref="genericEntityManager" />
         <constructor-arg index="16" ref="httpConfigurationManager" />
         <constructor-arg index="17" ref="roleManager" />
+        <constructor-arg index="18" ref="securePasswordManager" />
     </bean>
 
     <bean id="resourceFactoryParent" abstract="true">

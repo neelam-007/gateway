@@ -17,6 +17,7 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -233,6 +234,12 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     @Override
     public <ET extends GenericEntity> EntityManager<ET, GenericEntityHeader> getGenericEntityManager(@NotNull Class<ET> entityClass) throws FindException {
         return null; //Intentionally null, meant to support interface only. Not to be called in this context.
+    }
+
+    @Override
+    public SecurePassword findSecurePasswordById(Goid id) throws FindException {
+        final TrustedCertAdmin admin = getAdminInterface(TrustedCertAdmin.class);
+        return admin.findSecurePasswordById(id);
     }
 
     @Override
