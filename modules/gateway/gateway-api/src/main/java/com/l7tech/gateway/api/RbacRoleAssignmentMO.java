@@ -11,11 +11,12 @@ import javax.xml.bind.annotation.XmlType;
  * The RbacRoleAssignmentMO object represents an rbac role assignment entity.
  */
 @XmlRootElement(name = "RoleAssignment")
-@XmlType(name = "RoleAssignmentType", propOrder = {"providerId", "identityId", "entityType", "extension", "extensions"})
+@XmlType(name = "RoleAssignmentType", propOrder = {"providerId", "identityId", "identityName", "entityType", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "roleAssignment")
 public class RbacRoleAssignmentMO extends ElementExtendableAccessibleObject {
     private String providerId;
     private String identityId;
+    private String identityName;
     private String entityType;
 
     protected RbacRoleAssignmentMO() {
@@ -45,7 +46,7 @@ public class RbacRoleAssignmentMO extends ElementExtendableAccessibleObject {
      *
      * @return The identity id of the assignment user or group
      */
-    @XmlElement(name = "identityId", required = true)
+    @XmlElement(name = "identityId")
     public String getIdentityId() {
         return identityId;
     }
@@ -76,5 +77,24 @@ public class RbacRoleAssignmentMO extends ElementExtendableAccessibleObject {
      */
     public void setEntityType(String entityType) {
         this.entityType = entityType;
+    }
+
+    /**
+     * This is the name of the identity. Either the user or group name.
+     *
+     * @return The name of the identity.
+     */
+    @XmlElement(name = "identityName")
+    public String getIdentityName() {
+        return identityName;
+    }
+
+    /**
+     * Sets the name of the identity.
+     *
+     * @param identityName The name of the identity.
+     */
+    public void setIdentityName(String identityName) {
+        this.identityName = identityName;
     }
 }

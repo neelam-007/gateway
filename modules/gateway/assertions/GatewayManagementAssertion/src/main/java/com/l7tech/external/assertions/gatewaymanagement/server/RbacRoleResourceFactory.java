@@ -241,8 +241,8 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         role.setName(rbacRoleMO.getName());
         role.setDescription(rbacRoleMO.getDescription());
         // Note do not use the userCreated flag from the resource. Roles created using wsman will automatically have this flag set to true.
-        assignmentsFromResource(role, rbacRoleMO.getAssignments());
         try {
+            assignmentsFromResource(role, rbacRoleMO.getAssignments());
             permissionsFromResource(role, rbacRoleMO);
         } catch (FindException e) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Could not find entity: " + e.getMessage());
@@ -298,17 +298,29 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         }
     }
 
-    private void assignmentsFromResource(Role role, List<RbacRoleAssignmentMO> rbacRoleAssignmentMOs) throws InvalidResourceException {
+    private void assignmentsFromResource(Role role, List<RbacRoleAssignmentMO> rbacRoleAssignmentMOs) throws InvalidResourceException, FindException {
         for (RbacRoleAssignmentMO rbacRoleAssignmentMO : rbacRoleAssignmentMOs) {
             if ("User".equals(rbacRoleAssignmentMO.getEntityType())) {
                 UserBean user = new UserBean();
                 user.setProviderId(Goid.parseGoid(rbacRoleAssignmentMO.getProviderId()));
-                user.setUniqueIdentifier(rbacRoleAssignmentMO.getIdentityId());
+                if (rbacRoleAssignmentMO.getIdentityId() != null) {
+                    user.setUniqueIdentifier(rbacRoleAssignmentMO.getIdentityId());
+                } else if (rbacRoleAssignmentMO.getIdentityName() != null) {
+                    user.setUniqueIdentifier(findIdentityIdByName(Goid.parseGoid(rbacRoleAssignmentMO.getProviderId()), rbacRoleAssignmentMO.getEntityType(), rbacRoleAssignmentMO.getIdentityName()));
+                } else {
+                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "Must specify either role assignment identity id or identity name");
+                }
                 role.addAssignedUser(user);
             } else if ("Group".equals(rbacRoleAssignmentMO.getEntityType())) {
                 GroupBean group = new GroupBean();
                 group.setProviderId(Goid.parseGoid(rbacRoleAssignmentMO.getProviderId()));
-                group.setUniqueIdentifier(rbacRoleAssignmentMO.getIdentityId());
+                if (rbacRoleAssignmentMO.getIdentityId() != null) {
+                    group.setUniqueIdentifier(rbacRoleAssignmentMO.getIdentityId());
+                } else if (rbacRoleAssignmentMO.getIdentityName() != null) {
+                    group.setUniqueIdentifier(findIdentityIdByName(Goid.parseGoid(rbacRoleAssignmentMO.getProviderId()), rbacRoleAssignmentMO.getEntityType(), rbacRoleAssignmentMO.getIdentityName()));
+                } else {
+                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "Must specify either role assignment identity id or identity name");
+                }
                 role.addAssignedGroup(group);
             } else {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Unknown role assignment entity type: " + rbacRoleAssignmentMO.getEntityType());
@@ -516,5 +528,24 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                 throw new FindException("Could not find identity. Identity provider id: " + assignment.getProviderId() + " Id: " + assignment.getIdentityId());
             }
         }
+    }
+
+    private String findIdentityIdByName(Goid providerId, String entityType, String identityName) throws FindException {
+        IdentityProvider provider = identityProviderFactory.getProvider(providerId);
+        if (provider == null) {
+            throw new FindException("Could not find identity provider. Id: " + providerId);
+        }
+        final Identity identity;
+        if ("User".equals(entityType)) {
+            identity = provider.getUserManager().findByLogin(identityName);
+        } else if ("Group".equals(entityType)) {
+            identity = provider.getGroupManager().findByName(identityName);
+        } else {
+            throw new UnsupportedEntityTypeException("Unknown role assignment entity type: " + entityType);
+        }
+        if (identity == null) {
+            throw new FindException("Could not find identity. Identity provider id: " + providerId + " Name: " + identityName + " Type: " + entityType);
+        }
+        return identity.getId();
     }
 }
