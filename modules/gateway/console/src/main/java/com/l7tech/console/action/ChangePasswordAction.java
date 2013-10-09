@@ -41,7 +41,7 @@ public class ChangePasswordAction extends SecureAction {
      */
     @Override
     public String getName() {
-        return "My Account";
+        return "Change Password";
     }
 
     /**

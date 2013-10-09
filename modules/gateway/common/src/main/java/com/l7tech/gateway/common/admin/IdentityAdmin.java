@@ -473,6 +473,7 @@ public interface IdentityAdmin {
      */
     @Transactional(readOnly = true)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
+    @Administrative(licensed = false)
     String getPasswordPolicyDescriptionForIdentityProvider() throws FindException;
 
     /**

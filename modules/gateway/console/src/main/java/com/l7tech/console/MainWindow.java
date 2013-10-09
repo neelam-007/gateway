@@ -166,7 +166,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
-    private ChangePasswordAction changePasswordAction = null;
     private MyAccountAction myAccountAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
@@ -1351,7 +1350,9 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (myAccountAction == null) {
             myAccountAction = new MyAccountAction();
         }
-        disableUntilLogin(myAccountAction);
+        // disable until login
+        myAccountAction.setEnabled(false);
+        addLogonListener(myAccountAction);
         return myAccountAction;
     }
 
