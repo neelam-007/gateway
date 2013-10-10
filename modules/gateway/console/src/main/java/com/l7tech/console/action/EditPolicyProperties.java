@@ -3,6 +3,8 @@
  */
 package com.l7tech.console.action;
 
+import com.l7tech.console.logging.PermissionDeniedErrorHandler;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
@@ -174,6 +176,9 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
                         success = false;
+                    } catch (final PermissionDeniedException e) {
+                        success = false;
+                        PermissionDeniedErrorHandler.showMessageDialog(e, logger);
                     }
 
                     resultCallback.call(success);
