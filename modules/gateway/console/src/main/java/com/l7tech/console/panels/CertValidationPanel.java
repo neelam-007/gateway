@@ -40,7 +40,7 @@ public class CertValidationPanel extends WizardStepPanel {
     private void initialize() {
         add(mainPanel);
 
-        certificateIsATrustCheckBox.setSelected(true); // the default is set to be selected.
+        certificateIsATrustCheckBox.setSelected(false); // the default is set to be unselected.
 
         setVerifySslHostnameCheckBoxEnabled(false);
 
