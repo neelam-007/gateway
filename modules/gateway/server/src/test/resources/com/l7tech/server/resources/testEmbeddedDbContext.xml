@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Context used if running an Embedded database.
+-->
+<!--suppress SpringModelInspection -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean id="embeddedDBCreationDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
+        <property name="databaseName" value="memory:ssg"/>
+        <property name="createDatabase" value="create"/>
+        <property name="connectionAttributes" value="upgrade=true"/>
+    </bean>
+
+    <bean id="createEmbeddedDB"
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="staticMethod"
+                  value="com.l7tech.server.util.DerbyDbHelper.testDataSource"/>
+        <property name="arguments">
+            <list>
+                <ref local="embeddedDBCreationDataSource"/>
+                <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
+                <bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
+                <!--
+                  List of SQL script resources to run when database is created.
+                -->
+                <list>
+                    <value>classpath:/com/l7tech/server/resources/ssg_embedded.sql</value>
+                    <value>file:${com.l7tech.server.varDirectory}/derby.sql</value>
+                </list>
+                <!--
+                  List of SQL script resources to run when database already exists.
+                -->
+                <list>
+                    <value>file:${com.l7tech.server.varDirectory}/db/update.sql</value>
+                </list>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="embeddedDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40" depends-on="createEmbeddedDB">
+        <property name="databaseName" value="memory:ssg"/>
+    </bean>
+
+    <alias name="embeddedDataSource" alias="hibernateDataSource"/>
+    <alias name="embeddedDataSource" alias="primaryDbDataSource"/>
+    <alias name="embeddedDataSource" alias="secondaryDbDataSource"/>
+    <alias name="embeddedDataSource" alias="lazyDataSource"/>
+
+    <bean id="dataSourceExplorer" class="com.l7tech.server.util.DataSourceExplorer">
+        <constructor-arg ref="embeddedDataSource"/>
+    </bean>
+
+    <bean id="schemaExport" class="com.l7tech.server.util.DbSchemaExport" init-method="init" depends-on="sessionFactory">
+        <constructor-arg index="0">
+           <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="&amp;sessionFactory"/>
+                <property name="targetMethod" value="getConfiguration"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1" value="${com.l7tech.server.varDirectory}/db/ssg.sql"/>
+    </bean>
+
+    <bean id="serviceMetricsServices" class="com.l7tech.server.service.DisabledServiceMetricsServices"/>
+
+    <bean id="auditExporterDbDialect" class="com.l7tech.server.audit.AuditExporterImpl$Dialect" factory-method="valueOf">
+        <constructor-arg value="DERBY"/>
+    </bean>
+
+    <bean id="updateSchema" class="com.l7tech.server.util.EmbeddedDbSchemaUpdater" init-method="ensureCurrentSchema" depends-on="createEmbeddedDB">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1">
+            <value>com/l7tech/server/resources/derby</value>
+        </constructor-arg>
+        <property name="dataSource" ref="embeddedDataSource"/>
+    </bean>
+
+</beans>

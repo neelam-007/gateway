@@ -120,4 +120,10 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+    </bean>
+
+    <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl" parent="hibernateBean"/>
 </beans>
