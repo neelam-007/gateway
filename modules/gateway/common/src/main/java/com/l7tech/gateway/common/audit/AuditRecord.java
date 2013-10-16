@@ -34,6 +34,8 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
     private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
     private static AtomicLong globalSequenceNumber = new AtomicLong(0L);
 
+    private static final long serialVersionUID = 5179356781289444270L;
+
     public static final String SERSEP = ":";
 
     private Goid goid;
@@ -397,6 +399,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
         out.write(SERSEP.getBytes());
 
         if (identityProviderGoid != null) out.write(calculatePre80?Long.toString(identityProviderGoid.getLow()).getBytes():Goid.toString(identityProviderGoid).getBytes());
+        else if (calculatePre80)out.write(Long.toString(-1L).getBytes());
         out.write(SERSEP.getBytes());
 
         // AdminAuditRecord does entity_class:entity_id:action

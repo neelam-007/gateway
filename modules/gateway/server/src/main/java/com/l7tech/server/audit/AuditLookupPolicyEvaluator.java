@@ -339,20 +339,7 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
                 String message = ExternalAuditsUtils.getStringData(message_var[i]);
                 String properties = ExternalAuditsUtils.getStringData(props_var[i]);
 
-                AuditDetailPropertiesHandler handler =   parseDetailsProperties(properties);
-
-                String[] params = (handler == null)? null : handler.getParameters();
-                AuditDetail detail = new AuditDetail();
-                detail.setMessageId(messageId);
-                detail.setParams(params);
-                detail.setTime(time);
-                detail.setException(message);
-
-                detail.setAuditGuid(audit_oid);
-                detail.setOrdinal(ordinal);
-                detail.setComponentId(componentId);
-                detail.setGoid(new Goid(0,i));
-
+                AuditDetail detail = ExternalAuditsUtils.makeAuditDetail(i, audit_oid,time, componentId, ordinal, messageId,message,properties);
                 AuditRecord record = getAuditRecordFromCache(audit_oid,largeAuditMessages);
                 if(record == null){
                     logger.warning("Error creating audit record id: "+audit_oid);
@@ -402,24 +389,6 @@ public class AuditLookupPolicyEvaluator implements PropertyChangeListener {
             logger.log(Level.WARNING, "Failed to execute audit lookup policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new FindException("Failed to execute audit lookup policy",e);
         }
-    }
-
-
-    private AuditDetailPropertiesHandler  parseDetailsProperties(String props){
-        try {
-            AuditDetailPropertiesHandler handler = new AuditDetailPropertiesHandler();
-            XMLReader xr = XMLReaderFactory.createXMLReader();
-            xr.setContentHandler(handler);
-            xr.setErrorHandler(handler);
-            StringReader sr = new StringReader(props);
-            xr.parse(new InputSource(sr));
-            return handler;
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
-        }
-        return null;
     }
 
     /**

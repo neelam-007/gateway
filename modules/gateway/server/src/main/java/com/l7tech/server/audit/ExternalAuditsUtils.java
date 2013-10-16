@@ -19,6 +19,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.CompressedStringType;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.ValidationUtils;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -253,7 +254,7 @@ public class ExternalAuditsUtils {
                             String entityClass ,
                             String entityId ,
                             Integer status ,
-                            String requestId ,
+                                      String requestId ,
                             String serviceGoid ,
                             String operationName ,
                             Boolean authenticated ,
@@ -265,12 +266,15 @@ public class ExternalAuditsUtils {
                             Integer responseStatus,
                             Integer latency,
                             Integer componentId,
-                            String action,
-                            String properties)
+                                      String action,
+                  String properties)
     {
         AuditRecordPropertiesHandler  propsHandler = parseRecordProperties(properties);
 
         AuditRecord record = null;
+        userName = userName !=null? userName.length()>0? userName: null: null;
+        userId = userId !=null? userId.length()>0? userId: null: null;
+
         if(type.equals(AuditRecordUtils.TYPE_ADMIN)){
             record = new AdminAuditRecord(
                     Level.parse(auditLevel),
@@ -298,8 +302,6 @@ public class ExternalAuditsUtils {
             }
 
             SecurityTokenType tokenType = SecurityTokenType.getByName(authenticationType);
-            userName = userName !=null? userName.length()>0? userName: null: null;
-            userId = userId !=null? userId.length()>0? userId: null: null;
 
 
             record = new MessageSummaryAuditRecord(
@@ -504,4 +506,38 @@ public class ExternalAuditsUtils {
         return verifier.verifySignatureOfDigest(signature,record.computeSignatureDigest());
     }
 
+    public static AuditDetail makeAuditDetail(int index, String audit_oid, Long time, Integer componentId,Integer ordinal,Integer messageId,String message,String properties ) {
+        AuditDetailPropertiesHandler handler =   parseDetailsProperties(properties);
+
+        String[] params = (handler == null)? null : handler.getParameters();
+        AuditDetail detail = new AuditDetail();
+        detail.setMessageId(messageId);
+        detail.setParams(params);
+        detail.setTime(time);
+        detail.setException(message);
+
+        detail.setAuditGuid(audit_oid);
+        detail.setOrdinal(ordinal);
+        detail.setComponentId(componentId);
+        detail.setGoid(new Goid(0,index));
+
+        return detail;
+    }
+
+    private static  AuditDetailPropertiesHandler  parseDetailsProperties(String props){
+        try {
+            AuditDetailPropertiesHandler handler = new AuditDetailPropertiesHandler();
+            XMLReader xr = XMLReaderFactory.createXMLReader();
+            xr.setContentHandler(handler);
+            xr.setErrorHandler(handler);
+            StringReader sr = new StringReader(props);
+            xr.parse(new InputSource(sr));
+            return handler;
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
+        } catch (SAXException e) {
+            logger.log(Level.WARNING, "Error parsing audit detail properties: ", props);
+        }
+        return null;
+    }
 }
