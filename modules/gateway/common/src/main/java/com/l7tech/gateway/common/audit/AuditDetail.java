@@ -27,6 +27,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
     // used to determine the order of the messages as the timestamp (ms) of the messages may be the same.
     private int ordinal;
 
+    private static final long serialVersionUID = -683284228393791540L;
+
     public AuditDetail(AuditDetailMessage message) {
         this(message, null, (Throwable)null);
     }

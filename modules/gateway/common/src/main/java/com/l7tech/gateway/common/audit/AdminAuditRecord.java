@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.gateway.common.audit;
@@ -28,6 +27,8 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_LOGIN = 'L';
     public static final char ACTION_LOGOUT = 'X';
     public static final char ACTION_OTHER = 'O';
+
+    private static final long serialVersionUID = 3321267376215395996L;
 
     /**
      * Constructs a new AdminAuditRecord.

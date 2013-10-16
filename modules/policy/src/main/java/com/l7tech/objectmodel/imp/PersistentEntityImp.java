@@ -25,6 +25,8 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     protected final transient long loadTime;
     protected transient boolean locked; // read-only when locked
 
+    private static final long serialVersionUID = 5416621649996405984L;
+
     protected PersistentEntityImp() {
         goid = DEFAULT_GOID;
         loadTime = System.currentTimeMillis();

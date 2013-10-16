@@ -2705,6 +2705,8 @@ public class LogPanel extends JPanel {
         private String nodeName;
         private AuditRecord ssgLogRecord;
 
+        private static final long serialVersionUID = 8307839335019681973L;
+
         public WriteableLogMessage( AuditMessage lm ) {
             nodeName = lm.getNodeName();
             ssgLogRecord = lm.getAuditRecord();

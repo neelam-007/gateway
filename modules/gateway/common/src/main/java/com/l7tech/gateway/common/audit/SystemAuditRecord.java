@@ -19,6 +19,9 @@ import java.io.IOException;
  * @author alex
  */
 public class SystemAuditRecord extends AuditRecord {
+
+    private static final long serialVersionUID = 1907760870061310459L;
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
     protected SystemAuditRecord() {

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.gateway.common.audit;
@@ -39,6 +38,8 @@ import java.util.logging.Level;
  */
 public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEntity {
     public static final String ATTR_SERVICE_GOID = "serviceGoid";
+
+    private static final long serialVersionUID = 3558223265338839803L;
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
