@@ -61,7 +61,7 @@ checkForPatcher() {
 checkForAuthMethods() {
     #check for the existence of the files allowing configuration of alternative authentication methods.
     AUTHMETHODS_CONFIG=""
-    if [ -e "/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files" ] && [ -e "/etc/pam.d/sshd" ] && [ -e "/etc/pam_radius.conf" ] && [ -e "/etc/openldap/ldap.conf" ] && [ -e "/etc/ldap.conf" ] && [ -e "/etc/nsswitch.conf" ] ; then
+    if [ -e "/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files" ] && [ -e "/etc/pam.d/sshd" ] && [ -e "/etc/pam_radius.conf" ] && [ -e "/etc/openldap/ldap.conf" ] && [ -e "/etc/pam_ldap.conf" ] && [ -e "/etc/nslcd.conf" ] && [ -e "/etc/nsswitch.conf" ] ; then
         AUTHMETHODS_CONFIG="true"
     fi
 }
