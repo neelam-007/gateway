@@ -12,6 +12,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -20,18 +21,20 @@ import java.util.logging.Logger;
  * @author Victor Kazakov
  */
 public class StoredPasswordReference extends ExternalReference  {
-    private final Logger logger = Logger.getLogger(StoredPasswordReference.class.getName());
+    private static final Logger logger = Logger.getLogger(StoredPasswordReference.class.getName());
 
     private Goid id;
     private String name;
-    private String type;
+    private SecurePassword.SecurePasswordType type;
+    private String description;
     private LocalizeAction localizeType;
     private Goid localSecurePasswordId;
 
     private static final String ELMT_NAME_REF = "StoredPasswordReference";
-    private static final String ELMT_NAME_PASS_NAME = "PasswordName";
+    private static final String ELMT_NAME_PASS_NAME = "Name";
     private static final String ELMT_NAME_TYPE = "Type";
     private static final String ELMT_NAME_PASS_ID = "Id";
+    private static final String ELMT_NAME_PASS_DESC = "Description";
 
     private StoredPasswordReference( final ExternalReferenceFinder finder ) {
         super( finder );
@@ -39,9 +42,22 @@ public class StoredPasswordReference extends ExternalReference  {
 
     public StoredPasswordReference( final ExternalReferenceFinder finder, SecurePasswordEntityHeader securePasswordEntityHeader ) {
         super( finder );
-        id = securePasswordEntityHeader.getGoid();
-        name = securePasswordEntityHeader.getName();
-        type = securePasswordEntityHeader.getPasswordType();
+        final SecurePassword password;
+        try {
+            password = finder.findSecurePasswordById(securePasswordEntityHeader.getGoid());
+            init(password);
+        } catch (FindException e){
+            logger.log(Level.SEVERE, "error retrieving secure password information. ", e);
+        }
+    }
+
+    private void init( SecurePassword securePassword ) {
+        if (securePassword != null) {
+            id = securePassword.getGoid();
+            name = securePassword.getName();
+            type = securePassword.getType();
+            description = securePassword.getDescription();
+        }
     }
 
     @Override
@@ -58,7 +74,8 @@ public class StoredPasswordReference extends ExternalReference  {
         StoredPasswordReference output = new StoredPasswordReference( context );
         output.id = Goid.parseGoid(getParamFromEl(elmt, ELMT_NAME_PASS_ID));
         output.name = getParamFromEl(elmt, ELMT_NAME_PASS_NAME);
-        output.type = getParamFromEl(elmt, ELMT_NAME_TYPE);
+        output.type = SecurePassword.SecurePasswordType.valueOf(getParamFromEl(elmt, ELMT_NAME_TYPE));
+        output.description = getParamFromEl(elmt, ELMT_NAME_PASS_DESC);
 
         return output;
     }
@@ -72,7 +89,8 @@ public class StoredPasswordReference extends ExternalReference  {
 
         addParameterElement( ELMT_NAME_PASS_ID, id.toString(), referenceElement );
         addParameterElement( ELMT_NAME_PASS_NAME, name, referenceElement );
-        addParameterElement( ELMT_NAME_TYPE, type, referenceElement );
+        addParameterElement( ELMT_NAME_TYPE, type.name(), referenceElement );
+        addParameterElement( ELMT_NAME_PASS_DESC, description, referenceElement );
     }
 
     private void addParameterElement( final String name, final String value, final Element parent ) {
@@ -91,7 +109,7 @@ public class StoredPasswordReference extends ExternalReference  {
             return
                     password != null &&
                             password.getName().equalsIgnoreCase(name) &&
-                            (password.getType().name().equals(type));
+                            (password.getType().equals(type));
         } catch (FindException e) {
             logger.warning("Cannot find a Stored Password, " + name);
             return false;
@@ -156,7 +174,7 @@ public class StoredPasswordReference extends ExternalReference  {
         return name;
     }
 
-    public String getType() {
+    public SecurePassword.SecurePasswordType getType() {
         return type;
     }
 
@@ -168,7 +186,15 @@ public class StoredPasswordReference extends ExternalReference  {
         this.name = name;
     }
 
-    public void setType(String type) {
+    public void setType(SecurePassword.SecurePasswordType type) {
         this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

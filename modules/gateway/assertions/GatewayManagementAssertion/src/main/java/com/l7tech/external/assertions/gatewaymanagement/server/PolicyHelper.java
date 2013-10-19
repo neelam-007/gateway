@@ -627,6 +627,11 @@ public class PolicyHelper {
             return filter( securePasswordManager.findByPrimaryKey( id ) );
         }
 
+        @Override
+        public SecurePassword findSecurePasswordByName(String name) throws FindException {
+            return filter( securePasswordManager.findByUniqueName( name ) );
+        }
+
         private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {
             final IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
             if ( provider == null )

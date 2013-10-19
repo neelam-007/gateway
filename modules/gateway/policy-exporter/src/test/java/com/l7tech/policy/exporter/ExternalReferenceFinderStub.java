@@ -172,4 +172,9 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
         return null;
     }
 
+    @Override
+    public SecurePassword findSecurePasswordByName(String name) throws FindException {
+        return null;
+    }
+
 }

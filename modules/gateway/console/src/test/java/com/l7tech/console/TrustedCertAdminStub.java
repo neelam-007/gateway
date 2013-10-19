@@ -180,6 +180,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public SecurePassword findSecurePasswordByName(String name) throws FindException {
+        return null;
+    }
+
+    @Override
     public String getSecurePasswordPublicKey( final Goid securePasswordOid ) throws FindException {
         return null;
     }

@@ -91,4 +91,6 @@ public interface ExternalReferenceFinder {
 
     SecurePassword findSecurePasswordById(final Goid id) throws FindException;
 
+    SecurePassword findSecurePasswordByName(final String name) throws FindException;
+
 }

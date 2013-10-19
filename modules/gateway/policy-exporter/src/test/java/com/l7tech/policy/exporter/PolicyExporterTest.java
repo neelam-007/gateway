@@ -239,6 +239,24 @@ public class PolicyExporterTest {
                 jdbcConnection.setJdbcUrl( "jdbc:somesql:db" );
                 return jdbcConnection;
             }
+
+            @Override
+            public SecurePassword findSecurePasswordById(Goid id) throws FindException {
+                if(Goid.equals(new Goid(0,123), id)) {
+                    SecurePassword securePassword = new SecurePassword("privateKey");
+                    securePassword.setType(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                    securePassword.setGoid(new Goid(0,123));
+                    securePassword.setDescription("Private Key Description");
+                    return securePassword;
+                } else if(Goid.equals(new Goid(0,456), id)) {
+                    SecurePassword securePassword = new SecurePassword("Password");
+                    securePassword.setType(SecurePassword.SecurePasswordType.PASSWORD);
+                    securePassword.setGoid(new Goid(0,456));
+                    securePassword.setDescription("My Password Description");
+                    return securePassword;
+                }
+                return null;
+            }
         };
     }
 

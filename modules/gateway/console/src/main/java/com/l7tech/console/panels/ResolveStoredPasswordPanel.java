@@ -42,6 +42,7 @@ public class ResolveStoredPasswordPanel extends WizardStepPanel {
     private JButton createStoredPasswordButton;
     private SecurePasswordComboBox securePasswordComboBox;
     private JTextField idTextField;
+    private JTextField descriptionTextField;
 
     private StoredPasswordReference storedPasswordReference;
 
@@ -59,10 +60,12 @@ public class ResolveStoredPasswordPanel extends WizardStepPanel {
         nameTextField.setCaretPosition(0);
         idTextField.setText(storedPasswordReference.getId().toString());
         idTextField.setCaretPosition(0);
-        typeTextField.setText(storedPasswordReference.getType());
+        typeTextField.setText(storedPasswordReference.getType().name());
         typeTextField.setCaretPosition(0);
+        descriptionTextField.setText(storedPasswordReference.getDescription());
+        descriptionTextField.setCaretPosition(0);
 
-        securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.valueOf(storedPasswordReference.getType()));
+        securePasswordComboBox.reloadPasswordList(storedPasswordReference.getType());
 
         // default is delete
         removeRadioButton.setSelected(true);
@@ -130,7 +133,7 @@ public class ResolveStoredPasswordPanel extends WizardStepPanel {
 
     @Override
     public void notifyActive() {
-        securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.valueOf(storedPasswordReference.getType()));
+        securePasswordComboBox.reloadPasswordList(storedPasswordReference.getType());
     }
 
     private void enableAndDisableComponents() {
@@ -145,7 +148,8 @@ public class ResolveStoredPasswordPanel extends WizardStepPanel {
     private void doCreatePassword() {
         final SecurePassword newSecurePassword = new SecurePassword();
         newSecurePassword.setName(storedPasswordReference.getName());
-        newSecurePassword.setType(SecurePassword.SecurePasswordType.valueOf(storedPasswordReference.getType()));
+        newSecurePassword.setType(storedPasswordReference.getType());
+        newSecurePassword.setDescription(storedPasswordReference.getDescription());
 
         EntityUtils.resetIdentity(newSecurePassword);
         editAndSave(newSecurePassword);
@@ -196,7 +200,7 @@ public class ResolveStoredPasswordPanel extends WizardStepPanel {
                     }
 
                     // refresh controls
-                    securePasswordComboBox.reloadPasswordList(SecurePassword.SecurePasswordType.valueOf(storedPasswordReference.getType()));
+                    securePasswordComboBox.reloadPasswordList(storedPasswordReference.getType());
                     securePasswordComboBox.setSelectedSecurePassword(savedId);
                     securePasswordComboBox.setEnabled(true);
                     changeRadioButton.setSelected(true);

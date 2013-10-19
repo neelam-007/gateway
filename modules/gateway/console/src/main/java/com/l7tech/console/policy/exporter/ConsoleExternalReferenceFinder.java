@@ -243,6 +243,12 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
+    public SecurePassword findSecurePasswordByName(String name) throws FindException {
+        final TrustedCertAdmin admin = getAdminInterface(TrustedCertAdmin.class);
+        return admin.findSecurePasswordByName(name);
+    }
+
+    @Override
     public void warning( final String title, final String msg ) {
         JOptionPane.showMessageDialog(null, msg, title, JOptionPane.WARNING_MESSAGE);
     }
