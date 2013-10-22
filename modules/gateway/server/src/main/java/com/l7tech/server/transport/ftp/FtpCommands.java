@@ -3,13 +3,9 @@ package com.l7tech.server.transport.ftp;
 import java.io.IOException;
 
 import com.l7tech.gateway.common.transport.ftp.FtpMethod;
-import org.apache.ftpserver.listener.Connection;
-import org.apache.ftpserver.ftplet.FtpRequest;
-import org.apache.ftpserver.ftplet.FtpReplyOutput;
-import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FtpReply;
-import org.apache.ftpserver.FtpSessionImpl;
-import org.apache.ftpserver.DefaultFtpReply;
+import org.apache.ftpserver.ftplet.*;
+import org.apache.ftpserver.impl.FtpIoSession;
+import org.apache.ftpserver.impl.FtpServerContext;
 
 /**
  * FTP Commands that are overridden.
@@ -31,16 +27,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
             // reset state variables
             session.resetState();
 
             // and abort any data connection
-            out.write(new DefaultFtpReply(FtpReply.REPLY_202_COMMAND_NOT_IMPLEMENTED, "ACCT"));
+            session.write(new DefaultFtpReply(FtpReply.REPLY_202_COMMAND_NOT_IMPLEMENTED, "ACCT"));
         }
     }
 
@@ -54,14 +47,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
         
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
-            MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+            Ftplet ftplet = context.getFtpletContainer();
 
-            ftplet.onListStart(session, request, out, FtpMethod.FTP_APPE);
+//            ftplet.onListStart(session, request, FtpMethod.FTP_APPE);
         }
     }
 
@@ -75,14 +65,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
         
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
-            MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+            Ftplet ftplet = context.getFtpletContainer();
 
-            ftplet.onListStart(session, request, out, FtpMethod.FTP_LIST);
+//            ftplet.onListStart(session, request, FtpMethod.FTP_LIST);
         }
     }
 
@@ -116,14 +103,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
-            MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+            Ftplet ftplet = context.getFtpletContainer();
 
-            ftplet.onListStart(session, request, out, FtpMethod.FTP_NLST);
+//            ftplet.onListStart(session, request, FtpMethod.FTP_NLST);
         }
     }
 
@@ -227,14 +211,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
-            MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+            Ftplet ftplet = context.getFtpletContainer();
 
-            ftplet.onListStart(session, request, out, FtpMethod.FTP_MLSD);
+//            ftplet.onListStart(session, request, FtpMethod.FTP_MLSD);
         }
     }
 
@@ -248,14 +229,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out)
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
                 throws IOException, FtpException {
-            MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+            Ftplet ftplet = context.getFtpletContainer();
 
-            ftplet.onDeleteStart(session, request, out); // TODO jwilliams: move delete code from Ftplet to here?
+//            ftplet.onDeleteStart(session, request); // TODO jwilliams: move delete code from Ftplet to here?
         }
     }
 
@@ -269,14 +247,11 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out) throws IOException, FtpException {
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request) throws IOException, FtpException {
             // reset state variables
             session.resetState();
 
-            out.write(new FtpReply() {
+            session.write(new FtpReply() {
                 public int getCode() {
                     return FtpReply.REPLY_211_SYSTEM_STATUS_REPLY;
                 }
@@ -308,10 +283,7 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
         }
 
         @Override
-        public void execute(Connection connection,
-                            FtpRequest request,
-                            FtpSessionImpl session,
-                            FtpReplyOutput out) throws IOException, FtpException {
+        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request) throws IOException, FtpException {
             // reset state
             session.resetState();
 
@@ -320,12 +292,12 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
 
             if (language == null || language.toLowerCase().startsWith(LANG_EN)) {
                 session.setLanguage(null);
-                out.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, "Command LANG okay."));
+                session.write(new DefaultFtpReply(FtpReply.REPLY_200_COMMAND_OKAY, "Command LANG okay."));
                 return;
             }
 
             // not found - send error message
-            out.write(new DefaultFtpReply(FtpReply.REPLY_504_COMMAND_NOT_IMPLEMENTED_FOR_THAT_PARAMETER, "Command LANG not implemented for this parameter."));
+            session.write(new DefaultFtpReply(FtpReply.REPLY_504_COMMAND_NOT_IMPLEMENTED_FOR_THAT_PARAMETER, "Command LANG not implemented for this parameter."));
         }
     }
 }

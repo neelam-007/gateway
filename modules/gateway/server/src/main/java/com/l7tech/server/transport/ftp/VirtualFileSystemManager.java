@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
-import org.apache.ftpserver.ftplet.FileSystemManager;
+import org.apache.ftpserver.ftplet.FileSystemFactory;
 import org.apache.ftpserver.ftplet.FileSystemView;
 import org.apache.ftpserver.ftplet.User;
 import org.apache.ftpserver.ftplet.FtpException;
@@ -10,7 +10,7 @@ import org.apache.ftpserver.ftplet.FtpException;
  *
  * @author Steve Jones
  */
-class VirtualFileSystemManager implements FileSystemManager {
+class VirtualFileSystemManager implements FileSystemFactory {
 
     /**
      * Create a virtual file system for the given user.

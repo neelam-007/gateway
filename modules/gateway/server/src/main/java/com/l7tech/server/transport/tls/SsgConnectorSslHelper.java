@@ -456,11 +456,15 @@ public class SsgConnectorSslHelper {
         };
     }
 
+    public String[] getEnabledCiphers() {
+        return enabledCiphers;
+    }
+
     //
     // Private
     //
 
-    private static SSLContext createSslContext(SsgConnector ssgConnector, Set<String> desiredTlsVersions) throws ListenerException, NoSuchProviderException, NoSuchAlgorithmException {
+    private static SSLContext createSslContext(SsgConnector ssgConnector, Set<String> desiredTlsVersions) throws NoSuchProviderException, NoSuchAlgorithmException {
 
         String tlsProtocol = getTlsProtocol(ssgConnector);
         String customTlsProvider = ssgConnector.getProperty(SsgConnector.PROP_TLS_PROTOCOL_PROVIDER);
@@ -519,7 +523,7 @@ public class SsgConnectorSslHelper {
         }
     }
 
-    private String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory,
+    private String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory, // TODO jwilliams: use this to find tls versions for each SslHelper? Does SslConfiguration support multiple TLS versions?
                                                                         Set<String> desiredTlsVersions,
                                                                         String[] enabledCiphers,
                                                                         int clientAuth)

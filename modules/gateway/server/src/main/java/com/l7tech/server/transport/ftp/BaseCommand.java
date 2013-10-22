@@ -1,12 +1,13 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.ftp.FtpMethod;
-import org.apache.ftpserver.FtpSessionImpl;
 import org.apache.ftpserver.command.AbstractCommand;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FtpReplyOutput;
 import org.apache.ftpserver.ftplet.FtpRequest;
-import org.apache.ftpserver.listener.Connection;
+import org.apache.ftpserver.ftplet.FtpSession;
+import org.apache.ftpserver.ftplet.Ftplet;
+import org.apache.ftpserver.impl.FtpIoSession;
+import org.apache.ftpserver.impl.FtpServerContext;
 
 import java.io.IOException;
 
@@ -23,13 +24,17 @@ abstract class BaseCommand extends AbstractCommand {
     }
 
     @Override
-    public void execute(Connection connection,
-                        FtpRequest request,
-                        FtpSessionImpl session,
-                        FtpReplyOutput out)
+    public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
             throws IOException, FtpException {
-        MessageProcessingFtplet ftplet = (MessageProcessingFtplet) connection.getServerContext().getFtpletContainer();
+        MessageProcessingFtplet ftplet = (MessageProcessingFtplet) context.getFtpletContainer();
 
-        ftplet.onCommandStart(session, request, out, ftpMethod);
+        ftplet.onCommandStart(session.getFtpletSession(), request, ftpMethod);
+
+//        execute(session.getFtpletSession(), (MessageProcessingFtplet) context.getFtpletContainer(), request);
     }
+
+//    public void execute(FtpSession session, MessageProcessingFtplet ftplet, FtpRequest request)
+//            throws FtpException, IOException {
+//        ftplet.onCommandStart(session, request, ftpMethod); // TODO jwilliams: refactor all Ftplet methods to use FtpIoSession instead of FtpSession - gives access to Listener
+//    }
 }

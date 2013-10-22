@@ -2,7 +2,7 @@ package com.l7tech.server.transport.ftp;
 
 import java.net.InetAddress;
 
-import org.apache.ftpserver.interfaces.IpRestrictor;
+//import org.apache.ftpserver.interfaces.IpRestrictor;
 import org.apache.ftpserver.ftplet.FtpException;
 
 /**
@@ -10,7 +10,7 @@ import org.apache.ftpserver.ftplet.FtpException;
  *
  * @author Steve Jones
  */
-public class FtpIpRestrictor implements IpRestrictor {
+public class FtpIpRestrictor {
 
     public boolean hasPermission(InetAddress inetAddress) throws FtpException {
         return true;

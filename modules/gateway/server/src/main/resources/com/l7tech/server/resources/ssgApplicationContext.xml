@@ -1897,7 +1897,6 @@
         <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="serviceManager"/>
     </bean>

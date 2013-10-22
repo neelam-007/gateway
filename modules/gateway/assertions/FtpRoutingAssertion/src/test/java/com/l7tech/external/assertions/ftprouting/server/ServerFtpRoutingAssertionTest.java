@@ -23,10 +23,10 @@ import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.util.*;
 import com.l7tech.xml.xpath.*;
 import org.apache.ftpserver.ftplet.*;
-import org.apache.ftpserver.usermanager.BaseUser;
-import org.apache.ftpserver.usermanager.ConcurrentLoginPermission;
-import org.apache.ftpserver.usermanager.TransferRatePermission;
-import org.apache.ftpserver.usermanager.WritePermission;
+import org.apache.ftpserver.usermanager.impl.BaseUser;
+import org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission;
+import org.apache.ftpserver.usermanager.impl.TransferRatePermission;
+import org.apache.ftpserver.usermanager.impl.WritePermission;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -71,6 +72,11 @@ public class ServerFtpRoutingAssertionTest {
     // user accounts
     private static final String USER_ACCOUNT_NAME = "jdoe";
     private static final String USER_ACCOUNT_PASSWORD = "password";
+
+    private static final List<Authority> USER_AUTHORITIES =
+            Arrays.asList(new ConcurrentLoginPermission(10, 10),
+                    new TransferRatePermission(0, 0),
+                    new WritePermission("/"));
 
     // other settings
     private final FtpFileDetails LOG_FILE_DETAILS = new FtpFileDetails(FS_LOG_TXT_FILE, FS_LOG_DIR,
@@ -673,11 +679,7 @@ public class ServerFtpRoutingAssertionTest {
         user.setPassword(password);
         user.setHomeDirectory("/");
         user.setMaxIdleTime(60);
-        user.setAuthorities(new Authority[]{
-                new ConcurrentLoginPermission(10, 10),
-                new TransferRatePermission(0, 0),
-                new WritePermission("/"),
-        });
+        user.setAuthorities(USER_AUTHORITIES);
 
         return user;
     }

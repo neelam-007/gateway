@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import org.apache.ftpserver.ftplet.FileSystemView;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FileObject;
+import org.apache.ftpserver.ftplet.FtpFile;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -24,7 +24,8 @@ class VirtualFileSystem implements FileSystemView {
 
     private String changedDirectory;
 
-    public boolean changeDirectory(String dir) throws FtpException {
+    @Override
+    public boolean changeWorkingDirectory(String dir) throws FtpException {
         boolean changed = false;                                      
 
         if (dir != null) {
@@ -45,11 +46,12 @@ class VirtualFileSystem implements FileSystemView {
         return changed;
     }
 
+    @Override
     public boolean isRandomAccessible() throws FtpException {
         return false;
     }
 
-    public FileObject getCurrentDirectory() throws FtpException {
+    public FtpFile getWorkingDirectory() throws FtpException {
         return buildDirectoryFileObject(buildCurrentPath());
     }
 
@@ -92,8 +94,9 @@ class VirtualFileSystem implements FileSystemView {
         }
     }
 
-    public FileObject getFileObject(String file) throws FtpException {
-        FileObject fileObject;
+    @Override
+    public FtpFile getFile(String file) throws FtpException {
+        FtpFile fileObject;
 
         switch (file) {
             case ".":
@@ -112,10 +115,12 @@ class VirtualFileSystem implements FileSystemView {
         return fileObject;
     }
 
-    public FileObject getHomeDirectory() throws FtpException {
+    @Override
+    public FtpFile getHomeDirectory() throws FtpException {
         return buildDirectoryFileObject("/");
     }
 
+    @Override
     public void dispose() {
     }
 
@@ -203,11 +208,11 @@ class VirtualFileSystem implements FileSystemView {
         return normalized;
     }
 
-    private FileObject buildFileObject(final String path, final String file) {
+    private FtpFile buildFileObject(final String path, final String file) {
         return new VirtualFileObject(true, combinePaths(path, file));
     }
 
-    private FileObject buildDirectoryFileObject(final String path) {
+    private FtpFile buildDirectoryFileObject(final String path) {
         return new VirtualFileObject(false, path);
     }
 }

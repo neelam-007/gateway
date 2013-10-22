@@ -92,8 +92,8 @@
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-web-servlet" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.aspectj" name="aspectjweaver" rev="1.6.12" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
-        <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
-                    conf="core"/>
+        <dependency org="org.apache.ftpserver" name="ftplet-api" rev="1.0.6" force="true" conf="core"/>
+        <dependency org="org.apache.ftpserver" name="ftpserver-core" rev="1.0.6" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.35" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="catalina" rev="6.0.35-l7p1" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35-l7p1" force="true" conf="core"/>

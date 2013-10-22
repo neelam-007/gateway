@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0">
+<ivy-module version="2.0">
 	<info organisation="org.apache.ftpserver"
-		module="ftpserver-api"
-		revision="1.0-543677-20070601"
+		module="ftplet-api"
+		revision="1.0.6"
 		status="release"
-		publication="20080707125908"
+		publication="20131001115212"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="ftpserver-api" type="jar" ext="jar" conf="default"/>
+		<artifact name="ftplet-api" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>
