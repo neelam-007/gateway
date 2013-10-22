@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.w3c.dom.Document;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -32,10 +34,10 @@ public class ServerRESTGatewayManagementAssertionTest {
     public void testContextVariableURI() throws Exception{
         RESTGatewayManagementAssertion ass = new RESTGatewayManagementAssertion();
 
-        PolicyEnforcementContext pec = getPolicyEnforcementContext( getMockServletRequest());
-        pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_URI,testURI );
+        PolicyEnforcementContext pec = getPolicyEnforcementContext( getMockServletRequest(),null);
+        pec.setVariable(ass.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI, testURI);
 
-        String returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec,pec.getRequest(),ass);
+        String returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec, pec.getRequest(), ass);
         assertEquals(returnURI,testURI);
     }
 
@@ -47,7 +49,7 @@ public class ServerRESTGatewayManagementAssertionTest {
         MockHttpServletRequest servletRequest = getMockServletRequest();
         servletRequest.setRequestURI(routingURI+testURI);
 
-        PolicyEnforcementContext pec = getPolicyEnforcementContext( servletRequest);
+        PolicyEnforcementContext pec = getPolicyEnforcementContext( servletRequest,null);
         pec.setService(getService(routingURI + "*"));
 
         String returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec,pec.getRequest(),ass);
@@ -82,7 +84,7 @@ public class ServerRESTGatewayManagementAssertionTest {
         // should ignore value from request message
         MockHttpServletRequest servletRequest = getMockServletRequest();
         servletRequest.setMethod(HttpMethod.OTHER.toString());
-        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest );
+        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,null );
 
         pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_ACTION, "GET" );
         HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
@@ -104,23 +106,23 @@ public class ServerRESTGatewayManagementAssertionTest {
 
         MockHttpServletRequest servletRequest = getMockServletRequest();
         servletRequest.setMethod(HttpMethod.GET.toString());
-        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest );
+        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,null );
 
         HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
         assertEquals(HttpMethod.GET,method);
 
         servletRequest.setMethod(HttpMethod.POST.toString());
-        pec = getPolicyEnforcementContext(servletRequest );
+        pec = getPolicyEnforcementContext(servletRequest,null );
         method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
         assertEquals(HttpMethod.POST,method);
 
         servletRequest.setMethod(HttpMethod.DELETE.toString());
-        pec = getPolicyEnforcementContext(servletRequest );
+        pec = getPolicyEnforcementContext(servletRequest,null );
         method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
         assertEquals(HttpMethod.DELETE,method);
 
         servletRequest.setMethod(HttpMethod.OTHER.toString());
-        pec = getPolicyEnforcementContext(servletRequest );
+        pec = getPolicyEnforcementContext(servletRequest,null );
         try{
             method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
             fail("Exception expected");
@@ -129,7 +131,7 @@ public class ServerRESTGatewayManagementAssertionTest {
         }
 
         servletRequest.setMethod("asdf");
-        pec = getPolicyEnforcementContext(servletRequest );
+        pec = getPolicyEnforcementContext(servletRequest,null );
         try{
             method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
             fail("Exception expected");
@@ -138,23 +140,47 @@ public class ServerRESTGatewayManagementAssertionTest {
         }
     }
 
-    @Ignore
+    private static final String body_xml =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<ClusterProperty id=\"a88ec121c86a9cd502c4748084b012d6\" version=\"0\">\n" +
+            "   <Name>propertyName1</Name>\n" +
+            "   <Value>hihi</Value>\n" +
+            "</ClusterProperty>\n";
+
     @Test
     public void testContextVariableRequestDocument()throws Exception{
-        // todo
+        RESTGatewayManagementAssertion ass = new RESTGatewayManagementAssertion();
+
+        // should ignore value from request message
+        MockHttpServletRequest servletRequest = getMockServletRequest();
+        servletRequest.setMethod(HttpMethod.OTHER.toString());
+        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,null );
+
+        pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_BODY, body_xml );
+        Document doc =  ServerRESTGatewayManagementAssertion.getBodyDocument(pec, pec.getRequest(), ass);
+        XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(),"Name");
+        assertEquals(doc.getDocumentElement().getNodeName(),"ClusterProperty");
     }
 
-    @Ignore
     @Test
     public void testMessageRequestDocument()throws Exception{
-        // todo
+        RESTGatewayManagementAssertion ass = new RESTGatewayManagementAssertion();
+
+        // should ignore value from request message
+        MockHttpServletRequest servletRequest = getMockServletRequest();
+        servletRequest.setMethod(HttpMethod.OTHER.toString());
+        PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,body_xml );
+
+        Document doc =  ServerRESTGatewayManagementAssertion.getBodyDocument(pec, pec.getRequest(), ass);
+        XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(),"Name");
+        assertEquals(doc.getDocumentElement().getNodeName(),"ClusterProperty");
     }
 
 
-    private PolicyEnforcementContext getPolicyEnforcementContext(HttpServletRequest servletRequest) throws IOException {
+    private PolicyEnforcementContext getPolicyEnforcementContext(HttpServletRequest servletRequest, String requestMessage) throws IOException {
         final String contentType = ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue();
         final Message request = new Message();
-        request.initialize( ContentTypeHeader.parseValue(contentType) , new byte[0]);
+        request.initialize( ContentTypeHeader.parseValue(contentType) , requestMessage==null? new byte[0]: requestMessage.getBytes( "utf-8" ));
         final Message response = new Message();
 
         final MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();

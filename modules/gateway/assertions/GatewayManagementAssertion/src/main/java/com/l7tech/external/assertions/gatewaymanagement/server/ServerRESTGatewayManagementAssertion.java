@@ -4,7 +4,6 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -15,16 +14,12 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.Pair;
-import com.sun.ws.management.*;
-import com.sun.ws.management.transfer.InvalidRepresentationFault;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.mail.MethodNotSupportedException;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
-import javax.xml.soap.*;
 import java.io.*;
 import java.security.Principal;
 import java.util.*;
@@ -38,13 +33,14 @@ import java.util.regex.Pattern;
  */
 public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargetableServerAssertion<RESTGatewayManagementAssertion> {
 
-    private GatewayManagementSupport support;
+    private GatewayManagementHandler support;
+    protected static final String defaultIdType = "name";
     //- PUBLIC
 
     public ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
                                                 final BeanFactory context) throws PolicyAssertionException {
         super(assertion);
-        support = GatewayManagementSupport.createInstance(assertion, context);
+        support = new GatewayManagementHandler();
     }
 
     @Override
@@ -55,45 +51,50 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             throws IOException, PolicyAssertionException {
         final Message response = context.getResponse();
 
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(assertion.getClass().getClassLoader());
-
+        try{
             final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-            final String remoteAddr = context.getRequest().getHttpRequestKnob().getRemoteAddress();
-            final String URI = getURI(context, message, assertion);
+
+            // get parameters
+            // URI format: <resource>/<id>?<idType=[goid|guid|name]>
+            final String URI = getURI(context, message,assertion);
             final Pair<String,String> resourceInputs  = getResourceInputs(URI);
             final String resourceType = resourceInputs.left;
             final String selectorValue = resourceInputs.right;
+            String selectorType = message.getHttpRequestKnob().getParameter("idType");
+            if(selectorType == null){
+                selectorType = defaultIdType;
+            }else if(selectorType.equals("goid")){
+                selectorType = "id";
+            }
 
-            HttpMethod action = getAction(context, message, assertion);
+            // build selector map
+            Map<String,String> selectorMap = new HashMap<String,String>();
+            selectorMap.put(selectorType,selectorValue);
+
+            // build parameters
+            Map<String, Object> params = new HashMap<String,Object>();
+            params.put(GatewayManagementHandler.SELECTOR_MAP,selectorMap);
+            params.put(GatewayManagementHandler.PAYLOAD,getBodyDocument(context,message,assertion));
+
+            HttpMethod action = getAction(context,message,assertion);
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-            if (action == HttpMethod.GET) {
-                Pair<Document,List<ManagedObject>> managementResponse;
-                if (selectorValue == null) {
-                    managementResponse = support.getResourceList(resourceType, user, remoteAddr);
-                } else {
-                    managementResponse = support.getResource(resourceType, selectorValue, user, remoteAddr);
-                }
-                response.initialize(managementResponse.left);
-            } else if (action == HttpMethod.DELETE) {
-                support.deleteResource(resourceType, selectorValue, user, remoteAddr);
-            } else {
-                throw new MethodNotSupportedException();
-            }
+            Document managementResponse;
+            managementResponse = support.handle(resourceType, params, action.toString(), user);
+            response.initialize(managementResponse);
 
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
             return AssertionStatus.NONE;
-        } catch (Exception e) {
+
+        }catch(Exception e){
             handleError(e);
-            return AssertionStatus.FAILED;
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
+        return AssertionStatus.FAILED;
+
     }
 
+    // pair of resource type and selector value
     protected static Pair<String,String> getResourceInputs(String URI){
         final int divider = URI.contains("/") ? URI.indexOf("/") : URI.length();
         String resourceType = URI.substring(0, divider);
@@ -167,10 +168,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         }
 
         try {
-            if( message.isEnableOriginalDocument() ){
-                InputStream stream = message.getMimeKnob().getEntireMessageBodyAsInputStream();
-                requestDocument = XmlUtil.parse(stream);
-            }
+            InputStream stream = message.getMimeKnob().getEntireMessageBodyAsInputStream();
+            requestDocument = XmlUtil.parse(stream);
             return requestDocument;
         } catch (SAXException e) {
             throw new IllegalArgumentException();
@@ -183,28 +182,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
     private int handleError(Exception exception) {
         int errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        if (exception instanceof InvalidSelectorsFault) {  // todo invalid value = resource not found, insufficient selectors = invalid selectors
-            errorRseponse = HttpServletResponse.SC_NOT_FOUND;
-        } else if (exception instanceof InvalidRepresentationFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof AccessDeniedFault) {
-            errorRseponse = HttpServletResponse.SC_UNAUTHORIZED;
-        } else if (exception instanceof AlreadyExistsFault) {
-            errorRseponse = HttpServletResponse.SC_PRECONDITION_FAILED;
-        } else if (exception instanceof ConcurrencyFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof InternalErrorFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof JAXBException) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof SOAPException) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof InvalidPropertiesFormatException) {
-            errorRseponse = HttpServletResponse.SC_BAD_REQUEST;
-        } else if (exception instanceof MethodNotSupportedException) {
+        if (exception instanceof UnsupportedOperationException) {
             errorRseponse = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
-        } else if (exception instanceof IllegalArgumentException) {
-            errorRseponse = HttpServletResponse.SC_BAD_REQUEST;
         }
 
         getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{exception.getMessage()});
