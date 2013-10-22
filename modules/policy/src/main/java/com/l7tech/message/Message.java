@@ -43,6 +43,7 @@ public final class Message implements Closeable {
     private Map<MessageRole, Message> relatedMessages = new HashMap<MessageRole, Message>();
 
     // Quick lookup knob cache
+    private HeadersKnob headersKnob = new HeadersKnobSupport();
     private HttpRequestKnob httpRequestKnob;
     private HttpServletRequestKnob httpServletRequestKnob;
     private HttpResponseKnob httpResponseKnob;
@@ -698,6 +699,10 @@ public final class Message implements Closeable {
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as having arrived over JMS");
         return knob;
+    }
+
+    public HeadersKnob getHeadersKnob() {
+        return headersKnob;
     }
 
     public void notifyMessage(Message message, MessageRole role) {
