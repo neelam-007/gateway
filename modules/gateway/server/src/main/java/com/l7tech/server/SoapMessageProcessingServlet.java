@@ -118,7 +118,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final SsgConnector connector;
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
-            connector = HttpTransportModule.getConnector(hrequest);
+            connector = getConnector(hrequest);
             if (connector == null)
                 throw new ListenerException("No connector was found for the specified request.");
             if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT))
@@ -190,6 +190,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
         initCookies(hrequest.getCookies(), context);
+        initHeaders(hrequest, request);
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
@@ -380,6 +381,43 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             context.close();
         }
     }
+
+    /**
+     * Restricted visibility connector getter - overridden in unit tests.
+     */
+    SsgConnector getConnector(final HttpServletRequest hrequest) {
+        return HttpTransportModule.getConnector(hrequest);
+    }
+
+    void setLicenseManager(final LicenseManager licenseManager) {
+        this.licenseManager = licenseManager;
+    }
+
+    void setConfig(final Config config) {
+        this.config = config;
+    }
+
+    void setStashManagerFactory(final StashManagerFactory stashManagerFactory) {
+        this.stashManagerFactory = stashManagerFactory;
+    }
+
+    void setMessageProcessor(final MessageProcessor messageProcessor) {
+        this.messageProcessor = messageProcessor;
+    }
+
+    /**
+     * Loads Message with headers from request.
+     */
+    private void initHeaders(final HttpServletRequest hrequest, final Message request) {
+       final Enumeration headerNames = hrequest.getHeaderNames();
+       while (headerNames.hasMoreElements()) {
+           final String headerName = (String) headerNames.nextElement();
+           final Enumeration headerValues = hrequest.getHeaders(headerName);
+           while (headerValues.hasMoreElements()) {
+               request.getHeadersKnob().addHeader(headerName, headerValues.nextElement());
+           }
+       }
+   }
 
     private boolean canStreamResponse(PolicyEnforcementContext context) {
         // It is OK to stream a response unless it is marked to be saved for auditing,

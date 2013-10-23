@@ -81,6 +81,7 @@ public class HeadersKnobSupportTest {
     @Test
     public void getHeaderValues() {
         knob.addHeader("1", "one");
+        knob.addHeader("foo", "bar");
         final String[] values = knob.getHeaderValues("1");
         assertEquals(1, values.length);
         assertEquals("one", values[0]);
@@ -110,5 +111,14 @@ public class HeadersKnobSupportTest {
     @Test
     public void getHeaderNamesNone() {
         assertEquals(0, knob.getHeaderNames().length);
+    }
+
+    @Test
+    public void getHeaderNamesDuplicate() {
+        knob.addHeader("1", "one");
+        knob.addHeader("1", "anotherOne");
+        final String[] names = knob.getHeaderNames();
+        assertEquals(1, names.length);
+        assertEquals("1", names[0]);
     }
 }

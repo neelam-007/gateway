@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * Supporting implementation of HeadersKnob which stores the headers in a collection.
@@ -16,14 +17,16 @@ public class HeadersKnobSupport implements HeadersKnob {
     public String[] getHeaderValues(@NotNull final String name) {
         final Collection<String> valuesAsString = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            valuesAsString.add(header.getValue() == null ? null : header.getValue().toString());
+            if (header.getKey().equals(name)) {
+                valuesAsString.add(header.getValue() == null ? null : header.getValue().toString());
+            }
         }
         return valuesAsString.toArray(new String[valuesAsString.size()]);
     }
 
     @Override
     public String[] getHeaderNames() {
-        final Collection<String> names = new ArrayList<>();
+        final Collection<String> names = new HashSet<>();
         for (final Pair<String, Object> header : headers) {
             names.add(header.getKey());
         }
