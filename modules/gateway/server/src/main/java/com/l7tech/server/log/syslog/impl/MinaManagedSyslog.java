@@ -429,7 +429,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
             // build connector config
             SocketConnectorConfig config = new SocketConnectorConfig();
-            config.setConnectTimeout(30000);
+            config.setConnectTimeout(30);
             config.setThreadModel(ThreadModel.MANUAL);
 
             // start connect operation
@@ -481,7 +481,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
             // build connector config
             SocketConnectorConfig config = new SocketConnectorConfig();
-            config.setConnectTimeout(30000);
+            config.setConnectTimeout(30);
             config.setThreadModel(ThreadModel.MANUAL);
 
             // start connect operation
