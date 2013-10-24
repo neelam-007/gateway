@@ -34,6 +34,7 @@
             <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>
             <exclude org="org.apache.geronimo.specs" module="geronimo-servlet_2.5_spec"/>
             <exclude org="org.eclipse.jetty" />
+            <exclude org="org.slf4j" />
         </dependency>
 
         <dependency org="org.codehaus.woodstox" name="stax2-api" rev="3.1.1" force="true" conf="core"/>
