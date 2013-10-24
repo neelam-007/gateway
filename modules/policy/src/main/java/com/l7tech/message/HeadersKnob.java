@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public interface HeadersKnob extends HasHeaders, MessageKnob {
 
     /**
-     * Sets a header to a specified value, overriding an existing value if found.
+     * Sets a header to a specified value, overriding an existing value if found (case insensitive).
      *
      * @param name  the header name.
      * @param value the header value.
@@ -25,17 +25,23 @@ public interface HeadersKnob extends HasHeaders, MessageKnob {
     void addHeader(@NotNull final String name, @Nullable final Object value);
 
     /**
-     * Removes all headers with the given name.
+     * Removes all headers with the given name (case insensitive).
      *
      * @param name the header name.
      */
     void removeHeader(@NotNull final String name);
 
     /**
-     * Removes all headers with the given name and value.
+     * Removes all headers with the given name (case insensitive) and value (case sensitive).
      *
      * @param name  the header name.
      * @param value the header value.
      */
     void removeHeader(@NotNull final String name, @Nullable final Object value);
+
+    /**
+     * @param name the header name to look for (case insensitive).
+     * @return true if the knob contains at least one header with the given name.
+     */
+    boolean containsHeader(@NotNull final String name);
 }

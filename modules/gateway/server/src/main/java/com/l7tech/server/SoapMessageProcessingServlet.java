@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.server.audit.Auditor;
@@ -406,15 +407,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     /**
-     * Loads Message with headers from request.
+     * Loads Message with headers from request, filtering a specific set of 'non-application' headers.
+     * @see {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
      */
     private void initHeaders(final HttpServletRequest hrequest, final Message request) {
        final Enumeration headerNames = hrequest.getHeaderNames();
        while (headerNames.hasMoreElements()) {
            final String headerName = (String) headerNames.nextElement();
-           final Enumeration headerValues = hrequest.getHeaders(headerName);
-           while (headerValues.hasMoreElements()) {
-               request.getHeadersKnob().addHeader(headerName, headerValues.nextElement());
+           if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
+               final Enumeration headerValues = hrequest.getHeaders(headerName);
+               while (headerValues.hasMoreElements()) {
+                   request.getHeadersKnob().addHeader(headerName, headerValues.nextElement());
+               }
+           } else {
+               logger.log(Level.FINEST, "Filtering request header " + headerName);
            }
        }
    }

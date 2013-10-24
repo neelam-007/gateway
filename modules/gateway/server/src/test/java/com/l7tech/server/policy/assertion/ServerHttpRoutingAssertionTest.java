@@ -152,7 +152,7 @@ public class ServerHttpRoutingAssertionTest {
 
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
-        hrequest.addHeader("Authorization", "abcde=");
+        request.getHeadersKnob().addHeader("Authorization", "abcde=");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());

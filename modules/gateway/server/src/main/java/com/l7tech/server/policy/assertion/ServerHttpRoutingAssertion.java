@@ -530,7 +530,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(
-                    requestMessage.getKnob( HttpOutboundRequestKnob.class ),
                     requestMessage,
                     routedRequestParams,
                     context,

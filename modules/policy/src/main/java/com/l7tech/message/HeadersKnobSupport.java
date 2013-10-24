@@ -34,21 +34,21 @@ public class HeadersKnobSupport implements HeadersKnob {
     }
 
     @Override
-    public void setHeader(@NotNull String name, @Nullable Object value) {
+    public void setHeader(@NotNull final String name, @Nullable final Object value) {
         removeHeader(name);
         addHeader(name, value);
     }
 
     @Override
-    public void addHeader(@NotNull String name, @Nullable Object value) {
+    public void addHeader(@NotNull final String name, @Nullable final Object value) {
         headers.add(new Pair<String, Object>(name, value));
     }
 
     @Override
-    public void removeHeader(@NotNull String name) {
+    public void removeHeader(@NotNull final String name) {
         final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equals(name)) {
+            if (header.getKey().equalsIgnoreCase(name)) {
                 toRemove.add(header);
             }
         }
@@ -56,14 +56,24 @@ public class HeadersKnobSupport implements HeadersKnob {
     }
 
     @Override
-    public void removeHeader(@NotNull String name, @Nullable Object value) {
+    public void removeHeader(@NotNull final String name, @Nullable final Object value) {
         final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equals(name) && ObjectUtils.equals(value, header.getValue())) {
+            if (header.getKey().equalsIgnoreCase(name) && ObjectUtils.equals(value, header.getValue())) {
                 toRemove.add(header);
             }
         }
         headers.removeAll(toRemove);
+    }
+
+    @Override
+    public boolean containsHeader(@NotNull final String name) {
+        for (final Pair<String, Object> header : headers) {
+            if (header.getKey().equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Collection<Pair<String, Object>> headers = new ArrayList<>();

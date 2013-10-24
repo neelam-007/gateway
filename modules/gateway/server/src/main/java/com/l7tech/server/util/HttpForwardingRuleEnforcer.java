@@ -10,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.xml.soap.SoapUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
@@ -35,6 +36,76 @@ public class HttpForwardingRuleEnforcer {
     /**
      * For forwarding request http headers downstream (from routing assertion)
      *
+     * @param sourceMessage     the sourceMessage
+     * @param httpRequestParams Target for HTTP headers
+     * @param context           the pec
+     * @param targetDomain      name of domain used for cookie forwarding
+     * @param rules             http rules dictating what headers should be forwarded and under which conditions
+     * @param auditor           for runtime auditing
+     * @param vars              pre-populated map of context variables (pec.getVariableMap) or null
+     * @param varNames          the context variables used by the calling assertion used to populate vars if null
+     */
+    public static void handleRequestHeaders(final Message sourceMessage,
+                                            final GenericHttpRequestParams httpRequestParams,
+                                            final PolicyEnforcementContext context,
+                                            final String targetDomain,
+                                            final HttpPassthroughRuleSet rules,
+                                            final Audit auditor,
+                                            @Nullable Map<String, ?> vars,
+                                            @Nullable final String[] varNames) throws IOException {
+        // we should only forward def user-agent if the rules are not going to insert own
+        if (rules.ruleForName(HttpConstants.HEADER_USER_AGENT) != HttpPassthroughRuleSet.BLOCK) {
+            flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
+        }
+
+        final HeadersKnob headersKnob = sourceMessage.getHeadersKnob();
+        if (!rules.isForwardAll()) {
+            final Set<String> ruleHeaderNames = new HashSet<>();
+            // set custom values
+            for (int i = 0; i < rules.getRules().length; i++) {
+                final HttpPassthroughRule rule = rules.getRules()[i];
+                final String ruleName = rule.getName();
+                if (ruleName.isEmpty()) {
+                    throw new IOException("HttpPassthroughRule contains an HTTP header with an empty name");
+                }
+                ruleHeaderNames.add(ruleName.toLowerCase());
+                // Handled by virtual host
+                // TODO we should probably handle virtual host here instead of ServerHttpRouteAssertion?
+                if (HttpConstants.HEADER_HOST.equalsIgnoreCase(ruleName)) continue;
+                if (rule.isUsesCustomizedValue()) {
+                    // set header with custom value
+                    String headerValue = rule.getCustomizeValue();
+                    // resolve context variable if applicable
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
+                    }
+                    headersKnob.setHeader(ruleName, headerValue);
+                }
+            }
+
+            // remove headers that are not in rules
+            for (final String headerName : headersKnob.getHeaderNames()) {
+                if (!ruleHeaderNames.contains(headerName.toLowerCase())) {
+                    headersKnob.removeHeader(headerName);
+                }
+            }
+        }
+
+        writeHeaders(headersKnob, httpRequestParams, context, targetDomain, auditor);
+        //still try to get and set a SOAPAction If not already set
+        if (!headersKnob.containsHeader(SoapUtil.SOAPACTION)) {
+            handleSoapActionHeader(httpRequestParams, sourceMessage, null);
+        }
+    }
+
+
+    /**
+     * For forwarding request http headers downstream (from routing assertion)
+     *
+     * @deprecated              use {@link #handleRequestHeaders(com.l7tech.message.Message, com.l7tech.common.http.GenericHttpRequestParams, com.l7tech.server.message.PolicyEnforcementContext, String, com.l7tech.policy.assertion.HttpPassthroughRuleSet, com.l7tech.gateway.common.audit.Audit, java.util.Map, String[])}
      * @param headerSource Source for HTTP Headers (in addition to the request Message, may be null)
      * @param sourceMessage the sourceMessage
      * @param httpRequestParams Target for HTTP headers
@@ -45,12 +116,13 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
+    @Deprecated
     public static void handleRequestHeaders( @Nullable final HasOutboundHeaders headerSource,
                                              final Message sourceMessage,
                                              final GenericHttpRequestParams httpRequestParams,
                                              final PolicyEnforcementContext context,
                                              final String targetDomain,
-                                             final HttpPassthroughRuleSet rules, 
+                                             final HttpPassthroughRuleSet rules,
                                              final Audit auditor,
                                              @Nullable  Map<String,?> vars,
                                              @Nullable final String[] varNames) throws IOException {
@@ -164,7 +236,7 @@ public class HttpForwardingRuleEnforcer {
                             final String[] values = source.getHeaderValues(headerNameFromRule);
                             for ( final String value : values ) {
                                 httpRequestParams.addExtraHeader(new GenericHttpHeader(headerNameFromRule, value));
-                            }                            
+                            }
                         }
                     }
                 }
@@ -186,9 +258,11 @@ public class HttpForwardingRuleEnforcer {
                                                    final HasOutboundHeaders headerSource ) {
         String soapAction = null;
 
-        String[] soapActions = headerSource.getHeaderValues(SoapUtil.SOAPACTION);
-        if ( soapActions.length > 0 ) {
-            soapAction = soapActions[0];
+        if (headerSource != null) {
+            String[] soapActions = headerSource.getHeaderValues(SoapUtil.SOAPACTION);
+            if ( soapActions.length > 0 ) {
+                soapAction = soapActions[0];
+            }
         }
 
         MimeKnob mk = sourceMessage.getKnob(MimeKnob.class);
@@ -578,5 +652,45 @@ public class HttpForwardingRuleEnforcer {
             }
         }
         return output;
+    }
+
+    /**
+     * @param headersKnob   header source
+     * @param requestParams header destination (existing headers may be replaced)
+     * @throws              IOException if a header with an empty name is encountered
+     */
+    private static void writeHeaders(final HeadersKnob headersKnob, final GenericHttpRequestParams requestParams, final PolicyEnforcementContext context, final String targetDomain, final Audit auditor) throws IOException {
+        final List<String> processedHeaders = new ArrayList<>();
+        boolean cookieAlreadyHandled = false;
+        for (final String name : headersKnob.getHeaderNames()) {
+            if (StringUtils.isNotBlank(name)) {
+                if (name.equalsIgnoreCase(HttpConstants.HEADER_AUTHORIZATION) && requestParams.getPasswordAuthentication() != null) {
+                    logger.fine("not passing through authorization header because credentials are specified for back-end request"); // bug 10795
+                } else if (name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                    // special cookie handling
+                    // all cookies are processed in one go (unlike other headers)
+                    if (!cookieAlreadyHandled) {
+                        final List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
+                        if (!res.isEmpty()) {
+                            // currently only passes the name and value cookie attributes
+                            requestParams.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(res)));
+                        }
+                        cookieAlreadyHandled = true;
+                    }
+                } else {
+                    for (final String value : headersKnob.getHeaderValues(name)) {
+                        if (processedHeaders.contains(name)) {
+                            requestParams.addExtraHeader(new GenericHttpHeader(name, value));
+                        } else {
+                            // only replace existing headers on request params
+                            requestParams.replaceExtraHeader(new GenericHttpHeader(name, value));
+                            processedHeaders.add(name);
+                        }
+                    }
+                }
+            } else {
+                throw new IOException("HeadersKnob contains a header with an empty name");
+            }
+        }
     }
 }

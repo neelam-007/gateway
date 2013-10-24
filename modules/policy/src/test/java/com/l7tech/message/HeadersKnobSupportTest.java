@@ -79,6 +79,16 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
+    public void setHeaderIgnoresCase() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", "anotherOne");
+        knob.setHeader("FOO", "superiorOne");
+        final String[] values = knob.getHeaderValues("FOO");
+        assertEquals(1, values.length);
+        assertEquals("superiorOne", values[0]);
+    }
+
+    @Test
     public void getHeaderValues() {
         knob.addHeader("1", "one");
         knob.addHeader("foo", "bar");
@@ -120,5 +130,66 @@ public class HeadersKnobSupportTest {
         final String[] names = knob.getHeaderNames();
         assertEquals(1, names.length);
         assertEquals("1", names[0]);
+    }
+
+    @Test
+    public void containsHeaderTrue() {
+        knob.addHeader("1", "one");
+        assertTrue(knob.containsHeader("1"));
+    }
+
+    @Test
+    public void containsHeaderIgnoresCase() {
+        knob.addHeader("foo", "bar");
+        assertTrue(knob.containsHeader("FOO"));
+    }
+
+
+    @Test
+    public void containsHeaderFalse() {
+        assertFalse(knob.containsHeader("doesnotexist"));
+    }
+
+    @Test
+    public void removeHeader() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", "bar2");
+        knob.removeHeader("foo");
+        assertEquals(0, knob.getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderIgnoresCase() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", "bar2");
+        knob.removeHeader("FOO");
+        assertEquals(0, knob.getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderWithValue() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", "bar2");
+        knob.removeHeader("foo", "bar2");
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderWithValueIgnoresCase() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", "bar2");
+        knob.removeHeader("FOO", "bar2");
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderWithNullValue() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("foo", null);
+        knob.removeHeader("foo", null);
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
     }
 }
