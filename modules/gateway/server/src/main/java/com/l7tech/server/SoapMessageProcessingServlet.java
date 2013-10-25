@@ -192,7 +192,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
         initCookies(hrequest.getCookies(), context);
-        ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
@@ -202,6 +201,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
+            if (request.getHeadersKnob() != null) {
+                ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
+            } else {
+                logger.log(Level.WARNING, "HeadersKnob is missing from request.");
+            }
 
             final Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {

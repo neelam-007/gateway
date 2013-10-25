@@ -557,9 +557,7 @@ public class PolicyProcessingTest {
 
     /**
      * Test outbound headers
-     * FIXME
      */
-    @Ignore
     @Test
 	public void testHttpRoutingBlockHeaders() throws Exception {
         final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));

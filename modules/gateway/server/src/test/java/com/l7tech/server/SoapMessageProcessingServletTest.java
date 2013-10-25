@@ -11,9 +11,10 @@ import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -61,22 +62,28 @@ public class SoapMessageProcessingServletTest {
         request.addHeader("foo", "bar");
         request.addHeader("foo", "bar2");
         request.setContent("test".getBytes());
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenReturn(AssertionStatus.NONE);
+        // using doAnswer to verify headers because ArgumentCaptor does not capture the state of the PEC at the time of method execution
+        // instead the ArgumentCaptor captures a reference to the PEC which is mutated after method execution and cannot be used to verify headers
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
+                final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
+                assertEquals(2, headerNames.size());
+                assertTrue(headerNames.contains("test"));
+                assertTrue(headerNames.contains("foo"));
+                assertEquals(1, headersKnob.getHeaderValues("test").length);
+                assertEquals("test", headersKnob.getHeaderValues("test")[0]);
+                final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
+                assertEquals(2, fooValues.size());
+                assertTrue(fooValues.contains("bar"));
+                assertTrue(fooValues.contains("bar2"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-
-        final ArgumentCaptor<PolicyEnforcementContext> contextCaptor = ArgumentCaptor.forClass(PolicyEnforcementContext.class);
-        verify(messageProcessor).processMessage(contextCaptor.capture());
-        final HeadersKnob headersKnob = contextCaptor.getValue().getRequest().getHeadersKnob();
-        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
-        assertEquals(2, headerNames.size());
-        assertTrue(headerNames.contains("test"));
-        assertTrue(headerNames.contains("foo"));
-        assertEquals(1, headersKnob.getHeaderValues("test").length);
-        assertEquals("test", headersKnob.getHeaderValues("test")[0]);
-        final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
-        assertEquals(2, fooValues.size());
-        assertTrue(fooValues.contains("bar"));
-        assertTrue(fooValues.contains("bar2"));
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -86,20 +93,23 @@ public class SoapMessageProcessingServletTest {
         }
         request.addHeader("foo", "bar");
         request.setContent("test".getBytes());
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenReturn(AssertionStatus.NONE);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final HeadersKnob headersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getRequest().getHeadersKnob();
+                final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
+                assertEquals(1, headerNames.size());
+                assertTrue(headerNames.contains("foo"));
+                assertEquals(1, headersKnob.getHeaderValues("foo").length);
+                assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
+                for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
+                    assertFalse(headerNames.contains(headerNotToForward));
+                }
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-
-        final ArgumentCaptor<PolicyEnforcementContext> contextCaptor = ArgumentCaptor.forClass(PolicyEnforcementContext.class);
-        verify(messageProcessor).processMessage(contextCaptor.capture());
-        final HeadersKnob headersKnob = contextCaptor.getValue().getRequest().getHeadersKnob();
-        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
-        assertEquals(1, headerNames.size());
-        assertTrue(headerNames.contains("foo"));
-        assertEquals(1, headersKnob.getHeaderValues("foo").length);
-        assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
-        for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
-            assertFalse(headerNames.contains(headerNotToForward));
-        }
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -109,21 +119,24 @@ public class SoapMessageProcessingServletTest {
         }
         request.addHeader("foo", "bar");
         request.setContent("test".getBytes());
-        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenReturn(AssertionStatus.NONE);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final HeadersKnob headersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getRequest().getHeadersKnob();
+                final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
+                assertEquals(1, headerNames.size());
+                assertTrue(headerNames.contains("foo"));
+                assertEquals(1, headersKnob.getHeaderValues("foo").length);
+                assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
+                for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
+                    assertFalse(headerNames.contains(headerNotToForward));
+                    assertFalse(headerNames.contains(headerNotToForward.toUpperCase()));
+                }
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-
-        final ArgumentCaptor<PolicyEnforcementContext> contextCaptor = ArgumentCaptor.forClass(PolicyEnforcementContext.class);
-        verify(messageProcessor).processMessage(contextCaptor.capture());
-        final HeadersKnob headersKnob = contextCaptor.getValue().getRequest().getHeadersKnob();
-        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
-        assertEquals(1, headerNames.size());
-        assertTrue(headerNames.contains("foo"));
-        assertEquals(1, headersKnob.getHeaderValues("foo").length);
-        assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
-        for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
-            assertFalse(headerNames.contains(headerNotToForward));
-            assertFalse(headerNames.contains(headerNotToForward.toUpperCase()));
-        }
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
     }
 
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {

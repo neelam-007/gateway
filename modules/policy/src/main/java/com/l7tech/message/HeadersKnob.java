@@ -1,7 +1,10 @@
 package com.l7tech.message;
 
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 
 /**
  * A generic headers knob for storing all types of headers.
@@ -44,4 +47,9 @@ public interface HeadersKnob extends HasHeaders, MessageKnob {
      * @return true if the knob contains at least one header with the given name.
      */
     boolean containsHeader(@NotNull final String name);
+
+    /**
+     * @return an unmodifiable collection of the headers in the knob.
+     */
+    Collection<Pair<String, Object>> getHeaders();
 }

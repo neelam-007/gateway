@@ -1114,4 +1114,23 @@ public class ServerHttpRoutingAssertionTest {
         serverAssertion.checkRequest(context);
         assertEquals(0, response.getHeadersKnob().getHeaderNames().length);
     }
+
+    @Test
+    public void responseHeadersResponseNotInitialized() throws Exception {
+        responseHeaders.add(new GenericHttpHeader("foo", "bar"));
+        when(mockResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new GenericHttpHeader[responseHeaders.size()])));
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockContext);
+        final Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+        final Message response = new Message();
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        serverAssertion.checkRequest(context);
+        final String[] names = response.getHeadersKnob().getHeaderNames();
+        assertEquals(1, names.length);
+        assertEquals("foo", names[0]);
+        final String[] values = response.getHeadersKnob().getHeaderValues("foo");
+        assertEquals(1, values.length);
+        assertEquals("bar", values[0]);
+    }
 }

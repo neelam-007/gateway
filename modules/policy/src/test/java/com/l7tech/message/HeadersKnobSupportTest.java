@@ -1,9 +1,11 @@
 package com.l7tech.message;
 
+import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -95,6 +97,14 @@ public class HeadersKnobSupportTest {
         final String[] values = knob.getHeaderValues("1");
         assertEquals(1, values.length);
         assertEquals("one", values[0]);
+    }
+
+    @Test
+    public void getHeaderValuesCaseInsensitive() {
+        knob.addHeader("foo", "bar");
+        final String[] values = knob.getHeaderValues("FOO");
+        assertEquals(1, values.length);
+        assertEquals("bar", values[0]);
     }
 
     @Test
@@ -191,5 +201,20 @@ public class HeadersKnobSupportTest {
         knob.removeHeader("foo", null);
         assertEquals(1, knob.getHeaderValues("foo").length);
         assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void getHeaders() {
+        knob.addHeader("foo", "bar");
+        final Collection<Pair<String, Object>> headers = knob.getHeaders();
+        assertEquals(1, headers.size());
+        final Pair<String, Object> header = headers.iterator().next();
+        assertEquals("foo", header.getKey());
+        assertEquals("bar", header.getValue());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void getHeadersUnmodifiable() {
+        knob.getHeaders().add(new Pair<String, Object>("key", "value"));
     }
 }

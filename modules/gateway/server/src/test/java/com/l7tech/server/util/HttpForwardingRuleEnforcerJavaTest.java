@@ -70,6 +70,14 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
+    public void requestNotInitialized() throws Exception {
+        final Message uninitialized = new Message();
+        final PolicyEnforcementContext uninitializedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(uninitialized, response);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(uninitialized, requestParams, uninitializedContext, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertTrue(requestParams.getExtraHeaders().isEmpty());
+    }
+
+    @Test
     public void forwardAllRequestHeaders() throws Exception {
         request.getHeadersKnob().addHeader("foo", "bar");
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
@@ -276,6 +284,12 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals("shouldBeAdded", headers.get("add").get(0));
         assertEquals(1, headers.get("test").size());
         assertEquals("shouldNotBeFiltered", headers.get("test").get(0));
+        // ensure headers knob was not modified by routing
+        assertEquals(2, request.getHeadersKnob().getHeaderNames().length);
+        final List<String> headersOnKnob = Arrays.asList(request.getHeadersKnob().getHeaderNames());
+        assertTrue(headersOnKnob.contains("shouldBeFiltered"));
+        assertTrue(headersOnKnob.contains("test"));
+        assertFalse(headersOnKnob.contains("add"));
     }
 
     @BugId("SSG-6543")

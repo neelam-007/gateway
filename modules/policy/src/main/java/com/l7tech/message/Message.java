@@ -9,6 +9,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -41,9 +42,9 @@ public final class Message implements Closeable {
     private MessageFacet rootFacet;
 
     private Map<MessageRole, Message> relatedMessages = new HashMap<MessageRole, Message>();
+    private HeadersKnob headersKnob = new HeadersKnobSupport();
 
     // Quick lookup knob cache
-    private HeadersKnob headersKnob = new HeadersKnobSupport();
     private HttpRequestKnob httpRequestKnob;
     private HttpServletRequestKnob httpServletRequestKnob;
     private HttpResponseKnob httpResponseKnob;
@@ -701,8 +702,12 @@ public final class Message implements Closeable {
         return knob;
     }
 
+    /**
+     * @return the HeadersKnob attached to this message or null if the message has not been initialized or is closed.
+     */
+    @Nullable
     public HeadersKnob getHeadersKnob() {
-        return headersKnob;
+        return getKnob(HeadersKnob.class);
     }
 
     public void notifyMessage(Message message, MessageRole role) {

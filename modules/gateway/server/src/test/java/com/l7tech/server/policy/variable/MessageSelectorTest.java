@@ -344,4 +344,21 @@ public class MessageSelectorTest {
         assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
     }
 
+    @Test
+    public void selectHeaderFromHeadersKnob() {
+        message.getHeadersKnob().addHeader("test", "value");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("value", selectedValue);
+    }
+
+    @Test
+    public void selectHeaderFromRequestKnobBeforeHeadersKnob() {
+        message.attachHttpRequestKnob(new HttpRequestKnobStub(Collections.<HttpHeader>singletonList(new GenericHttpHeader("test", "requestKnobValue"))));
+        message.getHeadersKnob().addHeader("test", "headersKnobValue");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("requestKnobValue", selectedValue);
+    }
+
 }

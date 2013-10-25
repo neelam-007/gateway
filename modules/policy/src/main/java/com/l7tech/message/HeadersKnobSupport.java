@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 
 /**
@@ -74,6 +75,11 @@ public class HeadersKnobSupport implements HeadersKnob {
             }
         }
         return false;
+    }
+
+    @Override
+    public Collection<Pair<String, Object>> getHeaders() {
+        return Collections.unmodifiableCollection(headers);
     }
 
     private Collection<Pair<String, Object>> headers = new ArrayList<>();

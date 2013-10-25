@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +59,15 @@ public class HttpForwardingRuleEnforcer {
             flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
         }
 
-        final HeadersKnob headersKnob = sourceMessage.getHeadersKnob();
+        // do not modify original headers knob
+        final HeadersKnob copy = new HeadersKnobSupport();
+        if (sourceMessage.getHeadersKnob() != null) {
+            for (final Pair<String, Object> header : sourceMessage.getHeadersKnob().getHeaders()) {
+                copy.addHeader(header.getKey(), header.getValue());
+            }
+        } else {
+            logger.log(Level.WARNING, "HeadersKnob is missing from request.");
+        }
         final Set<String> ruleHeaderNames = new HashSet<>();
         if (!rules.isForwardAll()) {
             // set custom values
@@ -82,21 +91,21 @@ public class HttpForwardingRuleEnforcer {
                         }
                         headerValue = ExpandVariables.process(headerValue, vars, auditor);
                     }
-                    headersKnob.setHeader(ruleName, headerValue);
+                    copy.setHeader(ruleName, headerValue);
                 }
             }
 
             // remove headers that are not in rules
-            for (final String headerName : headersKnob.getHeaderNames()) {
+            for (final String headerName : copy.getHeaderNames()) {
                 if (!ruleHeaderNames.contains(headerName.toLowerCase())) {
-                    headersKnob.removeHeader(headerName);
+                    copy.removeHeader(headerName);
                 }
             }
         }
 
-        writeHeaders(headersKnob, httpRequestParams, context, targetDomain, auditor, ruleHeaderNames.contains("cookie"));
+        writeHeaders(copy, httpRequestParams, context, targetDomain, auditor, ruleHeaderNames.contains("cookie"));
         //still try to get and set a SOAPAction If not already set
-        if (!headersKnob.containsHeader(SoapUtil.SOAPACTION)) {
+        if (!copy.containsHeader(SoapUtil.SOAPACTION)) {
             handleSoapActionHeader(httpRequestParams, sourceMessage, null);
         }
     }
