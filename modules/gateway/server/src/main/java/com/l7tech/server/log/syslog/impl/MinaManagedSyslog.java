@@ -13,12 +13,9 @@ import org.apache.mina.core.future.WriteFuture;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.transport.socket.nio.NioDatagramConnector;
-import org.apache.mina.transport.socket.SocketConnector;
-import org.apache.mina.transport.socket.SocketSessionConfig;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
 import org.apache.mina.util.ExceptionMonitor;
-import org.apache.mina.util.IdentityHashSet;
 
 import java.net.SocketAddress;
 import java.nio.channels.UnresolvedAddressException;
@@ -436,7 +433,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             reconnect.set( false );
 
             // build connector config
-            connector.setConnectTimeoutMillis(30000L * 1000L); // TODO jwilliams: fix for SSG-7789
+            connector.setConnectTimeoutMillis(30000L);
             connector.setHandler(handler);
 
             // start connect operation
@@ -486,7 +483,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             reconnect.set( false );
 
             // build connector config
-            connector.setConnectTimeoutMillis(30000L * 1000L); // TODO jwilliams: fix for SSG-7789
+            connector.setConnectTimeoutMillis(30000L);
             connector.setHandler(handler);
 
             // start connect operation
