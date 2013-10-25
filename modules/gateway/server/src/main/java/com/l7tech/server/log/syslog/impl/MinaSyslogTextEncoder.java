@@ -1,8 +1,8 @@
 package com.l7tech.server.log.syslog.impl;
 
 import com.l7tech.util.Charsets;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoderAdapter;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 
@@ -51,7 +51,7 @@ class MinaSyslogTextEncoder extends ProtocolEncoderAdapter {
             session.setAttribute( ENCODER_PREFIX + charset.name(), encoder );
         }
 
-        ByteBuffer buf = ByteBuffer.allocate( value.length() ).setAutoExpand( true );
+        IoBuffer buf = IoBuffer.allocate( value.length() ).setAutoExpand( true );
         buf.putString( value, encoder );
         int positionBeforeEnding = buf.position();
         buf.putString( delimiter, encoder );

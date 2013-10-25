@@ -2,11 +2,9 @@ package com.l7tech.server.log.syslog;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoHandlerAdapter;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.ThreadModel;
-import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.service.IoHandlerAdapter;
+import org.apache.mina.core.session.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.junit.AfterClass;
@@ -160,16 +158,16 @@ public class SyslogManagerTest {
                 startLatch.countDown();
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                System.out.print(((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
+                System.out.print(((IoBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
             }
             public void sessionClosed(IoSession iosession) throws Exception {
                 System.out.println("Session closed.");
             }
         };
-        SocketConnectorConfig config = new SocketConnectorConfig();
-        config.setThreadModel(ThreadModel.MANUAL);
+
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(addresses[0], handler, config);
+        acceptor.setHandler(handler);
+        acceptor.bind(addresses[0]);
 
         // create client
         Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
@@ -191,8 +189,8 @@ public class SyslogManagerTest {
             Thread.sleep( 10L ); // see how many messages come through ...
 
             // server shuts down
-            acceptor.unbindAll();
-            sessionHolder[0].close();
+            acceptor.unbind();
+            sessionHolder[0].close(true);
 
             assertEquals("Connection events", 1L, (long) connectEventCount.get() );
 
@@ -235,16 +233,16 @@ public class SyslogManagerTest {
                 startLatchRef.get().countDown();
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                System.out.print(((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
+                System.out.print(((IoBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
             }
             public void sessionClosed(IoSession iosession) throws Exception {
                 System.out.println("Session closed.");
             }
         };
-        SocketConnectorConfig config = new SocketConnectorConfig();
-        config.setThreadModel(ThreadModel.MANUAL);
+
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(addresses[0], handler, config);
+        acceptor.setHandler(handler);
+        acceptor.bind(addresses[0]);
 
         // create client
         Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
@@ -260,7 +258,7 @@ public class SyslogManagerTest {
 
             Thread.sleep( 10L ); // see how many messages come through ...
             startLatchRef.set(new CountDownLatch(1));
-            sessionHolder[0].close();
+            sessionHolder[0].close(true);
 
             // wait until connected
             assertTrue("Client connected", startLatchRef.get().await( 2L, TimeUnit.SECONDS));
@@ -272,7 +270,7 @@ public class SyslogManagerTest {
 
             Thread.sleep( 10L ); // see how many messages come through ...
             startLatchRef.set(new CountDownLatch(1));
-            sessionHolder[0].close();
+            sessionHolder[0].close(true);
 
             // wait until connected
             assertTrue("Client connected", startLatchRef.get().await( 2L, TimeUnit.SECONDS));
@@ -283,7 +281,7 @@ public class SyslogManagerTest {
             syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 9");
 
             Thread.sleep( 10L ); // see how many messages come through ...
-            sessionHolder[0].close();
+            sessionHolder[0].close(true);
 
             if ( !endLatch.await( 5L, TimeUnit.SECONDS) ) {
                 fail("Timeout waiting for disconnect event.");
@@ -294,7 +292,7 @@ public class SyslogManagerTest {
             assertTrue("Connection events", 3 <= connectEventCount.get());
         } finally {
             ResourceUtils.closeQuietly(syslog);
-            acceptor.unbindAll();
+            acceptor.unbind();
         }
     }
 
@@ -315,17 +313,17 @@ public class SyslogManagerTest {
                 startLatch.countDown();
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                System.out.print(((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
+                System.out.print(((IoBuffer)obj).getString(Charset.defaultCharset().newDecoder()));
             }
             public void sessionClosed(IoSession iosession) throws Exception {
                 System.out.println("Session closed.");
                 endLatch.countDown();
             }
         };
-        SocketConnectorConfig config = new SocketConnectorConfig();
-        config.setThreadModel(ThreadModel.MANUAL);
+
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(addresses[0], handler, config);
+        acceptor.setHandler(handler);
+        acceptor.bind(addresses[0]);
 
         // create client
         Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
@@ -354,7 +352,7 @@ public class SyslogManagerTest {
             }
         } finally {
             ResourceUtils.closeQuietly(syslog);
-            acceptor.unbindAll();
+            acceptor.unbind();
         }
     }
 
@@ -378,7 +376,7 @@ public class SyslogManagerTest {
                 sessionCount.incrementAndGet();
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                String message = ((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder());
+                String message = ((IoBuffer)obj).getString(Charset.defaultCharset().newDecoder());
                 if ( message.length() > 0 ) {
                     System.out.print(message);
                     messagesLatch.countDown();
@@ -389,10 +387,10 @@ public class SyslogManagerTest {
                 endLatch.countDown();
             }
         };
-        SocketConnectorConfig config = new SocketConnectorConfig();
-        config.setThreadModel(ThreadModel.MANUAL);
+
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(addresses[0], handler, config);
+        acceptor.setHandler(handler);
+        acceptor.bind(addresses[0]);
 
         // create clients
         Syslog syslog1 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
@@ -424,7 +422,7 @@ public class SyslogManagerTest {
             ResourceUtils.closeQuietly(syslog1);
             ResourceUtils.closeQuietly(syslog2);
             ResourceUtils.closeQuietly(syslog3);
-            acceptor.unbindAll();
+            acceptor.unbind();
         }
     }
 
@@ -453,19 +451,21 @@ public class SyslogManagerTest {
                 System.out.println("Session closed.");
             }
             public void messageReceived(IoSession iosession, Object obj) throws Exception {
-                String value = ((ByteBuffer)obj).getString(Charset.defaultCharset().newDecoder());
+                String value = ((IoBuffer)obj).getString(Charset.defaultCharset().newDecoder());
                 if ( value.length()!=0 ) {
                     holder[0] = value;
                     latch.countDown();
                 }
             }
         };
-        SocketConnectorConfig config = new SocketConnectorConfig();
-        config.setThreadModel(ThreadModel.MANUAL);
+
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
+        acceptor.setHandler(handler);
+
         Syslog syslog = null;
+
         try {
-            acceptor.bind(addresses[0], handler, config);
+            acceptor.bind(addresses[0]);
 
             // create client
             syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, facility, hostname + ".l7tech.com", null, null, null, null);
@@ -482,7 +482,7 @@ public class SyslogManagerTest {
             }
         } finally {
             ResourceUtils.closeQuietly(syslog);
-            acceptor.unbindAll();
+            acceptor.unbind();
         }
     }
 }
