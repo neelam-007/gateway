@@ -17,7 +17,7 @@ public class HeadersKnobSupport implements HeadersKnob {
     public String[] getHeaderValues(@NotNull final String name) {
         final Collection<String> valuesAsString = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equals(name)) {
+            if (header.getKey().equalsIgnoreCase(name)) {
                 valuesAsString.add(header.getValue() == null ? null : header.getValue().toString());
             }
         }

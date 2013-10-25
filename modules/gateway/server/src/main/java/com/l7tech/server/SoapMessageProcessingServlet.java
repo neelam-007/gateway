@@ -30,6 +30,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.EventChannel;
+import com.l7tech.server.util.ServletUtils;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
@@ -191,7 +192,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
         initCookies(hrequest.getCookies(), context);
-        initHeaders(hrequest, request);
+        ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
@@ -405,25 +406,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     void setMessageProcessor(final MessageProcessor messageProcessor) {
         this.messageProcessor = messageProcessor;
     }
-
-    /**
-     * Loads Message with headers from request, filtering a specific set of 'non-application' headers.
-     * @see {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
-     */
-    private void initHeaders(final HttpServletRequest hrequest, final Message request) {
-       final Enumeration headerNames = hrequest.getHeaderNames();
-       while (headerNames.hasMoreElements()) {
-           final String headerName = (String) headerNames.nextElement();
-           if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
-               final Enumeration headerValues = hrequest.getHeaders(headerName);
-               while (headerValues.hasMoreElements()) {
-                   request.getHeadersKnob().addHeader(headerName, headerValues.nextElement());
-               }
-           } else {
-               logger.log(Level.FINEST, "Filtering request header " + headerName);
-           }
-       }
-   }
 
     private boolean canStreamResponse(PolicyEnforcementContext context) {
         // It is OK to stream a response unless it is marked to be saved for auditing,

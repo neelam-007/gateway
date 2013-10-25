@@ -1,7 +1,15 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.HttpHeader;
+import com.l7tech.message.HeadersKnob;
+import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
+import org.jetbrains.annotations.NotNull;
+
 import javax.servlet.http.HttpServletRequest;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServletUtils {
@@ -36,5 +44,38 @@ public class ServletUtils {
 
         logger.info("Cert param present but type not suppoted " + param.getClass().getName());
         return null;
+    }
+
+    /**
+     * Loads a HeadersKnob with headers from request, filtering a specific set of 'non-application' headers.
+     *
+     * @param hrequest    the HttpServletRequest which is a source of headers.
+     * @param headersKnob the HeadersKnob to load with headers from the request.
+     * @see {@link com.l7tech.policy.assertion.HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
+     */
+    public static void loadHeaders(@NotNull final HttpServletRequest hrequest, @NotNull final HeadersKnob headersKnob) {
+        final Enumeration headerNames = hrequest.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            final String headerName = (String) headerNames.nextElement();
+            if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
+                final Enumeration headerValues = hrequest.getHeaders(headerName);
+                while (headerValues.hasMoreElements()) {
+                    headersKnob.addHeader(headerName, headerValues.nextElement());
+                }
+            } else {
+                logger.log(Level.FINEST, "Filtering request header " + headerName);
+            }
+        }
+    }
+
+    public static void loadHeaders(@NotNull final GenericHttpResponse response, @NotNull final HeadersKnob headersKnob) {
+        for (final HttpHeader header : response.getHeaders().toArray()) {
+            final String headerName = header.getName();
+            if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
+                headersKnob.addHeader(headerName, header.getFullValue());
+            } else {
+                logger.log(Level.FINEST, "Filtering request header " + headerName);
+            }
+        }
     }
 }

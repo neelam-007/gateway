@@ -59,8 +59,8 @@ public class HttpForwardingRuleEnforcer {
         }
 
         final HeadersKnob headersKnob = sourceMessage.getHeadersKnob();
+        final Set<String> ruleHeaderNames = new HashSet<>();
         if (!rules.isForwardAll()) {
-            final Set<String> ruleHeaderNames = new HashSet<>();
             // set custom values
             for (int i = 0; i < rules.getRules().length; i++) {
                 final HttpPassthroughRule rule = rules.getRules()[i];
@@ -94,7 +94,7 @@ public class HttpForwardingRuleEnforcer {
             }
         }
 
-        writeHeaders(headersKnob, httpRequestParams, context, targetDomain, auditor);
+        writeHeaders(headersKnob, httpRequestParams, context, targetDomain, auditor, ruleHeaderNames.contains("cookie"));
         //still try to get and set a SOAPAction If not already set
         if (!headersKnob.containsHeader(SoapUtil.SOAPACTION)) {
             handleSoapActionHeader(httpRequestParams, sourceMessage, null);
@@ -659,7 +659,7 @@ public class HttpForwardingRuleEnforcer {
      * @param requestParams header destination (existing headers may be replaced)
      * @throws              IOException if a header with an empty name is encountered
      */
-    private static void writeHeaders(final HeadersKnob headersKnob, final GenericHttpRequestParams requestParams, final PolicyEnforcementContext context, final String targetDomain, final Audit auditor) throws IOException {
+    private static void writeHeaders(final HeadersKnob headersKnob, final GenericHttpRequestParams requestParams, final PolicyEnforcementContext context, final String targetDomain, final Audit auditor, final boolean retrieveCookiesFromContext) throws IOException {
         final List<String> processedHeaders = new ArrayList<>();
         boolean cookieAlreadyHandled = false;
         for (final String name : headersKnob.getHeaderNames()) {
@@ -670,12 +670,7 @@ public class HttpForwardingRuleEnforcer {
                     // special cookie handling
                     // all cookies are processed in one go (unlike other headers)
                     if (!cookieAlreadyHandled) {
-                        final List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
-                        if (!res.isEmpty()) {
-                            // currently only passes the name and value cookie attributes
-                            requestParams.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(res)));
-                        }
-                        cookieAlreadyHandled = true;
+                        cookieAlreadyHandled = setCookieHeadersFromContext(requestParams, context, targetDomain, auditor);
                     }
                 } else {
                     for (final String value : headersKnob.getHeaderValues(name)) {
@@ -692,5 +687,20 @@ public class HttpForwardingRuleEnforcer {
                 throw new IOException("HeadersKnob contains a header with an empty name");
             }
         }
+        if (retrieveCookiesFromContext && !cookieAlreadyHandled) {
+            setCookieHeadersFromContext(requestParams, context, targetDomain, auditor);
+        }
+
+    }
+
+    private static boolean setCookieHeadersFromContext(GenericHttpRequestParams requestParams, PolicyEnforcementContext context, String targetDomain, Audit auditor) {
+        boolean cookieAlreadyHandled;
+        final List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
+        if (!res.isEmpty()) {
+            // currently only passes the name and value cookie attributes
+            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(res)));
+        }
+        cookieAlreadyHandled = true;
+        return cookieAlreadyHandled;
     }
 }

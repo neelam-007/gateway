@@ -826,6 +826,8 @@ public final class Message implements Closeable {
             return soapKnob != null ? (T)soapKnob : (T)(soapKnob = (SoapKnob)findKnob(c));
         if (c == JsonKnob.class)
             return jsonKnob != null ? (T)jsonKnob : (T)(jsonKnob = (JsonKnob)findKnob(c));
+        if (c == HeadersKnob.class)
+            return (T)headersKnob;
 
         return (T)findKnob(c);
     }
