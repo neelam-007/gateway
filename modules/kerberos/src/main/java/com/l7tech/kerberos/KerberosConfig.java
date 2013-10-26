@@ -145,7 +145,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     /**
      * Can be called by a user to configure Kerberos info.
      */
-    static void generateKerberosConfig(byte[] keytabData, String kdc, String realm, boolean overwriteKrb5Conf) throws KerberosException {
+    public static void generateKerberosConfig(byte[] keytabData, String kdc, String realm, boolean overwriteKrb5Conf) throws KerberosException {
         if ( keytabData != null ) {
             File keytab = getKeytabFile();
 

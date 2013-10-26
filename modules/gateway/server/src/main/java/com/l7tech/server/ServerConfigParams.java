@@ -139,6 +139,8 @@ public interface ServerConfigParams {
     String PARAM_KERBEROS_CONFIG_KDC = "krb5KDC";
     String PARAM_KERBEROS_KRB5CONF_OVERWRITE = "kerberos.krb5Config.overwrite";
     String PARAM_KERBEROS_REFERRAL_LIMIT = "kerberos.referral.limit";
+    String PARAM_KERBEROS_CACHE_SIZE = "kerberos.cache.size";
+    String PARAM_KERBEROS_CACHE_TIMETOLIVE = "kerberos.cache.timeToLive";
     String PARAM_LDAPCERTINDEX_REBUILD_INTERVAL="ldapCertIndexInterval";
     String PARAM_LDAPCERT_CACHE_LIFETIME="ldapCertCacheLifetime";
     String PARAM_LDAP_COMPARISON_CASE_INSENSITIVE="ldapCaseInsensitiveComparison";

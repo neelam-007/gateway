@@ -1,5 +1,6 @@
-package com.l7tech.kerberos;
+package com.l7tech.kerberos.delegate;
 
+import com.l7tech.kerberos.*;
 import com.l7tech.kerberos.delegate.KerberosDelegateClient;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
@@ -11,6 +12,7 @@ import sun.security.krb5.Credentials;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.Ticket;
 
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.File;
 import java.io.IOException;
 
@@ -37,10 +39,10 @@ public class KerberosDelegateClientTest {
         //String keytab = "BQIAAABFAAIADFJGLkxJTExZLkNPTQAEaHR0cAAQc3NnLnJmLmxpbGx5LmNvbQAAAAAAAAAAAwAXABCRqKd12yDxqQHeS3wzsafD";
 
         //FOR KPMG
-        //String keytab = "BQIAAABMAAIAD0tXT1JMRC5LUE1HLkNPTQAEaHR0cAAUc3NnMS5rd29ybGQua3BtZy5jb20AAAAAAAAAAAMAFwAQkainddsg8akB3kt8M7Gnww==";
+        String keytab = "BQIAAABMAAIAD0tXT1JMRC5LUE1HLkNPTQAEaHR0cAAUc3NnMS5rd29ybGQua3BtZy5jb20AAAAAAAAAAAYAFwAQkainddsg8akB3kt8M7Gnww==";
 
         //FOR ELI LILLY
-        String keytab = "BQIAAABEAAIAC0hSLktQTUcuQ09NAARodHRwABBzc2cxLmhyLmtwbWcuY29tAAAAAAAAAAAEABcAEJGop3XbIPGpAd5LfDOxp8M=";
+        //String keytab = "BQIAAABEAAIAC0hSLktQTUcuQ09NAARodHRwABBzc2cxLmhyLmtwbWcuY29tAAAAAAAAAAAEABcAEJGop3XbIPGpAd5LfDOxp8M=";
         KerberosConfig.generateKerberosConfig(Base64.decodeBase64(keytab), null, null, false);
 
     }
@@ -52,13 +54,13 @@ public class KerberosDelegateClientTest {
     public static void setupMock() throws IOException {
         client = new KerberosDelegateClient() {
             @Override
-            protected Credentials getS4U2SelfCred(Credentials tgt, String servicePrincipal, String user , String userRealm) throws KrbException, IOException {
+            protected KerberosTicket getS4U2SelfTicket(KerberosTicket tgt, String servicePrincipal, String user , String userRealm) throws KrbException, IOException {
                 //return a fake service ticket
                 return tgt;
             }
 
             @Override
-            protected Credentials getS4U2ProxyCred(Credentials tgt, String servicePrincipalName, Ticket serviceTicket) throws KrbException, IOException {
+            protected KerberosTicket getS4U2ProxyTicket(KerberosTicket tgt, String servicePrincipalName, KerberosTicket serviceTicket) throws KrbException, IOException {
                 //return a fake service ticket
                 return tgt;
             }
@@ -87,6 +89,16 @@ public class KerberosDelegateClientTest {
         KerberosDelegateClient client = new KerberosDelegateClient();
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
+    }
+
+    @Ignore("Require KDC Connection")
+    @Test
+    public void testCacheReferralWithKeyTab() throws Exception {
+        KerberosDelegateClient client = new KerberosDelegateClient();
+        KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
+        assertNotNull(serviceTicket.getGSSAPReqTicket());
+        KerberosDelegateClient client2 = new KerberosDelegateClient();
+        client2.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
     }
 
     @Ignore("Require KDC Connection")
@@ -133,9 +145,8 @@ public class KerberosDelegateClientTest {
     public void testS4U2Proxy2() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
         KerberosServiceTicket s4uSelfServiceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
-        Ticket s4u2SelfTicket = new Ticket(s4uSelfServiceTicket.getDelegatedKerberosTicket().getEncoded());
 
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4u2SelfTicket);
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket());
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
 
@@ -143,9 +154,8 @@ public class KerberosDelegateClientTest {
     public void testS4U2Proxy2Mock() throws Exception {
         setupMock();
         KerberosServiceTicket s4uSelfServiceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
-        Ticket s4u2SelfTicket = new Ticket(s4uSelfServiceTicket.getDelegatedKerberosTicket().getEncoded());
 
-        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4u2SelfTicket);
+        KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket());
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }
 

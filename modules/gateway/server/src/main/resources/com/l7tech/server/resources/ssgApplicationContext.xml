@@ -421,6 +421,8 @@
                                 <value>krb5Realm</value>
                                 <value>krb5KDC</value>
                                 <value>kerberos.krb5Config.overwrite</value>
+                                <value>kerberos.cache.size</value>
+                                <value>kerberos.cache.timeToLive</value>
                             </list>
                         </entry>
                         <entry key="pollingEmailListenerFactory">

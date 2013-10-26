@@ -269,7 +269,7 @@ public class ServerKerberosAuthenticationAssertionTest {
         List<LoginCredentials> credentialsList = Arrays.asList(new LoginCredentials[]{pc});
         when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
 
-        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal("http", assertion.getRealm()), testTicket.getServiceTicket())).thenReturn(testTicket);
+        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal("http", assertion.getRealm()), testTicket.getDelegatedKerberosTicket())).thenReturn(testTicket);
 
         Map<String,Object> variableMap = new HashMap<String, Object>();
 

@@ -30,6 +30,7 @@ import sun.security.krb5.RealmException;
 import sun.security.krb5.internal.Ticket;
 
 import javax.inject.Inject;
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -184,7 +185,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     return AssertionStatus.FALSIFIED;
                 }
 
-                Ticket serviceTicket = kst.getServiceTicket();
+                KerberosTicket serviceTicket = kst.getDelegatedKerberosTicket();
 
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(serviceType, realm);

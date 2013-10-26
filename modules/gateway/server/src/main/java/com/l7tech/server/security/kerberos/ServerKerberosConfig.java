@@ -1,5 +1,6 @@
 package com.l7tech.server.security.kerberos;
 
+import com.l7tech.kerberos.KerberosCacheManager;
 import com.l7tech.kerberos.KerberosUtils;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.server.ServerConfigParams;
@@ -92,6 +93,9 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
                     overwriteKrb5Conf = BooleanUtils.toBoolean(evt.getNewValue().toString());
                 }
             }
+        } else if ((ServerConfigParams.PARAM_KERBEROS_CACHE_SIZE.equals((evt.getPropertyName()))) ||
+                (ServerConfigParams.PARAM_KERBEROS_CACHE_TIMETOLIVE.equals((evt.getPropertyName()))) ) {
+            KerberosCacheManager.getInstance().refresh();
 
         }
 
