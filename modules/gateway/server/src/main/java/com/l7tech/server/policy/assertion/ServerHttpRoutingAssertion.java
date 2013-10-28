@@ -33,7 +33,6 @@ import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
-import com.l7tech.server.util.ServletUtils;
 import com.l7tech.util.*;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
@@ -738,12 +737,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // Register raw HTTP headers source
             HttpInboundResponseKnob httpInboundResponseKnob = getOrCreateHttpInboundResponseKnob(routedResponseDestination);
             httpInboundResponseKnob.setHeaderSource(routedResponse);
-            final HeadersKnob headersKnob = routedResponseDestination.getHeadersKnob();
-            if (headersKnob != null) {
-                ServletUtils.loadHeaders(routedResponse, headersKnob);
-            } else {
-                logger.log(Level.WARNING, "HeadersKnob is missing from response.");
-            }
 
             HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (assertionStatus == AssertionStatus.NONE && httpResponseKnob != null) {

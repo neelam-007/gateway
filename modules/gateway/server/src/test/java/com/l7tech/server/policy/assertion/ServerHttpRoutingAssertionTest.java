@@ -69,39 +69,11 @@ import java.util.logging.Logger;
 
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import static org.mockito.Mockito.*;
-
-@RunWith(MockitoJUnitRunner.class)
 public class ServerHttpRoutingAssertionTest {
+
     private static final String CLIENT_FACTORY = "httpRoutingHttpClientFactory2";
-
-    @Mock
-    private ApplicationContext mockContext;
-    @Mock
-    private GenericHttpClientFactory httpClientFactory;
-    @Mock
-    private GenericHttpClient httpClient;
-    @Mock
-    private GenericHttpRequest mockRequest;
-    @Mock
-    private GenericHttpResponse mockResponse;
-    @Mock
-    private List<GenericHttpHeader> responseHeaders;
-    @Mock
-    private Config config;
-
-    @Before
-    public void setup() throws Exception {
-        responseHeaders = new ArrayList<>();
-        when(mockContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class)).thenReturn(httpClientFactory);
-        when(httpClientFactory.createHttpClient(anyInt(), anyInt(), anyInt(), anyInt(), anyObject())).thenReturn(httpClient);
-        when(httpClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(mockRequest);
-        when(mockRequest.getResponse()).thenReturn(mockResponse);
-        when(mockContext.getBean("serverConfig", Config.class)).thenReturn(config);
-    }
 
     @Test(expected = AssertionStatusException.class)
     @BugNumber(11385)
@@ -1078,59 +1050,5 @@ public class ServerHttpRoutingAssertionTest {
         assertTrue(TestHandler.isAuditPresentContaining("FINEST: https-out"));
         peCtx.close();
 
-    }
-
-    @Test
-    public void responseHeadersLoadedIntoContext() throws Exception {
-        responseHeaders.add(new GenericHttpHeader("foo", "bar"));
-        when(mockResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new GenericHttpHeader[responseHeaders.size()])));
-        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
-        assertion.setProtectedServiceUrl("http://localhost:8080/test");
-        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockContext);
-        final Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
-        final Message response = new Message();
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        serverAssertion.checkRequest(context);
-        final String[] names = response.getHeadersKnob().getHeaderNames();
-        assertEquals(1, names.length);
-        assertEquals("foo", names[0]);
-        final String[] values = response.getHeadersKnob().getHeaderValues("foo");
-        assertEquals(1, values.length);
-        assertEquals("bar", values[0]);
-    }
-
-    @Test
-    public void responseHeadersLoadedIntoContextAreFiltered() throws Exception {
-        for (final String doNotForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
-            responseHeaders.add(new GenericHttpHeader(doNotForward, "testValue"));
-        }
-        when(mockResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new GenericHttpHeader[responseHeaders.size()])));
-        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
-        assertion.setProtectedServiceUrl("http://localhost:8080/test");
-        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockContext);
-        final Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
-        final Message response = new Message();
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        serverAssertion.checkRequest(context);
-        assertEquals(0, response.getHeadersKnob().getHeaderNames().length);
-    }
-
-    @Test
-    public void responseHeadersResponseNotInitialized() throws Exception {
-        responseHeaders.add(new GenericHttpHeader("foo", "bar"));
-        when(mockResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new GenericHttpHeader[responseHeaders.size()])));
-        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
-        assertion.setProtectedServiceUrl("http://localhost:8080/test");
-        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockContext);
-        final Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
-        final Message response = new Message();
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-        serverAssertion.checkRequest(context);
-        final String[] names = response.getHeadersKnob().getHeaderNames();
-        assertEquals(1, names.length);
-        assertEquals("foo", names[0]);
-        final String[] values = response.getHeadersKnob().getHeaderValues("foo");
-        assertEquals(1, values.length);
-        assertEquals("bar", values[0]);
     }
 }

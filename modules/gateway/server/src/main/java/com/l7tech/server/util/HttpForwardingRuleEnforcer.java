@@ -536,6 +536,95 @@ public class HttpForwardingRuleEnforcer {
 
     /**
      * Handle response http headers from a response
+     * @param sourceOfResponseHeaders the response from the routing assertion
+     * @param targetForResponseHeaders the response HeadersKnob to put the pass-through headers into
+     * @param context the pec
+     * @param rules http rules dictating what headers should be forwarded and under which conditions
+     * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
+     * @param auditor for runtime auditing
+     * @param routedRequestParams httpclientproperty
+     * @param vars pre-populated map of context variables (pec.getVariableMap) or null
+     * @param varNames the context variables used by the calling assertion used to populate vars if null
+     */
+    public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
+                                              final HeadersKnob targetForResponseHeaders,
+                                              final Audit auditor,
+                                              final HttpPassthroughRuleSet rules,
+                                              final boolean passThroughSpecialHeaders,
+                                              final PolicyEnforcementContext context,
+                                              final GenericHttpRequestParams routedRequestParams,
+                                              @Nullable Map<String,?> vars,
+                                              @Nullable final String[] varNames) {
+        boolean passIncomingCookies = false;
+        if (rules.isForwardAll()) {
+            final boolean logFine = logger.isLoggable(Level.FINE);
+            for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
+                if (!passThroughSpecialHeaders && headerShouldBeIgnored(headerFromResponse.getName())) {
+                    if (logFine) {
+                        logger.fine("ignoring header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
+                    }
+                } else if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
+                    // special cookie handling happens outside this loop (see below)
+                } else {
+                    targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue());
+                }
+            }
+            passIncomingCookies = true;
+        } else {
+            if (passThroughSpecialHeaders) {
+                for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
+                    if (headerShouldBeIgnored(headerFromResponse.getName())) {
+                        targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue());
+                    }
+                }
+            }
+
+            for (final HttpPassthroughRule rule : rules.getRules()) {
+                if (rule.isUsesCustomizedValue()) {
+                    String headerValue = rule.getCustomizeValue();
+                    // resolve context variable if applicable
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
+                    }
+                    targetForResponseHeaders.addHeader(rule.getName(), headerValue);
+                } else {
+                    if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
+                        // special cookie handling outside this loop (see below)
+                        passIncomingCookies = true;
+                    } else {
+                        final String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
+                        if (values != null && values.length > 0) {
+                            for (final String val : values) {
+                                targetForResponseHeaders.addHeader(rule.getName(), val);
+                            }
+                        } else {
+                            logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
+                                    "incoming value but this header is not present.");
+                        }
+                    }
+                }
+            }
+        }
+
+        // handle cookies separately
+        if (passIncomingCookies) {
+            final String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
+            for (String setCookieValue : setCookieValues) {
+                try {
+                    context.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+                } catch (final HttpCookie.IllegalFormatException e) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle response http headers from a response
+     * @deprecated use {@link #handleResponseHeaders(com.l7tech.message.HttpInboundResponseKnob, com.l7tech.message.HeadersKnob, com.l7tech.gateway.common.audit.Audit, com.l7tech.policy.assertion.HttpPassthroughRuleSet, boolean, com.l7tech.server.message.PolicyEnforcementContext, com.l7tech.common.http.GenericHttpRequestParams, java.util.Map, String[])}
      * @param sourceOfResponseHeaders the response gotten from the routing assertion
      * @param targetForResponseHeaders the response message to put the pass-through headers into
      * @param context the pec
@@ -546,6 +635,7 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
+    @Deprecated
     public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
                                               final HttpResponseKnob targetForResponseHeaders,
                                               final Audit auditor,
