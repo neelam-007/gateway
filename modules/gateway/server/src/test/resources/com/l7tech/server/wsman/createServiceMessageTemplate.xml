@@ -1,5 +1,14 @@
-<!-- Creates a service which returns the request headers in the response body -->
-<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:n1="http://ns.l7tech.com/2010/04/gateway-management" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<!-- This is a template message for creating a service -->
+<!-- Configuration: -->
+<!-- ===SERVICENAME=== - name of the service -->
+<!-- ===SERVICEURL=== - url of the service -->
+<!-- ===SERVICEPOLICY=== - policy xml of the service -->
+<!-- Configuration: -->
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+            xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+            xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+            xmlns:n1="http://ns.l7tech.com/2010/04/gateway-management"
+        >
 	<s:Header>
 		<wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>
 		<wsa:To s:mustUnderstand="true">http://127.0.0.1:8080/wsman</wsa:To>
@@ -12,11 +21,11 @@
 	<s:Body>
 		 <n1:Service type="soap">
          <n1:ServiceDetail>
-            <n1:Name>EchoHeaders</n1:Name>
+            <n1:Name>===SERVICENAME===</n1:Name>
             <n1:Enabled>true</n1:Enabled>
             <n1:ServiceMappings>
                <n1:HttpMapping>
-                  <n1:UrlPattern>/echoHeaders</n1:UrlPattern>
+                  <n1:UrlPattern>===SERVICEURL===</n1:UrlPattern>
                   <n1:Verbs>
                      <n1:Verb>GET</n1:Verb>
                      <n1:Verb>POST</n1:Verb>
@@ -31,15 +40,7 @@
          </n1:ServiceDetail>
          <n1:Resources>
            <n1:ResourceSet tag="policy">
-               <n1:Resource type="policy" version="5"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-               <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
-                   <wsp:All wsp:Usage="Required">
-                       <L7p:HardcodedResponse>
-                           <L7p:Base64ResponseBody stringValue="JHtyZXF1ZXN0Lmh0dHAuYWxsaGVhZGVydmFsdWVzfQ=="/>
-                           <L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/>
-                       </L7p:HardcodedResponse>
-                   </wsp:All>
-               </wsp:Policy>]]></n1:Resource>
+               <n1:Resource type="policy" version="5"><![CDATA[===SERVICEPOLICY===]]></n1:Resource>
             </n1:ResourceSet>
          </n1:Resources>
       </n1:Service>
