@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.NamespaceContextImpl;
+import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
@@ -54,12 +55,15 @@ public class HttpRoutingIntegrationTest {
     private static final String DELETE_SERVICE_RESOURCE = "com/l7tech/server/wsman/deleteService.xml";
     private static final String CREATE_ACTION = "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create";
     private static final String DELETE_ACTION = "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete";
-    private static GenericHttpClient client;
-    private static XPath xPath;
-    private static List<String> createdServiceIds;
     private static final String SERVICENAME = "===SERVICENAME===";
     private static final String SERVICEURL = "===SERVICEURL===";
     private static final String SERVICEPOLICY = "===SERVICEPOLICY===";
+    private static final String L7_USER_AGENT = "Layer7-SecureSpan-Gateway";
+    private static final String APACHE_SERVER = "Apache-Coyote/1.1";
+    private static final String KEEP_ALIVE = "Keep-Alive";
+    private static GenericHttpClient client;
+    private static XPath xPath;
+    private static List<String> createdServiceIds;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -108,17 +112,17 @@ public class HttpRoutingIntegrationTest {
 
         final Map<String, Collection<String>> headers = getResponseHeaders(response);
         assertEquals(4, headers.size());
-        assertSingleHeaderValue(headers, "Server", "Apache-Coyote/1.1");
-        assertSingleHeaderValue(headers, "Content-Type", "text/plain;charset=UTF-8");
+        assertHeaderValues(headers, "Server", APACHE_SERVER);
+        assertHeaderValues(headers, "Content-Type", "text/plain;charset=UTF-8");
         assertTrue(headers.containsKey("Content-Length"));
         assertTrue(headers.containsKey("Date"));
 
         final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
         assertEquals(3, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
-        assertTrue(routedHeaders.get("user-agent").iterator().next().contains("Layer7-SecureSpan-Gateway"));
-        assertSingleHeaderValue(routedHeaders, "host", BASE_URL + ":8080");
-        assertSingleHeaderValue(routedHeaders, "connection", "Keep-Alive");
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
         assertFalse(routedHeaders.containsKey("Extra-Header"));
     }
 
@@ -141,9 +145,9 @@ public class HttpRoutingIntegrationTest {
         final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
         assertEquals(3, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
-        assertTrue(routedHeaders.get("user-agent").iterator().next().contains("Layer7-SecureSpan-Gateway"));
-        assertSingleHeaderValue(routedHeaders, "host", BASE_URL + ":8080");
-        assertSingleHeaderValue(routedHeaders, "connection", "Keep-Alive");
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
         assertFalse(routedHeaders.containsKey("Date"));
         assertFalse(routedHeaders.containsKey("Server"));
     }
@@ -164,11 +168,11 @@ public class HttpRoutingIntegrationTest {
         final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
         assertEquals(5, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
-        assertTrue(routedHeaders.get("user-agent").iterator().next().contains("Layer7-SecureSpan-Gateway"));
-        assertSingleHeaderValue(routedHeaders, "host", BASE_URL + ":8080");
-        assertSingleHeaderValue(routedHeaders, "connection", "Keep-Alive");
-        assertSingleHeaderValue(routedHeaders, "cookie", "foo=bar");
-        assertSingleHeaderValue(routedHeaders, "soapaction", "testSoapAction");
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+        assertHeaderValues(routedHeaders, "cookie", "foo=bar");
+        assertHeaderValues(routedHeaders, "soapaction", "testSoapAction");
     }
 
     /**
@@ -185,14 +189,9 @@ public class HttpRoutingIntegrationTest {
         routeParams.put(SERVICEPOLICY, routePolicy);
         createdServiceIds.add(createServiceFromTemplate(routeParams));
 
-        final HardcodedResponseAssertion templateResponseAssertion = new HardcodedResponseAssertion();
-        templateResponseAssertion.setResponseContentType("text/plain");
-        templateResponseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(new String("${request.http.allheadervalues}").getBytes()));
-        final AddHeaderAssertion addHeaderAssertion = new AddHeaderAssertion();
-        addHeaderAssertion.setTarget(TargetMessageType.RESPONSE);
-        addHeaderAssertion.setHeaderName("Set-Cookie");
-        addHeaderAssertion.setHeaderValue("foo=bar");
-        final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new Assertion[]{templateResponseAssertion, addHeaderAssertion})));
+        final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", "foo=bar"))));
         final Map<String, String> setCookieParams = new HashMap<>();
         setCookieParams.put(SERVICENAME, "SetCookieService");
         setCookieParams.put(SERVICEURL, "/setCookieService");
@@ -203,7 +202,263 @@ public class HttpRoutingIntegrationTest {
         printResponseDetails(response);
         assertEquals(200, response.getStatus());
         final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
-        assertSingleHeaderValue(responseHeaders, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/routeToSetCookieService");
+        assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/routeToSetCookieService");
+    }
+
+    /**
+     * If the route response sets any non-application headers, they should not be passed by default.
+     */
+    @Test
+    public void nonApplicationResponseHeadersFilteredByDefault() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setNonApplicationHeadersService");
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetNonApplicationHeadersService");
+        routeParams.put(SERVICEURL, "/routeToSetNonApplicationHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion))));
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setNonApplicationHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Date", "0000"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Server", "shouldNotBePassed"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Connection", "shouldNotBePassed"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Host", "shouldNotBePassed"))));
+        final Map<String, String> setHeadersParams = new HashMap<>();
+        setHeadersParams.put(SERVICENAME, "SetNonApplicationHeadersService");
+        setHeadersParams.put(SERVICEURL, "/setNonApplicationHeadersService");
+        setHeadersParams.put(SERVICEPOLICY, setNonApplicationHeadersPolicy);
+        createdServiceIds.add(createServiceFromTemplate(setHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetNonApplicationHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(4, responseHeaders.size());
+        assertTrue(responseHeaders.containsKey("Date"));
+        assertEquals(1, responseHeaders.get("Date").size());
+        assertFalse(responseHeaders.get("Date").iterator().next().equals("0000"));
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertFalse(responseHeaders.containsKey("Connection"));
+        assertFalse(responseHeaders.containsKey("Host"));
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+    }
+
+    @Test
+    public void passThroughAllRequestHeaders() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(true);
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughAllRequestHeaders");
+        routeParams.put(SERVICEURL, "/passThroughAllRequestHeaders");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughAllRequestHeaders"));
+        params.addExtraHeader(new GenericHttpHeader("foo", "bar"));
+        params.addExtraHeader(new GenericHttpHeader("foo", "foo2"));
+        params.addExtraHeader(new GenericHttpHeader("User-Agent", "testUserAgent"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "foo=bar"));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "testSoapAction"));
+        // non-application headers should still be filtered
+        params.addExtraHeader(new GenericHttpHeader("Server", "shouldNotBePassed"));
+        params.addExtraHeader(new GenericHttpHeader("Date", "shouldNotBePassed"));
+        params.addExtraHeader(new GenericHttpHeader("Connection", "shouldNotBePassed"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "shouldNotBePassed"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertEquals(6, routedHeaders.size());
+        assertHeaderValues(routedHeaders, "foo", "bar", "foo2");
+        assertHeaderValues(routedHeaders, "user-agent", "testUserAgent");
+        assertHeaderValues(routedHeaders, "cookie", "foo=bar");
+        assertHeaderValues(routedHeaders, "soapaction", "testSoapAction");
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+    }
+
+    @Test
+    public void customizeRequestHeadersToPassThrough() throws Exception {
+        // headers to pass through
+        final List<HttpPassthroughRule> rules = new ArrayList<>();
+        rules.add(new HttpPassthroughRule("foo", true, "customFoo"));
+        rules.add(new HttpPassthroughRule("User-Agent", false, null));
+
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughSomeRequestHeaders");
+        routeParams.put(SERVICEURL, "/passThroughSomeRequestHeaders");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughSomeRequestHeaders"));
+        params.addExtraHeader(new GenericHttpHeader("foo", "shouldBeReplaced"));
+        params.addExtraHeader(new GenericHttpHeader("foo", "shouldAlsoBeReplaced"));
+        params.addExtraHeader(new GenericHttpHeader("User-Agent", "testUserAgent"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "shouldNotBePassed"));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "shouldBeReplaced"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "testHost"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertHeaderValues(routedHeaders, "foo", "customFoo");
+        assertHeaderValues(routedHeaders, "user-agent", "testUserAgent");
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+    }
+
+    @Test
+    public void customizeRequestHostToPassThrough() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(new HttpPassthroughRule[]{new HttpPassthroughRule("Host", true, "customHost")});
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughCustomHost");
+        routeParams.put(SERVICEURL, "/passThroughCustomHost");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughCustomHost"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "testHost"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "host", "customHost:8080");
+    }
+
+    @Test
+    public void customizeRequestHostWithPortToPassThrough() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(new HttpPassthroughRule[]{new HttpPassthroughRule("Host", true, "customHost:8888")});
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughCustomHostWithPort");
+        routeParams.put(SERVICEURL, "/passThroughCustomHostWithPort");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughCustomHostWithPort"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "testHost"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "host", "customHost:8888");
+    }
+
+    @Test
+    public void passThroughOriginalRequestSoapAction() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(new HttpPassthroughRule[]{new HttpPassthroughRule("SOAPAction", false, null)});
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughOriginalSoapAction");
+        routeParams.put(SERVICEURL, "/passThroughOriginalSoapAction");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughOriginalSoapAction"));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "testSoapAction"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "soapaction", "testSoapAction");
+    }
+
+    @Test
+    public void customizeRequestSoapActionUsingRule() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(new HttpPassthroughRule[]{new HttpPassthroughRule("SOAPAction", true, "customSoapAction")});
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "CustomizeSoapActionUsingRule");
+        routeParams.put(SERVICEURL, "/customizeSoapActionUsingRule");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/customizeSoapActionUsingRule"));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "shouldBeReplaced"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "soapaction", "customSoapAction");
+    }
+
+    @Test
+    public void customizeRequestSoapActionUsingAddHeaderAssertion() throws Exception {
+        final AddHeaderAssertion addHeaderAssertion = new AddHeaderAssertion();
+        addHeaderAssertion.setHeaderName(SoapUtil.SOAPACTION);
+        addHeaderAssertion.setRemoveExisting(true);
+        addHeaderAssertion.setHeaderValue("customSoapAction");
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/echoHeaders");
+        routeAssertion.getRequestHeaderRules().setForwardAll(false);
+        routeAssertion.getRequestHeaderRules().setRules(new HttpPassthroughRule[]{new HttpPassthroughRule("SOAPAction", false, null)});
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "CustomizeSoapActionUsingAddHeaderAssertion");
+        routeParams.put(SERVICEURL, "/customizeSoapActionUsingAddHeaderAssertion");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(addHeaderAssertion, routeAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        createdServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/customizeSoapActionUsingAddHeaderAssertion"));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "shouldBeReplaced"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "soapaction", "customSoapAction");
+    }
+
+    private List<Assertion> assertionList(final Assertion... assertions) {
+        final List<Assertion> assertionList = new ArrayList<>();
+        for (final Assertion assertion : assertions) {
+            assertionList.add(assertion);
+        }
+        return assertionList;
+    }
+
+    private AddHeaderAssertion createAddHeaderAssertion(final TargetMessageType target, final String name, final String value) {
+        final AddHeaderAssertion addHeaderAssertion = new AddHeaderAssertion();
+        addHeaderAssertion.setTarget(target);
+        addHeaderAssertion.setHeaderName(name);
+        addHeaderAssertion.setHeaderValue(value);
+        return addHeaderAssertion;
+    }
+
+    private HardcodedResponseAssertion createEchoHeadersHardcodedResponseAssertion() {
+        final HardcodedResponseAssertion templateResponseAssertion = new HardcodedResponseAssertion();
+        templateResponseAssertion.setResponseContentType("text/plain");
+        templateResponseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(new String("${request.http.allheadervalues}").getBytes()));
+        return templateResponseAssertion;
     }
 
     private static String createServiceFromTemplate(final Map<String, String> toReplace) throws Exception {
@@ -222,6 +477,7 @@ public class HttpRoutingIntegrationTest {
     private Map<String, Collection<String>> getRoutedHeaders(final String responseBody) throws IOException {
         final Map<String, Collection<String>> routedRequestHeaders = new HashMap<>();
         final String[] headersFromBody = StringUtils.split(responseBody, ",");
+        String previousHeaderName = null;
         for (final String headerFromBody : headersFromBody) {
             if (headerFromBody.contains(":")) {
                 final int colonIndex = headerFromBody.indexOf(":");
@@ -231,14 +487,21 @@ public class HttpRoutingIntegrationTest {
                     routedRequestHeaders.put(name, new ArrayList<String>());
                 }
                 routedRequestHeaders.get(name).add(value);
+                previousHeaderName = name;
+            } else if (previousHeaderName != null) {
+                // most likely a multi-valued header
+                routedRequestHeaders.get(previousHeaderName).add(headerFromBody.trim());
             }
         }
         return routedRequestHeaders;
     }
 
-    private void assertSingleHeaderValue(final Map<String, Collection<String>> headers, final String headerName, final String headerValue) {
-        assertEquals(1, headers.get(headerName).size());
-        assertEquals(headerValue, headers.get(headerName).iterator().next());
+    private void assertHeaderValues(final Map<String, Collection<String>> headers, final String headerName, final String... headerValues) {
+        final Collection<String> foundValues = headers.get(headerName);
+        assertEquals(headerValues.length, foundValues.size());
+        for (final String headerValue : headerValues) {
+            assertTrue(foundValues.contains(headerValue));
+        }
     }
 
     private Map<String, Collection<String>> getResponseHeaders(final GenericHttpResponse response) {

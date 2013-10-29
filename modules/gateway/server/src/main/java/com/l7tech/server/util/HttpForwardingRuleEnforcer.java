@@ -104,10 +104,6 @@ public class HttpForwardingRuleEnforcer {
         }
 
         writeHeaders(copy, httpRequestParams, context, targetDomain, auditor, ruleHeaderNames.contains("cookie"));
-        //still try to get and set a SOAPAction If not already set
-        if (!copy.containsHeader(SoapUtil.SOAPACTION)) {
-            handleSoapActionHeader(httpRequestParams, sourceMessage, null);
-        }
     }
 
 

@@ -111,12 +111,10 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
-    public void soapActionFromRequest() throws Exception {
+    public void soapActionFromRequestIgnoredIfNotInKnob() throws Exception {
         final Message soapRequest = generateSoapRequest();
         HttpForwardingRuleEnforcer.handleRequestHeaders(soapRequest, requestParams, PolicyEnforcementContextFactory.createPolicyEnforcementContext(soapRequest, response), TARGET_DOMAIN, ruleSet, audit, null, null);
-        final Map<String, List<String>> headersMap = generateHeadersMap(requestParams.getExtraHeaders());
-        assertEquals(1, headersMap.get(SoapUtil.SOAPACTION).size());
-        assertEquals("test", headersMap.get(SoapUtil.SOAPACTION).get(0));
+        assertTrue(requestParams.getExtraHeaders().isEmpty());
     }
 
     @Test
@@ -137,6 +135,32 @@ public class HttpForwardingRuleEnforcerJavaTest {
         final Map<String, List<String>> headersMap = generateHeadersMap(requestParams.getExtraHeaders());
         assertEquals(1, headersMap.get(SoapUtil.SOAPACTION).size());
         assertEquals("priority", headersMap.get(SoapUtil.SOAPACTION).get(0));
+    }
+
+    @Test
+    public void customizeRequestSoapAction() throws Exception {
+        rules.add(new HttpPassthroughRule("SOAPAction", true, "customSoapAction"));
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        final Message soapRequest = generateSoapRequest();
+        soapRequest.getHeadersKnob().addHeader(SoapUtil.SOAPACTION, "shouldBeReplaced");
+        HttpForwardingRuleEnforcer.handleRequestHeaders(soapRequest, requestParams, PolicyEnforcementContextFactory.createPolicyEnforcementContext(soapRequest, response), TARGET_DOMAIN, ruleSet, audit, null, null);
+        final Map<String, List<String>> headersMap = generateHeadersMap(requestParams.getExtraHeaders());
+        assertEquals(1, headersMap.get(SoapUtil.SOAPACTION).size());
+        assertEquals("customSoapAction", headersMap.get(SoapUtil.SOAPACTION).get(0));
+    }
+
+    @Test
+    public void passThroughRequestSoapAction() throws Exception {
+        rules.add(new HttpPassthroughRule("SOAPAction", false, null));
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        final Message soapRequest = generateSoapRequest();
+        soapRequest.getHeadersKnob().addHeader(SoapUtil.SOAPACTION, "testSoapAction");
+        HttpForwardingRuleEnforcer.handleRequestHeaders(soapRequest, requestParams, PolicyEnforcementContextFactory.createPolicyEnforcementContext(soapRequest, response), TARGET_DOMAIN, ruleSet, audit, null, null);
+        final Map<String, List<String>> headersMap = generateHeadersMap(requestParams.getExtraHeaders());
+        assertEquals(1, headersMap.get(SoapUtil.SOAPACTION).size());
+        assertEquals("testSoapAction", headersMap.get(SoapUtil.SOAPACTION).get(0));
     }
 
     @Test(expected = IOException.class)

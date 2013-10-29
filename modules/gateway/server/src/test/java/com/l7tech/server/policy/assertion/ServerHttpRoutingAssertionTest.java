@@ -306,6 +306,7 @@ public class ServerHttpRoutingAssertionTest {
         final String placeOrderSoapActionHeaderValue = "\"http://warehouse.acme.com/ws/placeOrder\"";
         hrequest.addHeader("SOAPAction", placeOrderSoapActionHeaderValue);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        request.getHeadersKnob().addHeader("SOAPACtion", placeOrderSoapActionHeaderValue);
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
