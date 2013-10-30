@@ -5,10 +5,7 @@ import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.PermissiveX509TrustManager;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.AddHeaderAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HardcodedResponseAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
@@ -50,12 +47,14 @@ public abstract class HttpRoutingIntegrationTest {
     private static final String BASIC_ROUTING_SERVICE_RESOURCE = "com/l7tech/server/wsman/createBasicRoutingService.xml";
     private static final String SERVICE_TEMPLATE_RESOURCE = "com/l7tech/server/wsman/createServiceMessageTemplate.xml";
     private static final String DELETE_SERVICE_RESOURCE = "com/l7tech/server/wsman/deleteService.xml";
+    protected static final String ECHO_HEADERS_URL = "http://" + BASE_URL + ":8080/echoHeaders";
     private static final String CREATE_ACTION = "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create";
     private static final String DELETE_ACTION = "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete";
     protected static final String SERVICENAME = "===SERVICENAME===";
     protected static final String SERVICEURL = "===SERVICEURL===";
     protected static final String SERVICEPOLICY = "===SERVICEPOLICY===";
     protected static final String L7_USER_AGENT = "Layer7-SecureSpan-Gateway";
+    protected static final String APACHE_USER_AGENT = "Apache-HttpClient/4.2.5 (java 1.5)";
     protected static final String APACHE_SERVER = "Apache-Coyote/1.1";
     protected static final String KEEP_ALIVE = "Keep-Alive";
     private static GenericHttpClient client;
@@ -193,11 +192,24 @@ public abstract class HttpRoutingIntegrationTest {
         return assertionList;
     }
 
+    protected AddHeaderAssertion createAddHeaderAssertion(final String name, final String value) {
+        return createAddHeaderAssertion(TargetMessageType.REQUEST, name, value, false);
+    }
+
+    protected AddHeaderAssertion createAddHeaderAssertion(final String name, final String value, final boolean removeExisting) {
+        return createAddHeaderAssertion(TargetMessageType.REQUEST, name, value, removeExisting);
+    }
+
     protected AddHeaderAssertion createAddHeaderAssertion(final TargetMessageType target, final String name, final String value) {
+        return createAddHeaderAssertion(target, name, value, false);
+    }
+
+    protected AddHeaderAssertion createAddHeaderAssertion(final TargetMessageType target, final String name, final String value, final boolean removeExisting) {
         final AddHeaderAssertion addHeaderAssertion = new AddHeaderAssertion();
         addHeaderAssertion.setTarget(target);
         addHeaderAssertion.setHeaderName(name);
         addHeaderAssertion.setHeaderValue(value);
+        addHeaderAssertion.setRemoveExisting(removeExisting);
         return addHeaderAssertion;
     }
 
@@ -206,6 +218,42 @@ public abstract class HttpRoutingIntegrationTest {
         templateResponseAssertion.setResponseContentType("text/plain");
         templateResponseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(new String("${request.http.allheadervalues}").getBytes()));
         return templateResponseAssertion;
+    }
+
+    protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders) {
+        return createRouteAssertion(url, forwardAllRequestHeaders, (HttpPassthroughRule[]) null);
+    }
+
+    protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final Collection<HttpPassthroughRule> requestRules) {
+        return createRouteAssertion(url, forwardAllRequestHeaders, requestRules == null ? null : requestRules.toArray(new HttpPassthroughRule[requestRules.size()]));
+    }
+
+    protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final HttpPassthroughRule... requestRules) {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl(url);
+        routeAssertion.getRequestHeaderRules().setForwardAll(forwardAllRequestHeaders);
+        if (requestRules != null) {
+            routeAssertion.getRequestHeaderRules().setRules(requestRules);
+        }
+        return routeAssertion;
+    }
+
+    protected HttpRoutingAssertion createResponseRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final Collection<HttpPassthroughRule> responseRules) {
+        return createResponseRouteAssertion(url, forwardAllResponseHeaders, responseRules == null ? null : responseRules.toArray(new HttpPassthroughRule[responseRules.size()]));
+    }
+
+    protected HttpRoutingAssertion createResponseRouteAssertion(final String url, final boolean forwardAllResponseHeaders) {
+        return createResponseRouteAssertion(url, forwardAllResponseHeaders, (HttpPassthroughRule[]) null);
+    }
+
+    protected HttpRoutingAssertion createResponseRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final HttpPassthroughRule... responseRules) {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl(url);
+        routeAssertion.getResponseHeaderRules().setForwardAll(forwardAllResponseHeaders);
+        if (responseRules != null) {
+            routeAssertion.getResponseHeaderRules().setRules(responseRules);
+        }
+        return routeAssertion;
     }
 
     protected Map<String, Collection<String>> getRoutedHeaders(final String responseBody) throws IOException {

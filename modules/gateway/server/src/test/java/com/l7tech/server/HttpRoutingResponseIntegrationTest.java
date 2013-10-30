@@ -95,13 +95,11 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
 
     @Test
     public void passThroughAllResponseHeaders() throws Exception {
-        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
-        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setHeadersService");
-        routeAssertion.getResponseHeaderRules().setForwardAll(true);
         final Map<String, String> routeParams = new HashMap<>();
         routeParams.put(SERVICENAME, "RouteToSetHeadersService");
         routeParams.put(SERVICEURL, "/routeToSetHeadersService");
-        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion))));
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", true)))));
         testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
 
         final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
@@ -136,14 +134,11 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         rules.add(new HttpPassthroughRule("foo", false, null));
         // use custom value
         rules.add(new HttpPassthroughRule("customHeader", true, "customValue"));
-        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
-        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setHeadersService");
-        routeAssertion.getResponseHeaderRules().setForwardAll(false);
-        routeAssertion.getResponseHeaderRules().setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
         final Map<String, String> routeParams = new HashMap<>();
         routeParams.put(SERVICENAME, "RouteToSetHeadersService");
         routeParams.put(SERVICEURL, "/routeToSetHeadersService");
-        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion))));
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", false, rules)))));
         testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
 
         final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
@@ -170,4 +165,175 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
         assertTrue(responseHeaders.containsKey("Date"));
     }
+
+    @Test
+    public void addResponseHeaderUsingAddHeaderAssertion() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToEchoHeadersService");
+        routeParams.put(SERVICEURL, "/routeToEchoHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion(ECHO_HEADERS_URL, true),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "shouldBeAdded")))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToEchoHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "shouldBeAdded");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain;charset=UTF-8");
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    @Test
+    public void addResponseHeaderUsingAddHeaderAssertionNameAlreadyExists() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetHeadersService");
+        routeParams.put(SERVICEURL, "/routeToSetHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", true),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromRouteService", false)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromSetHeaderService"))));
+        final Map<String, String> setHeadersParams = new HashMap<>();
+        setHeadersParams.put(SERVICENAME, "SetHeadersService");
+        setHeadersParams.put(SERVICEURL, "/setHeadersService");
+        setHeadersParams.put(SERVICEPOLICY, setHeadersPolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "valueFromSetHeaderService", "valueFromRouteService");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    @Test
+    public void replaceResponseHeaderUsingAddHeaderAssertion() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetHeadersService");
+        routeParams.put(SERVICEURL, "/routeToSetHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", true),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromRouteService", true)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromSetHeaderService"))));
+        final Map<String, String> setHeadersParams = new HashMap<>();
+        setHeadersParams.put(SERVICENAME, "SetHeadersService");
+        setHeadersParams.put(SERVICEURL, "/setHeadersService");
+        setHeadersParams.put(SERVICEPOLICY, setHeadersPolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "valueFromRouteService");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    @Test
+    public void multipleAddHeaderAssertionsSameName() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToEchoHeadersService");
+        routeParams.put(SERVICEURL, "/routeToEchoHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion(ECHO_HEADERS_URL, true),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "bar"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "bar2")))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToEchoHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "bar", "bar2");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain;charset=UTF-8");
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    /**
+     * Add header assertion replaces response header rule replaces original response header.
+     */
+    @Test
+    public void addHeaderAssertionReplacesPassThroughResponseRule() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetHeadersService");
+        routeParams.put(SERVICEURL, "/routeToSetHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", false, new HttpPassthroughRule("foo", true, "valueFromRule")),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromAddHeader", true)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromSetHeaderService"))));
+        final Map<String, String> setHeadersParams = new HashMap<>();
+        setHeadersParams.put(SERVICENAME, "SetHeadersService");
+        setHeadersParams.put(SERVICEURL, "/setHeadersService");
+        setHeadersParams.put(SERVICEPOLICY, setHeadersPolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "valueFromAddHeader");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    @Test
+    public void addHeaderFromRuleAndAssertion() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetHeadersService");
+        routeParams.put(SERVICEURL, "/routeToSetHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/setHeadersService", false, new HttpPassthroughRule("foo", true, "valueFromRule")),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromAddHeader", false)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setHeadersPolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "valueFromSetHeaderService"))));
+        final Map<String, String> setHeadersParams = new HashMap<>();
+        setHeadersParams.put(SERVICENAME, "SetHeadersService");
+        setHeadersParams.put(SERVICEURL, "/setHeadersService");
+        setHeadersParams.put(SERVICEPOLICY, setHeadersPolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(5, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "valueFromRule", "valueFromAddHeader");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+        assertTrue(responseHeaders.containsKey("Date"));
+    }
+
 }
