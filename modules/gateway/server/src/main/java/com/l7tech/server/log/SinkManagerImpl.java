@@ -787,7 +787,7 @@ public class SinkManagerImpl
         // This check is required for SSG-7720
         if(logToConsole && handler == null){
             //if logging to the console is enforced and the root handle has not been set then create a new one.
-            handler = new ConsoleHandler();
+            handler = new ConsoleMessageSink.L7ConsoleHandler();
             //Add the Logs category here as well. Otherwise not much will be logged to the console
             configuration.setCategories(SinkConfiguration.CATEGORY_AUDITS + "," + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
         }
