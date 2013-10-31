@@ -4,6 +4,7 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -388,5 +389,48 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
         assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
         assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+    }
+
+    @Test
+    public void multipleRoutesAndAddHeaders() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "MultipleRoutesAndAddHeaders");
+        routeParams.put(SERVICEURL, "/multipleRoutesAndAddHeaders");
+
+        // this policy will collect the routed headers for each route and return them in the response
+        final HardcodedResponseAssertion echoResponseAssertion = new HardcodedResponseAssertion();
+        echoResponseAssertion.responseBodyString("<firstRouteResponse>${firstRouteResponse.mainpart}</firstRouteResponse><secondRouteResponse>${secondRouteResponse.mainpart}</secondRouteResponse>");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("foo", "addedBeforeFirstRoute"),
+                // store first route response in context variable
+                createRouteAssertion(ECHO_HEADERS_URL, true, "firstRouteResponse", null),
+                createAddHeaderAssertion("bar", "addedAfterFirstRoute"),
+                // store second route response in context variable
+                createRouteAssertion(ECHO_HEADERS_URL, true, "secondRouteResponse", null),
+                echoResponseAssertion)));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/multipleRoutesAndAddHeaders")), HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+
+        final String firstRouteResponseBody = responseBody.substring(responseBody.indexOf("<firstRouteResponse>") + "<firstRouteResponse>".length(), responseBody.indexOf("</firstRouteResponse"));
+        final Map<String, Collection<String>> firstHeadersRouted = getRoutedHeaders(firstRouteResponseBody);
+        assertEquals(4, firstHeadersRouted.size());
+        assertHeaderValues(firstHeadersRouted, "foo", "addedBeforeFirstRoute");
+        assertFalse(firstHeadersRouted.containsKey("bar"));
+        assertHeaderValues(firstHeadersRouted, "user-agent", APACHE_USER_AGENT);
+        assertHeaderValues(firstHeadersRouted, "host", BASE_URL + ":8080");
+        assertHeaderValues(firstHeadersRouted, "connection", KEEP_ALIVE);
+
+        final String secondRouteResponseBody = responseBody.substring(responseBody.indexOf("<secondRouteResponse>") + "<secondRouteResponse>".length(), responseBody.indexOf("</secondRouteResponse"));
+        final Map<String, Collection<String>> secondHeadersRouted = getRoutedHeaders(secondRouteResponseBody);
+        assertEquals(5, secondHeadersRouted.size());
+        assertHeaderValues(secondHeadersRouted, "foo", "addedBeforeFirstRoute");
+        assertHeaderValues(secondHeadersRouted, "bar", "addedAfterFirstRoute");
+        assertHeaderValues(secondHeadersRouted, "user-agent", APACHE_USER_AGENT);
+        assertHeaderValues(secondHeadersRouted, "host", BASE_URL + ":8080");
+        assertHeaderValues(secondHeadersRouted, "connection", KEEP_ALIVE);
     }
 }

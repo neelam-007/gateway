@@ -214,10 +214,16 @@ public abstract class HttpRoutingIntegrationTest {
     }
 
     protected HardcodedResponseAssertion createEchoHeadersHardcodedResponseAssertion() {
-        final HardcodedResponseAssertion templateResponseAssertion = new HardcodedResponseAssertion();
-        templateResponseAssertion.setResponseContentType("text/plain");
-        templateResponseAssertion.setBase64ResponseBody(HexUtils.encodeBase64(new String("${request.http.allheadervalues}").getBytes()));
-        return templateResponseAssertion;
+        return createHardcodedResponseAssertion("text/plain", "${request.http.allheadervalues}");
+    }
+
+    protected HardcodedResponseAssertion createHardcodedResponseAssertion(final String contentType, final String body) {
+        final HardcodedResponseAssertion assertion = new HardcodedResponseAssertion();
+        if (contentType != null) {
+            assertion.setResponseContentType(contentType);
+        }
+        assertion.responseBodyString(body);
+        return assertion;
     }
 
     protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders) {
@@ -229,11 +235,18 @@ public abstract class HttpRoutingIntegrationTest {
     }
 
     protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final HttpPassthroughRule... requestRules) {
+        return createRouteAssertion(url, forwardAllRequestHeaders, null, requestRules);
+    }
+
+    protected HttpRoutingAssertion createRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final String responseVar, final HttpPassthroughRule... requestRules) {
         final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
         routeAssertion.setProtectedServiceUrl(url);
         routeAssertion.getRequestHeaderRules().setForwardAll(forwardAllRequestHeaders);
         if (requestRules != null) {
             routeAssertion.getRequestHeaderRules().setRules(requestRules);
+        }
+        if (responseVar != null) {
+            routeAssertion.setResponseMsgDest(responseVar);
         }
         return routeAssertion;
     }

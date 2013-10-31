@@ -53,6 +53,34 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/routeToSetCookieService");
     }
 
+    @Test
+    public void responseInvalidSetCookieHeaderNotPassed() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setCookieService");
+        final String routePolicy = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetCookieService");
+        routeParams.put(SERVICEURL, "/routeToSetCookieService");
+        routeParams.put(SERVICEPOLICY, routePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                // set cookie header has empty value
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", ""))));
+        final Map<String, String> setCookieParams = new HashMap<>();
+        setCookieParams.put(SERVICENAME, "SetCookieService");
+        setCookieParams.put(SERVICEURL, "/setCookieService");
+        setCookieParams.put(SERVICEPOLICY, setCookiePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setCookieParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetCookieService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertFalse(responseHeaders.containsKey("Set-Cookie"));
+    }
+
     /**
      * If the route response sets any non-application headers, they should not be passed by default.
      */
@@ -334,6 +362,54 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
         assertTrue(responseHeaders.containsKey("Content-Length"));
         assertTrue(responseHeaders.containsKey("Date"));
+    }
+
+    @Test
+    public void multipleRoutesAggregatesHeaders() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "MultipleRoutes");
+        routeParams.put(SERVICEURL, "/multipleRoutes");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/firstSetHeadersService", true),
+                createResponseRouteAssertion("http://" + BASE_URL + ":8080/secondSetHeadersService", true)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final Map<String, String> firstSetHeadersParams = new HashMap<>();
+        firstSetHeadersParams.put(SERVICENAME, "FirstSetHeadersService");
+        firstSetHeadersParams.put(SERVICEURL, "/firstSetHeadersService");
+        firstSetHeadersParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createHardcodedResponseAssertion("text/plain", "responseFromFirstRoute"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "firstFoo"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Date", "dateFromFirstRoute"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "setByFirstRoute", "firstValue")))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(firstSetHeadersParams));
+
+        final Map<String, String> secondSetHeadersParams = new HashMap<>();
+        secondSetHeadersParams.put(SERVICENAME, "SecondSetHeadersService");
+        secondSetHeadersParams.put(SERVICEURL, "/secondSetHeadersService");
+        secondSetHeadersParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createHardcodedResponseAssertion("text/plain", "responseFromSecondRoute"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "foo", "secondFoo"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Date", "dateFromSecondRoute"),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "setBySecondRoute", "secondValue")))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(secondSetHeadersParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/multipleRoutes")), HttpMethod.GET, null);
+        final String responseBody = printResponseDetails(response);
+        assertEquals("responseFromSecondRoute", responseBody);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertEquals(7, responseHeaders.size());
+        assertHeaderValues(responseHeaders, "foo", "firstFoo", "secondFoo");
+        assertHeaderValues(responseHeaders, "setByFirstRoute", "firstValue");
+        assertHeaderValues(responseHeaders, "setBySecondRoute", "secondValue");
+        assertHeaderValues(responseHeaders, "Server", APACHE_SERVER);
+        assertHeaderValues(responseHeaders, "Content-Type", "text/plain");
+        assertTrue(responseHeaders.containsKey("Content-Length"));
+        assertTrue(responseHeaders.containsKey("Date"));
+        final String dateHeader = responseHeaders.get("Date").iterator().next();
+        assertFalse(dateHeader.equals("dateFromFirstRoute"));
+        assertFalse(dateHeader.equals("dateFromSecondRoute"));
     }
 
 }
