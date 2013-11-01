@@ -10,6 +10,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Add a header to a message.
@@ -41,8 +42,14 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
 
         // TODO validate header name and value before setting
 
+        final HeadersKnob headersKnob = message.getHeadersKnob();
         if (assertion.isRemoveExisting()) {
             oh.setHeader(name, value);
+            if (headersKnob != null) {
+                headersKnob.setHeader(name, value);
+            } else {
+                logger.log(Level.WARNING, "Cannot set header on message because headers knob is null.");
+            }
         } else {
             HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
             if (hrk != null && !oh.containsHeader(name)) {
@@ -56,6 +63,11 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             }
 
             oh.addHeader(name, value);
+            if (headersKnob != null) {
+                headersKnob.addHeader(name, value);
+            } else {
+                logger.log(Level.WARNING, "Cannot add header to message because headers knob is null.");
+            }
         }
 
         return AssertionStatus.NONE;

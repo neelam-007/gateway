@@ -14,6 +14,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 /**
@@ -267,4 +270,49 @@ public class ServerAddHeaderAssertionTest {
         assertEquals("bar", headers[0]);
     }
 
+    @Test
+    public void addHeaderToHeadersKnob() throws Exception {
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("bar");
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] values = headersKnob.getHeaderValues("foo");
+        assertEquals(1, values.length);
+        assertEquals("bar", values[0]);
+    }
+
+    @Test
+    public void replaceHeaderOnHeadersKnob() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "originalFoo");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("newFoo");
+        ass.setRemoveExisting(true);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] values = headersKnob.getHeaderValues("foo");
+        assertEquals(1, values.length);
+        assertEquals("newFoo", values[0]);
+    }
+
+    @Test
+    public void addToHeaderOnHeadersKnob() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "originalFoo");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("newFoo");
+        ass.setRemoveExisting(false);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final List<String> values = Arrays.asList(headersKnob.getHeaderValues("foo"));
+        assertEquals(2, values.size());
+        assertTrue(values.contains("originalFoo"));
+        assertTrue(values.contains("newFoo"));
+    }
 }
