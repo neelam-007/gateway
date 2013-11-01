@@ -7,7 +7,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.NamespaceContextImpl;
 import org.apache.commons.lang.StringUtils;
@@ -217,6 +216,10 @@ public abstract class HttpRoutingIntegrationTest {
         return createHardcodedResponseAssertion("text/plain", "${request.http.allheadervalues}");
     }
 
+    protected HardcodedResponseAssertion createHardcodedResponseAssertion(final String body) {
+        return createHardcodedResponseAssertion(null, body);
+    }
+
     protected HardcodedResponseAssertion createHardcodedResponseAssertion(final String contentType, final String body) {
         final HardcodedResponseAssertion assertion = new HardcodedResponseAssertion();
         if (contentType != null) {
@@ -269,9 +272,13 @@ public abstract class HttpRoutingIntegrationTest {
         return routeAssertion;
     }
 
-    protected Map<String, Collection<String>> getRoutedHeaders(final String responseBody) throws IOException {
+    /**
+     * Parses headers from the 'all' XML element in the response body.
+     */
+    protected Map<String, Collection<String>> parseHeaders(final String responseBody) throws IOException {
         final Map<String, Collection<String>> routedRequestHeaders = new HashMap<>();
-        final String[] headersFromBody = StringUtils.split(responseBody, ",");
+        final String allHeadersString = responseBody.substring(responseBody.indexOf("<all>") + "<all>".length(), responseBody.indexOf("</all>"));
+        final String[] headersFromBody = StringUtils.split(allHeadersString, ",");
         String previousHeaderName = null;
         for (final String headerFromBody : headersFromBody) {
             if (headerFromBody.contains(":")) {
@@ -286,6 +293,27 @@ public abstract class HttpRoutingIntegrationTest {
             } else if (previousHeaderName != null) {
                 // most likely a multi-valued header
                 routedRequestHeaders.get(previousHeaderName).add(headerFromBody.trim());
+            }
+        }
+        return routedRequestHeaders;
+    }
+
+    /**
+     * Parses headers from the 'byName' XML element in the response body.
+     */
+    protected Map<String, Collection<String>> parseHeadersByName(final String responseBody) throws IOException {
+        final Map<String, Collection<String>> routedRequestHeaders = new HashMap<>();
+        final String allHeadersString = responseBody.substring(responseBody.indexOf("<byName>") + "<byName>".length(), responseBody.indexOf("</byName>"));
+        final String[] headersFromBody = StringUtils.split(allHeadersString, "\n");
+        for (final String headerFromBody : headersFromBody) {
+            if (headerFromBody.contains(":")) {
+                final int colonIndex = headerFromBody.indexOf(":");
+                final String name = headerFromBody.substring(0, colonIndex).trim();
+                final String value = headerFromBody.substring(colonIndex + 1, headerFromBody.length()).trim();
+                if (!routedRequestHeaders.containsKey(name)) {
+                    routedRequestHeaders.put(name, new ArrayList<String>());
+                }
+                routedRequestHeaders.get(name).add(value);
             }
         }
         return routedRequestHeaders;

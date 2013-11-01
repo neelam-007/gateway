@@ -34,12 +34,46 @@
                <n1:Resource type="policy" version="5"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
                <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
                    <wsp:All wsp:Usage="Required">
+                       <L7p:SetVariable>
+                           <L7p:Base64Expression stringValue=""/>
+                           <L7p:VariableToSet stringValue="headers"/>
+                       </L7p:SetVariable>
+                       <L7p:ForEachLoop L7p:Usage="Required" loopVariable="request.http.headernames" variablePrefix="name">
+                           <L7p:LookupDynamicContextVariables>
+                               <L7p:SourceVariable stringValue="request.http.header.${name.current}"/>
+                               <L7p:TargetDataType variableDataType="string"/>
+                               <L7p:TargetOutputVariablePrefix stringValue="value"/>
+                           </L7p:LookupDynamicContextVariables>
+                           <wsp:OneOrMore wsp:Usage="Required">
+                               <wsp:All wsp:Usage="Required">
+                                   <L7p:ComparisonAssertion>
+                                       <L7p:Expression1 stringValue="${headers}"/>
+                                       <L7p:Expression2 stringValue=""/>
+                                       <L7p:Operator operator="EMPTY"/>
+                                       <L7p:Predicates predicates="included">
+                                           <L7p:item binary="included">
+                                               <L7p:Operator operator="EMPTY"/>
+                                               <L7p:RightValue stringValue=""/>
+                                           </L7p:item>
+                                       </L7p:Predicates>
+                                   </L7p:ComparisonAssertion>
+                                   <L7p:SetVariable>
+                                       <L7p:Base64Expression stringValue="JHtuYW1lLmN1cnJlbnR9OiR7dmFsdWUub3V0cHV0fQ=="/>
+                                       <L7p:VariableToSet stringValue="headers"/>
+                                   </L7p:SetVariable>
+                               </wsp:All>
+                               <L7p:SetVariable>
+                                   <L7p:Base64Expression stringValue="JHtoZWFkZXJzfQ0KJHtuYW1lLmN1cnJlbnR9OiR7dmFsdWUub3V0cHV0fQ=="/>
+                                   <L7p:VariableToSet stringValue="headers"/>
+                               </L7p:SetVariable>
+                           </wsp:OneOrMore>
+                       </L7p:ForEachLoop>
                        <L7p:HardcodedResponse>
-                           <L7p:Base64ResponseBody stringValue="JHtyZXF1ZXN0Lmh0dHAuYWxsaGVhZGVydmFsdWVzfQ=="/>
-                           <L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/>
+                           <L7p:Base64ResponseBody stringValue="PGFsbD4KJHtyZXF1ZXN0Lmh0dHAuYWxsaGVhZGVydmFsdWVzfQo8L2FsbD4KPGJ5TmFtZT4KJHtoZWFkZXJzfQo8L2J5TmFtZT4="/>
                        </L7p:HardcodedResponse>
                    </wsp:All>
-               </wsp:Policy>]]></n1:Resource>
+               </wsp:Policy>
+               ]]></n1:Resource>
             </n1:ResourceSet>
          </n1:Resources>
       </n1:Service>

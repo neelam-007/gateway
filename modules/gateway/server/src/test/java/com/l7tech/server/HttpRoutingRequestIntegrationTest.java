@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.xml.soap.SoapUtil;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -41,11 +42,11 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final Map<String, Collection<String>> headers = getResponseHeaders(response);
         assertEquals(4, headers.size());
         assertHeaderValues(headers, "Server", APACHE_SERVER);
-        assertHeaderValues(headers, "Content-Type", "text/plain;charset=UTF-8");
+        assertHeaderValues(headers, "Content-Type", "text/xml;charset=UTF-8");
         assertTrue(headers.containsKey("Content-Length"));
         assertTrue(headers.containsKey("Date"));
 
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(3, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
         assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
@@ -70,7 +71,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final String responseBody = printResponseDetails(response);
         assertEquals(200, response.getStatus());
 
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(3, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
         assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
@@ -93,7 +94,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final String responseBody = printResponseDetails(response);
         assertEquals(200, response.getStatus());
 
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(5, routedHeaders.size());
         assertEquals(1, routedHeaders.get("user-agent").size());
         assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
@@ -127,7 +128,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(6, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "bar", "foo2");
         assertHeaderValues(routedHeaders, "user-agent", "testUserAgent");
@@ -162,7 +163,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "customFoo");
         assertHeaderValues(routedHeaders, "user-agent", "testUserAgent");
@@ -186,7 +187,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "host", "customHost:8080");
     }
 
@@ -206,7 +207,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "host", "customHost:8888");
     }
 
@@ -226,7 +227,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "soapaction", "testSoapAction");
     }
 
@@ -246,7 +247,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "soapaction", "customSoapAction");
     }
 
@@ -267,7 +268,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "soapaction", "customSoapAction");
     }
 
@@ -285,7 +286,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/addHeaderToRequest")), HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "bar");
         assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
@@ -309,7 +310,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "existingFoo", "bar");
         assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
@@ -333,7 +334,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "bar");
         assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
@@ -360,7 +361,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "bar");
         assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
@@ -383,7 +384,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/addHeaderToRequest")), HttpMethod.GET, null);
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
-        final Map<String, Collection<String>> routedHeaders = getRoutedHeaders(responseBody);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertEquals(4, routedHeaders.size());
         assertHeaderValues(routedHeaders, "foo", "bar", "bar2");
         assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
@@ -416,7 +417,7 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final String responseBody = printResponseDetails(response);
 
         final String firstRouteResponseBody = responseBody.substring(responseBody.indexOf("<firstRouteResponse>") + "<firstRouteResponse>".length(), responseBody.indexOf("</firstRouteResponse"));
-        final Map<String, Collection<String>> firstHeadersRouted = getRoutedHeaders(firstRouteResponseBody);
+        final Map<String, Collection<String>> firstHeadersRouted = parseHeaders(firstRouteResponseBody);
         assertEquals(4, firstHeadersRouted.size());
         assertHeaderValues(firstHeadersRouted, "foo", "addedBeforeFirstRoute");
         assertFalse(firstHeadersRouted.containsKey("bar"));
@@ -425,12 +426,95 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(firstHeadersRouted, "connection", KEEP_ALIVE);
 
         final String secondRouteResponseBody = responseBody.substring(responseBody.indexOf("<secondRouteResponse>") + "<secondRouteResponse>".length(), responseBody.indexOf("</secondRouteResponse"));
-        final Map<String, Collection<String>> secondHeadersRouted = getRoutedHeaders(secondRouteResponseBody);
+        final Map<String, Collection<String>> secondHeadersRouted = parseHeaders(secondRouteResponseBody);
         assertEquals(5, secondHeadersRouted.size());
         assertHeaderValues(secondHeadersRouted, "foo", "addedBeforeFirstRoute");
         assertHeaderValues(secondHeadersRouted, "bar", "addedAfterFirstRoute");
         assertHeaderValues(secondHeadersRouted, "user-agent", APACHE_USER_AGENT);
         assertHeaderValues(secondHeadersRouted, "host", BASE_URL + ":8080");
         assertHeaderValues(secondHeadersRouted, "connection", KEEP_ALIVE);
+    }
+
+    /**
+     * request.http.allheadervalues only looks at incoming request headers.
+     */
+    @Test
+    public void requestAllHeaderValuesContextVariable() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "GetHeadersService");
+        routeParams.put(SERVICEURL, "/getHeadersService");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("foo", "assertionFoo", true),
+                createAddHeaderAssertion("addedByAssertion", "addedByAssertionValue"),
+                createHardcodedResponseAssertion("<all>${request.http.allheadervalues}</all>"))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/getHeadersService"));
+        requestParams.addExtraHeader(new GenericHttpHeader("setOnOriginalRequest", "setOnOriginalRequestValue"));
+        requestParams.addExtraHeader(new GenericHttpHeader("foo", "originalFoo"));
+        final GenericHttpResponse response = sendRequest(requestParams, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> headers = parseHeaders(responseBody);
+        assertHeaderValues(headers, "foo", "originalFoo");
+        assertFalse(headers.containsKey("addedbyassertion"));
+        assertFalse(headers.containsKey("addedByAssertion"));
+        assertHeaderValues(headers, "setonoriginalrequest", "setOnOriginalRequestValue");
+    }
+
+    /**
+     * request.http.headernames only looks at incoming request headers.
+     */
+    @Test
+    public void requestHeaderNamesContextVariable() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "GetHeadersService");
+        routeParams.put(SERVICEURL, "/getHeadersService");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("foo", "assertionFoo", true),
+                createAddHeaderAssertion("addedByAssertion", "addedByAssertionValue"),
+                createHardcodedResponseAssertion("${request.http.headernames}"))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/getHeadersService"));
+        requestParams.addExtraHeader(new GenericHttpHeader("setOnOriginalRequest", "setOnOriginalRequestValue"));
+        requestParams.addExtraHeader(new GenericHttpHeader("foo", "originalFoo"));
+        final GenericHttpResponse response = sendRequest(requestParams, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final List<String> headerNames = Arrays.asList(StringUtils.split(responseBody, ", "));
+        assertTrue(headerNames.contains("foo"));
+        assertTrue(headerNames.contains("setonoriginalrequest"));
+        assertFalse(headerNames.contains("addedByAssertion"));
+        assertFalse(headerNames.contains("addedbyassertion"));
+    }
+
+    /**
+     * request.http.header.headerName looks beyond incoming request headers if there is no header with that name on the incoming request.
+     */
+    @Test
+    public void requestHeaderValuesByNameContextVariable() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "GetHeadersService");
+        routeParams.put(SERVICEURL, "/getHeadersService");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("foo", "assertionFoo", true),
+                createAddHeaderAssertion("addedByAssertion", "addedByAssertionValue"),
+                createHardcodedResponseAssertion("<all>foo:${request.http.header.foo}, addedByAssertion:${request.http.header.addedByAssertion}, setOnOriginalRequest:${request.http.header.setOnOriginalRequest}</all>"))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams requestParams = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/getHeadersService"));
+        requestParams.addExtraHeader(new GenericHttpHeader("setOnOriginalRequest", "setOnOriginalRequestValue"));
+        requestParams.addExtraHeader(new GenericHttpHeader("foo", "originalFoo"));
+        final GenericHttpResponse response = sendRequest(requestParams, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> headers = parseHeaders(responseBody);
+        assertHeaderValues(headers, "foo", "originalFoo");
+        assertHeaderValues(headers, "addedByAssertion", "addedByAssertionValue");
+        assertHeaderValues(headers, "setOnOriginalRequest", "setOnOriginalRequestValue");
     }
 }
