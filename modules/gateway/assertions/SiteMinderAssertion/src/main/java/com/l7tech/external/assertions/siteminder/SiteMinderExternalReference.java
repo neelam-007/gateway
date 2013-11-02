@@ -7,12 +7,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -24,8 +22,10 @@ public class SiteMinderExternalReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(SiteMinderExternalReference.class.getName());
 
     public static final String ELMT_NAME_REF = "SiteMinderConfigurationReference";
+    public static final String GOID_EL_NAME = "GOID";
     private LocalizeAction localizeType;
     private Goid identifier;
+    private Goid locallyMatchingIdentifier;
 
     private SiteMinderConfiguration siteMinderConfiguration;
 
@@ -36,6 +36,7 @@ public class SiteMinderExternalReference extends ExternalReference {
     protected SiteMinderExternalReference(final ExternalReferenceFinder finder, final SiteMinderConfiguration config) {
         super(finder);
         siteMinderConfiguration = config;
+        identifier = siteMinderConfiguration.getGoid();
     }
 
     protected SiteMinderExternalReference(final ExternalReferenceFinder finder, Goid agentGoid) {
@@ -45,10 +46,40 @@ public class SiteMinderExternalReference extends ExternalReference {
         } catch (FindException e) {
             logger.warning("Cannot find the SiteMinder Configuration entity (Goid = " + agentGoid + ").");
         }
+        identifier = siteMinderConfiguration.getGoid();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SiteMinderExternalReference that = (SiteMinderExternalReference) o;
+
+        if (identifier != null ? !identifier.equals(that.identifier) : that.identifier != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return identifier != null ? identifier.hashCode() : 0;
     }
 
     public SiteMinderConfiguration getSiteMinderConfiguration() {
+
         return siteMinderConfiguration;
+    }
+
+    @Override
+    public String getRefId() {
+        String id = null;
+
+        if ( !identifier.equals(SiteMinderConfiguration.DEFAULT_GOID) ) {
+            id = identifier.toString();
+        }
+
+        return id;
     }
 
     @Override
@@ -64,7 +95,7 @@ public class SiteMinderExternalReference extends ExternalReference {
 
     @Override
     public boolean setLocalizeReplace(Goid identifier) {
-        this.identifier = identifier;
+        locallyMatchingIdentifier = identifier;
         localizeType = LocalizeAction.REPLACE;
         return true;
     }
@@ -74,6 +105,7 @@ public class SiteMinderExternalReference extends ExternalReference {
         final Document doc = referencesParentElement.getOwnerDocument();
         Element referenceElement = doc.createElement(ELMT_NAME_REF);
         setTypeAttribute(referenceElement);
+        addElement(referenceElement, GOID_EL_NAME, identifier==null?Goid.DEFAULT_GOID.toString():identifier.toString());
 
         try {
             JAXBContext context = JAXBContext.newInstance(SiteMinderConfiguration.class);
@@ -93,6 +125,18 @@ public class SiteMinderExternalReference extends ExternalReference {
             throw new IllegalArgumentException("Unable to save SiteMinder configuration reference.");
         }
         referencesParentElement.appendChild(referenceElement);
+    }
+
+    private void addElement( final Element parent,
+                             final String childElementName,
+                             final String text ) {
+        Element childElement = parent.getOwnerDocument().createElement( childElementName );
+        parent.appendChild(childElement);
+
+        if ( text != null ) {
+            Text textNode = DomUtils.createTextNode(parent, text);
+            childElement.appendChild( textNode );
+        }
     }
 
     @Override
@@ -119,12 +163,15 @@ public class SiteMinderExternalReference extends ExternalReference {
                 final SiteMinderCheckProtectedAssertion assertion = (SiteMinderCheckProtectedAssertion) assertionToLocalize;
                 if (assertion.getAgentGoid().equals(siteMinderConfiguration.getGoid())) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {
-                        try {
-                            SiteMinderConfiguration config = getFinder().findSiteMinderConfigurationByID(identifier);
-                            assertion.setAgentGoid(config.getGoid());
-                            assertion.setAgentId(config.getName());
-                        } catch (FindException e) {
-                            logger.info("Unable to find SiteMinder Configuration.");
+                        if(!locallyMatchingIdentifier.equals(identifier)){
+                            try {
+                                SiteMinderConfiguration config = getFinder().findSiteMinderConfigurationByID(locallyMatchingIdentifier);
+                                logger.info("The goid of the imported SiteMinderConfiguration has been changed from " + identifier + " to " + locallyMatchingIdentifier );
+                                assertion.setAgentGoid(config.getGoid());
+                                assertion.setAgentId(config.getName());
+                            } catch (FindException e) {
+                                logger.info("Unable to find SiteMinder Configuration.");
+                            }
                         }
                     } else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
@@ -154,6 +201,7 @@ public class SiteMinderExternalReference extends ExternalReference {
                     return new SiteMinderExternalReference(finder, siteMinderConfiguration);
 
                 } catch (JAXBException e) {
+                    //ignore
                 }
             }
         }
