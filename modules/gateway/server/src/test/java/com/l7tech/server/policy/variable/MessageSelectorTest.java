@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -12,9 +11,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.HttpRequestKnobStub;
-import com.l7tech.message.JmsKnobStub;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -26,6 +23,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -361,4 +359,40 @@ public class MessageSelectorTest {
         assertEquals("requestKnobValue", selectedValue);
     }
 
+    @Test
+    public void selectHeaderFromHttpOutboundRequestKnobBeforeHeadersKnob() {
+        HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(message);
+        message.getKnob(OutboundHeadersKnob.class).addHeader("test", "onOutboundKnob");
+        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("onOutboundKnob", selectedValue);
+    }
+
+    @Test
+    public void selectHeaderFromResponseKnobBeforeHeadersKnob() {
+        final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(new MockHttpServletResponse());
+        httpResponseKnob.addHeader("test", "onResponseKnob");
+        message.attachHttpResponseKnob(httpResponseKnob);
+        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("onResponseKnob", selectedValue);
+    }
+
+    @Test
+    public void selectHeaderFromInboundResponseKnobBeforeHeadersKnob() {
+        final HttpInboundResponseFacet facet = new HttpInboundResponseFacet();
+        facet.setHeaderSource(new HttpHeadersHaver() {
+            @Override
+            public HttpHeaders getHeaders() {
+                return new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader("test", "onInboundResponseKnob")});
+            }
+        });
+        message.attachKnob(HttpInboundResponseKnob.class, facet);
+        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("onInboundResponseKnob", selectedValue);
+    }
 }
