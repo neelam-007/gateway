@@ -37,7 +37,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("LIST", new FtpCommands.LIST());
         commandMap.put("MDTM", new FtpCommands.MDTM()); // RFC 3659 Extensions to FTP
         commandMap.put("MKD",  new FtpCommands.MKD());
-        commandMap.put("MLSD", new FtpCommands.LIST()); // RFC 3659 Extensions to FTP
+        commandMap.put("MLSD", new FtpCommands.MLSD()); // RFC 3659 Extensions to FTP
         commandMap.put("MLST", new FtpCommands.MLST()); // RFC 3659 Extensions to FTP
         commandMap.put("MODE", new MODE());
         commandMap.put("NLST", new FtpCommands.NLST());
@@ -52,15 +52,15 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("QUIT", new QUIT());
         commandMap.put("REIN", new REIN());
         commandMap.put("REST", new REST()); // RFC 3659 Extensions to FTP
-        commandMap.put("RETR", new RETR());
+        commandMap.put("RETR", new FtpCommands.RETR());
         commandMap.put("RMD",  new FtpCommands.RMD());
         commandMap.put("RNFR", new FtpCommands.RNFR());
         commandMap.put("RNTO", new FtpCommands.RNTO());
-        commandMap.put("SITE", new SITE());
+        commandMap.put("SITE", new FtpCommands.SITE());
         commandMap.put("SIZE", new FtpCommands.SIZE()); // RFC 3659 Extensions to FTP
         commandMap.put("STAT", new STAT());
-        commandMap.put("STOR", new STOR());
-        commandMap.put("STOU", new STOU());
+        commandMap.put("STOR", new FtpCommands.STOR());
+        commandMap.put("STOU", new FtpCommands.STOU());
         commandMap.put("STRU", new STRU());
         commandMap.put("SYST", new SYST());
         commandMap.put("TYPE", new TYPE());

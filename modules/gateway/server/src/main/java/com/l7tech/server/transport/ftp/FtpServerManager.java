@@ -26,7 +26,6 @@ import com.l7tech.util.Pair;
 import org.apache.ftpserver.*;
 import org.apache.ftpserver.command.CommandFactory;
 import org.apache.ftpserver.ftplet.*;
-import org.apache.ftpserver.listener.ListenerFactory;
 import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
@@ -101,7 +100,7 @@ public class FtpServerManager extends TransportModule {
 
     @Override
     protected void init() {
-//        timer.schedule(new TimerTask(){
+//        timer.schedule(new TimerTask(){ // TODO jwilliams: remove
 //            @Override
 //            public void run() {
 //                updateControlConnectionAccessTimes();
@@ -390,6 +389,7 @@ public class FtpServerManager extends TransportModule {
     public FtpServer new_createFtpServer(SsgConnector connector) throws ListenerException {
         Pair ftpletEntry = new Pair<>(DEFAULT_FTPLET_NAME, createFtplet(connector));
 
+        // TODO jwilliams: ensure all properties are retrieved in the factory, then remove 'asFtpProperties' and original 'createServer' methods
         SsgFtpServerFactory factory =
                 new SsgFtpServerFactory(connector, ssgConnectorManager, this, clusterPropertyManager, ftpletEntry);
 

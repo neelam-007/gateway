@@ -1,6 +1,10 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -12,6 +16,7 @@ import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.ListenerFactory;
 import org.apache.ftpserver.ssl.SslConfiguration;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +62,7 @@ public class SsgFtpServerFactory {
     }
 
     private SsgFtpServerContext createServerContext() throws ListenerException {
-        SsgFtpServerContext context = new SsgFtpServerContext(createConnectionConfig());
+        SsgFtpServerContext context = new SsgFtpServerContext(createConnectionConfig(), createCommandProcessor());
 
         Listener listener = createListener();
 
@@ -71,7 +76,7 @@ public class SsgFtpServerFactory {
     }
 
     /**
-     * Creates a control socket ConnectionConfig based on the factory SsgConnection settings.
+     * Creates a control socket ConnectionConfig based on the factory SsgConnector settings.
      *
      * @return a new ConnectionConfig
      */
@@ -86,6 +91,35 @@ public class SsgFtpServerFactory {
         factory.setMaxThreads(0); // 0
 
         return factory.createConnectionConfig();
+    }
+
+    /**
+     * Creates a new FtpRequestProcessor based on the factory SsgConnector settings.
+     *
+     * @return the new FtpRequestProcessor
+     * @throws ListenerException on invalid overridden content type specified in SsgConnector
+     */
+    private FtpRequestProcessor createCommandProcessor() throws ListenerException {
+        Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE,
+                SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+
+        String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        ContentTypeHeader overrideContentType = null;
+
+        try {
+            if (overrideContentTypeStr != null)
+                overrideContentType = ContentTypeHeader.parseValue(overrideContentTypeStr);
+        } catch (IOException e) {
+            throw new ListenerException("Unable to start FTP listener: Invalid overridden content type: " +
+                    overrideContentTypeStr);
+        }
+
+        return new FtpRequestProcessor(
+                overrideContentType,
+                hardwiredServiceGoid,
+                connector.getProperty("service"),
+                connector.getGoid(),
+                connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L));
     }
 
     /**

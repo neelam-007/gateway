@@ -523,7 +523,7 @@ public class SsgConnectorSslHelper {
         }
     }
 
-    private String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory, // TODO jwilliams: use this to find tls versions for each SslHelper? Does SslConfiguration support multiple TLS versions?
+    private String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory,
                                                                         Set<String> desiredTlsVersions,
                                                                         String[] enabledCiphers,
                                                                         int clientAuth)

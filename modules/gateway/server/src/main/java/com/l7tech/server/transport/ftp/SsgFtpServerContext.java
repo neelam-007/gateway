@@ -11,6 +11,7 @@ import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.message.MessageResource;
 import org.apache.ftpserver.message.MessageResourceFactory;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,18 +21,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * SSG implementation of Apache FtpServerContext.
  *
- * Listeners should be added before
- *
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class SsgFtpServerContext implements FtpServerContext {
     private final ConnectionConfig connectionConfig;
+    private final FtpRequestProcessor requestProcessor;
 
     private final UserManager userManager = new FtpUserManager();
     private final FtpStatistics statistics = new DefaultFtpStatistics();
     private final CommandFactory commandFactory = new FtpCommandFactory();
     private final FtpletContainer ftpletContainer = new DefaultFtpletContainer();
-    private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager(); // TODO jwilliams: needs rewriting
+    private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager(); // TODO jwilliams: VirtualFileSystemManager needs rewriting
     private final MessageResource messageResource = new MessageResourceFactory().createMessageResource();
 
     private final Map<String, Listener> listeners = new HashMap<>();
@@ -41,8 +41,10 @@ public class SsgFtpServerContext implements FtpServerContext {
      */
     private ThreadPoolExecutor threadPoolExecutor = null;
 
-    public SsgFtpServerContext(ConnectionConfig connectionConfig) {
+    public SsgFtpServerContext(@NotNull ConnectionConfig connectionConfig,
+                               @NotNull FtpRequestProcessor requestProcessor) {
         this.connectionConfig = connectionConfig;
+        this.requestProcessor = requestProcessor;
     }
 
     @Override
@@ -73,6 +75,10 @@ public class SsgFtpServerContext implements FtpServerContext {
     @Override
     public CommandFactory getCommandFactory() {
         return commandFactory;
+    }
+
+    public FtpRequestProcessor getRequestProcessor() {
+        return requestProcessor;
     }
 
     public void addFtplet(String name, Ftplet ftplet) {
