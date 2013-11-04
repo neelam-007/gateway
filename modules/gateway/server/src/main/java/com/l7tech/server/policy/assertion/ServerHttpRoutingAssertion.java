@@ -742,15 +742,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (assertionStatus == AssertionStatus.NONE && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
-                HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
-                                                                 httpResponseKnob,
-                                                                 getAudit(),
-                                                                 assertion.getResponseHeaderRules(),
-                                                                 routedResponseDestinationIsContextVariable,
-                                                                 context,
-                                                                 routedRequestParams,
-                                                                 vars,
-                                                                 varNames);
+                final HeadersKnob responseHeadersKnob = routedResponseDestination.getHeadersKnob();
+                if (responseHeadersKnob != null) {
+                    HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
+                                                                     responseHeadersKnob,
+                                                                     getAudit(),
+                                                                     assertion.getResponseHeaderRules(),
+                                                                     routedResponseDestinationIsContextVariable,
+                                                                     context,
+                                                                     routedRequestParams,
+                                                                     vars,
+                                                                     varNames);
+                } else {
+                    logger.log(Level.WARNING, "Unable to forward response headers because headers knob is null.");
+                }
             }
             if (assertion.isPassthroughHttpAuthentication()) {
                 boolean passed = false;

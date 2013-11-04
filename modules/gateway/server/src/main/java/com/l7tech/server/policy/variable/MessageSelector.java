@@ -136,7 +136,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
 
     private static final List<Class<? extends HasHeaders>> httpHeaderHaverKnobClasses =
-            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpOutboundRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class, HeadersKnob.class);
+            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HeadersKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class);
 
     private static final List<Class<? extends HasHeaders>> jmsHeaderHaverKnobClasses = Arrays.<Class<? extends HasHeaders>>asList(JmsKnob.class);
 

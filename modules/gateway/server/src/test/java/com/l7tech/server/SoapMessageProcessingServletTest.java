@@ -139,6 +139,24 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
     }
 
+    @Test
+    public void responseHeadersAddedToResponseKnob() throws Exception {
+        request.setContent("test".getBytes());
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final HeadersKnob responseHeadersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getResponse().getHeadersKnob();
+                responseHeadersKnob.addHeader("foo", "bar");
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        assertEquals(1, response.getHeaderNames().size());
+        final List<Object> headerValues = response.getHeaders("foo");
+        assertEquals(1, headerValues.size());
+        assertEquals("bar", headerValues.get(0));
+    }
+
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
         @Override
         SsgConnector getConnector(final HttpServletRequest request) {

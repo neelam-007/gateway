@@ -247,6 +247,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // Send response headers
             propagateCookies(context, reqKnob, respKnob);
+            final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
+            if (responseHeaders != null) {
+                for (final String headerName : responseHeaders.getHeaderNames()) {
+                    for (final String headerValue : responseHeaders.getHeaderValues(headerName)) {
+                        respKnob.addHeader(headerName, headerValue);
+                    }
+                }
+            }
             respKnob.beginResponse();
 
             int routeStat = respKnob.getStatus();

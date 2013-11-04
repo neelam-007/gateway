@@ -360,28 +360,18 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectHeaderFromHttpOutboundRequestKnobBeforeHeadersKnob() {
-        HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(message);
-        message.getKnob(OutboundHeadersKnob.class).addHeader("test", "onOutboundKnob");
-        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
-        final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("onOutboundKnob", selectedValue);
-    }
-
-    @Test
-    public void selectHeaderFromResponseKnobBeforeHeadersKnob() {
+    public void selectHeaderFromHeadersKnobBeforeResponseKnob() {
         final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(new MockHttpServletResponse());
         httpResponseKnob.addHeader("test", "onResponseKnob");
         message.attachHttpResponseKnob(httpResponseKnob);
         message.getHeadersKnob().addHeader("test", "onHeadersKnob");
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("onResponseKnob", selectedValue);
+        assertEquals("onHeadersKnob", selectedValue);
     }
 
     @Test
-    public void selectHeaderFromInboundResponseKnobBeforeHeadersKnob() {
+    public void selectHeaderFromHeadersKnobBeforeInboundResponseKnob() {
         final HttpInboundResponseFacet facet = new HttpInboundResponseFacet();
         facet.setHeaderSource(new HttpHeadersHaver() {
             @Override
@@ -393,6 +383,6 @@ public class MessageSelectorTest {
         message.getHeadersKnob().addHeader("test", "onHeadersKnob");
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("onInboundResponseKnob", selectedValue);
+        assertEquals("onHeadersKnob", selectedValue);
     }
 }

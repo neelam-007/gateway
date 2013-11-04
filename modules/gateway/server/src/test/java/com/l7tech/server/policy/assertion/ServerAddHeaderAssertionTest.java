@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
@@ -9,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -27,20 +29,24 @@ public class ServerAddHeaderAssertionTest {
     Message mess = new Message();
     PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
 
+    @Before
+    public void setup() throws Exception {
+        mess.initialize(XmlUtil.parse("<xml/>"));
+    }
+
     @Test
     public void testAddHeader_newmess() throws Exception {
         ass.setHeaderName("foo");
         ass.setHeaderValue("bar");
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
+        assertTrue(mess.getHeadersKnob().getHeaders().isEmpty());
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
     }
@@ -60,10 +66,9 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
     }
@@ -80,16 +85,17 @@ public class ServerAddHeaderAssertionTest {
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         hrequest.addHeader("foo", "orig");
         mess.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        // request headers are added to headers knob by SoapMessageProcessingServlet
+        mess.getHeadersKnob().addHeader("foo", "orig");
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
 
         assertNull(mess.getKnob(OutboundHeadersKnob.class));
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(2, headers.length);
         assertEquals("orig", headers[0]);
         assertEquals("bar", headers[1]);
@@ -103,6 +109,8 @@ public class ServerAddHeaderAssertionTest {
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         hrequest.addHeader("foo", "orig");
         mess.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        // request headers are added to headers knob by SoapMessageProcessingServlet
+        mess.getHeadersKnob().addHeader("foo", "orig");
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
 
 
@@ -114,10 +122,9 @@ public class ServerAddHeaderAssertionTest {
             ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
             assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
-            OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-            assertNotNull(ohk);
-            assertTrue(ohk instanceof HttpOutboundRequestFacet);
-            String[] headers = ohk.getHeaderValues("foo");
+            final HeadersKnob headersKnob = mess.getHeadersKnob();
+            assertNotNull(headersKnob);
+            String[] headers = headersKnob.getHeaderValues("foo");
             assertEquals(1, headers.length);
             assertEquals("bar", headers[0]);
         }
@@ -131,10 +138,9 @@ public class ServerAddHeaderAssertionTest {
             ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
             assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
-            OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-            assertNotNull(ohk);
-            assertTrue(ohk instanceof HttpOutboundRequestFacet);
-            String[] headers = ohk.getHeaderValues("foo");
+            final HeadersKnob headersKnob = mess.getHeadersKnob();
+            assertNotNull(headersKnob);
+            String[] headers = headersKnob.getHeaderValues("foo");
             assertEquals(2, headers.length);
             assertEquals("bar", headers[0]);
             assertEquals("bar2", headers[1]);
@@ -150,22 +156,19 @@ public class ServerAddHeaderAssertionTest {
         ass.setTarget(TargetMessageType.RESPONSE);
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
-        MockServletContext servletContext = new MockServletContext();
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
         mess.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
 
-        OutboundHeadersKnob existingKnob = mess.getKnob(OutboundHeadersKnob.class);
+        HeadersKnob existingKnob = mess.getKnob(HeadersKnob.class);
         assertNotNull(existingKnob);
-        assertTrue(existingKnob instanceof HttpServletResponseKnob);
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpServletResponseKnob);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
     }
@@ -180,10 +183,9 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        String[] headers = ohk.getHeaderValues("foo");
+        HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
 
@@ -192,10 +194,9 @@ public class ServerAddHeaderAssertionTest {
         sass = new ServerAddHeaderAssertion(ass);
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        headers = ohk.getHeaderValues("foo");
+        headersKnob = mess.getKnob(HeadersKnob.class);
+        assertNotNull(headersKnob);
+        headers = headersKnob.getHeaderValues("foo");
         assertEquals(2, headers.length);
         assertEquals("bar", headers[0]);
         assertEquals("blat", headers[1]);
@@ -211,10 +212,9 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        String[] headers = ohk.getHeaderValues("foo");
+        HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
 
@@ -224,10 +224,9 @@ public class ServerAddHeaderAssertionTest {
         sass = new ServerAddHeaderAssertion(ass);
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        headers = ohk.getHeaderValues("foo");
+        headersKnob = mess.getKnob(HeadersKnob.class);
+        assertNotNull(headersKnob);
+        headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("blat", headers[0]);
     }
@@ -243,10 +242,9 @@ public class ServerAddHeaderAssertionTest {
         pec.setVariable("hname", "foo");
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
     }
@@ -262,10 +260,9 @@ public class ServerAddHeaderAssertionTest {
         pec.setVariable("hvalue", "bar");
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
-        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
-        assertNotNull(ohk);
-        assertTrue(ohk instanceof HttpOutboundRequestFacet);
-        final String[] headers = ohk.getHeaderValues("foo");
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
     }
