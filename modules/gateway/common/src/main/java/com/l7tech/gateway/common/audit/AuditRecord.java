@@ -500,9 +500,11 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * @return TRUE if the two objects are the same. FALSE otherwise.
      */
     public boolean equals(Object obj) {
-        AuditRecord theOtherOne;
-        if (obj instanceof AuditRecord) theOtherOne = (AuditRecord)obj;
-        else return false;
+        if (obj == this)
+            return true;
+        if (!(obj instanceof AuditRecord))
+            return false;
+        AuditRecord theOtherOne = (AuditRecord)obj;
         if (nodeId != null) {
             if (!nodeId.equals(theOtherOne.getNodeId())) return false;
         }

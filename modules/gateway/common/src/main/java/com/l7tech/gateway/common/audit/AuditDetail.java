@@ -202,6 +202,9 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
 
     @Override
     public int compareTo(Object o) {
+        if (this == o)
+            return 0;
+
         if (!(o instanceof AuditDetail)) {
             // should not happen
             throw new RuntimeException("you can't compare AuditDetails and " + o.getClass().getName() + "s");
