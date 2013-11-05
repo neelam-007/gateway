@@ -489,7 +489,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
                 MQMessage mqResponseMessage = new MQMessage();
                 mqResponseMessage = new PassThroughDecorator(mqResponseMessage, (MqMessageProxy) mqNativeKnob.getMessage(),
-                        gatewayResponseMessage.getKnob(OutboundHeadersKnob.class), null, context, getAudit());
+                        gatewayResponseMessage.getKnob(HeadersKnob.class), null, context, getAudit());
                 mqResponseMessage = new DescriptorDecorator((MqMessageDecorator)mqResponseMessage);
                 mqResponseMessage = new PropertyDecorator((MqMessageDecorator)mqResponseMessage);
                 mqResponseMessage = new HeaderDecorator((MqMessageDecorator)mqResponseMessage);

@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.mqnative.server.MqMessageProxy;
 import com.l7tech.external.assertions.mqnative.server.MqNativeConfigException;
 import com.l7tech.external.assertions.mqnative.server.MqNativeUtils;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -23,7 +24,7 @@ public abstract class MqMessageDecorator extends MQMessage {
 
     protected final static String MQ_PREFIX = MqNativeUtils.PREIFX;
     protected final MQMessage mqMessage;
-    protected final OutboundHeadersKnob outboundHeadersKnob;
+    protected final HeadersKnob headersKnob;
     protected final MqMessageProxy source;
     protected final MqNativeRoutingAssertion assertion;
     protected final PolicyEnforcementContext context;
@@ -35,7 +36,7 @@ public abstract class MqMessageDecorator extends MQMessage {
      *
      * @param mqMessage The decorated MQMessage
      * @param source The source MQMessage
-     * @param outboundHeadersKnob The OutboundHeaderKnob which may contains the customized header.
+     * @param headersKnob The HeadersKnob which may contains the customized header.
      * @param assertion Assertion for configuration attribute
      * @param context PolicyEnforcementContext
      * @param audit Audit
@@ -43,10 +44,10 @@ public abstract class MqMessageDecorator extends MQMessage {
      * @throws IOException
      * @throws MQDataException
      */
-    public MqMessageDecorator(MQMessage mqMessage, MqMessageProxy source, OutboundHeadersKnob outboundHeadersKnob,
+    public MqMessageDecorator(MQMessage mqMessage, MqMessageProxy source, HeadersKnob headersKnob,
                               MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
         this.mqMessage = mqMessage;
-        this.outboundHeadersKnob = outboundHeadersKnob;
+        this.headersKnob = headersKnob;
         this.assertion = assertion;
         this.context = context;
         this.audit = audit;
@@ -61,7 +62,7 @@ public abstract class MqMessageDecorator extends MQMessage {
      */
     protected MqMessageDecorator(MqMessageDecorator decorator) {
         this.mqMessage = decorator;
-        this.outboundHeadersKnob = decorator.outboundHeadersKnob;
+        this.headersKnob = decorator.headersKnob;
         this.assertion = decorator.assertion;
         this.context = decorator.context;
         this.audit = decorator.audit;
@@ -102,11 +103,11 @@ public abstract class MqMessageDecorator extends MQMessage {
      */
     protected Map<String, Object> getOutboundHeaderAttributes(String prefix) {
         Map<String, Object> override = new LinkedHashMap<String, Object>();
-        if (outboundHeadersKnob != null) {
-            String[] headernames = outboundHeadersKnob.getHeaderNames();
+        if (headersKnob != null) {
+            String[] headernames = headersKnob.getHeaderNames();
             for (String headername : headernames) {
                 if (headername.startsWith(prefix)) {
-                    String[] headervalues = outboundHeadersKnob.getHeaderValues(headername);
+                    String[] headervalues = headersKnob.getHeaderValues(headername);
                     if (headervalues != null && headervalues.length > 0) {
                         override.put(headername.substring(prefix.length()), headervalues[0]);
                     }
@@ -117,8 +118,8 @@ public abstract class MqMessageDecorator extends MQMessage {
     }
 
     protected String getOutboundHeaderAttribute(String name) {
-        if (outboundHeadersKnob != null) {
-            String[] headervalues = outboundHeadersKnob.getHeaderValues(name);
+        if (headersKnob != null) {
+            String[] headervalues = headersKnob.getHeaderValues(name);
             if (headervalues != null && headervalues.length > 0) {
                 return headervalues[0];
             }

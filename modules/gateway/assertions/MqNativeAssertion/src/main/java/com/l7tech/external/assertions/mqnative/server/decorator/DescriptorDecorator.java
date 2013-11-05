@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.mqnative.server.MqNativeConfigException;
 import com.l7tech.external.assertions.mqnative.server.MqNativeUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -32,8 +33,8 @@ public class DescriptorDecorator extends MqMessageDecorator {
     private static final String PREFIX = MQ_PREFIX + ".md.";
     private static final String VERSION = "version";
 
-    public DescriptorDecorator(MQMessage mqMessage, MqMessageProxy source, OutboundHeadersKnob outboundHeadersKnob, MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
-        super(mqMessage, source, outboundHeadersKnob, assertion, context, audit);
+    public DescriptorDecorator(MQMessage mqMessage, MqMessageProxy source, HeadersKnob headersKnob, MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
+        super(mqMessage, source, headersKnob, assertion, context, audit);
     }
 
     public DescriptorDecorator(MqMessageDecorator decorator) {
