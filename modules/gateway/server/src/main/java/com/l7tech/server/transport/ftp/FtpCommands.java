@@ -358,4 +358,6 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             session.write(new DefaultFtpReply(FtpReply.REPLY_504_COMMAND_NOT_IMPLEMENTED_FOR_THAT_PARAMETER, "Command LANG not implemented for this parameter."));
         }
     }
+
+    // TODO jwilliams: implement STAT as pass-through command? consult priorities doc
 }

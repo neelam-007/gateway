@@ -1,10 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -15,62 +12,61 @@ import org.apache.ftpserver.impl.DefaultFtpServer;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.ListenerFactory;
 import org.apache.ftpserver.ssl.SslConfiguration;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class SsgFtpServerFactory {
+    private static final int IDLE_TIMEOUT_DEFAULT = 60;
+    private static final int MAX_LOGINS_DEFAULT = 10;
+    private static final int MAX_ANONYMOUS_LOGINS_DEFAULT = 10;
+    private static final boolean ANONYMOUS_LOGINS_ENABLED_DEFAULT = true;
+
     private static final String SECURE_LISTENER_NAME = "secure";
     private static final String DEFAULT_LISTENER_NAME = "default";
+    private static final String DEFAULT_FTPLET_NAME = "default";
 
-    private final SsgConnector connector;
-    private final SsgConnectorManager connectorManager;
-    private final FtpServerManager ftpServerManager;
-    private final ClusterPropertyManager clusterPropertyManager;
+//    private static final String CP_FTP_TIMEOUT_POLL_INTERVAL = "ftp.connection.timeout_poll_interval";  // TODO jwilliams: document removal - poll interval not settable any more because handled by MINA
+//    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: no analogue in new library? finish investigation
 
-    private final HashMap<String, Ftplet> ftplets = new HashMap<>();
+    // TODO jwilliams: doesn't make sense - these cluster properties shouldn't apply to every ftp/s connector the same
+    private static final String CP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
+    private static final String CP_MAX_LOGIN = "ftp.connection.max_login";
 
-    public SsgFtpServerFactory(SsgConnector connector, SsgConnectorManager connectorManager,
-                               FtpServerManager ftpServerManager, ClusterPropertyManager clusterPropertyManager) {
-        this.connector = connector;
-        this.connectorManager = connectorManager;
-        this.ftpServerManager = ftpServerManager;
-        this.clusterPropertyManager = clusterPropertyManager;
-    }
+    @Autowired
+    private FtpSslFactory ftpSslFactory;
 
-    @SafeVarargs
-    public SsgFtpServerFactory(SsgConnector connector, SsgConnectorManager connectorManager,
-                               FtpServerManager ftpServerManager, ClusterPropertyManager clusterPropertyManager,
-                               Map.Entry<String, Ftplet>... ftpletEntries) {
-        this(connector, connectorManager, ftpServerManager, clusterPropertyManager);
+    @Autowired
+    private SsgFtpletFactory ssgFtpletFactory;
 
-        for (Map.Entry<String, Ftplet> entry : ftpletEntries) {
-            addFtplet(entry.getKey(), entry.getValue());
+    @Autowired
+    private FtpRequestProcessorFactory ftpRequestProcessorFactory;
+
+    @Autowired
+    private SsgConnectorManager connectorManager;
+
+    @Autowired
+    private ClusterPropertyManager clusterPropertyManager;
+
+    public FtpServer create(SsgConnector connector) throws ListenerException {
+
+        for (final String propertyName : connector.getPropertyNames()) { // TODO jwilliams: make sure all properties handled properly
+            System.out.println("PROPERTY: " + propertyName + "   -   " + connector.getProperty(propertyName));
         }
+
+        return new DefaultFtpServer(createServerContext(connector));
     }
 
-    public FtpServer create() throws ListenerException {
-        return new DefaultFtpServer(createServerContext());
-    }
+    private SsgFtpServerContext createServerContext(SsgConnector connector) throws ListenerException {
+        SsgFtpServerContext context =
+                new SsgFtpServerContext(createConnectionConfig(), createCommandProcessor(connector));
 
-    public void addFtplet(String name, Ftplet ftplet) {
-        ftplets.put(name, ftplet);
-    }
-
-    private SsgFtpServerContext createServerContext() throws ListenerException {
-        SsgFtpServerContext context = new SsgFtpServerContext(createConnectionConfig(), createCommandProcessor());
-
-        Listener listener = createListener();
+        Listener listener = createListener(connector);
 
         context.addListener(listener.isImplicitSsl() ? SECURE_LISTENER_NAME : DEFAULT_LISTENER_NAME, listener);
 
-        for (Map.Entry<String, Ftplet> entry : ftplets.entrySet()) {
-            context.addFtplet(entry.getKey(), entry.getValue());
-        }
+        context.addFtplet(DEFAULT_FTPLET_NAME, createFtplet(connector));
 
         return context;
     }
@@ -80,15 +76,35 @@ public class SsgFtpServerFactory {
      *
      * @return a new ConnectionConfig
      */
-    private ConnectionConfig createConnectionConfig() {
+    private ConnectionConfig createConnectionConfig() throws ListenerException {
         ConnectionConfigFactory factory = new ConnectionConfigFactory();
 
-        factory.setMaxLogins(10); // 10
-        factory.setAnonymousLoginEnabled(true); // true
-        factory.setMaxAnonymousLogins(10); // 10
-        factory.setMaxLoginFailures(3); // 3
-        factory.setLoginFailureDelay(500); // 500
-        factory.setMaxThreads(0); // 0
+        int maxLogins = MAX_LOGINS_DEFAULT;
+        int maxAnonymousLogins = MAX_ANONYMOUS_LOGINS_DEFAULT;
+        boolean anonymousAllowed = ANONYMOUS_LOGINS_ENABLED_DEFAULT;
+
+        try { // TODO jwilliams: these settings should really come from the connector, not cluster properties
+            String maxLoginsProperty = clusterPropertyManager.getProperty(CP_MAX_LOGIN);
+
+            if (null != maxLoginsProperty) {
+                maxLogins = toInt(maxLoginsProperty, "Max logins");
+            }
+        } catch (FindException e) {
+            // ignore
+        }
+
+        // factory default values that we don't have any settings for
+//        int maxLoginFailures = 3;
+//        int loginFailureDelay = 500;
+//        int maxThreads = 0;
+
+        factory.setMaxLogins(maxLogins); // 10
+        factory.setAnonymousLoginEnabled(anonymousAllowed); // true
+        factory.setMaxAnonymousLogins(maxAnonymousLogins); // 10
+
+//        factory.setMaxLoginFailures(maxLoginFailures); // 3
+//        factory.setLoginFailureDelay(loginFailureDelay); // 500
+//        factory.setMaxThreads(maxThreads); // 0
 
         return factory.createConnectionConfig();
     }
@@ -99,27 +115,8 @@ public class SsgFtpServerFactory {
      * @return the new FtpRequestProcessor
      * @throws ListenerException on invalid overridden content type specified in SsgConnector
      */
-    private FtpRequestProcessor createCommandProcessor() throws ListenerException {
-        Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE,
-                SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
-
-        String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
-        ContentTypeHeader overrideContentType = null;
-
-        try {
-            if (overrideContentTypeStr != null)
-                overrideContentType = ContentTypeHeader.parseValue(overrideContentTypeStr);
-        } catch (IOException e) {
-            throw new ListenerException("Unable to start FTP listener: Invalid overridden content type: " +
-                    overrideContentTypeStr);
-        }
-
-        return new FtpRequestProcessor(
-                overrideContentType,
-                hardwiredServiceGoid,
-                connector.getProperty("service"),
-                connector.getGoid(),
-                connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L));
+    private FtpRequestProcessor createCommandProcessor(SsgConnector connector) throws ListenerException {
+        return ftpRequestProcessorFactory.create(connector);
     }
 
     /**
@@ -127,9 +124,22 @@ public class SsgFtpServerFactory {
      *
      * @return a new Listener
      */
-    private Listener createListener() throws ListenerException {
+    private Listener createListener(SsgConnector connector) throws ListenerException {
         ListenerFactory factory = new ListenerFactory();
 
+        int idleTimeout = IDLE_TIMEOUT_DEFAULT;
+
+        try { // TODO jwilliams: these settings should really come from the connector, not cluster properties
+            String idleTimeoutProperty = clusterPropertyManager.getProperty(CP_IDLE_TIMEOUT);
+
+            if (null != idleTimeoutProperty) {
+                idleTimeout = toInt(idleTimeoutProperty, "Default idle timeout");
+            }
+        } catch (FindException e) {
+            // ignore
+        }
+
+        factory.setIdleTimeout(idleTimeout);
         factory.setPort(connector.getPort());
 
         String address = connectorManager.translateBindAddress(connector.getProperty(SsgConnector.PROP_BIND_ADDRESS), connector.getPort());
@@ -144,14 +154,10 @@ public class SsgFtpServerFactory {
 
         factory.setImplicitSsl(secure);
 
-        SslConfiguration sslConfiguration = secure ? createFtpSslConfiguration() : null;
+        SslConfiguration sslConfiguration = secure ? createFtpSslConfiguration(connector) : null;
 
         factory.setSslConfiguration(sslConfiguration);
-
-        factory.setDataConnectionConfiguration(createDataConnectionConfiguration(sslConfiguration));
-
-//        factory.setIdleTimeout(300); // unset
-//        factory.setIpFilter(null); // old implementation used a permissive IpRestrictor that was not configurable
+        factory.setDataConnectionConfiguration(createDataConnectionConfiguration(connector, sslConfiguration));
 
         return factory.createListener();
     }
@@ -166,7 +172,8 @@ public class SsgFtpServerFactory {
      * @return a new DataConnectionConfiguration
      * @throws ListenerException
      */
-    private DataConnectionConfiguration createDataConnectionConfiguration(SslConfiguration sslConfiguration) throws ListenerException {
+    private DataConnectionConfiguration createDataConnectionConfiguration(SsgConnector connector,
+                                                                          SslConfiguration sslConfiguration) throws ListenerException {
         DataConnectionConfigurationFactory factory = new DataConnectionConfigurationFactory();
 
         factory.setActiveEnabled(false); // SSG default - active data connections are unsupported
@@ -178,6 +185,7 @@ public class SsgFtpServerFactory {
         factory.setImplicitSsl(null != sslConfiguration);
         factory.setSslConfiguration(sslConfiguration);
 
+        // TODO jwilliams: review these
 //        factory.setActiveIpCheck(false); // old properties file default, but seems unnecessary
 //        factory.setActiveLocalAddress(); // unused
 //        factory.setActiveLocalPort(); // unused
@@ -193,8 +201,12 @@ public class SsgFtpServerFactory {
      *
      * @return a new SslConfiguration
      */
-    private SslConfiguration createFtpSslConfiguration() throws ListenerException {
-        return new FtpSslConfigurationFactory(ftpServerManager, connector).createFtpSslConfiguration();
+    private SslConfiguration createFtpSslConfiguration(SsgConnector connector) throws ListenerException {
+        return ftpSslFactory.create(connector);
+    }
+
+    private Ftplet createFtplet(SsgConnector connector) throws ListenerException {
+        return ssgFtpletFactory.create(connector);
     }
 
     private int toInt(String str, String name) throws ListenerException {

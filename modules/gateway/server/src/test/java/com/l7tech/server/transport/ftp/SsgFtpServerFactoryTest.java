@@ -52,7 +52,7 @@ public class SsgFtpServerFactoryTest {
 
     @Test
     public void testCreate() throws Exception {
-        FtpServer server = createFtpServer();
+        FtpServer server = getFtpServer();
 
         server.start();
 
@@ -63,8 +63,9 @@ public class SsgFtpServerFactoryTest {
         assertTrue(server.isStopped());
     }
 
-    private FtpServer createFtpServer() throws ListenerException {
-        return new SsgFtpServerFactory(connector, connectorManager, ftpServerManager,
-                clusterPropertyManager, new Pair<>("default", ftplet)).create();
+    private FtpServer getFtpServer() throws ListenerException {
+        // TODO jwilliams: work out integration of Mockito and spring
+
+        return null;
     }
 }

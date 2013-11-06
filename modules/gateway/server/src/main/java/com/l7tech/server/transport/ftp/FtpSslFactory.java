@@ -5,23 +5,19 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.ftpserver.ssl.ClientAuth;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.security.GeneralSecurityException;
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
  */
-public class FtpSslConfigurationFactory {
+public class FtpSslFactory {
 
-    private final FtpServerManager ftpServerManager;
-    private final SsgConnector connector;
+    @Autowired
+    private FtpServerManager ftpServerManager;
 
-    public FtpSslConfigurationFactory(FtpServerManager ftpServerManager, SsgConnector connector) {
-        this.ftpServerManager = ftpServerManager;
-        this.connector = connector;
-    }
-
-    public FtpSsl createFtpSslConfiguration() throws ListenerException {
+    public FtpSsl create(SsgConnector connector) throws ListenerException {
         ClientAuth clientAuth;
 
         switch (connector.getClientAuth()) {
