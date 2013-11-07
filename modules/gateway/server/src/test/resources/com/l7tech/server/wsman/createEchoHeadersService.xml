@@ -69,7 +69,7 @@
                            </wsp:OneOrMore>
                        </L7p:ForEachLoop>
                        <L7p:HardcodedResponse>
-                           <L7p:Base64ResponseBody stringValue="PGFsbD4KJHtyZXF1ZXN0Lmh0dHAuYWxsaGVhZGVydmFsdWVzfQo8L2FsbD4KPGJ5TmFtZT4KJHtoZWFkZXJzfQo8L2J5TmFtZT4="/>
+                           <L7p:Base64ResponseBody stringValue="PGhlYWRlcnM+CjxhbGw+CiR7cmVxdWVzdC5odHRwLmFsbGhlYWRlcnZhbHVlc30KPC9hbGw+CjxieU5hbWU+CiR7aGVhZGVyc30KPC9ieU5hbWU+CjwvaGVhZGVycz4="/>
                        </L7p:HardcodedResponse>
                    </wsp:All>
                </wsp:Policy>

@@ -26,6 +26,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.SecureRandom;
@@ -59,6 +60,20 @@ public abstract class HttpRoutingIntegrationTest {
     private static GenericHttpClient client;
     private static XPath xPath;
     private static List<String> classLevelCreatedServiceIds;
+    protected static final String SOAP_BODY = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\">\n" +
+            "\t<s:Header>\n" +
+            "\t\t<wsa:Action s:mustUnderstand=\"true\">bridgeSoapAction</wsa:Action>\n" +
+            "\t\t<wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To>\n" +
+            "\t\t<wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID>\n" +
+            "\t\t<wsa:ReplyTo>\n" +
+            "\t\t\t<wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+            "\t\t</wsa:ReplyTo>\n" +
+            "\t</s:Header>\n" +
+            "\t<s:Body>\n" +
+            "\t</s:Body>\n" +
+            "</s:Envelope>";
+    protected static final String BRIDGE_USER_AGENT = "L7 Bridge; Protocol v2.0";
+    protected static final String SOAP_CONTENT_TYPE = "application/soap+xml;charset=UTF-8";
     protected List<String> testLevelCreatedServiceIds;
 
     @BeforeClass
@@ -272,6 +287,56 @@ public abstract class HttpRoutingIntegrationTest {
         return routeAssertion;
     }
 
+    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders) {
+        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, (HttpPassthroughRule[]) null);
+    }
+
+    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final List<HttpPassthroughRule> responseRules) {
+        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, responseRules.toArray(new HttpPassthroughRule[responseRules.size()]));
+    }
+
+    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final HttpPassthroughRule... responseRules) {
+        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, responseRules);
+    }
+
+    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean useSsl, final boolean forwardAllResponseHeaders, final HttpPassthroughRule... responseRules) {
+        final BridgeRoutingAssertion bridge = new BridgeRoutingAssertion();
+        bridge.setProtectedServiceUrl(url);
+        bridge.setUseSslByDefault(useSsl);
+        bridge.getResponseHeaderRules().setForwardAll(forwardAllResponseHeaders);
+        if (responseRules != null) {
+            bridge.getResponseHeaderRules().setRules(responseRules);
+        }
+        return bridge;
+    }
+
+    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean useSsl, final boolean forwardAllRequestHeaders, final String responseVar, final HttpPassthroughRule... requestRules) {
+        final BridgeRoutingAssertion bridge = new BridgeRoutingAssertion();
+        bridge.setProtectedServiceUrl(url);
+        bridge.setUseSslByDefault(useSsl);
+        bridge.getRequestHeaderRules().setForwardAll(forwardAllRequestHeaders);
+        if (responseVar != null) {
+            bridge.setResponseMsgDest(responseVar);
+        }
+        if (requestRules != null) {
+            bridge.getRequestHeaderRules().setRules(requestRules);
+        }
+        return bridge;
+    }
+
+    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final HttpPassthroughRule... requestRules) {
+        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, requestRules);
+    }
+
+    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final List<HttpPassthroughRule> requestRules) {
+        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, requestRules.toArray(new HttpPassthroughRule[requestRules.size()]));
+    }
+
+
+    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders) {
+        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, (HttpPassthroughRule[]) null);
+    }
+
     /**
      * Parses headers from the 'all' XML element in the response body.
      */
@@ -348,5 +413,12 @@ public abstract class HttpRoutingIntegrationTest {
         final String responseBody = new String(IOUtils.slurpStream(response.getInputStream()));
         System.out.println(responseBody);
         return responseBody;
+    }
+
+    protected GenericHttpRequestParams createSoapParams(final String url) throws MalformedURLException {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(url));
+        params.addExtraHeader(new GenericHttpHeader("SOAPAction", "testSoapAction"));
+        params.addExtraHeader(new GenericHttpHeader("Content-Type", SOAP_CONTENT_TYPE));
+        return params;
     }
 }
