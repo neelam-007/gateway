@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.util.ExceptionUtils;
@@ -107,5 +108,15 @@ public class CustomKeyValueStoreImpl implements KeyValueStore {
         } catch (DeleteException e) {
             throw new KeyValueStoreException("Unable to delete: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    @Override
+    public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        customKeyValueStoreManager.addListener(keyPrefix, listener);
+    }
+
+    @Override
+    public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        customKeyValueStoreManager.removeListener(keyPrefix, listener);
     }
 }

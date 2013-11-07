@@ -91,4 +91,22 @@ public interface KeyValueStore {
      * @throws KeyValueStoreException if there is an error
      */
     void delete(String key) throws KeyValueStoreException;
+
+    /**
+     * Adds a {@link KeyValueStoreChangeEventListener}.<p>
+     * The {@link KeyValueStoreChangeEventListener} will receive a list of {@link KeyValueStoreChangeEventListener.Event Events}
+     * when key values with give key prefix have been modified.
+     *
+     * @param keyPrefix the key prefix
+     * @param listener the listener to be notified
+     */
+    void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener);
+
+    /**
+     * Removes a {@link KeyValueStoreChangeEventListener} that has been added with the specified key prefix.
+     *
+     * @param keyPrefix the key prefix
+     * @param listener the listener to remove
+     */
+    void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener);
 }

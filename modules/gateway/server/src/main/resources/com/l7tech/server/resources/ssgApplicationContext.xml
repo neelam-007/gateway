@@ -1699,6 +1699,7 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
+                <ref bean="customKeyValueStoreManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -2313,6 +2314,7 @@
     </bean>
 
     <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">

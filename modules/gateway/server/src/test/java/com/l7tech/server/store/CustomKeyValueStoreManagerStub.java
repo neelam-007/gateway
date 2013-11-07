@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.CustomKeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,16 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
         } catch (FindException e) {
             throw new DeleteException("Unable to delete using key: " + key, e);
         }
+    }
+
+    @Override
+    public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        // Do nothing.
+    }
+
+    @Override
+    public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        // Do nothing.
     }
 
     @Override
