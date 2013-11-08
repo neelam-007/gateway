@@ -10,11 +10,11 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
+
+    private final Map<String, Set<KeyValueStoreChangeEventListener>> listeners = new HashMap<>();
 
     public CustomKeyValueStoreManagerStub(CustomKeyValueStore... customKeyValueStoresIn) {
         super(customKeyValueStoresIn);
@@ -49,12 +49,21 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
 
     @Override
     public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        // Do nothing.
+        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
+        if (keyPrefixListeners == null) {
+            keyPrefixListeners = new HashSet<>();
+            listeners.put(keyPrefix, keyPrefixListeners);
+        }
+
+        keyPrefixListeners.add(listener);
     }
 
     @Override
     public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        // Do nothing.
+        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
+        if (keyPrefixListeners != null) {
+            keyPrefixListeners.remove(listener);
+        }
     }
 
     @Override
