@@ -1,13 +1,8 @@
 package com.l7tech.server.transport.jms2.asynch;
 
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.transport.jms.JmsUtil;
-import com.l7tech.server.transport.jms2.JmsBlockPolicy;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointListenerFactory;
-import com.l7tech.server.util.ThreadPoolBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -19,11 +14,6 @@ import org.springframework.context.ApplicationContextAware;
 public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFactory, ApplicationContextAware {
 
 
-
-    public PooledJmsEndpointListenerFactory(ThreadPoolBean threadPoolBean) {
-        this.threadPoolBean = threadPoolBean;
-    }
-
     /**
      * Creates JmsEndpointListener implemented by the PooledJmsEndpointListener type.
      *
@@ -32,21 +22,10 @@ public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFact
      */
     @Override
     public JmsEndpointListener createListener(final JmsEndpointConfig endpointConfig) {
-
-        ThreadPoolBean threadPool = this.threadPoolBean;
-
-        if (JmsUtil.isDedicatedThreadPool(endpointConfig.getConnection())) {
-            String poolSize = endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE);
-            JmsBlockPolicy blockPolicy = applicationContext.getBean("jmsBlockPolicy", JmsBlockPolicy.class);
-            threadPool = new ThreadPoolBean(ServerConfig.getInstance(), endpointConfig.getEndpoint().getName() +
-                    " Thread Pool", "", "", Integer.parseInt(poolSize), blockPolicy);
-            threadPool.start();
-        }
-        return new PooledJmsEndpointListenerImpl(endpointConfig, threadPool);
+        return new PooledJmsEndpointListenerImpl(endpointConfig);
     }
 
     // - PRIVATE
-    private final ThreadPoolBean threadPoolBean;
     private ApplicationContext applicationContext;
 
     @Override

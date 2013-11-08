@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.transport.jms.JmsBag;
+import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.ManagedTimer;
@@ -179,7 +180,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         }
     }
 
-    @Override    
+    @Override
     public void destroy() throws Exception {
         if ( active.compareAndSet( true, false ) ) {
             doShutdown();
@@ -269,10 +270,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      */
     private void doShutdown() {
         logger.info( "Shutting down JMS Connection cache." );
-        
+
         timer.cancel();
         Collection<CachedConnection> connList = connectionHolder.values();
-        
+
         for ( final CachedConnection c : connList ) {
             c.unRef();
         }
@@ -409,17 +410,38 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             try {
                JmsBag jmsBag = pool.poll();
                if (jmsBag == null) {
+
                    Session session;
-                    if (endpointConfig.getEndpoint().isMessageSource()) {
-                        session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
-                    } else {
-                        session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                    }
-                    jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
-                        bag.getConnection(), session, this );
+                   if (endpointConfig.getEndpoint().isMessageSource()) {
+                       session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                   } else {
+                       session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                   }
+
+                   MessageConsumer consumer = null;
+                   MessageProducer producer = null;
+
+                   if (endpointConfig.getEndpoint().isMessageSource()) {
+                       //Create the consumer
+                       final String destinationName = endpointConfig.getEndpoint().getDestinationName();
+                       Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
+                       consumer = JmsUtil.createMessageConsumer(session, destination);
+
+                       Destination failureQueue = getFailureQueue(bag.getJndiContext());
+                       if (failureQueue != null) {
+                           producer = JmsUtil.createMessageProducer(session, failureQueue);
+                       }
+                   }
+
+                   jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
+                       bag.getConnection(), session, consumer, producer, this );
                 }
                 return jmsBag;
             } catch (JMSException e) {
+                throw new JmsRuntimeException(e);
+            } catch (NamingException e) {
+                throw new JmsRuntimeException(e);
+            } catch (JmsConfigException e) {
                 throw new JmsRuntimeException(e);
             }
         }
@@ -450,7 +472,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     @Override
                     public void doWithJndiContext( final JndiContextCallback contextCallback ) throws NamingException  {
                         synchronized( contextLock ) {
-                            contextCallback.doWork( bag.getJndiContext() );                           
+                            contextCallback.doWork( bag.getJndiContext() );
                         }
                     }
 
@@ -465,6 +487,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             } finally {
                 returnJmsBag(jmsBag);
             }
+        }
+
+        protected Queue getFailureQueue(Context context) throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
+            if ( endpointConfig.isTransactional() && endpointConfig.getEndpoint().getFailureDestinationName() != null) {
+                logger.finest( "Getting new FailureQueue" );
+                final String failureDestinationName = endpointConfig.getEndpoint().getFailureDestinationName();
+                return JmsUtil.cast( context.lookup( failureDestinationName ), Queue.class );
+            }
+            return null;
         }
 
         /**
@@ -543,7 +574,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         }
                     }
                 );
-            
+
             for ( final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
                 if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 && cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) {
                 evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );

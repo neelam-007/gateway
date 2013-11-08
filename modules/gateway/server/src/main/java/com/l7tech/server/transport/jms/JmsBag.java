@@ -2,11 +2,10 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.util.ExceptionUtils;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
 import java.io.Closeable;
+import java.lang.IllegalStateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,14 +16,21 @@ import java.util.logging.Logger;
  * Not thread-safe!
  */
 public class JmsBag implements Closeable {
-    public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess, Object owner ) {
+    public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess, MessageConsumer consumer, MessageProducer producer, Object owner) {
         connectionFactory = factory;
         connection = conn;
         session = sess;
         jndiContext = context;
+        messageConsumer = consumer;
+        failureProducer = producer;
         bagOwner = owner;
     }
-    
+
+    public JmsBag( Context context, ConnectionFactory factory, Connection conn, Session sess, Object owner ) {
+        this(context, factory, conn, sess, null, null, owner);
+    }
+
+
     public ConnectionFactory getConnectionFactory() {
         check();
         return connectionFactory;
@@ -49,10 +55,33 @@ public class JmsBag implements Closeable {
         return bagOwner;
     }
 
+    public MessageConsumer getMessageConsumer() {
+        return messageConsumer;
+    }
+
     /**
-     * Close the session only.
+     * Close the session and the consumer only.
      */
     public void closeSession() {
+        if (messageConsumer != null) {
+            try {
+                messageConsumer.close();
+            } catch (Exception e) {
+                handleCloseError( "consumer", e );
+            }
+            messageConsumer = null;
+        }
+
+        if (failureProducer != null) {
+            try {
+                failureProducer.close();
+            } catch (Exception e) {
+                handleCloseError( "failureQueueProducer", e );
+            }
+            failureProducer = null;
+        }
+
+
         if ( session != null ) {
             try {
                 session.close();
@@ -67,13 +96,7 @@ public class JmsBag implements Closeable {
     public void close() {
         if ( !closed ) {
             try {
-                if ( session != null ) {
-                    try {
-                        session.close();
-                    } catch ( Exception e ) {
-                        handleCloseError( "session", e );
-                    }
-                }
+                closeSession();
 
                 if ( connection != null ) {
                     try {
@@ -113,15 +136,8 @@ public class JmsBag implements Closeable {
         if (closed) throw new IllegalStateException("Bag has been closed");
     }
 
-    // not sure if this is necessary
-    protected void nullify() {
-        if (closed) {
-            session = null;
-            connection = null;
-            connectionFactory = null;
-            jndiContext = null;
-            bagOwner = null;
-        }
+    public MessageProducer getFailureProducer() {
+        return failureProducer;
     }
 
     private static final Logger logger = Logger.getLogger(JmsBag.class.getName());
@@ -129,6 +145,8 @@ public class JmsBag implements Closeable {
     private Connection connection;
     private Session session;
     private Context jndiContext;
+    private MessageConsumer messageConsumer;
+    private MessageProducer failureProducer;
     private Object bagOwner;
     protected volatile boolean closed;
 

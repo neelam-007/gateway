@@ -232,12 +232,6 @@ public interface JmsAdmin {
      * @return True if the size is valid, False if not.
      */
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    boolean isValidThreadPoolSize(String size);
+    boolean isValidConsumerConnectionSize(String size);
 
-    /**
-     * Check to see if the dedicated thread pool is enabled
-     * @return True when enable.
-     */
-    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    boolean isDedicatedThreadPoolEnabled();
 }

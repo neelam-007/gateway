@@ -225,9 +225,7 @@
                 <constructor-arg index="2">
                     <map>
                         <entry key="Pooled">
-                            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
-                                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool"/>
-                            </bean>
+                            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
                         </entry>
                         <entry key="Simple">
                             <bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>

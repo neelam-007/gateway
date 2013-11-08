@@ -81,7 +81,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
      * @param endpointCfg The Jms endpoint configuration that this handler operates on
      * @param bag The JMS context
      * @param transacted True is the session is transactional (so commit when done)
-     * @param failureProducer The producer for failed messages (may be null)
      * @param jmsRequest The request message to process
      * @throws com.l7tech.server.transport.jms.JmsRuntimeException if an error occurs
      */
@@ -89,7 +88,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     public void onMessage( final JmsEndpointConfig endpointCfg,
                            final JmsBag bag,
                            final boolean transacted,
-                           final MessageProducer failureProducer,
                            final Message jmsRequest ) throws JmsRuntimeException {
         final Message jmsResponse;
         final InputStream requestStream;
@@ -352,7 +350,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         } finally {
             if ( transacted ) {
                 boolean handledAnyFailure;
-                handledAnyFailure = status == AssertionStatus.NONE || failureProducer != null && sendFailureRequest(jmsRequest, failureProducer);
+                handledAnyFailure = status == AssertionStatus.NONE || bag.getFailureProducer() != null && sendFailureRequest(jmsRequest, bag.getFailureProducer());
 
                 Session session = bag.getSession();
                 if ( responseSuccess && handledAnyFailure ) {

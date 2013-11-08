@@ -363,9 +363,7 @@
         <constructor-arg index="4"  ref="jmsPropertyMapper"/>
         <constructor-arg index="5">
             <!--<bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>-->
-            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
-                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
-            </bean>
+            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
         </constructor-arg>
         <constructor-arg index="6"><null/></constructor-arg>
     </bean>

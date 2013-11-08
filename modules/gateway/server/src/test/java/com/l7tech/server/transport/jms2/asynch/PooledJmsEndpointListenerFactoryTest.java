@@ -34,7 +34,7 @@ public class PooledJmsEndpointListenerFactoryTest {
         applicationContext = ApplicationContexts.getTestApplicationContext();
         threadPoolBean = new ThreadPoolBean(ServerConfig.getInstance(), "Test","","", 25);
         threadPoolBean.start();
-        factory = new PooledJmsEndpointListenerFactory(threadPoolBean);
+        factory = new PooledJmsEndpointListenerFactory();
         factory.setApplicationContext(applicationContext);
         jmsConnectionManager = (JmsConnectionManager) applicationContext.getBean("jmsConnectionManager");
         jmsEndpointManager = (JmsEndpointManager) applicationContext.getBean("jmsEndpointManager");
@@ -55,8 +55,8 @@ public class PooledJmsEndpointListenerFactoryTest {
         jmsConnection.setGoid(new Goid(0, 1));
         jmsConnection.setInitialContextFactoryClassname("");
         Properties properties = new Properties();
-        properties.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
-        properties.setProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE, Integer.toString(5));
+        properties.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
+        properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, Integer.toString(5));
         jmsConnection.properties(properties);
         jmsConnection.setQueueFactoryUrl("ConnectionFactory");
         jmsConnection.setJndiUrl("");
@@ -83,8 +83,8 @@ public class PooledJmsEndpointListenerFactoryTest {
         jmsConnection2.setGoid(new Goid(0,2));
         jmsConnection2.setInitialContextFactoryClassname("");
         Properties properties2 = new Properties();
-        properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
-        properties2.setProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE, Integer.toString(10));
+        properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
+        properties2.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, Integer.toString(10));
         jmsConnection2.properties(properties2);
         jmsConnection2.setQueueFactoryUrl("ConnectionFactory");
         jmsConnection2.setJndiUrl("");
@@ -104,12 +104,8 @@ public class PooledJmsEndpointListenerFactoryTest {
         JmsEndpointConfig jmsEndpointConfig2 = new JmsEndpointConfig(jmsConnection2, connector2, null, applicationContext);
         JmsEndpointListener listener2 = factory.createListener(jmsEndpointConfig2);
 
-        assertFalse(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean() == ((PooledJmsEndpointListenerImpl) listener2).getThreadPoolBean());
-        assertFalse(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean() == ((PooledJmsEndpointListenerImpl) listener2).getThreadPoolBean());
-
         listener2.stop();
         listener.stop();
-        assertTrue(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean().isShutdown());
 
     }
 
@@ -147,8 +143,8 @@ public class PooledJmsEndpointListenerFactoryTest {
         jmsConnection2.setGoid(new Goid(0,2));
         jmsConnection2.setInitialContextFactoryClassname("");
         Properties properties2 = new Properties();
-        properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_POOL, Boolean.TRUE.toString());
-        properties2.setProperty(JmsConnection.PROP_DEDICATED_POOL_SIZE, Integer.toString(10));
+        properties2.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
+        properties2.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, Integer.toString(10));
         jmsConnection2.properties(properties2);
         jmsConnection2.setQueueFactoryUrl("ConnectionFactory");
         jmsConnection2.setJndiUrl("");
@@ -168,14 +164,10 @@ public class PooledJmsEndpointListenerFactoryTest {
         JmsEndpointConfig jmsEndpointConfig2 = new JmsEndpointConfig(jmsConnection2, connector2, null, applicationContext);
         JmsEndpointListener listener2 = factory.createListener(jmsEndpointConfig2);
 
-        assertFalse(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean() == ((PooledJmsEndpointListenerImpl) listener2).getThreadPoolBean());
-        assertFalse(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean() == ((PooledJmsEndpointListenerImpl) listener2).getThreadPoolBean());
 
         //Make sure to stop the listener but the threadpool is still alive for share pool
         listener.stop();
         listener2.stop();
-        assertFalse(((PooledJmsEndpointListenerImpl) listener).getThreadPoolBean().isShutdown());
-        assertTrue(((PooledJmsEndpointListenerImpl) listener2).getThreadPoolBean().isShutdown());
 
     }
 }

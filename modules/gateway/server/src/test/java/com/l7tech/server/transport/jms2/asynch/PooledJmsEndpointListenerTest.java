@@ -1,8 +1,7 @@
 package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.server.ServerConfigStub;
-import com.l7tech.server.transport.jms.JmsConfigException;
-import com.l7tech.server.transport.jms.JmsRuntimeException;
+import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointListenerFactory;
@@ -48,7 +47,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
             factory = new JmsEndpointListenerFactory() {
                 @Override
                 public JmsEndpointListener createListener(JmsEndpointConfig endpointConfig) {
-                    return new TestEndpointListener(endpointConfig, jmsThreadPool);
+                    return new TestEndpointListener(endpointConfig);
                 }
             };
 
@@ -131,8 +130,8 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
     class TestEndpointListener extends PooledJmsEndpointListenerImpl {
 //    class TestEndpointListener extends LegacyJmsEndpointListenerImpl {
 
-        TestEndpointListener(JmsEndpointConfig endpointConfig, ThreadPoolBean jmsThreadPool) {
-            super(endpointConfig, jmsThreadPool);
+        TestEndpointListener(JmsEndpointConfig endpointConfig) {
+            super(endpointConfig);
         }
 
 //        protected void handleMessage(Message dequeueMessage) throws JmsRuntimeException {
@@ -177,23 +176,6 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
 //            }
 //        }
 
-        protected JmsTask newJmsTask(Message jmsMessage) throws JmsRuntimeException {
-            try {
-
-                return new TestJmsTask(getEndpointConfig(),
-                        handOffJmsBag(getJmsBag()),
-                        jmsMessage,
-                        getFailureQueue(),
-                        getConsumer());
-
-            } catch (JMSException jex) {
-                throw new JmsRuntimeException("While creating new test JmsTask.",  jex);
-            } catch (NamingException nex) {
-                throw new JmsRuntimeException("While creating new test JmsTask.",  nex);
-            } catch (JmsConfigException cex) {
-                throw new JmsRuntimeException("While creating new test JmsTask.", cex);
-            }
-        }
     }
 
 
@@ -205,15 +187,15 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
         private boolean transactional;
         private javax.jms.Session jmsSession;
 
-        TestJmsTask(JmsEndpointConfig endpoint, JmsTaskBag jmsBag, Message jmsMessage, Queue failureQ, MessageConsumer consumer) {
-            super(endpoint, jmsBag, jmsMessage, failureQ, consumer, null);
+        TestJmsTask(JmsEndpointConfig endpoint, JmsBag jmsBag, Message jmsMessage, Queue failureQ ) {
+            super(endpoint, jmsBag);
 
             this.transactional = endpoint.isTransactional();
             this.jmsSession = jmsBag.getSession();
         }
 
         // For test, just check that the message payload is correct
-        protected void handleMessage() throws JmsRuntimeException {
+        public void onMessage(Message jmsMessage) {
 
             try {
                 if (jmsMessage instanceof BytesMessage) {
@@ -236,10 +218,8 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
                     }
 
                 } else {
-                    throw new JmsRuntimeException("Only BytesMessagesExpected");
                 }
             } catch (JMSException jex) {
-                throw new JmsRuntimeException("Couldn't read Jms BytesMessage", jex);
             }
         }
     }
