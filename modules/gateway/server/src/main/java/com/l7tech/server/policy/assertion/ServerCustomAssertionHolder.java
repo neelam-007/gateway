@@ -623,27 +623,24 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         if (cookieNames == null || cookieNames.length == 0 || pec == null || pec.getRequest() == null) return;
 
         final Message message = pec.getRequest();
-        HasOutboundHeaders oh = message.getKnob(OutboundHeadersKnob.class);
-        if (oh == null) {
-            oh = HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(message);
-        }
+        final HeadersKnob headersKnob = message.getKnob(HeadersKnob.class);
+        final HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
 
-        HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
-        if (hrk != null && !oh.containsHeader("Cookie")) {
+        if (hrk != null && headersKnob != null && !headersKnob.containsHeader("Cookie")) {
             String[] oldValues = hrk.getHeaderValues("Cookie");
             for (String oldValue : oldValues) {
-                oh.addHeader("Cookie", oldValue);
+                headersKnob.addHeader("Cookie", oldValue);
             }
         }
 
         for (String cookieName: cookieNames) {
             // Remove the cookies with the same cookie name from OutboundHeaders
-            if (oh.containsHeader("Cookie")) {
-                String[] values = oh.getHeaderValues("Cookie");
+            if (headersKnob != null && headersKnob.containsHeader("Cookie")) {
+                String[] values = headersKnob.getHeaderValues("Cookie");
 
                 for (String value: values) {
                     if (cookieName.equals(new HttpCookie(".", "/", value).getCookieName())) {
-                        oh.removeHeader("Cookie", value);
+                        headersKnob.removeHeader("Cookie", value);
                     }
                 }
             }

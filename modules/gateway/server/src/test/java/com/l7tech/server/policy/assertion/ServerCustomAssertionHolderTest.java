@@ -41,6 +41,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.xml.parsers.ParserConfigurationException;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
@@ -447,6 +448,8 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         httpServletRequest.setMethod("GET");
         httpServletRequest.addHeader("request_header1", "request_header1_value");
         httpServletRequest.addHeader("request_header2", new String[] {"request_header2_value1", "request_header2_value2"});
+        httpServletRequest.addHeader("Cookie", testHttpCookies[0].getCookieName() + "=" + testHttpCookies[0].getCookieValue());
+        httpServletRequest.addHeader("Cookie", testHttpCookies[1].getCookieName() + "=" + testHttpCookies[1].getCookieValue());
         request.attachHttpRequestKnob(new HttpServletRequestKnob(httpServletRequest));
 
         // build the response
@@ -478,6 +481,11 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         compareCookie(cookies[1], CookieUtils.fromServletCookie(newCookies[1], false));
         compareCookie(cookies[2], CookieUtils.fromServletCookie(newCookies[2], false));
         compareCookie(cookies[3], CookieUtils.fromServletCookie(newCookies[3], false));
+
+        final HeadersKnob requestHeadersKnob = context.getRequest().getHeadersKnob();
+        final String[] cookieValues = requestHeadersKnob.getHeaderValues("Cookie");
+        assertEquals(1, cookieValues.length);
+        assertEquals(testHttpCookies[0].getCookieName() + "=" + testHttpCookies[0].getCookieValue(), cookieValues[0]);
     }
 
     /**
