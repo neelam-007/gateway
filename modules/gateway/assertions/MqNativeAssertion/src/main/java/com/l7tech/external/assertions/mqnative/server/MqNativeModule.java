@@ -393,7 +393,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
 
             MqMessageProxy mqMessage = new MqMessageProxy(mqRequestMessage);
-            gatewayRequestMessage.attachKnob(buildMqNativeKnob(soapActionValue, mqMessage), true, MqNativeKnob.class, OutboundHeadersKnob.class);
+            gatewayRequestMessage.attachKnob(buildMqNativeKnob(soapActionValue, mqMessage), true, MqNativeKnob.class);
 
             final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
             if ( hardwiredServiceGoid != null ) {
@@ -405,7 +405,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
 
             Message gatewayResponseMessage = new Message();
-            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class, OutboundHeadersKnob.class );
+            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, gatewayResponseMessage, replyExpected);
 
             boolean stealthMode = false;

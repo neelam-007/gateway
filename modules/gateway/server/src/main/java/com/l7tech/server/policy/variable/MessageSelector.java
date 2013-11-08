@@ -730,6 +730,26 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true, httpHeaderHaverKnobClasses);
     private static final HeaderSelector jmsHeaderSelector = new HeaderSelector(JMS_HEADER_PREFIX, false, jmsHeaderHaverKnobClasses);
 
+    public static class ChainedSelector implements MessageAttributeSelector {
+        private Collection<MessageAttributeSelector> delegates;
+        public ChainedSelector(@NotNull final Collection<MessageAttributeSelector> delegates) {
+            this.delegates = delegates;
+        }
+
+        @Override
+        public Selection select(final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
+            for (final MessageAttributeSelector delegate : delegates) {
+                if (delegate != null) {
+                    final Selection selection = delegate.select(context, name, handler, strict);
+                    if (selection != null) {
+                        return selection;
+                    }
+                }
+            }
+            return null;
+        }
+    }
+
     public static class HeaderSelector implements MessageAttributeSelector {
         final String prefix;
         final boolean multi;

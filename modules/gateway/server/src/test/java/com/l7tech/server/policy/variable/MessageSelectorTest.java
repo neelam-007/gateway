@@ -13,6 +13,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.management.config.monitoring.Header;
@@ -32,7 +33,10 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class MessageSelectorTest {
 
@@ -384,5 +388,51 @@ public class MessageSelectorTest {
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("onHeadersKnob", selectedValue);
+    }
+
+    @Test
+    public void chainedSelectorFirstSelectorReturnsNonNull() {
+        final ExpandVariables.Selector.Selection selection = new ExpandVariables.Selector.Selection("value");
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(selection);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertEquals(selection, chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2, never()).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorFirstSelectorReturnsNull() {
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+        final ExpandVariables.Selector.Selection selection = new ExpandVariables.Selector.Selection("value");
+        when(selector2.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(selection);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertEquals(selection, chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorNoSelection() {
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector2.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertNull(chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorNullDelegate() {
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList((MessageSelector.MessageAttributeSelector) null));
+        assertNull(chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
     }
 }

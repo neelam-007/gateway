@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -71,8 +72,12 @@ public class MqNativeModuleLoadListener {
         if (mqNativeListenerModule != null) {
             logger.log(Level.WARNING, "MQ Native active connector module is already initialized");
         } else {
-            MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + "." , true,
+            final List<MessageSelector.MessageAttributeSelector> selectors = new ArrayList<>();
+            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
+                    Arrays.<Class<? extends HasHeaders>>asList(HeadersKnob.class)));
+            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
                     Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
+            MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.ChainedSelector(selectors));
             // Create (if does not exist) all context variables used by this module
             initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
 
