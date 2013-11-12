@@ -1,0 +1,4 @@
+<project name="layer7-gateway-rest-toolkit" default="compile">
+    <property name="module.package.root" value="com\l7tech\gateway\rest"/>
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

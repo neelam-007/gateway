@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="jersey"
+		module="hk2-api"
+		revision="2.2.0"
+		status="release"
+		publication="20090911102516"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="hk2-api" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>
