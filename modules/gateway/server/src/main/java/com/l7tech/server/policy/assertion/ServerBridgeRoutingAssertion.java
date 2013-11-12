@@ -307,7 +307,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     inboundResponseKnob.setHeaderSource(hh);
                     HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
-                        HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, getAudit(), hh,
+                        HttpForwardingRuleEnforcer.handleResponseHeaders(bridgeResponse.getHeadersKnob(), getAudit(), hh,
                                                                          assertion.getResponseHeaderRules(), vars,
                                                                          varNames, context);
 
@@ -736,7 +736,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         private final Message bridgeRequest;
         private final RoutingResultListener rrl;
         private final HeaderHolder hh;
-        private final HasOutboundHeaders oh;
 
         private BRASimpleHttpClient(final GenericHttpClient client,
                                     final PolicyEnforcementContext context,
@@ -749,13 +748,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             this.bridgeRequest = bridgeRequest;
             this.rrl = rrl;
             this.hh = hh;
-            this.oh = bridgeRequest.getKnob(HttpOutboundRequestKnob.class);
         }
 
         @Override
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
-            HttpForwardingRuleEnforcer.handleRequestHeaders(oh, bridgeRequest, params, context, assertion.getRequestHeaderRules(),
+            HttpForwardingRuleEnforcer.handleRequestHeaders(bridgeRequest, params, context, assertion.getRequestHeaderRules(),
                                                             getAudit(), null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {
