@@ -300,4 +300,16 @@ public class ServerAddHeaderAssertionTest {
         assertTrue(values.contains("originalFoo"));
         assertTrue(values.contains("newFoo"));
     }
+
+    @Test
+    public void removeHeader() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        ass.setHeaderName("foo");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames().length);
+    }
 }

@@ -22,6 +22,7 @@ import static org.junit.Assert.*;
  *
  * @see {@link HttpRoutingIntegrationTest for configuration}
  */
+@Ignore
 public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTest {
     /**
      * If the route response sets a cookie, it should be passed through by default.
