@@ -1,25 +1,28 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.util.*;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.CommonMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SetVariableAssertion;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.gateway.common.audit.CommonMessages;
+import com.l7tech.server.policy.variable.ExpandVariablesTemplate;
+import com.l7tech.util.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * @author alex
@@ -34,9 +37,12 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     @Inject
     private Config config;
 
+    private final ExpandVariablesTemplate compiledTemplate;
+
     public ServerSetVariableAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         varsUsed = assertion.getVariablesUsed();
+        compiledTemplate = new ExpandVariablesTemplate(assertion.expression());
         final String dateFormat = assertion.getDateFormat();
         if (dateFormat != null && !Syntax.isAnyVariableReferenced(dateFormat) && !DateTimeConfigUtils.isTimestampFormat(dateFormat)) {
             try {
@@ -51,7 +57,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Map<String,Object> vars = context.getVariableMap(varsUsed, getAudit());
-        final String strValue = ExpandVariables.process(assertion.expression(), vars, getAudit());
+        final String strValue = compiledTemplate.process(vars, getAudit());
 
         final DataType dataType = assertion.getDataType();
         if (dataType == DataType.STRING) {
