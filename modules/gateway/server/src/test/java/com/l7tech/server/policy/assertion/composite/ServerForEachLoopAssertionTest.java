@@ -183,9 +183,12 @@ public class ServerForEachLoopAssertionTest {
     public void testNullContextVariableValue() throws Exception {
         ass.setLoopVariableName("nullvalue");
         ass.setVariablePrefix("i");
+        when(mockPec.getVariable("i.break")).thenThrow(new NoSuchVariableException("i.break", "no such"));
         checkRequest(AssertionStatus.NONE, sass(), mockPec);
         verify(mockPec, times(1)).getVariableMap(Matchers.<String[]>anyObject(), Matchers.<Audit>anyObject());
         verify(mockPec, never()).setVariable(eq("i.current"), anyObject());
+        verify(mockPec, times(1)).setVariable(eq("i.break"), anyObject());
+        verify(mockPec, times(1)).getVariable(eq("i.break"));
         verify(mockPec, times(1)).setVariable("i.iterations", 0);
         verify(mockPec, times(2)).setVariable("i.exceededlimit", false);
         verifyNoMoreInteractions(mockPec);
