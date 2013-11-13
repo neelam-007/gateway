@@ -248,14 +248,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // Send response headers
             propagateCookies(context, reqKnob, respKnob);
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
-            if (responseHeaders != null) {
-                for (final String headerName : responseHeaders.getHeaderNames()) {
-                    for (final String headerValue : responseHeaders.getHeaderValues(headerName)) {
-                        respKnob.addHeader(headerName, headerValue);
-                    }
-                }
+            if (responseHeaders == null) {
+                logger.log(Level.WARNING, "Unable to load headers on response because HeadersKnob is null.");
             }
-            respKnob.beginResponse();
+            respKnob.beginResponse(responseHeaders != null ? responseHeaders.getHeaders() : Collections.<Pair<String, Object>>emptyList());
 
             int routeStat = respKnob.getStatus();
             if (routeStat < 1) {
@@ -288,7 +284,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                String[] ct = response.getHttpResponseKnob().getHeaderValues(HEADER_CONTENT_TYPE);
+                String[] ct = responseHeaders.getHeaderValues(HEADER_CONTENT_TYPE);
                 if (ct == null || ct.length <= 0) {
                     final ContentTypeHeader mimeKnobCt = responseMimeKnob.getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();

@@ -364,17 +364,6 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectHeaderFromHeadersKnobBeforeResponseKnob() {
-        final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(new MockHttpServletResponse());
-        httpResponseKnob.addHeader("test", "onResponseKnob");
-        message.attachHttpResponseKnob(httpResponseKnob);
-        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
-        final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("onHeadersKnob", selectedValue);
-    }
-
-    @Test
     public void selectHeaderFromHeadersKnobBeforeInboundResponseKnob() {
         final HttpInboundResponseFacet facet = new HttpInboundResponseFacet();
         facet.setHeaderSource(new HttpHeadersHaver() {

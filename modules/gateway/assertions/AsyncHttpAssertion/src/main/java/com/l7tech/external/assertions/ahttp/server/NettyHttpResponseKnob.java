@@ -10,12 +10,10 @@ import org.jboss.netty.handler.codec.http.CookieEncoder;
 import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.Cookie;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
 
@@ -39,11 +37,20 @@ public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
 
     /**
      * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @deprecated use {@link #beginResponse(java.util.Collection)}.
      */
+    @Deprecated
     public void beginResponse() {
+        beginResponse(Collections.<Pair<String, Object>>emptyList());
+    }
+
+    /**
+     * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     */
+    public void beginResponse(@NotNull final Collection<Pair<String, Object>> headersToSend) {
         httpResponse.setStatus(HttpResponseStatus.valueOf(statusToSet));
 
-        for ( final Pair<String, Object> pair : getHeadersToSend() ) {
+        for ( final Pair<String, Object> pair : headersToSend ) {
             final Object value = pair.right;
             if (value instanceof Long) {
                 httpResponse.addHeader(pair.left, ISO8601Date.format(new Date((Long)value)));

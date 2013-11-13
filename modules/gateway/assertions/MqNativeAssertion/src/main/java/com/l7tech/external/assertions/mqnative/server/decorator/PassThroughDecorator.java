@@ -8,7 +8,6 @@ import com.l7tech.external.assertions.mqnative.server.MqMessageProxy;
 import com.l7tech.external.assertions.mqnative.server.MqNativeConfigException;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.HeadersKnob;
-import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;

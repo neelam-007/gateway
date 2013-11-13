@@ -10,7 +10,6 @@ import com.l7tech.external.assertions.mqnative.server.MqNativeUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.HeadersKnob;
-import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.HexUtils;

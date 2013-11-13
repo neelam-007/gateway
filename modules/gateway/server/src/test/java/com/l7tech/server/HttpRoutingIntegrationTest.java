@@ -39,7 +39,6 @@ import static org.junit.Assert.*;
  * <p/>
  * Change the {@link #BASE_URL} and {@link #PASSWORD_AUTHENTICATION} be relevant for the gateway you want to test against.
  */
-@Ignore
 public abstract class HttpRoutingIntegrationTest {
     protected static final String BASE_URL = "localhost";
     protected static final PasswordAuthentication PASSWORD_AUTHENTICATION = new PasswordAuthentication("admin", "password".toCharArray());

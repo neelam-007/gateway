@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
  *
  * @see {@link HttpRoutingIntegrationTest for configuration}
  */
-@Ignore
 public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTest {
 
     /**

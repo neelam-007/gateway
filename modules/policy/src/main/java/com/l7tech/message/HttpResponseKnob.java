@@ -11,23 +11,12 @@ import com.l7tech.common.http.HttpCookie;
  * For information recorded about the last INCOMING BACK-END RESPONSE, look for an HttpInboundResponseKnob.
  * Information about a response to be sent via HTTP.
  */
-public interface HttpResponseKnob extends OutboundHeadersKnob {
+public interface HttpResponseKnob extends MessageKnob {
     /**
      * Adds the specified {@link HttpCookie} to the response
      * @param cookie the {@link HttpCookie} to be added. Must not be null.
      */
     void addCookie(HttpCookie cookie);
-
-    /**
-     * Adds a value to the specified header.
-     *
-     * <p>Do not use this for WWW-Authenticate; see {@link #addChallenge} instead.</p>
-     * 
-     * @param name the name of the header to add a value to. Must not be null or empty.
-     * @param value the value to add. Must not be null.
-     */
-    @Override
-    void addHeader( String name, String value );
 
     /**
      * Add a WWW-Authenticate: challenge value to this response.  The actual challenge will not be sent unless

@@ -62,8 +62,6 @@ public class ServerAddHeaderAssertionTest {
         mess.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
 
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
-
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
         final HeadersKnob headersKnob = mess.getHeadersKnob();
@@ -88,8 +86,6 @@ public class ServerAddHeaderAssertionTest {
         // request headers are added to headers knob by SoapMessageProcessingServlet
         mess.getHeadersKnob().addHeader("foo", "orig");
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
-
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
@@ -179,8 +175,6 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("bar");
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
-
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
         HeadersKnob headersKnob = mess.getHeadersKnob();
@@ -207,8 +201,6 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderName("foo");
         ass.setHeaderValue("bar");
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
-
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
 
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
@@ -237,8 +229,6 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("bar");
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
 
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
-
         pec.setVariable("hname", "foo");
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
 
@@ -254,8 +244,6 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderName("foo");
         ass.setHeaderValue("${hvalue}");
         ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
-
-        assertNull(mess.getKnob(OutboundHeadersKnob.class));
 
         pec.setVariable("hvalue", "bar");
         assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));

@@ -284,12 +284,9 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     //try link header
                     String linkHeaderValue = null;
                     final String link = "Link";
-                    if (message.isHttpRequest()) {
-                        final HttpRequestKnob requestKnob = message.getHttpRequestKnob();
-                        linkHeaderValue = requestKnob.getHeaderSingleValue(link);
-                    } else if(message.isHttpResponse()){
-                        final HttpResponseKnob responseKnob = message.getHttpResponseKnob();
-                        final String[] headerValues = responseKnob.getHeaderValues(link);
+                    final HeadersKnob headersKnob = message.getHeadersKnob();
+                    if (headersKnob != null) {
+                        final String[] headerValues = headersKnob.getHeaderValues(link);
                         if(headerValues.length > 0){
                             linkHeaderValue = headerValues[0];
                         }

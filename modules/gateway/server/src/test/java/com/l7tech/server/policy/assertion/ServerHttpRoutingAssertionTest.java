@@ -309,7 +309,7 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
-        assertEquals(0, pec.getResponse().getHttpResponseKnob().getHeaderValues("content-encoding").length);
+        assertEquals(0, pec.getResponse().getHeadersKnob().getHeaderValues("content-encoding").length);
     }
 
     @Test

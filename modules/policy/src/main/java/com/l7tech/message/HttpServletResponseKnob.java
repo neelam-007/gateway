@@ -4,10 +4,12 @@ import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,11 +33,21 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
 
     /**
      * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @deprecated use {@link #beginResponse(java.util.Collection)}.
      */
+    @Deprecated
     public void beginResponse() {
+        beginResponse(Collections.<Pair<String, Object>>emptyList());
+    }
+
+    /**
+     * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @param headersToSend the collection of headers to send with the response.
+     */
+    public void beginResponse(@NotNull final Collection<Pair<String, Object>> headersToSend) {
         response.setStatus(statusToSet);
-        
-        for ( final Pair<String, Object> pair : getHeadersToSend() ) {
+
+        for ( final Pair<String, Object> pair : headersToSend ) {
             final Object value = pair.right;
             if (value instanceof Long) {
                 response.addDateHeader(pair.left, (Long)value);
