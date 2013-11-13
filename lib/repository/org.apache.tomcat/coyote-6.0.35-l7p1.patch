@@ -1,6 +1,6 @@
 Index: java/org/apache/catalina/connector/Connector.java
 ===================================================================
---- java/org/apache/catalina/connector/Connector.java	(revision 1541646)
+--- java/org/apache/catalina/connector/Connector.java	(revision 1541661)
 +++ java/org/apache/catalina/connector/Connector.java	(working copy)
 @@ -126,7 +126,12 @@
       */
@@ -32,7 +32,7 @@ Index: java/org/apache/catalina/connector/Connector.java
       *
 Index: java/org/apache/catalina/connector/CoyoteAdapter.java
 ===================================================================
---- java/org/apache/catalina/connector/CoyoteAdapter.java	(revision 1541646)
+--- java/org/apache/catalina/connector/CoyoteAdapter.java	(revision 1541661)
 +++ java/org/apache/catalina/connector/CoyoteAdapter.java	(working copy)
 @@ -252,6 +252,8 @@
      	                org.apache.coyote.Response res)
@@ -45,7 +45,7 @@ Index: java/org/apache/catalina/connector/CoyoteAdapter.java
  
 Index: java/org/apache/catalina/core/StandardContextValve.java
 ===================================================================
---- java/org/apache/catalina/core/StandardContextValve.java	(revision 1541646)
+--- java/org/apache/catalina/core/StandardContextValve.java	(revision 1541661)
 +++ java/org/apache/catalina/core/StandardContextValve.java	(working copy)
 @@ -114,16 +114,6 @@
      public final void invoke(Request request, Response response)
@@ -66,7 +66,7 @@ Index: java/org/apache/catalina/core/StandardContextValve.java
          while (context.getPaused()) {
 Index: java/org/apache/coyote/Response.java
 ===================================================================
---- java/org/apache/coyote/Response.java	(revision 1541646)
+--- java/org/apache/coyote/Response.java	(revision 1541661)
 +++ java/org/apache/coyote/Response.java	(working copy)
 @@ -20,6 +20,7 @@
  import java.io.IOException;
@@ -76,15 +76,7 @@ Index: java/org/apache/coyote/Response.java
  import org.apache.tomcat.util.buf.ByteChunk;
  import org.apache.tomcat.util.http.MimeHeaders;
  
-@@ -50,7 +51,6 @@
-      */
-     private static Locale DEFAULT_LOCALE = Locale.getDefault();
- 
--
-     // ----------------------------------------------------- Instance Variables
- 
-     /**
-@@ -89,6 +89,9 @@
+@@ -89,6 +90,9 @@
      protected boolean commited = false;
  
  
@@ -94,7 +86,7 @@ Index: java/org/apache/coyote/Response.java
      /**
       * Action hook.
       */
-@@ -226,7 +229,14 @@
+@@ -226,7 +230,14 @@
          this.commited = v;
      }
  
@@ -109,16 +101,16 @@ Index: java/org/apache/coyote/Response.java
      // -----------------Error State --------------------
  
  
-@@ -523,8 +533,12 @@
+@@ -523,7 +534,11 @@
          if (ret != null 
              && characterEncoding != null
              && charsetSet) {
+-            ret = ret + ";charset=" + characterEncoding;
 +            if (connector != null && !connector.isTrimContentType()) {
-             ret = ret + ";charset=" + characterEncoding;
++            ret = ret + "; charset=" + characterEncoding;
 +            } else {
 +                ret = ret + ";charset=" + characterEncoding;
++            }
          }
-+        }
  
          return ret;
-     }
