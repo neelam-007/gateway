@@ -171,12 +171,15 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
     }
 
     public void setBase64Expression(String base64Expression) {
+        expressionString = null;
         _base64Expression = base64Expression;
     }
 
     public String expression() {
+        if (expressionString != null)
+            return expressionString;
         try {
-            return new String(HexUtils.decodeBase64(_base64Expression, true), Charsets.UTF8);
+            return expressionString = new String(HexUtils.decodeBase64(_base64Expression, true), Charsets.UTF8);
         } catch (Exception e) {
             return _base64Expression;
         }
@@ -243,6 +246,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         return _meta;
     }
 
+    private transient String expressionString;
     private final static String baseName = "Set Context Variable";
     private static final int MAX_DISPLAY_LENGTH = 60;
     
