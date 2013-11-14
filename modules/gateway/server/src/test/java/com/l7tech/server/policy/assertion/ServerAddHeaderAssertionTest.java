@@ -2,14 +2,19 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.message.*;
+import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -302,14 +307,118 @@ public class ServerAddHeaderAssertionTest {
     }
 
     @Test
+    public void addHeaderEmptyValue() throws Exception {
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("");
+        final ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
+        assertEquals(1, headers.length);
+        assertEquals(StringUtils.EMPTY, headers[0]);
+    }
+
+    @Test
+    public void addHeaderNullValue() throws Exception {
+        ass.setHeaderName("foo");
+        ass.setHeaderValue(null);
+        final ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+        final HeadersKnob headersKnob = mess.getHeadersKnob();
+        assertNotNull(headersKnob);
+        final String[] headers = headersKnob.getHeaderValues("foo");
+        assertEquals(1, headers.length);
+        assertNull(headers[0]);
+    }
+
+    @Test
     public void removeHeader() throws Exception {
         mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "bar2");
         ass.setHeaderName("foo");
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
         serverAssertion.checkRequest(pec);
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(0, headersKnob.getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderIgnoresValue() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "bar2");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("shouldBeIgnored");
+        ass.setMatchValueForRemoval(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderWithValue() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "bar2");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("bar");
+        ass.setMatchValueForRemoval(true);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] fooValues = headersKnob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("bar2", fooValues[0]);
+    }
+
+    @Test
+    public void removeHeaderWithEmptyValue() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("");
+        ass.setMatchValueForRemoval(true);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] fooValues = headersKnob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("bar", fooValues[0]);
+    }
+
+    @Test
+    public void removeHeaderNotFound() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        ass.setHeaderName("notFound");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
+    }
+
+    @Test(expected = PolicyAssertionException.class)
+    public void nullHeaderName() throws Exception {
+        ass.setHeaderName(null);
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void messageNotInitialized() throws Exception {
+        new ServerAddHeaderAssertion(ass).checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()));
     }
 }

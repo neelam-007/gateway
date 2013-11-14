@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Supporting implementation of HeadersKnob which stores the headers in a collection.
@@ -53,6 +55,9 @@ public class HeadersKnobSupport implements HeadersKnob {
                 toRemove.add(header);
             }
         }
+        if (toRemove.isEmpty()) {
+            logger.log(Level.FINE, "No header found with name: " + name);
+        }
         headers.removeAll(toRemove);
     }
 
@@ -63,6 +68,9 @@ public class HeadersKnobSupport implements HeadersKnob {
             if (header.getKey().equalsIgnoreCase(name) && ObjectUtils.equals(value, header.getValue())) {
                 toRemove.add(header);
             }
+        }
+        if (toRemove.isEmpty()) {
+            logger.log(Level.FINE, "No header found with name: " + name + " and value: " + value);
         }
         headers.removeAll(toRemove);
     }
@@ -83,4 +91,5 @@ public class HeadersKnobSupport implements HeadersKnob {
     }
 
     private Collection<Pair<String, Object>> headers = new ArrayList<>();
+    private static final Logger logger = Logger.getLogger(HeadersKnobSupport.class.getName());
 }

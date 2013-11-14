@@ -204,6 +204,22 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
+    public void removeHeaderNotFound() {
+        knob.addHeader("foo", "bar");
+        knob.removeHeader("notFound");
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderWithValueNotFound() {
+        knob.addHeader("foo", "bar");
+        knob.removeHeader("notFound", "notFound");
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
     public void getHeaders() {
         knob.addHeader("foo", "bar");
         final Collection<Pair<String, Object>> headers = knob.getHeaders();
