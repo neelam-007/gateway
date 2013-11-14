@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="RadiusAssertion"
+        status="integration"
+	>
+	</info>
+	<configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+	</configurations>
+	<publications>
+		<artifact name="RadiusAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="net.jradius" name="jradius-core" rev="1.1.4" force="true" conf="core"/>
+        <dependency org="net.jradius" name="jradius-dictionary" rev="1.1.4" force="true" conf="core"/>
+        <dependency org="net.jradius" name="jradius-extended" rev="1.1.4" force="true" conf="core"/>
+        <dependency org="gnu.crypto" name="gnu-crypto" rev="2.0.1" force="true" conf="core"/>
+        <!--
+        <dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="core"/>
+        -->
+	</dependencies>
+</ivy-module>

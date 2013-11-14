@@ -148,7 +148,7 @@ public final class ExpandVariables {
         if (strict) throw new VariableNameSyntaxException(nonExistentVariable);
     }
 
-    static interface Selector<T> {
+    public static interface Selector<T> {
         static final Selection NOT_PRESENT = new Selection(null, null);
         static class Selection {
             private final Object value;
@@ -347,10 +347,15 @@ public final class ExpandVariables {
         while (remainingName != null && remainingName.length() > 0) {
             // Try to find a Selector for values of this type
             Selector selector = null;
-            for ( Selector<?> sel : selectors ) {
-                if (sel.getContextObjectClass().isAssignableFrom( contextValue.getClass() )) {
-                    selector = sel;
-                    break;
+
+            if (contextValue instanceof Selector) {
+                selector = (Selector) contextValue;
+            } else {
+                for ( Selector<?> sel : selectors ) {
+                    if (sel.getContextObjectClass().isAssignableFrom( contextValue.getClass() )) {
+                        selector = sel;
+                        break;
+                    }
                 }
             }
 

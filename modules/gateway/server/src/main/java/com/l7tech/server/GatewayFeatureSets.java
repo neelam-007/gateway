@@ -759,6 +759,12 @@ public class GatewayFeatureSets {
                 "Sophos AntiMalware Assertion",
                 mass("assertion:Sophos"));
 
+        GatewayFeatureSet radiusAssertions =
+                fsr("set:Radius:Assertions",
+                        "The necessary assertions to enable Radius authentication functionality",
+                        mass("assertion:RadiusAuthenticate"));
+
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -881,6 +887,7 @@ public class GatewayFeatureSets {
             fs(sophosAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
+            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
@@ -944,6 +951,7 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
@@ -1010,6 +1018,7 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =

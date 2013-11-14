@@ -1230,5 +1230,10 @@ public class AssertionMessages extends Messages {
     public static final M SITEMINDER_FINE = m(10101, Level.FINE, "SiteMinder {0} assertion: {1}");
     public static final M SITEMINDER_WARNING = m(10102, Level.WARNING, "SiteMinder {0} assertion: {1}");
 
+    //Radius Assertion
+    public static final M RADIUS_AUTH_ERROR = m(10200, Level.WARNING, "Radius Server Error: {0}");
+    public static final M RADIUS_AUTH_NO_CREDENTIAL = m(10201, Level.WARNING, "No credentials found!");
+
+
     // Highest ID reserved for AssertionMessages = 99999
 }
