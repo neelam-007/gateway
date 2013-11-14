@@ -35,12 +35,29 @@ public interface HeadersKnob extends HasHeaders, MessageKnob {
     void removeHeader(@NotNull final String name);
 
     /**
+     * Removes all headers with the given name.
+     *
+     * @param name          the header name.
+     * @param caseSensitive set to true for case sensitive name matching.
+     */
+    void removeHeader(@NotNull final String name, final boolean caseSensitive);
+
+    /**
      * Removes all headers with the given name (case insensitive) and value (case sensitive).
      *
      * @param name  the header name.
      * @param value the header value.
      */
     void removeHeader(@NotNull final String name, @Nullable final Object value);
+
+    /**
+     * Removes all headers with the given name and value (case sensitive).
+     *
+     * @param name          the header name.
+     * @param value         the header value.
+     * @param caseSensitive set to true for case sensitive name matching.
+     */
+    void removeHeader(@NotNull final String name, @Nullable final Object value, final boolean caseSensitive);
 
     /**
      * @param name the header name to look for (case insensitive).

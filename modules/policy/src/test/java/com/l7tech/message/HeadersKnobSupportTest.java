@@ -186,7 +186,15 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
-    public void removeHeaderWithValueIgnoresCase() {
+    public void removeHeaderWithValueCaseSensitive() {
+        knob.addHeader("foo", "bar");
+        knob.removeHeader("foo", "BAR");
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderWithValueIgnoresNameCase() {
         knob.addHeader("foo", "bar");
         knob.addHeader("foo", "bar2");
         knob.removeHeader("FOO", "bar2");
@@ -232,5 +240,49 @@ public class HeadersKnobSupportTest {
     @Test(expected = UnsupportedOperationException.class)
     public void getHeadersUnmodifiable() {
         knob.getHeaders().add(new Pair<String, Object>("key", "value"));
+    }
+
+    @Test
+    public void removeHeaderCaseSensitive() {
+        knob.addHeader("foo", "bar");
+        knob.removeHeader("Foo", true);
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueCaseSensitive() {
+        knob.addHeader("foo", "bar");
+        knob.removeHeader("Foo", "bar", true);
+        assertEquals(1, knob.getHeaderValues("foo").length);
+        assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueMultivalued() {
+        knob.addHeader("foo", "value1,value2,value3");
+        knob.removeHeader("foo", "value2");
+        final String[] fooValues = knob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("value1,value3", fooValues[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueMultivaluedTrimsWhitespace() {
+        // whitespace after the comma separator
+        knob.addHeader("foo", "value1, value2, value3");
+        knob.removeHeader("foo", "value2");
+        final String[] fooValues = knob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("value1,value3", fooValues[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueMultivaluedNotFound() {
+        knob.addHeader("foo", "value1, value2");
+        knob.removeHeader("foo", "doesNotExist");
+        final String[] fooValues = knob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("value1,value2", fooValues[0]);
     }
 }

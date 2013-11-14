@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.HeadersKnobSupport;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -13,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * Add a header to a message.
@@ -41,21 +43,10 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
 
             switch (assertion.getOperation()) {
                 case ADD:
-                    if (assertion.isRemoveExisting()) {
-                        headersKnob.setHeader(name, value);
-                    } else {
-                        headersKnob.addHeader(name, value);
-                    }
-                    logger.log(Level.FINEST, "Added header with name=" + name + " and value=" + value);
+                    doAdd(headersKnob, name, value);
                     break;
                 case REMOVE:
-                    if (assertion.isMatchValueForRemoval()) {
-                        headersKnob.removeHeader(name, value);
-                        logger.log(Level.FINEST, "Removed header with name=" + name + " and value=" + value);
-                    } else {
-                        headersKnob.removeHeader(name);
-                        logger.log(Level.FINEST, "Removed header with name=" + name);
-                    }
+                    doRemove(headersKnob, name, value);
                     break;
                 default:
                     final String msg = "Unsupported operation: " + assertion.getOperation();
@@ -67,5 +58,61 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private void doAdd(final HeadersKnob headersKnob, final String name, final String value) {
+        if (assertion.isRemoveExisting()) {
+            headersKnob.setHeader(name, value);
+        } else {
+            headersKnob.addHeader(name, value);
+        }
+        logger.log(Level.FINEST, "Added header with name=" + name + " and value=" + value);
+    }
+
+    private void doRemove(final HeadersKnob headersKnob, final String name, final String value) {
+        if (!assertion.isMatchValueForRemoval()) {
+            // don't care about header value
+            if (assertion.isEvaluateNameAsExpression()) {
+                final Pattern namePattern = Pattern.compile(name);
+                for (final String headerName : headersKnob.getHeaderNames()) {
+                    if (namePattern.matcher(headerName).matches()) {
+                        // when using an expression, we must match case
+                        headersKnob.removeHeader(headerName, true);
+                        logger.log(Level.FINEST, "Removed header with name=" + headerName);
+                    }
+                }
+            } else {
+                headersKnob.removeHeader(name);
+                logger.log(Level.FINEST, "Removed header with name=" + name);
+            }
+        } else {
+            // must match value in order to remove
+            for (final String headerName : headersKnob.getHeaderNames()) {
+                if ((!assertion.isEvaluateNameAsExpression() && name.equalsIgnoreCase(headerName)) ||
+                        Pattern.compile(name).matcher(headerName).matches()) {
+                    // name matches
+                    for (final String headerValue : headersKnob.getHeaderValues(headerName)) {
+                        if (headerValue.contains(HeadersKnobSupport.VALUE_SEPARATOR)) {
+                            // multivalued
+                            final String[] subValues = StringUtils.split(headerValue, HeadersKnobSupport.VALUE_SEPARATOR);
+                            for (final String subValue : subValues) {
+                                removeByValue(headersKnob, value, headerName, subValue.trim());
+                            }
+                        }
+                        removeByValue(headersKnob, value, headerName, headerValue);
+                    }
+                }
+            }
+        }
+    }
+
+    private void removeByValue(final HeadersKnob headersKnob, final String valueToMatch, final String headerName, final String headerValue) {
+        if ((!assertion.isEvaluateValueExpression() && valueToMatch.equalsIgnoreCase(headerValue)) ||
+                Pattern.compile(valueToMatch).matcher(headerValue).matches()) {
+            // value matches
+            // when using an expression, we must match case
+            headersKnob.removeHeader(headerName, headerValue, true);
+            logger.log(Level.FINEST, "Removed header with name=" + headerName + " and value=" + headerValue);
+        }
     }
 }

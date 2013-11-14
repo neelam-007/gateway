@@ -15,6 +15,8 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
     private JRadioButton addRadioButton;
     private JRadioButton removeRadioButton;
     private JCheckBox matchValueCheckBox;
+    private JCheckBox nameExpressionCheckBox;
+    private JCheckBox valueExpressionCheckBox;
 
     public AddHeaderAssertionDialog(Window owner, AddHeaderAssertion assertion) {
         super(assertion.getClass(), owner, assertion, true);
@@ -31,6 +33,8 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
         headerNameTextField.setText(assertion.getHeaderName() == null ? "" : assertion.getHeaderName());
         headerValueTextField.setText(assertion.getHeaderValue() == null ? "" : assertion.getHeaderValue());
         replaceExistingValuesCheckBox.setSelected(assertion.isRemoveExisting());
+        nameExpressionCheckBox.setSelected(assertion.isEvaluateNameAsExpression());
+        valueExpressionCheckBox.setSelected(assertion.isEvaluateValueExpression());
     }
 
     @Override
@@ -63,6 +67,8 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
 
         assertion.setRemoveExisting(replaceExistingValuesCheckBox.isSelected());
         assertion.setMatchValueForRemoval(matchValueCheckBox.isSelected());
+        assertion.setEvaluateNameAsExpression(nameExpressionCheckBox.isSelected());
+        assertion.setEvaluateValueExpression(valueExpressionCheckBox.isSelected());
         return assertion;
     }
 
@@ -82,10 +88,13 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
         });
         addRadioButton.addActionListener(listener);
         removeRadioButton.addActionListener(listener);
+        matchValueCheckBox.addActionListener(listener);
     }
 
     private void enableDisable() {
         replaceExistingValuesCheckBox.setEnabled(addRadioButton.isSelected());
         matchValueCheckBox.setEnabled(removeRadioButton.isSelected());
+        nameExpressionCheckBox.setEnabled(removeRadioButton.isSelected());
+        valueExpressionCheckBox.setEnabled(removeRadioButton.isSelected() && matchValueCheckBox.isSelected());
     }
 }

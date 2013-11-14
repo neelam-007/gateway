@@ -5,7 +5,6 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -19,6 +18,8 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     private String headerValue;
     private boolean removeExisting;
     private boolean matchValueForRemoval;
+    private boolean evaluateNameAsExpression;
+    private boolean evaluateValueExpression;
 
     public String getHeaderName() {
         return headerName;
@@ -87,8 +88,55 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
         this.matchValueForRemoval = matchValueForRemoval;
     }
 
+    /**
+     * Only applies to {@link Operation.REMOVE}
+     *
+     * @return true if the header name should be treated as a regular expression.
+     */
+    public boolean isEvaluateNameAsExpression() {
+        return evaluateNameAsExpression;
+    }
+
+    /**
+     * Only applies to {@link Operation.REMOVE}
+     *
+     * @param evaluateNameAsExpression set to true if the header name should be treated as a regular expression.
+     */
+    public void setEvaluateNameAsExpression(final boolean evaluateNameAsExpression) {
+        this.evaluateNameAsExpression = evaluateNameAsExpression;
+    }
+
+    /**
+     * Only applies to {@link Operation.REMOVE}
+     *
+     * @return true if the header value should be treated as a regular expression.
+     */
+    public boolean isEvaluateValueExpression() {
+        return evaluateValueExpression;
+    }
+
+    /**
+     * Only applies to {@link Operation.REMOVE}
+     *
+     * @param evaluateValueExpression set to true if the header value should be treated as a regular expression.
+     */
+    public void setEvaluateValueExpression(final boolean evaluateValueExpression) {
+        this.evaluateValueExpression = evaluateValueExpression;
+    }
+
     public static enum Operation {
-        ADD, REMOVE;
+        ADD("Add"), REMOVE("Remove");
+
+        private Operation(@NotNull final String name) {
+            this.name = name;
+        }
+
+        @NotNull
+        public String getName() {
+            return name;
+        }
+
+        private final String name;
     }
 
     @Override
@@ -101,12 +149,20 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
 
     private static final AssertionNodeNameFactory<AddHeaderAssertion> nodeNameFactory = new AssertionNodeNameFactory<AddHeaderAssertion>() {
         @Override
-        public String getAssertionName(AddHeaderAssertion assertion, boolean decorate) {
-            if(!decorate) return baseName;
+        public String getAssertionName(final AddHeaderAssertion assertion, final boolean decorate) {
+            if (!decorate) return baseName;
 
-            StringBuilder sb = new StringBuilder(baseName);
-            sb.append(" ").append(assertion.getHeaderName()).append(": ").append(assertion.getHeaderValue());
-            if (assertion.isRemoveExisting()) sb.append(" (replace existing)");
+            StringBuilder sb = new StringBuilder(assertion.getOperation().getName() + " Header");
+            if (assertion.getOperation() == Operation.REMOVE) {
+                // possible to remove more than one header
+                sb.append("(s)");
+            }
+            sb.append(" ").append(assertion.getHeaderName());
+            if (assertion.getOperation() == Operation.ADD || (assertion.getOperation() == Operation.REMOVE && assertion.isMatchValueForRemoval())) {
+                sb.append(":").append(assertion.getHeaderValue());
+            }
+            if (assertion.getOperation() == Operation.ADD && assertion.isRemoveExisting())
+                sb.append(" (replace existing)");
             return AssertionUtils.decorateName( assertion, sb );
         }
     };

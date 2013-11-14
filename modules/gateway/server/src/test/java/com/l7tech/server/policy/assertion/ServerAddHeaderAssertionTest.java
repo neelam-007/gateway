@@ -399,6 +399,23 @@ public class ServerAddHeaderAssertionTest {
     }
 
     @Test
+    public void removeHeaderWithValueMultivalued() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar, bar2");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("bar");
+        ass.setMatchValueForRemoval(true);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
+        serverAssertion.checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] fooValues = headersKnob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("bar2", fooValues[0]);
+    }
+
+    @Test
     public void removeHeaderNotFound() throws Exception {
         mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
@@ -420,5 +437,99 @@ public class ServerAddHeaderAssertionTest {
     @Test(expected = IllegalStateException.class)
     public void messageNotInitialized() throws Exception {
         new ServerAddHeaderAssertion(ass).checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()));
+    }
+
+    @Test
+    public void removeHeaderNameExpression() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "bar2");
+        mess.getHeadersKnob().addHeader("Foo", "caseNoMatch");
+        mess.getHeadersKnob().addHeader("doesNotMatch", "shouldNotBeRemoved");
+        ass.setHeaderName("f[a-zA-Z0-9_]*");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setEvaluateNameAsExpression(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(2, headersKnob.getHeaderNames().length);
+        final String[] upperCaseFooValues = headersKnob.getHeaderValues("Foo");
+        assertEquals(1, upperCaseFooValues.length);
+        assertEquals("caseNoMatch", upperCaseFooValues[0]);
+        assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("doesNotMatch")[0]);
+    }
+
+    @Test
+    public void removeHeaderValueExpression() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "Bar(caseNoMatch)");
+        mess.getHeadersKnob().addHeader("foo", "valNoMatch");
+        mess.getHeadersKnob().addHeader("Foo", "barz");
+        mess.getHeadersKnob().addHeader("nameNoMatch", "shouldNotBeRemoved");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setEvaluateValueExpression(true);
+        ass.setMatchValueForRemoval(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(2, headersKnob.getHeaderNames().length);
+        final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
+        assertEquals(2, fooValues.size());
+        assertTrue(fooValues.contains("valNoMatch"));
+        assertTrue(fooValues.contains("Bar(caseNoMatch)"));
+        assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("nameNoMatch")[0]);
+    }
+
+    @Test
+    public void removeHeaderValueExpressionMultivalued() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "Bar(caseNoMatch), bar, valNoMatch");
+        mess.getHeadersKnob().addHeader("Foo", "barz");
+        mess.getHeadersKnob().addHeader("nameNoMatch", "shouldNotBeRemoved");
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setEvaluateValueExpression(true);
+        ass.setMatchValueForRemoval(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(2, headersKnob.getHeaderNames().length);
+        final String[] fooValues = headersKnob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("Bar(caseNoMatch),valNoMatch", fooValues[0]);
+        assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("nameNoMatch")[0]);
+    }
+
+    @Test
+    public void removeHeaderNameAndValueExpressions() throws Exception {
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
+        mess.getHeadersKnob().addHeader("foo", "bar");
+        mess.getHeadersKnob().addHeader("foo", "bar2");
+        mess.getHeadersKnob().addHeader("foo", "valNoMatch");
+        mess.getHeadersKnob().addHeader("Foo", "caseNoMatch");
+        mess.getHeadersKnob().addHeader("doesNotMatch", "shouldNotBeRemoved");
+        ass.setHeaderName("f[a-zA-Z0-9_]*");
+        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setEvaluateNameAsExpression(true);
+        ass.setEvaluateValueExpression(true);
+        ass.setMatchValueForRemoval(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
+        assertEquals(3, headerNames.size());
+        assertTrue(headerNames.contains("foo"));
+        assertTrue(headerNames.contains("Foo"));
+        assertTrue(headerNames.contains("doesNotMatch"));
+        final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
+        assertEquals(2, fooValues.size());
+        assertTrue(fooValues.contains("valNoMatch"));
+        assertTrue(fooValues.contains("caseNoMatch"));
+        assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("doesNotMatch")[0]);
     }
 }

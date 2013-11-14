@@ -2,13 +2,11 @@ package com.l7tech.message;
 
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,6 +14,9 @@ import java.util.logging.Logger;
  * Supporting implementation of HeadersKnob which stores the headers in a collection.
  */
 public class HeadersKnobSupport implements HeadersKnob {
+
+    public static final String VALUE_SEPARATOR = ",";
+
     @Override
     public String[] getHeaderValues(@NotNull final String name) {
         final Collection<String> valuesAsString = new ArrayList<>();
@@ -44,14 +45,19 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public void addHeader(@NotNull final String name, @Nullable final Object value) {
-        headers.add(new Pair<String, Object>(name, value));
+        headers.add(new Pair(name, value));
     }
 
     @Override
     public void removeHeader(@NotNull final String name) {
+        removeHeader(name, false);
+    }
+
+    @Override
+    public void removeHeader(@NotNull String name, boolean caseSensitive) {
         final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equalsIgnoreCase(name)) {
+            if (nameMatches(name, caseSensitive, header.getKey())) {
                 toRemove.add(header);
             }
         }
@@ -63,16 +69,40 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public void removeHeader(@NotNull final String name, @Nullable final Object value) {
+        removeHeader(name, value, false);
+    }
+
+    @Override
+    public void removeHeader(@NotNull String name, @Nullable Object value, boolean caseSensitive) {
         final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
+        final Collection<Pair<String, Object>> replacements = new ArrayList<>();
         for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equalsIgnoreCase(name) && ObjectUtils.equals(value, header.getValue())) {
-                toRemove.add(header);
+            if ((nameMatches(name, caseSensitive, header.getKey()))) {
+                if (header.getValue() instanceof String && ((String) header.getValue()).contains(VALUE_SEPARATOR)) {
+                    // handle comma-separated multiple values
+                    final List<String> subValues = new ArrayList<>();
+                    for (final String token : StringUtils.split((String) header.getValue(), VALUE_SEPARATOR)) {
+                        subValues.add(token.trim());
+                    }
+                    final List<String> subValuesToRemove = new ArrayList<>();
+                    for (final String subValue : subValues) {
+                        if (value.equals(subValue)) {
+                            subValuesToRemove.add(subValue);
+                        }
+                    }
+                    subValues.removeAll(subValuesToRemove);
+                    toRemove.add(header);
+                    replacements.add(new Pair<String, Object>(header.getKey(), StringUtils.join(subValues, VALUE_SEPARATOR)));
+                } else if (ObjectUtils.equals(value, header.getValue())) {
+                    toRemove.add(header);
+                }
             }
         }
         if (toRemove.isEmpty()) {
             logger.log(Level.FINE, "No header found with name: " + name + " and value: " + value);
         }
         headers.removeAll(toRemove);
+        headers.addAll(replacements);
     }
 
     @Override
@@ -88,6 +118,11 @@ public class HeadersKnobSupport implements HeadersKnob {
     @Override
     public Collection<Pair<String, Object>> getHeaders() {
         return Collections.unmodifiableCollection(headers);
+    }
+
+    private boolean nameMatches(final String toMatch, final boolean caseSensitive, final String headerName) {
+        return (!caseSensitive && headerName.equalsIgnoreCase(toMatch)) ||
+                (caseSensitive && headerName.equals(toMatch));
     }
 
     private Collection<Pair<String, Object>> headers = new ArrayList<>();
