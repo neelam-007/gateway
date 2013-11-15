@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HeadersKnobSupport;
 import com.l7tech.message.Message;
@@ -66,7 +67,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         } else {
             headersKnob.addHeader(name, value);
         }
-        logger.log(Level.FINEST, "Added header with name=" + name + " and value=" + value);
+        logAndAudit(AssertionMessages.HEADER_ADDED, name, value);
     }
 
     private void doRemove(final HeadersKnob headersKnob, final String name, final String value) {
@@ -78,12 +79,12 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                     if (namePattern.matcher(headerName).matches()) {
                         // when using an expression, we must match case
                         headersKnob.removeHeader(headerName, true);
-                        logger.log(Level.FINEST, "Removed header with name=" + headerName);
+                        logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, headerName);
                     }
                 }
-            } else {
+            } else if (headersKnob.containsHeader(name)){
                 headersKnob.removeHeader(name);
-                logger.log(Level.FINEST, "Removed header with name=" + name);
+                logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, name);
             }
         } else {
             // must match value in order to remove
@@ -112,7 +113,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             // value matches
             // when using an expression, we must match case
             headersKnob.removeHeader(headerName, headerValue, true);
-            logger.log(Level.FINEST, "Removed header with name=" + headerName + " and value=" + headerValue);
+            logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE, headerName, headerValue);
         }
     }
 }
