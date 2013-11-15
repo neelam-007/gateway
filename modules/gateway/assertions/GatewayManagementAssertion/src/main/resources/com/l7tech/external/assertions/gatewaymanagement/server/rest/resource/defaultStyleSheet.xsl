@@ -5,7 +5,7 @@
                 version="1.0">
     <xsl:output method="html"/>
 
-    <xsl:template match="l7:Reference[@xlink:type = 'simple' and @xlink:href]">
+    <xsl:template match="l7:reference[@xlink:type = 'simple' and @xlink:href]">
         <li><a href="{@xlink:href}"><xsl:apply-templates/></a></li>
     </xsl:template>
 
