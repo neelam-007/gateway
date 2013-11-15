@@ -96,5 +96,6 @@ public class AddHeaderAssertionDialog extends AssertionPropertiesOkCancelSupport
         matchValueCheckBox.setEnabled(removeRadioButton.isSelected());
         nameExpressionCheckBox.setEnabled(removeRadioButton.isSelected());
         valueExpressionCheckBox.setEnabled(removeRadioButton.isSelected() && matchValueCheckBox.isSelected());
+        headerValueTextField.setEnabled(addRadioButton.isSelected() || (removeRadioButton.isSelected() && matchValueCheckBox.isSelected()));
     }
 }

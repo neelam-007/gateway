@@ -30,6 +30,8 @@ import static org.junit.Assert.*;
  * Unit tests for {@link ServerAddHeaderAssertion}.
  */
 public class ServerAddHeaderAssertionTest {
+    private static final String STARTS_WITH_F = "f[a-zA-Z0-9_]*";
+    private static final String STARTS_WITH_B = "b[a-zA-Z0-9_]*";
     AddHeaderAssertion ass = new AddHeaderAssertion();
     Message mess = new Message();
     PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
@@ -275,7 +277,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void replaceHeaderOnHeadersKnob() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "originalFoo");
         ass.setHeaderName("foo");
         ass.setHeaderValue("newFoo");
@@ -291,7 +292,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void addToHeaderOnHeadersKnob() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "originalFoo");
         ass.setHeaderName("foo");
         ass.setHeaderValue("newFoo");
@@ -336,7 +336,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeader() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "bar2");
         ass.setHeaderName("foo");
@@ -349,7 +348,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderIgnoresValue() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "bar2");
         ass.setHeaderName("foo");
@@ -364,7 +362,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderWithValue() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "bar2");
         ass.setHeaderName("foo");
@@ -382,7 +379,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderWithEmptyValue() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "");
         ass.setHeaderName("foo");
@@ -400,7 +396,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderWithValueMultivalued() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar, bar2");
         ass.setHeaderName("foo");
         ass.setHeaderValue("bar");
@@ -417,7 +412,6 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderNotFound() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         ass.setHeaderName("notFound");
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
@@ -441,12 +435,11 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderNameExpression() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "bar2");
         mess.getHeadersKnob().addHeader("Foo", "caseNoMatch");
         mess.getHeadersKnob().addHeader("doesNotMatch", "shouldNotBeRemoved");
-        ass.setHeaderName("f[a-zA-Z0-9_]*");
+        ass.setHeaderName(STARTS_WITH_F);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateNameAsExpression(true);
 
@@ -460,15 +453,27 @@ public class ServerAddHeaderAssertionTest {
     }
 
     @Test
+    public void removeHeaderNameExpressionAll() throws Exception {
+        mess.getHeadersKnob().addHeader("foo", "bar, bar2");
+        mess.getHeadersKnob().addHeader("abc", "123");
+        ass.setHeaderName(".*");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setEvaluateNameAsExpression(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames().length);
+    }
+
+    @Test
     public void removeHeaderValueExpression() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "Bar(caseNoMatch)");
         mess.getHeadersKnob().addHeader("foo", "valNoMatch");
         mess.getHeadersKnob().addHeader("Foo", "barz");
         mess.getHeadersKnob().addHeader("nameNoMatch", "shouldNotBeRemoved");
         ass.setHeaderName("foo");
-        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setHeaderValue(STARTS_WITH_B);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
@@ -485,12 +490,11 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderValueExpressionMultivalued() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "Bar(caseNoMatch), bar, valNoMatch");
         mess.getHeadersKnob().addHeader("Foo", "barz");
         mess.getHeadersKnob().addHeader("nameNoMatch", "shouldNotBeRemoved");
         ass.setHeaderName("foo");
-        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setHeaderValue(STARTS_WITH_B);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
@@ -506,14 +510,13 @@ public class ServerAddHeaderAssertionTest {
 
     @Test
     public void removeHeaderNameAndValueExpressions() throws Exception {
-        mess.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
         mess.getHeadersKnob().addHeader("foo", "bar");
         mess.getHeadersKnob().addHeader("foo", "bar2");
         mess.getHeadersKnob().addHeader("foo", "valNoMatch");
         mess.getHeadersKnob().addHeader("Foo", "caseNoMatch");
         mess.getHeadersKnob().addHeader("doesNotMatch", "shouldNotBeRemoved");
-        ass.setHeaderName("f[a-zA-Z0-9_]*");
-        ass.setHeaderValue("b[a-zA-Z0-9_]*");
+        ass.setHeaderName(STARTS_WITH_F);
+        ass.setHeaderValue(STARTS_WITH_B);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateNameAsExpression(true);
         ass.setEvaluateValueExpression(true);
@@ -531,5 +534,22 @@ public class ServerAddHeaderAssertionTest {
         assertTrue(fooValues.contains("valNoMatch"));
         assertTrue(fooValues.contains("caseNoMatch"));
         assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("doesNotMatch")[0]);
+    }
+
+    @Test
+    public void addHeaderIgnoresExpressions() throws Exception {
+        ass.setHeaderName(STARTS_WITH_F);
+        ass.setHeaderValue(STARTS_WITH_B);
+        // following flags should be ignored when performing an add
+        ass.setEvaluateNameAsExpression(true);
+        ass.setEvaluateValueExpression(true);
+        ass.setMatchValueForRemoval(true);
+
+        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames().length);
+        final String[] vals = headersKnob.getHeaderValues(STARTS_WITH_F);
+        assertEquals(1, vals.length);
+        assertEquals(STARTS_WITH_B, vals[0]);
     }
 }
