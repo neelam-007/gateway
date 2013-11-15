@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HeadersKnobSupport;
@@ -29,7 +31,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
     }
 
     @Override
-    protected AssertionStatus doCheckRequest(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext)
+    protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message, final String messageDescription, final AuthenticationContext authContext)
             throws IOException, PolicyAssertionException {
         final HeadersKnob headersKnob = message.getHeadersKnob();
         if (headersKnob != null) {
@@ -44,7 +46,12 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
 
             switch (assertion.getOperation()) {
                 case ADD:
-                    doAdd(headersKnob, name, value);
+                    try {
+                        doAdd(headersKnob, name, value, context);
+                    } catch (final HttpCookie.IllegalFormatException e) {
+                        logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, value);
+                        return AssertionStatus.FALSIFIED;
+                    }
                     break;
                 case REMOVE:
                     doRemove(headersKnob, name, value);
@@ -61,13 +68,18 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         return AssertionStatus.NONE;
     }
 
-    private void doAdd(final HeadersKnob headersKnob, final String name, final String value) {
+    private void doAdd(final HeadersKnob headersKnob, final String name, final String value, final PolicyEnforcementContext context) throws HttpCookie.IllegalFormatException {
         if (assertion.isRemoveExisting()) {
             headersKnob.setHeader(name, value);
         } else {
             headersKnob.addHeader(name, value);
         }
+        if (name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+            // all cookie attributes are parsed from the header value
+            context.addCookie(new HttpCookie((String) null, null, value));
+        }
         logAndAudit(AssertionMessages.HEADER_ADDED, name, value);
+
     }
 
     private void doRemove(final HeadersKnob headersKnob, final String name, final String value) {
@@ -82,7 +94,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                         logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, headerName);
                     }
                 }
-            } else if (headersKnob.containsHeader(name)){
+            } else if (headersKnob.containsHeader(name)) {
                 headersKnob.removeHeader(name);
                 logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, name);
             }

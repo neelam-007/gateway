@@ -105,7 +105,7 @@ public class HttpCookie {
             domain = trimQuotes(parsedDomain, parsedVersion);
             explicitDomain = true;
         }
-        if(parsedPath==null) {
+        if(parsedPath==null && requestPath != null) {
             int trim = requestPath.lastIndexOf('/');
             if(trim>0) {
                 parsedPath = requestPath.substring(0, trim);

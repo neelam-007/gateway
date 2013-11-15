@@ -432,6 +432,15 @@ public class CookieTest {
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
     }
+
+    @Test
+    public void nullRequestDomainAndPath() throws Exception {
+        final HttpCookie cookie = new HttpCookie((String) null, null, "foo=bar");
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());

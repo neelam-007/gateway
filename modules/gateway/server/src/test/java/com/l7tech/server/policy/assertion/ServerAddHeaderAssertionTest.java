@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.HeadersKnob;
@@ -21,8 +23,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
-import java.util.Arrays;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -266,8 +268,7 @@ public class ServerAddHeaderAssertionTest {
     public void addHeaderToHeadersKnob() throws Exception {
         ass.setHeaderName("foo");
         ass.setHeaderValue("bar");
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] values = headersKnob.getHeaderValues("foo");
@@ -281,8 +282,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderName("foo");
         ass.setHeaderValue("newFoo");
         ass.setRemoveExisting(true);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] values = headersKnob.getHeaderValues("foo");
@@ -296,8 +296,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderName("foo");
         ass.setHeaderValue("newFoo");
         ass.setRemoveExisting(false);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final List<String> values = Arrays.asList(headersKnob.getHeaderValues("foo"));
@@ -310,9 +309,7 @@ public class ServerAddHeaderAssertionTest {
     public void addHeaderEmptyValue() throws Exception {
         ass.setHeaderName("foo");
         ass.setHeaderValue("");
-        final ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
-
-        assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = mess.getHeadersKnob();
         assertNotNull(headersKnob);
         final String[] headers = headersKnob.getHeaderValues("foo");
@@ -324,9 +321,7 @@ public class ServerAddHeaderAssertionTest {
     public void addHeaderNullValue() throws Exception {
         ass.setHeaderName("foo");
         ass.setHeaderValue(null);
-        final ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
-
-        assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = mess.getHeadersKnob();
         assertNotNull(headersKnob);
         final String[] headers = headersKnob.getHeaderValues("foo");
@@ -340,8 +335,7 @@ public class ServerAddHeaderAssertionTest {
         mess.getHeadersKnob().addHeader("foo", "bar2");
         ass.setHeaderName("foo");
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(0, headersKnob.getHeaderNames().length);
     }
@@ -354,8 +348,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("shouldBeIgnored");
         ass.setMatchValueForRemoval(false);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(0, headersKnob.getHeaderNames().length);
     }
@@ -368,8 +361,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("bar");
         ass.setMatchValueForRemoval(true);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
@@ -385,8 +377,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("");
         ass.setMatchValueForRemoval(true);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
@@ -401,8 +392,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("bar");
         ass.setMatchValueForRemoval(true);
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
@@ -415,8 +405,7 @@ public class ServerAddHeaderAssertionTest {
         mess.getHeadersKnob().addHeader("foo", "bar");
         ass.setHeaderName("notFound");
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
-        final ServerAddHeaderAssertion serverAssertion = new ServerAddHeaderAssertion(ass);
-        serverAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
@@ -443,7 +432,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateNameAsExpression(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(2, headersKnob.getHeaderNames().length);
         final String[] upperCaseFooValues = headersKnob.getHeaderValues("Foo");
@@ -460,7 +449,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         ass.setEvaluateNameAsExpression(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(0, headersKnob.getHeaderNames().length);
     }
@@ -478,7 +467,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(2, headersKnob.getHeaderNames().length);
         final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
@@ -499,7 +488,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(2, headersKnob.getHeaderNames().length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
@@ -522,7 +511,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
         assertEquals(3, headerNames.size());
@@ -545,11 +534,127 @@ public class ServerAddHeaderAssertionTest {
         ass.setEvaluateValueExpression(true);
         ass.setMatchValueForRemoval(true);
 
-        new ServerAddHeaderAssertion(ass).checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(1, headersKnob.getHeaderNames().length);
         final String[] vals = headersKnob.getHeaderValues(STARTS_WITH_F);
         assertEquals(1, vals.length);
         assertEquals(STARTS_WITH_B, vals[0]);
+    }
+
+    @Test
+    public void addSimpleCookie() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+    }
+
+    @Test
+    public void addCookieWithDomain() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;domain=localhost");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals("localhost", cookie.getDomain());
+        assertNull(cookie.getPath());
+    }
+
+    @Test
+    public void addCookieWithPath() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;path=/foo");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals("/foo", cookie.getPath());
+        assertNull(cookie.getDomain());
+    }
+
+    @Test
+    public void addCookieWithComment() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;comment=test");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals("test", cookie.getComment());
+    }
+
+    @Test
+    public void addCookieWithSecure() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;secure");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertTrue(cookie.isSecure());
+    }
+
+    @Test
+    public void addCookieWithExpires() throws Exception {
+        final Calendar calendar = new GregorianCalendar(2013, Calendar.NOVEMBER, 15, 0, 0, 0);
+        ass.setHeaderName("Cookie");
+        final SimpleDateFormat format = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        ass.setHeaderValue("foo=bar;expires=" + format.format(calendar.getTime()));
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertTrue(cookie.hasExpiry());
+    }
+
+    @Test
+    public void addCookieWithMaxAge() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;max-age=60");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(60, cookie.getMaxAge());
+    }
+
+    @Test
+    public void addCookieWithVersion() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar;version=0");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
+    }
+
+    @Test
+    public void addInvalidCookie() throws Exception {
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("");
+        assertEquals(AssertionStatus.FALSIFIED, new ServerAddHeaderAssertion(ass).checkRequest(pec));
     }
 }
