@@ -11,14 +11,8 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.wsdl.Wsdl;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -35,6 +29,7 @@ public class RESTGatewayManagementAssertion extends Assertion implements Message
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_URI = "uri";
     public static final String SUFFIX_BODY = "body";
+    public static final String SUFFIX_BASE_URI = "baseuri";
 
     public String getVariablePrefix() {
         return variablePrefix;

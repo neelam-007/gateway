@@ -38,13 +38,13 @@ public @interface Dependency {
      * These are the different types of dependencies
      */
     public enum DependencyType {
-        GENERIC(EntityType.ANY), ASSERTION(null), POLICY(EntityType.POLICY), FOLDER(EntityType.FOLDER),
+        GENERIC(EntityType.GENERIC), ASSERTION(null), POLICY(EntityType.POLICY), FOLDER(EntityType.FOLDER),
         JDBC_CONNECTION(EntityType.JDBC_CONNECTION), SECURE_PASSWORD(EntityType.SECURE_PASSWORD),
         SERVICE(EntityType.SERVICE), TRUSTED_CERT(EntityType.TRUSTED_CERT),
         CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY), ID_PROVIDER_CONFIG(EntityType.ID_PROVIDER_CONFIG),
         JMS_CONNECTION(EntityType.JMS_CONNECTION), SSG_KEYSTORE(EntityType.SSG_KEYSTORE),
         SSG_ACTIVE_CONNECTOR(EntityType.SSG_ACTIVE_CONNECTOR), SSG_PRIVATE_KEY(EntityType.SSG_KEY_ENTRY),
-        SSG_CONNECTOR(EntityType.SSG_CONNECTOR);
+        SSG_CONNECTOR(EntityType.SSG_CONNECTOR), ANY(EntityType.ANY), SECURITY_ZONE(EntityType.SECURITY_ZONE);
 
         private EntityType entityType;
 

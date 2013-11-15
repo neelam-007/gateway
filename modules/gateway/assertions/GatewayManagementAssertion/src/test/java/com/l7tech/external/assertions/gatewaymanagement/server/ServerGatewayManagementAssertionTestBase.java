@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
+import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -35,6 +36,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
+import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
@@ -58,11 +60,10 @@ import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.beans.factory.support.StaticListableBeanFactory;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -76,7 +77,8 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the GatewayManagementAssertion for EmailListenerMO entity.
@@ -85,8 +87,9 @@ import static org.junit.Assert.*;
 @RunWith(MockitoJUnitRunner.class)
 public class ServerGatewayManagementAssertionTestBase {
 
-    protected final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    protected final GenericApplicationContext applicationContext = new GenericApplicationContext();
     protected ServerGatewayManagementAssertion managementAssertion;
+    protected ServerRESTGatewayManagementAssertion restManagementAssertion;
     protected static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
     protected RbacServicesStub rbacService;
     @Mock
@@ -109,58 +112,60 @@ public class ServerGatewayManagementAssertionTestBase {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
 
         final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager();
-        beanFactory.addBean( "serverConfig", new MockConfig( new Properties() ) );
-        beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager());
-        beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
-        beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
-        beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub());
-        beanFactory.addBean( "folderManager", new FolderManagerStub());
-        beanFactory.addBean( "identityProviderConfigManager", identityProviderConfigManager );
-        beanFactory.addBean( "identityProviderFactory", new IdentityProviderFactory(identityProviderConfigManager));
-        beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub());
-        beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub());
-        beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub());
-        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
-        beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
-        beanFactory.addBean( "policyManager",  new PolicyManagerStub());
-        beanFactory.addBean("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub()));
+        applicationContext.getBeanFactory().registerSingleton( "serverConfig", new MockConfig( new Properties() ) );
+        applicationContext.getBeanFactory().registerSingleton( "trustedCertManager", new TestTrustedCertManager());
+        applicationContext.getBeanFactory().registerSingleton( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
+        applicationContext.getBeanFactory().registerSingleton( "clusterPropertyManager", clusterPropertyManager);
+        applicationContext.getBeanFactory().registerSingleton( "resourceEntryManager", new ResourceEntryManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "folderManager", new FolderManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "identityProviderConfigManager", identityProviderConfigManager );
+        applicationContext.getBeanFactory().registerSingleton( "identityProviderFactory", new IdentityProviderFactory(identityProviderConfigManager));
+        applicationContext.getBeanFactory().registerSingleton( "jmsConnectionManager",  new JmsConnectionManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "jmsEndpointManager",  new JmsEndpointManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "jdbcConnectionManager", new JdbcConnectionManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "policyManager",  new PolicyManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub()));
         rbacService = new RbacServicesStub();
-        beanFactory.addBean("rbacServices", rbacService);
-        beanFactory.addBean( "securityFilter", rbacService );
-        beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
-        beanFactory.addBean( "serviceManager", new MockServiceManager(service( new Goid(0,1L), "Test Service 1", false, false, null, null)));
-        beanFactory.addBean( "policyValidator", policyValidator );
-        beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
+        applicationContext.getBeanFactory().registerSingleton("rbacServices", rbacService);
+        applicationContext.getBeanFactory().registerSingleton( "securityFilter", rbacService );
+        applicationContext.getBeanFactory().registerSingleton( "serviceDocumentManager", new ServiceDocumentManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "serviceManager", new MockServiceManager(service( new Goid(0,1L), "Test Service 1", false, false, null, null)));
+        applicationContext.getBeanFactory().registerSingleton( "policyValidator", policyValidator );
+        applicationContext.getBeanFactory().registerSingleton( "uddiServiceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
             @Override
             public boolean isWsdlUpdatePermitted( final PublishedService service, final boolean resetWsdlXml ) throws UpdateException {
                 return true;
             }
         } );
-        beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "securePasswordManager", new SecurePasswordManagerStub(
                 securePassword(new Goid(0,1L), "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
         ) );
-        beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub() );
-        beanFactory.addBean( "httpConfigurationManager", new HttpConfigurationManagerStub() );
-        beanFactory.addBean( "roleManager", new MockRoleManager(null) );
-        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub());
-        beanFactory.addBean("genericEntityManagerWithData",new GenericEntityManagerStub() );
-        beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "httpConfigurationManager", new HttpConfigurationManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "roleManager", new MockRoleManager(null) );
+        applicationContext.getBeanFactory().registerSingleton("genericEntityManager",new GenericEntityManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub() );
 
         final SecurityZone securityZone1 = new SecurityZone();
         securityZone1.setGoid(new Goid(0,2));
         securityZone1.setName("Test Security Zone 0002");
         securityZone1.setDescription("Canned Testing Security Zone 0002");
         securityZone1.getPermittedEntityTypes().add(EntityType.ANY);
-        beanFactory.addBean("securityZoneManager", new SecurityZoneManagerStub(securityZone1));
+        applicationContext.getBeanFactory().registerSingleton("securityZoneManager", new SecurityZoneManagerStub(securityZone1));
 
-        beanFactory.addBean("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub());
-        beanFactory.addBean( "entityCrud", new EntityFinderStub() );
-        beanFactory.addBean("assertionAccessManager", new AssertionAccessManagerStub());
-        beanFactory.addBean("policyAliasManager", new PolicyAliasManagerStub());
-        beanFactory.addBean("serviceAliasManager", new ServiceAliasManagerStub());
-        beanFactory.addBean("emailListenerManager", new EmailListenerManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "entityCrud", new EntityFinderStub() );
+        applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("policyAliasManager", new PolicyAliasManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("serviceAliasManager", new ServiceAliasManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
 
         moreInit();
+
+        applicationContext.refresh();
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
@@ -196,13 +201,15 @@ public class ServerGatewayManagementAssertionTestBase {
 
         Thread.currentThread().setContextClassLoader(resourceClassLoader);
         managementAssertion = new ServerGatewayManagementAssertion(
-                new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml", false );
+                new GatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
+
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
     }
 
-    protected void moreInit() {}
+    protected void moreInit() throws SaveException {}
 
     protected static PublishedService service( final Goid goid, final String name, final boolean disabled, final boolean soap, final String wsdlUrl, final String wsdlXml ) {
         final PublishedService service = new PublishedService();

@@ -40,7 +40,10 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.server.*;
+import com.l7tech.server.AssertionAccessManagerStub;
+import com.l7tech.server.EntityFinderStub;
+import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -58,6 +61,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
+import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
@@ -90,7 +94,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.beans.factory.support.StaticListableBeanFactory;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -2237,7 +2241,7 @@ public class ServerGatewayManagementAssertionTest {
         putAndVerify( message, verifier, true );
 
         // Added for SSG-5693
-        JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
+        JmsEndpointManagerStub jmsManager = applicationContext.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
         JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
         assertEquals("Password field should be ignored", "password", endpoint.getPassword());
     }
@@ -2308,12 +2312,12 @@ public class ServerGatewayManagementAssertionTest {
         putAndVerify( message, verifier, true );
 
         // Added for SSG-5693
-        JmsEndpointManagerStub jmsManager = beanFactory.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
+        JmsEndpointManagerStub jmsManager = applicationContext.getBean( "jmsEndpointManager",  JmsEndpointManagerStub.class);
         JmsEndpoint endpoint = jmsManager.findByPrimaryKey(id);
         assertEquals("Password field should be ignored", "password", endpoint.getPassword());
 
         // Added for SSG-7449
-        JmsConnectionManagerStub jmsConnectionManager = beanFactory.getBean( "jmsConnectionManager",  JmsConnectionManagerStub.class);
+        JmsConnectionManagerStub jmsConnectionManager = applicationContext.getBean( "jmsConnectionManager",  JmsConnectionManagerStub.class);
         JmsConnection connection = jmsConnectionManager.findByPrimaryKey(id);
         assertEquals("JNDI Password field should be ignored", "jndi-password", connection.properties().getProperty("java.naming.security.credentials"));
     }
@@ -3649,7 +3653,7 @@ public class ServerGatewayManagementAssertionTest {
                         "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
                         "            &lt;L7p:AuditAssertion/&gt;\n" +
                         "            &lt;L7p:Authentication&gt;\n" +
-                        "                &lt;L7p:IdentityProviderOid longValue=\"000000000000000300000000000000c8\"/&gt;\n" +
+                        "                &lt;L7p:IdentityProviderOid goidValue=\"000000000000000300000000000000c8\"/&gt;\n" +
                         "            &lt;/L7p:Authentication&gt;\n" +
                         "            &lt;L7p:JdbcQuery&gt;\n" +
                         "                &lt;L7p:ConnectionName stringValue=\"Invalid Connection\"/&gt;\n" +
@@ -3941,7 +3945,7 @@ public class ServerGatewayManagementAssertionTest {
                         "</PolicyImportContext></env:Body></env:Envelope>";
 
         // insert policy with same name
-        PolicyManagerStub policyManager = beanFactory.getBean("policyManager", PolicyManagerStub.class);
+        PolicyManagerStub policyManager = applicationContext.getBean("policyManager", PolicyManagerStub.class);
         policyManager.save(policy( new Goid(123,2L), PolicyType.INCLUDE_FRAGMENT, "Imported Policy Include Fragment", true, POLICY) );
 
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
@@ -4352,7 +4356,7 @@ public class ServerGatewayManagementAssertionTest {
         final Element soapBody = SoapUtil.getBodyElement(result);
         XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
 
-        EncapsulatedAssertionConfigManagerStub encassManager = beanFactory.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
+        EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0001");
         Assert.assertTrue(encapsulatedAssertionConfig.getPolicy().getXml().contains("testEncassImportUsingSelectorsExists"));
     }
@@ -4535,7 +4539,7 @@ public class ServerGatewayManagementAssertionTest {
         final Element soapBody = SoapUtil.getBodyElement(result);
         XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
 
-        EncapsulatedAssertionConfigManagerStub encassManager = beanFactory.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
+        EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0002");
         Assert.assertNotNull(encapsulatedAssertionConfig);
         Assert.assertEquals("testEncassImportNewExistingPolicyRenameInstructionPolicy", encapsulatedAssertionConfig.getPolicy().getName());
@@ -4631,7 +4635,7 @@ public class ServerGatewayManagementAssertionTest {
         final Element soapBody = SoapUtil.getBodyElement(result);
         XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
 
-        EncapsulatedAssertionConfigManagerStub encassManager = beanFactory.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
+        EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0002");
         Assert.assertNotNull(encapsulatedAssertionConfig);
         Assert.assertEquals("testEncassNewImportNewPolicy", encapsulatedAssertionConfig.getPolicy().getName());
@@ -5037,7 +5041,7 @@ public class ServerGatewayManagementAssertionTest {
 
     //- PRIVATE
 
-    private final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    private final GenericApplicationContext applicationContext = new GenericApplicationContext();
     private ServerGatewayManagementAssertion managementAssertion;
     private static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
     private RbacServicesStub rbacService;
@@ -5085,14 +5089,14 @@ public class ServerGatewayManagementAssertionTest {
                 prop( new Goid(0,3), "testProp3", "testValue3"),
                 prop( new Goid(0,4), "interfaceTags", "localhost(127.0.0.1)"),
                 prop( new Goid(0,5), "keyStore.defaultSsl.alias", "0:bob" ) );
-        beanFactory.addBean( "serverConfig", new MockConfig( new Properties() ) );
+        applicationContext.getBeanFactory().registerSingleton( "serverConfig", new MockConfig( new Properties() ) );
         final TestTrustedCertManager testTrustedCertManager = new TestTrustedCertManager(
                 cert(new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
                 cert(new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()));
-        beanFactory.addBean( "trustedCertManager", testTrustedCertManager);
-        beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
-        beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
-        beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "trustedCertManager", testTrustedCertManager);
+        applicationContext.getBeanFactory().registerSingleton( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
+        applicationContext.getBeanFactory().registerSingleton( "clusterPropertyManager", clusterPropertyManager);
+        applicationContext.getBeanFactory().registerSingleton( "resourceEntryManager", new ResourceEntryManagerStub(
                 resource( new Goid(0,1L),"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
                 resource( new Goid(0,2L),"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
                 resource( new Goid(0,3L),"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
@@ -5101,12 +5105,12 @@ public class ServerGatewayManagementAssertionTest {
                 testFolder,
                 folder(new Goid(0, 2L), testFolder, "Nested Test Folder"),
                 emptyFolder);
-        beanFactory.addBean( "folderManager", folderManagerStub);
+        applicationContext.getBeanFactory().registerSingleton( "folderManager", folderManagerStub);
         final IdentityProviderConfig identityProviderConfig = provider(new Goid(0, -2L), IdentityProviderType.INTERNAL, "Internal Identity Provider");
         final TestIdentityProviderConfigManager testIdentityProviderConfigManager = new TestIdentityProviderConfigManager(
                 identityProviderConfig,
                 provider(new Goid(0, -3L), IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT"));
-        beanFactory.addBean( "identityProviderConfigManager", testIdentityProviderConfigManager);
+        applicationContext.getBeanFactory().registerSingleton( "identityProviderConfigManager", testIdentityProviderConfigManager);
         final TestIdentityProvider testIdentityProvider = new TestIdentityProvider(identityProviderConfig);
         TestIdentityProvider.addUser(new UserBean(new Goid(0, -2L), new Goid(0,1).toString()), new Goid(0,1).toString(), "password".toCharArray());
         final GroupBean gb1 = new GroupBean(new Goid(0, -2L), new Goid(0, 2).toString());
@@ -5117,25 +5121,24 @@ public class ServerGatewayManagementAssertionTest {
         gb2.setUniqueIdentifier(new Goid(0, 4).toString());
         TestIdentityProvider.addGroup(gb2);
         Mockito.when(identityProviderFactory.getProvider(Matchers.eq(new Goid(0, -2L)))).thenReturn(testIdentityProvider);
-        beanFactory.addBean( "identityProviderFactory", identityProviderFactory);
-        beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "identityProviderFactory", identityProviderFactory);
+        applicationContext.getBeanFactory().registerSingleton( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
                 jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));
-        beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "jmsEndpointManager",  new JmsEndpointManagerStub(
                 jmsEndpoint( 1L, 1L, "Test Endpoint"),
                 jmsEndpoint( 2L, 2L, "Test Endpoint 2")));
         final JdbcConnectionManagerStub jdbcConnectionManagerStub = new JdbcConnectionManagerStub(
                 connection(new Goid(0, 1), "A Test Connection"),
                 connection(new Goid(0, 2), "Test Connection"));
-        beanFactory.addBean( "jdbcConnectionManager", jdbcConnectionManagerStub);
-        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub() );
-        beanFactory.addBean( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton( "jdbcConnectionManager", jdbcConnectionManagerStub);
+        applicationContext.getBeanFactory().registerSingleton( "policyExporterImporterManager", new PolicyExporterImporterManagerStub() );
         final Policy testPolicy1 = policy(new Goid(0,1L), PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY);
-        beanFactory.addBean( "policyManager",  new PolicyManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "policyManager",  new PolicyManagerStub(
                 testPolicy1,
                 policy( new Goid(0,2L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY),
                 policy( new Goid(0,3L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Encass Import", true, POLICY)));
-        beanFactory.addBean("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub(Arrays.asList(
+        applicationContext.getBeanFactory().registerSingleton("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub(Arrays.asList(
                 key(new Goid(0, 0), "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey())))));
         rbacService = mock( RbacServicesStub.class);
         when(rbacService.isPermittedForAnyEntityOfType(any(User.class),any(OperationType.class),any(EntityType.class))).thenReturn(true);
@@ -5143,27 +5146,27 @@ public class ServerGatewayManagementAssertionTest {
         when(rbacService.isPermittedForEntity(any(User.class), any(Entity.class),any(OperationType.class), anyString())).thenReturn(true);
         when(rbacService.isPermittedForSomeEntityOfType(any(User.class),any(OperationType.class), any(EntityType.class))).thenReturn(true);
 
-        beanFactory.addBean("rbacServices", rbacService);
-        beanFactory.addBean( "securityFilter", new RbacServicesStub() );
-        beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton("rbacServices", rbacService);
+        applicationContext.getBeanFactory().registerSingleton( "securityFilter", new RbacServicesStub() );
+        applicationContext.getBeanFactory().registerSingleton( "serviceDocumentManager", new ServiceDocumentManagerStub() );
         final PublishedService testService1 = service( new Goid(0,1L), "Test Service 1", false, false, null, null);
-        beanFactory.addBean( "serviceManager", new MockServiceManager(
+        applicationContext.getBeanFactory().registerSingleton( "serviceManager", new MockServiceManager(
                 testService1,
                 service( new Goid(0,2L), "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
-        beanFactory.addBean( "policyValidator", policyValidator );
-        beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
+        applicationContext.getBeanFactory().registerSingleton( "policyValidator", policyValidator );
+        applicationContext.getBeanFactory().registerSingleton( "uddiServiceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
             @Override
             public boolean isWsdlUpdatePermitted( final PublishedService service, final boolean resetWsdlXml ) throws UpdateException {
                 return true;
             }
         } );
-        beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "securePasswordManager", new SecurePasswordManagerStub(
                 securePassword(new Goid(0,1L), "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD)
         ) );
-        beanFactory.addBean( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub(
                 encapsulatedAssertion( new Goid(0,1L), "Test Encass Config 1", "ABCD-0001", testPolicy1, null, null, null)
         ) );
-        beanFactory.addBean( "httpConfigurationManager", new HttpConfigurationManagerStub(httpConfiguration(new Goid(0, 1L))) );
+        applicationContext.getBeanFactory().registerSingleton( "httpConfigurationManager", new HttpConfigurationManagerStub(httpConfiguration(new Goid(0, 1L))) );
         MockRoleManager roleManager = new MockRoleManager(null);
         roleManager.save(role());
         final Role customRole = new Role();
@@ -5171,7 +5174,7 @@ public class ServerGatewayManagementAssertionTest {
         customRole.setName("My custom Role");
         customRole.setUserCreated(true);
         roleManager.save(customRole);
-        beanFactory.addBean( "roleManager", roleManager );
+        applicationContext.getBeanFactory().registerSingleton( "roleManager", roleManager );
 
         final Map<String,String> mqMap = new HashMap<String,String>();
         mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_HOST_NAME,"host");
@@ -5186,7 +5189,7 @@ public class ServerGatewayManagementAssertionTest {
         sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_USERNAME,"user");
         sftpMap.put(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID,"1234");
 
-        beanFactory.addBean( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub(
+        applicationContext.getBeanFactory().registerSingleton( "ssgActiveConnectorManager", new SsgActiveConnectorManagerStub(
                 activeConnector( new Goid(0,1L), "Test MQ Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE,new Goid(0,1234L), mqMap),
                 activeConnector( new Goid(0,2L), "Test SFTP Config 1", SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP,new Goid(0,4567L), sftpMap),
                 activeConnector( new Goid(0,3L), "Test SFTP Config Bad", "SFTP1", new Goid(0,1234L),sftpMap)
@@ -5202,9 +5205,9 @@ public class ServerGatewayManagementAssertionTest {
 
         GenericEntityManagerStub genericEntityManager = new GenericEntityManagerStub(genericEntity);
         genericEntityManager.setRegistedClasses("com.l7tech.external.assertions.gatewaymanagement.server.ServerGatewayManagementAssertionTest");
-        beanFactory.addBean("genericEntityManagerWithData",genericEntityManager );
+        applicationContext.getBeanFactory().registerSingleton("genericEntityManager",genericEntityManager );
 
-        beanFactory.addBean("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
+        applicationContext.getBeanFactory().registerSingleton("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
             customKeyValue(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
         ) );
 
@@ -5228,14 +5231,14 @@ public class ServerGatewayManagementAssertionTest {
         securityZone2.getPermittedEntityTypes().add(EntityType.ANY);
 
         final SecurityZoneManagerStub securityZoneManagerStub = new SecurityZoneManagerStub(securityZone1, securityZone2);
-        beanFactory.addBean("securityZoneManager", securityZoneManagerStub);
+        applicationContext.getBeanFactory().registerSingleton("securityZoneManager", securityZoneManagerStub);
 
         // siteminder
-        beanFactory.addBean("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub(
+        applicationContext.getBeanFactory().registerSingleton("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub(
                 siteminderConfiguration(new Goid(0, 1L), "Config 1","0.0.0.0","secret","localhost",3),
                 siteminderConfiguration(new Goid(0, 2L), "Config 2","0.0.0.0","secret","localhost",3)));
 
-        beanFactory.addBean( "entityCrud", new EntityFinderStub(folderManagerStub, securityZoneManagerStub, jdbcConnectionManagerStub, testIdentityProviderConfigManager, testTrustedCertManager) );
+        applicationContext.getBeanFactory().registerSingleton( "entityCrud", new EntityFinderStub(folderManagerStub, securityZoneManagerStub, jdbcConnectionManagerStub, testIdentityProviderConfigManager, testTrustedCertManager) );
 
         // assertion security zone
         final AssertionAccess assAccess1 = new AssertionAccess();
@@ -5247,21 +5250,25 @@ public class ServerGatewayManagementAssertionTest {
         assAccess2.setGoid(new Goid(0,2));
         assAccess2.setName("Test assertion access 2");
         assAccess2.setSecurityZone(securityZone2);
-        beanFactory.addBean("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
+        applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
 
         // policy alias
         final PolicyAlias pAlias1 = new PolicyAlias(testPolicy1,testFolder);
         pAlias1.setGoid(new Goid(0,1));
-        beanFactory.addBean("policyAliasManager", new PolicyAliasManagerStub(pAlias1));
+        applicationContext.getBeanFactory().registerSingleton("policyAliasManager", new PolicyAliasManagerStub(pAlias1));
 
         // service alias
         final PublishedServiceAlias sAlias1 = new PublishedServiceAlias(testService1,testFolder);
         sAlias1.setGoid(new Goid(0,1));
-        beanFactory.addBean("serviceAliasManager", new ServiceAliasManagerStub(sAlias1));
+        applicationContext.getBeanFactory().registerSingleton("serviceAliasManager", new ServiceAliasManagerStub(sAlias1));
 
         // email listener
         final EmailListener emailListener = new EmailListener(EmailServerType.POP3);
-        beanFactory.addBean("emailListenerManager", new EmailListenerManagerStub(emailListener){});
+        applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub(emailListener){});
+
+        applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
+
+        applicationContext.refresh();
 
         final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
         final ResourceClassLoader resourceClassLoader = new ResourceClassLoader(
@@ -5297,7 +5304,7 @@ public class ServerGatewayManagementAssertionTest {
 
         Thread.currentThread().setContextClassLoader(resourceClassLoader);
         managementAssertion = new ServerGatewayManagementAssertion(
-                new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml", false );
+                new GatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 

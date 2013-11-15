@@ -2,10 +2,13 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/context
-                            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+                            http://www.springframework.org/schema/context/spring-context-2.5.xsd
+                            http://www.springframework.org/schema/util
+                            http://www.springframework.org/schema/util/spring-util-2.5.xsd">
 
     <context:annotation-config/>
 
@@ -458,4 +461,181 @@
     </bean>
 
     <bean id="siteMinderConfigurationManager" class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub"/>
+
+    <bean id="policyValidator" class="com.l7tech.policy.PolicyValidatorStub" />
+
+    <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerStub">
+        <constructor-arg>
+            <list value-type="com.l7tech.gateway.common.jdbc.JdbcConnection" />
+        </constructor-arg>
+    </bean>
+
+    <bean id="resourceEntryManager" class="com.l7tech.server.globalresources.ResourceEntryManagerStub" />
+    <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerStub" />
+    <bean id="policyExporterImporterManager" class="com.l7tech.server.export.PolicyExporterImporterManagerStub" />
+    <bean id="httpConfigurationManager" class="com.l7tech.server.globalresources.HttpConfigurationManagerStub" />
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.MockRoleManager" >
+        <constructor-arg>
+            <ref local="entityFinder" />
+        </constructor-arg>
+    </bean>
+    <bean id="securePasswordManager" class="com.l7tech.server.security.password.SecurePasswordManagerStub" />
+    <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesStub" />
+    <alias name="rbacServices" alias="securityFilter" />
+    <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerStub" >
+        <constructor-arg>
+            <list value-type="com.l7tech.objectmodel.SecurityZone" />
+        </constructor-arg>
+    </bean>
+    <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerStub" />
+    <bean id="uddiServiceWsdlUpdateChecker" class="com.l7tech.server.uddi.ServiceWsdlUpdateChecker">
+        <constructor-arg index="0" ref="serviceManager"/>
+        <constructor-arg index="1" ref="uddiServiceControlManager"/>
+    </bean>
+    <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerStub" >
+        <constructor-arg>
+            <list value-type="com.l7tech.policy.CustomKeyValueStore" />
+        </constructor-arg>
+    </bean>
+    <bean id="assertionAccessManager" class="com.l7tech.server.AssertionAccessManagerStub" >
+        <constructor-arg>
+            <list value-type="com.l7tech.policy.AssertionAccess" />
+        </constructor-arg>
+    </bean>
+
+    <bean id="policyAliasManager" class="com.l7tech.server.service.PolicyAliasManagerStub" >
+        <constructor-arg>
+            <list />
+        </constructor-arg>
+    </bean>
+
+    <bean id="emailListenerManager" class="com.l7tech.server.transport.email.EmailListenerManagerStub" >
+        <constructor-arg>
+            <list />
+        </constructor-arg>
+    </bean>
+
+    <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerStub" >
+        <constructor-arg>
+            <list />
+        </constructor-arg>
+    </bean>
+
+    <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
+
+    <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
+        <property name="sessionFactory" ><bean class="com.l7tech.server.SessionFactoryStub"/></property>
+        <constructor-arg ref="entityFinder"/>
+        <constructor-arg>
+            <list>
+                <ref bean="auditRecordManager"/>
+                <ref bean="clusterPropertyManager"/>
+                <ref bean="resourceEntryManager"/>
+                <ref bean="folderManager"/>
+                <ref bean="identityProviderConfigManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="policyAliasManager"/>
+                <ref bean="roleManager"/>
+                <ref bean="serviceAliasManager"/>
+                <ref bean="serviceDocumentManager"/>
+                <ref bean="emailListenerManager"/>
+                <ref bean="jmsConnectionManager"/>
+                <ref bean="jmsEndpointManager"/>
+                <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                    <constructor-arg index="0" value="com.l7tech.identity.User"/>
+                    <constructor-arg index="1" ref="identityProviderFactory"/>
+                </bean>
+                <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                    <constructor-arg index="0" value="com.l7tech.identity.Group"/>
+                    <constructor-arg index="1" ref="identityProviderFactory"/>
+                </bean>
+                <ref bean="ssgActiveConnectorManager"/>
+                <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="assertionAccessManager"/>
+                <ref bean="httpConfigurationManager"/>
+                <ref bean="jdbcConnectionManager"/>
+                <ref bean="securePasswordManager"/>
+                <ref bean="uddiServiceControlManager"/>
+                <ref bean="siteMinderConfigurationManager"/>
+                <ref bean="serviceManager" />
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="dependencyProcessorStore" class="com.l7tech.server.search.DependencyProcessorStore">
+        <constructor-arg>
+            <map>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/></key>
+                    <bean class="com.l7tech.server.search.processors.GenericDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/></key>
+                    <bean class="com.l7tech.server.search.processors.FolderDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JDBC_CONNECTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.JdbcConnectionDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD"/></key>
+                    <bean class="com.l7tech.server.search.processors.SecurePasswordDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ASSERTION"/></key>
+                    <bean class="com.l7tech.server.search.processors.AssertionDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.CLUSTER_PROPERTY"/></key>
+                    <bean class="com.l7tech.server.search.processors.ClusterPropertyDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.ID_PROVIDER_CONFIG"/></key>
+                    <bean class="com.l7tech.server.search.processors.IdentityProviderProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_ACTIVE_CONNECTOR"/></key>
+                    <bean class="com.l7tech.server.search.processors.SsgActiveConnectorDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_CONNECTOR"/></key>
+                    <bean class="com.l7tech.server.search.processors.SsgConnectorDependencyProcessor"/>
+                </entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <bean id="ssgActiveConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry" />
+
+    <bean id="ssgConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry">
+        <constructor-arg>
+            <util:map key-type="java.lang.String" value-type="com.l7tech.server.search.processors.DependencyProcessor">
+                <entry>
+                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP"/></key>
+                    <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/></key>
+                    <ref bean="sslSsgConnectorDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTP"/></key>
+                    <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/></key>
+                    <ref bean="sslSsgConnectorDependencyProcessor"/>
+                </entry>
+            </util:map>
+        </constructor-arg>
+    </bean>
+    <bean id="sslSsgConnectorDependencyProcessor" class="com.l7tech.server.search.processors.SslSsgConnectorDependencyProcessor" />
+
+    <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerStub"/>
+
+
 </beans>

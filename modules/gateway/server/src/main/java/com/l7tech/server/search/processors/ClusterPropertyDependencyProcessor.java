@@ -13,6 +13,6 @@ import com.l7tech.server.search.objects.DependentObject;
 public class ClusterPropertyDependencyProcessor extends GenericDependencyProcessor<ClusterProperty> {
     @Override
     public DependentObject createDependentObject(ClusterProperty clusterProperty) {
-        return new DependentEntity(clusterProperty.getName(), EntityType.CLUSTER_PROPERTY, clusterProperty.getName(), clusterProperty.getId());
+        return new DependentEntity(clusterProperty.getName(), EntityType.CLUSTER_PROPERTY, clusterProperty.getId(), clusterProperty.getName());
     }
 }

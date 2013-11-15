@@ -572,6 +572,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 Criteria criteria = session.createCriteria( getImpClass() );
                 criteria.setFirstResult( offset );
                 criteria.setFetchSize( windowSize );
+                criteria.setMaxResults( windowSize );
                 return (List<ET>) criteria.list();
             }
         } );
@@ -594,6 +595,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 final Criteria criteria = session.createCriteria(getImpClass());
                 criteria.setFirstResult(offset);
                 criteria.setFetchSize(windowSize);
+                criteria.setMaxResults( windowSize );
 
                 if ( filters != null ) {
                     Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();

@@ -26,7 +26,11 @@
         <dependency name="jersey-client" org="jersey" rev="2.3.1" force="true" conf="core"/>
         <dependency name="jersey-common" org="jersey" rev="2.3.1" force="true" conf="core"/>
         <dependency name="jersey-server" org="jersey" rev="2.3.1" force="true" conf="core"/>
+        <dependency name="cglib-nodep" org="cglib" rev="2.2.2" force="true" conf="core"/>
+        <dependency name="asm" org="asm" rev="3.3.1" force="true" conf="core"/>
+        <dependency name="validation-api" org="javax.validation" rev="1.0.0.GA" force="true" conf="core"/>
 
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
+        <dependency name="layer7-common" rev="latest.integration" conf="test"/>
     </dependencies>
 </ivy-module>

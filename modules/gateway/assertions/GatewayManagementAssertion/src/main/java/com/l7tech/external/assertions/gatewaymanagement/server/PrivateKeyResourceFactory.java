@@ -136,6 +136,22 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }, true );
     }
 
+    //TODO: is there a better way to do this?
+    @Override
+    public Collection<Map<String, String>> getResources(final int offset, final int windowSize){
+        return transactional( new TransactionalCallback<Collection<Map<String, String>>>(){
+            @Override
+            public Collection<Map<String, String>> execute() throws ObjectModelException {
+                return Functions.map( new ArrayList<>(getEntityHeaders()).subList(offset, windowSize), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
+                    @Override
+                    public Map<String, String> call( final SsgKeyHeader header ) {
+                        return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
+                    }
+                } );
+            }
+        }, true );
+    }
+
     @Override
     public PrivateKeyMO putResource( final Map<String, String> selectorMap,
                                      final Object resource ) throws ResourceNotFoundException, InvalidResourceException {

@@ -84,9 +84,10 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
 
     @Override
     public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
-        EH[] dest = (EH[]) new EntityHeader[limit];
-        EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
-        System.arraycopy(all, offset, dest, 0, limit);
+        int rtnSize = offset+limit>headers.size()?headers.size()-offset:limit;
+        EH[] dest = (EH[]) new EntityHeader[rtnSize];
+        EH[] all = (EH[]) headers.values().toArray(new EntityHeader[rtnSize]);
+        System.arraycopy(all, offset, dest, 0, rtnSize);
         return Arrays.asList(dest);
     }
 

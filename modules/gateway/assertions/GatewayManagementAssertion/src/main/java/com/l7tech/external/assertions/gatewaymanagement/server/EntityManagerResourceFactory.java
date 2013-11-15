@@ -147,6 +147,27 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     @Override
+    public Collection<Map<String, String>> getResources(int offset, int windowSize) {
+        Collection<Map<String,String>> resources = Collections.emptyList();
+
+        try {
+            Collection<EH> headers = manager.findAllHeaders(offset, windowSize);
+            headers = accessFilter(headers, manager.getEntityType(), OperationType.READ, null);
+            headers = filterHeaders( headers );
+
+            resources = new ArrayList<>( headers.size() );
+
+            for ( EntityHeader header : headers ) {
+                resources.add( Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() ) );
+            }
+        } catch (FindException e) {
+            handleObjectModelException(e);
+        }
+
+        return resources;
+    }
+
+    @Override
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         checkReadOnly();
 

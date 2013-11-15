@@ -40,3 +40,6 @@ CustomKeyValueStoreMO
 SecurityZoneMO
 SiteMinderConfigurationMO
 AssertionSecurityZoneMO
+DependencyResultsMO
+DependencyMO
+DependentObjectMO

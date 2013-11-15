@@ -64,7 +64,7 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
 
         //add the injection resolver feature so that @SpringBean annotations will be properly processed.
         if (applicationContext != null) {
-            resourceConfig.register(new CustomInjectionResolverFeature<>(new SpringBeanInjectionResolver(applicationContext), SpringBean.class));
+            resourceConfig.register(new CustomInjectionResolverFeature<SpringBean,SpringBeanInjectionResolver>(new SpringBeanInjectionResolver(applicationContext), SpringBean.class){});
 
             //Scan the application context for any components that are annotated with one of the autoScannedComponentAnnotations. Add these components to the rest application
             if (autoScannedComponentAnnotations != null) {

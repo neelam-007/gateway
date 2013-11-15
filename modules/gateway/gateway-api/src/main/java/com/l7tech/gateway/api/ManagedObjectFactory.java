@@ -608,8 +608,23 @@ public class ManagedObjectFactory {
                 RbacRoleMO.class,
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
-                RbacRolePredicateMO.class
+                RbacRolePredicateMO.class,
+                DependencyResultsMO.class,
+                DependencyMO.class,
+                DependentObjectMO.class
         };
+    }
+
+    public static DependencyResultsMO createDependencyResultsMO() {
+        return new DependencyResultsMO();
+    }
+
+    public static DependencyMO createDependencyMO() {
+        return new DependencyMO();
+    }
+
+    public static DependentObjectMO createDependentObjectMO() {
+        return new DependentObjectMO();
     }
 
     /**

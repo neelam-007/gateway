@@ -16,7 +16,8 @@ import java.lang.reflect.Type;
 
 /**
  * This Features allows you to create custom injection resolvers and use them to resolve dependencies in Jersey
- * Components.
+ * Components. This class needs to be abstract because there needs to be a unique implementation of a feature for every
+ * different Injection resolver.
  * <p/>
  * {@link A} is the annotation the this injection resolver works with.
  * <p/>
@@ -31,7 +32,7 @@ import java.lang.reflect.Type;
  *
  * @see SpringBeanInjectionResolver This is an example of a custom Injection resolver.
  */
-public class CustomInjectionResolverFeature<A extends Annotation, I extends InjectionResolver<A>> extends AbstractBinder implements Feature {
+public abstract class CustomInjectionResolverFeature<A extends Annotation, I extends InjectionResolver<A>> extends AbstractBinder implements Feature {
 
     /**
      * The injection resolver to resolve objects annotated with {@link A} with in Jersey components.
@@ -80,11 +81,10 @@ public class CustomInjectionResolverFeature<A extends Annotation, I extends Inje
 
 
     /**
-     * This is called to bind the register the absract binder.
+     * This is called to the feature.
      */
     @Override
     public boolean configure(final FeatureContext context) {
-        context.register(this);
         return true;
     }
 }

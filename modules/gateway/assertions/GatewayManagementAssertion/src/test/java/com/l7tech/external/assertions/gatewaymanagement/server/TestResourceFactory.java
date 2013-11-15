@@ -81,6 +81,11 @@ public class TestResourceFactory implements ResourceFactory<Object> {
         return null;
     }
 
+    @Override
+    public Collection<Map<String, String>> getResources(int offset, int windowSize) {
+        return null;
+    }
+
     @ResourceFactory.ResourceMethod(name="Create")
     public Object customCreate() {
         return newResource();

@@ -116,6 +116,15 @@ public interface ResourceFactory<R> {
      */
     Collection<Map<String, String>> getResources();
 
+    //TODO: need to return a list not a collection
+    /**
+     * Get selector map for all resource from the given offset, with the given window size.
+     *
+     * @return The collection of resource selectors.
+     */
+    Collection<Map<String, String>> getResources(int offset, int windowSize);
+
+
     /**
      * Annotation for the resource name.
      *

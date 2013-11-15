@@ -56,23 +56,25 @@ public class GenericDependencyProcessorTest {
         Policy policy = new Policy(PolicyType.INTERNAL, policyName, null, false);
         final String guid = "GUID";
         policy.setGuid(guid);
+        final Goid id = new Goid(0,123);
+        policy.setGoid(id);
 
         DependentObject dependentObject = processor.createDependentObject(policy);
         Assert.assertEquals(DependentEntity.class, dependentObject.getClass());
         DependentEntity dependentEntity = (DependentEntity) dependentObject;
 
         Assert.assertEquals(policyName, dependentEntity.getName());
-        Assert.assertEquals(guid, dependentEntity.getPublicID());
-        Assert.assertEquals(EntityType.POLICY, dependentEntity.getEntityType());
+        Assert.assertEquals(id.toString(), dependentEntity.getId());
+        Assert.assertEquals(EntityType.POLICY, dependentEntity.getDependencyType().getEntityType());
     }
 
     @Test
     public void testCreateDependentObjectFromEntity() {
-        final String myID = "myID";
+        final Goid myID = new Goid(0,123);
         Entity entity = new Entity() {
             @Override
             public String getId() {
-                return myID;
+                return myID.toString();
             }
         };
 
@@ -81,9 +83,9 @@ public class GenericDependencyProcessorTest {
         DependentEntity dependentEntity = (DependentEntity) dependentObject;
 
         Assert.assertNull(dependentEntity.getName());
-        Assert.assertNull(dependentEntity.getPublicID());
-        Assert.assertEquals(myID, dependentEntity.getInternalID());
-        Assert.assertEquals(EntityType.ANY, dependentEntity.getEntityType());
+        Assert.assertEquals(myID.toString(), dependentEntity.getId());
+        Assert.assertNull(dependentEntity.getAlternativeId());
+        Assert.assertEquals(EntityType.ANY, dependentEntity.getDependencyType().getEntityType());
     }
 
     @Test
@@ -107,9 +109,9 @@ public class GenericDependencyProcessorTest {
         DependentEntity dependentEntity = (DependentEntity) dependentObject;
 
         Assert.assertEquals(name, dependentEntity.getName());
-        Assert.assertNull(dependentEntity.getPublicID());
-        Assert.assertEquals(myID, dependentEntity.getInternalID());
-        Assert.assertEquals(EntityType.ANY, dependentEntity.getEntityType());
+        Assert.assertEquals(myID, dependentEntity.getId());
+        Assert.assertNull(dependentEntity.getAlternativeId());
+        Assert.assertEquals(EntityType.ANY, dependentEntity.getDependencyType().getEntityType());
     }
 
     @Test
@@ -133,7 +135,7 @@ public class GenericDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(GOID, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<Entity> entities = processor.find(GOID, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -162,7 +164,7 @@ public class GenericDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(GOID_STR, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<Entity> entities = processor.find(GOID_STR, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -195,7 +197,7 @@ public class GenericDependencyProcessorTest {
             });
         }
 
-        List<Entity> entities = processor.find(goids, com.l7tech.search.Dependency.DependencyType.GENERIC, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<Entity> entities = processor.find(goids, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud, new Times(3)).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
@@ -246,7 +248,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getId());
     }
 
     @Test
@@ -280,7 +282,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getId());
     }
 
     @Test
@@ -320,7 +322,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getId());
     }
 
     @Test
@@ -353,7 +355,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getId());
     }
 
     @Test
@@ -384,7 +386,7 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getInternalID());
+        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getId());
     }
 
     @Test
@@ -421,9 +423,9 @@ public class GenericDependencyProcessorTest {
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(2, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
-        Assert.assertTrue(names.contains(((DependentEntity) dependencies.get(0).getDependent()).getInternalID()));
+        Assert.assertTrue(names.contains(((DependentEntity) dependencies.get(0).getDependent()).getId()));
         Assert.assertNotNull(dependencies.get(1));
-        Assert.assertTrue(names.contains(((DependentEntity) dependencies.get(1).getDependent()).getInternalID()));
+        Assert.assertTrue(names.contains(((DependentEntity) dependencies.get(1).getDependent()).getId()));
     }
 
     private class EmptyEntity implements Entity {
