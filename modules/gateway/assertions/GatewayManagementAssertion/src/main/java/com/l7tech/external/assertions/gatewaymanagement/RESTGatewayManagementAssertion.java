@@ -7,7 +7,6 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
@@ -22,7 +21,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 @SuppressWarnings({"serial"})
 @ProcessesRequest
-@RequiresSOAP
 public class RESTGatewayManagementAssertion extends Assertion implements MessageTargetable{
 
     //-PUBLIC

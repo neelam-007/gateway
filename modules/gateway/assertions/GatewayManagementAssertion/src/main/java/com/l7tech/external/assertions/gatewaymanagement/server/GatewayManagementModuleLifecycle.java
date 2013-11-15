@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
+import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocumentResources;
@@ -14,7 +15,6 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.event.system.LicenseChangeEvent;
-import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
@@ -26,7 +26,7 @@ import org.springframework.context.ApplicationListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,6 +114,25 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         return template;
     }
 
+    static ServiceTemplate createRestServiceTemplate() {
+        ServiceTemplate template = null;
+
+        try {
+            final String policyContents = getDefaultRestPolicyXml();
+
+            template = new ServiceTemplate(
+                    "Gateway REST Management Service",
+                    "/restman/*",
+                    policyContents,
+                    ServiceType.OTHER_INTERNAL_SERVICE,
+                    null);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
+        }
+
+        return template;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(GatewayManagementModuleLifecycle.class.getName());
@@ -127,6 +146,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
     private final ApplicationContext spring;
 
     private ServiceTemplate serviceTemplate;
+    private ServiceTemplate restServiceTemplate;
 
     private void handleLicenceEvent() {
         if ( isLicensed() ) {
@@ -138,6 +158,8 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     private void initialize() {
         serviceTemplate = createServiceTemplate();
+
+        restServiceTemplate = createRestServiceTemplate();
 
         registerServices();
     }
@@ -159,11 +181,13 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
             logger.warning("The Gateway Management assertion module is not licensed. The Gateway Management service will not be available.");
         } else {
             registerService(serviceTemplate);
+            registerService(restServiceTemplate);
         }
     }
 
     private void unregisterServices() {
         unregisterService(serviceTemplate);
+        unregisterService(restServiceTemplate);
     }
 
     private void registerService( final ServiceTemplate svcTemplate ) {
@@ -188,6 +212,20 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
                 new HttpBasic(),
                 authenticationAssertion,
                 new GatewayManagementAssertion()
+        ) );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        WspWriter.writePolicy(allAss, outputStream);
+        return HexUtils.decodeUtf8(outputStream.toByteArray());
+    }
+
+    private static String getDefaultRestPolicyXml() throws IOException {
+        final AuthenticationAssertion authenticationAssertion = new AuthenticationAssertion();
+        authenticationAssertion.setIdentityProviderOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID );
+        final Assertion allAss = new AllAssertion( Arrays.asList(
+                new SslAssertion(),
+                new HttpBasic(),
+                authenticationAssertion,
+                new RESTGatewayManagementAssertion()
         ) );
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         WspWriter.writePolicy(allAss, outputStream);
