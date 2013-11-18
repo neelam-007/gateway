@@ -1106,8 +1106,7 @@ public class GatewayFeatureSets {
         /**
          * Mobile Access Gateway
          *
-         * N.B. As of Halibut 8.0 GA this feature profile has no use. It will not serve any purpose until
-         * the assertions it references have been updated to be licensed from the assertion class.
+         * Applicable as of MAG 2.0.1.
          */
         GatewayFeatureSet mobileFeaturePack = fsp("set:Profile:Mobile",
                 "Mobile Access Gateway",
@@ -1116,6 +1115,40 @@ public class GatewayFeatureSets {
                 mass("assertion:CsrSigner"), // CsrSignerAssertion
                 mass("assertion:JwtDecode"), // JsonWebTokenAssertion
                 mass("assertion:JwtEncode"),
+                mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
+                mass("assertion:IDTokenDecode"),
+                mass("assertion:OpenIDConnectInstaller"),
+                mass("assertion:ApplePushNotification"), // ApplePushNotificationAssertion
+                mass("assertion:AppleFeedbackService"),
+                mass("assertion:WebSocket"), // WebSocketAssertion
+                mass("assertion:WebSocketEntityManager"),
+                mass("assertion:WebSocketValidation"),
+                mass("assertion:WebSocketMessageInjection"),
+                mass("assertion:XMPPGetRemoteCertificate"), // XMPPAssertion
+                mass("assertion:XMPPStartTLS"),
+                mass("assertion:XMPPCloseSession"),
+                mass("assertion:XMPPAssociateSessions"),
+                mass("assertion:XMPPGetAssociatedSessionId"),
+                mass("assertion:XMPPGetSessionAttribute"),
+                mass("assertion:XMPPSendToRemoteHost"),
+                mass("assertion:XMPPSetSessionAttribute"),
+                mass("assertion:XMPPOpenServerSession"),
+                fs(moduleLoader));
+
+        /**
+         * Mobile Access Gateway 'Classic'
+         *
+         * This profile was created to license the latest versions of the features introduced in MAG 1.0 to customers
+         * who received a subset of those features as tactical solutions, instead of giving those customers licenses
+         * for MAG 2.0.1.
+         *
+         * The 'Classic' profile lacks the CSR Signer and JSON WebToken features of the full Mobile Access Gateway.
+         *
+         * Added in Herring 8.0.1, applicable to MAG 2.0.1 and onward.
+         */
+        GatewayFeatureSet mobileClassicFeaturePack = fsp("set:Profile:MobileClassic",
+                "Mobile Access Gateway 'Classic'",
+                "Includes only those features available in MAG 1.0 (requires SOA Gateway license as base)",
                 mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
                 mass("assertion:IDTokenDecode"),
                 mass("assertion:OpenIDConnectInstaller"),
@@ -1150,7 +1183,8 @@ public class GatewayFeatureSets {
                 fs(profileApi),
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
-                fs(mobileFeaturePack));
+                fs(mobileFeaturePack),
+                fs(mobileClassicFeaturePack));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
