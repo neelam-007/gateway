@@ -18,6 +18,7 @@
     <context:component-scan base-package="com.l7tech.external.assertions.gatewaymanagement.server.rest">
         <context:include-filter type="annotation" expression="javax.ws.rs.ext.Provider"/>
     </context:component-scan>
+    <context:component-scan base-package="com.l7tech.external.assertions.gatewaymanagement.server" />
 
     <bean id="policyHelper" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper">
         <constructor-arg index="0"><bean class="com.l7tech.server.TestLicenseManager"/></constructor-arg>

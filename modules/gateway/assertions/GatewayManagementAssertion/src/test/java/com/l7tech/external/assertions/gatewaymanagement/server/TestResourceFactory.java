@@ -8,10 +8,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * ResourceFactory for testing custom methods
@@ -82,7 +79,7 @@ public class TestResourceFactory implements ResourceFactory<Object> {
     }
 
     @Override
-    public Collection<Map<String, String>> getResources(int offset, int windowSize) {
+    public List<Map<String, String>> getResources(int offset, int windowSize) {
         return null;
     }
 

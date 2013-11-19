@@ -147,8 +147,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     @Override
-    public Collection<Map<String, String>> getResources(int offset, int windowSize) {
-        Collection<Map<String,String>> resources = Collections.emptyList();
+    public List<Map<String, String>> getResources(int offset, int windowSize) {
+        List<Map<String,String>> resources = Collections.emptyList();
 
         try {
             Collection<EH> headers = manager.findAllHeaders(offset, windowSize);

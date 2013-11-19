@@ -7,10 +7,12 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
@@ -120,9 +122,9 @@ public interface ResourceFactory<R> {
     /**
      * Get selector map for all resource from the given offset, with the given window size.
      *
-     * @return The collection of resource selectors.
+     * @return The list of resource selectors.
      */
-    Collection<Map<String, String>> getResources(int offset, int windowSize);
+    List<Map<String, String>> getResources(int offset, int windowSize);
 
 
     /**

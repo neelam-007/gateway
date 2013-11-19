@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.JDBCConnectionRestResourceFactory;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.rest.SpringBean;
 
@@ -14,13 +14,13 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(JDBCConnectionResource.jdbcConnections_URI)
-public class JDBCConnectionResource extends RestWsmanEntityResource<JDBCConnectionMO, JDBCConnectionResourceFactory> {
+public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO, JDBCConnectionRestResourceFactory> {
 
     protected static final String jdbcConnections_URI = "jdbcConnections";
 
     @Override
     @SpringBean
-    public void setFactory( JDBCConnectionResourceFactory factory) {
+    public void setFactory( JDBCConnectionRestResourceFactory factory) {
         super.factory = factory;
     }
 }

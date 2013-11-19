@@ -138,10 +138,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     //TODO: is there a better way to do this?
     @Override
-    public Collection<Map<String, String>> getResources(final int offset, final int windowSize){
-        return transactional( new TransactionalCallback<Collection<Map<String, String>>>(){
+    public List<Map<String, String>> getResources(final int offset, final int windowSize){
+        return transactional( new TransactionalCallback<List<Map<String, String>>>(){
             @Override
-            public Collection<Map<String, String>> execute() throws ObjectModelException {
+            public List<Map<String, String>> execute() throws ObjectModelException {
                 return Functions.map( new ArrayList<>(getEntityHeaders()).subList(offset, windowSize), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
                     @Override
                     public Map<String, String> call( final SsgKeyHeader header ) {
