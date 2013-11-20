@@ -87,6 +87,9 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
     Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException;
 
     <ET extends GenericEntity>
+    void save(@NotNull Goid id, @NotNull Class<ET> entityClass, ET entity) throws SaveException;
+
+    <ET extends GenericEntity>
     Integer getVersion(@NotNull Class<ET> entityClass, Goid goid) throws FindException;
 
     <ET extends GenericEntity>

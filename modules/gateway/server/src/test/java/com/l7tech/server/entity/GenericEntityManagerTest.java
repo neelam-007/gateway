@@ -2,10 +2,12 @@ package com.l7tech.server.entity;
 
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.EntityManagerTest;
 import com.l7tech.util.AnnotationClassFilter;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -227,4 +229,71 @@ public class GenericEntityManagerTest extends EntityManagerTest {
         assertFalse(entity.getHashtable().containsKey("defaultEntry"));
     }
 
+    @Test
+    public void testSaveWithId() throws Exception {
+        EntityManager<TestDemoGenericEntity, GenericEntityHeader> gem = genericEntityManager.getEntityManager(TestDemoGenericEntity.class);
+
+        TestDemoGenericEntity entity = new TestDemoGenericEntity();
+        entity.setName("testSaveWithId");
+        entity.setDescription("descr of testSaveWithId");
+        entity.setAge(27);
+        entity.setPlaysTrombone(true);
+        entity.setEnabled(true);
+        entity.setTestGoid(new Goid(123, 456));
+
+        Goid goidToSave = new Goid(576576576, 1);
+        gem.save(goidToSave, entity);
+        session.flush();
+
+        TestDemoGenericEntity entitySaved = gem.findByPrimaryKey(goidToSave);
+
+        Assert.assertNotNull(entitySaved);
+        Assert.assertEquals(entity.getName(),entitySaved.getName());
+    }
+
+    @Test(expected = SaveException.class)
+    public void testSaveWithIdInReservedRange() throws Exception {
+        EntityManager<TestDemoGenericEntity, GenericEntityHeader> gem = genericEntityManager.getEntityManager(TestDemoGenericEntity.class);
+
+        TestDemoGenericEntity entity = new TestDemoGenericEntity();
+
+        Goid goidToSave = new Goid(4, 1);
+        gem.save(goidToSave, entity);
+    }
+
+    @Test(expected = SaveException.class)
+    public void testSaveWithIdInReservedRange1() throws Exception {
+        EntityManager<TestDemoGenericEntity, GenericEntityHeader> gem = genericEntityManager.getEntityManager(TestDemoGenericEntity.class);
+
+        TestDemoGenericEntity entity = new TestDemoGenericEntity();
+
+        Goid goidToSave = new Goid(0, Long.MIN_VALUE);
+        gem.save(goidToSave, entity);
+    }
+
+    @Test(expected = SaveException.class)
+    public void testSaveWithIdInReservedRange2() throws Exception {
+        EntityManager<TestDemoGenericEntity, GenericEntityHeader> gem = genericEntityManager.getEntityManager(TestDemoGenericEntity.class);
+
+        TestDemoGenericEntity entity = new TestDemoGenericEntity();
+
+        Goid goidToSave = new Goid(Math.round(Math.pow(2,16)) - 1, Long.MAX_VALUE);
+        gem.save(goidToSave, entity);
+    }
+
+    @Test
+    public void testSaveWithIdAroundReservedRange() throws Exception {
+        EntityManager<TestDemoGenericEntity, GenericEntityHeader> gem = genericEntityManager.getEntityManager(TestDemoGenericEntity.class);
+
+        TestDemoGenericEntity entity = new TestDemoGenericEntity();
+        entity.setName("MinGoid");
+
+        Goid goidToSave = new Goid(Math.round(Math.pow(2,16)), Long.MIN_VALUE);
+        gem.save(goidToSave, entity);
+
+        entity.setName("MinNegativeGoid");
+
+        Goid goidToSave2 = new Goid(-1, Long.MIN_VALUE);
+        gem.save(goidToSave2, entity);
+    }
 }

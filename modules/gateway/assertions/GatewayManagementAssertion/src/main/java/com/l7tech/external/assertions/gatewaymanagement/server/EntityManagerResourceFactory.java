@@ -58,6 +58,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
     @Override
     public Map<String, String> createResource( final Object resource ) throws InvalidResourceException {
+        return createResource(null, resource);
+    }
+
+    @Override
+    public Map<String, String> createResource( @Nullable final String id, final Object resource ) throws InvalidResourceException {
         checkReadOnly();
 
         final Goid goid = Eithers.extract(transactional(new TransactionalCallback<Either<InvalidResourceException, Goid>>() {
@@ -85,7 +90,13 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                         validate(entity);
                     }
 
-                    final Goid goid = doSaveEntity(entityBag.getEntity());
+                    final Goid goid;
+                    if(id != null){
+                        goid = Goid.parseGoid(id);
+                        doSaveEntity(goid, entityBag.getEntity());
+                    } else {
+                        goid = doSaveEntity(entityBag.getEntity());
+                    }
                     afterCreateEntity(entityBag, goid);
 
                     if (manager instanceof RoleAwareEntityManager) {
@@ -107,6 +118,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     // save the entity to the manager
     protected Goid doSaveEntity(E entity) throws SaveException {
         return manager.save(entity);
+    }
+
+    // save the entity to the manager
+    protected void doSaveEntity(Goid id, E entity) throws SaveException {
+        manager.save(id, entity);
     }
 
     @Override

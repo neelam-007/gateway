@@ -3,6 +3,7 @@ package com.l7tech.objectmodel.imp;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.Functions.Unary;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -35,6 +36,35 @@ public class PersistentEntityUtil {
         if (ge instanceof PersistentEntityImp) {
             PersistentEntityImp imp = (PersistentEntityImp) ge;
             imp.lock();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if this entities id should be preserved on save.
+     *
+     * @param ge The entity to check.
+     * @return true if this entities id should be preserved on save.
+     */
+    public static boolean isPreserveId(@NotNull PersistentEntity ge) {
+        if (ge instanceof PersistentEntityImp) {
+            PersistentEntityImp imp = (PersistentEntityImp) ge;
+            return imp.isPreserveId();
+        }
+        return false;
+    }
+
+    /**
+     * Preserve this entities id on save.
+     *
+     * @param ge The entity who's id to preserve.
+     * @return true if the preserve entity id property is properly set on the entity.
+     */
+    public static boolean preserveId(@NotNull PersistentEntity ge) {
+        if (ge instanceof PersistentEntityImp) {
+            PersistentEntityImp imp = (PersistentEntityImp) ge;
+            imp.preserveId();
             return true;
         }
         return false;

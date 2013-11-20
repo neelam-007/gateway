@@ -57,6 +57,10 @@ public class TestResourceFactory implements ResourceFactory<Object> {
         throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "create not supported");
     }
 
+    public Map<String,String> createResource(String id, Object resource) throws InvalidResourceException {
+        throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "create not supported");
+    }
+
     @Override
     public Object getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         throw new ResourceNotFoundException("Resource not found " + selectorMap);

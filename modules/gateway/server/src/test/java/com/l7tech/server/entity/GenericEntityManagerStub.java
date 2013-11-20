@@ -92,6 +92,11 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
     }
 
     @Override
+    public <ET extends GenericEntity> void save(@NotNull Goid id, @NotNull Class<ET> entityClass, ET entity) throws SaveException {
+        throw new UnsupportedOperationException("Not yet implemented for stub");
+    }
+
+    @Override
     public <ET extends GenericEntity> Integer getVersion(@NotNull Class<ET> entityClass, Goid goid) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }

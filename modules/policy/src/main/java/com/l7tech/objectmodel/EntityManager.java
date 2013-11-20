@@ -30,6 +30,8 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
 
     Goid save(ET entity) throws SaveException;
 
+    void save(Goid id, ET entity) throws SaveException;
+
     Integer getVersion(Goid goid) throws FindException;
 
     Map<Goid, Integer> findVersionMap() throws FindException;

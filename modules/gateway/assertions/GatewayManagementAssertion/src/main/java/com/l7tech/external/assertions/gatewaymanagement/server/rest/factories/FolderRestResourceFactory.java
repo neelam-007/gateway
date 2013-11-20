@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.objectmodel.folder.Folder;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -24,6 +25,7 @@ public class FolderRestResourceFactory extends WsmanBaseResourceFactory<FolderMO
     public FolderMO getResourceTemplate() {
         FolderMO folderMO = ManagedObjectFactory.createFolder();
         folderMO.setName("Folder Template");
+        folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
         return folderMO;
     }
 }

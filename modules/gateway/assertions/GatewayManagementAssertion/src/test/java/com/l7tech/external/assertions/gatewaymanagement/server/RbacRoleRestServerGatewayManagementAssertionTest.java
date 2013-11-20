@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.RbacRoleAssignmentMO;
@@ -9,6 +11,7 @@ import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.security.rbac.MockRoleManager;
@@ -16,9 +19,14 @@ import com.l7tech.util.Functions;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,8 +63,10 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
     @After
     public void after() throws Exception {
         super.after();
-        roleManager.delete(role);
-        roleManager.delete(roleCustom);
+        Collection<EntityHeader> roles = new ArrayList<>(roleManager.findAllHeaders());
+        for(EntityHeader role : roles){
+            roleManager.delete(role.getGoid());
+        }
     }
 
     @Test
@@ -99,6 +109,51 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Role roleSaved = roleManager.findByPrimaryKey(new Goid(uri.substring(uri.lastIndexOf('/')+1)));
         Assert.assertEquals(roleSaved.getDescription(), "My Description");
         Assert.assertEquals(roleSaved.getName(), "MyCreateRole");
+    }
+
+    @Test
+    public void createRoleWithIDTest() throws Exception {
+        RbacRoleMO roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setDescription("My Description");
+        roleMO.setName("MyCreateRole");
+
+        Goid id = new Goid(124124124, 1);
+
+        String roleMOString = writeMOToString(roleMO);
+
+        Response response = processRequest(roleBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
+        logger.info(response.toString());
+
+        String body = response.getBody();
+        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
+        Matcher matcher = pattern.matcher(body);
+        Assert.assertTrue(matcher.matches());
+        String uri = matcher.group(1);
+
+        final Goid goidReturned = new Goid(uri.substring(uri.lastIndexOf('/') + 1));
+        Assert.assertEquals(id, goidReturned);
+
+        Role roleSaved = roleManager.findByPrimaryKey(goidReturned);
+        Assert.assertNotNull(roleSaved);
+        Assert.assertEquals(roleSaved.getDescription(), "My Description");
+        Assert.assertEquals(roleSaved.getName(), "MyCreateRole");
+    }
+
+    @Test
+    public void createRoleWithIDInReservedRangeTest() throws Exception {
+        RbacRoleMO roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setDescription("My Description");
+        roleMO.setName("MyCreateRole");
+
+        Goid id = new Goid(5, 1);
+
+        String roleMOString = writeMOToString(roleMO);
+
+        Response response = processRequest(roleBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
+        logger.info(response.toString());
+
+        Assert.assertEquals(403, response.getStatus());
+        Assert.assertEquals("Cannot save entity with ID in reserved Range. ID: "+id, response.getBody());
     }
 
     @Test
@@ -180,6 +235,13 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
     public void listRoles() throws Exception {
         Response response = processRequest(roleBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
+
+        final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
+
+        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
+        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+
+        Assert.assertEquals(2, references.getReferences().size());
     }
 
     private String writeMOToString(ManagedObject roleMO) throws IOException {

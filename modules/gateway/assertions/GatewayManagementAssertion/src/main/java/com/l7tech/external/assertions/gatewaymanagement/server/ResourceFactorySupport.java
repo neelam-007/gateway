@@ -68,6 +68,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     }
 
     @Override
+    public Map<String, String> createResource(String id,  final Object resource ) throws InvalidResourceException {
+        throw new IllegalStateException("Read only");
+    }
+
+    @Override
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         throw new IllegalStateException("Read only");
     }

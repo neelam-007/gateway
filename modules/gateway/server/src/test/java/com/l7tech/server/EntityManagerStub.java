@@ -143,6 +143,15 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return goid;
     }
 
+    @Override
+    public synchronized void save(Goid id, ET entity) throws SaveException {
+        if(GoidRange.RESERVED_RANGE.isInRange(id)) throw new SaveException("Cannot save entity with ID in reserved Range. ID: " + id);
+        entity.setGoid(id);
+
+        entities.put(id, entity);
+        headers.put(id, header(entity));
+    }
+
     private String name(ET entity) {
         String name = null;
         if (entity instanceof NamedEntity ) {

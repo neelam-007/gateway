@@ -25,6 +25,11 @@ public enum GoidRange {
      * and must never be persisted as the GOID of some entity.
      */
     WRAPPED_OID(3, Long.MIN_VALUE, 3, Long.MAX_VALUE),
+
+    /**
+     * Represents the full reserved goid range. Goid's in this range will never be auto generated.
+     */
+    RESERVED_RANGE(0, Long.MIN_VALUE, 65535, Long.MAX_VALUE),
     ;
 
     /**

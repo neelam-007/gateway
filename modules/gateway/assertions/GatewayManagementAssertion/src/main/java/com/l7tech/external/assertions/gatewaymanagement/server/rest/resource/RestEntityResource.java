@@ -144,7 +144,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"../" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
     public Response createResourceWithId(R resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.createResource(id, resource);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
+        UriBuilder ub = uriInfo.getAbsolutePathBuilder();
         final URI uri = ub.build();
         return Response.created(uri).entity(new Reference(uri.toString(), uri.toString())).build();
     }

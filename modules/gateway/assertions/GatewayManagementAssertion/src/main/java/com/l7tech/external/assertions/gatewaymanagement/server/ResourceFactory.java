@@ -79,6 +79,14 @@ public interface ResourceFactory<R> {
     Map<String,String> createResource( Object resource ) throws InvalidResourceException;
 
     /**
+     * Create a new resource with the given id.
+     * @param id The id to create the resource with.
+     * @param resource The new resource to create
+     * @return The resource selectors.
+     */
+    Map<String,String> createResource(String id, Object resource) throws InvalidResourceException;
+
+    /**
      * Get the resource that matches the given selectors.
      *
      * @param selectorMap The map of selectors

@@ -224,6 +224,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public void save(Goid id, Policy entity) throws SaveException {
+            policyEntityManager.save(id, entity);
+        }
+
+        @Override
         public Integer getVersion(Goid oid) throws FindException {
             return policyEntityManager.getVersion(oid);
         }
@@ -309,6 +314,11 @@ public class EntityCrudImplTest {
         @Override
         public Goid save(SecurityZone entity) throws SaveException {
             return zoneEntityManager.save(entity);
+        }
+
+        @Override
+        public void save(Goid id, SecurityZone entity) throws SaveException {
+            zoneEntityManager.save(id, entity);
         }
 
         @Override
@@ -400,6 +410,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public void save(Goid id, PublishedService entity) throws SaveException {
+            serviceEntityManager.save(id, entity);
+        }
+
+        @Override
         public Integer getVersion(Goid oid) throws FindException {
             return serviceEntityManager.getVersion(oid);
         }
@@ -485,6 +500,11 @@ public class EntityCrudImplTest {
         @Override
         public Goid save(JdbcConnection entity) throws SaveException {
             return jdbcConnectionEntityManager.save(entity);
+        }
+
+        @Override
+        public void save(Goid id, JdbcConnection entity) throws SaveException {
+            jdbcConnectionEntityManager.save(entity);
         }
 
         @Override

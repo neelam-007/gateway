@@ -31,7 +31,7 @@ public interface RestResourceFactory<R> {
      * @param id       The id to create the resource with
      * @param resource The new resource to create.
      */
-    public void createResource(@NotNull String id, @NotNull R resource);
+    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.InvalidResourceException;
 
     /**
      * This will update a resource with this given id.

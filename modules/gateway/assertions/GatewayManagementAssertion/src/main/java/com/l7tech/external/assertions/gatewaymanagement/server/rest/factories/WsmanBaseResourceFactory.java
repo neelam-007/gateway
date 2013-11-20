@@ -57,13 +57,10 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      * @param resource The new resource to create.
      */
     @Override
-    public void createResource(@NotNull String id, @NotNull R resource) {
-        //TODO: This needs to be implemented.
-        throw new NotImplementedException("Not yet implemented");
+    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.InvalidResourceException {
         //validate that the resource is appropriate for create.
-//        validateCreateResource(id, resource);
-//        Map<String, String> selectorMap = factory.createResource(id, resource);
-//        return selectorMap.get("id");
+        validateCreateResource(id, resource);
+        factory.createResource(id, resource);
     }
 
     /**
@@ -141,7 +138,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      * @param id       The id to create the resource with.
      * @param resource The resource to create
      */
-    private void validateCreateResource(String id, R resource) {
+    private void validateCreateResource(@Nullable String id, R resource) {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
             throw new IllegalArgumentException("Must not specify an ID when creating a new entity, or id must equal new entity id");
         }

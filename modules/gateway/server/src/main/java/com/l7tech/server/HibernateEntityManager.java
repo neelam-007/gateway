@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ConfigFactory;
@@ -144,7 +145,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (uniquePropertyName.trim().isEmpty())
             throw new IllegalArgumentException("uniquePropertyName cannot be empty");
 
-        return findUnique( Collections.<String,Object>singletonMap( uniquePropertyName, uniqueKey ) );
+        return findUnique( Collections.<String,Object>singletonMap(uniquePropertyName, uniqueKey) );
     }
 
     /**
@@ -416,6 +417,39 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Goid");
 
             return (Goid)key;
+        } catch (RuntimeException e) {
+            throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
+        }
+    }
+
+    @Override
+    public void save(Goid id, ET entity) throws SaveException {
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1}) with id {2}", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString(), id.toString() });
+        if(GoidRange.RESERVED_RANGE.isInRange(id)) {
+            throw new SaveException("Cannot save an entity with an id in the reserved range. ID: " + id);
+        }
+        try {
+            try {
+                ET other = findByPrimaryKey(id);
+                if(other != null) throw new DuplicateObjectException("Other entity exists with the given id: " + id);
+            } catch (FindException e) {
+                //do nothing. This means that there is no other entity with the same goid.
+            }
+            if (getUniqueType() != UniqueType.NONE) {
+                final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
+                List others;
+                try {
+                    others = findMatching(constraints);
+                } catch (FindException e) {
+                    throw new SaveException("Couldn't find previous version(s) to check uniqueness", e);
+                }
+
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));
+            }
+
+            PersistentEntityUtil.preserveId(entity);
+            entity.setGoid(id);
+            getHibernateTemplate().save(entity);
         } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }

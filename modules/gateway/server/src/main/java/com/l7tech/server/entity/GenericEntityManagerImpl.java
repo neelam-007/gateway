@@ -147,6 +147,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             }
 
             @Override
+            public void save(Goid id, ET entity) throws SaveException {
+                gem.save(id, entityClass, entity);
+            }
+
+            @Override
             public Integer getVersion(Goid goid) throws FindException {
                 return gem.getVersion(entityClass, goid);
             }
@@ -304,6 +309,17 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
     @Override
     public <ET extends GenericEntity> Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException {
+        GenericEntity pers = prepareForSave(entityClass, entity);
+        return save(pers);
+    }
+
+    @Override
+    public <ET extends GenericEntity> void save(@NotNull Goid id, @NotNull Class<ET> entityClass, ET entity) throws SaveException {
+        GenericEntity pers = prepareForSave(entityClass, entity);
+        save(id, pers);
+    }
+
+    private <ET extends GenericEntity> GenericEntity prepareForSave(Class<ET> entityClass, ET entity) throws SaveException {
         if (!isRegistered(entityClass))
             throw new SaveException(regmsg(entityClass));
         if (!entityClass.getName().equals(entity.getEntityClassName()))
@@ -312,7 +328,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
 
         GenericEntity pers = new GenericEntity();
         GenericEntity.copyBaseFields(entity, pers);
-        return save(pers);
+        return pers;
     }
 
     @Override

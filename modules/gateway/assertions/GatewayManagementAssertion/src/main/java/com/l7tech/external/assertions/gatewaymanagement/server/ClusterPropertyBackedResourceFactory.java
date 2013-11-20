@@ -50,6 +50,11 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     }
 
     @Override
+    public final Map<String,String> createResource(String id, final Object resource) throws InvalidResourceException {
+        throw new UnsupportedOperationException("Cannot create a cluster property backed resource with a specific id.");
+    }
+
+    @Override
     public final Collection<Map<String, String>> getResources() {
         return transactional(new TransactionalCallback<List<Map<String, String>>>() {
             @Override
