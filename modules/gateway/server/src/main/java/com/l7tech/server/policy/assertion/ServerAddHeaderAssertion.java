@@ -9,15 +9,14 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -48,12 +47,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
 
             switch (assertion.getOperation()) {
                 case ADD:
-                    try {
-                        doAdd(headersKnob, name, value, context);
-                    } catch (final HttpCookie.IllegalFormatException e) {
-                        logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, value);
-                        return AssertionStatus.FALSIFIED;
-                    }
+                    doAdd(headersKnob, name, value, context);
                     break;
                 case REMOVE:
                     doRemove(headersKnob, name, value, context);
@@ -70,59 +64,100 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         return AssertionStatus.NONE;
     }
 
-    private void doAdd(final HeadersKnob headersKnob, final String name, final String value, final PolicyEnforcementContext context) throws HttpCookie.IllegalFormatException {
-        if (assertion.isRemoveExisting()) {
-            headersKnob.setHeader(name, value);
-        } else {
-            headersKnob.addHeader(name, value);
-        }
-        if (name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+    private void doAdd(final HeadersKnob headersKnob, final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {
+        if ((assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && assertion.getTarget() == TargetMessageType.REQUEST) ||
+                (assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE) && assertion.getTarget() == TargetMessageType.RESPONSE)) {
+            if (assertion.isRemoveExisting()) {
+                // delete all existing cookies from context
+                removeCookiesFromContext(context.getCookies(), context);
+                // remove cookie/set-cookie header if there happens to be any
+                headersKnob.removeHeader(assertionHeaderName);
+            }
+            // add cookie to context
             // all cookie attributes are parsed from the header value
-            context.addCookie(new HttpCookie((String) null, null, value));
+            try {
+                context.addCookie(new HttpCookie((String) null, null, assertionHeaderValue));
+            } catch (final HttpCookie.IllegalFormatException e) {
+                logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, assertionHeaderValue);
+            }
+        } else {
+            if (assertion.isRemoveExisting()) {
+                headersKnob.setHeader(assertionHeaderName, assertionHeaderValue);
+            } else {
+                headersKnob.addHeader(assertionHeaderName, assertionHeaderValue);
+            }
         }
-        logAndAudit(AssertionMessages.HEADER_ADDED, name, value);
-
+        logAndAudit(AssertionMessages.HEADER_ADDED, assertionHeaderName, assertionHeaderValue);
     }
 
-    private void doRemove(final HeadersKnob headersKnob, final String name, final String value, final PolicyEnforcementContext context) {
+    private void doRemove(final HeadersKnob headersKnob, final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {
         if (!assertion.isMatchValueForRemoval()) {
             // don't care about header value
             if (assertion.isEvaluateNameAsExpression()) {
-                final Pattern namePattern = Pattern.compile(name);
+                final Pattern namePattern = Pattern.compile(assertionHeaderName);
                 for (final String headerName : headersKnob.getHeaderNames()) {
                     if (namePattern.matcher(headerName).matches()) {
                         // when using an expression, we must match case
                         headersKnob.removeHeader(headerName, true);
-                        if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(headerName)) {
-                            removeAllCookiesFromContext(context);
-                        }
                         logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, headerName);
                     }
                 }
-            } else if (headersKnob.containsHeader(name)) {
-                headersKnob.removeHeader(name);
-                if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(name)) {
-                    removeAllCookiesFromContext(context);
+            } else {
+                if (headersKnob.containsHeader(assertionHeaderName)) {
+                    headersKnob.removeHeader(assertionHeaderName);
+                    logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, assertionHeaderName);
                 }
-                logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, name);
             }
         } else {
             // must match value in order to remove
             for (final String headerName : headersKnob.getHeaderNames()) {
-                if ((!assertion.isEvaluateNameAsExpression() && name.equalsIgnoreCase(headerName)) ||
-                        Pattern.compile(name).matcher(headerName).matches()) {
+                if ((!assertion.isEvaluateNameAsExpression() && assertionHeaderName.equalsIgnoreCase(headerName)) ||
+                        Pattern.compile(assertionHeaderName).matcher(headerName).matches()) {
                     // name matches
                     for (final String headerValue : headersKnob.getHeaderValues(headerName)) {
                         if (headerValue.contains(HeadersKnobSupport.VALUE_SEPARATOR)) {
                             // multivalued
                             final String[] subValues = StringUtils.split(headerValue, HeadersKnobSupport.VALUE_SEPARATOR);
                             for (final String subValue : subValues) {
-                                removeByValue(headersKnob, value, headerName, subValue.trim(), context);
+                                removeByValue(headersKnob, assertionHeaderValue, headerName, subValue.trim(), context);
                             }
                         }
-                        removeByValue(headersKnob, value, headerName, headerValue, context);
+                        removeByValue(headersKnob, assertionHeaderValue, headerName, headerValue, context);
                     }
                 }
+            }
+        }
+        doRemoveCookies(assertionHeaderName, assertionHeaderValue, context);
+    }
+
+    /**
+     * Cookies will only be removed from the context if header name + target pair is Cookie + request OR Set-Cookie + response.
+     */
+    private void doRemoveCookies(final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {
+        boolean cookieHeaderNameMatch = false;
+        if (assertion.isEvaluateNameAsExpression()) {
+            final Pattern namePattern = Pattern.compile(assertionHeaderName);
+            if ((namePattern.matcher(HttpConstants.HEADER_COOKIE).matches() && assertion.getTarget() == TargetMessageType.REQUEST) ||
+                    (namePattern.matcher(HttpConstants.HEADER_SET_COOKIE).matches() && assertion.getTarget() == TargetMessageType.RESPONSE)) {
+                cookieHeaderNameMatch = true;
+            }
+        } else if ((assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && assertion.getTarget() == TargetMessageType.REQUEST) ||
+                (assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE) && assertion.getTarget() == TargetMessageType.RESPONSE)) {
+            cookieHeaderNameMatch = true;
+        }
+        if (cookieHeaderNameMatch) {
+            if (assertion.isMatchValueForRemoval()) {
+                final List<HttpCookie> cookiesToRemove = new ArrayList<>();
+                for (final HttpCookie cookie : context.getCookies()) {
+                    final String cookieValue = HttpCookie.getCookieHeader(Collections.singleton(cookie));
+                    if ((!assertion.isEvaluateValueExpression() && assertionHeaderValue.equals(cookieValue) || // equality check
+                            assertion.isEvaluateValueExpression() && Pattern.compile(assertionHeaderValue).matcher(cookieValue).matches())) { // expression check
+                        cookiesToRemove.add(cookie);
+                    }
+                }
+                removeCookiesFromContext(cookiesToRemove, context);
+            } else {
+                removeCookiesFromContext(context.getCookies(), context);
             }
         }
     }
@@ -133,33 +168,14 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             // value matches
             // when using an expression, we must match case
             headersKnob.removeHeader(headerName, headerValue, true);
-            if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(headerName)) {
-                removeCookiesFromContext(headerValue, context);
-            }
             logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE, headerName, headerValue);
         }
     }
 
-    private void removeAllCookiesFromContext(final PolicyEnforcementContext context) {
-        for (final HttpCookie cookie : context.getCookies()) {
-            context.deleteCookie(cookie);
-        }
-    }
-
-    private void removeCookiesFromContext(final String cookieHeaderValue, final PolicyEnforcementContext context) {
-        try {
-            final HttpCookie parsed = new HttpCookie((String) null, null, cookieHeaderValue);
-            final List<HttpCookie> toDelete = new ArrayList<>();
-            for (final HttpCookie inContext : context.getCookies()) {
-                if (inContext.getCookieName().equals(parsed.getCookieName()) && inContext.getCookieValue().equals(parsed.getCookieValue())) {
-                    toDelete.add(inContext);
-                }
-            }
-            for (final HttpCookie delete : toDelete) {
-                context.deleteCookie(delete);
-            }
-        } catch (final HttpCookie.IllegalFormatException e) {
-            logger.log(Level.WARNING, "Unable to parse cookie from header value: " + cookieHeaderValue);
+    private void removeCookiesFromContext(final Collection<HttpCookie> cookiesToRemove, final PolicyEnforcementContext context) {
+        for (final HttpCookie toRemove : cookiesToRemove) {
+            context.deleteCookie(toRemove);
+            logAndAudit(AssertionMessages.COOKIE_REMOVED, toRemove.getCookieName(), toRemove.getCookieValue());
         }
     }
 }

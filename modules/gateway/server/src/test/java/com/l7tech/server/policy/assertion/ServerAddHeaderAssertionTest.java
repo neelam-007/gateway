@@ -548,6 +548,25 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+    }
+
+    @Test
+    public void addCookieReplaceExisting() throws Exception {
+        pec.addCookie(new HttpCookie("shouldBeReplaced", "shouldBeReplaced", 1, "/", "localhost"));
+        mess.getHeadersKnob().addHeader("Cookie", "shouldBeRemoved=shouldBeRemoved");
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar");
+        ass.setRemoveExisting(true);
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -562,6 +581,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;domain=localhost");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -576,6 +596,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;path=/foo");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -590,6 +611,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;comment=test");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -603,6 +625,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;secure");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -615,9 +638,11 @@ public class ServerAddHeaderAssertionTest {
         final Calendar calendar = new GregorianCalendar(2013, Calendar.NOVEMBER, 15, 0, 0, 0);
         ass.setHeaderName("Cookie");
         final SimpleDateFormat format = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
-        ass.setHeaderValue("foo=bar;expires=" + format.format(calendar.getTime()));
+        final String headerValue = "foo=bar;expires=" + format.format(calendar.getTime());
+        ass.setHeaderValue(headerValue);
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -631,6 +656,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;max-age=60");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -644,6 +670,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("foo=bar;version=0");
 
         assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -652,10 +679,89 @@ public class ServerAddHeaderAssertionTest {
     }
 
     @Test
+    public void addSetCookieToRequest() throws Exception {
+        ass.setHeaderName("Set-Cookie");
+        ass.setHeaderValue("foo=bar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals("foo=bar", mess.getHeadersKnob().getHeaderValues("Set-Cookie")[0]);
+        assertTrue(pec.getCookies().isEmpty());
+    }
+
+    @Test
+    public void addSetCookieToResponse() throws Exception {
+        ass.setTarget(TargetMessageType.RESPONSE);
+        ass.setHeaderName("Set-Cookie");
+        ass.setHeaderValue("foo=bar;domain=localhost;path=/;secure;max-age=60;version=1");
+        final PolicyEnforcementContext responsePec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(responsePec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, responsePec.getCookies().size());
+        final HttpCookie cookie = responsePec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals("localhost", cookie.getDomain());
+        assertEquals("/", cookie.getPath());
+        assertEquals(60, cookie.getMaxAge());
+        assertEquals(1, cookie.getVersion());
+    }
+
+    @Test
+    public void addCookieToResponse() throws Exception {
+        ass.setTarget(TargetMessageType.RESPONSE);
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar");
+        final PolicyEnforcementContext responsePec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(responsePec));
+        assertEquals(1, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals("foo=bar", mess.getHeadersKnob().getHeaderValues("Cookie")[0]);
+        assertTrue(responsePec.getCookies().isEmpty());
+    }
+
+    @Test
+    public void addSetCookieToNonRequestOrResponse() throws Exception {
+        final Message otherMessage = new Message();
+        otherMessage.initialize(XmlUtil.createEmptyDocument());
+        pec.setVariable("otherMessageVar", otherMessage);
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("otherMessageVar");
+        ass.setHeaderName("Set-Cookie");
+        ass.setHeaderValue("foo=bar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, otherMessage.getHeadersKnob().getHeaderNames().length);
+        assertEquals("foo=bar", otherMessage.getHeadersKnob().getHeaderValues("Set-Cookie")[0]);
+        // cookie should not be added to context if target is not request/response
+        assertTrue(pec.getCookies().isEmpty());
+    }
+
+    @Test
+    public void addCookieToNonRequestOrResponse() throws Exception {
+        final Message otherMessage = new Message();
+        otherMessage.initialize(XmlUtil.createEmptyDocument());
+        pec.setVariable("otherMessageVar", otherMessage);
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("otherMessageVar");
+        ass.setHeaderName("Cookie");
+        ass.setHeaderValue("foo=bar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(1, otherMessage.getHeadersKnob().getHeaderNames().length);
+        assertEquals("foo=bar", otherMessage.getHeadersKnob().getHeaderValues("Cookie")[0]);
+        // cookie should not be added to context if target is not request/response
+        assertTrue(pec.getCookies().isEmpty());
+    }
+
+    @Test
     public void addInvalidCookie() throws Exception {
         ass.setHeaderName("Cookie");
         ass.setHeaderValue("");
-        assertEquals(AssertionStatus.FALSIFIED, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertTrue(pec.getCookies().isEmpty());
     }
 
     @Test
@@ -742,6 +848,99 @@ public class ServerAddHeaderAssertionTest {
         assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
         assertEquals(1, pec.getCookies().size());
         // context cookies were not changed
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
+
+    @Test
+    public void removeSetCookieFromResponse() throws Exception {
+        final PolicyEnforcementContext responseContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
+        responseContext.addCookie(new HttpCookie((String) null, null, "foo=bar"));
+        mess.getHeadersKnob().addHeader("Set-Cookie", "foo=bar");
+        ass.setTarget(TargetMessageType.RESPONSE);
+        ass.setHeaderName("Set-Cookie");
+        ass.setMatchValueForRemoval(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(responseContext));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertTrue(responseContext.getCookies().isEmpty());
+    }
+
+    /**
+     * Cookies should not be removed from context if the target is response and the header name is not 'Set-Cookie'.
+     */
+    @Test
+    public void removeCookieFromResponse() throws Exception {
+        final PolicyEnforcementContext responseContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
+        responseContext.addCookie(new HttpCookie((String) null, null, "foo=bar"));
+        mess.getHeadersKnob().addHeader("Cookie", "foo=bar");
+        ass.setTarget(TargetMessageType.RESPONSE);
+        ass.setHeaderName("Cookie");
+        ass.setMatchValueForRemoval(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(responseContext));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, responseContext.getCookies().size());
+        final HttpCookie cookie = responseContext.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
+
+    /**
+     * Cookies should not be removed from context if the target is request and the header name is not 'Cookie'.
+     */
+    @Test
+    public void removeSetCookie() throws Exception {
+        pec.addCookie(new HttpCookie((String) null, null, "foo=bar"));
+        mess.getHeadersKnob().addHeader("Set-Cookie", "foo=bar");
+        ass.setHeaderName("Set-Cookie");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, mess.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
+
+    @Test
+    public void removeCookieFromNonRequestOrResponse() throws Exception {
+        final Message otherMessage = new Message();
+        otherMessage.initialize(XmlUtil.createEmptyDocument());
+        pec.setVariable("otherMessageVar", otherMessage);
+        pec.addCookie(new HttpCookie((String) null, null, "foo=bar"));
+        otherMessage.getHeadersKnob().addHeader("Cookie", "foo=bar");
+        ass.setHeaderName("Cookie");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("otherMessageVar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, otherMessage.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, pec.getCookies().size());
+        final HttpCookie cookie = pec.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
+
+    @Test
+    public void removeSetCookieFromNonRequestOrResponse() throws Exception {
+        final Message otherMessage = new Message();
+        otherMessage.initialize(XmlUtil.createEmptyDocument());
+        pec.setVariable("otherMessageVar", otherMessage);
+        pec.addCookie(new HttpCookie((String) null, null, "foo=bar"));
+        otherMessage.getHeadersKnob().addHeader("Set-Cookie", "foo=bar");
+        ass.setHeaderName("Set-Cookie");
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("otherMessageVar");
+
+        assertEquals(AssertionStatus.NONE, new ServerAddHeaderAssertion(ass).checkRequest(pec));
+        assertEquals(0, otherMessage.getHeadersKnob().getHeaderNames().length);
+        assertEquals(1, pec.getCookies().size());
         final HttpCookie cookie = pec.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals("bar", cookie.getCookieValue());

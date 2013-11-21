@@ -95,7 +95,7 @@ public class HttpForwardingRuleEnforcer {
             }
         }
 
-        writeHeaders(copy, httpRequestParams, context, targetDomain, auditor, ruleHeaderNames.contains("cookie"));
+        writeHeaders(copy, httpRequestParams, context, targetDomain, auditor, rules.isForwardAll() || ruleHeaderNames.contains("cookie"));
     }
 
     private static HeadersKnob copyHeadersKnob(final HeadersKnob toCopy) {

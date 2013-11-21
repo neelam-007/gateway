@@ -395,28 +395,6 @@ public class HttpCookie {
     }
 
     /**
-     * Get this cookie formatted as part of a version 1 (RFC 2109) "cookie:"
-     * header.
-     *
-     * @return "<Name>=<Value>; $Path=<Path>; $Domain=<Domain>"
-     */
-    public String getV1CookieHeaderPart() {
-        StringBuffer headerPart = new StringBuffer();
-        headerPart.append(cookieName);
-        headerPart.append('=');
-        headerPart.append(quoteIfNeeded(cookieValue));
-        headerPart.append("; $Path=");
-        headerPart.append(path);
-
-        if(explicitDomain) {
-            headerPart.append("; $Domain=");
-            headerPart.append(domain);
-        }
-
-        return headerPart.toString();
-    }
-
-    /**
      * Get the cookies as a string (as in a "Cookie:" header).
      *
      * NOTE: Since we may have modified the path/domain of the cookie when

@@ -172,6 +172,13 @@ public class CookieTest {
     }
 
     @Test
+    public void ensureValidForDomainAndPathNullCookieDomainAndPath() {
+        HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, null, null);
+        HttpCookie cookie2 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
+        assertEquals("Check valid", cookie1, cookie2);
+    }
+
+    @Test
     public void testQuoting() {
         HttpCookie cookie1 = new HttpCookie("name", "value with spaces", 1, "/some", ".domain.com");
         String header1 = cookie1.getV0CookieHeaderPart();
