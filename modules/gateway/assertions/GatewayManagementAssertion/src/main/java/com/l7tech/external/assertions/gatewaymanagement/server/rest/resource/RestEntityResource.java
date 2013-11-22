@@ -65,7 +65,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     @GET
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
-    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"../" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
+    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
     public Response listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) int count, @QueryParam("filters") String filters) {
         //TODO: implement filtering.
         //gets the list of resource ids
@@ -120,7 +120,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
      *
      */
     @POST
-    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"../" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
+    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
     public Response createResource(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
@@ -141,7 +141,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
      */
     @POST
     @Path("{id}")
-    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"../" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
+    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
     public Response createResourceWithId(R resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.createResource(id, resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder();
@@ -162,7 +162,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
      */
     @PUT
     @Path("{id}")
-    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"../" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
+    @XmlHeader("<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>")
     public Response updateResource(R resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.updateResource(id, resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);

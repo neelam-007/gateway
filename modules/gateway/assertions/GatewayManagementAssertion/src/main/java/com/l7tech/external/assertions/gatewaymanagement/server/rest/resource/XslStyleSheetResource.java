@@ -12,19 +12,23 @@ import java.io.OutputStream;
 
 /**
  * This resource servers all the xsl style sheets used by the rest api for transforming resources
+ * <p/>
+ * The {path:.*} allows the stylesheet to be found from any directory in the rest application. We do this because it is
+ * not easy to find the root path for load the stylesheets from otherwise
  *
  * @author Victor Kazakov
  */
 @Provider
-@Path(XslStyleSheetResource.StyleSheetBasePath)
+@Path("{path:.*}" + XslStyleSheetResource.StyleSheetBasePath)
 public class XslStyleSheetResource {
     public static final String StyleSheetBasePath = "stylesheets";
 
-    public static final String DefaultStyleSheetPath = StyleSheetBasePath+"/defaultStyleSheet.xsl";
+    public static final String DefaultStyleSheetPath = StyleSheetBasePath + "/defaultStyleSheet.xsl";
+
     @Path("defaultStyleSheet.xsl")
     @GET
     @Produces({"text/xsl"})
-    public StreamingOutput getDefaultStyleSheet(){
+    public StreamingOutput getDefaultStyleSheet() {
         return new StreamingOutput() {
             public void write(OutputStream output) throws IOException {
                 IOUtils.copyStream(XslStyleSheetResource.this.getClass().getResourceAsStream("defaultStyleSheet.xsl"), output);

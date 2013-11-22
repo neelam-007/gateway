@@ -29,6 +29,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,12 +62,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
 
     @Spy
-    StashManagerFactory stashManagerFactory = new StashManagerFactory() {
-        @Override
-        public StashManager createStashManager() {
-            return new ByteArrayStashManager();
-        }
-    };
+    StashManagerFactory stashManagerFactory = new TestStashManagerFactory();
 
     @Before
     public void before() throws Exception {
@@ -119,7 +115,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         return provider;
     }
 
-    protected Response processRequest( String uri, HttpMethod method, String contentType, String body ) throws Exception {
+    protected Response processRequest( String uri, HttpMethod method, @Nullable String contentType, String body ) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType==null?ContentTypeHeader.OCTET_STREAM_DEFAULT:ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize( contentTypeHeader , body.getBytes( "utf-8" ));
@@ -221,5 +217,12 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             return headers;
         }
     }
+
+    public static class TestStashManagerFactory implements StashManagerFactory {
+        @Override
+        public StashManager createStashManager() {
+            return new ByteArrayStashManager();
+        }
+    };
 
 }
