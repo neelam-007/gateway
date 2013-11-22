@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 /**
- * Add a header to a message.
+ * Add/remove header(s) to/from a message or cookie(s) to/from context via Cookie/Set-Cookie header.
  */
 public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAssertion<AddHeaderAssertion> {
     private final String[] variablesUsed;
@@ -55,7 +55,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                 default:
                     final String msg = "Unsupported operation: " + assertion.getOperation();
                     logger.log(Level.WARNING, msg);
-                    throw new IllegalArgumentException(msg);
+                    throw new PolicyAssertionException(assertion, msg);
             }
         } else {
             throw new IllegalStateException("HeadersKnob on message is null. Message may not have been initialized.");
@@ -65,29 +65,40 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
     }
 
     private void doAdd(final HeadersKnob headersKnob, final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {
-        if ((assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && assertion.getTarget() == TargetMessageType.REQUEST) ||
-                (assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE) && assertion.getTarget() == TargetMessageType.RESPONSE)) {
+        final boolean isCookieHeader = assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE);
+        final boolean isSetCookieHeader = assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE);
+        if ((isCookieHeader && assertion.getTarget() == TargetMessageType.REQUEST) ||
+                (isSetCookieHeader && assertion.getTarget() == TargetMessageType.RESPONSE)) {
             if (assertion.isRemoveExisting()) {
                 // delete all existing cookies from context
                 removeCookiesFromContext(context.getCookies(), context);
                 // remove cookie/set-cookie header if there happens to be any
-                headersKnob.removeHeader(assertionHeaderName);
+                if (headersKnob.containsHeader(assertionHeaderName)) {
+                    headersKnob.removeHeader(assertionHeaderName);
+                    logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME, assertionHeaderName);
+                }
             }
             // add cookie to context
             // all cookie attributes are parsed from the header value
             try {
-                context.addCookie(new HttpCookie((String) null, null, assertionHeaderValue));
+                final HttpCookie cookie = new HttpCookie((String) null, null, assertionHeaderValue);
+                context.addCookie(cookie);
+                logAndAudit(AssertionMessages.COOKIE_ADDED, cookie.getCookieName(), cookie.getCookieValue());
             } catch (final HttpCookie.IllegalFormatException e) {
                 logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, assertionHeaderValue);
             }
         } else {
+            if (isCookieHeader || isSetCookieHeader) {
+                logAndAudit(AssertionMessages.INVALID_HEADER_FOR_TARGET, assertionHeaderName, assertion.getTarget().toString());
+            }
+
             if (assertion.isRemoveExisting()) {
                 headersKnob.setHeader(assertionHeaderName, assertionHeaderValue);
             } else {
                 headersKnob.addHeader(assertionHeaderName, assertionHeaderValue);
             }
+            logAndAudit(AssertionMessages.HEADER_ADDED, assertionHeaderName, assertionHeaderValue);
         }
-        logAndAudit(AssertionMessages.HEADER_ADDED, assertionHeaderName, assertionHeaderValue);
     }
 
     private void doRemove(final HeadersKnob headersKnob, final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {
@@ -141,12 +152,20 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                     (namePattern.matcher(HttpConstants.HEADER_SET_COOKIE).matches() && assertion.getTarget() == TargetMessageType.RESPONSE)) {
                 cookieHeaderNameMatch = true;
             }
-        } else if ((assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && assertion.getTarget() == TargetMessageType.REQUEST) ||
-                (assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE) && assertion.getTarget() == TargetMessageType.RESPONSE)) {
-            cookieHeaderNameMatch = true;
+        } else {
+            final boolean isCookieHeader = assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE);
+            final boolean isSetCookieHeader = assertionHeaderName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE);
+            if ((isCookieHeader && assertion.getTarget() == TargetMessageType.REQUEST) ||
+                    (isSetCookieHeader && assertion.getTarget() == TargetMessageType.RESPONSE)) {
+                cookieHeaderNameMatch = true;
+            } else if (isCookieHeader || isSetCookieHeader) {
+                logAndAudit(AssertionMessages.INVALID_HEADER_FOR_TARGET, assertionHeaderName, assertion.getTarget().toString());
+            }
         }
+
         if (cookieHeaderNameMatch) {
             if (assertion.isMatchValueForRemoval()) {
+                // only remove cookies with values that match
                 final List<HttpCookie> cookiesToRemove = new ArrayList<>();
                 for (final HttpCookie cookie : context.getCookies()) {
                     final String cookieValue = HttpCookie.getCookieHeader(Collections.singleton(cookie));
@@ -157,6 +176,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                 }
                 removeCookiesFromContext(cookiesToRemove, context);
             } else {
+                // value doesn't matter - remove all cookies
                 removeCookiesFromContext(context.getCookies(), context);
             }
         }

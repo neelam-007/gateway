@@ -1234,7 +1234,9 @@ public class AssertionMessages extends Messages {
     public static final M HEADER_ADDED = m(10150, Level.INFO, "Added header with name {0} and value {1}");
     public static final M HEADER_REMOVED_BY_NAME = m(10151, Level.INFO, "Removed header with name {0}");
     public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10152, Level.INFO, "Removed header with name {0} and value {1}");
-    public static final M COOKIE_REMOVED = m(10153, Level.INFO, "Removed cookie with name {0} and value {1}");
+    public static final M COOKIE_ADDED = m(10153, Level.INFO, "Added cookie with name {0} and value {1}");
+    public static final M COOKIE_REMOVED = m(10154, Level.INFO, "Removed cookie with name {0} and value {1}");
+    public static final M INVALID_HEADER_FOR_TARGET = m(10155, Level.WARNING, "Header {0} is invalid for target {1}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
