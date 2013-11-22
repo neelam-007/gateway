@@ -382,6 +382,8 @@
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerStub"/>
 
+    <bean id="policyVersionManager" class="com.l7tech.server.policy.PolicyVersionManagerStub"/>
+
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
         <constructor-arg index="0"><null/></constructor-arg>
         <constructor-arg index="1" ref="policyFactory"/>

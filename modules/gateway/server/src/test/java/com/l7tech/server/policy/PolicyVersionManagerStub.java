@@ -5,6 +5,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.EntityManagerStub;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,12 +20,18 @@ public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,En
 
     @Override
     public PolicyVersion findByPrimaryKey( final Goid policyOid, final Goid policyVersionOid ) throws FindException {
-        throw new FindException("Not Implemented");
+        return entities.get(policyVersionOid);
     }
 
     @Override
     public List<PolicyVersion> findAllForPolicy( final Goid policyOid ) throws FindException {
-        throw new FindException("Not Implemented");
+        ArrayList<PolicyVersion> policyVersions = new ArrayList<>();
+        for(PolicyVersion policyVersion : entities.values()){
+            if(Goid.equals(policyVersion.getPolicyGoid(), policyOid)){
+                policyVersions.add(policyVersion);
+            }
+        }
+        return policyVersions;
     }
 
     @Override

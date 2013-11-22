@@ -5,6 +5,8 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
+import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -43,6 +45,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -225,4 +228,9 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         }
     };
 
+    protected String writeMOToString(ManagedObject mo) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ManagedObjectFactory.write(mo, bout);
+        return bout.toString();
+    }
 }

@@ -152,7 +152,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      */
     private void validateUpdateResource(String id, R resource) {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when updating a new entity, or id must equal new entity id");
+            throw new IllegalArgumentException("Must not specify an ID when updating a new entity, or id must equal entity id");
         }
     }
 

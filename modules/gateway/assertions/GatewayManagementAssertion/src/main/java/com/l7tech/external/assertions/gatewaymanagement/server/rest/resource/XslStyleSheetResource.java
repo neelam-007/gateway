@@ -22,6 +22,7 @@ import java.io.OutputStream;
 @Path("{path:.*}" + XslStyleSheetResource.StyleSheetBasePath)
 public class XslStyleSheetResource {
     public static final String StyleSheetBasePath = "stylesheets";
+    public static final String DEFAULT_STYLESHEET_HEADER = "<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>";
 
     public static final String DefaultStyleSheetPath = StyleSheetBasePath + "/defaultStyleSheet.xsl";
 

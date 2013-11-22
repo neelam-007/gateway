@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.RbacRoleAssignmentMO;
 import com.l7tech.gateway.api.RbacRoleMO;
@@ -21,8 +20,6 @@ import org.junit.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -242,11 +239,5 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
 
         Assert.assertEquals(2, references.getReferences().size());
-    }
-
-    private String writeMOToString(ManagedObject roleMO) throws IOException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ManagedObjectFactory.write(roleMO, bout);
-        return bout.toString();
     }
 }

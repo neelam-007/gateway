@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.entities;
 
-import com.l7tech.gateway.api.impl.AccessorSupport;
-
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -14,7 +12,6 @@ import javax.xml.bind.annotation.XmlValue;
  */
 @XmlRootElement(name = "Reference")
 @XmlType(name = "ReferenceType")
-@AccessorSupport.AccessibleResource(name = "folders")
 public class Reference {
     private String href;
     //this is the xlink type. We currently only use simple xlinks

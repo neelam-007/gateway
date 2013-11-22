@@ -24,7 +24,7 @@ import java.util.List;
 public class DependencyResource {
 
     @SpringBean
-    DependencyAnalyzer dependencyAnalyzer;
+    private DependencyAnalyzer dependencyAnalyzer;
 
     private EntityHeader entityHeader;
 
