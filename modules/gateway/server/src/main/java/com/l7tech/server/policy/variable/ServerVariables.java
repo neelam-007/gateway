@@ -237,6 +237,13 @@ public class ServerVariables {
                     return hrk == null ? null : hrk.getQueryString();
                 }
             }),
+            new Variable("request.ftp.command", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : frk.getCommand();
+                }
+            }),
             new Variable("request.ftp.path", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
@@ -265,6 +272,7 @@ public class ServerVariables {
                     return frk == null ? null : String.valueOf(frk.isSecure());
                 }
             }),
+            // TODO jwilliams: add server variable for "directory"?
             new Variable("request.ssh.path", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {

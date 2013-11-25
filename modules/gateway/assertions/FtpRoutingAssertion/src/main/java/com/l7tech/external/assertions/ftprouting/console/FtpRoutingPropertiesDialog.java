@@ -4,7 +4,6 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
@@ -65,14 +64,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private static final String ENABLED_PROPERTY_NAME = "enabled";
 
-    private static final ContentTypeHeader[] OFFERED_CONTENT_TYPE_HEADERS = new ContentTypeHeader[] {
-            ContentTypeHeader.XML_DEFAULT,
-            ContentTypeHeader.TEXT_DEFAULT,
-            ContentTypeHeader.SOAP_1_2_DEFAULT,
-            ContentTypeHeader.APPLICATION_JSON,
-            ContentTypeHeader.OCTET_STREAM_DEFAULT,
-    };
-
     private static final int PORT_RANGE_START = 1;
     private static final int PORT_RANGE_END = 65535;
 
@@ -96,7 +87,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JComboBox<MessageTargetableSupport> messageTargetComboBox;
     private JPanel targetVariablePanelHolder;
     private JPanel responseLimitHolderPanel;
-    private JComboBox<String> contentTypeComboBox;
     private BetterComboBox<String> commandComboBox;
     private JTextField argumentsTextField;
     private JButton manageStoredPasswordsButton;
@@ -182,6 +172,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // Command variable
         commandVariablePanel = new TargetVariablePanel();
+        commandVariablePanel.setValueWillBeRead(true);
+        commandVariablePanel.setValueWillBeWritten(false);
+
         commandVariablePanelHolder.setLayout(new BorderLayout());
         commandVariablePanelHolder.add(commandVariablePanel, BorderLayout.CENTER);
 
@@ -298,15 +291,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         supplyClientCertCheckBox.addPropertyChangeListener(ENABLED_PROPERTY_NAME, supplyClientCertCheckBoxListener);
 
         // --- Advanced tab ---
-
-        // Content type combo box
-        DefaultComboBoxModel<String> contentTypeComboBoxModel = new DefaultComboBoxModel<>();
-
-        for (ContentTypeHeader offeredType : OFFERED_CONTENT_TYPE_HEADERS) {
-            contentTypeComboBoxModel.addElement(offeredType.getFullValue());
-        }
-
-        contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
         // Response limit settings
         responseLimitPanel = new ByteLimitPanel();
@@ -459,8 +443,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(new InputValidator.ComponentValidationRule(storedPasswordComboBox) {
             @Override
             public String getValidationError() {
-                if(specifyUserCredsRadioButton.isSelected() && (storedPasswordComboBox == null
-                        || storedPasswordComboBox.getItemCount() == 0)) {
+                if(specifyUserCredsRadioButton.isSelected() && // TODO jwilliams: this doesn't account for plaintext passwords, should check storedPasswordComboBox.isEnabled()
+                        (storedPasswordComboBox == null || storedPasswordComboBox.getItemCount() == 0)) {
                     return getResourceString("passwordEmptyError");
                 }
 
@@ -517,18 +501,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        // content type must be specified if the combo box is enabled
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(contentTypeComboBox) {
-            @Override
-            public String getValidationError() {
-                if(contentTypeComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
-                    return getResourceString("contentTypeNullError");
-                }
-
-                return null;
-            }
-        });
-
         // validate response limit panel settings
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
@@ -565,13 +537,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
             messageSourceComboBox.setEnabled(false);
             messageTargetComboBox.setEnabled(false);
-            contentTypeComboBox.setEnabled(false);
             responseLimitPanel.setEnabled(false);
             autoFilenameCheckBox.setEnabled(false);
         } else {
             if (commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX) {
                 messageSourceComboBox.setEnabled(true);
-                contentTypeComboBox.setEnabled(true);
                 responseLimitPanel.setEnabled(true);
                 autoFilenameCheckBox.setEnabled(true);
             } else {
@@ -579,7 +549,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
                 messageSourceComboBox.setEnabled(isUploadCommand);
                 autoFilenameCheckBox.setEnabled(isUploadCommand);
-                contentTypeComboBox.setEnabled(!isUploadCommand);
                 responseLimitPanel.setEnabled(!isUploadCommand);
             }
 
@@ -743,19 +712,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         supplyClientCertCheckBox.setSelected(assertion.isUseClientCert());
         clientCertComboBox.select(assertion.getClientCertKeystoreId(), assertion.getClientCertKeyAlias());
 
-        // content type settings
-        String contentType = assertion.getDownloadedContentType();
-
-        if (contentType == null) {
-            contentTypeComboBox.setSelectedIndex(0);
-        } else {
-            contentTypeComboBox.setSelectedItem(contentType);
-            if (!contentType.equalsIgnoreCase((String) contentTypeComboBox.getSelectedItem())) {
-                ((DefaultComboBoxModel<String>) contentTypeComboBox.getModel()).addElement(contentType);
-                contentTypeComboBox.setSelectedItem(contentType);
-            }
-        }
-
         // response limit settings
         responseLimitPanel.setValue(assertion.getResponseByteLimit(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
 
@@ -815,7 +771,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             assertion.setOtherCommand(true);
             assertion.setFtpMethodOtherCommand(commandVariablePanel.getVariable());
         } else {
-            assertion.setFtpMethod((FtpMethod) FtpMethod.getEnumTranslator().stringToObject(commandComboBox.getSelectedItem().toString()));
+            Object selectedCommand = commandComboBox.getSelectedItem();
+
+            if (selectedCommand != null) { // TODO jwilliams: this is a fix to allow testing a connection without specifying a command first - need a better solution
+                assertion.setFtpMethod((FtpMethod) FtpMethod.getEnumTranslator().stringToObject(selectedCommand.toString()));
+            }
         }
 
         // message source
@@ -848,9 +808,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void fillAssertionAdvancedData(final FtpRoutingAssertion assertion) {
-        // content type
-        assertion.setDownloadedContentType(contentTypeComboBox.getSelectedItem().toString());
-
         // response limit settings
         assertion.setResponseByteLimit(responseLimitPanel.getValue());
 

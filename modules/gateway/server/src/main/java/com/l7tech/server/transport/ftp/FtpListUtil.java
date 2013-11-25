@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -22,9 +23,10 @@ import java.util.logging.Logger;
  * @author nilic
  * @author jwilliams
  */
-public class FtpListUtil {
+public class FtpListUtil { // TODO jwilliams: rename to FtpResponseUtil or something - needs a more accurate name
+    private static final Logger logger = Logger.getLogger(FtpListUtil.class.getName());
 
-    private static List<String> LIST_COMMANDS =
+    private static List<String> LIST_COMMANDS = // TODO jwilliams: this is wrong if this is just supposed to be for lists
             Arrays.asList(FtpMethod.FTP_LIST.getWspName(),
                     FtpMethod.FTP_MDTM.getWspName(),
                     FtpMethod.FTP_MLSD.getWspName(),
@@ -38,34 +40,23 @@ public class FtpListUtil {
                     FtpMethod.FTP_FEAT.getWspName(),
                     FtpMethod.FTP_HELP.getWspName());
 
-    private static final Logger logger = Logger.getLogger(FtpListUtil.class.getName());
-    private InputStream responseStream;
-
-    public FtpListUtil(InputStream responseStream) {
-        this.responseStream = responseStream;
-    }
-
-    public String writeMessageToOutput(){
-        String messageOut;
+    public static String writeMessageToOutput(final InputStream responseStream) {
+        String messageOut = null;
 
         try {
-            messageOut = new String(IOUtils.slurpStream(responseStream));
+            messageOut = new String(IOUtils.slurpStream(responseStream), Charsets.UTF8);
         } catch (SocketException ex) {
             logger.log(Level.WARNING, "Socket exception during list transfer", ex);
-            return null;
         } catch (IOException ex) {
             logger.log(Level.WARNING, "IOException during list transfer", ex);
-            return null;
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "Illegal list syntax");
-            return null;
         }
 
         return messageOut;
     }
 
-    public static Document createDoc(String responseMessage) {
-
+    public static Document createDoc(final String responseMessage) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
         DocumentBuilder builder;
@@ -77,18 +68,18 @@ public class FtpListUtil {
             // Use String reader
             document = builder.parse(new InputSource(new StringReader(responseMessage)));
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to parse String to Xml");
+            logger.log(Level.WARNING, "Unable to parse response message.");
             return null;
         }
 
         return document;
     }
 
-    public static String getRawListData(Document doc) {
+    public static String getRawListData(final Document doc) {
         StringBuilder sb = new StringBuilder();
         NodeList nodes = doc.getDocumentElement().getElementsByTagName("raw");
 
-        for (int i = 0; i < nodes.getLength(); i++){
+        for (int i = 0; i < nodes.getLength(); i++){ // TODO jwilliams: could replace with foreach
             Node node = nodes.item(i);
             sb.append("\r\n");
             sb.append(node.getTextContent());
@@ -99,7 +90,7 @@ public class FtpListUtil {
         return sb.toString();
     }
 
-    public static boolean isInputStreamCommand(FtpMethod ftpMethod){
+    public static boolean isInputStreamCommand(final FtpMethod ftpMethod){
         return LIST_COMMANDS.contains(ftpMethod.getWspName());
     }
 }

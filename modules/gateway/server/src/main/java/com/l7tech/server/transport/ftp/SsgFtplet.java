@@ -20,9 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Ftplet implementation backed by our MessageProcessor.
+ * Ftplet implementation for SSG.
  *
- * @author Steve Jones
  * @author jwilliams
  */
 public class SsgFtplet extends DefaultFtplet {

@@ -10,6 +10,13 @@ import java.net.PasswordAuthentication;
 public interface FtpRequestKnob extends TcpKnob, UriKnob {
 
     /**
+     * The raw FTP command.
+     *
+     * @return the FTP command
+     */
+    String getCommand();
+
+    /**
      * The path of the file being uploaded.
      *
      * @return the file path

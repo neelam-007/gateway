@@ -15,7 +15,7 @@ import org.apache.ftpserver.impl.FtpServerContext;
  * @author Steve Jones
  * @author jwilliams
  */
-public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet functionality into this class, as suggested above in class javadoc
+public class FtpCommands {
 
     /**
      * ACCT command implementation. Acknowledges the ACCT (account) command with a 202 reply.
@@ -67,13 +67,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             super(FtpMethod.FTP_LIST);
         }
         
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
-        }
+//        @Override
+//        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
+//                throws IOException, FtpException {
+//            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
+//            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
+//            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
+//        }
     }
 
     /**
@@ -105,23 +105,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             super(FtpMethod.FTP_NLST);
         }
 
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
-        }
-    }
-
-    /**
-     * PASS command implementation. Set passive mode
-     */
-    public static class PASS extends BaseCommand {
-
-        PASS() {
-            super(FtpMethod.FTP_PASS);
-        }
+//        @Override
+//        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
+//                throws IOException, FtpException {
+//            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
+//            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
+//            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
+//        }
     }
 
     /**
@@ -223,13 +213,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             super(FtpMethod.FTP_MLSD);
         }
 
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
-        }
+//        @Override
+//        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
+//                throws IOException, FtpException {
+//            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
+//            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
+//            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
+//        }
     }
 
     /**
@@ -239,14 +229,6 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
 
         DELE() {
             super(FtpMethod.FTP_DELE);
-        }
-
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleCommandStart(session.getFtpletSession(), request, false, getFtpMethod());
         }
     }
 
@@ -271,13 +253,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             super(FtpMethod.FTP_PUT);
         }
 
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
-        }
+//        @Override
+//        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
+//                throws IOException, FtpException {
+//            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
+//            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
+//            requestProcessor.handleTransportStart(session, request, false, getFtpMethod());
+//        }
     }
 
     public static class STOU extends BaseCommand {
@@ -286,13 +268,13 @@ public class FtpCommands { // TODO jwilliams: investigate refactoring of Ftplet 
             super(FtpMethod.FTP_PUT); // TODO jwilliams: should be STOU!!! change unique upload approach
         }
 
-        @Override
-        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
-                throws IOException, FtpException {
-            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
-            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
-            requestProcessor.handleTransportStart(session, request, true, getFtpMethod()); // TODO jwilliams: note: TRUE
-        }
+//        @Override
+//        public void execute(FtpIoSession session, FtpServerContext context, FtpRequest request)
+//                throws IOException, FtpException {
+//            SsgFtpServerContext ssgContext = (SsgFtpServerContext) context;
+//            FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
+//            requestProcessor.handleTransportStart(session, request, true, getFtpMethod()); // TODO jwilliams: note: TRUE
+//        }
     }
 
     /**

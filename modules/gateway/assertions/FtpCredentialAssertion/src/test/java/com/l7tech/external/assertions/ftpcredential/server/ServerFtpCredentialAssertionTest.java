@@ -42,6 +42,12 @@ public class ServerFtpCredentialAssertionTest {
                 public String getFile() {
                     return null;
                 }
+
+                @Override
+                public String getCommand() {
+                    return null;
+                }
+
                 @Override
                 public String getPath() {
                     return null;

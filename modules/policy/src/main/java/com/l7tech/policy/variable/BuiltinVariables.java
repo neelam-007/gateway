@@ -23,6 +23,8 @@ public class BuiltinVariables {
     public static final String REQUEST_JMS_MSG_ALL_PROP_VALS = "request.jms.allpropertyvalues";
     public static final String RESPONSE_JMS_MSG_ALL_PROP_VALS = "response.jms.allpropertyvalues";
 
+    public static final String PREFIX_REQUEST_FTP = "request.ftp";
+
     public static final String PREFIX_REQUEST_SHARED = "request.shared";
 
     public static final String SSGNODE_NAME = "ssgnode.name";
@@ -139,10 +141,12 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_REQUEST_SHARED, true, true, null, false),
             new VariableMetadata("request.http.secure", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata("request.http.queryString", false, false, null, false),
-            new VariableMetadata("request.ftp.path", false, false, null, false),
-            new VariableMetadata("request.ftp.file", false, false, null, false),
-            new VariableMetadata("request.ftp.unique", false, false, null, false),
-            new VariableMetadata("request.ftp.secure", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_FTP + ".command", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_FTP + ".path", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_FTP + ".file", false, false, null, false),
+            // TODO jwilliams: add directory variable here, too?
+            new VariableMetadata(PREFIX_REQUEST_FTP + ".unique", false, false, null, false),
+            new VariableMetadata(PREFIX_REQUEST_FTP + ".secure", false, false, null, false),
             new VariableMetadata("request.ssh.path", false, false, null, false),
             new VariableMetadata("request.ssh.file", false, false, null, false),
             new VariableMetadata("auditLevel", false, false, null, true),

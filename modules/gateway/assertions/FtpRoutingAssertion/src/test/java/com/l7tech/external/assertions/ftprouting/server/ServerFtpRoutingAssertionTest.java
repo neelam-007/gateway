@@ -132,7 +132,6 @@ public class ServerFtpRoutingAssertionTest {
 
         assertion.setFtpMethod(testMethod);
         assertion.setDirectory(testFile.getDirectory());
-        assertion.setDownloadedContentType(ContentTypeHeader.XML_DEFAULT.toString());
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
 
@@ -160,14 +159,13 @@ public class ServerFtpRoutingAssertionTest {
 
         // set up file system
         FileEntry testFileEntry = addFile(fakeFtpServer.getFileSystem(), testFile);
-        String listItem = new UnixDirectoryListingFormatter().format(testFileEntry);
+        String listItem = new UnixDirectoryListingFormatter().format(testFileEntry) + "\r\n";
 
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
         assertion.setFtpMethod(testMethod);
         assertion.setDirectory(testFile.getDirectory());
-        assertion.setDownloadedContentType(ContentTypeHeader.XML_DEFAULT.toString());
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
 
@@ -185,11 +183,7 @@ public class ServerFtpRoutingAssertionTest {
         String responseContent =
                 new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
 
-        List<Element> elementList =
-                XpathUtil.findElements(XmlUtil.parse(responseContent).getDocumentElement(), RAW_NODE_XPATH, null);
-
-        assertEquals(1, elementList.size());
-        assertEquals(listItem, elementList.get(0).getTextContent());
+        assertEquals(listItem, responseContent);
     }
 
     @Test
@@ -334,7 +328,6 @@ public class ServerFtpRoutingAssertionTest {
         assertion.setFileNameSource(FtpFileNameSource.ARGUMENT);
         assertion.setArguments(file.getName());
         assertion.setDirectory(file.getDirectory());
-        assertion.setDownloadedContentType(file.getContentType());
     }
 
     private class FtpFileDetails {
@@ -463,6 +456,11 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
+                    public String getCommand() {
+                        return null;
+                    }
+
+                    @Override
                     public String getPath() {
                         return path;
                     }
@@ -569,6 +567,11 @@ public class ServerFtpRoutingAssertionTest {
                     @Override
                     public String getFile() {
                         return file;
+                    }
+
+                    @Override
+                    public String getCommand() {
+                        return null;
                     }
 
                     @Override

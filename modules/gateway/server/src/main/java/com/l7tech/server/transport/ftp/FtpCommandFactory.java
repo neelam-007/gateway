@@ -42,7 +42,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("MODE", new MODE());
         commandMap.put("NLST", new FtpCommands.NLST());
         commandMap.put("NOOP", new NOOP());
-        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation
+        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation // TODO jwilliams: implement OPTS & OPTS_MLST (affects MLST response); OPTS_UTF8 can keep the library implementation
         commandMap.put("PASS", new PASS());
         commandMap.put("PASV", new PASV());
         commandMap.put("PBSZ", new PBSZ()); // RFC 2228 Security Extensions
@@ -51,7 +51,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("PWD",  new FtpCommands.PWD());
         commandMap.put("QUIT", new QUIT());
         commandMap.put("REIN", new REIN());
-        commandMap.put("REST", new REST()); // RFC 3659 Extensions to FTP
+        commandMap.put("REST", new REST()); // RFC 3659 Extensions to FTP // TODO jwilliams: make a command? set local attribute, AND pass in request?
         commandMap.put("RETR", new FtpCommands.RETR());
         commandMap.put("RMD",  new FtpCommands.RMD());
         commandMap.put("RNFR", new FtpCommands.RNFR());
@@ -62,7 +62,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("STOR", new FtpCommands.STOR());
         commandMap.put("STOU", new FtpCommands.STOU());
         commandMap.put("STRU", new STRU());
-        commandMap.put("SYST", new SYST());
+        commandMap.put("SYST", new SYST()); // TODO jwilliams: custom command to obscure info?
         commandMap.put("TYPE", new TYPE());
         commandMap.put("USER", new USER());
 

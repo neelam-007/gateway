@@ -14,8 +14,8 @@ public class FtpMethod implements Serializable {    // TODO jwilliams: refactor 
     /** Map for looking up instance by wspName. */
     private static final Map<String, FtpMethod> _wspNameMap = new HashMap<>();
 
-    public static final FtpMethod FTP_GET  = new FtpMethod("RETR" , "Transfer a copy of the file", FtpMethodEnum.FTP_GET);
-    public static final FtpMethod FTP_PUT  = new FtpMethod("STOR" , "Accept the data and to store the data as a file at the server site", FtpMethodEnum.FTP_PUT);
+    public static final FtpMethod FTP_GET  = new FtpMethod("RETR" , "Transfer a copy of the file", FtpMethodEnum.FTP_GET); // TODO jwilliams: rename "FTP_RETR"
+    public static final FtpMethod FTP_PUT  = new FtpMethod("STOR" , "Accept the data and to store the data as a file at the server site", FtpMethodEnum.FTP_PUT); // TODO jwilliams: rename "FTP_STOR"
     public static final FtpMethod FTP_DELE = new FtpMethod("DELE", "Delete file", FtpMethodEnum.FTP_DELE);
     public static final FtpMethod FTP_LIST = new FtpMethod("LIST", "Returns information of a file or directory if specified, else information of the current working directory is returned", FtpMethodEnum.FTP_LIST);
     public static final FtpMethod FTP_ABOR = new FtpMethod("ABOR", "Abort an active file transfer", FtpMethodEnum.FTP_ABOR);

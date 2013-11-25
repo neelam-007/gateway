@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -25,9 +26,7 @@ import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -117,8 +116,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private FtpMethod _ftpMethod;
 
     private String _arguments;
-
-    private String _downloadedContentType;
 
     private MessageTargetableSupport _requestTarget = defaultRequestTarget();
 
@@ -297,14 +294,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this._arguments = arguments;
     }
 
-    public String getDownloadedContentType() {
-        return _downloadedContentType;
-    }
-
-    public void setDownloadedContentType(String downloadedContentType) {
-        this._downloadedContentType = downloadedContentType;
-    }
-
     @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
     public Goid getPasswordGoid() {
         return passwordGoid;
@@ -314,7 +303,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this.passwordGoid = passwordGoid;
     }
 
-    public boolean getOtherCommand() {
+    public boolean getOtherCommand() { // TODO jwilliams: refactor to "isCommandFromVariable" or something
         return _otherCommand;
     }
 
@@ -450,19 +439,28 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
+        final List<String> expressions = new ArrayList<>();
+
+        if (getOtherCommand()) {
+            expressions.add(Syntax.getVariableExpression(_ftpMethodOtherCommand));
+        }
+
+        if (_passwordUsesContextVariables) {
+            expressions.add(Syntax.getVariableExpression(_password));
+        }
+
+        expressions.add(_hostName);
+        expressions.add(_port);
+        expressions.add(_directory);
+        expressions.add(_userName);
+        expressions.add(_arguments);
+        expressions.add(_responseByteLimit);
+
+//        Syntax.getReferencedNames( expressions.toArray( new String[ expressions.size() ] ) );
+
         return _requestTarget.getMessageTargetVariablesUsed()
                 .with(_responseTarget.getMessageTargetVariablesUsed())
-                .withExpressions(
-                        _ftpMethodOtherCommand,
-                        _hostName,
-                        _port,
-                        _directory,
-                        _userName,
-                        _passwordUsesContextVariables ? _password : null,
-//                        _fileNamePattern,
-                        _arguments,
-                        _responseByteLimit
-                ).asArray();
+                .withExpressions(expressions).asArray();
     }
 
     @Override

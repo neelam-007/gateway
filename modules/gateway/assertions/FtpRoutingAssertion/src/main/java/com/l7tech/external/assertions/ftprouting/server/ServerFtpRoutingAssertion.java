@@ -151,7 +151,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         String arguments = null;
 
         if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            // Cannot use STOU because
+            // Cannot use STOU because // TODO jwilliams: look at this - is it why we don't pass through STOU? Should make that decision in the routing - not the inbound handling - to be less tightly coupled.
             // {@link com.jscape.inet.ftp.Ftp.uploadUnique(InputStream, String)}
             // sends a parameter as filename seed, which causes IIS to respond
             // with "500 'STOU seed': Invalid number of parameters".
@@ -165,8 +165,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         FtpMethod ftpMethod;
 
         if (assertion.getOtherCommand()) {
-            String ftpMethodOtherCommand = expandVariables(context, assertion.getFtpMethodOtherCommand());
-            ftpMethod = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(ftpMethodOtherCommand);
+            String otherCommand = variableExpander.expandVariables(Syntax.getVariableExpression(assertion.getFtpMethodOtherCommand()));
+            ftpMethod = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(otherCommand);
         } else {
             ftpMethod = assertion.getFtpMethod();
         }
@@ -298,7 +298,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
             final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
             response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, getMaxBytes());
+                    ContentTypeHeader.OCTET_STREAM_DEFAULT, is, getMaxBytes());
 
             throw new FtpException(ex.getMessage());
         }
@@ -377,7 +377,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
             final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
             response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, getMaxBytes());
+                    ContentTypeHeader.OCTET_STREAM_DEFAULT, is, getMaxBytes());
 
             throw new FtpException(ex.getMessage());
         }
@@ -407,7 +407,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             final Future<Void> future = startFtpDownloadTask(config, connection, fileToDownload, pos);
             final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
             response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), pis, byteLimit);
+                    ContentTypeHeader.OCTET_STREAM_DEFAULT, pis, byteLimit);
             // force all message parts to be initialized, it is by default lazy
             logger.log(Level.FINER, "Reading FTP(S) response.");
             response.getMimeKnob().getContentLength();
@@ -442,7 +442,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
             Ftp ftp = (Ftp) connection;
             if (FtpListUtil.isInputStreamCommand(ftpMethod)) {
-                is = inputStreamFtp(ftp, arguments, ftpMethod);
+                is = inputStreamFtp(ftp, config.getDirectory(), arguments, ftpMethod);
             } else {
                 is = issueFtpCommand(ftp, ftpMethod, arguments);
             }
@@ -457,12 +457,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
 
-        if (is != null){
+        if (is != null) {
             response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, byteLimit);
+                    ContentTypeHeader.OCTET_STREAM_DEFAULT, is, byteLimit);
         } else {
             response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), new ByteArrayInputStream(new byte[0]), byteLimit);
+                    ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(new byte[0]), byteLimit);
         }
 
         // force all message parts to be initialized, it is by default lazy
@@ -654,7 +654,26 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private static InputStream inputStreamFtp(final Ftp ftp,
+    /**
+     * Returns a StringBuilder of CRLF-separated raw listing lines for each FtpFile in the enumeration.
+     * There doesn't seem to be a way to get the original raw response from the server, unfortunately, so we have to
+     * reconstruct it.
+     */
+    private static String createRawListing(Enumeration ftpFiles) {
+        StringBuilder sb = new StringBuilder();
+
+        while (ftpFiles.hasMoreElements()) {
+            FtpFile file = (FtpFile) ftpFiles.nextElement();
+            sb.append(file.getLine());
+            sb.append("\r\n");
+        }
+
+        return sb.toString();
+    }
+
+    // TODO jwilliams: N.B. method signature changed - apply same changes to FTPS methods
+    private static InputStream inputStreamFtp(final Ftp ftp, // TODO jwilliams: ensure arguments are used properly - may have to pass in 'dir', too
+                                              final String dir,
                                               final String arguments,
                                               final FtpMethod ftpMethod) throws FtpException {
         InputStream is = null;
@@ -664,19 +683,14 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         
         switch (ftpMethod.getFtpMethodEnum()) {
             case FTP_MLSD:
+//                Enumeration machineDirListingEnum = (null == arguments || arguments.isEmpty())    // TODO jwilliams: find out why this isn't working
+//                        ? ftp.getMachineDirListing(dir)
+//                        : ftp.getMachineDirListing(arguments);
+//                is = new ByteArrayInputStream(createRawListing(machineDirListingEnum).getBytes());
+//                break;
             case FTP_LIST:
-                List<FtpFile> fileList = new ArrayList<>();
-                Enumeration fileEnum = ftp.getDirListing();
-
-                while (fileEnum.hasMoreElements()) {
-                    FtpFile file = (FtpFile) fileEnum.nextElement();
-                    fileList.add(file);
-                }
-
-                //Build XML as a String
-                Document doc = createXml(fileList);
-                String files = getStringFromDoc(doc);
-                is = new ByteArrayInputStream(files.getBytes());
+                Enumeration dirListingEnum = ftp.getDirListing(); // TODO jwilliams: handle arguments
+                is = new ByteArrayInputStream(createRawListing(dirListingEnum).getBytes());
                 break;
             case FTP_MDTM:
                 Date lastModifiedTime = ftp.getFileTimestamp(arguments);
@@ -685,7 +699,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 break;
             case FTP_NLST:
                 StringBuilder sb = new StringBuilder();
-                Enumeration fileNames = ftp.getNameListing();
+                Enumeration fileNames = ftp.getNameListing(); // TODO jwilliams: add arguments
 
                 while (fileNames.hasMoreElements()) {
                     String file = (String) fileNames.nextElement();
@@ -709,7 +723,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 break;
             default:
                 String response = ftp.issueCommand(ftpMethod.getWspName());
-                listener.responseReceived(new FtpResponseEvent(ftp, response));
+                System.out.println("RESPONSE: " + response);
+                listener.responseReceived(new FtpResponseEvent(ftp, response)); // TODO jwilliams: is this necessary? I think the event is already being created
                 is = new ByteArrayInputStream(response.getBytes());
             case FTP_GET:
                 break;
@@ -732,10 +747,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             case FTP_CCC:
                 break;
             case FTP_CDUP:
+                // TODO jwilliams: implement with ftp.setDirUp
                 break;
             case FTP_CONF:
                 break;
             case FTP_CWD:
+                // TODO jwilliams: implement with ftp.setDir
                 break;
             case FTP_ENC:
                 break;
@@ -814,9 +831,10 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         
         switch (ftpMethod.getFtpMethodEnum()) {
             case FTP_MLSD:
+                // TODO jwilliams: add case for ftps.getMachineDirListing?
             case FTP_LIST:
                 List<FtpFile> fileList = new ArrayList<>();
-                Enumeration fileEnum = ftps.getDirListing();
+                Enumeration fileEnum = ftps.getDirListing(); // TODO jwilliams: doesn't check for or include any arguments
 
                 while (fileEnum.hasMoreElements())  {
                     FtpFile file = (FtpFile) fileEnum.nextElement();
@@ -930,12 +948,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         } else if (listener.getSize() < count) {
             throw new FtpException("File '" + filename + "' upload truncated to " + listener.getSize() + " bytes.");
         }
-    }
-
-    private String expandVariables(PolicyEnforcementContext context, String pattern) {
-        final String[] variablesUsed = Syntax.getReferencedNames(pattern);
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
-        return ExpandVariables.process(pattern, vars, getAudit());
     }
 
     /*
@@ -1068,6 +1080,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         @Override
         public void responseReceived(final FtpResponseEvent ftpResponseEvent) {
             final String response = ftpResponseEvent.getResponse();
+
             if (response.startsWith(CODE_CONN_OPEN_START_TRANS) ||
                             response.startsWith(CODE_FILE_STATUS_OK_DATA_OPEN)) {
                 error = null;
