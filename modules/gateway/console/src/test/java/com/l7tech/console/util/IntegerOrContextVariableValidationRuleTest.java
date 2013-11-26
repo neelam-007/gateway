@@ -119,6 +119,20 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
+    public void nullStringAllowed() {
+        textComponent.setText(null);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void emptyStringAllowed() {
+        textComponent.setText("");
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
     public void validateCheckBoxNumeric() {
         final JComboBox comboBox = createEditableComboBox("1");
         assertNull(new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
@@ -143,9 +157,31 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
+    public void validateCheckBoxEmpty() {
+        final JComboBox comboBox = createEditableComboBox("");
+        assertEquals("The version must not be empty.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
     public void validateCheckBoxNotNumeric() {
         final JComboBox comboBox = createEditableComboBox("notNumeric");
         assertEquals("The version field must be an integer between 0 and 1.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxNullAllowed() {
+        final JComboBox comboBox = createEditableComboBox(null);
+        final IntegerOrContextVariableValidationRule rule = new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxEmptyAllowed() {
+        final JComboBox comboBox = createEditableComboBox("");
+        final IntegerOrContextVariableValidationRule rule = new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
     }
 
     private void validateNonIntegerError(String error) {

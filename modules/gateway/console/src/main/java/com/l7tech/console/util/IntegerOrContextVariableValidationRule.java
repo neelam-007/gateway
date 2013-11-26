@@ -20,6 +20,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     private int maximum;
     private final String fieldName;
     private final JComponent component;
+    private boolean allowEmpty;
 
     public IntegerOrContextVariableValidationRule(final int minimum, final int maximum, final String fieldName, final JTextComponent textComponent) {
         this.minimum = minimum;
@@ -45,6 +46,10 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
 
     public void setMaximum(final int maximum) {
         this.maximum = maximum;
+    }
+
+    public void setAllowEmpty(final boolean allowEmpty) {
+        this.allowEmpty = allowEmpty;
     }
 
     @Override
@@ -74,7 +79,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
             } catch (VariableNameSyntaxException e) {
                 errorMessage = MessageFormat.format("Invalid variable referenced for {0} field: {1}.", fieldName, ExceptionUtils.getMessage(e));
             }
-        } else {
+        } else if (!allowEmpty) {
             errorMessage = MessageFormat.format("The {0} must not be empty.", fieldName);
         }
         return errorMessage;

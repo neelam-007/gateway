@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
 import com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
@@ -19,15 +20,18 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     private JTextField maxAgeTextField;
     private JComboBox versionComboBox;
     private JCheckBox secureCheckBox;
+    private JComboBox operationComboBox;
     private InputValidator validators;
 
     public AddOrRemoveCookiePropertiesDialog(final Frame parent, final AddOrRemoveCookieAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
         initComponents();
+        enableDisable();
     }
 
     @Override
     public void setData(final AddOrRemoveCookieAssertion assertion) {
+        operationComboBox.setSelectedItem(assertion.getOperation());
         nameTextField.setText(assertion.getName());
         valueTextField.setText(assertion.getValue());
         domainTextField.setText(assertion.getDomain());
@@ -44,12 +48,13 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
         if (error != null) {
             throw new ValidationException(error);
         }
+        assertion.setOperation((AddOrRemoveCookieAssertion.Operation) operationComboBox.getSelectedItem());
         assertion.setName(nameTextField.getText().trim());
         assertion.setValue(valueTextField.getText().trim());
         assertion.setDomain(domainTextField.getText().trim());
         assertion.setCookiePath(pathTextField.getText().trim());
         assertion.setMaxAge(maxAgeTextField.getText().trim());
-        assertion.setVersion(versionComboBox.getSelectedItem().toString());
+        assertion.setVersion((Integer) versionComboBox.getSelectedItem());
         assertion.setSecure(secureCheckBox.isSelected());
         return assertion;
     }
@@ -62,11 +67,37 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     @Override
     protected void initComponents() {
         super.initComponents();
-        versionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1", "0"}));
+        operationComboBox.setModel(new DefaultComboBoxModel(new AddOrRemoveCookieAssertion.Operation[]{AddOrRemoveCookieAssertion.Operation.ADD, AddOrRemoveCookieAssertion.Operation.REMOVE}));
+        operationComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+                return super.getListCellRendererComponent(list, value instanceof AddOrRemoveCookieAssertion.Operation ? ((AddOrRemoveCookieAssertion.Operation) value).getName() : value, index, isSelected, cellHasFocus);
+            }
+        });
+        operationComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+            }
+        }));
+        versionComboBox.setModel(new DefaultComboBoxModel(new Integer[]{1, 0}));
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty("name", nameTextField, null);
-        validators.constrainTextFieldToBeNonEmpty("value", valueTextField, null);
-        validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "max age", maxAgeTextField));
-        validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "version", versionComboBox));
+        validators.ensureComboBoxSelection("version", versionComboBox);
+        validators.ensureComboBoxSelection("operation", operationComboBox);
+        final IntegerOrContextVariableValidationRule maxAgeRule = new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "max age", maxAgeTextField);
+        maxAgeRule.setAllowEmpty(true);
+        validators.addRule(maxAgeRule);
+    }
+
+    private void enableDisable() {
+        final boolean isAdd = AddOrRemoveCookieAssertion.Operation.ADD == operationComboBox.getSelectedItem();
+        valueTextField.setEnabled(isAdd);
+        domainTextField.setEnabled(isAdd);
+        pathTextField.setEnabled(isAdd);
+        maxAgeTextField.setEnabled(isAdd);
+        commentTextField.setEnabled(isAdd);
+        versionComboBox.setEnabled(isAdd);
+        secureCheckBox.setEnabled(isAdd);
     }
 }
