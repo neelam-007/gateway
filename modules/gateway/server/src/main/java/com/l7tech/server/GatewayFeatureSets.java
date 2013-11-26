@@ -146,12 +146,14 @@ public class GatewayFeatureSets {
         GatewayFeatureSet httpFront =
         fsr("set:http:front", "Allow incoming HTTP messages",
             srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"),
-            ass(AddHeaderAssertion.class));
+            ass(AddHeaderAssertion.class),
+            mass("assertion:AddOrRemoveCookie"));
 
         GatewayFeatureSet httpBack =
         fsr("set:http:back", "Allow outgoing HTTP messages",
             ass(HttpRoutingAssertion.class),
-            ass(AddHeaderAssertion.class));
+            ass(AddHeaderAssertion.class),
+            mass("assertion:AddOrRemoveCookie"));
 
         GatewayFeatureSet ftpFront =
         fsr("set:ftp:front", "Allow incoming FTP messages",
