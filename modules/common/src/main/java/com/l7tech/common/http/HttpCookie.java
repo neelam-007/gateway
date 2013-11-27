@@ -39,7 +39,19 @@ public class HttpCookie {
      *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
      * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
      */
-    public HttpCookie(String requestDomain, String requestPath, String headerFullValue)
+    public HttpCookie(String requestDomain, String requestPath, String headerFullValue) throws HttpCookie.IllegalFormatException {
+        this(requestDomain, requestPath, headerFullValue, true);
+    }
+
+    /**
+     * Create an HttpCookie out of the specified raw header value value.
+     *
+     * @param headerFullValue the value of a Set-Cookie header, ie:
+     *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
+     * @param passToClient set to true if the cookie should be passed back to the client in the response
+     * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
+     */
+    public HttpCookie(String requestDomain, String requestPath, String headerFullValue, boolean passToClient)
             throws HttpCookie.IllegalFormatException {
         // Parse cookie
         if (headerFullValue == null || "".equals(headerFullValue)) {
@@ -150,7 +162,7 @@ public class HttpCookie {
         path = trimQuotes(parsedPath, parsedVersion);
         comment = trimQuotes(parsedComment, parsedVersion);
         version = parsedVersion;
-        newcook = true;
+        newcook = passToClient;
 
         createdTime = System.currentTimeMillis();
         id = buildId();

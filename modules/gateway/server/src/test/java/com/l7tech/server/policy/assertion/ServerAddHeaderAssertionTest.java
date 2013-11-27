@@ -574,6 +574,7 @@ public class ServerAddHeaderAssertionTest {
         assertEquals("bar", cookie.getCookieValue());
         assertNull(cookie.getDomain());
         assertNull(cookie.getPath());
+        assertFalse(cookie.isNew());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
         assertFalse(testAudit.isAuditPresent(AssertionMessages.HEADER_ADDED));
     }
@@ -739,6 +740,7 @@ public class ServerAddHeaderAssertionTest {
         assertEquals("/", cookie.getPath());
         assertEquals(60, cookie.getMaxAge());
         assertEquals(1, cookie.getVersion());
+        assertTrue(cookie.isNew());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 

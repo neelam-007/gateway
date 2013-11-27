@@ -81,7 +81,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             // add cookie to context
             // all cookie attributes are parsed from the header value
             try {
-                final HttpCookie cookie = new HttpCookie((String) null, null, assertionHeaderValue);
+                final HttpCookie cookie = new HttpCookie(null, null, assertionHeaderValue, assertion.getTarget() == TargetMessageType.RESPONSE);
                 context.addCookie(cookie);
                 logAndAudit(AssertionMessages.COOKIE_ADDED, cookie.getCookieName(), cookie.getCookieValue());
             } catch (final HttpCookie.IllegalFormatException e) {
