@@ -249,8 +249,8 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     }
 
     @Override
-    protected Collection<PolicyHeader> filterHeaders( final Collection<PolicyHeader> headers ) {
-        final Collection<PolicyHeader> filteredHeaders = new ArrayList<PolicyHeader>(headers.size());
+    protected List<PolicyHeader> filterHeaders( final List<PolicyHeader> headers ) {
+        final List<PolicyHeader> filteredHeaders = new ArrayList<>(headers.size());
 
         for ( PolicyHeader policyHeader : headers ) {
             switch ( policyHeader.getPolicyType() ) {

@@ -276,6 +276,67 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    //TODO: merge this with findPage
+    @Override
+    public List<ET> findPagedMatching(final int offset, final int count, final String sortProperty, final Boolean ascending, final Map<String,List<Object>> matchProperties) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
+                @SuppressWarnings({ "unchecked" })
+                @Override
+                protected List<ET> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria criteria = session.createCriteria(getImpClass());
+
+                    // Ensure manager specific criteria are added
+                    addFindAllCriteria( criteria );
+
+                    if(matchProperties!=null && !matchProperties.isEmpty()){
+                        Criterion criterion = reduce( matchProperties.entrySet(), conjunction(), new Functions.Binary<Junction, Junction, Map.Entry<String, List<Object>>>() {
+                            @Override
+                            public Junction call( final Junction junction, final Map.Entry<String, List<Object>> entry ) {
+                                if(!entry.getValue().isEmpty()) {
+                                    junction.add( reduce(entry.getValue(), disjunction(), new Functions.Binary<Junction, Junction, Object>() {
+                                        @Override
+                                        public Junction call(Junction junction, Object o) {
+                                            if (o == NULL) {
+                                                junction.add(Restrictions.isNull(entry.getKey()));
+                                            } else if (o == NOTNULL) {
+                                                junction.add(Restrictions.isNotNull(entry.getKey()));
+                                            } else if (o != null) {
+                                                junction.add(Restrictions.eq(entry.getKey(), o));
+                                            }
+                                            return junction;
+                                        }
+                                    }) );
+                                }
+                                return junction;
+                            }
+                        } );
+
+                        // Add additional criteria
+                        criteria.add( criterion );
+                    }
+
+
+                    if(sortProperty != null){
+                        if ( ascending == null || ascending ) {
+                            criteria.addOrder( Order.asc(sortProperty) );
+                        } else {
+                            criteria.addOrder( Order.desc(sortProperty) );
+                        }
+                    }
+
+                    criteria.setFirstResult( offset );
+                    criteria.setFetchSize( count );
+                    criteria.setMaxResults( count );
+
+                    return (List<ET>)criteria.list();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't find entities", e);
+        }
+    }
+
     /**
      * Finds entities matching the specified criteria.
      *

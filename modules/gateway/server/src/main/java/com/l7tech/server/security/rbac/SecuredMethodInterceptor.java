@@ -55,7 +55,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationC
     public SecurityFilter getSecurityFilter() {
         return new SecurityFilter() {
             @Override
-            public <T> Collection<T> filter(Collection<T> entityCollection, User user, OperationType type, @Nullable String operationName) throws FindException {
+            public <T, C extends Collection<T>> C filter(C entityCollection, User user, OperationType type, @Nullable String operationName) throws FindException {
                 return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter", null );
             }
         };

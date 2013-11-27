@@ -13,7 +13,6 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
-import javax.ws.rs.core.UriBuilder;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -58,8 +57,7 @@ public class RestHandler {
      */
     public ContainerResponse handle(@NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream) throws PrivilegedActionException, RequestProcessingException {
         // Build the Jersey Container Request
-        final UriBuilder uriBuilder = UriBuilder.fromUri(baseUri);
-        final ContainerRequest request = new ContainerRequest(uriBuilder.build(), uriBuilder.path(uri.toString()).build(), httpMethod, securityContext, new MapPropertiesDelegate());
+        final ContainerRequest request = new ContainerRequest(baseUri, URI.create(baseUri.toString() + uri.toString()), httpMethod, securityContext, new MapPropertiesDelegate());
         //Set the content type header.
         if (contentType != null) {
             request.header(HttpHeaders.CONTENT_TYPE, contentType);

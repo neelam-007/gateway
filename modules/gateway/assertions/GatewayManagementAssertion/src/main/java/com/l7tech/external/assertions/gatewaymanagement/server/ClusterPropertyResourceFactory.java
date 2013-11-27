@@ -10,7 +10,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * 
@@ -63,8 +63,8 @@ public class ClusterPropertyResourceFactory extends EntityManagerResourceFactory
     }
 
     @Override
-    protected Collection<EntityHeader> filterHeaders( final Collection<EntityHeader> headers ) {
-        Collection<EntityHeader> filtered = new ArrayList<EntityHeader>(headers.size());
+    protected List<EntityHeader> filterHeaders( final List<EntityHeader> headers ) {
+        List<EntityHeader> filtered = new ArrayList<>(headers.size());
 
         final ClusterProperty dummy = new ClusterProperty();
         for ( final EntityHeader entityHeader : headers ) {

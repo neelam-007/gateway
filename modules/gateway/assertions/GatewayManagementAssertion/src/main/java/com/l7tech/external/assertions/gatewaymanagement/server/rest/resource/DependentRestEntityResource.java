@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.TemplateFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DependencyResource;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;

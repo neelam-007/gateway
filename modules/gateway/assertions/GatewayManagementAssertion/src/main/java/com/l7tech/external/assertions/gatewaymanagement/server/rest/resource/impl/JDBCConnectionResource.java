@@ -1,6 +1,7 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.JDBCConnectionRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.JDBCConnectionRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.rest.SpringBean;
 

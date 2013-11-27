@@ -53,7 +53,7 @@ public class RbacServicesStub implements RbacServices, SecurityFilter {
     }
 
     @Override
-    public <T> Collection<T> filter( final Collection<T> entityCollection, final User user, final OperationType type, final String operationName ) throws FindException {
+    public <T, C extends Collection<T>> C filter( final C entityCollection, final User user, final OperationType type, final String operationName ) throws FindException {
         return entityCollection;
     }
 }

@@ -69,7 +69,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     @Before
     public void before() throws Exception {
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false);
 
         MockitoAnnotations.initMocks(this);
     }
@@ -88,56 +88,61 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         identityProviderConfigManager.save(identityProviderConfig);
     }
 
-    protected static IdentityProviderConfig provider( final Goid oid, final IdentityProviderType type, final String name, String... props ) {
-        final IdentityProviderConfig provider = type == IdentityProviderType.LDAP ? new LdapIdentityProviderConfig() : new IdentityProviderConfig( type );
+    protected static IdentityProviderConfig provider(final Goid oid, final IdentityProviderType type, final String name, String... props) {
+        final IdentityProviderConfig provider = type == IdentityProviderType.LDAP ? new LdapIdentityProviderConfig() : new IdentityProviderConfig(type);
         provider.setGoid(oid);
-        provider.setName( name );
+        provider.setName(name);
         if (props != null && props.length > 0) {
             int numprops = props.length / 2;
             if (props.length != numprops * 2)
                 throw new IllegalArgumentException("An even number of strings must be provided (to be interpreted as test property name,value pairs)");
 
-            for (int i = 0; i < props.length; i+=2) {
+            for (int i = 0; i < props.length; i += 2) {
                 String prop = props[i];
                 String val = props[i + 1];
                 if ("userLookupByCertMode".equals(prop)) {
-                    ((LdapIdentityProviderConfig)provider).setUserLookupByCertMode(LdapIdentityProviderConfig.UserLookupByCertMode.valueOf(val));
+                    ((LdapIdentityProviderConfig) provider).setUserLookupByCertMode(LdapIdentityProviderConfig.UserLookupByCertMode.valueOf(val));
                 } else {
                     throw new IllegalArgumentException("Unsupported test idp property: " + prop);
                 }
             }
         }
 
-        if(type == IdentityProviderType.LDAP){
-            LdapIdentityProviderConfig ldap = (LdapIdentityProviderConfig)provider;
-            Map<String,String> ntlmProps = new TreeMap<String,String>();
-            ntlmProps.put("prop","val");
-            ntlmProps.put("prop1","val1");
+        if (type == IdentityProviderType.LDAP) {
+            LdapIdentityProviderConfig ldap = (LdapIdentityProviderConfig) provider;
+            Map<String, String> ntlmProps = new TreeMap<String, String>();
+            ntlmProps.put("prop", "val");
+            ntlmProps.put("prop1", "val1");
             ldap.setNtlmAuthenticationProviderProperties(ntlmProps);
         }
         return provider;
     }
 
-    protected Response processRequest( String uri, HttpMethod method, @Nullable String contentType, String body ) throws Exception {
-        final ContentTypeHeader contentTypeHeader = contentType==null?ContentTypeHeader.OCTET_STREAM_DEFAULT:ContentTypeHeader.parseValue(contentType);
+    protected Response processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+        return processRequest(uri, null, method, contentType, body);
+    }
+
+    protected Response processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+        final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
-        request.initialize( contentTypeHeader , body.getBytes( "utf-8" ));
+        request.initialize(contentTypeHeader, body.getBytes("utf-8"));
         final Message response = new Message();
 
         final MockServletContext servletContext = new MockServletContext();
         final MockHttpServletRequest httpServletRequest = new MockHttpServletRequest(servletContext);
         final MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
-        servletContext.setContextPath( "/" );
+        servletContext.setContextPath("/");
 
         httpServletRequest.setMethod(method.getProtocolName());
-        if(contentType!=null){
+        if (contentType != null) {
             httpServletRequest.setContentType(contentType);
             httpServletRequest.addHeader("Content-Type", contentType);
         }
         httpServletRequest.setRemoteAddr("127.0.0.1");
-        httpServletRequest.setServerName( "127.0.0.1" );
-        httpServletRequest.setRequestURI("/restman/"+uri);
+        httpServletRequest.setServerName("127.0.0.1");
+        httpServletRequest.setRequestURI("/restman/" + uri);
+        httpServletRequest.setQueryString(queryString);
         httpServletRequest.setContent(body.getBytes("UTF-8"));
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
@@ -151,7 +156,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
             // fake user authentication
-            context.getDefaultAuthenticationContext().addAuthenticationResult( new AuthenticationResult(
+            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
                     new UserBean("admin"),
                     new HttpBasicToken("admin", "".toCharArray()), null, false)
             );
@@ -166,7 +171,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
             String responseBody = bout.toString("UTF-8");
             HashMap<String, String[]> headers = new HashMap<>();
-            for(String header : response.getHttpResponseKnob().getHeaderNames()){
+            for (String header : response.getHttpResponseKnob().getHeaderNames()) {
                 headers.put(header, response.getHttpResponseKnob().getHeaderValues(header));
             }
             return new Response(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
@@ -176,15 +181,16 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
     }
 
     @After
-    public void after() throws Exception {}
+    public void after() throws Exception {
+    }
 
     protected class Response {
         private String body;
         private int status;
-        private Map<String,String[]> headers;
+        private Map<String, String[]> headers;
         private AssertionStatus assertionStatus;
 
-        private Response(AssertionStatus assertionStatus, String body, int status, Map<String,String[]> headers){
+        private Response(AssertionStatus assertionStatus, String body, int status, Map<String, String[]> headers) {
             this.assertionStatus = assertionStatus;
             this.body = body;
             this.status = status;
@@ -199,7 +205,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             return status;
         }
 
-        public String toString(){
+        public String toString() {
             return "Status: " + status + " headers: " + printHeaders(headers) + " Body:\n" + body;
         }
 
@@ -226,7 +232,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         public StashManager createStashManager() {
             return new ByteArrayStashManager();
         }
-    };
+    }
 
     protected String writeMOToString(ManagedObject mo) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();

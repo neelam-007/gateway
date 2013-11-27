@@ -1,6 +1,7 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.ServiceRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;

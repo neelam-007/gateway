@@ -284,6 +284,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public List<Policy> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return policyEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
+        }
+
+        @Override
         public Policy findByPrimaryKey(Goid goid) throws FindException {
             return policyEntityManager.findByPrimaryKey(goid);
         }
@@ -374,6 +379,11 @@ public class EntityCrudImplTest {
         @Override
         public SecurityZone findByHeader(EntityHeader header) throws FindException {
             return zoneEntityManager.findByHeader(header);
+        }
+
+        @Override
+        public List<SecurityZone> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return zoneEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
         }
 
         @Override
@@ -470,6 +480,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public List<PublishedService> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return serviceEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
+        }
+
+        @Override
         public PublishedService findByPrimaryKey(Goid goid) throws FindException {
             return serviceEntityManager.findByPrimaryKey(goid);
         }
@@ -560,6 +575,11 @@ public class EntityCrudImplTest {
         @Override
         public JdbcConnection findByHeader(EntityHeader header) throws FindException {
             return jdbcConnectionEntityManager.findByHeader(header);
+        }
+
+        @Override
+        public List<JdbcConnection> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return jdbcConnectionEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
         }
 
         @Override

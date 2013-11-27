@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.DependencyResultsMO;

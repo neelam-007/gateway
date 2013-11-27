@@ -1,11 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.TemplateFactory;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.util.CollectionUtils;
-import org.apache.commons.lang.NotImplementedException;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +25,13 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      * The wiseman resource factory
      */
     protected F factory;
+    private Map<String, String> sortKeys;
+    private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters;
+
+    public WsmanBaseResourceFactory(Map<String, String> sortKeys, Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters) {
+        this.sortKeys = sortKeys;
+        this.filters = filters;
+    }
 
     /**
      * Sets the wiseman resource factory. Likely set using injection.
@@ -34,14 +40,6 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      */
     public abstract void setFactory(F factory);
 
-    /**
-     * Creates a new resource
-     *
-     * @param resource The new resource to create
-     * @return The new resource id.
-     * @throws ResourceFactory.InvalidResourceException
-     *
-     */
     @Override
     public String createResource(@NotNull R resource) throws ResourceFactory.InvalidResourceException {
         //validate that the resource is appropriate for create.
@@ -50,12 +48,6 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         return selectorMap.get("id");
     }
 
-    /**
-     * Creates a new resource with a given id.
-     *
-     * @param id       The id to create the resource with
-     * @param resource The new resource to create.
-     */
     @Override
     public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.InvalidResourceException {
         //validate that the resource is appropriate for create.
@@ -63,53 +55,20 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         factory.createResource(id, resource);
     }
 
-    /**
-     * Updates a resource with the given id
-     *
-     * @param id       The id of the resource to update
-     * @param resource The updated resource
-     * @throws ResourceFactory.ResourceNotFoundException
-     *
-     * @throws ResourceFactory.InvalidResourceException
-     *
-     */
     @Override
     public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         validateUpdateResource(id, resource);
         factory.putResource(buildSelectorMap(id), resource);
     }
 
-    /**
-     * Returns the resource with the given id.
-     *
-     * @param id The id of the resource to retrieve
-     * @return The resource with the given id
-     * @throws ResourceFactory.ResourceNotFoundException
-     *
-     */
     @Override
     public R getResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException {
         return factory.getResource(buildSelectorMap(id));
     }
 
-    /**
-     * Lists resources
-     *
-     * @param offset  The offset to start listing from
-     * @param count   The number of resources to list
-     * @param filters The collection of filters specifying which entities to include.
-     * @return The list of resource id's
-     */
     @Override
-    public List<String> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable Map<String, List<String>> filters) {
-        final List<Map<String, String>> resources;
-        if (filters != null) {
-            //TODO: implement filtering
-            throw new NotImplementedException("Not yet implemented");
-//            resources = factory.getResources(offset, count, filters);
-        } else {
-            resources = factory.getResources(offset, count);
-        }
+    public List<String> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
+        final List<Map<String, String>> resources = factory.getResources(offset, count, sort, ascending, filters);
 
         //get the list of resource id's
         List<String> resourceList = new ArrayList<>(resources.size());
@@ -120,13 +79,6 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         return resourceList;
     }
 
-    /**
-     * Delete a resource with the given id.
-     *
-     * @param id The id of the resource to delete.
-     * @throws ResourceFactory.ResourceNotFoundException
-     *
-     */
     @Override
     public void deleteResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException {
         factory.deleteResource(buildSelectorMap(id));
@@ -164,5 +116,15 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      */
     protected static Map<String, String> buildSelectorMap(String id) {
         return CollectionUtils.MapBuilder.<String, String>builder().put("id", id).map();
+    }
+
+    @Override
+    public String getSortKey(String sort) {
+        return sortKeys.get(sort);
+    }
+
+    @Override
+    public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
+        return filters;
     }
 }

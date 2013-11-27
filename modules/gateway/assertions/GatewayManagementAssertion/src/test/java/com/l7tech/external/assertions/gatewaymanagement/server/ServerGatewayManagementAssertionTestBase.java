@@ -36,6 +36,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
+import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -162,6 +163,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("serviceAliasManager", new ServiceAliasManagerStub());
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub());
         applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
+        applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub());
 
         moreInit();
 

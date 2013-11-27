@@ -83,7 +83,7 @@ public class TestResourceFactory implements ResourceFactory<Object> {
     }
 
     @Override
-    public List<Map<String, String>> getResources(int offset, int windowSize) {
+    public List<Map<String, String>> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
         return null;
     }
 

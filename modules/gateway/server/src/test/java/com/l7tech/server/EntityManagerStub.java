@@ -4,8 +4,8 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -110,6 +110,11 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public synchronized Collection<ET> findAll() throws FindException {
         return Collections.unmodifiableCollection(entities.values());
+    }
+
+    @Override
+    public synchronized List<ET> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return new ArrayList<>(entities.values());
     }
 
     @Override

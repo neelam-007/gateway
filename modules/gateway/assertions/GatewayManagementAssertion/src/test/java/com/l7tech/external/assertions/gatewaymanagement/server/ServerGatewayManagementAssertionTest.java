@@ -61,6 +61,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
+import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -5210,6 +5211,8 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub(
             customKeyValue(new Goid(0,1L), "key.prefix.key1", "<xml>Test value</xml>".getBytes("UTF-8"))
         ) );
+
+        applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub());
 
         final SecurityZone securityZone1 = new SecurityZone();
         securityZone1.setGoid(new Goid(0,1));

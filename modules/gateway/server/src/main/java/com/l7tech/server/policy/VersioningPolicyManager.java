@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,6 +67,11 @@ public class VersioningPolicyManager implements PolicyManager {
     @Override
     public Policy findByHeader(EntityHeader header) throws FindException {
         return processRevision(policyManager.findByHeader(header));
+    }
+
+    @Override
+    public List<Policy> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return processRevisions( policyManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties) );
     }
 
     @Override
@@ -214,7 +220,7 @@ public class VersioningPolicyManager implements PolicyManager {
     private final PolicyManager policyManager;
     private final PolicyVersionManager policyVersionManager;
 
-    private Collection<Policy> processRevisions( final Collection<Policy> policies ) throws FindException {
+    private <C extends Collection<Policy>> C processRevisions( final C policies ) throws FindException {
         if ( policies != null ) {
             for ( Policy policy : policies ) {
                 processRevision( policy );    

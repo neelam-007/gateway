@@ -1,9 +1,10 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RoleRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleRestResourceFactory;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
+import com.l7tech.gateway.rest.SpringBean;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
@@ -14,11 +15,12 @@ import javax.ws.rs.PUT;
  * @author Victor Kazakov
  */
 public class RoleAssignmentsResource {
+    @SpringBean
     private RoleRestResourceFactory factory;
+
     private String roleId;
 
-    public RoleAssignmentsResource(String roleId, RoleRestResourceFactory factory) {
-        this.factory = factory;
+    public RoleAssignmentsResource(String roleId) {
         this.roleId = roleId;
     }
 

@@ -4,10 +4,11 @@ import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.*;
-import com.l7tech.util.Eithers.*;
+import com.l7tech.util.Eithers.E2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -146,28 +147,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         Collection<Map<String,String>> resources = Collections.emptyList();
 
         try {
-            Collection<EH> headers = manager.findAllHeaders();
-            headers = accessFilter(headers, manager.getEntityType(), OperationType.READ, null);
-            headers = filterHeaders( headers );
-
-            resources = new ArrayList<Map<String,String>>( headers.size() );
-
-            for ( EntityHeader header : headers ) {
-                resources.add( Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() ) );
-            }
-        } catch (FindException e) {
-            handleObjectModelException(e);
-        }
-
-        return resources;
-    }
-
-    @Override
-    public List<Map<String, String>> getResources(int offset, int windowSize) {
-        List<Map<String,String>> resources = Collections.emptyList();
-
-        try {
-            Collection<EH> headers = manager.findAllHeaders(offset, windowSize);
+            List<EH> headers = new ArrayList<>(manager.findAllHeaders());
             headers = accessFilter(headers, manager.getEntityType(), OperationType.READ, null);
             headers = filterHeaders( headers );
 
@@ -181,6 +161,36 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         }
 
         return resources;
+    }
+
+    @Override
+    public List<Map<String, String>> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
+        List<Map<String,String>> resources = Collections.emptyList();
+
+        try {
+            List<E> entities = manager.findPagedMatching(offset, count, sort, ascending, filters);
+            entities = accessFilter(entities, manager.getEntityType(), OperationType.READ, null);
+            List<EH> headers = getHeaders(entities);
+            headers = filterHeaders( headers );
+
+            resources = new ArrayList<>( headers.size() );
+
+            for ( EntityHeader header : headers ) {
+                resources.add( Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() ) );
+            }
+        } catch (FindException e) {
+            handleObjectModelException(e);
+        }
+
+        return resources;
+    }
+
+    private List<EH> getHeaders(List<E> entities) {
+        ArrayList<EH> headers = new ArrayList<>(entities.size());
+        for(E entity : entities){
+            headers.add((EH) EntityHeaderUtils.fromEntity(entity));
+        }
+        return headers;
     }
 
     @Override
@@ -378,7 +388,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param headers The headers to filter.
      * @return The filtered collection.
      */
-    protected Collection<EH> filterHeaders( final Collection<EH> headers ) {
+    protected List<EH> filterHeaders( final List<EH> headers ) {
         return headers;
     }
 

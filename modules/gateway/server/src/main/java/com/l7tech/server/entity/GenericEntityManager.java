@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -114,4 +115,7 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
 
     <ET extends GenericEntity>
     ET findByHeader(@NotNull Class<ET> entityClass, EntityHeader header) throws FindException;
+
+    <ET extends GenericEntity>
+    List<ET> findPagedMatching(@NotNull Class<ET> entityClass, int offset, int count, @Nullable String sortProperty, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> matchProperties) throws FindException;
 }

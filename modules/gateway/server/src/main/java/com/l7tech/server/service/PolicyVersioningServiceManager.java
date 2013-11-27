@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -127,6 +128,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public List<PublishedService> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return processRevisions(serviceManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties));
+    }
+
+    @Override
     public Integer getVersion(Goid goid) throws FindException {
         return serviceManager.getVersion(goid);
     }
@@ -214,7 +220,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
     
-    private Collection<PublishedService> processRevisions( final Collection<PublishedService> services ) throws FindException {
+    private <C extends Collection<PublishedService>> C processRevisions( final C services ) throws FindException {
         if ( services != null ) {
             for ( PublishedService service : services ) {
                 processRevision( service );

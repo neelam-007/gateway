@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.util.IOUtils;
 
@@ -32,7 +32,7 @@ public class XslStyleSheetResource {
     public StreamingOutput getDefaultStyleSheet() {
         return new StreamingOutput() {
             public void write(OutputStream output) throws IOException {
-                IOUtils.copyStream(XslStyleSheetResource.this.getClass().getResourceAsStream("defaultStyleSheet.xsl"), output);
+                IOUtils.copyStream(XslStyleSheetResource.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/defaultStyleSheet.xsl"), output);
             }
         };
 

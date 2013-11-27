@@ -34,6 +34,7 @@ import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -126,7 +127,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return transactional( new TransactionalCallback<Collection<Map<String, String>>>(){
             @Override
             public Collection<Map<String, String>> execute() throws ObjectModelException {
-                return Functions.map( getEntityHeaders(), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
+                return Functions.map( getEntityHeaders(null), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
                     @Override
                     public Map<String, String> call( final SsgKeyHeader header ) {
                         return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
@@ -136,20 +137,24 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }, true );
     }
 
-    //TODO: is there a better way to do this?
     @Override
-    public List<Map<String, String>> getResources(final int offset, final int windowSize){
-        return transactional( new TransactionalCallback<List<Map<String, String>>>(){
+    public List<Map<String, String>> getResources(final Integer offset, final Integer count, String sort, Boolean ascending, final Map<String, List<Object>> filters) {
+        return transactional(new TransactionalCallback<List<Map<String, String>>>() {
             @Override
             public List<Map<String, String>> execute() throws ObjectModelException {
-                return Functions.map( new ArrayList<>(getEntityHeaders()).subList(offset, windowSize), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
+                return Functions.map( CollectionUtils.safeSubList(getEntityHeaders(Functions.map(filters.get("alias"), new Unary<String, Object>() {
+                    @Override
+                    public String call(Object o) {
+                        return o.toString();
+                    }
+                })), offset, count), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
                     @Override
                     public Map<String, String> call( final SsgKeyHeader header ) {
                         return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
                     }
                 } );
             }
-        }, true );
+        }, true);
     }
 
     @Override
@@ -625,13 +630,15 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }, true ) );
     }
 
-    private Collection<SsgKeyHeader> getEntityHeaders() throws FindException {
-        final Collection<SsgKeyHeader> headers = new ArrayList<SsgKeyHeader>();
+    private List<SsgKeyHeader> getEntityHeaders(@Nullable List<String> aliasIncludes) throws FindException {
+        final List<SsgKeyHeader> headers = new ArrayList<>();
 
         try {
             for ( final SsgKeyFinder ssgKeyFinder : ssgKeyStoreManager.findAll() ) {
                 for ( final String alias : ssgKeyFinder.getAliases() ) {
-                    headers.add( new SsgKeyHeader( toExternalId(ssgKeyFinder.getGoid(), alias), ssgKeyFinder.getGoid(), alias, alias ) );
+                    if(aliasIncludes == null || aliasIncludes.contains(alias)) {
+                        headers.add( new SsgKeyHeader( toExternalId(ssgKeyFinder.getGoid(), alias), ssgKeyFinder.getGoid(), alias, alias ) );
+                    }
                 }
             }
         } catch ( KeyStoreException e ) {

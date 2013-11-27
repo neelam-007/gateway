@@ -11,6 +11,9 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.*;
 import org.hibernate.*;
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Junction;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +30,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Functions.reduce;
+import static org.hibernate.criterion.Restrictions.conjunction;
+import static org.hibernate.criterion.Restrictions.disjunction;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
@@ -204,6 +210,11 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             @Override
             public ET findByHeader(EntityHeader header) throws FindException {
                 return gem.findByHeader(entityClass, header);
+            }
+
+            @Override
+            public List<ET> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+                return gem.findPagedMatching(entityClass, offset, count, sortProperty, ascending, matchProperties);
             }
 
             @Override
@@ -516,6 +527,78 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         if (!entityClass.getName().equals(ret.getEntityClassName()))
             return null;
         return asConcreteEntity(ret, classInfo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public <ET extends GenericEntity> List<ET> findPagedMatching(final @NotNull Class<ET> entityClass, final int offset, final int count, final String sortProperty, final Boolean ascending, final Map<String, List<Object>> matchProperties) throws FindException {
+        @SuppressWarnings("unchecked")
+        final ClassInfo<ET> classInfo = getClassInfo(entityClass);
+
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
+                @SuppressWarnings({"unchecked"})
+                @Override
+                protected List<ET> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+
+                    Criteria criteria = session.createCriteria(getImpClass());
+                    criteria.add(Restrictions.eq("entityClassName", entityClass.getName()));
+
+                    // Ensure manager specific criteria are added
+                    addFindAllCriteria(criteria);
+
+                    if (matchProperties != null && !matchProperties.isEmpty()) {
+                        Criterion criterion = reduce(matchProperties.entrySet(), conjunction(), new Functions.Binary<Junction, Junction, Map.Entry<String, List<Object>>>() {
+                            @Override
+                            public Junction call(final Junction junction, final Map.Entry<String, List<Object>> entry) {
+                                junction.add(reduce(entry.getValue(), disjunction(), new Functions.Binary<Junction, Junction, Object>() {
+                                    @Override
+                                    public Junction call(Junction junction, Object o) {
+                                        if (o == NULL) {
+                                            junction.add(Restrictions.isNull(entry.getKey()));
+                                        } else if (o == NOTNULL) {
+                                            junction.add(Restrictions.isNotNull(entry.getKey()));
+                                        } else if (o != null) {
+                                            junction.add(Restrictions.eq(entry.getKey(), o));
+                                        }
+                                        return junction;
+                                    }
+                                }));
+                                return junction;
+                            }
+                        });
+
+                        // Add additional criteria
+                        criteria.add(criterion);
+                    }
+
+                    if (sortProperty != null) {
+                        if (ascending == null || ascending) {
+                            criteria.addOrder(Order.asc(sortProperty));
+                        } else {
+                            criteria.addOrder(Order.desc(sortProperty));
+                        }
+                    }
+
+                    criteria.setFirstResult(offset);
+                    criteria.setFetchSize(count);
+                    criteria.setMaxResults(count);
+
+                    List list = criteria.list();
+                    List<ET> ret = new ArrayList<>();
+                    for (Object obj : list) {
+                        try {
+                            ret.add(asConcreteEntity((GenericEntity) obj, classInfo));
+                        } catch (InvalidGenericEntityException e) {
+                            logger.log(Level.INFO, "Ignoring invalid generic entity", e);
+                        }
+                    }
+                    return ret;
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't find generic entities of type " + entityClass.getName(), e);
+        }
     }
 
     @Override

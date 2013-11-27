@@ -349,11 +349,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     /**
      * Filter a collection of entities or entity types.
      */
-    final protected <ET> Collection<ET> accessFilter( final Collection<ET> entities,
+    final protected <ET> List<ET> accessFilter( final List<ET> entities,
                                                       final EntityType entityType,
                                                       final OperationType operationType,
                                                       @Nullable final String otherOperationName ) throws FindException {
-        final Collection<ET> filteredEntities;
+        final List<ET> filteredEntities;
         final User user = JaasUtils.getCurrentUser();
 
         if ( user != null ) {

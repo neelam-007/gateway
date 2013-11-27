@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest;
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 /**
  * This interface specifies that the factory can produce templates
