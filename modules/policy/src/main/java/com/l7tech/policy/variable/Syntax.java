@@ -277,6 +277,30 @@ public abstract class Syntax {
     }
 
     /**
+     * Validate that a user supplied string consists only of a single variable (not even syntax or a template), and return the string.
+     * <P/>
+     * The value must contain only the characters "${" followed by a valid context variable
+     * name followed by "}".  No array syntax is permitted, and nor is any leading or training characters before
+     * or after the "${" or "}".
+     *
+     * @param value the value to examine.
+     * @return the name of the valid single variable reference, or null if the string did not meet the requirements
+     *         (of "${" followed by a valid variable name followed by "}").
+     */
+    public static String getSingleVariableReferencedNoSyntaxOrWhitespace(final @NotNull String value) {
+        final Matcher matcher = oneVarPattern.matcher(value);
+        if (!matcher.matches())
+            return null;
+
+        String variableName = matcher.group(1);
+
+        if (VariableMetadata.validateName(variableName, false) != null)
+            return null;
+
+        return variableName;
+    }
+
+    /**
      * Check if an expression references any variables. This method will never throw a VariableNameSyntaxException
      *
      * @param value expression value to check
