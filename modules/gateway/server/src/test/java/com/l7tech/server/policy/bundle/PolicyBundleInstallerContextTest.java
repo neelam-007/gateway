@@ -5,6 +5,7 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.test.BugNumber;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
@@ -27,6 +28,11 @@ public class PolicyBundleInstallerContextTest {
             @Override
             public Document getBundleItem(@NotNull String bundleId, @NotNull BundleItem bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException, InvalidBundleException {
                 return null;
+            }
+
+            @Override
+            public void setInstallationPrefix(@Nullable String installationPrefix) {
+                // do nothing
             }
         };
         final List<BundleInfo> resultList = bundleResolver.getResultList();

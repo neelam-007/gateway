@@ -1,17 +1,21 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.policybundleinstaller.installer.JdbcConnectionInstaller;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
@@ -37,11 +41,11 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
 
-import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
+import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
+import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class PolicyBundleInstallerTest {
 
@@ -73,8 +77,7 @@ public class PolicyBundleInstallerTest {
             }
         }, context, cancelledCallback);
 
-        final Document folderDoc = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
-        final Map<String, Goid> oldToNewMap = bundleInstaller.installFolders(new Goid(0,-5002), folderDoc);
+        final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -85,11 +88,11 @@ public class PolicyBundleInstallerTest {
 
     private Functions.Nullary<Boolean> getCancelledCallback(final PolicyBundleEvent bundleEvent) {
         return new Functions.Nullary<Boolean>() {
-                @Override
-                public Boolean call() {
-                    return bundleEvent.isCancelled();
-                }
-            };
+            @Override
+            public Boolean call() {
+                return bundleEvent.isCancelled();
+            }
+        };
     }
 
     /**
@@ -99,13 +102,12 @@ public class PolicyBundleInstallerTest {
      */
     @Test
     public void testInstallFolders_AllExist() throws Exception {
-        final Map<String, Integer> nameToIdMap = new HashMap<String, Integer>();
+        final Map<String, Integer> nameToIdMap = new HashMap<>();
 
         final BundleResolver bundleResolver = getBundleResolver();
         final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
-        //OAuth_1_0
-        final Document oAuth_1_0 = bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, false);
+        final BundleInfo bundleInfo = resultList.get(0);    // OAuth_1_0
+
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
@@ -148,7 +150,7 @@ public class PolicyBundleInstallerTest {
             }
         }, context, getCancelledCallback(installEvent));
 
-        final Map<String, Goid> oldToNewMap = bundleInstaller.installFolders(new Goid(0,-5002), oAuth_1_0);
+        final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
@@ -195,7 +197,7 @@ public class PolicyBundleInstallerTest {
      */
     public void installPoliciesTest(final @NotNull BundleInfo bundleInfo,
                                     final @Nullable String installationPrefix) throws Exception {
-        final Map<String, String> nameToPreviousGuid = new HashMap<String, String>();
+        final Map<String, String> nameToPreviousGuid = new HashMap<>();
 
         final BundleResolver bundleResolver = getBundleResolver();
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver, true);
@@ -245,7 +247,6 @@ public class PolicyBundleInstallerTest {
         }, context, getCancelledCallback(installEvent));
 
         final Document policyFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, false);
-
         ElementCursor cursor = new DomElementCursor(policyFromBundleDoc);
         final XpathResult xpathResult = cursor.getXpathResult(
                 new XpathExpression(
@@ -270,7 +271,8 @@ public class PolicyBundleInstallerTest {
             policyNameToGuid.put(name, guid);
         }
 
-        final Map<String, String> oldGuidToNewGuidMap = bundleInstaller.installPolicies(getFolderIds(), policyFromBundleDoc);
+        final Map<String, String> oldToNewPolicyIds = new HashMap<>();
+        final Map<String, String> oldGuidToNewGuidMap = bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
@@ -305,8 +307,7 @@ public class PolicyBundleInstallerTest {
         }, context, getCancelledCallback(installEvent));
 
         // OAuth_1_0
-        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
-        bundleInstaller.installServices(getFolderIds(), getPolicyGuids(), serviceFromBundleDoc);
+        bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
 
     }
 
@@ -320,8 +321,8 @@ public class PolicyBundleInstallerTest {
         final BundleResolver bundleResolver = getBundleResolver();
 
         final boolean[] invoked = new boolean[1];
-        final Map<String, Boolean> servicesFound = new HashMap<String, Boolean>();
-        final Map<String, Set<String>> jdbcPerService = new HashMap<String, Set<String>>();
+        final Map<String, Boolean> servicesFound = new HashMap<>();
+        final Map<String, Set<String>> jdbcPerService = new HashMap<>();
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
@@ -361,9 +362,7 @@ public class PolicyBundleInstallerTest {
                         try {
                             xpathResult = cursor.getXpathResult(
                                     new XpathExpression(".//l7:Service", getNamespaceMap()).compile());
-                        } catch (XPathExpressionException e) {
-                            throw new RuntimeException("Unexpected issue with internal xpath expression: " + e.getMessage(), e);
-                        } catch (InvalidXpathException e) {
+                        } catch (XPathExpressionException | InvalidXpathException e) {
                             throw new RuntimeException("Unexpected issue with internal xpath expression: " + e.getMessage(), e);
                         }
 
@@ -384,7 +383,6 @@ public class PolicyBundleInstallerTest {
                     } else if (requestXml.contains(" to do policy")) {
 
                     }
-
 
                     // pretend it was created
                     // validate the requestXml contains updated JDBC Connections
@@ -438,7 +436,7 @@ public class PolicyBundleInstallerTest {
     @Test
     public void testServicesUriPrefixedInstallation() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver();
-        final Map<String, String> serviceIdToUri = new HashMap<String, String>();
+        final Map<String, String> serviceIdToUri = new HashMap<>();
         final List<BundleInfo> resultList = bundleResolver.getResultList();
         //OAuth_1_0
         final BundleInfo bundleInfo = resultList.get(0);
@@ -477,9 +475,7 @@ public class PolicyBundleInstallerTest {
 
                             serviceIdToUri.put(serviceId, url);
                             System.out.println("Found url: " + url);
-                        } catch (XPathExpressionException e) {
-                            throw new RuntimeException(e);
-                        } catch (InvalidXpathException e) {
+                        } catch (XPathExpressionException | InvalidXpathException e) {
                             throw new RuntimeException(e);
                         }
 
@@ -495,9 +491,7 @@ public class PolicyBundleInstallerTest {
             }
         }, context, getCancelledCallback(installEvent));
 
-        final Document serviceFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, false);
-
-        bundleInstaller.installServices(getFolderIds(), getPolicyGuids(), serviceFromBundleDoc);
+        bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
 
         // validate all services were found and all URIs were prefixed correctly
         assertEquals("Incorrect number of services created", 7, serviceIdToUri.size());
@@ -534,7 +528,7 @@ public class PolicyBundleInstallerTest {
                     final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
 
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
-                        if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                        if (requestXml.contains(JdbcConnectionInstaller.JDBC_MGMT_NS)) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='"+new Goid(0,123345678)+"']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
@@ -542,7 +536,7 @@ public class PolicyBundleInstallerTest {
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0, 123345678))));
                         }
                     }
                 } catch (Exception e) {
@@ -605,8 +599,8 @@ public class PolicyBundleInstallerTest {
         final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-            bundleInfo,
-            null, null, bundleResolver, false);
+                bundleInfo,
+                null, null, bundleResolver, false);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
@@ -620,7 +614,7 @@ public class PolicyBundleInstallerTest {
                     final String requestXml = XmlUtil.nodeToFormattedString(documentReadOnly);
 
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
-                        if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                        if (requestXml.contains(JdbcConnectionInstaller.JDBC_MGMT_NS)) {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else if (requestXml.contains("/l7:Service/l7:ServiceDetail[@id='"+new Goid(0,123345678)+"']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern")) {
@@ -628,7 +622,7 @@ public class PolicyBundleInstallerTest {
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         } else {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0, 123345678))));
                         }
                     }
                 } catch (Exception e) {
@@ -667,9 +661,9 @@ public class PolicyBundleInstallerTest {
 //                    System.out.println(requestXml);
 
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")) {
-                        if (requestXml.contains(InstallerUtils.JDBC_MGMT_NS)) {
+                        if (requestXml.contains(JdbcConnectionInstaller.JDBC_MGMT_NS)) {
                             // results
-                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0,123345678))));
+                            setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0, 123345678))));
                         } else {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
@@ -744,7 +738,7 @@ public class PolicyBundleInstallerTest {
     @NotNull
     private BundleResolver getBundleResolver(){
 
-        final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<String, Map<String, Document>>();
+        final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<>();
         final String cannedId = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
         bundleToItemAndDocMap.put(cannedId, getItemsToDocs(true));
 
@@ -759,6 +753,11 @@ public class PolicyBundleInstallerTest {
             @Override
             public List<BundleInfo> getResultList() {
                 return Arrays.asList(new BundleInfo(cannedId, "1.0", "Name", "Desc"));
+            }
+
+            @Override
+            public void setInstallationPrefix(@Nullable String installationPrefix) {
+                // do nothing
             }
         };
     }
@@ -775,7 +774,7 @@ public class PolicyBundleInstallerTest {
     }
 
     private Map<String, Document> getItemsToDocs(boolean hasPolicy) {
-        final Map<String, Document> itemsToDocs = new HashMap<String, Document>();
+        final Map<String, Document> itemsToDocs = new HashMap<>();
         final String baseName = "/com/l7tech/external/assertions/policybundleinstaller/bundles/Bundle1";
         itemsToDocs.put("Folder.xml", getDocumentFromResource(baseName + "/Folder.xml"));
         itemsToDocs.put("Service.xml", getDocumentFromResource(baseName + "/Service.xml"));
@@ -828,9 +827,7 @@ public class PolicyBundleInstallerTest {
             System.out.println(XmlUtil.nodeToFormattedString(requestXml));
             final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(new Goid(0,nextOid++)));
             final Document parse = XmlUtil.parse(format);
-            return new Pair<AssertionStatus, Document>(
-                    AssertionStatus.NONE,
-                    parse);
+            return new Pair<>(AssertionStatus.NONE, parse);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration>
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57f541927144f77cd71f562ef2d31656" version="1">
+        <l7:ServiceDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" id="57f541927144f77cd71f562ef2d31656" version="1">
+            <l7:Name>simpleRestService</l7:Name>
+            <l7:Enabled>true</l7:Enabled>
+            <l7:ServiceMappings>
+                <l7:HttpMapping>
+                    <l7:UrlPattern>/simpleRestService</l7:UrlPattern>
+                    <l7:Verbs>
+                        <l7:Verb>GET</l7:Verb>
+                        <l7:Verb>POST</l7:Verb>
+                        <l7:Verb>PUT</l7:Verb>
+                        <l7:Verb>DELETE</l7:Verb>
+                    </l7:Verbs>
+                </l7:HttpMapping>
+            </l7:ServiceMappings>
+        </l7:ServiceDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy" version="8"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:Simple/>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="912d9fac-e790-4a1d-b7a1-0239f2aead08"/>
+        </L7p:Include>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+            <L7p:VariableToSet stringValue="inSimpleEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Encapsulated>
+            <L7p:EncapsulatedAssertionConfigGuid stringValue="506589b0-eba5-4b3f-81b5-be7809817623"/>
+            <L7p:EncapsulatedAssertionConfigName stringValue="Simple Encapsulated Assertion"/>
+        </L7p:Encapsulated>
+        <L7p:JdbcQuery>
+            <L7p:ConnectionName stringValue="SSG"/>
+            <L7p:ConvertVariablesToStrings booleanValue="false"/>
+            <L7p:NamingMap mapValue="included">
+                <L7p:entry>
+                    <L7p:key stringValue="current_version"/>
+                    <L7p:value stringValue="ssgVersion"/>
+                </L7p:entry>
+            </L7p:NamingMap>
+            <L7p:SqlQuery stringValue="select current_version from ssg_version;"/>
+            <L7p:VariablePrefix stringValue="simpleJdbcQuery"/>
+        </L7p:JdbcQuery>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNpbXBsZVJlc3BvbnNlPgogICA8cmVxdWVzdC51cmw+JHtyZXF1ZXN0LnVybH08L3JlcXVlc3QudXJsPgogICA8cmVxdWVzdC5odHRwLm1ldGhvZD4ke3JlcXVlc3QuaHR0cC5tZXRob2R9PC9yZXF1ZXN0Lmh0dHAubWV0aG9kPgogICA8cmVxdWVzdC5tYWlucGFydD4ke3JlcXVlc3QubWFpbnBhcnR9PC9yZXF1ZXN0Lm1haW5wYXJ0PgogICA8c2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgICAgJHtzaW1wbGVJbmNsdWRlZFBvbGljeUZyYWdtZW50VmFyaWFibGV9CiAgIDwvc2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgPG91dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50PgogICAgICAke291dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50fQogICA8L291dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50PgogICA8c2ltcGxlSmRiY1F1ZXJ5PgogICAgICA8c3NnVmVyc2lvbj4ke3NpbXBsZUpkYmNRdWVyeS5zc2dWZXJzaW9ufTwvc3NnVmVyc2lvbj4KICAgPC9zaW1wbGVKZGJjUXVlcnk+Cjwvc2ltcGxlUmVzcG9uc2U+"/>
+        </L7p:HardcodedResponse>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Service>
+</enumeration>

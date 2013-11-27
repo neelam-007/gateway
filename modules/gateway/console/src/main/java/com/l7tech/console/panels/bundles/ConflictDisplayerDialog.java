@@ -1,6 +1,5 @@
 package com.l7tech.console.panels.bundles;
 
-import com.l7tech.console.panels.bundles.BundleConflictComponent;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 

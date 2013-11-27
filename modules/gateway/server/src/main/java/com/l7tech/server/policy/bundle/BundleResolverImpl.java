@@ -1,13 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
-package com.l7tech.external.assertions.salesforceinstaller;
+package com.l7tech.server.policy.bundle;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.policy.bundle.BundleResolver;
-import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
@@ -29,12 +23,19 @@ import java.util.logging.Logger;
 import static com.l7tech.util.Functions.map;
 
 /**
- * Resolver specific to the OAuth Toolkit Installer modular assertion. Loads bundles from jar resources.
+ * Default bundle resolver which loads bundles from jar resources.
  */
-public class SalesforceBundleResolver implements BundleResolver {
+public class BundleResolverImpl implements BundleResolver {
+    private static final String ROOT_FOLDER_NAME_LOWERCASE = "root";
 
-    public SalesforceBundleResolver(final List<Pair<BundleInfo, String>> bundleInfosFromJar) {
-        final Map<String, String> guidMap = new HashMap<String, String>();
+    private final List<BundleInfo> resultList = new ArrayList<>();
+    private final Map<String, String> guidToResourceDirectory = new HashMap<>();
+    private String installationPrefix;
+    private static final Logger logger = Logger.getLogger(BundleResolverImpl.class.getName());
+    private final Class callingClass;
+
+    public BundleResolverImpl(@NotNull final List<Pair<BundleInfo, String>> bundleInfosFromJar, @NotNull final Class callingClass) {
+        final Map<String, String> guidMap = new HashMap<>();
 
         for (Pair<BundleInfo, String> pair : bundleInfosFromJar) {
             guidMap.put(pair.left.getId(), pair.right);
@@ -47,6 +48,8 @@ public class SalesforceBundleResolver implements BundleResolver {
             }
         }));
         guidToResourceDirectory.putAll(guidMap);
+
+        this.callingClass = callingClass;
     }
 
     /**
@@ -71,11 +74,10 @@ public class SalesforceBundleResolver implements BundleResolver {
         return itemFromBundle;
     }
 
-    protected Document getItemFromBundle(String bundleId, BundleItem itemName) throws BundleResolver.UnknownBundleException,
-            InvalidBundleException {
+    protected Document getItemFromBundle(@NotNull String bundleId, @NotNull BundleItem itemName) throws UnknownBundleException, InvalidBundleException {
 
         if (!guidToResourceDirectory.containsKey(bundleId)) {
-            throw new BundleResolver.UnknownBundleException("Unknown bundle id: " + bundleId);
+            throw new UnknownBundleException("Unknown bundle id: " + bundleId);
         }
 
         final String resourceBase = guidToResourceDirectory.get(bundleId);
@@ -89,7 +91,7 @@ public class SalesforceBundleResolver implements BundleResolver {
             fullResourceName = resourceBase + itemName.getFileName();
         }
 
-        final URL itemUrl = this.getClass().getResource(fullResourceName);
+        final URL itemUrl = callingClass.getResource(fullResourceName);
         Document itemDocument = null;
         if (itemUrl != null) {
             try {
@@ -101,32 +103,30 @@ public class SalesforceBundleResolver implements BundleResolver {
         }
 
         if (itemName == BundleItem.FOLDER && installationPrefix != null) {
-            // rewrite the name of the OAuth folder
-            final XpathResult xpathResult =
-                    XpathUtil.getXpathResultQuietly(
-                            new DomElementCursor(itemDocument), GatewayManagementDocumentUtilities.getNamespaceMap(), ".//l7:Name");
+            // rewrite the name of the folder
+            final XpathResult xpathResult = XpathUtil.getXpathResultQuietly(
+                    new DomElementCursor(itemDocument), GatewayManagementDocumentUtilities.getNamespaceMap(), ".//l7:Name");
 
             if (xpathResult.getType() != XpathResult.TYPE_NODESET) {
                 throw new InvalidBundleException("Could not find folder name elements");
             }
 
+            boolean atLeastOneFolderNameFound = false;
             final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
-            final String newOAuthFolderName = "OAuth " + installationPrefix;
-            boolean oauthNameFound = false;
             while (iterator.hasNext()) {
                 final Element nameElement = iterator.nextElementAsCursor().asDomElement();
-                final String nameValue = DomUtils.getTextValue(nameElement);
-                if ("OAuth".equals(nameValue)) {
-
-                    DomUtils.setTextContent(nameElement, newOAuthFolderName);
-                    oauthNameFound = true;
+                final String originalFolderName = DomUtils.getTextValue(nameElement);
+                if (originalFolderName != null && !originalFolderName.toLowerCase().contains(ROOT_FOLDER_NAME_LOWERCASE)) {
+                    String newFolderName = originalFolderName + " " + installationPrefix;
+                    DomUtils.setTextContent(nameElement, newFolderName);
+                    atLeastOneFolderNameFound = true;
+                    logger.fine("Updated " + originalFolderName + " folder for installation prefix: '" + newFolderName + "'");
                 }
             }
 
-            if (!oauthNameFound) {
-                throw new InvalidBundleException("OAuth folder could not be found for update with installation prefix.");
+            if (!atLeastOneFolderNameFound) {
+                throw new InvalidBundleException("No folder found for update with installation prefix.");
             }
-            logger.fine("Updated OAuth folder for installation prefix: '" + newOAuthFolderName + "'");
         }
 
         return itemDocument;
@@ -137,12 +137,4 @@ public class SalesforceBundleResolver implements BundleResolver {
     public List<BundleInfo> getResultList() {
         return Collections.unmodifiableList(resultList);
     }
-
-    // - PRIVATE
-
-    private final List<BundleInfo> resultList = new ArrayList<BundleInfo>();
-    private final Map<String, String> guidToResourceDirectory = new HashMap<String, String>();
-    private String installationPrefix;
-    private static final Logger logger = Logger.getLogger(SalesforceBundleResolver.class.getName());
-
 }

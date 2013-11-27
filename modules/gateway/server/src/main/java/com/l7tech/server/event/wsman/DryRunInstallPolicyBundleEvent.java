@@ -29,8 +29,16 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         jdbcConnsThatDontExist.add(missingJdbcConn);
     }
 
-    public void addMissingAssertions(String missingAssertion) {
+    public void addMissingAssertion(String missingAssertion) {
         missingAssertions.add(missingAssertion);
+    }
+
+    public void addEncapsulatedAssertionNameWithConflict(String encapsulatedAssertionName, String encapsulatedAssertionGuid) {
+        encapsulatedAssertionConflict.add(encapsulatedAssertionName + " (GUID: " + encapsulatedAssertionGuid + ")");
+    }
+
+    public void addEncapsulatedAssertionWithPolicyReferenceConflict(String conflict) {
+        encapsulatedAssertionConflict.add(conflict);
     }
 
     public List<String> getServiceConflict() {
@@ -53,10 +61,15 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         return Collections.unmodifiableList(missingAssertions);
     }
 
+    public List<String> getEncapsulatedAssertionConflict() {
+        return Collections.unmodifiableList(encapsulatedAssertionConflict);
+    }
+
     // - PRIVATE
-    private List<String> serviceConflict = new ArrayList<String>();
-    private List<String> policyConflict = new ArrayList<String>();
-    private List<String> certificateConflict = new ArrayList<String>();
-    private List<String> jdbcConnsThatDontExist = new ArrayList<String>();
-    private List<String> missingAssertions = new ArrayList<String>();
+    private List<String> serviceConflict = new ArrayList<>();
+    private List<String> policyConflict = new ArrayList<>();
+    private List<String> certificateConflict = new ArrayList<>();
+    private List<String> jdbcConnsThatDontExist = new ArrayList<>();
+    private List<String> missingAssertions = new ArrayList<>();
+    private List<String> encapsulatedAssertionConflict = new ArrayList<>();
 }

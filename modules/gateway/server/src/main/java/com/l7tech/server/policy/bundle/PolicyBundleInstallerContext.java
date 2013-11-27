@@ -29,8 +29,6 @@ public class PolicyBundleInstallerContext {
         this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired);
     }
 
-
-
     /**
      * @param bundleInfo    bundle to install
      * @param folderGoid    goid of the parent folder
@@ -40,7 +38,7 @@ public class PolicyBundleInstallerContext {
      * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
-                                        Goid folderGoid,
+                                        @NotNull Goid folderGoid,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
@@ -99,7 +97,6 @@ public class PolicyBundleInstallerContext {
     @Nullable
     private final String installationPrefix;
     @NotNull
-    final BundleResolver bundleResolver;
-
+    private final BundleResolver bundleResolver;
     private final boolean checkingAssertionExistenceRequired;
 }

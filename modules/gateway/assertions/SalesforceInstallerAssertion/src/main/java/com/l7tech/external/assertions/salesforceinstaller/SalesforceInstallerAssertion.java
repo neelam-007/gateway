@@ -1,62 +1,52 @@
 package com.l7tech.external.assertions.salesforceinstaller;
 
+import com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
+import com.l7tech.server.util.Injector;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
  * 
  */
-public class SalesforceInstallerAssertion extends Assertion implements UsesVariables {
+public class SalesforceInstallerAssertion extends Assertion {
     protected static final Logger logger = Logger.getLogger(SalesforceInstallerAssertion.class.getName());
-
-    public String[] getVariablesUsed() {
-        return new String[0]; //Syntax.getReferencedNames(...);
-    }
-
-    //
-    // Metadata
-    //
     private static final String META_INITIALIZED = SalesforceInstallerAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final PolicyBundleInstallerAdmin instance;
+                try {
+                    instance = new SalesforceInstallerAdminImpl("/com/l7tech/external/assertions/salesforceinstaller/bundles/", "SalesforceBundleInfo.xml", "http://ns.l7tech.com/2013/02/salesforce-bundle", appContext);
+                    final Injector injector = appContext.getBean("injector", Injector.class);
+                    injector.inject(instance);
+                } catch (PolicyBundleInstallerAdmin.PolicyBundleInstallerException e) {
+                    logger.warning("Could not load Salesforce Installer: " + ExceptionUtils.getMessage(e));
+                    throw new RuntimeException(e);
+                }
+                final ExtensionInterfaceBinding<PolicyBundleInstallerAdmin> binding = new ExtensionInterfaceBinding<>(PolicyBundleInstallerAdmin.class,  SalesforceInstallerAssertion.class.getName(), instance);
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
+            }
+        });
 
-        // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "");
-        meta.put(AssertionMetadata.LONG_NAME, "");
-
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/.gif");
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:SalesforceInstaller" rather than "set:modularAssertions"
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[]{ "com.l7tech.external.assertions.salesforceinstaller.console.SalesforceInstallerAction" });
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.salesforceinstaller.SalesforceInstallerAdminImpl");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

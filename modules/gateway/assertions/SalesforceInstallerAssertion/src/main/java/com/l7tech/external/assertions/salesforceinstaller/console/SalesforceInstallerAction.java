@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.Pair;
 
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -28,7 +27,7 @@ public class SalesforceInstallerAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Install Salesforce Toolkit";
+        return "Install Execute Salesforce Operation Assertion";
     }
 
 

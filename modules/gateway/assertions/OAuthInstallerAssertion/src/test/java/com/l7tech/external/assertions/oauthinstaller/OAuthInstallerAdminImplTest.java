@@ -9,6 +9,7 @@ import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.event.admin.DetailedAdminEvent;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
@@ -30,7 +31,6 @@ import java.util.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static com.l7tech.util.Functions.toMap;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test tests are concerned with logic relating to either the contents of the OTK bundles or logic which is controlled
@@ -39,8 +39,11 @@ import static org.junit.Assert.assertEquals;
 public class OAuthInstallerAdminImplTest {
 
     private final String baseName = "/com/l7tech/external/assertions/oauthinstaller/bundles/";
+    private final String infoFileName = "OAuthToolkitBundleInfo.xml";
+    private final String installerVersionNamespace = "http://ns.l7tech.com/2012/11/oauth-toolkit-bundle";
 
-    //todo test - validate that each service in an enumeration contains a unique id.
+
+    // todo test - validate that each service in an enumeration contains a unique id.
     // todo test coverage for reacahibility of folders
     // todo test that all policies with the same name have the same guid.
     // todo check that logic for finding the new guid for a policy is based on the name and not the guid.
@@ -50,10 +53,10 @@ public class OAuthInstallerAdminImplTest {
      */
     @Test
     public void testValidateSpringRequestsForDryRun() throws Exception {
-        final Map<String, Boolean> foundBundles = new HashMap<String, Boolean>();
-        final Set<String> foundAuditEvents = new HashSet<String>();
+        final Map<String, Boolean> foundBundles = new HashMap<>();
+        final Set<String> foundAuditEvents = new HashSet<>();
 
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
                 // note this code will run on a separate thread to the actual test so failures here will not
@@ -64,14 +67,14 @@ public class OAuthInstallerAdminImplTest {
 
                     foundBundles.put(dryRunEvent.getContext().getBundleInfo().getId(), true);
                     dryRunEvent.setProcessed(true);
-                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
-                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                } else if (applicationEvent instanceof DetailedAdminEvent) {
+                    final DetailedAdminEvent auditEvent = (DetailedAdminEvent) applicationEvent;
                     foundAuditEvents.add(auditEvent.getNote() + auditEvent.getAuditDetails().toString());
                 }
             }
         });
 
-        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunOtkInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
                 "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
@@ -105,8 +108,8 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testValidateSpringRequestsForInstall() throws Exception {
 
-        final Set<String> foundAuditEvents = new HashSet<String>();
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final Set<String> foundAuditEvents = new HashSet<>();
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
                 // note this code will run on a separate thread to the actual test so failures here will not
@@ -115,14 +118,14 @@ public class OAuthInstallerAdminImplTest {
                 if (applicationEvent instanceof InstallPolicyBundleEvent) {
                     InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
                     installEvent.setProcessed(true);
-                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
-                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                } else if (applicationEvent instanceof DetailedAdminEvent) {
+                    final DetailedAdminEvent auditEvent = (DetailedAdminEvent) applicationEvent;
                     foundAuditEvents.add(auditEvent.getNote() + auditEvent.getAuditDetails().toString());
                 }
             }
         });
 
-        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
                 "ba525763-6e55-4748-9376-76055247c8b1"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
@@ -159,9 +162,9 @@ public class OAuthInstallerAdminImplTest {
      */
     @Test
     public void testListAllBundles() throws Exception {
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, ApplicationContexts.getTestApplicationContext());
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, ApplicationContexts.getTestApplicationContext());
 
-        final List<BundleInfo> allBundles = admin.getAllOtkComponents();
+        final List<BundleInfo> allBundles = admin.getAllComponents();
         assertNotNull(allBundles);
 
         for (BundleInfo aBundle : allBundles) {
@@ -194,7 +197,7 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testAllIncludesAreWithinTheBundle() throws Exception {
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
         final List<BundleInfo> allBundles = resolver.getResultList();
 
         for (BundleInfo aBundle : allBundles) {
@@ -202,11 +205,11 @@ public class OAuthInstallerAdminImplTest {
             final List<Element> enumPolicyElms = getEntityElements(policyDocument.getDocumentElement(), "Policy");
 
             // Record all policies defined in this bundle.
-            final Map<String, String> guidToPolicyNameMatch = new HashMap<String, String>();
+            final Map<String, String> guidToPolicyNameMatch = new HashMap<>();
             // Record all includes for a policy
-            final Map<String, Set<String>> policyGuidToPolicyRefMap = new HashMap<String, Set<String>>();
+            final Map<String, Set<String>> policyGuidToPolicyRefMap = new HashMap<>();
             // Record all included policies
-            final Map<String, String> policyIncludeToReferantPolicyMap = new HashMap<String, String>();
+            final Map<String, String> policyIncludeToReferantPolicyMap = new HashMap<>();
             for (Element policyElm : enumPolicyElms) {
                 final String policyGuid = policyElm.getAttribute("guid");
                 final Element policyDetailElm = GatewayManagementDocumentUtilities.getPolicyDetailElement(policyElm);
@@ -218,7 +221,7 @@ public class OAuthInstallerAdminImplTest {
                 final Element policyResourceElement = getPolicyResourceElement(policyElm, "Policy", "Not used");
                 final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not used");
                 final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(layer7Policy);
-                Set<String> allIncludes = new HashSet<String>();
+                Set<String> allIncludes = new HashSet<>();
                 for (Element policyInclude : policyIncludes) {
                     final String includeGuid = policyInclude.getAttribute("stringValue");
                     allIncludes.add(includeGuid);
@@ -237,7 +240,7 @@ public class OAuthInstallerAdminImplTest {
             final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
             final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
             // all that matters is that the policy exists if referenced, does not matter if we don't record all the services that may reference a policy
-            final Map<String, String> policyGuidToServiceRefMap = new HashMap<String, String>();
+            final Map<String, String> policyGuidToServiceRefMap = new HashMap<>();
 
             for (Element enumServiceElm : enumServiceElms) {
                 final Element serviceDetail = getServiceDetailElement(enumServiceElm);
@@ -286,13 +289,13 @@ public class OAuthInstallerAdminImplTest {
     public void testValidateTheSamePoliciesAreIdentical() throws Exception {
 
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
         final List<BundleInfo> allBundles = resolver.getResultList();
 
         // Collect all policies from each bundle
-        Map<String, Map<String, Element>> bundleToAllPolicies = new HashMap<String, Map<String, Element>>();
+        Map<String, Map<String, Element>> bundleToAllPolicies = new HashMap<>();
         for (BundleInfo aBundle : allBundles) {
-            final Map<String, Element> guidToElementMap = new HashMap<String, Element>();
+            final Map<String, Element> guidToElementMap = new HashMap<>();
             final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
             final List<Element> enumPolicyElms = getEntityElements(policyDocument.getDocumentElement(), "Policy");
             for (Element policyElm : enumPolicyElms) {
@@ -305,7 +308,7 @@ public class OAuthInstallerAdminImplTest {
         }
 
         // Organise all policies with the same guid
-        Map<String, List<Element>> policyNameToPolicyElms = new HashMap<String, List<Element>>();
+        Map<String, List<Element>> policyNameToPolicyElms = new HashMap<>();
 
         for (Map.Entry<String, Map<String, Element>> entry : bundleToAllPolicies.entrySet()) {
             System.out.println("Bundle: " + entry.getKey());
@@ -344,9 +347,9 @@ public class OAuthInstallerAdminImplTest {
 
     @Test
     public void testResponse_PermissionDenied() throws Exception {
-        final Set<String> foundAuditEvents = new HashSet<String>();
-        final Set<AuditDetail> foundDetails = new HashSet<AuditDetail>();
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final Set<String> foundAuditEvents = new HashSet<>();
+        final Set<AuditDetail> foundDetails = new HashSet<>();
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
                 // note this code will run on a separate thread to the actual test so failures here will not
@@ -358,15 +361,15 @@ public class OAuthInstallerAdminImplTest {
                     final String deniedRequestXml = "<DeniedRequest />";
                     installEvent.setProcessingException(new GatewayManagementDocumentUtilities.AccessDeniedManagementResponse("Access Denied", deniedRequestXml));
                     installEvent.setProcessed(true);
-                } else if (applicationEvent instanceof OAuthInstallerAdminImpl.OtkInstallationAuditEvent) {
-                    final OAuthInstallerAdminImpl.OtkInstallationAuditEvent auditEvent = (OAuthInstallerAdminImpl.OtkInstallationAuditEvent) applicationEvent;
+                } else if (applicationEvent instanceof DetailedAdminEvent) {
+                    final DetailedAdminEvent auditEvent = (DetailedAdminEvent) applicationEvent;
                     foundDetails.addAll(auditEvent.getAuditDetails());
                     foundAuditEvents.add(auditEvent.getNote());
                 }
             }
         });
 
-        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1")
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1")
                 , new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
@@ -408,13 +411,13 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testAllFolderIdsAreTheSame() throws Exception {
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
         final List<BundleInfo> allBundles = resolver.getResultList();
 
         // Collect all ids for a folder name
         for (BundleInfo aBundle : allBundles) {
             System.out.println("Bundle " + aBundle.getName());
-            final Set<String> allFoldersInBundle = new HashSet<String>();
+            final Set<String> allFoldersInBundle = new HashSet<>();
 
             final Document folderDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.FOLDER, false);
             final List<Element> folderElms = getEntityElements(folderDocument.getDocumentElement(), "Folder");
@@ -423,7 +426,7 @@ public class OAuthInstallerAdminImplTest {
                 allFoldersInBundle.add(idAttr);
             }
 
-            final Set<String> foundFolderIds = new HashSet<String>();
+            final Set<String> foundFolderIds = new HashSet<>();
             // Get all folder ids referenced from services
             final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
             final List<Element> serviceElements = getEntityElements(serviceDocument.getDocumentElement(), "Service");
@@ -470,7 +473,7 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testHostnamesDoNotContainTraililngSlash() throws Exception {
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
         final List<BundleInfo> allBundles = resolver.getResultList();
 
         for (BundleInfo aBundle : allBundles) {
@@ -517,7 +520,7 @@ public class OAuthInstallerAdminImplTest {
         final int [] numServiceCommentsFound = new int[1];
         final String[] otkToolkitVersion = new String[1];
 
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
 
@@ -572,10 +575,10 @@ public class OAuthInstallerAdminImplTest {
             }
         });
 
-        otkToolkitVersion[0] = admin.getOAuthToolkitVersion();
+        otkToolkitVersion[0] = admin.getVersion();
 
         final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.installOAuthToolkit(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
+                admin.install(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1"), new Goid(0, -5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -589,7 +592,7 @@ public class OAuthInstallerAdminImplTest {
     @Test
     @BugNumber(13282)
     public void testGetDatabaseSchema() throws Exception {
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
 
@@ -622,12 +625,12 @@ public class OAuthInstallerAdminImplTest {
         // Set up
 
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
 
         final Map<String, BundleInfo> bundleMap = toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
             @Override
             public Pair<String, BundleInfo> call(BundleInfo bundleInfo) {
-                return new Pair<String, BundleInfo>(bundleInfo.getId(), bundleInfo);
+                return new Pair<>(bundleInfo.getId(), bundleInfo);
             }
         });
 
@@ -656,7 +659,7 @@ public class OAuthInstallerAdminImplTest {
     @Test
     public void testApiPortalIntegrationNotRequested() throws Exception {
         final boolean[] testPass = new boolean[1];
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, new ApplicationEventPublisher() {
+        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
             @Override
             public void publishEvent(ApplicationEvent applicationEvent) {
 
@@ -696,7 +699,7 @@ public class OAuthInstallerAdminImplTest {
         // Secure Zone Storage
         // false to not integrate the API Portal
         final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.installOAuthToolkit(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, false);
+                admin.install(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), new Goid(0, -5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
@@ -720,7 +723,7 @@ public class OAuthInstallerAdminImplTest {
     public void testManageClientsNotAvailableWhenPortalIntegrated() throws Exception {
 
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final OAuthToolkitBundleResolver resolver = new OAuthToolkitBundleResolver(bundleInfos);
+        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
 
         final Map<String, BundleInfo> bundleMap = Functions.toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
             @Override
