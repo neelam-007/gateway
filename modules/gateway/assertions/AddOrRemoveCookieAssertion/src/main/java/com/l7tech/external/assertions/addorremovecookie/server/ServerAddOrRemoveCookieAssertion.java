@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAsserti
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -72,12 +73,16 @@ public class ServerAddOrRemoveCookieAssertion extends AbstractServerAssertion<Ad
         }
         context.addCookie(new HttpCookie(name, value, assertion.getVersion(), StringUtils.isBlank(path) ? null : path,
                 StringUtils.isBlank(domain) ? null : domain, maxAgeInt, assertion.isSecure(),
-                StringUtils.isBlank(comment) ? null : comment));
+                StringUtils.isBlank(comment) ? null : comment, assertion.getTarget() == TargetMessageType.RESPONSE));
         logAndAudit(AssertionMessages.COOKIE_ADDED, name, value);
         return AssertionStatus.NONE;
     }
 
     private void validateRequiredFields(final AddOrRemoveCookieAssertion.Operation operation) throws PolicyAssertionException {
+        if (assertion.getTarget() == TargetMessageType.OTHER) {
+            // for now we do not support TargetMessageType.OTHER until we move cookies to be stored on the message instead of the PEC.
+            throw new PolicyAssertionException(assertion, "Unsupported target: " + assertion.getOtherTargetMessageVariable());
+        }
         if (assertion.getName() == null) {
             throw new PolicyAssertionException(assertion, "Cookie name is null");
         }

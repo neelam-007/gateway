@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -43,6 +44,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertEquals(-1, cookie.getMaxAge());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isNew());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
@@ -67,6 +69,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertEquals(60, cookie.getMaxAge());
         assertEquals("test comment", cookie.getComment());
         assertTrue(cookie.isSecure());
+        assertFalse(cookie.isNew());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
@@ -175,6 +178,45 @@ public class ServerAddOrRemoveCookieAssertionTest {
             fail("Expected PolicyAssertionException");
         } catch (final PolicyAssertionException e) {
             assertEquals("Cookie name is null", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void addCookieToResponse() throws Exception {
+        assertion.setTarget(TargetMessageType.RESPONSE);
+        assertion.setName("foo");
+        assertion.setValue("bar");
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        final HttpCookie cookie = context.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(1, cookie.getVersion());
+        assertNull(cookie.getPath());
+        assertNull(cookie.getDomain());
+        assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.isSecure());
+        assertTrue(cookie.isNew());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    /**
+     * For now we do not support TargetMessageType.OTHER until we move cookies to be stored on the message instead of the PEC.
+     */
+    @Test(expected = PolicyAssertionException.class)
+    public void addCookieToOtherTarget() throws Exception {
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("testMessage");
+        assertion.setName("foo");
+        assertion.setValue("bar");
+
+        try {
+            new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context);
+            fail("Expected PolicyAssertionException");
+        } catch (final PolicyAssertionException e) {
+            assertEquals("Unsupported target: testMessage", e.getMessage());
             throw e;
         }
     }

@@ -170,6 +170,21 @@ public class HttpCookie {
      * @param comment the comment, may be null
      */
     public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment) {
+        this(name, value, version, path, domain, maxAge, secure, comment, true);
+    }
+
+    /**
+     * @param name the name of the cookie
+     * @param value the value of the cookie
+     * @param version the cookie version (0 - Netscape, 1 - RFC 2109)
+     * @param path the explicitly set path (version 1+ only), may be null
+     * @param domain the explicitly set domain (version 1+ only), may be null
+     * @param maxAge the maximum age in seconds (-1 for not specified)
+     * @param secure is this a secure cookie
+     * @param passToClient set to true if the cookie should be passed back to the client in the response
+     * @param comment the comment, may be null
+     */
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean passToClient) {
         this.cookieName = name;
         this.cookieValue = value;
         this.version = version;
@@ -185,7 +200,7 @@ public class HttpCookie {
             this.comment = comment;
         }
         this.secure = secure;
-        this.newcook = true;
+        this.newcook = passToClient;
         this.createdTime = System.currentTimeMillis();
 
         this.id = buildId();
@@ -311,6 +326,8 @@ public class HttpCookie {
     public boolean isNew() {
         return newcook;
     }
+
+
 
     /**
      *

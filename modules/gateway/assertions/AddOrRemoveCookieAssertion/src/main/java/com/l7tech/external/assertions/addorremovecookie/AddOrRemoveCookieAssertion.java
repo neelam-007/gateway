@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.addorremovecookie;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -13,7 +12,7 @@ import java.util.Collections;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
-public class AddOrRemoveCookieAssertion extends Assertion implements UsesVariables {
+public class AddOrRemoveCookieAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     public static enum Operation {
         ADD("Add"), REMOVE("Remove");
@@ -103,8 +102,9 @@ public class AddOrRemoveCookieAssertion extends Assertion implements UsesVariabl
         this.secure = secure;
     }
 
-    public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(name, value, domain, cookiePath, maxAge, comment);
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(name, value, domain, cookiePath, maxAge, comment);
     }
 
     public AssertionMetadata meta() {
@@ -138,7 +138,7 @@ public class AddOrRemoveCookieAssertion extends Assertion implements UsesVariabl
                     sb.append("=");
                     sb.append(assertion.getValue());
                 }
-                return sb.toString();
+                return AssertionUtils.decorateName(assertion, sb);
             } else {
                 return BASE_NAME;
             }
@@ -162,4 +162,6 @@ public class AddOrRemoveCookieAssertion extends Assertion implements UsesVariabl
     private String comment;
 
     private boolean secure;
+
+    private boolean passToResponse;
 }

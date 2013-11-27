@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.addorremovecookie;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.TargetMessageType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,13 +27,21 @@ public class AddOrRemoveCookieAssertionTest {
     public void getAssertionNameAdd() {
         assertion.setName("foo");
         assertion.setValue("bar");
-        assertEquals("Add Cookie foo=bar", assertionNameFactory.getAssertionName(assertion, true));
+        assertEquals("Request: Add Cookie foo=bar", assertionNameFactory.getAssertionName(assertion, true));
     }
 
     @Test
     public void getAssertionNameRemove() {
         assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
         assertion.setName("foo");
-        assertEquals("Remove Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
+        assertEquals("Request: Remove Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
+    }
+
+    @Test
+    public void getAssertionNameResponse() {
+        assertion.setTarget(TargetMessageType.RESPONSE);
+        assertion.setName("foo");
+        assertion.setValue("bar");
+        assertEquals("Response: Add Cookie foo=bar", assertionNameFactory.getAssertionName(assertion, true));
     }
 }

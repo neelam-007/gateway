@@ -1239,8 +1239,7 @@ public class AssertionMessages extends Messages {
     public static final M INVALID_HEADER_FOR_TARGET = m(10155, Level.WARNING, "Header {0} is invalid for target {1}");
 
     // Add or Remove Cookie Assertion
-    public static final M INVALID_COOKIE_VERSION = m(10200, Level.WARNING, "Cookie version is invalid: {0}");
-    public static final M INVALID_MAX_AGE = m(10201, Level.WARNING, "Cookie max age is invalid: {0}");
+    public static final M INVALID_MAX_AGE = m(10200, Level.WARNING, "Cookie max age is invalid: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
