@@ -41,8 +41,6 @@ public class LicenseGeneratorFeatureSets {
                 allProfiles.get(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENTION));
         availableProfiles.put(GatewayFeatureSets.PROFILE_MOBILE_EXTENTION,
                 allProfiles.get(GatewayFeatureSets.PROFILE_MOBILE_EXTENTION));
-        availableProfiles.put(GatewayFeatureSets.PROFILE_MOBILE_CLASSIC_EXTENTION,
-                allProfiles.get(GatewayFeatureSets.PROFILE_MOBILE_CLASSIC_EXTENTION));
 
         availableProfiles.put(PLACEHOLDER_PROFILE_ESM.getName(), PLACEHOLDER_PROFILE_ESM);
 

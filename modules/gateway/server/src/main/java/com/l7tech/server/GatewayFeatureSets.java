@@ -135,8 +135,6 @@ public class GatewayFeatureSets {
 
     public static final String PROFILE_MOBILE_EXTENTION = "set:Profile:Mobile";
 
-    public static final String PROFILE_MOBILE_CLASSIC_EXTENTION = "set:Profile:MobileClassic";
-
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
 
     static {
@@ -1168,40 +1166,6 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
-         * Mobile Access Gateway 'Classic'
-         *
-         * This profile was created to license the latest versions of the features introduced in MAG 1.0 to customers
-         * who received a subset of those features as tactical solutions, instead of giving those customers licenses
-         * for MAG 2.0.1.
-         *
-         * The 'Classic' profile lacks the CSR Signer and JSON WebToken features of the full Mobile Access Gateway.
-         *
-         * Added in Herring 8.0.1, applicable to MAG 2.0.1 and onward.
-         */
-        GatewayFeatureSet mobileClassicFeaturePack = fsp(PROFILE_MOBILE_CLASSIC_EXTENTION,
-                "Mobile Access Gateway 'Classic'",
-                "Includes only those features available in MAG 1.0 (requires SOA Gateway license as base)",
-                mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
-                mass("assertion:IDTokenDecode"),
-                mass("assertion:OpenIDConnectInstaller"),
-                mass("assertion:ApplePushNotification"), // ApplePushNotificationAssertion
-                mass("assertion:AppleFeedbackService"),
-                mass("assertion:WebSocket"), // WebSocketAssertion
-                mass("assertion:WebSocketEntityManager"),
-                mass("assertion:WebSocketValidation"),
-                mass("assertion:WebSocketMessageInjection"),
-                mass("assertion:XMPPGetRemoteCertificate"), // XMPPAssertion
-                mass("assertion:XMPPStartTLS"),
-                mass("assertion:XMPPCloseSession"),
-                mass("assertion:XMPPAssociateSessions"),
-                mass("assertion:XMPPGetAssociatedSessionId"),
-                mass("assertion:XMPPGetSessionAttribute"),
-                mass("assertion:XMPPSendToRemoteHost"),
-                mass("assertion:XMPPSetSessionAttribute"),
-                mass("assertion:XMPPOpenServerSession"),
-                fs(moduleLoader));
-
-        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1215,8 +1179,7 @@ public class GatewayFeatureSets {
                 fs(profileApi),
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
-                fs(mobileFeaturePack),
-                fs(mobileClassicFeaturePack));
+                fs(mobileFeaturePack));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
