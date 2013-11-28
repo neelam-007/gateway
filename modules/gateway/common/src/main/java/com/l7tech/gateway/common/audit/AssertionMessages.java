@@ -1240,6 +1240,9 @@ public class AssertionMessages extends Messages {
 
     // Add or Remove Cookie Assertion
     public static final M INVALID_MAX_AGE = m(10200, Level.WARNING, "Cookie max age is invalid: {0}");
+    public static final M EMPTY_COOKIE_NAME = m(10201, Level.WARNING, "Cookie name is empty");
+    public static final M COOKIE_NOT_FOUND = m(10202, Level.WARNING, "No cookie with name {0} was found for target {1}");
+    public static final M COOKIE_ALREADY_EXISTS = m(10203, Level.WARNING, "A cookie with name {0} already exists");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -159,10 +159,47 @@ public class ServerAddOrRemoveCookieAssertionTest {
     }
 
     @Test
+    public void addCookieNameResolvesToEmpty() throws Exception {
+        assertion.setName("${name}");
+        assertion.setValue("bar");
+
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertTrue(context.getCookies().isEmpty());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_COOKIE_NAME));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    @Test
+    public void addCookieNameAlreadyExists() throws Exception {
+        context.addCookie(new HttpCookie("foo", "existingValue", 0, "/", "localhost", 60, true, "test"));
+        assertion.setName("foo");
+        assertion.setValue("newValue");
+
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, context.getCookies().size());
+        final HttpCookie cookie = context.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("existingValue", cookie.getCookieValue());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ALREADY_EXISTS));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    @Test
     public void removeCookie() throws Exception {
         context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
-        context.addCookie(new HttpCookie("foo", "bar2", 1, "/", "localhost2"));
         assertion.setName("foo");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertTrue(context.getCookies().isEmpty());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+    }
+
+    @Test
+    public void removeCookieFromContextVar() throws Exception {
+        context.setVariable("name", "foo");
+        context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
+        assertion.setName("${name}");
         assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
@@ -180,6 +217,60 @@ public class ServerAddOrRemoveCookieAssertionTest {
             assertEquals("Cookie name is null", e.getMessage());
             throw e;
         }
+    }
+
+    @Test
+    public void removeCookieFromResponse() throws Exception {
+        final HttpCookie responseCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", true);
+        context.addCookie(responseCookie);
+        assertion.setName("foo");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setTarget(TargetMessageType.RESPONSE);
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertTrue(context.getCookies().isEmpty());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+    }
+
+    @Test
+    public void removeCookieFromResponseDoesNotRemoveRequestCookies() throws Exception {
+        final HttpCookie requestCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false);
+        context.addCookie(requestCookie);
+        assertion.setName("foo");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setTarget(TargetMessageType.RESPONSE);
+
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, context.getCookies().size());
+        assertEquals("foo", context.getCookies().iterator().next().getCookieName());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+    }
+
+    @Test
+    public void removeCookieNotFound() throws Exception {
+        context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
+        assertion.setName("notFound");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, context.getCookies().size());
+        assertEquals("foo", context.getCookies().iterator().next().getCookieName());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+    }
+
+    @Test
+    public void removeCookieNameResolvesToEmpty() throws Exception {
+        context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
+        assertion.setName("${name}");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, context.getCookies().size());
+        assertEquals("foo", context.getCookies().iterator().next().getCookieName());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_COOKIE_NAME));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
     }
 
     @Test
@@ -206,7 +297,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
      * For now we do not support TargetMessageType.OTHER until we move cookies to be stored on the message instead of the PEC.
      */
     @Test(expected = PolicyAssertionException.class)
-    public void addCookieToOtherTarget() throws Exception {
+    public void otherTargetMessageType() throws Exception {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("testMessage");
         assertion.setName("foo");
@@ -219,6 +310,96 @@ public class ServerAddOrRemoveCookieAssertionTest {
             assertEquals("Unsupported target: testMessage", e.getMessage());
             throw e;
         }
+    }
+
+    @Test
+    public void updateCookie() throws Exception {
+        context.addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        final String modified = "modified";
+        assertion.setName("foo");
+        assertion.setValue(modified);
+        assertion.setDomain(modified);
+        assertion.setCookiePath(modified);
+        assertion.setComment(modified);
+        assertion.setVersion(1);
+        assertion.setMaxAge("99");
+        assertion.setSecure(true);
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        final HttpCookie cookie = context.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals(modified, cookie.getCookieValue());
+        assertEquals(modified, cookie.getPath());
+        assertEquals(modified, cookie.getDomain());
+        assertEquals(modified, cookie.getComment());
+        assertEquals(1, cookie.getVersion());
+        assertEquals(99, cookie.getMaxAge());
+        assertTrue(cookie.isSecure());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    @Test
+    public void updateCookieFromContextVars() throws Exception {
+        final String modified = "modified";
+        context.setVariable("name", "foo");
+        context.setVariable("value", modified);
+        context.setVariable("domain", modified);
+        context.setVariable("path", modified);
+        context.setVariable("comment", modified);
+        context.setVariable("maxAge", 99);
+        context.addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        assertion.setName("${name}");
+        assertion.setValue("${value}");
+        assertion.setDomain("${domain}");
+        assertion.setCookiePath("${path}");
+        assertion.setComment("${comment}");
+        assertion.setVersion(1);
+        assertion.setMaxAge("${maxAge}");
+        assertion.setSecure(true);
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        final HttpCookie cookie = context.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals(modified, cookie.getCookieValue());
+        assertEquals(modified, cookie.getPath());
+        assertEquals(modified, cookie.getDomain());
+        assertEquals(modified, cookie.getComment());
+        assertEquals(1, cookie.getVersion());
+        assertEquals(99, cookie.getMaxAge());
+        assertTrue(cookie.isSecure());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    @Test
+    public void updateCookieNameResolvesToEmpty() throws Exception {
+        context.addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        assertion.setName("${name}");
+        assertion.setValue("bar");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, context.getCookies().size());
+        final HttpCookie cookie = context.getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_COOKIE_NAME));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+    @Test
+    public void updateCookieDoesNotExist() throws Exception {
+        assertion.setName("foo");
+        assertion.setValue("bar");
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
     private ServerAddOrRemoveCookieAssertion configureServerAssertion(final ServerAddOrRemoveCookieAssertion serverAssertion) {

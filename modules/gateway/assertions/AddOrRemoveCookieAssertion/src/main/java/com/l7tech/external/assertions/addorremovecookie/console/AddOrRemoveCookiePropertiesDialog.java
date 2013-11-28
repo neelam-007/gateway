@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
+import static com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion.Operation.*;
 
 public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCancelSupport<AddOrRemoveCookieAssertion> {
     private JPanel contentPanel;
@@ -91,13 +92,13 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     }
 
     private void enableDisable() {
-        final boolean isAdd = AddOrRemoveCookieAssertion.Operation.ADD == operationComboBox.getSelectedItem();
-        valueTextField.setEnabled(isAdd);
-        domainTextField.setEnabled(isAdd);
-        pathTextField.setEnabled(isAdd);
-        maxAgeTextField.setEnabled(isAdd);
-        commentTextField.setEnabled(isAdd);
-        versionComboBox.setEnabled(isAdd);
-        secureCheckBox.setEnabled(isAdd);
+        final Object op = operationComboBox.getSelectedItem();
+        valueTextField.setEnabled(op != REMOVE);
+        domainTextField.setEnabled(op != REMOVE);
+        pathTextField.setEnabled(op != REMOVE);
+        maxAgeTextField.setEnabled(op != REMOVE);
+        commentTextField.setEnabled(op != REMOVE);
+        versionComboBox.setEnabled(op != REMOVE);
+        secureCheckBox.setEnabled(op != REMOVE);
     }
 }

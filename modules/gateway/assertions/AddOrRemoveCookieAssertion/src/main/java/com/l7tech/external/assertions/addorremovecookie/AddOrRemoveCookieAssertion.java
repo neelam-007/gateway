@@ -15,7 +15,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 public class AddOrRemoveCookieAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     public static enum Operation {
-        ADD("Add"), REMOVE("Remove");
+        ADD("Add"), REMOVE("Remove"), UPDATE("Update");
 
         private Operation(@NotNull final String name) {
             this.name = name;
@@ -162,6 +162,4 @@ public class AddOrRemoveCookieAssertion extends MessageTargetableAssertion imple
     private String comment;
 
     private boolean secure;
-
-    private boolean passToResponse;
 }

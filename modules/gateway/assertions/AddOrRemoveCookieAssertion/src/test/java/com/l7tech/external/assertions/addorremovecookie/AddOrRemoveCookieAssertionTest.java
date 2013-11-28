@@ -38,6 +38,14 @@ public class AddOrRemoveCookieAssertionTest {
     }
 
     @Test
+    public void getAssertionNameUpdate() {
+        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setName("foo");
+        assertEquals("Request: Update Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
+    }
+
+
+    @Test
     public void getAssertionNameResponse() {
         assertion.setTarget(TargetMessageType.RESPONSE);
         assertion.setName("foo");
