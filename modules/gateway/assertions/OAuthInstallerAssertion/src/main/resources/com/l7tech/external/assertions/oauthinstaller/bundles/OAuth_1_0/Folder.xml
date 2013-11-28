@@ -1,37 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600897" id="123600898"
-               version="0">
-        <l7:Name>OAuthClient</l7:Name>
-    </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600896" id="123600897"
-               version="0">
-        <l7:Name>OAuth 1.0</l7:Name>
-    </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600897" id="123600899"
-               version="0">
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7a49"
+               id="57477c668279c3c8d34da687b89a7b49" version="0">
         <l7:Name>OAuthEndpoints</l7:Name>
     </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600897" id="123600901"
-               version="0">
-        <l7:Name>ProtectedResourceServer</l7:Name>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a74a9"
+               id="57477c668279c3c8d34da687b89a7a49" version="0">
+        <l7:Name>OAuth 1.0</l7:Name>
     </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600897" id="123600902"
-               version="0">
-        <l7:Name>OAuthFragments</l7:Name>
-    </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600897" id="123600903"
-               version="0">
-        <l7:Name>OAuthAccessControl</l7:Name>
-    </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="-5002" version="0">
-        <l7:Name>Root Node</l7:Name>
-    </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="123600899" id="123600900"
-               version="0">
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7b49"
+               id="57477c668279c3c8d34da687b89a7b89" version="0">
         <l7:Name>OAuthWebsite</l7:Name>
     </l7:Folder>
-    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="-5002" id="123600896" version="0">
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7a49"
+               id="57477c668279c3c8d34da687b89a7a89" version="0">
+        <l7:Name>OAuthAccessControl</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7a49"
+               id="57477c668279c3c8d34da687b89a7ac9" version="0">
+        <l7:Name>OAuthFragments</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="-5002"
+               id="57477c668279c3c8d34da687b89a74a9" version="0">
         <l7:Name>OAuth</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7a49"
+               id="57477c668279c3c8d34da687b89a7bc9" version="0">
+        <l7:Name>OAuthClient</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7a49"
+               id="57477c668279c3c8d34da687b89a7b09" version="0">
+        <l7:Name>ProtectedResourceServer</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="-5002"
+               version="0">
+        <l7:Name>Root Node</l7:Name>
     </l7:Folder>
 </enumeration>

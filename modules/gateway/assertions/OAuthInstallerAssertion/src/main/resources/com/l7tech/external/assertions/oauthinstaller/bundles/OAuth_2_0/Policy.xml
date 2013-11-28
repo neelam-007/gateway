@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"
-               id="123732005" version="12">
-        <l7:PolicyDetail folderId="123600904" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd" id="123732005" version="12">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="dfdc6c16-7c02-4415-b0e1-b4a9de10316f"
+               id="57477c668279c3c8d34da687b89a7721" version="12">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a75a1" guid="dfdc6c16-7c02-4415-b0e1-b4a9de10316f"
+                         id="57477c668279c3c8d34da687b89a7721" version="12">
             <l7:Name>OAuth 2.0 Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>13</l7:LongValue>
+                    <l7:LongValue>11</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -20,16 +21,21 @@
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Policy Fragment: OAuth Context Variables"/&gt;
-                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="BEARER or MAC"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="QkVBUkVS"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_oauth_ovp_server"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="QkVBUkVS"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth2_token_type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
@@ -83,14 +89,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="1987200f-1887-4566-b0e7-1bff9558a361"
-               id="123731995" version="0">
-        <l7:PolicyDetail folderId="123600896" guid="1987200f-1887-4566-b0e7-1bff9558a361" id="123731995" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="683d721b-2a6f-4d44-b484-aae0e64989b6"
+               id="57477c668279c3c8d34da687b89a7735" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="683d721b-2a6f-4d44-b484-aae0e64989b6"
+                         id="57477c668279c3c8d34da687b89a7735" version="1">
             <l7:Name>v2GenerateRequestMac</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>1</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -107,7 +114,8 @@
                     &lt;L7p:Comment stringValue="Generates request MAC using HMAC-SHA1 algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key, mac_algorithm"/&gt;
+                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key,
+                    mac_algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Outputs: mac"/&gt;
@@ -217,7 +225,8 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path) =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path)
+                    =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Regex&gt;
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;
@@ -472,9 +481,10 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="7768a8bc-8228-48a2-80f1-f44884937569"
-               id="123731987" version="1">
-        <l7:PolicyDetail folderId="123600909" guid="7768a8bc-8228-48a2-80f1-f44884937569" id="123731987" version="1">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="9481f86f-4c50-4500-b496-a5fa5a4a98b9"
+               id="57477c668279c3c8d34da687b89a7748" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a75e1" guid="9481f86f-4c50-4500-b496-a5fa5a4a98b9"
+                         id="57477c668279c3c8d34da687b89a7748" version="1">
             <l7:Name>v2GenerateAuthHeaderForClient</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
@@ -655,7 +665,7 @@
                     &lt;L7p:VariableToSet stringValue="mac_algorithm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="1987200f-1887-4566-b0e7-1bff9558a361"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="683d721b-2a6f-4d44-b484-aae0e64989b6"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -685,7 +695,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${ext}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -745,14 +755,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="5b3f8880-588d-424c-bdd5-da7c80119c3a"
-               id="123731984" version="1">
-        <l7:PolicyDetail folderId="123600908" guid="5b3f8880-588d-424c-bdd5-da7c80119c3a" id="123731984" version="1">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e418c4cb-b910-49a7-b9f5-aa6ee18d21f9"
+               id="57477c668279c3c8d34da687b89a775b" version="27">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a76a1" guid="e418c4cb-b910-49a7-b9f5-aa6ee18d21f9"
+                         id="57477c668279c3c8d34da687b89a775b" version="27">
             <l7:Name>Require OAuth 2.0 Token</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>2</l7:LongValue>
+                    <l7:LongValue>28</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -765,185 +776,199 @@
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Include this policy in a service policy to authorize api access based
+                    on an oauth 2.0 access token"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="This policy exports these variables: session.scope, session.client_id,
+                    session.subscriber_id, session.expires_in, session.scheme, session.access_token"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="dfdc6c16-7c02-4415-b0e1-b4a9de10316f"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Include this policy in a service policy to authorize api access based on an oauth 2.0 access token"/&gt;
+                    &lt;L7p:Comment stringValue="=== If the token is found at multiple locations the policy will fail"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=""/&gt;
-                    &lt;L7p:VariableToSet stringValue="auth_scheme"/&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Allow Token in Header?"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="allow_header"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${request.http.header.authorization}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Regex&gt;
-                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
-                    &lt;L7p:CaptureVar stringValue="auth_header"/&gt;
-                    &lt;L7p:OtherTargetMessageVariable stringValue="request.http.header.authorization"/&gt;
-                    &lt;L7p:Regex stringValue="(\b.*\b)\s+.*"/&gt;
-                    &lt;L7p:Replacement stringValue=""/&gt;
-                    &lt;L7p:Target target="OTHER"/&gt;
-                    &lt;/L7p:Regex&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHthdXRoX2hlYWRlclsxXX0="/&gt;
-                    &lt;L7p:VariableToSet stringValue="auth_scheme"/&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Allow token as parameter?"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="allow_query"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:TrueAssertion/&gt;
-                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Look for authentication scheme in the authorization header, if it
-                    exists."/&gt;
+                    &lt;L7p:value stringValue="Change this value as desired"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Validation result"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="MzA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="cache_lifetime"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Will be set to MAC or Bearer"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="auth_scheme"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyLmF1dGhvcml6YXRpb259"/&gt;
-                    &lt;L7p:VariableToSet stringValue="authorizationHeader"/&gt;
+                    &lt;L7p:VariableToSet stringValue="auth_header"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmFjY2Vzc190b2tlbn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5hY2Nlc3NfdG9rZW59"/&gt;
+                    &lt;L7p:VariableToSet stringValue="auth_param_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="ZmFsc2U="/&gt;
+                    &lt;L7p:VariableToSet stringValue="hasError"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${allow_query}"/&gt;
+                    &lt;L7p:Expression2 stringValue="true"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_header}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_param_token}"/&gt;
+                    &lt;L7p:MultivaluedComparison multivaluedComparison="FAIL"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item dataType="included"&gt;
+                    &lt;L7p:Type variableDataType="string"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="QmVhcmVy"/&gt;
+                    &lt;L7p:VariableToSet stringValue="auth_scheme"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthdXRoX3BhcmFtX3Rva2VufQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="access_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${auth_scheme}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:AddHeader&gt;
-                    &lt;L7p:HeaderName stringValue="WWW-Authenticate"/&gt;
-                    &lt;L7p:HeaderValue stringValue="${auth_scheme} error=&amp;quot;Missing access token&amp;quot;"/&gt;
-                    &lt;L7p:Target target="RESPONSE"/&gt;
-                    &lt;/L7p:AddHeader&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:TrueAssertion/&gt;
                     &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Add WWW-Authenticate header"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="401"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiTWlzc2luZyBhY2Nlc3MgdG9rZW4iCn0="/&gt;
-                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
-                    &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus stringValue="401"/&gt;
-                    &lt;/L7p:HardcodedResponse&gt;
-                    &lt;L7p:FalseAssertion/&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Check access token"/&gt;
+                    &lt;L7p:value stringValue="LOCATE AS PARAMETER"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
+                    &lt;L7p:Expression1 stringValue="${allow_header}"/&gt;
+                    &lt;L7p:Expression2 stringValue="true"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="true"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_param_token}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Regex&gt;
+                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
+                    &lt;L7p:CaptureVar stringValue="schema_token"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="auth_header"/&gt;
+                    &lt;L7p:Regex stringValue="^\b([Bb][Ee][Aa][Rr][Ee][Rr]|MAC)\b\s(.{1,256})$"/&gt;
+                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:Regex&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtzY2hlbWFfdG9rZW5bMV19"/&gt;
+                    &lt;L7p:VariableToSet stringValue="auth_scheme"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="for MAC this will contain MAC values, not the access_token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtzY2hlbWFfdG9rZW5bMl19"/&gt;
+                    &lt;L7p:VariableToSet stringValue="access_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="LOCATE IN HEADER"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_header}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -953,40 +978,20 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_param_token}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5hY2Nlc3NfdG9rZW58QEB9"/&gt;
-                    &lt;L7p:VariableToSet stringValue="requestParams"/&gt;
+                    &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="hasError"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:Regex&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Presence of &amp;quot;@@&amp;quot; indicates duplicate parameters"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
-                    &lt;L7p:OtherTargetMessageVariable stringValue="requestParams"/&gt;
-                    &lt;L7p:ProceedIfPatternMatches booleanValue="false"/&gt;
-                    &lt;L7p:Regex stringValue="@@"/&gt;
-                    &lt;L7p:Replacement stringValue=""/&gt;
-                    &lt;L7p:Target target="OTHER"/&gt;
-                    &lt;/L7p:Regex&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -1004,13 +1009,47 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:AddHeader&gt;
-                    &lt;L7p:HeaderName stringValue="WWW-Authenticate"/&gt;
-                    &lt;L7p:HeaderValue stringValue="${auth_scheme} error=&amp;quot;Duplicate access token&amp;quot;"/&gt;
-                    &lt;L7p:Target target="RESPONSE"/&gt;
-                    &lt;/L7p:AddHeader&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[{
+                    "error":"invalid_request",
+                    "error_description":"Missing access token"
+                    }]]&gt;&lt;/L7p:Content&gt;
+                    &lt;L7p:ContentType stringValue="application/json"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Pragma"/&gt;
+                    &lt;L7p:Value stringValue="no-cache"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Cache-Control"/&gt;
+                    &lt;L7p:Value stringValue="no-store"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="WWW-Authenticate"/&gt;
+                    &lt;L7p:Value stringValue="${auth_scheme} error=&amp;quot;Missing access token&amp;quot;"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:ExtraHeaders&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
                     &lt;/wsp:All&gt;
-                    &lt;L7p:TrueAssertion/&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[{
+                    "error":"invalid_request",
+                    "error_description":"Missing access token"
+                    }]]&gt;&lt;/L7p:Content&gt;
+                    &lt;L7p:ContentType stringValue="application/json"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Pragma"/&gt;
+                    &lt;L7p:Value stringValue="no-cache"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Cache-Control"/&gt;
+                    &lt;L7p:Value stringValue="no-store"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:ExtraHeaders&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
@@ -1020,54 +1059,29 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="401"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiRHVwbGljYXRlIGFjY2VzcyB0b2tlbiIKfQ=="/&gt;
-                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
-                    &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus stringValue="401"/&gt;
-                    &lt;/L7p:HardcodedResponse&gt;
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Check for duplicate access tokens"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${hasError}"/&gt;
+                    &lt;L7p:Expression2 stringValue="false"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:RightValue stringValue="false"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_header}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
                     &lt;L7p:Negate booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
                     &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:RightValue stringValue=""/&gt;
                     &lt;/L7p:item&gt;
@@ -1075,15 +1089,30 @@
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:Regex&gt;
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;
-                    &lt;L7p:CaptureVar stringValue="incoming_token"/&gt;
-                    &lt;L7p:OtherTargetMessageVariable stringValue="authorizationHeader"/&gt;
-                    &lt;L7p:Regex stringValue="Bearer\s+(.*)"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="auth_header"/&gt;
+                    &lt;L7p:Regex stringValue="^\b([Bb][Ee][Aa][Rr][Ee][Rr]|MAC)\b\s"/&gt;
                     &lt;L7p:Replacement stringValue=""/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_param_token}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${incoming_token[1]}"/&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_scheme}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
                     &lt;L7p:Negate booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
@@ -1093,239 +1122,190 @@
                     &lt;L7p:Negated booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[{
+                    "error":"invalid_request",
+                    "error_description":"Duplicate access token"
+                    }]]&gt;&lt;/L7p:Content&gt;
+                    &lt;L7p:ContentType stringValue="application/json"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Pragma"/&gt;
+                    &lt;L7p:Value stringValue="no-cache"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Cache-Control"/&gt;
+                    &lt;L7p:Value stringValue="no-store"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="WWW-Authenticate"/&gt;
+                    &lt;L7p:Value stringValue="${auth_scheme} error=&amp;quot;Duplicate access token&amp;quot;"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:ExtraHeaders&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[{
+                    "error":"invalid_request",
+                    "error_description":"Duplicate access token"
+                    }]]&gt;&lt;/L7p:Content&gt;
+                    &lt;L7p:ContentType stringValue="application/json"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Pragma"/&gt;
+                    &lt;L7p:Value stringValue="no-cache"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Cache-Control"/&gt;
+                    &lt;L7p:Value stringValue="no-store"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:ExtraHeaders&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Add WWW-Authenticate header"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="MULTIPLE ACCESS_TOKEN"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="MISSING TOKEN"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Make it available as variable"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Find the access_token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${access_token}"/&gt;
+                    &lt;L7p:CacheId stringValue="accessTokenValidation"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${cache_lifetime}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="validationResult"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_scheme}"/&gt;
+                    &lt;L7p:Expression2 stringValue="Bearer"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:RightValue stringValue="Bearer"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
-                    &lt;L7p:VariableToSet stringValue="params"/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="emptyMessage"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Bearer token in Authorization header"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${access_token}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
+                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
+                    &lt;L7p:HttpMethod httpMethod="GET"/&gt;
+                    &lt;L7p:ProtectedServiceUrl
+                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/token?access_token=${access_token}&amp;amp;auth_scheme=${auth_scheme}"/&gt;
+                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
+                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
+                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="emptyMessage"/&gt;
+                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
+                    &lt;/L7p:RequestParamRules&gt;
+                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
+                    &lt;L7p:item httpPassthroughRule="included"&gt;
+                    &lt;L7p:Name stringValue="Set-Cookie"/&gt;
                     &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="YWNjZXNzX3Rva2VuPSR7YWNjZXNzX3Rva2VufQ=="/&gt;
-                    &lt;L7p:VariableToSet stringValue="params"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Bearer token in access_token parameter"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Regex&gt;
-                    &lt;L7p:AutoTarget booleanValue="false"/&gt;
-                    &lt;L7p:CaptureVar stringValue="incoming_token"/&gt;
-                    &lt;L7p:OtherTargetMessageVariable stringValue="authorizationHeader"/&gt;
-                    &lt;L7p:Regex stringValue="MAC\s+(.*)"/&gt;
-                    &lt;L7p:Replacement stringValue=""/&gt;
+                    &lt;/L7p:Rules&gt;
+                    &lt;/L7p:ResponseHeaderRules&gt;
+                    &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
+                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
+                    &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${access_token}"/&gt;
+                    &lt;L7p:CacheId stringValue="accessTokenValidation"/&gt;
+                    &lt;L7p:MaxEntries stringValue="10000"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${cache_lifetime}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="validationResult"/&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
-                    &lt;/L7p:Regex&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${auth_scheme}"/&gt;
+                    &lt;L7p:Expression2 stringValue="MAC"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="MAC"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAubWV0aG9kfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="request_http_method"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${request_http_method}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="request_url"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${request_url}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="request_url"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="request_url"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression
                     stringValue="aHR0cF9tZXRob2Q9JHtyZXF1ZXN0X2h0dHBfbWV0aG9kfSZ1cmw9JHtyZXF1ZXN0X3VybH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="params"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="MAC token"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Expression1 stringValue="${auth_scheme}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:AddHeader&gt;
-                    &lt;L7p:HeaderName stringValue="WWW-Authenticate"/&gt;
-                    &lt;L7p:HeaderValue stringValue="${auth_scheme} error=&amp;quot;Invalid access token&amp;quot;"/&gt;
-                    &lt;L7p:Target target="RESPONSE"/&gt;
-                    &lt;/L7p:AddHeader&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:TrueAssertion/&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Add WWW-Authenticate header"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="401"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiSW52YWxpZCBhY2Nlc3MgdG9rZW4iCn0="/&gt;
-                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
-                    &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus stringValue="401"/&gt;
-                    &lt;/L7p:HardcodedResponse&gt;
-                    &lt;L7p:FalseAssertion/&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Error"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Construct request parameter based on token type"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Route to Authorization Server to validate the access token =========="/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${params}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtwYXJhbXN9"/&gt;
-                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="YXV0aF9zY2hlbWU9JHthdXRoX3NjaGVtZX0maHR0cF9tZXRob2Q9JHtyZXF1ZXN0X2h0dHBfbWV0aG9kfSZ1cmw9JHtyZXF1ZXN0X3VybH0="/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded; charset=UTF-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
-                    &lt;L7p:VariableToSet stringValue="ValidateAccessTokenFormPostMsg"/&gt;
+                    &lt;L7p:VariableToSet stringValue="message"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
@@ -1338,13 +1318,13 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${authorizationHeader}"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="${auth_header}"/&gt;
                     &lt;L7p:Name stringValue="authorization"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Rules&gt;
                     &lt;/L7p:RequestHeaderRules&gt;
-                    &lt;L7p:RequestMsgSrc stringValue="ValidateAccessTokenFormPostMsg"/&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="message"/&gt;
                     &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:ForwardAll booleanValue="true"/&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"/&gt;
@@ -1359,146 +1339,45 @@
                     &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Each request contains different values and have to be recalculated with
+                    each request."/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="DOES NOT WORK FOR MAC"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${access_token}"/&gt;
+                    &lt;L7p:CacheId stringValue="accessTokenValidation"/&gt;
+                    &lt;L7p:Enabled booleanValue="false"/&gt;
+                    &lt;L7p:MaxEntries stringValue="10000"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${cache_lifetime}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="validationResult"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Send authorization header and request parameters"/&gt;
+                    &lt;L7p:value stringValue="MAC token"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${params}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
-                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
-                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/token"/&gt;
-                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
-                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
-                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
-                    &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Name stringValue="authorization"/&gt;
-                    &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Rules&gt;
-                    &lt;/L7p:RequestHeaderRules&gt;
-                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
-                    &lt;/L7p:RequestParamRules&gt;
-                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
-                    &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:Name stringValue="Set-Cookie"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Rules&gt;
-                    &lt;/L7p:ResponseHeaderRules&gt;
-                    &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
-                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
-                    &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Send authorization header only"/&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Validate the token"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${authorizationHeader}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${params}"/&gt;
-                    &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:Negate booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:Predicates predicates="included"&gt;
-                    &lt;L7p:item binary="included"&gt;
-                    &lt;L7p:Negated booleanValue="true"/&gt;
-                    &lt;L7p:Operator operator="EMPTY"/&gt;
-                    &lt;L7p:RightValue stringValue=""/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtwYXJhbXN9"/&gt;
-                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
-                    &lt;L7p:DataType variableDataType="message"/&gt;
-                    &lt;L7p:VariableToSet stringValue="ValidateAccessTokenFormPostMsg"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
-                    &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
-                    &lt;L7p:HttpMethod httpMethod="POST"/&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/token"/&gt;
-                    &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
-                    &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
-                    &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
-                    &lt;/L7p:RequestHeaderRules&gt;
-                    &lt;L7p:RequestMsgSrc stringValue="ValidateAccessTokenFormPostMsg"/&gt;
-                    &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
-                    &lt;/L7p:RequestParamRules&gt;
-                    &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
-                    &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:Name stringValue="Set-Cookie"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Rules&gt;
-                    &lt;/L7p:ResponseHeaderRules&gt;
-                    &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
-                    &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
-                    &lt;/L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Send request parameters only"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ResponseXpathAssertion&gt;
@@ -1520,6 +1399,18 @@
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:VariableToSet stringValue="removeValidationResult"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${access_token}"/&gt;
+                    &lt;L7p:CacheId stringValue="accessTokenValidation"/&gt;
+                    &lt;L7p:MaxEntries stringValue="10000"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="1"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="removeValidationResult"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -1553,28 +1444,30 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:AssertionComment assertionComment="included"&gt;
-                    &lt;L7p:Properties mapValue="included"&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="401"/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiVmFsaWRhdGlvbiBlcnJvciIKfQ=="/&gt;
-                    &lt;L7p:EarlyResponse booleanValue="true"/&gt;
-                    &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus stringValue="401"/&gt;
-                    &lt;/L7p:HardcodedResponse&gt;
-                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;L7p:CustomizeErrorResponse&gt;
+                    &lt;L7p:Content stringValueReference="inline"&gt;&lt;![CDATA[{
+                    "error":"invalid_request",
+                    "error_description":"Validation error"
+                    }]]&gt;&lt;/L7p:Content&gt;
+                    &lt;L7p:ContentType stringValue="application/json; charset=UTF-8"/&gt;
+                    &lt;L7p:ExtraHeaders nameValuePairArray="included"&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Pragma"/&gt;
+                    &lt;L7p:Value stringValue="no-cache"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item nameValuePair="included"&gt;
+                    &lt;L7p:Key stringValue="Cache-Control"/&gt;
+                    &lt;L7p:Value stringValue="no-store"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:ExtraHeaders&gt;
+                    &lt;L7p:HttpStatus stringValue="401"/&gt;
+                    &lt;/L7p:CustomizeErrorResponse&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Check validation result and set returned values"/&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Check the validation result"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
@@ -1583,7 +1476,7 @@
                     &lt;L7p:Comment stringValue="========== Add global authorization rules here =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Get token information from response message =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Get token information fromvalidation result =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:VariablePrefix stringValue="xpathClientId"/&gt;
@@ -1673,10 +1566,20 @@
                     &lt;L7p:Base64Expression stringValue="JHt4cGF0aEV4cGlyYXRpb24ucmVzdWx0fQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="session.expires_at"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthdXRoX3NjaGVtZX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="session.scheme"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHthY2Nlc3NfdG9rZW59"/&gt;
+                    &lt;L7p:VariableToSet stringValue="session.access_token"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
                     &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="session.access_token"/&gt;
                     &lt;L7p:item stringValue="session.client_id"/&gt;
                     &lt;L7p:item stringValue="session.expires_at"/&gt;
+                    &lt;L7p:item stringValue="session.scheme"/&gt;
                     &lt;L7p:item stringValue="session.scope"/&gt;
                     &lt;L7p:item stringValue="session.subscriber_id"/&gt;
                     &lt;/L7p:ExportedVars&gt;
@@ -1687,14 +1590,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e1431c63-9d2c-4ba1-b254-8eb69f543da7"
-               id="123961347" version="6">
-        <l7:PolicyDetail folderId="123600909" guid="e1431c63-9d2c-4ba1-b254-8eb69f543da7" id="123961347" version="6">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="6042809d-5ef7-4bb1-a9f3-af3584a06d5c"
+               id="57477c668279c3c8d34da687b89a776e" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a75e1" guid="6042809d-5ef7-4bb1-a9f3-af3584a06d5c"
+                         id="57477c668279c3c8d34da687b89a776e" version="1">
             <l7:Name>OAuth 2.0 Client Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>7</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -1725,11 +1629,13 @@
                     &lt;L7p:VariableToSet stringValue="oauth2_server_logo"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0="/&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="JHtob3N0X3NlcnZlcn0vb2F1dGgvdjIvcHJvdGVjdGVkYXBpL3Jlc291cmNlZm9v"/&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="JHtob3N0X3NlcnZlcn0vb2F1dGgvdjIvcHJvdGVjdGVkYXBpL3Jlc291cmNlZm9v"/&gt;
                     &lt;L7p:VariableToSet stringValue="apicalltarget"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -1745,7 +1651,8 @@
                     be defined by any policy which includes this fragment."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="PCFET0NUWVBFIGh0bWwgUFVCTElDICItLy9XM0MvL0RURCBYSFRNTCAxLjAgU3RyaWN0Ly9FTiIgImh0dHA6Ly93d3cudzMub3JnL1RSL3hodG1sMS9EVEQveGh0bWwxLXN0cmljdC5kdGQiPg0KPGh0bWwgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbDpsYW5nPSJlbiIgbGFuZz0iZW4iIGRpcj0ibHRyIj4NCjxoZWFkPg0KPG1ldGEgaHR0cC1lcXVpdj0iQ29udGVudC1UeXBlIiBjb250ZW50PSJ0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgiIC8+DQo8dGl0bGU+T0F1dGhWMkNsaWVudDwvdGl0bGU+DQo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPg0KYm9keS5kcmFne2N1cnNvcjptb3ZlO310aC5hY3RpdmUgaW1ne2Rpc3BsYXk6aW5saW5lO310ci5ldmVuLHRyLm9kZHtiYWNrZ3JvdW5kLWNvbG9yOiNlZWU7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2NjYztwYWRkaW5nOjAuMWVtIDAuNmVtO30NCnRyLmRyYWd7YmFja2dyb3VuZC1jb2xvcjojZmZmZmYwO310ci5kcmFnLXByZXZpb3Vze2JhY2tncm91bmQtY29sb3I6I2ZmZDt9DQp0ZC5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZGRkO310ZC5jaGVja2JveCx0aC5jaGVja2JveHt0ZXh0LWFsaWduOmNlbnRlcjt9DQp0Ym9keXtib3JkZXItdG9wOjFweCBzb2xpZCAjY2NjO310Ym9keSB0aHtib3JkZXItYm90dG9tOjFweCBzb2xpZCAjY2NjO30NCnRoZWFkIHRoe3RleHQtYWxpZ246bGVmdDsNCiAgcGFkZGluZy1yaWdodDoxZW07DQogIGJvcmRlci1ib3R0b206M3B4IHNvbGlkICNjY2M7fQ0KLmJyZWFkY3J1bWJ7cGFkZGluZy1ib3R0b206LjVlbX1kaXYuaW5kZW50YXRpb257d2lkdGg6MjBweDtoZWlnaHQ6MS43ZW07bWFyZ2luOi0wLjRlbSAwLjJlbSAtMC40ZW0gLTAuNGVtOw0KICBwYWRkaW5nOjAuNDJlbSAwIDAuNDJlbSAwLjZlbTsNCiAgZmxvYXQ6bGVmdDt9DQp1bC5wcmltYXJ5e2JvcmRlci1jb2xsYXBzZTpjb2xsYXBzZTtwYWRkaW5nOjAgMCAwIDFlbTsNCiAgd2hpdGUtc3BhY2U6bm93cmFwO2xpc3Qtc3R5bGU6bm9uZTttYXJnaW46NXB4O2hlaWdodDphdXRvO2xpbmUtaGVpZ2h0Om5vcm1hbDtib3JkZXItYm90dG9tOjFweCBzb2xpZCAjYmJiO30NCnVsLnByaW1hcnkgbGl7ZGlzcGxheTppbmxpbmU7fXVsLnByaW1hcnkgbGkgYXtiYWNrZ3JvdW5kLWNvbG9yOiNkZGQ7Ym9yZGVyLWNvbG9yOiNiYmI7Ym9yZGVyLXdpZHRoOjFweDtib3JkZXItc3R5bGU6c29saWQgc29saWQgbm9uZSBzb2xpZDtoZWlnaHQ6YXV0bzttYXJnaW4tcmlnaHQ6MC41ZW07DQogIHBhZGRpbmc6MCAxZW07dGV4dC1kZWNvcmF0aW9uOm5vbmU7fXVsLnByaW1hcnkgbGkuYWN0aXZlIGF7YmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlcjoxcHggc29saWQgI2JiYjtib3JkZXItYm90dG9tOiNmZmYgMXB4IHNvbGlkO30NCnVsLnByaW1hcnkgbGkgYTpob3ZlcntiYWNrZ3JvdW5kLWNvbG9yOiNlZWU7Ym9yZGVyLWNvbG9yOiNjY2M7Ym9yZGVyLWJvdHRvbS1jb2xvcjojZWVlO311bC5zZWNvbmRhcnl7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2JiYjtwYWRkaW5nOjAuNWVtIDFlbTttYXJnaW46NXB4O30NCg0KKnttYXJnaW46MDt9DQpodG1sLGJvZHl7YmFja2dyb3VuZDojZmZmO2ZvbnQ6MTJweC8xLjJlbSBoZWx2ZXRpY2EsYXJpYWwsc2Fucy1zZXJpZjtjb2xvcjojNGI0YjRiO2hlaWdodDoxMDAlO2xpbmUtaGVpZ2h0OjEuM2VtO30NCmhye2hlaWdodDoxcHg7YmFja2dyb3VuZC1jb2xvcjojZGRkOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtwYWRkaW5nOjhweCBhdXRvO2JvcmRlcjowIG5vbmU7fQ0KaW5wdXR7Y29sb3I6IzRiNGI0Yjt9DQpoMSxoMixoMyxoNCxoNSxoNntwYWRkaW5nOjA7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtZmFtaWx5OmhlbHZldGljYSxhcmlhbCxzYW5zLXNlcmlmO30NCmgxe2ZvbnQtc2l6ZToyNTAlO2NvbG9yOndoaXRlO3otaW5kZXg6NTt9DQpoMntmb250LXNpemU6MTc1JTt9DQpoM3tmb250LXNpemU6MTUwJTt9DQpoNHtmb250LXNpemU6MTIwJTt9DQpoNXtmb250LXNpemU6MTEwJTt9DQpoNntmb250LXNpemU6MTA1JTt9DQphOmFjdGl2ZSxhLmFjdGl2ZXtjb2xvcjojNGI0YjRiO3RleHQtZGVjb3JhdGlvbjpub25lO30NCmE6bGluayxhOnZpc2l0ZWR7Y29sb3I6IzRiNGI0Yjt0ZXh0LWRlY29yYXRpb246dW5kZXJsaW5lO291dGxpbmU6bm9uZTt9DQphOmhvdmVye2NvbG9yOiNkYjNiMmM7dGV4dC1kZWNvcmF0aW9uOnVuZGVybGluZTt9DQpwe21hcmdpbi1ib3R0b206LjVlbTtsaW5lLWhlaWdodDoxLjNlbTtsaXN0LXN0eWxlOm5vbmU7dGV4dC1hbGlnbjpsZWZ0O2xpbmUtaGVpZ2h0OjEuNWVtO2NvbG9yOiM0YjRiNGI7fQ0KYmxvY2txdW90ZSAqe21hcmdpbjo1cHggMCAwIDEwcHg7fXVse2xpbmUtaGVpZ2h0OjEuNWVtOw0KcGFkZGluZzouMmVtIDFlbSAxZW0gMWVtO31vbHtsaW5lLWhlaWdodDoxLjVlbTtwYWRkaW5nOi4yZW0gMWVtIDFlbSAxZW07fXRyLmV2ZW4sdHIub2Rke2JhY2tncm91bmQ6bm9uZTt9aW1nLGEgaW1ne2JvcmRlcjpub25lO30NCm5vLXJlcGVhdCBsZWZ0IDM1JTttYXJnaW4tbGVmdDouNWVtO3BhZGRpbmctbGVmdDoxZW07fQ0KI3dyYXBwZXJ7bWluLWhlaWdodDoxMDAlO2hlaWdodDphdXRvICFpbXBvcnRhbnQ7aGVpZ2h0OjEwMCU7bWFyZ2luOjAgYXV0byAtNWVtO30jY29udGFpbmVye21hcmdpbjotMi41ZW0gYXV0byAwIDIuNWVtO30NCi5maWVsZC1jb250ZW50IC52aWV3LWRvbS1pZC01IC52aWV3LWNvbnRlbnQgLnZpZXdzLXJvd3sNCiAgICBtYXJnaW46MHB4O3BhZGRpbmc6MHB4O30NCg0KI3NpZGViYXItbGVmdHtmbG9hdDpsZWZ0O2NsZWFyOmxlZnQ7cGFkZGluZzoyZW0gMCA2ZW0gMDt6LWluZGV4OjUwMDt3aWR0aDoxNWVtO30NCiNzaWRlYmFyLWxlZnQgLmNvbnRlbnR7bWFyZ2luLXRvcDouOGVtO30NCiNzaWRlYmFyLWxlZnQgYXtkaXNwbGF5OmJsb2NrO2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDAgMXB4IDNweDt0ZXh0LWRlY29yYXRpb246bm9uZTtmb250LXNpemU6MTA1JTttYXJnaW4tbGVmdDozcHg7bWFyZ2luLXJpZ2h0OjNweDt9DQojc2lkZWJhci1sZWZ0IHVse3dpZHRoOjEzLjVlbTtkaXNwbGF5OmJsb2NrO2xpc3Qtc3R5bGU6bm9uZTt9DQojc2lkZWJhci1sZWZ0IHVsIHVse25vLXJlcGVhdCBjZW50ZXIgdG9wO3BhZGRpbmctbGVmdDouMmVtO30NCiNzaWRlYmFyLWxlZnQgYTpob3ZlciwNCiNzaWRlYmFyLWxlZnQgYS5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZDgzYjJjO2NvbG9yOndoaXRlO30NCiNzaWRlYmFyLWxlZnQgLm5vbGluay1saXtwYWRkaW5nLXRvcDoxLjNlbTt9DQojc2lkZWJhci1sZWZ0IC5maXJzdC5ub2xpbmstbGl7cGFkZGluZy10b3A6MDt9DQojc2lkZWJhci1sZWZ0IC5ub2xpbmt7Y29sb3I6IzIzMjAyMTtmb250LXNpemU6MTIwJTtmb250LXdlaWdodDo2MDA7fQ0KI3NpZGViYXItbGVmdCAubWVudS1uYW1lLW1lbnUtcmVzb3VyY2VzIC5ub2xpbmt7Zm9udC13ZWlnaHQ6MTAwO2ZvbnQtc2l6ZToxMDUlO30NCiNzaWRlYmFyLWxlZnQgbGkubGVhZntib3JkZXI6bm9uZTt0ZXh0LWluZGVudDpub25lOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtkaXNwbGF5OmJsb2NrO3BhZGRpbmc6MXB4IDAgMnB4O30NCiNzaWRlYmFyLWxlZnQgdWwgdWwgbGkuZmlyc3R7cGFkZGluZy10b3A6MnB4O30NCg0KLnZpZXctY29udGVudCBoNHtmb250LXNpemU6MTAwJTt9I25hdmlnYXRpb257cG9zaXRpb246cmVsYXRpdmU7Ym9yZGVyOjBweCBzb2xpZCByZWQ7bWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCi5icmVhZGNydW1ie3RleHQtYWxpZ246bGVmdDtwYWRkaW5nOjA7cG9zaXRpb246YWJzb2x1dGU7dG9wOjQuN2VtO2xlZnQ6MTUuOGVtO3otaW5kZXg6NTA7fS5icmVhZGNydW1iIGEuYWN0aXZlLC5icmVhZGNydW1iIGE6YWN0aXZle2NvbG9yOiMyMzIwMjE7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fS5icmVhZGNydW1iIGE6aG92ZXJ7Y29sb3I6I2RiM2IyYzt9bGkubGVhZntkaXNwbGF5OmlubGluZTtwYWRkaW5nOjAgMC41ZW0gMCAwLjNlbTt2ZXJ0aWNhbC1hbGlnbjptaWRkbGU7Ym9yZGVyLXJpZ2h0OjFweCBzb2xpZCAjNzI3MjcyO30NCg0KI2hlYWRlcntoZWlnaHQ6Ni41ZW07bWF4LXdpZHRoOjEwMCU7cG9zaXRpb246cmVsYXRpdmU7fSNoZWFkZXIgI2xvZ28tZmxvYXRlcntmbG9hdDpsZWZ0O3Bvc2l0aW9uOnJlbGF0aXZlO3RvcDoxMCU7d2lkdGg6MTU5cHg7aGVpZ2h0OjUzcHg7bWFyZ2luLWxlZnQ6Mi41ZW07fWRpdiNyZXN7ZGlzcGxheTpub25lO3Zpc2liaWxpdHk6aGlkZGVuO30jbWVudWJrZ3twb3NpdGlvbjpyZWxhdGl2ZTt3aWR0aDoxMDAlO2hlaWdodDozMXB4O2JhY2tncm91bmQtY29sb3I6I2ZmMDAwMDt0b3A6Ni42ZW07ei1pbmRleDowO30NCg0KZGl2Lmxpbmtze2Rpc3BsYXk6bm9uZTt9DQoNCiNjb250ZW50e21hcmdpbi1sZWZ0OjE1ZW07cGFkZGluZy10b3A6NC4zZW07cGFkZGluZy1ib3R0b206MWVtO30NCi5zdWJtaXR0ZWR7ZGlzcGxheTpub25lO30uY29udGFpbmVye3otaW5kZXg6NTtoZWlnaHQ6MTAwJTtwYWRkaW5nLXRvcDouMmVtO30NCi50aXRsZS1ib3ggaDF7Y29sb3I6I2RiM2IyYztsaW5lLWhlaWdodDoxZW07fQ0KDQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWx7Ym9yZGVyOjA7bGlzdC1zdHlsZTpub25lO2hlaWdodDozMXB4O21hcmdpbjowO3BhZGRpbmc6MDt3aWR0aDoxMDAlO30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyB1bCBsaXtiYWNrZ3JvdW5kOnRyYW5zcGFyZW50O2JvcmRlcjowO2Zsb2F0OmxlZnQ7bWFyZ2luOjA7cGFkZGluZzowO2xpc3Qtc3R5bGU6bm9uZTtwb3NpdGlvbjpyZWxhdGl2ZTt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWwgbGkgYXtkaXNwbGF5OmJsb2NrO2hlaWdodDozMXB4O3RleHQtaW5kZW50Oi01MDAwcHg7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIGxpIGF7YmFja2dyb3VuZC1jb2xvcjojY2NjO30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyBsaSBhOmhvdmVye2JhY2tncm91bmQtY29sb3I6I2NjYzt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgbGkubWVudS1tbGlkLTIzOTMgPiBhOmhvdmVye30NCg0KI2JvdHRvbWJhcntwb3NpdGlvbjpyZWxhdGl2ZTtwYWRkaW5nOjJlbSAwIDZlbSAwO3otaW5kZXg6NTAwO3dpZHRoOjEzLjVlbTtmb250LXNpemU6MTMwJTt9DQojYm90dG9tYmFyIC5jb250ZW50e21hcmdpbi10b3A6LjhlbTt9DQojYm90dG9tYmFyIGF7bGluZS1oZWlnaHQ6MS4yZW07cGFkZGluZzozcHggM3B4IDNweCAzcHg7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fQ0KI2JvdHRvbWJhciBhOmhvdmVyLA0KI2JvdHRvbWJhciBhLmFjdGl2ZXtjb2xvcjojZDgzYjJjO30NCiNib3R0b21iYXIgYntmb250LXNpemU6MTMzJTt9DQoNCi5oaWRkZW4geyBkaXNwbGF5OiBub25lOyB9DQoudW5oaWRkZW4geyBkaXNwbGF5OiBibG9jazsgfQ0KDQo8L3N0eWxlPg0KPC9oZWFkPg0KPGJvZHk+DQo8IS0tIExheW91dCAtLT4NCjxkaXYgaWQ9IndyYXBwZXIiPg0KICAgICA8ZGl2IGlkPSJtZW51YmtnIj48L2Rpdj4NCiAgICAgPGRpdiBpZD0iY29udGFpbmVyIj4NCgkgIDxkaXYgaWQ9ImhlYWRlciI+DQoJCQk8ZGl2IGlkPSJsb2dvLWZsb2F0ZXIiPjxhIGhyZWY9IiR7aG9zdF9zZXJ2ZXJ9L29hdXRoL3YyL2NsaWVudC8ke2NsaWVudF9wYWdlfSIgdGl0bGU9IiI+PGltZyBzcmM9IiR7b2F1dGgyX3NlcnZlcl9sb2dvfSIgYWx0PSIiIGlkPSJsb2dvIiAvPjwvYT48L2Rpdj4NCg0KICAJCTwvZGl2Pg0KPCEtLWNsb3NlIGhlYWRlci0tPg0KDQoNCgk8ZGl2IGlkPSJzaWRlYmFyLWxlZnQiIGNsYXNzPSJzaWRlYmFyIj4NCgkJICA8ZGl2IGlkPSJibG9jay1tZW51X2Jsb2NrLTEwIiBjbGFzcz0iY2xlYXItYmxvY2sgYmxvY2sgYmxvY2stbWVudV9ibG9jayI+DQoJCSAgPGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+DQoJCSAgICA8aDI+IDwvaDI+DQoJCSAgICAgIDxkaXYgY2xhc3M9ImNvbnRlbnQiPg0KCQkgICAgICAgIDxkaXYgY2xhc3M9Im1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHBhcmVudC1tbGlkLTIzNjMgbWVudS1sZXZlbC0xIj4NCiAgCQkJCQk8IS0tPHVsIGNsYXNzPSJtZW51Ij4NCiAgCQkJCQk8bGkgY2xhc3M9ImV4cGFuZGVkIGZpcnN0IG1lbnUtbWxpZC0yMzY0IG5vbGluay1saSI+PHNwYW4gY2xhc3M9Im5vbGluayI+UmVwb3J0cyBieSBBUEkgS2V5PC9zcGFuPi0tPg0KICAJCQkJCTx1bCBjbGFzcz0ibWVudSI+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9hdXRoY29kZSIgdGl0bGU9IiI+QXV0aG9yaXphdGlvbiBDb2RlPC9hPjwvbGk+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9pbXBsaWNpdCIgdGl0bGU9IiI+SW1wbGljaXQ8L2E+PC9saT4NCgkJCQkJPGxpIGNsYXNzPSJsZWFmIGZpcnN0IG1lbnUtbWxpZC05MDQ2Ij48YSBocmVmPSIuL2NsaWVudGNyZWRzIiB0aXRsZT0iIj5DbGllbnQgQ3JlZGVudGlhbHM8L2E+PC9saT4NCgkJCQkJPGxpIGNsYXNzPSJsZWFmIGZpcnN0IG1lbnUtbWxpZC05MDQ2Ij48YSBocmVmPSIuL3JvcGMiIHRpdGxlPSIiPlJlc291cmNlIE93bmVyIFBhc3N3b3JkIENyZWRlbnRpYWxzPC9hPjwvbGk+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9zYW1sIiB0aXRsZT0iIj5TQU1MPC9hPjwvbGk+DQoJCQkJCTxiciAvPg0KCQkJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+DQoJCQkJCTxsaT48YSBocmVmPSIke29hdXRoX21hbmFnZXJfc2VydmVyX3VybH0iIHRhcmdldD0iX2JsYW5rIHRpdGxlPSI+T0F1dGggTWFuYWdlcjwvYT48L2xpPg0KCQkJCTwvZGl2Pg0KCQkJPC9kaXY+DQoJCQk8L2Rpdj4NCgkgIDwvZGl2Pg=="/&gt;
+                    &lt;L7p:Base64Expression
+                    stringValue="PCFET0NUWVBFIGh0bWwgUFVCTElDICItLy9XM0MvL0RURCBYSFRNTCAxLjAgU3RyaWN0Ly9FTiIgImh0dHA6Ly93d3cudzMub3JnL1RSL3hodG1sMS9EVEQveGh0bWwxLXN0cmljdC5kdGQiPg0KPGh0bWwgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiIHhtbDpsYW5nPSJlbiIgbGFuZz0iZW4iIGRpcj0ibHRyIj4NCjxoZWFkPg0KPG1ldGEgaHR0cC1lcXVpdj0iQ29udGVudC1UeXBlIiBjb250ZW50PSJ0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgiIC8+DQo8dGl0bGU+T0F1dGhWMkNsaWVudDwvdGl0bGU+DQo8c3R5bGUgdHlwZT0idGV4dC9jc3MiPg0KYm9keS5kcmFne2N1cnNvcjptb3ZlO310aC5hY3RpdmUgaW1ne2Rpc3BsYXk6aW5saW5lO310ci5ldmVuLHRyLm9kZHtiYWNrZ3JvdW5kLWNvbG9yOiNlZWU7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2NjYztwYWRkaW5nOjAuMWVtIDAuNmVtO30NCnRyLmRyYWd7YmFja2dyb3VuZC1jb2xvcjojZmZmZmYwO310ci5kcmFnLXByZXZpb3Vze2JhY2tncm91bmQtY29sb3I6I2ZmZDt9DQp0ZC5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZGRkO310ZC5jaGVja2JveCx0aC5jaGVja2JveHt0ZXh0LWFsaWduOmNlbnRlcjt9DQp0Ym9keXtib3JkZXItdG9wOjFweCBzb2xpZCAjY2NjO310Ym9keSB0aHtib3JkZXItYm90dG9tOjFweCBzb2xpZCAjY2NjO30NCnRoZWFkIHRoe3RleHQtYWxpZ246bGVmdDsNCiAgcGFkZGluZy1yaWdodDoxZW07DQogIGJvcmRlci1ib3R0b206M3B4IHNvbGlkICNjY2M7fQ0KLmJyZWFkY3J1bWJ7cGFkZGluZy1ib3R0b206LjVlbX1kaXYuaW5kZW50YXRpb257d2lkdGg6MjBweDtoZWlnaHQ6MS43ZW07bWFyZ2luOi0wLjRlbSAwLjJlbSAtMC40ZW0gLTAuNGVtOw0KICBwYWRkaW5nOjAuNDJlbSAwIDAuNDJlbSAwLjZlbTsNCiAgZmxvYXQ6bGVmdDt9DQp1bC5wcmltYXJ5e2JvcmRlci1jb2xsYXBzZTpjb2xsYXBzZTtwYWRkaW5nOjAgMCAwIDFlbTsNCiAgd2hpdGUtc3BhY2U6bm93cmFwO2xpc3Qtc3R5bGU6bm9uZTttYXJnaW46NXB4O2hlaWdodDphdXRvO2xpbmUtaGVpZ2h0Om5vcm1hbDtib3JkZXItYm90dG9tOjFweCBzb2xpZCAjYmJiO30NCnVsLnByaW1hcnkgbGl7ZGlzcGxheTppbmxpbmU7fXVsLnByaW1hcnkgbGkgYXtiYWNrZ3JvdW5kLWNvbG9yOiNkZGQ7Ym9yZGVyLWNvbG9yOiNiYmI7Ym9yZGVyLXdpZHRoOjFweDtib3JkZXItc3R5bGU6c29saWQgc29saWQgbm9uZSBzb2xpZDtoZWlnaHQ6YXV0bzttYXJnaW4tcmlnaHQ6MC41ZW07DQogIHBhZGRpbmc6MCAxZW07dGV4dC1kZWNvcmF0aW9uOm5vbmU7fXVsLnByaW1hcnkgbGkuYWN0aXZlIGF7YmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlcjoxcHggc29saWQgI2JiYjtib3JkZXItYm90dG9tOiNmZmYgMXB4IHNvbGlkO30NCnVsLnByaW1hcnkgbGkgYTpob3ZlcntiYWNrZ3JvdW5kLWNvbG9yOiNlZWU7Ym9yZGVyLWNvbG9yOiNjY2M7Ym9yZGVyLWJvdHRvbS1jb2xvcjojZWVlO311bC5zZWNvbmRhcnl7Ym9yZGVyLWJvdHRvbToxcHggc29saWQgI2JiYjtwYWRkaW5nOjAuNWVtIDFlbTttYXJnaW46NXB4O30NCg0KKnttYXJnaW46MDt9DQpodG1sLGJvZHl7YmFja2dyb3VuZDojZmZmO2ZvbnQ6MTJweC8xLjJlbSBoZWx2ZXRpY2EsYXJpYWwsc2Fucy1zZXJpZjtjb2xvcjojNGI0YjRiO2hlaWdodDoxMDAlO2xpbmUtaGVpZ2h0OjEuM2VtO30NCmhye2hlaWdodDoxcHg7YmFja2dyb3VuZC1jb2xvcjojZGRkOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtwYWRkaW5nOjhweCBhdXRvO2JvcmRlcjowIG5vbmU7fQ0KaW5wdXR7Y29sb3I6IzRiNGI0Yjt9DQpoMSxoMixoMyxoNCxoNSxoNntwYWRkaW5nOjA7Zm9udC13ZWlnaHQ6bm9ybWFsO2ZvbnQtZmFtaWx5OmhlbHZldGljYSxhcmlhbCxzYW5zLXNlcmlmO30NCmgxe2ZvbnQtc2l6ZToyNTAlO2NvbG9yOndoaXRlO3otaW5kZXg6NTt9DQpoMntmb250LXNpemU6MTc1JTt9DQpoM3tmb250LXNpemU6MTUwJTt9DQpoNHtmb250LXNpemU6MTIwJTt9DQpoNXtmb250LXNpemU6MTEwJTt9DQpoNntmb250LXNpemU6MTA1JTt9DQphOmFjdGl2ZSxhLmFjdGl2ZXtjb2xvcjojNGI0YjRiO3RleHQtZGVjb3JhdGlvbjpub25lO30NCmE6bGluayxhOnZpc2l0ZWR7Y29sb3I6IzRiNGI0Yjt0ZXh0LWRlY29yYXRpb246dW5kZXJsaW5lO291dGxpbmU6bm9uZTt9DQphOmhvdmVye2NvbG9yOiNkYjNiMmM7dGV4dC1kZWNvcmF0aW9uOnVuZGVybGluZTt9DQpwe21hcmdpbi1ib3R0b206LjVlbTtsaW5lLWhlaWdodDoxLjNlbTtsaXN0LXN0eWxlOm5vbmU7dGV4dC1hbGlnbjpsZWZ0O2xpbmUtaGVpZ2h0OjEuNWVtO2NvbG9yOiM0YjRiNGI7fQ0KYmxvY2txdW90ZSAqe21hcmdpbjo1cHggMCAwIDEwcHg7fXVse2xpbmUtaGVpZ2h0OjEuNWVtOw0KcGFkZGluZzouMmVtIDFlbSAxZW0gMWVtO31vbHtsaW5lLWhlaWdodDoxLjVlbTtwYWRkaW5nOi4yZW0gMWVtIDFlbSAxZW07fXRyLmV2ZW4sdHIub2Rke2JhY2tncm91bmQ6bm9uZTt9aW1nLGEgaW1ne2JvcmRlcjpub25lO30NCm5vLXJlcGVhdCBsZWZ0IDM1JTttYXJnaW4tbGVmdDouNWVtO3BhZGRpbmctbGVmdDoxZW07fQ0KI3dyYXBwZXJ7bWluLWhlaWdodDoxMDAlO2hlaWdodDphdXRvICFpbXBvcnRhbnQ7aGVpZ2h0OjEwMCU7bWFyZ2luOjAgYXV0byAtNWVtO30jY29udGFpbmVye21hcmdpbjotMi41ZW0gYXV0byAwIDIuNWVtO30NCi5maWVsZC1jb250ZW50IC52aWV3LWRvbS1pZC01IC52aWV3LWNvbnRlbnQgLnZpZXdzLXJvd3sNCiAgICBtYXJnaW46MHB4O3BhZGRpbmc6MHB4O30NCg0KI3NpZGViYXItbGVmdHtmbG9hdDpsZWZ0O2NsZWFyOmxlZnQ7cGFkZGluZzoyZW0gMCA2ZW0gMDt6LWluZGV4OjUwMDt3aWR0aDoxNWVtO30NCiNzaWRlYmFyLWxlZnQgLmNvbnRlbnR7bWFyZ2luLXRvcDouOGVtO30NCiNzaWRlYmFyLWxlZnQgYXtkaXNwbGF5OmJsb2NrO2xpbmUtaGVpZ2h0OjEuMmVtO3BhZGRpbmc6M3B4IDAgMXB4IDNweDt0ZXh0LWRlY29yYXRpb246bm9uZTtmb250LXNpemU6MTA1JTttYXJnaW4tbGVmdDozcHg7bWFyZ2luLXJpZ2h0OjNweDt9DQojc2lkZWJhci1sZWZ0IHVse3dpZHRoOjEzLjVlbTtkaXNwbGF5OmJsb2NrO2xpc3Qtc3R5bGU6bm9uZTt9DQojc2lkZWJhci1sZWZ0IHVsIHVse25vLXJlcGVhdCBjZW50ZXIgdG9wO3BhZGRpbmctbGVmdDouMmVtO30NCiNzaWRlYmFyLWxlZnQgYTpob3ZlciwNCiNzaWRlYmFyLWxlZnQgYS5hY3RpdmV7YmFja2dyb3VuZC1jb2xvcjojZDgzYjJjO2NvbG9yOndoaXRlO30NCiNzaWRlYmFyLWxlZnQgLm5vbGluay1saXtwYWRkaW5nLXRvcDoxLjNlbTt9DQojc2lkZWJhci1sZWZ0IC5maXJzdC5ub2xpbmstbGl7cGFkZGluZy10b3A6MDt9DQojc2lkZWJhci1sZWZ0IC5ub2xpbmt7Y29sb3I6IzIzMjAyMTtmb250LXNpemU6MTIwJTtmb250LXdlaWdodDo2MDA7fQ0KI3NpZGViYXItbGVmdCAubWVudS1uYW1lLW1lbnUtcmVzb3VyY2VzIC5ub2xpbmt7Zm9udC13ZWlnaHQ6MTAwO2ZvbnQtc2l6ZToxMDUlO30NCiNzaWRlYmFyLWxlZnQgbGkubGVhZntib3JkZXI6bm9uZTt0ZXh0LWluZGVudDpub25lOyBuby1yZXBlYXQgY2VudGVyIGJvdHRvbTtkaXNwbGF5OmJsb2NrO3BhZGRpbmc6MXB4IDAgMnB4O30NCiNzaWRlYmFyLWxlZnQgdWwgdWwgbGkuZmlyc3R7cGFkZGluZy10b3A6MnB4O30NCg0KLnZpZXctY29udGVudCBoNHtmb250LXNpemU6MTAwJTt9I25hdmlnYXRpb257cG9zaXRpb246cmVsYXRpdmU7Ym9yZGVyOjBweCBzb2xpZCByZWQ7bWFyZ2luOjBweDtwYWRkaW5nOjBweDt9DQoNCi5icmVhZGNydW1ie3RleHQtYWxpZ246bGVmdDtwYWRkaW5nOjA7cG9zaXRpb246YWJzb2x1dGU7dG9wOjQuN2VtO2xlZnQ6MTUuOGVtO3otaW5kZXg6NTA7fS5icmVhZGNydW1iIGEuYWN0aXZlLC5icmVhZGNydW1iIGE6YWN0aXZle2NvbG9yOiMyMzIwMjE7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fS5icmVhZGNydW1iIGE6aG92ZXJ7Y29sb3I6I2RiM2IyYzt9bGkubGVhZntkaXNwbGF5OmlubGluZTtwYWRkaW5nOjAgMC41ZW0gMCAwLjNlbTt2ZXJ0aWNhbC1hbGlnbjptaWRkbGU7Ym9yZGVyLXJpZ2h0OjFweCBzb2xpZCAjNzI3MjcyO30NCg0KI2hlYWRlcntoZWlnaHQ6Ni41ZW07bWF4LXdpZHRoOjEwMCU7cG9zaXRpb246cmVsYXRpdmU7fSNoZWFkZXIgI2xvZ28tZmxvYXRlcntmbG9hdDpsZWZ0O3Bvc2l0aW9uOnJlbGF0aXZlO3RvcDoxMCU7d2lkdGg6MTU5cHg7aGVpZ2h0OjUzcHg7bWFyZ2luLWxlZnQ6Mi41ZW07fWRpdiNyZXN7ZGlzcGxheTpub25lO3Zpc2liaWxpdHk6aGlkZGVuO30jbWVudWJrZ3twb3NpdGlvbjpyZWxhdGl2ZTt3aWR0aDoxMDAlO2hlaWdodDozMXB4O2JhY2tncm91bmQtY29sb3I6I2ZmMDAwMDt0b3A6Ni42ZW07ei1pbmRleDowO30NCg0KZGl2Lmxpbmtze2Rpc3BsYXk6bm9uZTt9DQoNCiNjb250ZW50e21hcmdpbi1sZWZ0OjE1ZW07cGFkZGluZy10b3A6NC4zZW07cGFkZGluZy1ib3R0b206MWVtO30NCi5zdWJtaXR0ZWR7ZGlzcGxheTpub25lO30uY29udGFpbmVye3otaW5kZXg6NTtoZWlnaHQ6MTAwJTtwYWRkaW5nLXRvcDouMmVtO30NCi50aXRsZS1ib3ggaDF7Y29sb3I6I2RiM2IyYztsaW5lLWhlaWdodDoxZW07fQ0KDQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWx7Ym9yZGVyOjA7bGlzdC1zdHlsZTpub25lO2hlaWdodDozMXB4O21hcmdpbjowO3BhZGRpbmc6MDt3aWR0aDoxMDAlO30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyB1bCBsaXtiYWNrZ3JvdW5kOnRyYW5zcGFyZW50O2JvcmRlcjowO2Zsb2F0OmxlZnQ7bWFyZ2luOjA7cGFkZGluZzowO2xpc3Qtc3R5bGU6bm9uZTtwb3NpdGlvbjpyZWxhdGl2ZTt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgdWwgbGkgYXtkaXNwbGF5OmJsb2NrO2hlaWdodDozMXB4O3RleHQtaW5kZW50Oi01MDAwcHg7fQ0KI25hdmlnYXRpb24gZGl2Lm1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIGxpIGF7YmFja2dyb3VuZC1jb2xvcjojY2NjO30NCiNuYXZpZ2F0aW9uIGRpdi5tZW51LW5hbWUtcHJpbWFyeS1saW5rcyBsaSBhOmhvdmVye2JhY2tncm91bmQtY29sb3I6I2NjYzt9DQojbmF2aWdhdGlvbiBkaXYubWVudS1uYW1lLXByaW1hcnktbGlua3MgbGkubWVudS1tbGlkLTIzOTMgPiBhOmhvdmVye30NCg0KI2JvdHRvbWJhcntwb3NpdGlvbjpyZWxhdGl2ZTtwYWRkaW5nOjJlbSAwIDZlbSAwO3otaW5kZXg6NTAwO3dpZHRoOjEzLjVlbTtmb250LXNpemU6MTMwJTt9DQojYm90dG9tYmFyIC5jb250ZW50e21hcmdpbi10b3A6LjhlbTt9DQojYm90dG9tYmFyIGF7bGluZS1oZWlnaHQ6MS4yZW07cGFkZGluZzozcHggM3B4IDNweCAzcHg7dGV4dC1kZWNvcmF0aW9uOm5vbmU7fQ0KI2JvdHRvbWJhciBhOmhvdmVyLA0KI2JvdHRvbWJhciBhLmFjdGl2ZXtjb2xvcjojZDgzYjJjO30NCiNib3R0b21iYXIgYntmb250LXNpemU6MTMzJTt9DQoNCi5oaWRkZW4geyBkaXNwbGF5OiBub25lOyB9DQoudW5oaWRkZW4geyBkaXNwbGF5OiBibG9jazsgfQ0KDQo8L3N0eWxlPg0KPC9oZWFkPg0KPGJvZHk+DQo8IS0tIExheW91dCAtLT4NCjxkaXYgaWQ9IndyYXBwZXIiPg0KICAgICA8ZGl2IGlkPSJtZW51YmtnIj48L2Rpdj4NCiAgICAgPGRpdiBpZD0iY29udGFpbmVyIj4NCgkgIDxkaXYgaWQ9ImhlYWRlciI+DQoJCQk8ZGl2IGlkPSJsb2dvLWZsb2F0ZXIiPjxhIGhyZWY9IiR7aG9zdF9zZXJ2ZXJ9L29hdXRoL3YyL2NsaWVudC8ke2NsaWVudF9wYWdlfSIgdGl0bGU9IiI+PGltZyBzcmM9IiR7b2F1dGgyX3NlcnZlcl9sb2dvfSIgYWx0PSIiIGlkPSJsb2dvIiAvPjwvYT48L2Rpdj4NCg0KICAJCTwvZGl2Pg0KPCEtLWNsb3NlIGhlYWRlci0tPg0KDQoNCgk8ZGl2IGlkPSJzaWRlYmFyLWxlZnQiIGNsYXNzPSJzaWRlYmFyIj4NCgkJICA8ZGl2IGlkPSJibG9jay1tZW51X2Jsb2NrLTEwIiBjbGFzcz0iY2xlYXItYmxvY2sgYmxvY2sgYmxvY2stbWVudV9ibG9jayI+DQoJCSAgPGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+PGJyIC8+DQoJCSAgICA8aDI+IDwvaDI+DQoJCSAgICAgIDxkaXYgY2xhc3M9ImNvbnRlbnQiPg0KCQkgICAgICAgIDxkaXYgY2xhc3M9Im1lbnUtbmFtZS1wcmltYXJ5LWxpbmtzIHBhcmVudC1tbGlkLTIzNjMgbWVudS1sZXZlbC0xIj4NCiAgCQkJCQk8IS0tPHVsIGNsYXNzPSJtZW51Ij4NCiAgCQkJCQk8bGkgY2xhc3M9ImV4cGFuZGVkIGZpcnN0IG1lbnUtbWxpZC0yMzY0IG5vbGluay1saSI+PHNwYW4gY2xhc3M9Im5vbGluayI+UmVwb3J0cyBieSBBUEkgS2V5PC9zcGFuPi0tPg0KICAJCQkJCTx1bCBjbGFzcz0ibWVudSI+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9hdXRoY29kZSIgdGl0bGU9IiI+QXV0aG9yaXphdGlvbiBDb2RlPC9hPjwvbGk+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9pbXBsaWNpdCIgdGl0bGU9IiI+SW1wbGljaXQ8L2E+PC9saT4NCgkJCQkJPGxpIGNsYXNzPSJsZWFmIGZpcnN0IG1lbnUtbWxpZC05MDQ2Ij48YSBocmVmPSIuL2NsaWVudGNyZWRzIiB0aXRsZT0iIj5DbGllbnQgQ3JlZGVudGlhbHM8L2E+PC9saT4NCgkJCQkJPGxpIGNsYXNzPSJsZWFmIGZpcnN0IG1lbnUtbWxpZC05MDQ2Ij48YSBocmVmPSIuL3JvcGMiIHRpdGxlPSIiPlJlc291cmNlIE93bmVyIFBhc3N3b3JkIENyZWRlbnRpYWxzPC9hPjwvbGk+DQoJCQkJCTxsaSBjbGFzcz0ibGVhZiBmaXJzdCBtZW51LW1saWQtOTA0NiI+PGEgaHJlZj0iLi9zYW1sIiB0aXRsZT0iIj5TQU1MPC9hPjwvbGk+DQoJCQkJCTxiciAvPg0KCQkJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+DQoJCQkJCTxsaT48YSBocmVmPSIke29hdXRoX21hbmFnZXJfc2VydmVyX3VybH0iIHRhcmdldD0iX2JsYW5rIHRpdGxlPSI+T0F1dGggTWFuYWdlcjwvYT48L2xpPg0KCQkJCTwvZGl2Pg0KCQkJPC9kaXY+DQoJCQk8L2Rpdj4NCgkgIDwvZGl2Pg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="htmlTemplateTop"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -1771,14 +1678,13 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="d1d995ab-c7c8-4354-b005-ec3deeedc3a5"
-               id="123961345" version="4">
-        <l7:PolicyDetail folderId="123600896" guid="d1d995ab-c7c8-4354-b005-ec3deeedc3a5" id="123961345" version="4">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="ffe30a9e-0d90-45cb-8419-d5c85c883642" id="57477c668279c3c8d34da687b89a753c" version="3">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="ffe30a9e-0d90-45cb-8419-d5c85c883642" id="57477c668279c3c8d34da687b89a753c" version="3">
             <l7:Name>Token Lifetime Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>5</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -1787,41 +1693,41 @@
         </l7:PolicyDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_consumer_key_lifetime_m&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_consumer_key_lifetime_m"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;ODY0MDA=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_access_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="ODY0MDA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_access_token_lifetime_s"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MzAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_request_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MzAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_request_token_lifetime_s"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;NjAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_auth_code_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="NjAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_auth_code_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MzYwMA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_access_token_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MzYwMA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_access_token_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;NjA0ODAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_refresh_token_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="NjA0ODAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_refresh_token_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
-                    &lt;L7p:ExportedVars stringArrayValue=&quot;included&quot;&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_access_token_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_auth_code_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_refresh_token_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_access_token_lifetime_s&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_consumer_key_lifetime_m&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_request_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="oauth2_access_token_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_auth_code_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_refresh_token_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_access_token_lifetime_s"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_consumer_key_lifetime_m"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_request_token_lifetime_s"/&gt;
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
@@ -1830,270 +1736,9 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="585c3a3d-8fd7-4337-8d91-46846bfc4194"
-               id="123731968" version="0">
-        <l7:PolicyDetail folderId="123600896" guid="585c3a3d-8fd7-4337-8d91-46846bfc4194" id="123731968" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="2dc66d50-fa74-489e-97f8-d6b2f4a13c08" id="57477c668279c3c8d34da687b89a754f" version="2">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="2dc66d50-fa74-489e-97f8-d6b2f4a13c08" id="57477c668279c3c8d34da687b89a754f" version="2">
             <l7:Name>GenerateOAuthToken</l7:Name>
-            <l7:PolicyType>Include</l7:PolicyType>
-            <l7:Properties>
-                <l7:Property key="revision">
-                    <l7:LongValue>15</l7:LongValue>
-                </l7:Property>
-                <l7:Property key="soap">
-                    <l7:BooleanValue>false</l7:BooleanValue>
-                </l7:Property>
-            </l7:Properties>
-        </l7:PolicyDetail>
-        <l7:Resources>
-            <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Poilcy issues tokens and token secrets&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Input: token_type=urt|art|at|ck|ac|at_2|rft&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Output: genToken, genSecret, genExpiration&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Configurable values: lifetime for tokens&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue=&quot;d1d995ab-c7c8-4354-b005-ec3deeedc3a5&quot;/&gt;
-                    &lt;/L7p:Include&gt;
-                    &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Operator operatorNull=&quot;null&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item regex=&quot;included&quot;&gt;
-                    &lt;L7p:Pattern stringValue=&quot;urt|art&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_request_token_lifetime_s}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;unauthorized/ authorized request token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;at&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;at&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_access_token_lifetime_s}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;access token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;ck&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;ck&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;0&quot;/&gt;
-                    &lt;L7p:Operator operator=&quot;GT&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Operator operator=&quot;GT&quot;/&gt;
-                    &lt;L7p:RightValue stringValue=&quot;0&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
-                    &lt;L7p:DateOffsetField intValue=&quot;12&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration.millis&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;client_key&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;ac&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;ac&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_auth_code_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;authorization_code&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;at_2&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;at_2&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_access_token_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;access token oauth 2.0&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;rft&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;rft&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_refresh_token_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;refresh token oauth 2.0&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;Set the lifetime for the token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:UUIDGenerator&gt;
-                    &lt;L7p:AssertionComment assertionComment=&quot;included&quot;&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;Generate the token and the secret&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Quantity stringValue=&quot;2&quot;/&gt;
-                    &lt;L7p:TargetVariable stringValue=&quot;tokenSecret&quot;/&gt;
-                    &lt;/L7p:UUIDGenerator&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHt0b2tlblNlY3JldFswXX0=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genToken&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHt0b2tlblNlY3JldFsxXX0=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genSecret&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHtleHBpcmF0aW9uLm1pbGxpc30=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genExpiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:ExportVariables&gt;
-                    &lt;L7p:ExportedVars stringArrayValue=&quot;included&quot;&gt;
-                    &lt;L7p:item stringValue=&quot;genExpiration&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;genSecret&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;genToken&quot;/&gt;
-                    &lt;/L7p:ExportedVars&gt;
-                    &lt;/L7p:ExportVariables&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
-            </l7:ResourceSet>
-        </l7:Resources>
-    </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"
-               id="123961351" version="2">
-        <l7:PolicyDetail folderId="123600896" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3" id="123961351" version="2">
-            <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
@@ -2106,20 +1751,282 @@
         </l7:PolicyDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Poilcy issues tokens and token secrets"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Input: token_type=urt|art|at|ck|ac|at_2|rft"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Output: genToken, genSecret, genExpiration"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configurable values: lifetime for tokens"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="ffe30a9e-0d90-45cb-8419-d5c85c883642"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item regex="included"&gt;
+                    &lt;L7p:Pattern stringValue="urt|art"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_request_token_lifetime_s}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="unauthorized/ authorized request token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="at"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="at"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_access_token_lifetime_s}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="access token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="ck"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="ck"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_v1_consumer_key_lifetime_m}"/&gt;
+                    &lt;L7p:Expression2 stringValue="0"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:RightValue stringValue="0"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_consumer_key_lifetime_m}"/&gt;
+                    &lt;L7p:DateOffsetField intValue="12"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration.seconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="client_key"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="ac"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="ac"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_auth_code_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="authorization_code"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="at_2"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="at_2"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_access_token_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="access token oauth 2.0"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="rft"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="rft"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_refresh_token_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="refresh token oauth 2.0"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Set the lifetime for the token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:UUIDGenerator&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate the token and the secret"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Quantity stringValue="2"/&gt;
+                    &lt;L7p:TargetVariable stringValue="tokenSecret"/&gt;
+                    &lt;/L7p:UUIDGenerator&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlblNlY3JldFswXX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="genToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlblNlY3JldFsxXX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="genSecret"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_session_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtleHBpcmF0aW9uLnNlY29uZHN9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="genExpiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="genExpiration"/&gt;
+                    &lt;L7p:item stringValue="genSecret"/&gt;
+                    &lt;L7p:item stringValue="genToken"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e503f8c2-0466-478d-937d-87c5a5f19bee"
+               id="57477c668279c3c8d34da687b89a7529" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="e503f8c2-0466-478d-937d-87c5a5f19bee"
+                         id="57477c668279c3c8d34da687b89a7529" version="1">
+            <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>2</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_tokenstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_clientstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_session_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;
@@ -2127,14 +2034,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="25d78032-31b0-4d72-b04e-eb1deb7bee89"
-               id="90832896" version="4">
-        <l7:PolicyDetail folderId="123600909" guid="25d78032-31b0-4d72-b04e-eb1deb7bee89" id="90832896" version="4">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="4fb19dfb-0d61-4ec1-a843-b0493badf7da"
+               id="57477c668279c3c8d34da687b89a7781" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a75e1" guid="4fb19dfb-0d61-4ec1-a843-b0493badf7da"
+                         id="57477c668279c3c8d34da687b89a7781" version="1">
             <l7:Name>getCurrentToken</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>5</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>

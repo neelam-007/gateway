@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943"
-               id="52297728" version="1">
-        <l7:PolicyDetail folderId="123600913" guid="8ac0e0fc-b08a-4f00-b78d-0cead654d943" id="52297728" version="1">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="44e17396-a7be-4983-aa1b-48086e48f65f"
+               id="57477c668279c3c8d34da687b89a7f0f" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7e8f" guid="44e17396-a7be-4983-aa1b-48086e48f65f"
+                         id="57477c668279c3c8d34da687b89a7f0f" version="1">
             <l7:Name>setClientKeyOptionalValues</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
@@ -29,7 +30,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.parameter.scope}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -63,7 +64,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.parameter.environment}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -97,7 +98,7 @@
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${request.http.parameter.callback}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -131,14 +132,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f5576334-63fa-407c-9488-9bf343effbdb"
-               id="195166240" version="1">
-        <l7:PolicyDetail folderId="123600912" guid="f5576334-63fa-407c-9488-9bf343effbdb" id="195166240" version="1">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="b2fc8dbd-78fc-4cc2-98f9-0f91b517b2ef"
+               id="57477c668279c3c8d34da687b89a7f22" version="2">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7ecf" guid="b2fc8dbd-78fc-4cc2-98f9-0f91b517b2ef"
+                         id="57477c668279c3c8d34da687b89a7f22" version="2">
             <l7:Name>Delete expired tokens</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>2</l7:LongValue>
+                    <l7:LongValue>3</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -166,9 +168,9 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
-                    where expiration &lt; ${now.millis}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where expiration &lt; ${now.seconds}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -180,11 +182,11 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[DELETE FROM oauth_token
                     WHERE
                     rtoken IS NOT NULL AND
-                    rexpiration &lt; ${now.millis}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    rexpiration &lt; ${now.seconds}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;L7p:VariablePrefix stringValue="persist"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
@@ -197,9 +199,9 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
-                    where expiration &lt; ${now.millis} and rtoken is null]]&gt;&lt;/L7p:SqlQuery&gt;
+                    where expiration &lt; ${now.seconds} and rtoken is null]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
@@ -213,14 +215,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="211ed09a-b162-49fa-8559-7d6b157f4e16"
-               id="82968620" version="2">
-        <l7:PolicyDetail folderId="82837523" guid="211ed09a-b162-49fa-8559-7d6b157f4e16" id="82968620" version="2">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="45df2c5c-c197-4a4e-aa72-a7da470798c4"
+               id="57477c668279c3c8d34da687b89a7f35" version="3">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7e4f" guid="45df2c5c-c197-4a4e-aa72-a7da470798c4"
+                         id="57477c668279c3c8d34da687b89a7f35" version="3">
             <l7:Name>Delete Expired Sessions</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>3</l7:LongValue>
+                    <l7:LongValue>4</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -244,9 +247,9 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
                     &lt;L7p:QueryName stringValue="Delete expired sessions"/&gt;
-                    &lt;L7p:SqlQuery stringValue="delete from oauth_session where expiration &amp;lt;= ${now.millis};"/&gt;
+                    &lt;L7p:SqlQuery stringValue="delete from oauth_session where expiration &amp;lt;= ${now.seconds}"/&gt;
                     &lt;L7p:VariablePrefix stringValue="deleteExpired"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
@@ -263,14 +266,13 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"
-               id="123961351" version="2">
-        <l7:PolicyDetail folderId="123600896" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3" id="123961351" version="2">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
             <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>3</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -279,20 +281,20 @@
         </l7:PolicyDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_tokenstore_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_clientstore_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_session_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_session_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;

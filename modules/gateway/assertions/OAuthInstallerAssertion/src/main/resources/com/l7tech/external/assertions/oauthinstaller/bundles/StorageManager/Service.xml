@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="123797522" version="2">
-        <l7:ServiceDetail folderId="123600910" id="123797522" version="2">
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7562"
+                version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a74e9" id="57477c668279c3c8d34da687b89a7562" version="2">
             <l7:Name>oauth/manager</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -17,7 +18,7 @@
             </l7:ServiceMappings>
             <l7:Properties>
                 <l7:Property key="policyRevision">
-                    <l7:LongValue>5</l7:LongValue>
+                    <l7:LongValue>3</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="wssProcessingEnabled">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -32,20 +33,21 @@
         </l7:ServiceDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy" version="4">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                <l7:Resource type="policy" version="2">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Implementation of a simple oauth manager that uses API calls only to access the client- and tokenstore"/&gt;
+                    &lt;L7p:Comment stringValue="Implementation of a simple oauth manager that uses API calls only to
+                    access the client- and tokenstore"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="e503f8c2-0466-478d-937d-87c5a5f19bee"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:HttpBasic/&gt;
                     &lt;L7p:Authentication&gt;
-                    &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+                    &lt;L7p:IdentityProviderOid goidValue="0000000000000000fffffffffffffffe"/&gt;
                     &lt;/L7p:Authentication&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnN0YXRlfQ=="/&gt;
@@ -99,7 +101,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${state}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -164,7 +166,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${httpRouting.reasonCode}"/&gt;
                     &lt;L7p:Expression2 stringValue="200"/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Negate booleanValue="true"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -176,7 +178,7 @@
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${getResult.mainpart}"/&gt;
                     &lt;L7p:Expression2 stringValue="API Portal Integration is configured"/&gt;
-                    &lt;L7p:FailIfVariableNotFound booleanValue="false"/&gt;
+                    &lt;L7p:ExpressionIsVariable booleanValue="false"/&gt;
                     &lt;L7p:Operator operator="CONTAINS"/&gt;
                     &lt;L7p:Predicates predicates="included"&gt;
                     &lt;L7p:item binary="included"&gt;
@@ -348,7 +350,8 @@
                     &lt;L7p:SplitPatternRegEx booleanValue="false"/&gt;
                     &lt;/L7p:Split&gt;
                     &lt;L7p:ForEachLoop L7p:Usage="Required"
-                    iterationLimit="10000" loopVariable="dates" variablePrefix="date"&gt;
+                    iterationLimit="10000"
+                    loopVariable="dates" variablePrefix="date"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="JHtkYXRlLmN1cnJlbnR9"/&gt;
                     &lt;L7p:DataType variableDataType="dateTime"/&gt;
@@ -638,7 +641,7 @@
                     &lt;L7p:VariableToSet stringValue="token_type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="2dc66d50-fa74-489e-97f8-d6b2f4a13c08"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -767,7 +770,7 @@
                     &lt;L7p:VariableToSet stringValue="token_type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="2dc66d50-fa74-489e-97f8-d6b2f4a13c08"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/store"/&gt;
@@ -1095,7 +1098,7 @@
                     &lt;L7p:VariablePrefix stringValue="xpathDescription"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="clientValues"/&gt;
                     &lt;L7p:XpathExpression xpathExpressionValue="included"&gt;
-                    &lt;L7p:Expression stringValue="/ns:values/ns:value/ns:description/text()"/&gt;
+                    &lt;L7p:Expression stringValue="/ns:values/ns:value/ns:description"/&gt;
                     &lt;L7p:Namespaces mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="ns"/&gt;
@@ -1597,7 +1600,7 @@
                     &lt;L7p:VariableToSet stringValue="token_type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="585c3a3d-8fd7-4337-8d91-46846bfc4194"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="2dc66d50-fa74-489e-97f8-d6b2f4a13c08"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
