@@ -31,6 +31,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message, final String messageDescription, final AuthenticationContext authContext)
             throws IOException, PolicyAssertionException {
+        AssertionStatus status = AssertionStatus.NONE;
         final HeadersKnob headersKnob = message.getHeadersKnob();
         if (headersKnob != null) {
             if (assertion.getHeaderName() == null) {
@@ -38,27 +39,29 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             }
             final Map<String, ?> varMap = context.getVariableMap(variablesUsed, getAudit());
             final String name = ExpandVariables.process(assertion.getHeaderName(), varMap, getAudit());
-            final String value = assertion.getHeaderValue() == null ? null : ExpandVariables.process(assertion.getHeaderValue(), varMap, getAudit());
-
-            // TODO validate header name and value before setting
-
-            switch (assertion.getOperation()) {
-                case ADD:
-                    doAdd(headersKnob, name, value, context);
-                    break;
-                case REMOVE:
-                    doRemove(headersKnob, name, value, context);
-                    break;
-                default:
-                    final String msg = "Unsupported operation: " + assertion.getOperation();
-                    logger.log(Level.WARNING, msg);
-                    throw new PolicyAssertionException(assertion, msg);
+            if (StringUtils.isBlank(name)) {
+                status = AssertionStatus.FALSIFIED;
+                logAndAudit(AssertionMessages.EMPTY_HEADER_NAME);
+            } else {
+                final String value = assertion.getHeaderValue() == null ? null : ExpandVariables.process(assertion.getHeaderValue(), varMap, getAudit());
+                // TODO validate header name and value before setting
+                switch (assertion.getOperation()) {
+                    case ADD:
+                        doAdd(headersKnob, name, value, context);
+                        break;
+                    case REMOVE:
+                        doRemove(headersKnob, name, value, context);
+                        break;
+                    default:
+                        final String msg = "Unsupported operation: " + assertion.getOperation();
+                        logger.log(Level.WARNING, msg);
+                        throw new PolicyAssertionException(assertion, msg);
+                }
             }
         } else {
             throw new IllegalStateException("HeadersKnob on message is null. Message may not have been initialized.");
         }
-
-        return AssertionStatus.NONE;
+        return status;
     }
 
     private void doAdd(final HeadersKnob headersKnob, final String assertionHeaderName, final String assertionHeaderValue, final PolicyEnforcementContext context) {

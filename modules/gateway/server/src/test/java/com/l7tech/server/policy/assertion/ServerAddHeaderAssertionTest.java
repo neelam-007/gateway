@@ -568,6 +568,29 @@ public class ServerAddHeaderAssertionTest {
         assertEquals(STARTS_WITH_B, vals[0]);
     }
 
+    @Test
+    public void addHeaderNameContextVarDoesNotExist() throws Exception {
+        ass.setHeaderName("${name}");
+        ass.setHeaderValue("test");
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_HEADER_NAME));
+    }
+
+    @Test
+    public void addHeaderNameContextVarResolvesEmpty() throws Exception {
+        pec.setVariable("name", "");
+        ass.setHeaderName("${name}");
+        ass.setHeaderValue("test");
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_HEADER_NAME));
+    }
+
     private void configureServerAssertion(final ServerAddHeaderAssertion serverAssertion) {
         ApplicationContexts.inject(serverAssertion,
                 CollectionUtils.MapBuilder.<String, Object>builder()
