@@ -35,12 +35,12 @@ public class LicenseGeneratorFeatureSets {
                 allProfiles.get(GatewayFeatureSets.PROFILE_FIREWALL));
         availableProfiles.put(GatewayFeatureSets.PROFILE_GATEWAY,
                 allProfiles.get(GatewayFeatureSets.PROFILE_GATEWAY));
-        availableProfiles.put(GatewayFeatureSets.PROFILE_NCES_EXTENTION,
-                allProfiles.get(GatewayFeatureSets.PROFILE_NCES_EXTENTION));
-        availableProfiles.put(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENTION,
-                allProfiles.get(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENTION));
-        availableProfiles.put(GatewayFeatureSets.PROFILE_MOBILE_EXTENTION,
-                allProfiles.get(GatewayFeatureSets.PROFILE_MOBILE_EXTENTION));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_NCES_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_NCES_EXTENSION));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENSION));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION));
 
         availableProfiles.put(PLACEHOLDER_PROFILE_ESM.getName(), PLACEHOLDER_PROFILE_ESM);
 

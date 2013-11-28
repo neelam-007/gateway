@@ -129,11 +129,11 @@ public class GatewayFeatureSets {
 
     public static final String PROFILE_API_PROXY = "set:Profile:Api";
 
-    public static final String PROFILE_SALESFORCE_EXTENTION = "set:Profile:Salesforce";
+    public static final String PROFILE_SALESFORCE_EXTENSION = "set:Profile:Salesforce";
 
-    public static final String PROFILE_NCES_EXTENTION = "set:Profile:NCES";
+    public static final String PROFILE_NCES_EXTENSION = "set:Profile:NCES";
 
-    public static final String PROFILE_MOBILE_EXTENTION = "set:Profile:Mobile";
+    public static final String PROFILE_MOBILE_EXTENSION = "set:Profile:Mobile";
 
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
 
@@ -794,6 +794,52 @@ public class GatewayFeatureSets {
                         "The necessary assertions to enable Radius authentication functionality",
                         mass("assertion:RadiusAuthenticate"));
 
+        GatewayFeatureSet csrSignerAssertions =
+                fsr("set:CsrSigner:Assertions",
+                        "Assertions to enable CSR Signing functionality",
+                        mass("assertion:CsrSigner"));
+
+        GatewayFeatureSet jsonWebTokenAssertions =
+                fsr("set:JsonWebToken:Assertions",
+                        "Assertions to enable JSON Web Token functionality.",
+                        mass("assertion:JwtDecode"),
+                        mass("assertion:JwtEncode"));
+
+        GatewayFeatureSet openIDConnectAssertions =
+                fsr("set:OpenIDConnect:Assertions",
+                        "Assertions to enable OpenIDConnect functionality, including policy dependencies",
+                        mass("assertion:IDTokenGeneration"),
+                        mass("assertion:IDTokenDecode"),
+                        mass("assertion:OpenIDConnectInstaller"),
+                        csrSignerAssertions,
+                        jsonWebTokenAssertions);
+
+        GatewayFeatureSet applePushNotificationAssertions =
+                fsr("set:ApplePushNotification:Assertions",
+                        "Assertions to enable Apple Push Notification functionality.",
+                        mass("assertion:ApplePushNotification"),
+                        mass("assertion:AppleFeedbackService"));
+
+        GatewayFeatureSet webSocketAssertions =
+                fsr("set:WebSocket:Assertions",
+                        "Assertions to enable WebSocket functionality.",
+                        mass("assertion:WebSocket"),
+                        mass("assertion:WebSocketEntityManager"),
+                        mass("assertion:WebSocketValidation"),
+                        mass("assertion:WebSocketMessageInjection"));
+
+        GatewayFeatureSet xmppAssertions =
+                fsr("set:XMPP:Assertions",
+                        "Assertions to enable XMPP functionality.",
+                        mass("assertion:XMPPGetRemoteCertificate"),
+                        mass("assertion:XMPPStartTLS"),
+                        mass("assertion:XMPPCloseSession"),
+                        mass("assertion:XMPPAssociateSessions"),
+                        mass("assertion:XMPPGetAssociatedSessionId"),
+                        mass("assertion:XMPPGetSessionAttribute"),
+                        mass("assertion:XMPPSendToRemoteHost"),
+                        mass("assertion:XMPPSetSessionAttribute"),
+                        mass("assertion:XMPPOpenServerSession"));
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
@@ -1115,7 +1161,7 @@ public class GatewayFeatureSets {
         /**
          * Salesforce Connector
          */
-        GatewayFeatureSet salesforceFeaturePack = fsp(PROFILE_SALESFORCE_EXTENTION,
+        GatewayFeatureSet salesforceFeaturePack = fsp(PROFILE_SALESFORCE_EXTENSION,
                 "Salesforce Connector",
                 "Includes assertions that provide access to Salesforce data",
                 mass("assertion:Salesforce"),
@@ -1126,7 +1172,7 @@ public class GatewayFeatureSets {
         /**
          * NCES Feature Pack
          */
-        GatewayFeatureSet ncesFeaturePack = fsp(PROFILE_NCES_EXTENTION,
+        GatewayFeatureSet ncesFeaturePack = fsp(PROFILE_NCES_EXTENSION,
                 "NCES Feature Pack",
                 "Includes NCES and SAML specific assertions",
                 fs(ncesAssertions),
@@ -1138,31 +1184,16 @@ public class GatewayFeatureSets {
          *
          * Applicable as of MAG 2.0.1.
          */
-        GatewayFeatureSet mobileFeaturePack = fsp(PROFILE_MOBILE_EXTENTION,
+        GatewayFeatureSet mobileFeaturePack = fsp(PROFILE_MOBILE_EXTENSION,
                 "Mobile Access Gateway",
                 "Includes series of assertions required to support existing and future Mobile Access Gateway " +
                         "functionality (requires SOA Gateway license as base)",
-                mass("assertion:CsrSigner"), // CsrSignerAssertion
-                mass("assertion:JwtDecode"), // JsonWebTokenAssertion
-                mass("assertion:JwtEncode"),
-                mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
-                mass("assertion:IDTokenDecode"),
-                mass("assertion:OpenIDConnectInstaller"),
-                mass("assertion:ApplePushNotification"), // ApplePushNotificationAssertion
-                mass("assertion:AppleFeedbackService"),
-                mass("assertion:WebSocket"), // WebSocketAssertion
-                mass("assertion:WebSocketEntityManager"),
-                mass("assertion:WebSocketValidation"),
-                mass("assertion:WebSocketMessageInjection"),
-                mass("assertion:XMPPGetRemoteCertificate"), // XMPPAssertion
-                mass("assertion:XMPPStartTLS"),
-                mass("assertion:XMPPCloseSession"),
-                mass("assertion:XMPPAssociateSessions"),
-                mass("assertion:XMPPGetAssociatedSessionId"),
-                mass("assertion:XMPPGetSessionAttribute"),
-                mass("assertion:XMPPSendToRemoteHost"),
-                mass("assertion:XMPPSetSessionAttribute"),
-                mass("assertion:XMPPOpenServerSession"),
+                csrSignerAssertions,
+                jsonWebTokenAssertions,
+                openIDConnectAssertions,
+                applePushNotificationAssertions,
+                webSocketAssertions,
+                xmppAssertions,
                 fs(moduleLoader));
 
         /**
