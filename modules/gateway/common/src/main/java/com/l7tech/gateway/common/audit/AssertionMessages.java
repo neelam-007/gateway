@@ -685,7 +685,7 @@ public class AssertionMessages extends Messages {
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
-    
+
     // Map Value
     public static final Messages.M MAP_VALUE_PATTERN_NOT_MATCHED = m(7025, Level.FINE, "Pattern not matched: {0}");
     public static final Messages.M MAP_VALUE_NO_PATTERNS_MATCHED = m(7026, Level.INFO, "No patterns were matched");
@@ -1230,19 +1230,18 @@ public class AssertionMessages extends Messages {
     public static final M SITEMINDER_FINE = m(10101, Level.FINE, "SiteMinder {0} assertion: {1}");
     public static final M SITEMINDER_WARNING = m(10102, Level.WARNING, "SiteMinder {0} assertion: {1}");
 
-    // Add or Remove Header Assertion
-    public static final M HEADER_ADDED = m(10150, Level.INFO, "Added header with name {0} and value {1}");
-    public static final M HEADER_REMOVED_BY_NAME = m(10151, Level.INFO, "Removed header with name {0}");
-    public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10152, Level.INFO, "Removed header with name {0} and value {1}");
-    public static final M COOKIE_ADDED = m(10153, Level.INFO, "Added cookie with name {0} and value {1}");
-    public static final M COOKIE_REMOVED = m(10154, Level.INFO, "Removed cookie with name {0} and value {1}");
-    public static final M INVALID_HEADER_FOR_TARGET = m(10155, Level.WARNING, "Header {0} is invalid for target {1}");
+    // Manage Header Assertion
+    public static final M HEADER_ADDED = m(10150, Level.FINE, "Added header with name {0} and value {1}");
+    public static final M HEADER_REMOVED_BY_NAME = m(10151, Level.FINE, "Removed header with name {0}");
+    public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10152, Level.FINE, "Removed header with name {0} and value {1}");
 
     // Add or Remove Cookie Assertion
     public static final M INVALID_MAX_AGE = m(10200, Level.WARNING, "Cookie max age is invalid: {0}");
     public static final M EMPTY_COOKIE_NAME = m(10201, Level.WARNING, "Cookie name is empty");
     public static final M COOKIE_NOT_FOUND = m(10202, Level.WARNING, "No cookie with name {0} was found for target {1}");
     public static final M COOKIE_ALREADY_EXISTS = m(10203, Level.WARNING, "A cookie with name {0} already exists");
+    public static final M COOKIE_ADDED = m(10204, Level.FINE, "Added cookie with name {0} and value {1}");
+    public static final M COOKIE_REMOVED = m(10205, Level.FINE, "Removed cookie with name {0} and value {1}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

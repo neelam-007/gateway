@@ -18,7 +18,7 @@ public class AddHeaderAssertionTest {
     @Test
     public void getAssertionNameNoDecorate() {
         assertion.setHeaderName("foo");
-        assertEquals("Add or Remove Header", assertionNameFactory.getAssertionName(assertion, false));
+        assertEquals("Manage Header", assertionNameFactory.getAssertionName(assertion, false));
     }
 
     @Test
@@ -50,7 +50,6 @@ public class AddHeaderAssertionTest {
         assertion.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertion.setHeaderName("foo");
         assertion.setHeaderValue("bar");
-        assertion.setMatchValueForRemoval(true);
         // remove existing should be ignored
         assertion.setRemoveExisting(true);
         assertEquals("Request: Remove Header(s) foo:bar", assertionNameFactory.getAssertionName(assertion, true));

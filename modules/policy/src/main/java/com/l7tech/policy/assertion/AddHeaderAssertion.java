@@ -3,6 +3,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -17,7 +18,6 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     private String headerName;
     private String headerValue;
     private boolean removeExisting;
-    private boolean matchValueForRemoval;
     private boolean evaluateNameAsExpression;
     private boolean evaluateValueExpression;
 
@@ -38,7 +38,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.ADD}
+     * Only applies to Add.
      *
      * @return true if adding a header should remove (overwrite) any existing value for the header or false otherwise.
      */
@@ -47,7 +47,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.ADD}
+     * Only applies to Add.
      *
      * @param removeExisting set to true if adding a header should remove (overwrite) any existing value for the header or false otherwise.
      */
@@ -71,25 +71,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.REMOVE}
-     *
-     * @return true if the header value should match the configured value for header removal.
-     */
-    public boolean isMatchValueForRemoval() {
-        return matchValueForRemoval;
-    }
-
-    /**
-     * Only applies to {@link Operation.REMOVE}
-     *
-     * @param matchValueForRemoval set to true if the header value should match the configured value for header removal.
-     */
-    public void setMatchValueForRemoval(final boolean matchValueForRemoval) {
-        this.matchValueForRemoval = matchValueForRemoval;
-    }
-
-    /**
-     * Only applies to {@link Operation.REMOVE}
+     * Only applies to Remove.
      *
      * @return true if the header name should be treated as a regular expression.
      */
@@ -98,7 +80,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.REMOVE}
+     * Only applies to Remove.
      *
      * @param evaluateNameAsExpression set to true if the header name should be treated as a regular expression.
      */
@@ -107,7 +89,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.REMOVE}
+     * Only applies to Remove.
      *
      * @return true if the header value should be treated as a regular expression.
      */
@@ -116,7 +98,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     /**
-     * Only applies to {@link Operation.REMOVE}
+     * Only applies to Remove.
      *
      * @param evaluateValueExpression set to true if the header value should be treated as a regular expression.
      */
@@ -145,7 +127,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     private static final String META_INITIALIZED = AddHeaderAssertion.class.getName() + ".metadataInitialized";
-    private static final String baseName = "Add or Remove Header";
+    private static final String baseName = "Manage Header";
 
     private static final AssertionNodeNameFactory<AddHeaderAssertion> nodeNameFactory = new AssertionNodeNameFactory<AddHeaderAssertion>() {
         @Override
@@ -158,12 +140,12 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
                 sb.append("(s)");
             }
             sb.append(" ").append(assertion.getHeaderName());
-            if (assertion.getOperation() == Operation.ADD || (assertion.getOperation() == Operation.REMOVE && assertion.isMatchValueForRemoval())) {
+            if (assertion.getOperation() == Operation.ADD || (assertion.getOperation() == Operation.REMOVE && StringUtils.isNotBlank(assertion.getHeaderValue()))) {
                 sb.append(":").append(assertion.getHeaderValue());
             }
             if (assertion.getOperation() == Operation.ADD && assertion.isRemoveExisting())
                 sb.append(" (replace existing)");
-            return AssertionUtils.decorateName( assertion, sb );
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -174,8 +156,9 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
             return meta;
 
         meta.put(SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.DESCRIPTION, "Add, replace or remove header(s).");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-        meta.put(PALETTE_FOLDERS, new String[] { "routing" });
+        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddHeaderAssertionDialog");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(POLICY_NODE_NAME_FACTORY, nodeNameFactory);
