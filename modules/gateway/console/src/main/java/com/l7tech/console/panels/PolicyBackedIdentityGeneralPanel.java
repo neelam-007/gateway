@@ -8,9 +8,11 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,12 +32,13 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     private JTextField providerNameField;
     private JComboBox<PolicyHeader> policyComboBox;
     private JCheckBox adminEnabledCheckbox;
-    private JComboBox<Role> roleComboBox;
+    private JComboBox<Pair<Role, String>> roleComboBox;
     private SecurityZoneWidget zoneControl;
     private JCheckBox defaultRoleCheckBox;
 
     private java.util.List<PolicyHeader> policies;
     private java.util.List<Role> roles;
+    private java.util.List<Pair<Role, String>> rolesWithNames;
 
     private boolean finishAllowed = false;
 
@@ -58,10 +61,23 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
 
         if (Registry.getDefault().isAdminContextPresent()) {
             policies = loadPolicies();
-            policyComboBox.setModel(new DefaultComboBoxModel<PolicyHeader>(policies.toArray(new PolicyHeader[policies.size()])));
+            policyComboBox.setModel(new DefaultComboBoxModel<>(policies.toArray(new PolicyHeader[policies.size()])));
 
-            roles = loadRoles();
-            roleComboBox.setModel(new DefaultComboBoxModel<Role>(roles.toArray(new Role[roles.size()])));
+            loadRoles();
+
+            //noinspection unchecked,Convert2Diamond
+            roleComboBox.setModel(new DefaultComboBoxModel<Pair<Role, String>>(rolesWithNames.<Pair<Role, String>>toArray(new Pair[rolesWithNames.size()])));
+            roleComboBox.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    if (value instanceof Pair) {
+                        @SuppressWarnings("unchecked")
+                        Pair<Role, String> pair = (Pair<Role, String>) value;
+                        value = pair.right;
+                    }
+                    return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                }
+            });
         }
 
         adminEnabledCheckbox.addActionListener(listener);
@@ -72,13 +88,31 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
         updateControlButtonState();
     }
 
-    private static java.util.List<Role> loadRoles() {
+    private void loadRoles() {
         try {
-            return new ArrayList<>(Registry.getDefault().getRbacAdmin().findAllRoles());
+            final ArrayList<Role> roles = new ArrayList<>(Registry.getDefault().getRbacAdmin().findAllRoles());
+            Collections.sort(roles, new NamedEntityComparator());
+            this.roles = roles;
+            this.rolesWithNames = new ArrayList<>();
+            for (Role role : roles) {
+                rolesWithNames.add(new Pair<>(role, getNameForRole(role)));
+            }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to load roles; " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return Collections.emptyList();
+            this.roles = Collections.emptyList();
+            this.rolesWithNames = Collections.emptyList();
         }
+    }
+
+    private String getNameForRole(Role role) {
+        String name = "name unavailable";
+        try {
+            name = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
+            return name;
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve name for role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        return name;
     }
 
     private static java.util.List<PolicyHeader> loadPolicies() {
@@ -187,7 +221,9 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
 
             config.setAdminEnabled(adminEnabledCheckbox.isSelected());
 
-            Role role = (Role) roleComboBox.getSelectedItem();
+            @SuppressWarnings("unchecked")
+            Pair<Role, String> pair = (Pair<Role, String>) roleComboBox.getSelectedItem();
+            Role role = pair == null ? null : pair.left;
             config.setDefaultRoleId(!defaultRoleCheckBox.isSelected() || role == null ? null : role.getGoid());
 
             config.setSecurityZone(zoneControl.getSelectedZone());
