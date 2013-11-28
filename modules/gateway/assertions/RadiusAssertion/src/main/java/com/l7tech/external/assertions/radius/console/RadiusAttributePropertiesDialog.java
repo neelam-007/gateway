@@ -82,11 +82,14 @@ public class RadiusAttributePropertiesDialog extends JDialog {
                 new InputValidator.ComponentValidationRule(nameTextField) {
                     @Override
                     public String getValidationError() {
+                        if(!getRadiusAdmin().isAttributeNameValid(nameTextField.getText()))
+                            return "The attribute " + nameTextField.getText() + " is not found in the dictionary.";
+
                         String[] tmp = Syntax.getReferencedNames(valueTextField.getText(), false);
+
                         if (tmp == null || tmp.length == 0) {
                             if (!getRadiusAdmin().isAttributeValid(nameTextField.getText(), valueTextField.getText())) {
-                                return "The attribute " + nameTextField.getText() + " is invalid.";
-
+                                return "The attribute value: " + valueTextField.getText()  + " is not allowed for attribute "+ nameTextField.getText();
                             }
                         }
                         return null;

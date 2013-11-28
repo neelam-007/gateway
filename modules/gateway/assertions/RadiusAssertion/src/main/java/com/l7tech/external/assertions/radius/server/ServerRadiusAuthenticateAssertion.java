@@ -122,9 +122,9 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
     private boolean authenticate(PolicyEnforcementContext ctx, LoginCredentials credentials, Map<String, Object> variableMap, RadiusReply reply) throws IOException, RadiusException, FindException, ParseException {
 
         String host = ExpandVariables.process(assertion.getHost(), variableMap, getAudit());
-        int authPort = Integer.parseInt(ExpandVariables.process(assertion.getAuthPort(), variableMap, getAudit()));
-        int acctPort = Integer.parseInt(ExpandVariables.process(assertion.getAcctPort(), variableMap, getAudit()));
-        int timeout = Integer.parseInt(ExpandVariables.process(assertion.getTimeout(), variableMap, getAudit()));
+        int authPort = RadiusUtils.parseIntValue(ExpandVariables.process(assertion.getAuthPort(), variableMap, getAudit()));
+        int acctPort = RadiusUtils.parseIntValue(ExpandVariables.process(assertion.getAcctPort(), variableMap, getAudit()));
+        int timeout = RadiusUtils.parseIntValue(ExpandVariables.process(assertion.getTimeout(), variableMap, getAudit()));
 
         InetAddress inetAddress = InetAddress.getByName(host);
         RadiusClient radiusClient = null;
@@ -137,7 +137,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
             AttributeList attributeList = new AttributeList();
             for (Map.Entry<String, String> entry : assertion.getAttributes().entrySet() ) {
                 String value = ExpandVariables.process(entry.getValue(), variableMap, getAudit());
-                attributeList.add(RadiusUtils.getAttribute(entry.getKey(), value));
+                attributeList.add(RadiusUtils.newAttribute(entry.getKey(), value));
             }
 
             //Setting the password

@@ -5,9 +5,6 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
-
 /**
  * Admin interface for SSM code to perform Radius functions in server-side
  *
@@ -16,9 +13,17 @@ import java.util.Set;
 @Secured
 @Administrative
 public interface RadiusAdmin {
+    /**
+     * Validate Radius attribute name
+     * @param name
+     * @return  true if Radius attribute name is valid
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+    boolean isAttributeNameValid(String name);
 
     /**
-     * Validate the Radius attribute name
+     * Validate the Radius attribute
      * @param name The attribute name
      * @param value The attribute value
      * @return True if the Radius attribute is valid, False if the Radius attribute is invalid.

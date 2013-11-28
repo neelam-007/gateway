@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.radius;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -13,7 +12,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
-import static com.l7tech.policy.assertion.VariableUseSupport.variables;
+
 
 /**
  *
@@ -181,7 +180,7 @@ public class RadiusAuthenticateAssertion extends Assertion implements MessageTar
         public String getAssertionName( final RadiusAuthenticateAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            StringBuilder name = new StringBuilder(baseName);
+            StringBuilder name = new StringBuilder(assertion.getTargetName() + ": " + baseName);
             name.append(" " + assertion.getHost());
             name.append(" [");
             name.append(assertion.getPrefix());

@@ -29,9 +29,14 @@ public class RadiusAssertion extends Assertion {
 
                 ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<RadiusAdmin>(RadiusAdmin.class, null, new RadiusAdmin() {
                     @Override
+                    public boolean isAttributeNameValid(String name) {
+                        return RadiusUtils.isAttributeValid(name);
+                    }
+
+                    @Override
                     public boolean isAttributeValid(String name, String value) {
                         try {
-                            RadiusUtils.getAttribute(name, value);
+                            RadiusUtils.newAttribute(name, value);
                             return true;
                         } catch (RadiusException e) {
                             return false;

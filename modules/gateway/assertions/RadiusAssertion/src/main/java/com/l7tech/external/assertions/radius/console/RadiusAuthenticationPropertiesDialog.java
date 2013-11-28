@@ -103,11 +103,50 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
         InputValidator okValidator =
                 new InputValidator(this, "Radius Configuration");
 
+
         okValidator.constrainTextFieldToBeNonEmpty("Prefix", prefixTextField, null);
         okValidator.constrainTextFieldToBeNonEmpty("Host", hostTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty("Auth Port", authPortTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty("Auth Port", authPortTextField, new InputValidator.ComponentValidationRule(authPortTextField) {
+            @Override
+            public String getValidationError() {
+
+                int port = -1;
+                final String text = authPortTextField.getText();
+                if (!text.isEmpty() && Syntax.getReferencedNames(text).length == 0) {
+                    try {
+                        port = Integer.parseInt(text);
+                    } catch (NumberFormatException e) {
+                        //Nothing here
+                    }
+
+                    if(port < 0 || port > 65535)
+                        return  "Invalid port number " + text + "\nValue must be in the range between 0 and 65535";
+                }
+
+                return null;
+            }
+        });
         okValidator.constrainTextFieldToBeNonEmpty("Acct Port", acctPortTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty("Timeout", timeoutTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty("Timeout", timeoutTextField, new InputValidator.ComponentValidationRule(timeoutTextField) {
+            @Override
+            public String getValidationError() {
+
+                int timeout = -1;
+                final String text = timeoutTextField.getText();
+                if (!text.isEmpty() && Syntax.getReferencedNames(text).length == 0) {
+                    try {
+                        timeout = Integer.parseInt(text);
+                    } catch (NumberFormatException e) {
+                        //Nothing here
+                    }
+
+                    if(timeout < 0 )
+                        return  "Invalid timeout " + text + "\nValue must be positive Integer";
+                }
+
+                return null;
+            }
+        });
         okValidator.ensureComboBoxSelection("Secret", securePasswordComboBox);
 
         InputValidator.ValidationRule authenticatorRule =
