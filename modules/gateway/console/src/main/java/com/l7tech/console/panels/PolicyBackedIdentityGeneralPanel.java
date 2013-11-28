@@ -94,8 +94,8 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     public String getDescription() {
         return "<html>This Wizard allows you to configure a Policy-Backed Identity Provider. Fields \n" +
             "marked with an asterisk \"*\" are required.\n" +
-            "\n<p>A default role assignment allows any user who successfully authenticates with\n" +
-            "this provider to administer the Gateway using the specified role, unless\n" +
+            "\n<p><b>WARNING:</b> A default role assignment allows <b>any user</b> who successfully authenticates with\n" +
+            "this provider to <b>administer the Gateway</b> using the specified role, unless\n" +
             "they have some more-specific role assignments specifically for their username.\n" +
             "</html>";
     }
