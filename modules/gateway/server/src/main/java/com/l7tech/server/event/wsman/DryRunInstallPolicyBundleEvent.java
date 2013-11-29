@@ -33,11 +33,7 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         missingAssertions.add(missingAssertion);
     }
 
-    public void addEncapsulatedAssertionNameWithConflict(String encapsulatedAssertionName, String encapsulatedAssertionGuid) {
-        encapsulatedAssertionConflict.add(encapsulatedAssertionName + " (GUID: " + encapsulatedAssertionGuid + ")");
-    }
-
-    public void addEncapsulatedAssertionWithPolicyReferenceConflict(String conflict) {
+    public void addEncapsulatedAssertionConflict(String conflict) {
         encapsulatedAssertionConflict.add(conflict);
     }
 

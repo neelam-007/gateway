@@ -14,6 +14,11 @@ import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +26,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.List;
@@ -64,9 +70,15 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
                 }
 
                 try {
-                    final List<Goid> matchingEncapsulatedAssertions = findMatchingEncapsulatedAssertion(encapsulatedAssertionName, encapsulatedAssertionGuid);
+                    List<Goid> matchingEncapsulatedAssertions = findMatchingEncapsulatedAssertion("/l7:EncapsulatedAssertion/l7:Name[text()='" + encapsulatedAssertionName + "']");
                     if (!matchingEncapsulatedAssertions.isEmpty()) {
-                        dryRunEvent.addEncapsulatedAssertionNameWithConflict(encapsulatedAssertionName, encapsulatedAssertionGuid);
+                        dryRunEvent.addEncapsulatedAssertionConflict(encapsulatedAssertionName);
+                    } else {
+                        matchingEncapsulatedAssertions = findMatchingEncapsulatedAssertion("/l7:EncapsulatedAssertion/l7:Guid[text()='" + encapsulatedAssertionGuid + "']");
+                        if (!matchingEncapsulatedAssertions.isEmpty()) {
+                            String name = getExistingEncapsulatedAssertionName(matchingEncapsulatedAssertions.get(0));
+                            dryRunEvent.addEncapsulatedAssertionConflict("GUID " + encapsulatedAssertionGuid + " already exists as " + name);
+                        }
                     }
                 } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
                     throw new BundleResolver.InvalidBundleException("Could not check for conflict for Encapsulated Assertion name  '" + encapsulatedAssertionName + "'", e);
@@ -76,13 +88,13 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
                 Element originalPolicyReferenceElm = DomUtils.findFirstChildElementByName(encapsulatedAssertionElm, MGMT_VERSION_NAMESPACE, "PolicyReference");
                 String policyId = originalPolicyReferenceElm.getAttribute("id");
                 if(!policyIdsNames.keySet().contains(policyId)) {
-                    dryRunEvent.addEncapsulatedAssertionWithPolicyReferenceConflict(encapsulatedAssertionName + " missing reference to Policy ID " + policyId);
+                    dryRunEvent.addEncapsulatedAssertionConflict(encapsulatedAssertionName + " missing reference to Policy ID " + policyId);
                 }
 
                 // check if the reference policy is in the list of policies that are in conflict
                 String conflictPolicyName = conflictingPolicyIdsNames.get(originalPolicyReferenceElm.getAttribute("id"));
                 if(conflictPolicyName != null) {
-                    dryRunEvent.addEncapsulatedAssertionWithPolicyReferenceConflict(encapsulatedAssertionName + " references conflicting Policy " + conflictPolicyName);
+                    dryRunEvent.addEncapsulatedAssertionConflict(encapsulatedAssertionName + " references conflicting Policy " + conflictPolicyName);
                 }
             }
         }
@@ -120,13 +132,26 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
     }
 
     @NotNull
-    private List<Goid> findMatchingEncapsulatedAssertion(@NotNull String encapsulatedAssertionName, @NotNull final String encapsulatedAssertionGuid) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                ENCAPSULATED_ASSERTIONS_MGMT_NS, 10,
-                "/l7:EncapsulatedAssertion/l7:Name[text()='" + encapsulatedAssertionName + "'] | " + "/l7:EncapsulatedAssertion/l7:Guid[text()='" + encapsulatedAssertionGuid + "']");
-
+    private List<Goid> findMatchingEncapsulatedAssertion(@NotNull String filterString) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, 10, filterString);
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
         return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    }
+
+    @Nullable
+    private String getExistingEncapsulatedAssertionName(@NotNull final Goid goid) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        final String getEncapsulatedAssertionXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, "id", goid);
+
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(getEncapsulatedAssertionXml);
+        final ElementCursor cursor = new DomElementCursor(documentPair.right);
+
+        final XpathResult xpathResult;
+        try {
+            xpathResult = cursor.getXpathResult(new XpathExpression("string(/env:Envelope/env:Body/l7:EncapsulatedAssertion/l7:Name)", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
+        } catch (XPathExpressionException | InvalidXpathException e) {
+            throw new RuntimeException("Unexpected exception performing xpath to obtain Encapsulated Assertion name for goid '" + goid + "' ", e);
+        }
+        return xpathResult.getString();
     }
 
     /**
