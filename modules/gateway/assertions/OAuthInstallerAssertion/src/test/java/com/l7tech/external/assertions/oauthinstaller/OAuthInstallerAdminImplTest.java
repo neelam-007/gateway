@@ -184,7 +184,7 @@ public class OAuthInstallerAdminImplTest {
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "2.1", "Secure Zone Storage", "Token and Client Store");
-        expected.addJdbcReference("otk_herring");
+        expected.addJdbcReference("OAuth");
         assertTrue(allBundles.contains(expected));
 
         expected = new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "2.1", "OAuth Manager", "Manager utility for Client and Token store for OAuth 1.0 and 2.0");
