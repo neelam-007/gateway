@@ -7,7 +7,7 @@ START TRANSACTION;
 --
 -- Adding an artificial primary key to oauth_token
 --
-ALTER TABLE oauth_token ADD CONSTRAINT UNIQUE oat_unique_token (token);
+ALTER TABLE oauth_token ADD UNIQUE (token);
 ALTER TABLE oauth_token DROP PRIMARY KEY;
 ALTER TABLE oauth_token ADD COLUMN otk_token_id varchar(128);
 --
@@ -21,6 +21,7 @@ ALTER TABLE oauth_token ADD PRIMARY KEY (otk_token_id);
 UPDATE oauth_client_key SET expiration = expiration/1000 WHERE expiration >= 1000000000000;
 UPDATE oauth_initiate SET expiration = expiration/1000 WHERE expiration >= 1000000000000;
 UPDATE oauth_token SET expiration = expiration/1000 WHERE expiration >= 1000000000000;
+UPDATE oauth_token SET rexpiration = rexpiration/1000 WHERE rexpiration >= 1000000000000;
 UPDATE oauth_session SET expiration = expiration/1000 WHERE expiration >= 1000000000000;
 --
 -- Adding an index to oauth_token. This will improve the overall performance
