@@ -284,17 +284,13 @@
                     &lt;L7p:Direction intValue="-1"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="forXSL"/&gt;
                     &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
-                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
-                    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
                     &lt;xsl:output method="text" omit-xml-declaration="yes"/&gt;
-
                     &lt;xsl:variable name="lowercase" select="'abcdefghijklmnopqrstuvwxyz'"/&gt;
                     &lt;xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/&gt;
-
                     &lt;xsl:template match="/hostname"&gt;
                     &lt;xsl:value-of select="translate(., $uppercase, $lowercase)"/&gt;
                     &lt;/xsl:template&gt;
-
                     &lt;/xsl:stylesheet&gt;]]&gt;&lt;/L7p:Document&gt;
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;

@@ -18,8 +18,7 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -107,15 +106,13 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Generates request MAC using HMAC-SHA1 algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key,
-                    mac_algorithm"/&gt;
+                    &lt;L7p:Comment stringValue="Inputs: timestamp_sec, nonce, http_method, url, ext, mac_key, mac_algorithm"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Outputs: mac"/&gt;
@@ -225,8 +222,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path)
-                    =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Break URL into parts (protocol, hostname+port, path) =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Regex&gt;
                     &lt;L7p:AutoTarget booleanValue="false"/&gt;
@@ -378,17 +374,13 @@
                     &lt;L7p:Direction intValue="-1"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="forXSL"/&gt;
                     &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
-                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
-                    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
                     &lt;xsl:output method="text" omit-xml-declaration="yes"/&gt;
-
                     &lt;xsl:variable name="lowercase" select="'abcdefghijklmnopqrstuvwxyz'"/&gt;
                     &lt;xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/&gt;
-
                     &lt;xsl:template match="/hostname"&gt;
                     &lt;xsl:value-of select="translate(., $uppercase, $lowercase)"/&gt;
                     &lt;/xsl:template&gt;
-
                     &lt;/xsl:stylesheet&gt;]]&gt;&lt;/L7p:Document&gt;
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
@@ -460,8 +452,7 @@
                     &lt;L7p:VariableToSet stringValue="empty_line"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9DQoke2VtcHR5X2xpbmV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9DQoke2VtcHR5X2xpbmV9"/&gt;
                     &lt;L7p:VariableToSet stringValue="normalized_request"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:GenerateSecurityHash&gt;
@@ -2013,8 +2004,7 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
