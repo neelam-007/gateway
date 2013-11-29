@@ -665,7 +665,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -711,7 +711,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -752,7 +752,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -792,7 +792,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -832,7 +832,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -864,7 +864,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select ock.client_key, ock.secret,
                     ock.scope, ock.callback, ock.environment, ock.expiration, ock.status, ock.client_ident, ock.created,
                     ock.created_by, ock.client_name
@@ -1110,7 +1110,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
@@ -1156,7 +1156,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
                     from oauth_client
@@ -1195,7 +1195,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
@@ -1234,7 +1234,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
@@ -1280,7 +1280,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
@@ -1320,7 +1320,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select oc.client_ident, oc.name,
                     oc.type, oc.description, oc.organization, oc.registered_by, oc.created
@@ -1360,7 +1360,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="100"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select client_ident, name, type,
                     description, organization, registered_by, created
@@ -1392,7 +1392,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT CLIENT_IDENT, NAME, TYPE,
                     DESCRIPTION, ORGANIZATION, REGISTERED_BY, CREATED
@@ -1743,7 +1743,7 @@
                     &lt;L7p:VariableToSet stringValue="description"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client
                     (client_ident, name, description, organization, registered_by, type, created)
                     values (${request.http.parameter.client_ident}, ${request.http.parameter.name}, ${description},
@@ -1847,7 +1847,7 @@
                     &lt;L7p:PolicyGuid stringValue="44e17396-a7be-4983-aa1b-48086e48f65f"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client_key
                     (client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
                     created_by, client_name)
@@ -1994,7 +1994,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client
                     (client_ident, name, description, organization, registered_by, type, created)
                     values (${request.http.parameter.client_ident}, ${request.http.parameter.name},
@@ -2013,7 +2013,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_client_key
                     (client_key, secret, scope, callback, environment, expiration, status, client_ident, created,
                     created_by, client_name)
@@ -2119,7 +2119,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client
                     where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2231,7 +2231,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client_key
                     where client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2269,7 +2269,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_client_key
                     where client_key = ${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -2417,7 +2417,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_client
                     set name=${request.http.parameter.name},
                     description=${request.http.parameter.description},
@@ -2435,7 +2435,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[UPDATE oauth_client_key
                     SET client_name=${request.http.parameter.name}
                     WHERE client_ident = ${request.http.parameter.client_ident}]]&gt;&lt;/L7p:SqlQuery&gt;
@@ -2518,7 +2518,7 @@
                     &lt;/L7p:Include&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_client_key
                     set status=${request.http.parameter.status},
                     scope=${scope},
@@ -2775,7 +2775,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -2814,7 +2814,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -2853,7 +2853,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -2892,7 +2892,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -2938,7 +2938,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -2978,7 +2978,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -3010,7 +3010,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
@@ -3145,7 +3145,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
                     from oauth_initiate
@@ -3184,7 +3184,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
                     from oauth_initiate
@@ -3222,7 +3222,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
@@ -3261,7 +3261,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
@@ -3307,7 +3307,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
@@ -3340,7 +3340,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
                     scope, resource_owner, client_name, client_key, created, verifier, callback
@@ -3655,7 +3655,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_initiate (token,
                     secret, expiration, callback, client_key, client_name, created, scope, resource_owner)
                     values( ${request.http.parameter.token}, ${secret}, ${request.http.parameter.expiration},
@@ -3744,7 +3744,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[UPDATE oauth_token
                     SET token=${request.http.parameter.token},
@@ -3777,7 +3777,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[INSERT INTO oauth_token (otk_token_id,
                     token,secret, expiration, client_key, status, created, resource_owner, client_name)
@@ -3905,7 +3905,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[INSERT INTO oauth_token (otk_token_id,
                     token,secret, expiration, client_key, resource_owner, status, created, client_name, scope)
@@ -3956,7 +3956,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[UPDATE oauth_token
                     SET
@@ -3982,7 +3982,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[INSERT INTO oauth_token (otk_token_id,
                     token,secret, expiration, client_key, resource_owner, status, created, client_name, scope)
@@ -4119,7 +4119,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[UPDATE oauth_token
                     SET
@@ -4147,7 +4147,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[INSERT INTO oauth_token (otk_token_id,
                     token,secret, expiration, client_key, resource_owner, status, rtoken, rexpiration, created,
@@ -4301,7 +4301,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_initiate
                     set resource_owner = ${request.http.parameter.resource_owner}
                     where token = ${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
@@ -4339,7 +4339,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_token
                     set status=${request.http.parameter.status}
                     where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
@@ -4391,7 +4391,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_initiate
                     set expiration=${request.http.parameter.expiration},
                     verifier=${request.http.parameter.verifier}
@@ -4503,7 +4503,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where client_key=${request.http.parameter.client_key}
                     and resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
@@ -4542,7 +4542,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4556,7 +4556,7 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
                     where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4585,7 +4585,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where resource_owner=${request.http.parameter.resource_owner}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4614,7 +4614,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4706,7 +4706,7 @@
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValue="update oauth_token set status='DISABLED' where
                     client_key=${request.http.parameter.client_key}"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4797,7 +4797,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
                     where token=${request.http.parameter.temp_token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4826,7 +4826,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where token=${request.http.parameter.token}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4855,7 +4855,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where rtoken=${request.http.parameter.rtoken}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4892,7 +4892,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_initiate
                     where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -4905,7 +4905,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[delete from oauth_token
                     where client_key=${request.http.parameter.client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
@@ -5386,7 +5386,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:MaxRecords intValue="1"/&gt;
                     &lt;L7p:QueryName stringValue="Update existing session in DB"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[update oauth_session set expiration =
@@ -5395,7 +5395,7 @@
                     &lt;L7p:VariablePrefix stringValue="sessionStore"/&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:JdbcQuery&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:QueryName stringValue="Insert or update session"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[insert into oauth_session
                     (session_key,session_group,expiration,value) values (
@@ -5612,7 +5612,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:NamingMap mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="expiration"/&gt;
@@ -5682,7 +5682,7 @@
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:QueryName stringValue="Delete expired session"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[DELETE FROM oauth_session
                     WHERE session_key=${cacheKey}
@@ -5885,7 +5885,7 @@
                     &lt;/L7p:CacheStorage&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="otk_herring"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:QueryName stringValue="Delete session"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[DELETE FROM oauth_session
                     WHERE session_key = ${cacheKey}
