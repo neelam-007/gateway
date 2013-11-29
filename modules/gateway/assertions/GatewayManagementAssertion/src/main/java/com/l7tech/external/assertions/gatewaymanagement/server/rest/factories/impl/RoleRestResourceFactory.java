@@ -25,7 +25,9 @@ public class RoleRestResourceFactory extends WsmanBaseResourceFactory<RbacRoleMO
 
     public RoleRestResourceFactory() {
         super(
-                CollectionUtils.MapBuilder.<String, String>builder().put("name", "name").map(),
+                CollectionUtils.MapBuilder.<String, String>builder()
+                        .put("id", "id")
+                        .put("name", "name").map(),
                 CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
                         .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
                         .put("userCreated", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("userCreated", RestResourceFactoryUtils.booleanConvert))

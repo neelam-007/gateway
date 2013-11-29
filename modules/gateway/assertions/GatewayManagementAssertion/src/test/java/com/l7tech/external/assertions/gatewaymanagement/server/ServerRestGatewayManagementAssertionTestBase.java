@@ -32,10 +32,7 @@ import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.*;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -50,6 +47,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test the GatewayManagementAssertion for EmailListenerMO entity.
@@ -178,6 +177,16 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         } finally {
             ResourceUtils.closeQuietly(context);
         }
+    }
+
+    protected String getFirstReferencedGoid(Response response) {
+        String body = response.getBody();
+        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
+        Matcher matcher = pattern.matcher(body);
+        Assert.assertTrue(matcher.matches());
+        String uri = matcher.group(1);
+
+        return uri.substring(uri.lastIndexOf('/') + 1);
     }
 
     @After

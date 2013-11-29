@@ -22,7 +22,9 @@ public class JDBCConnectionRestResourceFactory extends WsmanBaseResourceFactory<
 
     public JDBCConnectionRestResourceFactory() {
         super(
-                CollectionUtils.MapBuilder.<String, String>builder().put("name", "name").map(),
+                CollectionUtils.MapBuilder.<String, String>builder()
+                        .put("id", "id")
+                        .put("name", "name").map(),
                 CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
                         .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
                         .put("enabled", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("enabled", RestResourceFactoryUtils.booleanConvert))

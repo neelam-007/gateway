@@ -23,7 +23,9 @@ public class ServiceRestResourceFactory extends WsmanBaseResourceFactory<Service
 
     public ServiceRestResourceFactory() {
         super(
-                CollectionUtils.MapBuilder.<String, String>builder().put("name", "name").put("parentFolder.id", "parentFolder.id").map(),
+                CollectionUtils.MapBuilder.<String, String>builder()
+                        .put("id", "id")
+                        .put("name", "name").put("parentFolder.id", "parentFolder.id").map(),
                 CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
                         .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
                         .put("guid", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("guid", RestResourceFactoryUtils.stringConvert))

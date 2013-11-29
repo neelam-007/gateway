@@ -32,7 +32,9 @@ public class PolicyVersionRestResourceFactory {
     @Inject
     private PolicyVersionManager policyVersionManager;
 
-    private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder().put("version", "ordinal").map();
+    private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
+            .put("id", "id")
+            .put("version", "ordinal").map();
     private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
             .put("version", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("ordinal", RestResourceFactoryUtils.longConvert))
             .put("active", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("active", RestResourceFactoryUtils.booleanConvert))

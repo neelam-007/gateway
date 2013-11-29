@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This was created: 10/23/13 as 4:47 PM
@@ -97,13 +95,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Response response = processRequest(roleBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
-        String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
-        Matcher matcher = pattern.matcher(body);
-        Assert.assertTrue(matcher.matches());
-        String uri = matcher.group(1);
-
-        Role roleSaved = roleManager.findByPrimaryKey(new Goid(uri.substring(uri.lastIndexOf('/')+1)));
+        Role roleSaved = roleManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
         Assert.assertEquals(roleSaved.getDescription(), "My Description");
         Assert.assertEquals(roleSaved.getName(), "MyCreateRole");
     }
@@ -121,13 +113,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Response response = processRequest(roleBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
-        String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
-        Matcher matcher = pattern.matcher(body);
-        Assert.assertTrue(matcher.matches());
-        String uri = matcher.group(1);
-
-        final Goid goidReturned = new Goid(uri.substring(uri.lastIndexOf('/') + 1));
+        final Goid goidReturned = new Goid(getFirstReferencedGoid(response));
         Assert.assertEquals(id, goidReturned);
 
         Role roleSaved = roleManager.findByPrimaryKey(goidReturned);

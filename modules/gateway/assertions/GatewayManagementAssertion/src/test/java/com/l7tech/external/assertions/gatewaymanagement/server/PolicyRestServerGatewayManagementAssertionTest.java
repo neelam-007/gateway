@@ -144,13 +144,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         Response response = processRequest(policyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
-        String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
-        Matcher matcher = pattern.matcher(body);
-        Assert.assertTrue(matcher.matches());
-        String uri = matcher.group(1);
-
-        Policy policySaved = policyManager.findByPrimaryKey(new Goid(uri.substring(uri.lastIndexOf('/') + 1)));
+        Policy policySaved = policyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
         Assert.assertNotNull(policySaved);
         Assert.assertEquals(policyDetail.getName(), policySaved.getName());
         Assert.assertEquals(AuditDetailAssertion.class, ((AllAssertion)policySaved.getAssertion()).getChildren().get(0).getClass());
@@ -191,18 +185,12 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         Response response = processRequest(policyBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
-        String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
-        Matcher matcher = pattern.matcher(body);
-        Assert.assertTrue(matcher.matches());
-        String uri = matcher.group(1);
-
         Policy policySaved = policyManager.findByPrimaryKey(id);
         Assert.assertNotNull(policySaved);
         Assert.assertEquals(policyDetail.getName(), policySaved.getName());
         Assert.assertEquals(AuditDetailAssertion.class, ((AllAssertion)policySaved.getAssertion()).getChildren().get(0).getClass());
 
-        final Goid goidReturned = new Goid(uri.substring(uri.lastIndexOf('/') + 1));
+        final Goid goidReturned = new Goid(getFirstReferencedGoid(response));
         Assert.assertEquals(id, goidReturned);
     }
 
