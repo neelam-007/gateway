@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.bundles;
 
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 
@@ -36,6 +37,7 @@ public class ConflictDisplayerDialog extends JDialog {
                 onCancel();
             }
         });
+        getRootPane().setDefaultButton(buttonCancel);
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -66,8 +68,23 @@ public class ConflictDisplayerDialog extends JDialog {
     }
 
     private void onOK() {
-        wasoked = true;
-        dispose();
+        DialogDisplayer.showSafeConfirmDialog(
+                this,
+                "<html><center>Detected conflict won't be installed, do you want to continue?</center></html>",
+                "Confirm Conflict Install",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.CANCEL_OPTION) {
+                            return;
+                        }
+                        wasoked = true;
+                        dispose();
+                    }
+                }
+        );
     }
 
     private void onCancel() {
