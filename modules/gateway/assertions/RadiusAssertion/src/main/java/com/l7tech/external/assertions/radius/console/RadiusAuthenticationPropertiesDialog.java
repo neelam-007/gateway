@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.radius.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.radius.RadiusAdmin;
@@ -13,8 +14,10 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.MutablePair;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +33,7 @@ import java.util.Map;
 
 public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkCancelSupport<RadiusAuthenticateAssertion> {
 
+    public static final String DIALOG_TITLE = "Radius Configuration";
     private JPanel propertyPanel;
     private JTextField hostTextField;
     private JTextField authPortTextField;
@@ -43,7 +47,13 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
     private JComboBox authenticatorComboBox;
     private JLabel acctPortLabel;
     private JButton managePasswordsButton;
-    private JTextField prefixTextField;
+    private TargetVariablePanel prefixTargetVariablePanel;
+    private JLabel hostLabel;
+    private JLabel authPortLabel;
+    private JLabel timeoutSecLabel;
+    private JLabel authenticatorLabel;
+    private JLabel radiusVariablePrefixLabel;
+    private JLabel secretLabel;
     private AdvancedPropertiesTableModel advancedPropertiesTableModel = new AdvancedPropertiesTableModel();
     private static final String DEFAULT_AUTH_PORT = "1812";
     private static final String DEFAULT_ACCT_PORT = "1813";
@@ -68,8 +78,7 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                 enableOrDisableComponents();
             }
         };
-
-        prefixTextField.setText("radius");
+        prefixTargetVariablePanel.setVariable(RadiusAuthenticateAssertion.DEFAULT_PREFIX);
 
         acctPortLabel.setVisible(false);
         acctPortTextField.setVisible(false);
@@ -101,12 +110,21 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
         });
 
         InputValidator okValidator =
-                new InputValidator(this, "Radius Configuration");
+                new InputValidator(this, DIALOG_TITLE);
 
-
-        okValidator.constrainTextFieldToBeNonEmpty("Prefix", prefixTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty("Host", hostTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty("Auth Port", authPortTextField, new InputValidator.ComponentValidationRule(authPortTextField) {
+        okValidator.addRule(new InputValidator.ValidationRule(){
+            @Override
+            public String getValidationError() {
+                if (StringUtils.isBlank(prefixTargetVariablePanel.getVariable())) {
+                    return "Radius Variable Prefix must not be empty!";
+                } else if(!VariableMetadata.isNameValid(prefixTargetVariablePanel.getVariable())) {
+                    return "Radius Variable Prefix must have valid name";
+                }
+                return null;
+            }
+        });
+        okValidator.constrainTextFieldToBeNonEmpty(hostLabel.getText(), hostTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(authPortLabel.getText(), authPortTextField, new InputValidator.ComponentValidationRule(authPortTextField) {
             @Override
             public String getValidationError() {
 
@@ -126,8 +144,8 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                 return null;
             }
         });
-        okValidator.constrainTextFieldToBeNonEmpty("Acct Port", acctPortTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty("Timeout", timeoutTextField, new InputValidator.ComponentValidationRule(timeoutTextField) {
+        okValidator.constrainTextFieldToBeNonEmpty(acctPortLabel.getText(), acctPortTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(timeoutSecLabel.getText(), timeoutTextField, new InputValidator.ComponentValidationRule(timeoutTextField) {
             @Override
             public String getValidationError() {
 
@@ -147,7 +165,7 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                 return null;
             }
         });
-        okValidator.ensureComboBoxSelection("Secret", securePasswordComboBox);
+        okValidator.ensureComboBoxSelection(secretLabel.getText(), securePasswordComboBox);
 
         InputValidator.ValidationRule authenticatorRule =
                 new InputValidator.ComponentValidationRule(authenticatorComboBox) {
@@ -313,14 +331,17 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
             securePasswordComboBox.setSelectedSecurePassword(assertion.getSecretGoid());
         }
 
-        if (assertion.getPrefix() != null) {
-            prefixTextField.setText(assertion.getPrefix());
+
+        if (assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
+            prefixTargetVariablePanel.setVariable(assertion.getPrefix());
+        } else {
+            prefixTargetVariablePanel.setVariable(RadiusAuthenticateAssertion.DEFAULT_PREFIX);
         }
     }
 
     @Override
     public RadiusAuthenticateAssertion getData(RadiusAuthenticateAssertion assertion) throws ValidationException {
-        assertion.setPrefix(prefixTextField.getText());
+        assertion.setPrefix(prefixTargetVariablePanel.getVariable());
         assertion.setAttributes(advancedPropertiesTableModel.toMap());
         assertion.setHost(hostTextField.getText());
         assertion.setAuthPort(authPortTextField.getText());

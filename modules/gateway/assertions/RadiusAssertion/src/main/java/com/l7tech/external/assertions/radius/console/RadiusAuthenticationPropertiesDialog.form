@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="propertyPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="465" height="362"/>
+      <xy x="48" y="54" width="465" height="382"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -16,7 +16,7 @@
         <properties/>
         <border type="none" title="Radius Server Configuration"/>
         <children>
-          <component id="6773a" class="javax.swing.JLabel">
+          <component id="6773a" class="javax.swing.JLabel" binding="hostLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -24,7 +24,7 @@
               <text value="Host:"/>
             </properties>
           </component>
-          <component id="f880e" class="javax.swing.JLabel">
+          <component id="f880e" class="javax.swing.JLabel" binding="authPortLabel">
             <constraints>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -40,7 +40,7 @@
               <text value="Acct Port:"/>
             </properties>
           </component>
-          <component id="817b3" class="javax.swing.JLabel">
+          <component id="817b3" class="javax.swing.JLabel" binding="timeoutSecLabel">
             <constraints>
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -82,7 +82,7 @@
               <text value=""/>
             </properties>
           </component>
-          <component id="2ac1f" class="javax.swing.JLabel">
+          <component id="2ac1f" class="javax.swing.JLabel" binding="secretLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -187,7 +187,7 @@
         <properties/>
         <border type="none" title="Authentication Protocol"/>
         <children>
-          <component id="3a7f4" class="javax.swing.JLabel">
+          <component id="3a7f4" class="javax.swing.JLabel" binding="authenticatorLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -211,19 +211,17 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="f885" class="javax.swing.JLabel">
+          <component id="f885" class="javax.swing.JLabel" binding="radiusVariablePrefixLabel">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Radius Variable Prefix:"/>
             </properties>
           </component>
-          <component id="c4e9c" class="javax.swing.JTextField" binding="prefixTextField">
+          <component id="af7cb" class="com.l7tech.console.panels.TargetVariablePanel" binding="prefixTargetVariablePanel">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="-1"/>
-              </grid>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
           </component>

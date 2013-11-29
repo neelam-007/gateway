@@ -83,7 +83,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
             }
         } catch (UnknownHostException e) {
             context.setVariable(reasonCode, UNKNOWN_HOST);
-            logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());
+            logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, "Unknown host " + e.getMessage());
         } catch (TimeoutException e) {
             context.setVariable(reasonCode, RADIUS_SERVER_TIMEOUT);
             logAndAudit(AssertionMessages.RADIUS_AUTH_ERROR, e.getMessage());

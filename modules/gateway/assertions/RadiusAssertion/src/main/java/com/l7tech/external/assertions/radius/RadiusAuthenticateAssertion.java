@@ -21,6 +21,8 @@ public class RadiusAuthenticateAssertion extends Assertion implements MessageTar
     private final static String baseName = "Authenticate Against Radius Server";
     protected static final Logger logger = Logger.getLogger(RadiusAuthenticateAssertion.class.getName());
 
+    public static final String DEFAULT_PREFIX = "radius";
+
     //Server Configuration
     private String host;
     private Goid secretGoid;

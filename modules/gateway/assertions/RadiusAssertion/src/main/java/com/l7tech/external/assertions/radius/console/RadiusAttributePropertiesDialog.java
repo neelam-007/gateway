@@ -15,6 +15,7 @@ import java.awt.event.*;
 import java.util.Map;
 
 public class RadiusAttributePropertiesDialog extends JDialog {
+    public static final String DIALOG_TITLE = "Radius Attribute Configuration";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -76,7 +77,7 @@ public class RadiusAttributePropertiesDialog extends JDialog {
         }
 
         InputValidator okValidator =
-                new InputValidator(this, "Radius Attribute Configuration");
+                new InputValidator(this, DIALOG_TITLE);
 
         InputValidator.ValidationRule attributeRule =
                 new InputValidator.ComponentValidationRule(nameTextField) {
