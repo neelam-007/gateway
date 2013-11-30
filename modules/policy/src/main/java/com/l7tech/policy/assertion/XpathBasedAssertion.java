@@ -111,22 +111,16 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     }
 
     public static boolean isFullyDynamicXpath(String expression) {
-        return getFullyDynamicXpathVariableName(expression) != null;
-    }
-
-    public static String getFullyDynamicXpathVariableName(String expression) {
-        if (expression == null)
-            return null;
-        return Syntax.getSingleVariableReferencedNoSyntaxOrWhitespace(expression);
+        return expression != null && Syntax.getSingleVariableReferenced(expression) != null;
     }
 
     protected VariablesUsed doGetVariablesUsed() {
         VariablesUsed used = new VariablesUsed();
         if (xpathExpression != null) {
             final String expr = xpathExpression.getExpression();
-            final String fullyDynamicVar = !permitsFullyDynamicExpression() ? null : getFullyDynamicXpathVariableName(expr);
+            final String fullyDynamicVar = !permitsFullyDynamicExpression() ? null : Syntax.getSingleVariableReferenced(expr);
             if ( fullyDynamicVar != null ) {
-                used.addVariables( getFullyDynamicXpathVariableName(expr) );
+                used.addVariables( fullyDynamicVar );
             } else if ( expr != null ) {
                 used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(expr, xpathExpression.getXpathVersion()) );
             }

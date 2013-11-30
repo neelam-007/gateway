@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -1452,11 +1453,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         if (xpath == null) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
 
         if (assertion.permitsFullyDynamicExpression() && XpathBasedAssertion.isFullyDynamicXpath(xpath)) {
-            String dynamicVar = XpathBasedAssertion.getFullyDynamicXpathVariableName(xpath);
-            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            if (variables != null && !variables.contains(dynamicVar)) {
-                return new XpathFeedBack(-1, xpath, "Fully-dynamic XPath context variable is not set by any previous policy assertion", null);
+            String[] variablesUsed = Syntax.getReferencedNames(xpath);
+            final Set<String> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            for (String var : variablesUsed) {
+                if (!BuiltinVariables.isPredefined(var) && Syntax.getMatchingName(var, predecessorVariables) == null) {
+                    return new XpathFeedBack(-1, xpath, "Fully-dynamic XPath context variable is not a built-in variable and isn't set by any previous policy assertion", null);
+                }
             }
+
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for fully-dynamic XPath from context variable", null);
             feedback.hardwareAccelFeedback.fullyDynamic = true;

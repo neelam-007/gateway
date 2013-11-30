@@ -49,9 +49,9 @@ public class XpathBasedAssertionValidator extends NamespaceMigratableAssertionVa
 
                 if (assertion.permitsFullyDynamicExpression()) {
                     // Check for fully-dynamic xpath and skip XPath parsing if so
-                    String dynamicXpathVar = Syntax.getSingleVariableReferencedNoSyntaxOrWhitespace(pattern);
-                    if (dynamicXpathVar != null)
-                        varsUsed = Collections.singleton(dynamicXpathVar);
+                    final String[] vars = Syntax.getReferencedNames(pattern);
+                    if (vars.length > 0)
+                        varsUsed = new HashSet<>(Arrays.asList(vars));
                 }
 
                 if (varsUsed == null) {
