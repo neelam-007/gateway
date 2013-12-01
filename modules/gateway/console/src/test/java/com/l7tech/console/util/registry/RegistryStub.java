@@ -222,6 +222,11 @@ public class RegistryStub extends Registry {
                 return findAllRoles();
             }
 
+            @Override
+            public Role findDefaultRoleForIdentityProvider(Goid identityProviderId) throws FindException {
+                return null;
+            }
+
             @NotNull
             @Override
             public Collection<Role> findRolesForGroup(@NotNull Group group) throws FindException {

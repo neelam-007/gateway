@@ -107,17 +107,15 @@ public class RbacAdminImpl implements RbacAdmin {
         List<Role> assignedRoles = new ArrayList<>();
         assignedRoles.addAll(roleManager.getAssignedRoles(user, true, false));
 
-        // TODO move this hack into the roleManager
-        if (assignedRoles.isEmpty()) {
-            Role defaultRole = findDefaultRole(user.getProviderId());
-            if (defaultRole != null)
-                assignedRoles.add(defaultRole);
-        }
-
         for (final Role assignedRole : assignedRoles) {
             attachEntities(assignedRole);
         }
         return assignedRoles;
+    }
+
+    @Override
+    public Role findDefaultRoleForIdentityProvider(Goid identityProviderId) throws FindException {
+        return findDefaultRole(identityProviderId);
     }
 
     /**

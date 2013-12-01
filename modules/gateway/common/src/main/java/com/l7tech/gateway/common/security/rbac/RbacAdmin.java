@@ -60,6 +60,13 @@ public interface RbacAdmin {
      * <p/>
      * <b>Note</b>: this method <em>intentionally</em> avoids validating user accounts (e.g. whether they're expired or disabled).
      * <b>Don't ever use it for authorization</b>!
+     * <p/>
+     * The returned collection will not include the default role, if any -- only explicitly assigned role assignments.
+     * This means this method may return an empty collection for a user that would obtain a non-empty result
+     * from {@link #findCurrentUserPermissions()}.
+     * <p/>
+     * To check for a default role, use the {@link #findDefaultRoleForIdentityProvider} method with the user's
+     * identity provider ID.
      *
      * @param user the user whose roles to look up.  Must not be null.
      * @return the roles for this user.  May be empty but never null.
@@ -70,13 +77,28 @@ public interface RbacAdmin {
     Collection<Role> findRolesForUser(User user) throws FindException;
 
     /**
-     * Gets the roles assigned to the given group.
+     * Gets the default role for an identity provider, if it has one.
+     * <p/>
+     * This method is here to provide a way to access this information for RBAC GUI purposes
+     * regardless of what permissions the current admin may have (or not have) on the identity provider.
      *
-     * This method does <em>not</em> check the validity of the group and should not be used for authorization.
-     * @param group the group for which to look up roles it has been assigned to.
-     * @return a collection of roles to which the group is assigned.
-     * @throws FindException
+     * @param identityProviderId ID of identity provider to check for a default role.  Required.
+     * @return the default role of the specified identity provider, if there is one, or null.
+     * @throws FindException on error obtaining information.
      */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    Role findDefaultRoleForIdentityProvider(Goid identityProviderId) throws FindException;
+
+    /**
+    * Gets the roles assigned to the given group.
+    *
+    * This method does <em>not</em> check the validity of the group and should not be used for authorization.
+    * @param group the group for which to look up roles it has been assigned to.
+    * @return a collection of roles to which the group is assigned.
+    * @throws FindException
+    */
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = FIND_ENTITIES)

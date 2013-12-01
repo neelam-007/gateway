@@ -18,10 +18,13 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -47,10 +50,12 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
     private BasicRolePropertiesPanel rolePropertiesPanel;
     private JButton removeButton;
     private JButton addButton;
+    private JLabel defaultRoleLabel;
     private SimpleTableModel<Role> rolesModel;
     private Identity identity;
     private EntityType entityType;
     private Set<Role> assignedRoles;
+    private Role defaultRole;
     private boolean readOnly;
 
     /**
@@ -58,19 +63,35 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
      * @param assignedRoles the Roles assigned to the identity.
      * @param readOnly      true if the panel should only display the roles, and not allow any changes.
      */
-    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @NotNull Set<Role> assignedRoles, final boolean readOnly) {
+    public IdentityRoleAssignmentsPanel(@NotNull final Identity identity, @NotNull Set<Role> assignedRoles, @Nullable Role defaultRole, final boolean readOnly) {
         if (!(identity instanceof User) && !(identity instanceof Group)) {
             throw new IllegalArgumentException("Identity must be a user or group");
         }
         this.identity = identity;
         this.entityType = identity instanceof User ? EntityType.USER : EntityType.GROUP;
         this.assignedRoles = assignedRoles;
+        this.defaultRole = defaultRole;
         this.readOnly = readOnly;
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
         initTable();
         initButtons();
         handleSelectionChange();
+        handleTableDataChange();
+        checkDefaultRole();
+    }
+
+    private void checkDefaultRole() {
+        if (defaultRole == null || rolesModel.getRowCount() > 0) {
+            defaultRoleLabel.setText("Not using default role");
+            defaultRoleLabel.setVisible(false);
+            return;
+        }
+
+        final String defaultRoleName = getNameForRole(defaultRole);
+        defaultRoleLabel.setText("Using default role: " + defaultRoleName);
+        defaultRoleLabel.setVisible(true);
+        rolePropertiesPanel.configure(defaultRole, defaultRoleName);
     }
 
     /**
@@ -199,6 +220,17 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
         final Role selected = roleFromRowIndex(rolesTable.getSelectedRow());
         removeButton.setEnabled(selected != null && canRemove(selected));
         rolePropertiesPanel.configure(selected, selected == null ? null : getNameForRole(selected));
+        if (rolesModel.getRowCount() < 1 && defaultRole != null)
+            checkDefaultRole();
+    }
+
+    private void handleTableDataChange() {
+        rolesTable.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                checkDefaultRole();
+            }
+        });
     }
 
     private boolean canRemove(final Role role) {
