@@ -8,7 +8,9 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
+import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -21,6 +23,8 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.external.PolicyBackedIdentityProvider;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
@@ -30,6 +34,7 @@ import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -60,6 +65,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     @Inject
     private PolicyAssertionRbacChecker policyChecker;
+
+    @Inject
+    @Named("identityProviderFactory")
+    private IdentityProviderFactory identityProviderFactory;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -152,11 +161,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     @Override
     public void deletePolicy(Goid goid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
-        checkForActiveAuditSinkOrTracePolicy(goid);
+        checkForPolicyInUseAsSpecialPolicy(goid);
         policyManager.delete(goid);
     }
 
-    private void checkForActiveAuditSinkOrTracePolicy(Goid goid) throws FindException, PolicyDeletionForbiddenException {
+    private void checkForPolicyInUseAsSpecialPolicy(Goid goid) throws FindException, PolicyDeletionForbiddenException {
         if ( config == null)
             return;
         Policy policy = policyManager.findByPrimaryKey(goid);
@@ -166,6 +175,18 @@ public class PolicyAdminImpl implements PolicyAdmin {
         final Collection<EncapsulatedAssertionConfig> configsWhichReferencePolicy = encapsulatedAssertionConfigManager.findByPolicyGoid(policy.getGoid());
         if (encapsulatedAssertionConfigManager != null && configsWhichReferencePolicy.size() > 0) {
             throw  new PolicyDeletionForbiddenException(policy, EntityType.ENCAPSULATED_ASSERTION, configsWhichReferencePolicy.iterator().next());
+        }
+
+        if (PolicyType.IDENTITY_PROVIDER_POLICY.equals(policy.getType())) {
+            // See if it is in use
+            Collection<IdentityProvider> providers = identityProviderFactory.findAllIdentityProviders();
+            for (IdentityProvider provider : providers) {
+                if (provider instanceof PolicyBackedIdentityProvider) {
+                    PolicyBackedIdentityProviderConfig config = (PolicyBackedIdentityProviderConfig) provider.getConfig();
+                    if (Goid.equals(policy.getGoid(), config.getPolicyId()))
+                        throw new PolicyDeletionForbiddenException(policy, EntityType.ID_PROVIDER_CONFIG, config);
+                }
+            }
         }
 
         if (!(PolicyType.INTERNAL.equals(policy.getType())))

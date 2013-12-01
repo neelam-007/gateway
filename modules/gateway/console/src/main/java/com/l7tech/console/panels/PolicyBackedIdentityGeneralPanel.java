@@ -35,6 +35,7 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     private JComboBox<Pair<Role, String>> roleComboBox;
     private SecurityZoneWidget zoneControl;
     private JCheckBox defaultRoleCheckBox;
+    private JLabel authPoliciesWarningLabel;
 
     private java.util.List<PolicyHeader> policies;
     private java.util.List<Role> roles;
@@ -80,6 +81,14 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
             });
         }
 
+        if (policies == null || policies.isEmpty()) {
+            authPoliciesWarningLabel.setText("No identity provider policies exist or are available to the current admin");
+            authPoliciesWarningLabel.setVisible(true);
+        } else {
+            authPoliciesWarningLabel.setText("");
+            authPoliciesWarningLabel.setVisible(false);
+        }
+
         adminEnabledCheckbox.addActionListener(listener);
         defaultRoleCheckBox.addActionListener(listener);
         policyComboBox.addActionListener(listener);
@@ -117,7 +126,7 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
 
     private static java.util.List<PolicyHeader> loadPolicies() {
         try {
-            return new ArrayList<>(Registry.getDefault().getPolicyAdmin().findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT), false));
+            return new ArrayList<>(Registry.getDefault().getPolicyAdmin().findPolicyHeadersWithTypes(EnumSet.of(PolicyType.IDENTITY_PROVIDER_POLICY), false));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to load policies; " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return Collections.emptyList();
@@ -190,9 +199,11 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
                 Role role = roles.get(i);
                 if (roleId.equals(role.getGoid())) {
                     roleComboBox.setSelectedIndex(i);
-                    break;
+                    return;
                 }
             }
+
+            roleComboBox.setSelectedIndex(-1);
         }
     }
 
@@ -204,9 +215,12 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
                 PolicyHeader header = policies.get(i);
                 if (policyId.equals(header.getGoid())) {
                     policyComboBox.setSelectedIndex(i);
-                    break;
+                    return;
                 }
             }
+
+            // Not found
+            policyComboBox.setSelectedIndex(-1);
         }
     }
 

@@ -150,16 +150,6 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
         policyDetail.setFolderId( getFolderId( policy ) );
         policyDetail.setName( policy.getName() );
         switch ( policy.getType() ) {
-            case PRIVATE_SERVICE:
-            case SHARED_SERVICE:
-            case PRE_ROUTING_FRAGMENT:
-            case SUCCESSFUL_ROUTING_FRAGMENT:
-            case FAILED_ROUTING_FRAGMENT:
-            case AUTHENTICATION_SUCCESS_FRAGMENT:
-            case AUTHENTICATION_FAILURE_FRAGMENT:
-            case AUTHORIZATION_SUCCESS_FRAGMENT:
-            case AUTHORIZATION_FAILURE_FRAGMENT:
-                throw new ResourceAccessException( "Access of unsupported policy type." );
             case INCLUDE_FRAGMENT:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
                 break;
@@ -169,6 +159,8 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case GLOBAL_FRAGMENT:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.GLOBAL );
                 break;
+            default:
+                throw new ResourceAccessException( "Access of unsupported policy type." );
         }
         policyDetail.setProperties( getProperties( policy, Policy.class ) );
 

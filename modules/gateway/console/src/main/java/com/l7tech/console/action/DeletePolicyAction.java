@@ -113,16 +113,21 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
     }
 
     private String pdfeMessage(PolicyDeletionForbiddenException pdfe) {
-        if (EntityType.POLICY.equals(pdfe.getReferringEntityType())) {
+        final EntityType referringType = pdfe.getReferringEntityType();
+        if (EntityType.POLICY.equals(referringType)) {
             return WordUtils.wrap(node.getName() + "  cannot be deleted at this time; it is still in use by another policy", LINE_CHAR_LIMIT, null, true);
-        } else if (EntityType.ENCAPSULATED_ASSERTION.equals(pdfe.getReferringEntityType())) {
+        } else if (EntityType.ENCAPSULATED_ASSERTION.equals(referringType) || EntityType.ID_PROVIDER_CONFIG.equals(referringType)) {
             final StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(node.getName());
-            stringBuilder.append(" cannot be deleted at this time; it is still in use as the underlying policy fragment for an encapsulated assertion");
+            if (EntityType.ENCAPSULATED_ASSERTION.equals(referringType)) {
+                stringBuilder.append(" cannot be deleted at this time; it is still in use as the underlying policy fragment for an encapsulated assertion");
+            } else {
+                stringBuilder.append(" cannot be deleted at this time; it is still in use as the backing policy for a policy-backed identity provider");
+            }
             final Entity referringEntity = pdfe.getReferringEntity();
             if (referringEntity != null && referringEntity instanceof NamedEntity) {
                 final NamedEntity named = (NamedEntity) referringEntity;
-                stringBuilder.append(" (" + named.getName() + ")");
+                stringBuilder.append(" (").append(named.getName()).append(")");
             }
             return WordUtils.wrap(stringBuilder.toString(), LINE_CHAR_LIMIT, null, true);
         }

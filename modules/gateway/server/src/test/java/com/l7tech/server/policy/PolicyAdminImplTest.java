@@ -12,6 +12,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
@@ -41,13 +42,17 @@ public class PolicyAdminImplTest {
     private EncapsulatedAssertionConfigManager encassConfigManager;
     @Mock
     private PolicyAssertionRbacChecker policyChecker;
+    @Mock
+    private IdentityProviderFactory identityProviderFactory;
 
     @Before
     public void setup() {
         policyAdmin = new PolicyAdminImpl(policyManager, policyAliasManager, null, policyVersionManager, null, null, null, null, null, null);
         ApplicationContexts.inject(policyAdmin, CollectionUtils.<String, Object>mapBuilder()
                 .put("policyChecker", policyChecker)
-                .put("encapsulatedAssertionConfigManager", encassConfigManager).unmodifiableMap(),
+                .put("encapsulatedAssertionConfigManager", encassConfigManager)
+                .put("identityProviderFactory", identityProviderFactory)
+                .unmodifiableMap(),
                 false);
     }
 
