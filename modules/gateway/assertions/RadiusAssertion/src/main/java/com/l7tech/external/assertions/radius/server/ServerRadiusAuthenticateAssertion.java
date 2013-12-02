@@ -54,6 +54,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
     private static final int UNKNOWN_HOST = -3;
     private static final int SECRET_NOT_FOUND = -4;
     private static final int CONFIGURATION_ERROR = -5;
+    public static final int DEFAULT_RETRIES = 0;
 
     private final String reasonCode;
     private final String[] variablesUsed;
@@ -155,7 +156,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
 
             AccessRequest request = new AccessRequest(radiusClient, attributeList);
 
-            RadiusPacket replyPacket = radiusClient.authenticate(request, RadiusClient.getAuthProtocol(assertion.getAuthenticator()), 1);
+            RadiusPacket replyPacket = radiusClient.authenticate(request, RadiusClient.getAuthProtocol(assertion.getAuthenticator()), DEFAULT_RETRIES);
             //store RadiusAuthenticationContext in a context variable
             ctx.setVariable(assertion.getPrefix(), createRadiusAuthenticationContext(replyPacket));
 
