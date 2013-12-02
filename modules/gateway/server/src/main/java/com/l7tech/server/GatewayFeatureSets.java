@@ -792,6 +792,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet radiusAssertions =
                 fsr("set:Radius:Assertions",
                         "The necessary assertions to enable Radius authentication functionality",
+                        mass("assertion:Radius"),
                         mass("assertion:RadiusAuthenticate"));
 
         GatewayFeatureSet csrSignerAssertions =
@@ -963,7 +964,6 @@ public class GatewayFeatureSets {
             fs(sophosAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
-            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
@@ -1094,7 +1094,6 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
-            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =

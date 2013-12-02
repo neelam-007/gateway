@@ -27,7 +27,7 @@ public class RadiusAssertion extends Assertion {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
 
-                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<RadiusAdmin>(RadiusAdmin.class, null, new RadiusAdmin() {
+                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(RadiusAdmin.class, null, new RadiusAdmin() {
                     @Override
                     public boolean isAttributeNameValid(String name) {
                         return RadiusUtils.isAttributeValid(name);
@@ -54,17 +54,15 @@ public class RadiusAssertion extends Assertion {
 
                     @Override
                     public boolean isAuthenticatorSupport(String authenticator) {
-                        if (RadiusClient.getAuthProtocol(authenticator) != null) {
-                            return true;
-                        } else {
-                            return false;
-                        }
+                        return RadiusClient.getAuthProtocol(authenticator) != null;
                     }
                 }
                 );
                 return Collections.singletonList(binding);
             }
         });
+
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         return meta;
     }
