@@ -83,6 +83,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
                 context.setVariable(reasonCode, SUCCESS);
                 return AssertionStatus.NONE;
             } else {
+                logAndAudit(AssertionMessages.RADIUS_AUTH_AUTHENTICATION_FAILED, credentials.getLogin());
                 return AssertionStatus.AUTH_FAILED;
             }
         } catch (UnknownHostException e) {

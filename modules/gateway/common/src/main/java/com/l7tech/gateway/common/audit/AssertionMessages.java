@@ -1232,7 +1232,8 @@ public class AssertionMessages extends Messages {
 
     //Radius Assertion
     public static final M RADIUS_AUTH_ERROR = m(10200, Level.WARNING, "Radius Server Error: {0}");
-    public static final M RADIUS_AUTH_NO_CREDENTIAL = m(10201, Level.WARNING, "No credentials found!");
+    public static final M RADIUS_AUTH_NO_CREDENTIAL = m(10201, Level.INFO, "No credentials found!");
+    public static final M RADIUS_AUTH_AUTHENTICATION_FAILED = m(10202, Level.FINE, "Authentication Against Radius Server failed for credentials: {0}");
 
 
     // Highest ID reserved for AssertionMessages = 99999
