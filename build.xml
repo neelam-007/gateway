@@ -1384,7 +1384,7 @@
         <property name="build.version.label" value=""/>
         <property name="build.version.revision" value=""/>
 
-        <condition property="build.version" value="${build.version.major}.${build.version.minor}${build.version.label}">
+        <condition property="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}">
             <equals arg1="0" arg2="${build.version.subminor}"/>
         </condition>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
