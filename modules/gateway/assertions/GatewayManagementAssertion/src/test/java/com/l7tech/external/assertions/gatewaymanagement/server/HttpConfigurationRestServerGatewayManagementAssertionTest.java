@@ -2,10 +2,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
 import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -19,7 +18,6 @@ import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -113,7 +111,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         createObject.setUsername("New user");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        Response response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Http configuration goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -160,9 +158,8 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         Response response = processRequest(httpConfigurationBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        References references = MarshallingUtils.unmarshal(References.class, source);
 
         // check entity
         Assert.assertEquals(httpConfigurationManagerStub.findAll().size(), references.getReferences().size());

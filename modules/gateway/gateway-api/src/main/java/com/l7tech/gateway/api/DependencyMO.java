@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.List;
@@ -13,21 +14,22 @@ import java.util.List;
 @XmlRootElement(name = "Dependency")
 @XmlType(propOrder = {"dependentObject", "dependencies"})
 public class DependencyMO {
-    private DependentObjectMO dependentObject;
+    private Reference dependentObjectReference;
     private List<DependencyMO> dependencies;
 
     DependencyMO(){}
 
-    @XmlElement(name = "dependentObject", required = true)
-    public DependentObjectMO getDependentObject() {
-        return dependentObject;
+    @XmlElement(name = "Reference", required = true)
+    public Reference getDependentObject() {
+        return dependentObjectReference;
     }
 
-    public void setDependentObject(DependentObjectMO dependentObject) {
-        this.dependentObject = dependentObject;
+    public void setDependentObject(Reference dependentObjectReference) {
+        this.dependentObjectReference = dependentObjectReference;
     }
 
-    @XmlElement(name = "dependencies")
+    @XmlElement(name = "Dependency")
+    @XmlElementWrapper(name = "Dependencies")
     public List<DependencyMO> getDependencies() {
         return dependencies;
     }

@@ -4,7 +4,6 @@ import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.*;
@@ -164,33 +163,23 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     @Override
-    public List<Map<String, String>> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
-        List<Map<String,String>> resources = Collections.emptyList();
-
+    public List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
         try {
             List<E> entities = manager.findPagedMatching(offset, count, sort, ascending, filters);
             entities = accessFilter(entities, manager.getEntityType(), OperationType.READ, null);
-            List<EH> headers = getHeaders(entities);
-            headers = filterHeaders( headers );
+            entities = filterEntities(entities);
 
-            resources = new ArrayList<>( headers.size() );
-
-            for ( EntityHeader header : headers ) {
-                resources.add( Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() ) );
-            }
+            return Functions.map(entities, new Functions.Unary<R, E>() {
+                @Override
+                public R call(E e) {
+                    return identify(asResource(e), e);
+                }
+            });
         } catch (FindException e) {
             handleObjectModelException(e);
         }
 
-        return resources;
-    }
-
-    private List<EH> getHeaders(List<E> entities) {
-        ArrayList<EH> headers = new ArrayList<>(entities.size());
-        for(E entity : entities){
-            headers.add((EH) EntityHeaderUtils.fromEntity(entity));
-        }
-        return headers;
+        return Collections.emptyList();
     }
 
     @Override
@@ -390,6 +379,21 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      */
     protected List<EH> filterHeaders( final List<EH> headers ) {
         return headers;
+    }
+
+    /**
+     * Filter access to the entities.
+     *
+     * @param entities The entities to filter.
+     * @return The filtered collection.
+     */
+    private List<E> filterEntities(final List<E> entities) {
+        return Functions.grep(entities, new Functions.Unary<Boolean, E>() {
+            @Override
+            public Boolean call(E e) {
+                return filterEntity(e) != null;
+            }
+        });
     }
 
     /**

@@ -3,6 +3,7 @@ package com.l7tech.gateway.api;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -14,16 +15,16 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-@XmlRootElement(name = "DependencyResults")
-@XmlType(propOrder = {"options", "searchObject", "dependencies"})
-public class DependencyResultsMO {
+@XmlRootElement(name = "DependencyAnalysis")
+@XmlType(propOrder = {"options", "searchObjectReference", "dependencies"})
+public class DependencyAnalysisMO {
     private Map<String,String> options;
-    private DependentObjectMO searchObject;
+    private Reference searchObjectReference;
     private List<DependencyMO> dependencies;
 
-    DependencyResultsMO(){}
+    DependencyAnalysisMO(){}
 
-    @XmlElement(name = "options", required = true)
+    @XmlElement(name = "Options")
     @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
     public Map<String, String> getOptions() {
         return options;
@@ -33,16 +34,17 @@ public class DependencyResultsMO {
         this.options = options;
     }
 
-    @XmlElement(name = "searchObject", required = true)
-    public DependentObjectMO getSearchObject() {
-        return searchObject;
+    @XmlElement(name = "Reference", required = true)
+    public Reference getSearchObjectReference() {
+        return searchObjectReference;
     }
 
-    public void setSearchObject(DependentObjectMO searchObject) {
-        this.searchObject = searchObject;
+    public void setSearchObjectReference(Reference searchObjectReference) {
+        this.searchObjectReference = searchObjectReference;
     }
 
-    @XmlElement(name = "dependencies")
+    @XmlElement(name = "Dependency")
+    @XmlElementWrapper(name = "Dependencies")
     public List<DependencyMO> getDependencies() {
         return dependencies;
     }

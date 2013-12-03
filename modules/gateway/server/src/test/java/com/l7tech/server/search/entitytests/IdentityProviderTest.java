@@ -45,10 +45,10 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
-        Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getId());
+        Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityHeader().getStrId());
         Assert.assertEquals(EntityType.SECURITY_ZONE, ((DependentEntity) result.getDependencies().get(0).getDependent()).getDependencyType().getEntityType());
     }
 
@@ -66,7 +66,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertEquals(0, result.getDependencies().size());
     }
@@ -93,10 +93,10 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
-        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependencies().get(0).getDependent()).getId()));
+        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.TRUSTED_CERT, ((DependentEntity) result.getDependencies().get(0).getDependent()).getDependencyType().getEntityType());
     }
 
@@ -134,7 +134,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(3, result.getDependencies().size());
@@ -153,7 +153,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(identityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         //Private keys are not returned as keys yet...
     }
@@ -190,7 +190,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(identityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getId()));
+        Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertEquals(2, result.getDependencies().size());
     }

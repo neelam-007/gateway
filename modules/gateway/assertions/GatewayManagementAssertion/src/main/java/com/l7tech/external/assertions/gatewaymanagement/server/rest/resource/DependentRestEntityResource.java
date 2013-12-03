@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Te
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DependencyResource;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -36,11 +35,4 @@ public abstract class DependentRestEntityResource<R extends ManagedObject, F ext
         EntityHeader serviceHeader = new EntityHeader(resource.getId(), getEntityType(), null, null);
         return resourceContext.initResource(new DependencyResource(serviceHeader));
     }
-
-    /**
-     * Returns the entity type of the resource
-     *
-     * @return The resource entity type
-     */
-    protected abstract EntityType getEntityType();
 }

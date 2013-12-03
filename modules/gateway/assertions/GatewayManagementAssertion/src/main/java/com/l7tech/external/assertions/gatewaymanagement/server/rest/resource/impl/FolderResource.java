@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.FolderRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.gateway.api.FolderMO;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 
@@ -26,7 +27,12 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
         super.factory = factory;
     }
 
-    protected EntityType getEntityType(){
+    public EntityType getEntityType(){
         return EntityType.FOLDER;
+    }
+
+    @Override
+    protected Reference toReference(FolderMO resource) {
+        return toReference(resource.getId(), resource.getName());
     }
 }

@@ -48,15 +48,18 @@ public class PolicyVersionRestResourceFactory {
         return filters;
     }
 
-    public List<String> listResources(@NotNull String policyId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
+    public List<PolicyVersionMO> listResources(@NotNull String policyId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
             HashMap<String, List<Object>> filtersWithPolicyGoid = new HashMap<>(filters);
             filtersWithPolicyGoid.put("policyGoid", Arrays.<Object>asList(RestResourceFactoryUtils.goidConvert.call(policyId)));
             List<PolicyVersion> policyVersions = policyVersionManager.findPagedMatching(offset, count, sort, order, filtersWithPolicyGoid);
-            return Functions.map(policyVersions, new Functions.Unary<String, PolicyVersion>() {
+            return Functions.map(policyVersions, new Functions.Unary<PolicyVersionMO, PolicyVersion>() {
                 @Override
-                public String call(PolicyVersion policyVersion) {
-                    return policyVersion.getId();
+                public PolicyVersionMO call(PolicyVersion policyVersion) {
+                    PolicyVersionMO policyVersionMO = new PolicyVersionMO();
+                    policyVersionMO.setId(policyVersion.getId());
+                    policyVersionMO.setVersion(policyVersion.getOrdinal());
+                    return policyVersionMO;
                 }
             });
         } catch (FindException e) {

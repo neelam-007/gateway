@@ -1,14 +1,21 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.List;
 
 /**
  * This is the base resource factory for a rest entity. It supports all crud operations:
@@ -29,6 +36,9 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
      */
     protected F factory;
 
+    @Context
+    protected UriInfo uriInfo;
+
     /**
      * This method needs to be called to set the factory. It should be called in the initialization faze before any of
      * the Rest methods are called. It should likely be annotated with {@link com.l7tech.gateway.rest.SpringBean} to
@@ -39,14 +49,43 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     @SuppressWarnings("UnusedDeclaration")
     public abstract void setFactory(F factory);
 
+    /**
+     * Returns the entity type of the resource
+     *
+     * @return The resource entity type
+     */
+    @NotNull
+    public abstract EntityType getEntityType();
+
     @Override
-    public Response listResources(UriInfo uriInfo, final int offset, final int count, final String sort, final String order) {
+    public Response listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
         if(sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        return RestEntityResourceUtils.createReferenceListResponse(uriInfo.getAbsolutePath(), factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())));
+        List<Reference> references = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, R>() {
+            @Override
+            public Reference call(R resource) {
+                return toReference(resource);
+            }
+        });
+        return Response.ok(ManagedObjectFactory.createReferences(references)).build();
+    }
+
+    protected abstract Reference toReference(R resource);
+
+    public Reference toReference(EntityHeader entityHeader) {
+        return toReference(entityHeader.getStrId(), entityHeader.getName());
+    }
+
+    protected Reference toReference(String id, String content){
+        Reference reference = ManagedObjectFactory.createReference();
+        reference.setHref(RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id));
+        reference.setEntityId(id);
+        reference.setEntityType(getEntityType().name());
+        reference.setContent(content);
+        return reference;
     }
 
     @Override
@@ -62,27 +101,27 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     }
 
     @Override
-    public Response createResource(UriInfo uriInfo, R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response createResource(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
         final URI uri = ub.build();
-        return Response.created(uri).entity(new Reference(uri.toString(), uri.toString())).build();
+        return Response.created(uri).entity(toReference(resource)).build();
     }
 
     @Override
-    public Response createResourceWithId(UriInfo uriInfo, R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        factory.createResource(id, resource);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder();
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new Reference(uri.toString(), uri.toString())).build();
-    }
-
-    @Override
-    public Response updateResource(UriInfo uriInfo, R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        factory.updateResource(id, resource);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder();
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new Reference(uri.toString(), uri.toString())).build();
+    public Response updateResource(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        R existingResource;
+        try {
+            existingResource = factory.getResource(id);
+        } catch (ResourceFactory.ResourceNotFoundException e){
+            existingResource = null;
+        }
+        if(existingResource != null){
+            factory.updateResource(id, resource);
+        } else {
+            factory.createResource(id, resource);
+        }
+        return Response.ok().entity(toReference(resource)).build();
     }
 
     @Override

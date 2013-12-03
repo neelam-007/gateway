@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Factory for managed objects.
@@ -609,22 +610,35 @@ public class ManagedObjectFactory {
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
                 RbacRolePredicateMO.class,
-                DependencyResultsMO.class,
+                DependencyAnalysisMO.class,
                 DependencyMO.class,
-                DependentObjectMO.class
+                Reference.class,
+                References.class
         };
     }
 
-    public static DependencyResultsMO createDependencyResultsMO() {
-        return new DependencyResultsMO();
+    public static DependencyAnalysisMO createDependencyResultsMO() {
+        return new DependencyAnalysisMO();
     }
 
     public static DependencyMO createDependencyMO() {
         return new DependencyMO();
     }
 
-    public static DependentObjectMO createDependentObjectMO() {
-        return new DependentObjectMO();
+    public static Reference createReference() {
+        return new Reference();
+    }
+
+    public static Reference createReference(String uri, String strId, String name, String content) {
+        return new Reference(uri, strId, name, content);
+    }
+
+    public static References createReferences() {
+        return new References();
+    }
+
+    public static References createReferences(List<Reference> references) {
+        return new References(references);
     }
 
     /**

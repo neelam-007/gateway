@@ -2,10 +2,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.EmailListenerMO;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
@@ -18,7 +17,6 @@ import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -106,7 +104,7 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         createObject.setName("New email listener");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(emailListenerBasePath + goid.toString(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        Response response = processRequest(emailListenerBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Email listener goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -153,9 +151,8 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         Response response = processRequest(emailListenerBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        References references = MarshallingUtils.unmarshal(References.class, source);
 
         // check entity
         Assert.assertEquals(emailListenerManagerStub.findAll().size(), references.getReferences().size());

@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.PolicyVersionMO;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.References;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;

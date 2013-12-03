@@ -1,12 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,20 +21,14 @@ public class RestEntityResourceUtils {
     /**
      * Creates a new response for a list of ids.
      *
-     * @param path        The path of the resources
-     * @param resourceIds The list of resource id's to create the references to
+     * @param basePath The path of the resources
+     * @param id       The resource id
      * @return A Response containing a list of references to the given resource id's
      */
-    public static Response createReferenceListResponse(URI path, final List<String> resourceIds) {
-        //Create the Reference list.
-        List<Reference> resourceList = new ArrayList<>(resourceIds.size());
-        for (String id : resourceIds) {
-            UriBuilder ub = UriBuilder.fromUri(path).path(id);
-            final URI uri = ub.build();
-            resourceList.add(new Reference(uri.toString(), uri.toString()));
-        }
-
-        return Response.ok(new References(resourceList)).build();
+    public static String createURI(URI basePath, String id) {
+        UriBuilder ub = UriBuilder.fromUri(basePath).path(id);
+        final URI uri = ub.build();
+        return uri.toString();
     }
 
     /**

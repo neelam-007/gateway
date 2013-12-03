@@ -195,7 +195,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         if (dependent instanceof IdentityProviderConfig) {
             entityHeader.setType(EntityType.ID_PROVIDER_CONFIG);
         }
-        return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader.getStrId(), entityHeader instanceof GuidEntityHeader ? ((GuidEntityHeader) entityHeader).getGuid() : null);
+        return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader);
     }
 
     /**

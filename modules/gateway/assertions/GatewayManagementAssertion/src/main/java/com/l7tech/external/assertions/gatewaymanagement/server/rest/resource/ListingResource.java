@@ -10,10 +10,8 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 /**
  * The list resource interface. All resources that allow listing should implement this in order to support consistent
@@ -38,7 +36,6 @@ public interface ListingResource {
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param uriInfo The uri info
      * @param offset  The offset from the start of the list to start listing from
      * @param count   The total number of entities to return. The returned list can be shorter is there are not enough
      *                entities
@@ -50,5 +47,5 @@ public interface ListingResource {
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    Response listResources(@Context UriInfo uriInfo, @QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
+    Response listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
 }

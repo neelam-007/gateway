@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
@@ -26,7 +27,12 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         super.factory = factory;
     }
 
-    protected EntityType getEntityType(){
+    public EntityType getEntityType(){
         return EntityType.SERVICE;
+    }
+
+    @Override
+    protected Reference toReference(ServiceMO resource) {
+        return toReference(resource.getId(), resource.getServiceDetail().getName());
     }
 }

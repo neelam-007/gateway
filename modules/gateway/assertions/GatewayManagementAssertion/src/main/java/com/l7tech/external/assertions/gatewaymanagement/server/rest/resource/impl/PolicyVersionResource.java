@@ -1,22 +1,26 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.PolicyVersionMO;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyVersionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import java.net.URI;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * This resource handles policy version operations.
@@ -27,6 +31,9 @@ public class PolicyVersionResource implements ListingResource, ReadingResource {
 
     @SpringBean
     private PolicyVersionRestResourceFactory policyVersionRestResourceFactory;
+
+    @Context
+    private UriInfo uriInfo;
 
     //The policy id to manage version for.
     private String policyId;
@@ -41,13 +48,23 @@ public class PolicyVersionResource implements ListingResource, ReadingResource {
     }
 
     @Override
-    public Response listResources(UriInfo uriInfo, final int offset, final int count, final String sort, final String order) {
+    public Response listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = policyVersionRestResourceFactory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        return RestEntityResourceUtils.createReferenceListResponse(uriInfo.getAbsolutePath(), policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())));
+        List<Reference> references = Functions.map(policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, PolicyVersionMO>() {
+            @Override
+            public Reference call(PolicyVersionMO resource) {
+                return toReference(resource);
+            }
+        });
+        return Response.ok(ManagedObjectFactory.createReferences(references)).build();
+    }
+
+    private Reference toReference(PolicyVersionMO resource) {
+        return ManagedObjectFactory.createReference(RestEntityResourceUtils.createURI(uriInfo.getAbsolutePath(), resource.getId()), resource.getId(), EntityType.POLICY_VERSION.name(), "Version: " + resource.getVersion());
     }
 
     @Override
@@ -66,10 +83,8 @@ public class PolicyVersionResource implements ListingResource, ReadingResource {
     @PUT
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/comment")
-    public Response setComment(@Context UriInfo uriInfo, @PathParam("id") String id, String comment) throws FindException, UpdateException {
+    public Response setComment(@PathParam("id") String id, String comment) throws FindException, UpdateException {
         policyVersionRestResourceFactory.updateComment(policyId, id, comment);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path("../");
-        final URI uri = ub.build().normalize();
-        return Response.ok(new Reference(uri.toString(), uri.toString())).build();
+        return Response.ok(toReference(policyVersionRestResourceFactory.getResource(policyId, id))).build();
     }
 }

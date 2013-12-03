@@ -127,15 +127,15 @@ public interface ResourceFactory<R> {
     Collection<Map<String, String>> getResources();
 
     /**
-     * Gets selector map for all resources given the offset, count, sort, and filter properties.
+     * Gets all resources given the offset, count, sort, and filter properties.
      * @param offset The offset to start returning resources from
      * @param count The number of resources to return
      * @param sort The property to sort the resources by.
      * @param ascending The sort order.
      * @param filters The filters to search for entities with.
-     * @return The selectors of the entities found
+     * @return The entities found
      */
-    List<Map<String, String>> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters);
+    List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters);
 
 
     /**

@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.entities;
+package com.l7tech.gateway.api;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -11,19 +11,21 @@ import javax.xml.bind.annotation.XmlValue;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "Reference")
-@XmlType(name = "ReferenceType")
+@XmlType(name = "EntityReferenceType")
 public class Reference {
     private String href;
-    //this is the xlink type. We currently only use simple xlinks
-    private static final String xlinkType = "simple";
+    private String entityId;
+    private String entityType;
     private String content;
 
-    public Reference() {
+    Reference() {
     }
 
-    public Reference(String href, String content) {
+    Reference(String href, String entityId, String entityType, String content) {
         this.href = href;
         this.content = content;
+        this.entityId = entityId;
+        this.entityType = entityType;
     }
 
     /**
@@ -31,7 +33,7 @@ public class Reference {
      *
      * @return The uri to retrieve the entity from
      */
-    @XmlAttribute(name = "href", namespace = "http://www.w3.org/1999/xlink")
+    @XmlAttribute(name = "href")
     public String getHref() {
         return href;
     }
@@ -40,14 +42,22 @@ public class Reference {
         this.href = href;
     }
 
-    /**
-     * The type of xlink. Right now this is aways 'simple'
-     *
-     * @return 'simple'
-     */
-    @XmlAttribute(name = "type", namespace = "http://www.w3.org/1999/xlink")
-    public String getXlinkType() {
-        return xlinkType;
+    @XmlAttribute(name = "entityId")
+    public String getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(String entityId) {
+        this.entityId = entityId;
+    }
+
+    @XmlAttribute(name = "entityType")
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 
     /**

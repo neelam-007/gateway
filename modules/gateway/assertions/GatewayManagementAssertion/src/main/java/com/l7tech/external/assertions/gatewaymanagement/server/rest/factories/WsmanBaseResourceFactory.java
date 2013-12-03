@@ -9,7 +9,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,13 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     private Map<String, String> sortKeys;
     private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters;
 
+    /**
+     * Creates a new wsman based resource factory. This is a resource factory that used the wiseman resources to perform
+     * its work.
+     *
+     * @param sortKeys The sort keys that can be used to sort the resources.
+     * @param filters  The filters that can be used to filter out resources.
+     */
     public WsmanBaseResourceFactory(Map<String, String> sortKeys, Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters) {
         this.sortKeys = sortKeys;
         this.filters = filters;
@@ -45,6 +51,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         //validate that the resource is appropriate for create.
         validateCreateResource(null, resource);
         Map<String, String> selectorMap = factory.createResource(resource);
+        resource.setId(selectorMap.get("id"));
         return selectorMap.get("id");
     }
 
@@ -53,12 +60,14 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         //validate that the resource is appropriate for create.
         validateCreateResource(id, resource);
         factory.createResource(id, resource);
+        resource.setId(id);
     }
 
     @Override
     public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         validateUpdateResource(id, resource);
         factory.putResource(buildSelectorMap(id), resource);
+        resource.setId(id);
     }
 
     @Override
@@ -67,16 +76,8 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public List<String> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
-        final List<Map<String, String>> resources = factory.getResources(offset, count, sort, ascending, filters);
-
-        //get the list of resource id's
-        List<String> resourceList = new ArrayList<>(resources.size());
-        for (Map<String, String> selectorMap : resources) {
-            resourceList.add(selectorMap.get("id"));
-        }
-
-        return resourceList;
+    public List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
+        return factory.getResources(offset, count, sort, ascending, filters);
     }
 
     @Override

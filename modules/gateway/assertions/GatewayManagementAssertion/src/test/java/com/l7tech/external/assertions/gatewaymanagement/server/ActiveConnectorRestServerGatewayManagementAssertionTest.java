@@ -2,10 +2,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
@@ -19,11 +18,11 @@ import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -122,7 +121,8 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         createObject.setId(null);
         createObject.setName("New active connector");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(activeConnectorBasePath + goid, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        Response response = processRequest(activeConnectorBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        logger.log(Level.INFO, response.toString());
 
         assertEquals("Created active connector goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -173,9 +173,8 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         Response response = processRequest(activeConnectorBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        References references = MarshallingUtils.unmarshal(References.class, source);
 
         // check entity
         Assert.assertEquals(1, references.getReferences().size());

@@ -181,7 +181,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     protected String getFirstReferencedGoid(Response response) {
         String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*xlink:href=\"([^\"]+).*");
+        Pattern pattern = Pattern.compile(".*href=\"([^\"]+).*");
         Matcher matcher = pattern.matcher(body);
         Assert.assertTrue(matcher.matches());
         String uri = matcher.group(1);

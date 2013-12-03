@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.entities;
+package com.l7tech.gateway.api;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -18,10 +18,10 @@ public class References {
     @XmlElement(name = "reference")
     private List<Reference> references = null;
 
-    public References() {
+    References() {
     }
 
-    public References(List<Reference> references) {
+    References(List<Reference> references) {
         this.references = references;
     }
 

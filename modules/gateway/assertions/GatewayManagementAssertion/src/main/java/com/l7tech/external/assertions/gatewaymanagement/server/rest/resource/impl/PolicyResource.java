@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 
@@ -33,7 +34,12 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         super.factory = factory;
     }
 
-    protected EntityType getEntityType() {
+    @Override
+    protected Reference toReference(PolicyMO resource) {
+        return toReference(resource.getId(), resource.getPolicyDetail().getName());
+    }
+
+    public EntityType getEntityType() {
         return EntityType.POLICY;
     }
 

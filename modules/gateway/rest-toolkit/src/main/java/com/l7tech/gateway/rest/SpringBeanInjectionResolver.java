@@ -47,6 +47,10 @@ public class SpringBeanInjectionResolver implements InjectionResolver<SpringBean
 
         //Get the type of bean required.
         final Class<?> beanType = (Class<?>) injectee.getRequiredType();
+        //If the bean required is the application context then return it.
+        if(ApplicationContext.class.equals(beanType)){
+            return applicationContext;
+        }
         //Find the bean by its type in the application context.
         Object bean = applicationContext.getBean(beanType);
         if (bean == null) {

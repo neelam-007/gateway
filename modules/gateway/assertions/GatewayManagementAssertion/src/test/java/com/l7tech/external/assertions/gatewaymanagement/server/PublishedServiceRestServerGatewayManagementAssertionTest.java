@@ -2,12 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.DependencyResultsMO;
+import com.l7tech.gateway.api.DependencyAnalysisMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.resources.ResourceEntry;
-import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.Goid;
@@ -24,7 +22,6 @@ import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.stream.StreamSource;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.UUID;
@@ -84,7 +81,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
-        DependencyResultsMO dependencyResultsMO = MarshallingUtils.unmarshal(DependencyResultsMO.class, source);
+        DependencyAnalysisMO dependencyResultsMO = MarshallingUtils.unmarshal(DependencyAnalysisMO.class, source);
 
         dependencyResultsMO.toString();
     }

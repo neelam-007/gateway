@@ -2,11 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceDocumentMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -21,7 +20,6 @@ import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -193,7 +191,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.getProperties().put("description", "new schema");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath + goid.toString(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        Response response = processRequest(documentResourceBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Document resource goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -241,9 +239,8 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         Response response = processRequest(documentResourceBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        References references = MarshallingUtils.unmarshal(References.class, source);
 
         // check entity
         Assert.assertEquals(resourceEntryManagerStub.findAll().size(), references.getReferences().size());

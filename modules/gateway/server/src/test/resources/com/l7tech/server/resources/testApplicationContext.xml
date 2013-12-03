@@ -560,6 +560,7 @@
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="serviceManager" />
+                <ref bean="policyManager" />
             </list>
         </constructor-arg>
     </bean>

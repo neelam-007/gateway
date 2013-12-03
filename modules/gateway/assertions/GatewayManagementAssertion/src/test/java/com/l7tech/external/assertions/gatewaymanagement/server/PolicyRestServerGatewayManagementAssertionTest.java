@@ -1,8 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -24,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This was created: 10/23/13 as 4:47 PM
@@ -182,7 +178,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         String policyMOString = writeMOToString(policyMO);
 
-        Response response = processRequest(policyBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
+        Response response = processRequest(policyBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
         Policy policySaved = policyManager.findByPrimaryKey(id);

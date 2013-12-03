@@ -138,23 +138,31 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     @Override
-    public List<Map<String, String>> getResources(final Integer offset, final Integer count, String sort, Boolean ascending, final Map<String, List<Object>> filters) {
-        return transactional(new TransactionalCallback<List<Map<String, String>>>() {
+    public List<PrivateKeyMO> getResources(final Integer offset, final Integer count, String sort, Boolean ascending, final Map<String, List<Object>> filters) {
+        return transactional(new TransactionalCallback<List<PrivateKeyMO>>() {
             @Override
-            public List<Map<String, String>> execute() throws ObjectModelException {
+            public List<PrivateKeyMO> execute() throws ObjectModelException {
                 return Functions.map( CollectionUtils.safeSubList(getEntityHeaders(Functions.map(filters.get("alias"), new Unary<String, Object>() {
                     @Override
                     public String call(Object o) {
                         return o.toString();
                     }
-                })), offset, count), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
+                })), offset, count), new Functions.Unary<PrivateKeyMO, SsgKeyHeader>() {
                     @Override
-                    public Map<String, String> call( final SsgKeyHeader header ) {
-                        return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
+                    public PrivateKeyMO call( final SsgKeyHeader header ) {
+                        return buildPrivateKeyResource(header);
                     }
                 } );
             }
         }, true);
+    }
+
+    private PrivateKeyMO buildPrivateKeyResource(SsgKeyHeader header) {
+        final PrivateKeyMO privateKeyMO = ManagedObjectFactory.createPrivateKey();
+        privateKeyMO.setAlias(header.getAlias());
+        privateKeyMO.setKeystoreId(header.getKeystoreId().toString());
+        privateKeyMO.setId(header.getStrId());
+        return privateKeyMO;
     }
 
     @Override

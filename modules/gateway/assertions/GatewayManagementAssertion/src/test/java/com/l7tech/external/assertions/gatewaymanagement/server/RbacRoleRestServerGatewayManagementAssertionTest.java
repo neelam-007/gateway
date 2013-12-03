@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.Reference;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.References;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.RbacRoleAssignmentMO;
 import com.l7tech.gateway.api.RbacRoleMO;
@@ -110,7 +110,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String roleMOString = writeMOToString(roleMO);
 
-        Response response = processRequest(roleBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
+        Response response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
         final Goid goidReturned = new Goid(getFirstReferencedGoid(response));
@@ -132,7 +132,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String roleMOString = writeMOToString(roleMO);
 
-        Response response = processRequest(roleBasePath + id, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
+        Response response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
         Assert.assertEquals(403, response.getStatus());

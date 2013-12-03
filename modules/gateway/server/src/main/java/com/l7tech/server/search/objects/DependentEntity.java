@@ -1,33 +1,30 @@
 package com.l7tech.server.search.objects;
 
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The DependentEntity is a reference to an entity. Contains all the identifiers needed to retrieve the entity.
+ * The DependentEntity is a reference to an entity. Contains the entity header.
  *
  * @author Victor Kazakov
  */
 public class DependentEntity extends DependentObject {
-    private final String id;
-    private final String alternativeId;
+    private final EntityHeader entityHeader;
 
     /**
      * Creates a new DependentEntity.
      *
      * @param name          The name of the entity. This is meant to be a human readable name to help easily identify
      *                      the entity.
-     * @param entityType    The {@link com.l7tech.search.Dependency.DependencyType} of the entity
-     * @param id            The id of the entity. This is always the goid of the entity.
-     * @param alternativeId The alternativeId of the entity. This can sometimes be the entity name, of entity Guid if it
-     *                      has one. It is nullable
+     * @param entityType    The entity Type of the entity
+     * @param entityHeader  The Dependent Entity Header.
      */
-    public DependentEntity(@Nullable String name, @NotNull EntityType entityType, @NotNull String id, @Nullable String alternativeId) {
+    public DependentEntity(@Nullable String name, @NotNull EntityType entityType, @NotNull EntityHeader entityHeader) {
         super(name, dependencyTypeFromEntityType(entityType));
-        this.id = id;
-        this.alternativeId = alternativeId;
+        this.entityHeader = entityHeader;
     }
 
     private static Dependency.DependencyType dependencyTypeFromEntityType(EntityType entityType) {
@@ -53,19 +50,10 @@ public class DependentEntity extends DependentObject {
     }
 
     /**
-     * @return The id of the entity. This cannot be null.
+     * @return The dependent entity Header.
      */
-    @NotNull
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * @return The alternative id of the entity.
-     */
-    @Nullable
-    public String getAlternativeId() {
-        return alternativeId;
+    public EntityHeader getEntityHeader() {
+        return entityHeader;
     }
 
     @Override
@@ -76,9 +64,7 @@ public class DependentEntity extends DependentObject {
 
         DependentEntity that = (DependentEntity) o;
 
-        if (alternativeId != null ? !alternativeId.equals(that.alternativeId) : that.alternativeId != null)
-            return false;
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (entityHeader != null ? !entityHeader.equals(that.entityHeader) : that.entityHeader != null) return false;
 
         return true;
     }
@@ -86,8 +72,7 @@ public class DependentEntity extends DependentObject {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (alternativeId != null ? alternativeId.hashCode() : 0);
+        result = 31 * result + (entityHeader != null ? entityHeader.hashCode() : 0);
         return result;
     }
 }

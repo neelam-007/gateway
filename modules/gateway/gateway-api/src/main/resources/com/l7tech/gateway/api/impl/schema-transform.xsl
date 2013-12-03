@@ -66,15 +66,16 @@
     </xsl:template>
     
     <!--
-      Sort by name elements first then types
+      Sort by name elements first then types. Import item need to come before Element items
     -->
     <xsl:template match="/*">
         <xsl:copy>
             <xsl:apply-templates select="@*"/>
+            <xsl:apply-templates select="xs:import" mode="spaced"/>
             <xsl:apply-templates select="xs:element" mode="spaced">
                 <xsl:sort select="@name"/>
             </xsl:apply-templates>
-            <xsl:apply-templates select="node()[local-name() != 'element']" mode="spaced">
+            <xsl:apply-templates select="node()[local-name() != 'element' and local-name() != 'import']" mode="spaced">
                 <xsl:sort select="@name"/>
             </xsl:apply-templates>
         </xsl:copy>
