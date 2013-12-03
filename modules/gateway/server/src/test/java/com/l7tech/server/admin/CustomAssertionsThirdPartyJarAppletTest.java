@@ -30,7 +30,7 @@ import java.net.URL;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -139,6 +139,10 @@ public class CustomAssertionsThirdPartyJarAppletTest {
         when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
         when(configMock.getProperty("custom.assertions.modules")).thenReturn(modulesDirPath);
         when(configMock.getProperty("custom.assertions.temp")).thenReturn(modulesTmpDirPath);
+
+        // enable custom assertion scanner
+        when(configMock.getBooleanProperty(eq("custom.assertions.rescan.enabled"), anyBoolean())).thenReturn(true);
+        when(configMock.getLongProperty(eq("custom.assertions.rescan.millis"), anyLong())).thenReturn(10000L);
 
         when(servletContextMock.getAttribute(anyString())).thenReturn(webApplicationContextMock);
         when(filterConfigMock.getServletContext()).thenReturn(servletContextMock);

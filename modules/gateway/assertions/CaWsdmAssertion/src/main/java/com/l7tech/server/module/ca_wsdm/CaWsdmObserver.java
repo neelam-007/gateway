@@ -16,7 +16,8 @@ import com.l7tech.server.event.RoutingEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.ModularAssertionModule;
+import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.Config;
@@ -431,12 +432,15 @@ public class CaWsdmObserver implements ApplicationListener {
 
         if (event instanceof AssertionModuleRegistrationEvent) {
             AssertionModuleRegistrationEvent regEvent = (AssertionModuleRegistrationEvent)event;
-            Set<? extends Assertion> protos = regEvent.getModule().getAssertionPrototypes();
-            if (protos.size() > 0) {
-                Assertion proto = protos.iterator().next();
-                if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
-                    // Our module has just been registered.  Time to do our delayed initialization.
-                    initializeIfNeeded();
+            if (regEvent.getModule() instanceof ModularAssertionModule) {
+                final ModularAssertionModule assMod = (ModularAssertionModule)regEvent.getModule();
+                Set<? extends Assertion> protos = assMod.getAssertionPrototypes();
+                if (protos.size() > 0) {
+                    Assertion proto = protos.iterator().next();
+                    if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
+                        // Our module has just been registered.  Time to do our delayed initialization.
+                        initializeIfNeeded();
+                    }
                 }
             }
         } else if (event instanceof Starting || event instanceof Started) {

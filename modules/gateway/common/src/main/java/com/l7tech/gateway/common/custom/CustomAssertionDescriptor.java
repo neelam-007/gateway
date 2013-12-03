@@ -29,6 +29,7 @@ import java.util.*;
  * <li> display name for the node in the left palette
  * <li> display name for the node in the right policy editor
  * <li> display module file name in the Assertion View Info dialog
+ * <li> String containing the extension Interface class name, must be implementation of <code>CustomExtensionInterfaceBinding</code></li>
  * </ul>
  */
 public class CustomAssertionDescriptor {
@@ -48,6 +49,7 @@ public class CustomAssertionDescriptor {
     private boolean isUiAutoOpen;
     private String[] uiAllowedPackages = new String[0];
     private Set<String> uiAllowedResources = new HashSet<>();
+    private String extensionInterface;
 
     /**
      * Create the new extensibility holder instance with the assertion and server assertion class.
@@ -176,6 +178,13 @@ public class CustomAssertionDescriptor {
         return taskActionUiClass;
     }
 
+    /**
+     * @return the extension interface class name or <b>null</b> if it has not been set
+     */
+    public String getExtensionInterface() {
+        return extensionInterface;
+    }
+
     public String toString() {
         return "[" + "; name='" + name + "'" + "; categories=" + categoriesFriendlyPrintString + "; assertion=" +
                 safeName(assertion) + "; serverAssertion=" + safeName(serverAssertion) + "; editorClass=" +
@@ -263,5 +272,12 @@ public class CustomAssertionDescriptor {
                 this.uiAllowedResources.add(aSplit.trim());
             }
         }
+    }
+
+    /**
+     * @param extensionInterface extension interface class name, must be implementation of <code>CustomExtensionInterfaceBinding</code>
+     */
+    public void setExtensionInterface(String extensionInterface) {
+        this.extensionInterface = extensionInterface;
     }
 }

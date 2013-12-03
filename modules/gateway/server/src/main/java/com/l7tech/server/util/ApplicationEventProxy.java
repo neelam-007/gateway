@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
+import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;

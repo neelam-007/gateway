@@ -28,7 +28,7 @@ import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -682,13 +682,13 @@ public class ManagerAppletFilter implements Filter {
         }
 
         String packageName = STRIPCLASS.matcher(filePath).replaceAll("").replace('/', '.');
-        Set<AssertionModule> possibleModules = findAssertionModulesThatOfferPackage(packageName);
+        Set<ModularAssertionModule> possibleModules = findAssertionModulesThatOfferPackage(packageName);
 
         if (possibleModules == null || possibleModules.isEmpty())
             return false;
 
 
-        for (AssertionModule module : possibleModules) {
+        for (ModularAssertionModule module : possibleModules) {
             byte[] data = module.getResourceBytes(filePath, true);
             if (data != null) {
                 handled = true;
@@ -700,10 +700,10 @@ public class ManagerAppletFilter implements Filter {
         return handled;
     }
 
-    private Set<AssertionModule> findAssertionModulesThatOfferPackage(String packageName) {
-        Set<AssertionModule> ret = new HashSet<AssertionModule>();
-        Set<AssertionModule> mods = assertionRegistry.getLoadedModules();
-        for (AssertionModule mod : mods)
+    private Set<ModularAssertionModule> findAssertionModulesThatOfferPackage(String packageName) {
+        Set<ModularAssertionModule> ret = new HashSet<ModularAssertionModule>();
+        Set<ModularAssertionModule> mods = assertionRegistry.getLoadedModules();
+        for (ModularAssertionModule mod : mods)
             if (mod.offersPackage(packageName))
                 ret.add(mod);
         return ret;

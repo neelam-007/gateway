@@ -6,13 +6,11 @@ package com.l7tech.util;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -45,6 +43,26 @@ public class HexUtils {
             md.update(bytes);
         }
         return md.digest();
+    }
+
+    public static byte[] getSha1Digest(@NotNull InputStream stream, boolean closeStream) throws IOException {
+        final MessageDigest md = getSha1();
+        final DigestInputStream digestStream = new DigestInputStream(stream, md);
+        try {
+            IOUtils.copyStream(digestStream,
+                    // no need to write
+                    new OutputStream() {
+                        @Override public void write(int b) throws IOException { }
+                        @Override public void write(byte b[]) throws IOException { }
+                        @Override public void write(byte b[], int off, int len) throws IOException { }
+                    }
+            );
+            return md.digest();
+        } finally {
+            if (closeStream) {
+                ResourceUtils.closeQuietly(stream);
+            }
+        }
     }
 
     public static byte[] getSha1Digest(byte[] stuffToDigest) {

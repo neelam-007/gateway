@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -22,6 +23,11 @@ class CustomAssertions {
     static void register( CustomAssertionDescriptor eh) {
         logger.fine("registering " + eh);
         assertions.put(eh.getName(), eh);
+    }
+
+    static CustomAssertionDescriptor unregister(final CustomAssertionDescriptor eh) {
+        logger.fine("unregistering " + eh);
+        return assertions.remove(eh.getName());
     }
 
     /**
@@ -175,5 +181,5 @@ class CustomAssertions {
         return allAssertions;
     }
 
-    private static Map<String, CustomAssertionDescriptor> assertions = new HashMap<>();
+    private static Map<String, CustomAssertionDescriptor> assertions = new ConcurrentHashMap<>();
 }

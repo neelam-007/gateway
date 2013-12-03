@@ -23,6 +23,8 @@ import com.l7tech.server.folder.FolderCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.ExceptionUtils;
@@ -522,7 +524,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
      */
     @Override
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
-        if( applicationEvent instanceof LicenseChangeEvent || applicationEvent instanceof AssertionModuleRegistrationEvent ) {
+        if( applicationEvent instanceof LicenseChangeEvent || applicationEvent instanceof AssertionModuleRegistrationEvent) {
             transactionIfAvailable( new Runnable() {
                 @Override
                 public void run() {
@@ -530,7 +532,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                     resetUnlicensed();
                 }
             });
-        } else if( applicationEvent instanceof AssertionModuleUnregistrationEvent ) {
+        } else if( applicationEvent instanceof AssertionModuleUnregistrationEvent) {
             transactionIfAvailable( new Runnable() {
                 @Override
                 public void run() {

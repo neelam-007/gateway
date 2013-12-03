@@ -1,4 +1,4 @@
-package com.l7tech.server.policy;
+package com.l7tech.server.policy.module;
 
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.IOUtils;

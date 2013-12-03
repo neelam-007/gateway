@@ -17,6 +17,9 @@ import java.io.File;
 import java.net.URL;
 
 import static junit.framework.Assert.*;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -98,6 +101,10 @@ public class CustomAssertionsThirdPartyJarTest {
         when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
         when(configMock.getProperty("custom.assertions.modules")).thenReturn(modulesDirPath);
         when(configMock.getProperty("custom.assertions.temp")).thenReturn(modulesTmpDirPath);
+
+        // enable custom assertion scanner
+        when(configMock.getBooleanProperty(eq("custom.assertions.rescan.enabled"), anyBoolean())).thenReturn(true);
+        when(configMock.getLongProperty(eq("custom.assertions.rescan.millis"), anyLong())).thenReturn(10000L);
 
         customAssertionsRegistrarImpl =
             new CustomAssertionsRegistrarImpl(serverAssertionRegistryMock);

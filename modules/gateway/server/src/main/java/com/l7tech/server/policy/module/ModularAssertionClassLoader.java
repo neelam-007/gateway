@@ -1,5 +1,6 @@
-package com.l7tech.server.policy;
+package com.l7tech.server.policy.module;
 
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
@@ -21,8 +22,8 @@ import java.util.logging.Logger;
  * A URLClassloader that keeps track of loaded classes so they can be notified when it is time to unload them.
  * @noinspection CustomClassloader
  */
-class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
-    protected static final Logger logger = Logger.getLogger(AssertionModuleClassLoader.class.getName());
+class ModularAssertionClassLoader extends URLClassLoader implements Closeable {
+    protected static final Logger logger = Logger.getLogger(ModularAssertionClassLoader.class.getName());
 
     /** Protocol that we register. */
     public static final String NR_PROTO = "assnmod";
@@ -38,10 +39,10 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private final CodeSource codeSource;
     private final AccessControlContext accessControlContext;
 
-    AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles, boolean useApplicationClasspath ) {
+    ModularAssertionClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles, boolean useApplicationClasspath) {
         super(new URL[] { jarUrl }, parent);
         this.moduleName = moduleName;
-        this.nestedJarFiles = new ConcurrentHashMap<NestedZipFile, Object>();
+        this.nestedJarFiles = new ConcurrentHashMap<>();
         for (NestedZipFile file : nestedJarFiles)
             this.nestedJarFiles.put(file, new Object());
         this.resourceLoadPrefix = useApplicationClasspath ? "com.l7tech.external.assertions" : null;
@@ -105,7 +106,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
                         else if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
                             found = findClassFromNestedJars(name, false);
                         if (found == null)
-                            found = AssertionModuleClassLoader.super.findClass(name);
+                            found = ModularAssertionClassLoader.super.findClass(name);
                     } catch (ClassNotFoundException e) {
                         found = findClassFromNestedJars(name, false);
                         if (found == null)
@@ -257,7 +258,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return AccessController.doPrivileged(new PrivilegedAction<URL>() {
             @Override
             public URL run() {
-                URL url = AssertionModuleClassLoader.super.findResource(name);
+                URL url = ModularAssertionClassLoader.super.findResource(name);
                 if (url == null)
                     url = findResourceFromNestedJars(name);
                 if (url == null)
@@ -314,7 +315,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     @Override
     public Enumeration<URL> findResources(final String name) throws IOException {
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
         Enumeration<URL> resen = super.findResources(name);
         while (resen != null && resen.hasMoreElements()) {
             URL url = resen.nextElement();
@@ -326,7 +327,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         r = findResourceFromDelegates(name);
         if (r != null)
             urls.add(r); // TODO should add all of them, not just one of them
-        return new IteratorEnumeration<URL>(urls.iterator());
+        return new IteratorEnumeration<>(urls.iterator());
     }
 
     /**
@@ -334,7 +335,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
      * datastructures that would keep their instances from being collected
      */
     void onModuleUnloaded() {
-        Set<Class> toNotify = new HashSet<Class>(classes);
+        Set<Class> toNotify = new HashSet<>(classes);
         for (Class clazz : toNotify) {
             onModuleUnloaded(clazz);
             classes.remove(clazz);
@@ -355,13 +356,11 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private void onModuleUnloaded(Class clazz) {
         try {
             clazz.getMethod("onModuleUnloaded").invoke(null);
-        } catch (NoClassDefFoundError e) {
+        } catch (NoClassDefFoundError | IllegalAccessException e) {
             // Must be not-entirely-initialized class
             logger.log(Level.WARNING, "Module " + moduleName + ": unable to notify class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e));
         } catch (NoSuchMethodException e) {
             // Ok, it doesn't care to be notified
-        } catch (IllegalAccessException e) {
-            logger.log(Level.WARNING, "Module " + moduleName + ": unable to notify class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e));
         } catch (InvocationTargetException e) {
             logger.log(Level.SEVERE, "Module " + moduleName + ": exception while notifying class " + clazz.getName() + " of module unload: " + ExceptionUtils.getMessage(e), e);
         }
@@ -374,13 +373,13 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     /** @param registry registry to use for locating modules when resolving assnmod: URLs. */
     public static void setRegistry(ServerAssertionRegistry registry) {
-        AssertionModuleClassLoader.registry = registry;
+        ModularAssertionClassLoader.registry = registry;
     }
 
     @Override
     public void close() throws IOException {
         onModuleUnloaded();
-        Set<NestedZipFile> toClose = new HashSet<NestedZipFile>(nestedJarFiles.keySet());
+        Set<NestedZipFile> toClose = new HashSet<>(nestedJarFiles.keySet());
         for (NestedZipFile nested : toClose) {
             nested.close();
             nestedJarFiles.remove(nested);

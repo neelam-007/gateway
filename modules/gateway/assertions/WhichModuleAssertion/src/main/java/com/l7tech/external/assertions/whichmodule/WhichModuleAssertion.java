@@ -19,7 +19,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
@@ -161,7 +161,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
                 Assertion ass = wspReader.parseStrictly(getAssertion().getAssertionXml(), WspReader.INCLUDE_DISABLED);
                 if (ass == null) throw new IOException("Parsed AssertionXml produced null policy");
 
-                AssertionModule module = assertionRegistry.getModuleForClassLoader(ass.getClass().getClassLoader());
+                ModularAssertionModule module = assertionRegistry.getModuleForClassLoader(ass.getClass().getClassLoader());
                 if (module == null) {
                     context.setVariable("module.exists", Boolean.FALSE);
                     context.setVariable("module.name", "(core assertion)");

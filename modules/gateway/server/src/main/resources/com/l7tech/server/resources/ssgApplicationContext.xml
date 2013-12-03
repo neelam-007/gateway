@@ -1806,7 +1806,7 @@
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
-    <bean id="allModulesClassLoader" class="com.l7tech.server.policy.AllModulesClassLoader">
+    <bean id="allModulesClassLoader" class="com.l7tech.server.policy.module.AllModularAssertionClassLoader">
         <constructor-arg ref="assertionRegistry"/>
     </bean>
 
