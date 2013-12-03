@@ -169,13 +169,13 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             entities = accessFilter(entities, manager.getEntityType(), OperationType.READ, null);
             entities = filterEntities(entities);
 
-            return Functions.map(entities, new Functions.Unary<R, E>() {
+            return Functions.map(entities, new Functions.UnaryThrows<R, E, ObjectModelException>() {
                 @Override
-                public R call(E e) {
-                    return identify(asResource(e), e);
+                public R call(E e) throws ObjectModelException {
+                    return identify(asResource(loadEntityBag(e)), e);
                 }
             });
-        } catch (FindException e) {
+        } catch (ObjectModelException e) {
             handleObjectModelException(e);
         }
 
