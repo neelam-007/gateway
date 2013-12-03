@@ -18,6 +18,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DbCompareTestUtils {
 
     public static void compareNewToUpgradedDatabase(Connection databaseOneConnection, Connection databaseTwoConnection) throws SQLException {
+        compareNewToUpgradedDatabase(databaseOneConnection, databaseTwoConnection, true);
+    }
+
+    public static void compareNewToUpgradedDatabase(Connection databaseOneConnection, Connection databaseTwoConnection, boolean checkFunctionsAndProcedures) throws SQLException {
 
         DatabaseMetaData newDatabaseMetadata = databaseOneConnection.getMetaData();
         DatabaseMetaData upgradedDatabaseMetadata = databaseTwoConnection.getMetaData();
@@ -136,41 +140,43 @@ public class DbCompareTestUtils {
             }
         }
 
-        // ***************************** Check functions ******************************************//
-        Map<String, Map<String, String>> newFunctionsInfo = getResultSetInfo(newDatabaseMetadata.getFunctions(null, "APP", null), 3);
-        Map<String, Map<String, String>> upgradedFunctionsInfo = getResultSetInfo(upgradedDatabaseMetadata.getFunctions(null, "APP", null), 3);
-        compareResultInfo(newFunctionsInfo, upgradedFunctionsInfo,
-                "The number of functions need to be equal.",
-                "The upgraded database is missing function: %1$s",
-                "The new function and upgrade function have different values for a property. Function: %1$s property: %2$s", CollectionUtils.set("FUNCTION_CAT", "SPECIFIC_NAME"));
+        if(checkFunctionsAndProcedures) {
+            // ***************************** Check functions ******************************************//
+            Map<String, Map<String, String>> newFunctionsInfo = getResultSetInfo(newDatabaseMetadata.getFunctions(null, "APP", null), 3);
+            Map<String, Map<String, String>> upgradedFunctionsInfo = getResultSetInfo(upgradedDatabaseMetadata.getFunctions(null, "APP", null), 3);
+            compareResultInfo(newFunctionsInfo, upgradedFunctionsInfo,
+                    "The number of functions need to be equal.",
+                    "The upgraded database is missing function: %1$s",
+                    "The new function and upgrade function have different values for a property. Function: %1$s property: %2$s", CollectionUtils.set("FUNCTION_CAT", "SPECIFIC_NAME"));
 
-        for(String functionName : newFunctionsInfo.keySet()){
-            Map<String, Map<String, String>> newFunctionColumnsInfo = getResultSetInfo(newDatabaseMetadata.getFunctionColumns(null, "APP", functionName, null), 4);
-            Map<String, Map<String, String>> upgradedFunctionColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getFunctionColumns(null, "APP", functionName, null), 4);
+            for(String functionName : newFunctionsInfo.keySet()){
+                Map<String, Map<String, String>> newFunctionColumnsInfo = getResultSetInfo(newDatabaseMetadata.getFunctionColumns(null, "APP", functionName, null), 4);
+                Map<String, Map<String, String>> upgradedFunctionColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getFunctionColumns(null, "APP", functionName, null), 4);
 
-            // ignore Ordinal position for now. We will not enforce column ordering for derby.
-            compareResultInfo(newFunctionColumnsInfo, upgradedFunctionColumnsInfo,
-                    "Function " + functionName + " has a different number of columns",
-                    "The upgraded database is missing column: %1$s for function " + functionName,
-                    "For function " + functionName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("FUNCTION_CAT", "SPECIFIC_NAME"));
-        }
+                // ignore Ordinal position for now. We will not enforce column ordering for derby.
+                compareResultInfo(newFunctionColumnsInfo, upgradedFunctionColumnsInfo,
+                        "Function " + functionName + " has a different number of columns",
+                        "The upgraded database is missing column: %1$s for function " + functionName,
+                        "For function " + functionName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("FUNCTION_CAT", "SPECIFIC_NAME"));
+            }
 
-        // ***************************** Check procedures ******************************************//
-        Map<String, Map<String, String>> newProcedureInfo = getResultSetInfo(newDatabaseMetadata.getProcedures(null, "APP", null), 3);
-        Map<String, Map<String, String>> upgradedProcedureInfo = getResultSetInfo(upgradedDatabaseMetadata.getProcedures(null, "APP", null), 3);
-        compareResultInfo(newProcedureInfo, upgradedProcedureInfo,
-                "The number of procedures need to be equal.",
-                "The upgraded database is missing procedure: %1$s",
-                "The new procedure and upgrade procedure have different values for a property. Procedure: %1$s property: %2$s", CollectionUtils.set("PROCEDURE_CAT", "SPECIFIC_NAME"));
-        for(String procedureName : newProcedureInfo.keySet()){
-            Map<String, Map<String, String>> newProcedureColumnsInfo = getResultSetInfo(newDatabaseMetadata.getProcedureColumns(null, "APP", procedureName, null), 4);
-            Map<String, Map<String, String>> upgradedProcedureColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getProcedureColumns(null, "APP", procedureName, null), 4);
+            // ***************************** Check procedures ******************************************//
+            Map<String, Map<String, String>> newProcedureInfo = getResultSetInfo(newDatabaseMetadata.getProcedures(null, "APP", null), 3);
+            Map<String, Map<String, String>> upgradedProcedureInfo = getResultSetInfo(upgradedDatabaseMetadata.getProcedures(null, "APP", null), 3);
+            compareResultInfo(newProcedureInfo, upgradedProcedureInfo,
+                    "The number of procedures need to be equal.",
+                    "The upgraded database is missing procedure: %1$s",
+                    "The new procedure and upgrade procedure have different values for a property. Procedure: %1$s property: %2$s", CollectionUtils.set("PROCEDURE_CAT", "SPECIFIC_NAME"));
+            for(String procedureName : newProcedureInfo.keySet()){
+                Map<String, Map<String, String>> newProcedureColumnsInfo = getResultSetInfo(newDatabaseMetadata.getProcedureColumns(null, "APP", procedureName, null), 4);
+                Map<String, Map<String, String>> upgradedProcedureColumnsInfo = getResultSetInfo(upgradedDatabaseMetadata.getProcedureColumns(null, "APP", procedureName, null), 4);
 
-            // ignore Ordinal position for now. We will not enforce column ordering for derby.
-            compareResultInfo(newProcedureColumnsInfo, upgradedProcedureColumnsInfo,
-                    "Procedure " + procedureName + " has a different number of columns",
-                    "The upgraded database is missing column: %1$s for procedure " + procedureName,
-                    "For procedure " + procedureName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("PROCEDURE_CAT", "SPECIFIC_NAME"));
+                // ignore Ordinal position for now. We will not enforce column ordering for derby.
+                compareResultInfo(newProcedureColumnsInfo, upgradedProcedureColumnsInfo,
+                        "Procedure " + procedureName + " has a different number of columns",
+                        "The upgraded database is missing column: %1$s for procedure " + procedureName,
+                        "For procedure " + procedureName + " the new column and upgrade column have different values for a property. Column: %1$s property: %2$s", CollectionUtils.set("PROCEDURE_CAT", "SPECIFIC_NAME"));
+            }
         }
     }
 
