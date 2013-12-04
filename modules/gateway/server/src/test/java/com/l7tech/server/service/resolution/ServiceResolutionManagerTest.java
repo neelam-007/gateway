@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
+import com.l7tech.test.BugId;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapVersion;
@@ -26,6 +27,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,6 +64,28 @@ public class ServiceResolutionManagerTest {
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
         assertEquals( "Service id", new Goid(serviceUpgradePrefix,2L), service2.getGoid() );
+    }
+
+    @Test
+    @BugId("SSG-7898")
+    public void testResolutionUriI18n() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/"+ URLEncoder.encode("ᄄᄔᄤᄴᅄᅔᅤᅴᆄ", "UTF-8")) );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved)", service );
+        assertEquals( "Service id", new Goid(serviceUpgradePrefix,5L), service.getGoid() );
+    }
+
+    @Test
+    @BugId("SSG-7898")
+    public void testResolutionUriI18nNoEncoding() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/ᄄᄔᄤᄴᅄᅔᅤᅴᆄ") );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved)", service );
+        assertEquals( "Service id", new Goid(serviceUpgradePrefix,5L), service.getGoid() );
     }
 
     @Test
@@ -384,6 +408,7 @@ public class ServiceResolutionManagerTest {
             si( service( new Goid(serviceUpgradePrefix,3L), "XML", null, null, false), null, null, null ), // unresolvable other than by id
             si( service( new Goid(serviceUpgradePrefix,4L), "Wild", "/wild/*", null, false), null, null, null ),
             si( service( new Goid(-93463452159384L,6294682937658L), "ComplexHex", "/complex_hex/*", null, false), null, null, null ),
+            si( service( new Goid(serviceUpgradePrefix,5L), "ᄄᄔᄤᄴᅄᅔᅤᅴᆄ", "/ᄄᄔᄤᄴᅄᅔᅤᅴᆄ", null, false), null, null, null ),
         };
 
         Collection<PublishedService> services = new ArrayList<PublishedService>();

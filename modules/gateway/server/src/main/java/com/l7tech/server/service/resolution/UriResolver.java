@@ -5,11 +5,15 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.message.*;
+import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.Message;
+import com.l7tech.message.UriKnob;
 import com.l7tech.objectmodel.Goid;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -162,6 +166,13 @@ public class UriResolver extends ServiceResolver<String> {
 
     private String transformValue( final String value ) {
         String resultValue = value;
+
+        //url decode the string. This is needed to handle urls with non standard characters. SSG-7898
+        try {
+            resultValue = URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("This should not happen!");
+        }
 
         if ( !caseSensitive && value != null ) {
             resultValue = value.toLowerCase();
