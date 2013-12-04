@@ -70,8 +70,11 @@ public class ConflictDisplayerDialog extends JDialog {
     private void onOK() {
         DialogDisplayer.showSafeConfirmDialog(
                 this,
-                "<html><center>Detected conflict won't be installed, do you want to continue?</center></html>",
-                "Confirm Conflict Install",
+                "<html><center>Be aware that continuing installation with detected conflicts may result in partial installation " +
+                        "of components: (1) Components with detected conflicts will NOT be installed. (2) References to a " +
+                        "conflicted component will be replaced with references to a version of the same component on the target " +
+                        "Gateway, if one exists. These references may occur in service policies or policy fragments.</center></html>",
+                "Confirm Installation with Conflicts",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
