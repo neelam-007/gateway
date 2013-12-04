@@ -350,7 +350,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         } finally {
             if ( transacted ) {
                 boolean handledAnyFailure;
-                handledAnyFailure = status == AssertionStatus.NONE || bag.getFailureProducer() != null && sendFailureRequest(jmsRequest, bag.getFailureProducer());
+                handledAnyFailure = status == AssertionStatus.NONE || bag.getMessageProducer() != null && sendFailureRequest(jmsRequest, bag.getMessageProducer());
 
                 Session session = bag.getSession();
                 if ( responseSuccess && handledAnyFailure ) {

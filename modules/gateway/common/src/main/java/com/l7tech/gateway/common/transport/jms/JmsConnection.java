@@ -77,6 +77,15 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
     public static final String PROP_IS_DEDICATED_CONSUMER = PREFIX + ".dedicated.consumer.bool";
     public static final String PROP_DEDICATED_CONSUMER_SIZE = PREFIX + ".dedicated.consumer.size";
 
+    public static final String PROP_SESSION_POOL_SIZE = PREFIX + ".session.pool.size";
+    public static final String PROP_MAX_SESSION_IDLE = PREFIX + ".max.session.idle";
+    public static final String PROP_SESSION_POOL_MAX_WAIT = PREFIX + ".session.pool.max.wait";
+    public static final int DEFAULT_SESSION_POOL_SIZE = 8;
+    public static final long DEFAULT_SESSION_POOL_MAX_WAIT = 5000;
+
+
+
+
     /** Name of String property (in returned value of {@link #properties()}) that
         contains the name of JMS message property to be used as SOAPAction value
         during service resolution. */

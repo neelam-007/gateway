@@ -22,7 +22,7 @@ public class JmsBag implements Closeable {
         session = sess;
         jndiContext = context;
         messageConsumer = consumer;
-        failureProducer = producer;
+        messageProducer = producer;
         bagOwner = owner;
     }
 
@@ -72,13 +72,13 @@ public class JmsBag implements Closeable {
             messageConsumer = null;
         }
 
-        if (failureProducer != null) {
+        if (messageProducer != null) {
             try {
-                failureProducer.close();
+                messageProducer.close();
             } catch (Exception e) {
                 handleCloseError( "failureQueueProducer", e );
             }
-            failureProducer = null;
+            messageProducer = null;
         }
 
 
@@ -136,8 +136,8 @@ public class JmsBag implements Closeable {
         if (closed) throw new IllegalStateException("Bag has been closed");
     }
 
-    public MessageProducer getFailureProducer() {
-        return failureProducer;
+    public MessageProducer getMessageProducer() {
+        return messageProducer;
     }
 
     private static final Logger logger = Logger.getLogger(JmsBag.class.getName());
@@ -146,7 +146,8 @@ public class JmsBag implements Closeable {
     private Session session;
     private Context jndiContext;
     private MessageConsumer messageConsumer;
-    private MessageProducer failureProducer;
+    //This can be failure queue producer for inbound or producer for outbound
+    private MessageProducer messageProducer;
     private Object bagOwner;
     protected volatile boolean closed;
 

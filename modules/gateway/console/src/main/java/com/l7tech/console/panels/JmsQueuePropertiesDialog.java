@@ -123,6 +123,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private SecurityZoneWidget zoneControl;
     private JCheckBox dedicatedConsumerConnectionsCheckBox;
     private JSpinner dedicatedConsumerConnectionLimitSpinner;
+    private JSpinner sessionPoolSizeSpinner;
+    private JTextField sessionPoolMaxWaitTextField;
+    private JLabel sessionPoolSizeLabel;
+    private JLabel sessionPoolMaxWait;
+    private JSpinner maxIdleSessionSpinner;
+    private JLabel maxSessionIdleLabel;
 
 
     private JmsConnection connection = null;
@@ -325,6 +331,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(dedicatedConsumerConnectionLimitSpinner);
         dedicatedConsumerConnectionLimitSpinner.setEnabled(false);
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, dedicatedConsumerConnectionsCheckBox.getText()));
+
+        sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
+
+        maxIdleSessionSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxIdleSessionSpinner,maxSessionIdleLabel.getText()));
+
+        inputValidator.constrainTextFieldToNumberRange(sessionPoolMaxWait.getText(), sessionPoolMaxWaitTextField, -1, Long.MAX_VALUE);
+
         inputValidator.attachToButton(saveButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -332,6 +347,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         });
         dedicatedConsumerConnectionsCheckBox.addItemListener(enableDisableListener);
+
 
         useQueueCredentialsCheckBox.addItemListener(new ItemListener() {
             @Override
@@ -836,6 +852,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
 //            properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitTextField.getText());
             properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitSpinner.getValue().toString());
         }
+
+        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
+        properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
+        properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
+
         conn.properties(properties);
         conn.setSecurityZone(zoneControl.getSelectedZone());
         return conn;
@@ -1051,6 +1072,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
 //                dedicatedConsumerConnectionLimitTextField.setText("");
                 dedicatedConsumerConnectionLimitSpinner.setValue(CONSUMER_CONNECTIONS_MIN_VALUE);
             }
+
+            sessionPoolSizeSpinner.setValue(getSessionPoolSize(props));
+            maxIdleSessionSpinner.setValue(getMaxSessionIdle(props));
+            sessionPoolMaxWaitTextField.setText(getSessionPoolMaxWait(props).toString());
         } else {
             // No connection is set
             qcfTextField.setText("");
@@ -1067,6 +1092,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             queuePasswordField.setText(null);
             enableOrDisableQueueCredentials();
             environmentPropertiesTableModel.setRows( Collections.<NameValuePair>emptyList() );
+            sessionPoolMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
         }
 
         boolean associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, isHardWired, hardWiredId);
@@ -1172,6 +1198,36 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return new Integer(val);
         } catch (NumberFormatException ex) {
             return CONSUMER_CONNECTIONS_DEFAULT_VALUE;
+        }
+    }
+
+    private Integer getSessionPoolSize(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        try{
+            return new Integer(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        }
+    }
+
+    private Integer getMaxSessionIdle(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_MAX_SESSION_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        try{
+            return new Integer(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        }
+    }
+
+    private Long getSessionPoolMaxWait(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
+        if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT;
+        try{
+            return new Long(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT;
         }
     }
 

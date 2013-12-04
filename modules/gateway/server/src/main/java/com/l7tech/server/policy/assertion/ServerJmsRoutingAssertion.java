@@ -158,13 +158,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             cfg = getEndpointConfig(dynamicPropsWithValues);
 
             // Destinations are cached for retries
-            final Destination[] outboundDestinationHolder = new Destination[1];
             final Destination[] inboundDestinationHolder = new Destination[1];
 
             // Message send retry loop.
             // Once the message is sent, there are no more retries
             while ( true ) {
-                final JmsRoutingCallback jrc = new JmsRoutingCallback(context, cfg, outboundDestinationHolder, inboundDestinationHolder);
+                final JmsRoutingCallback jrc = new JmsRoutingCallback(context, cfg, inboundDestinationHolder);
                 try {
                     jmsResourceManager.doWithJmsResources( cfg, jrc );
                     jrc.doException();
@@ -193,7 +192,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, e);
                         }
                         jmsResourceManager.invalidate(cfg);
-                        outboundDestinationHolder[0] = null;
                         inboundDestinationHolder[0] = null;
                         sleep( retryDelay );
                     } else {
@@ -210,7 +208,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     // MQSeries provider with LDAP -
                     if (++oopses < maxOopses && nex instanceof CommunicationException) {
                         jmsResourceManager.invalidate(cfg);
-                        outboundDestinationHolder[0] = null;
                         inboundDestinationHolder[0] = null;
                     } else {
                         if (oopses >= maxOopses)
@@ -274,18 +271,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         private final JmsEndpointConfig cfg;
         private final PolicyEnforcementContext context;
         private final com.l7tech.message.Message requestMessage;
-        private final Destination[] jmsOutboundDestinationHolder;
         private final Destination[] jmsInboundDestinationHolder;
         private Exception exception;
         private boolean messageSent = false;
 
         JmsRoutingCallback ( final PolicyEnforcementContext context,
                                      final JmsEndpointConfig cfg,
-                                     final Destination[] jmsOutboundDestinationHolder,
                                      final Destination[] jmsInboundDestinationHolder ) {
             this.context = context;
             this.cfg = cfg;
-            this.jmsOutboundDestinationHolder = jmsOutboundDestinationHolder;
             this.jmsInboundDestinationHolder = jmsInboundDestinationHolder;
             try {
                 this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
@@ -323,20 +317,16 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
          * Don't throw JMSException since that would close the connection before our retry count. 
          */
         @Override
-        public void doWork( final Connection connection,
-                            final Session jmsSession,
+        public void doWork( final JmsBag bag,
                             final JmsResourceManager.JndiContextProvider jndiContextProvider ) {
             boolean routingStarted = false;
             boolean routingFinished = false;
             try {
-                final Message jmsOutboundRequest = makeRequest(context, jmsSession, jndiContextProvider, cfg);
+                final Message jmsOutboundRequest = makeRequest(context, bag.getSession(), jndiContextProvider, cfg);
 
-                if (jmsOutboundDestinationHolder[0] == null)
-                    jmsOutboundDestinationHolder[0] = getRoutedRequestDestination(jndiContextProvider, cfg);
                 if (jmsInboundDestinationHolder[0] == null)
                     jmsInboundDestinationHolder[0] = jmsOutboundRequest.getJMSReplyTo();
 
-                final Destination jmsOutboundDestination = jmsOutboundDestinationHolder[0];
                 final Destination jmsInboundDestination = jmsInboundDestinationHolder[0];
 
                 // Enforces rules on propagation of request JMS message properties.
@@ -367,31 +357,27 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), getAudit() );
                 MessageProducer jmsProducer = null;
-                try {
-                    jmsProducer = JmsUtil.createMessageProducer( jmsSession, jmsOutboundDestination );
+                jmsProducer = bag.getMessageProducer();
 
-                    final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
-                    final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
-                    final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0L, Long.MAX_VALUE, variables );
+                final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
+                final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
+                final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0L, Long.MAX_VALUE, variables );
 
-                    context.routingStarted();
-                    routingStarted = true;
+                context.routingStarted();
+                routingStarted = true;
 
-                    if ( logger.isLoggable( Level.FINE ))
-                        logger.fine("Sending JMS outbound message");
+                if ( logger.isLoggable( Level.FINE ))
+                    logger.fine("Sending JMS outbound message");
 
-                    if ( deliveryMode != null && priority != null && timeToLive != null ) {
-                        jmsProducer.send( jmsOutboundRequest, deliveryMode.getValue(), priority, timeToLive );
-                    } else {
-                        jmsProducer.send( jmsOutboundRequest );
-                    }
-                    messageSent = true; // no retries once sent
-
-                    if ( logger.isLoggable( Level.FINE ))
-                        logger.fine("JMS outbound message sent");
-                } finally {
-                   if (jmsProducer != null) jmsProducer.close();
+                if ( deliveryMode != null && priority != null && timeToLive != null ) {
+                    jmsProducer.send( jmsOutboundRequest, deliveryMode.getValue(), priority, timeToLive );
+                } else {
+                    jmsProducer.send( jmsOutboundRequest );
                 }
+                messageSent = true; // no retries once sent
+
+                if ( logger.isLoggable( Level.FINE ))
+                    logger.fine("JMS outbound message sent");
 
                 if ( !processReply ) {
                     context.routingFinished();
@@ -423,7 +409,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
                     try {
-                        jmsConsumer = JmsUtil.createMessageConsumer( jmsSession, jmsInboundDestination, selector );
+                        jmsConsumer = JmsUtil.createMessageConsumer( bag.getSession(), jmsInboundDestination, selector );
 
                         logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                         jmsResponse = jmsConsumer.receive( (long)timeout );
