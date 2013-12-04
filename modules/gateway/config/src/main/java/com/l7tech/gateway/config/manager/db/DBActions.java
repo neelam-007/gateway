@@ -955,8 +955,9 @@ public class DBActions {
                 while (createTables.next()) {
                     String s = createTables.getString(2).replace("\n", "");
                     // The below replacement is needed because mysql will return a default byte value as the actual byte string.
-                    // In the create table statement we need it to be a hex string. This is only needed in the wsdm_subscription table.
+                    // In the create table statement we need it to be a hex string.
                     s = s.replace("DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0��������'", "DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF'");
+                    s = s.replace("binary(16) NOT NULL DEFAULT '0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", "binary(16) NOT NULL DEFAULT 0");
                     list.add(s);
                 }
             }
