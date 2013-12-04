@@ -35,6 +35,7 @@ import java.util.Map;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.ENCAPSULATED_ASSERTION;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Install Encapsulated Assertion.
@@ -207,7 +208,8 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
 
                     // check for error
                     if (GatewayManagementDocumentUtilities.isConcurrencyErrorResponse(statusDocument.right)) {
-                        throw new RuntimeException("Duplicate or concurrency error: Encapsulated Assertion name [" + encapsulatedAssertionName + "], GUID [" + encapsulatedAssertionGuid + "].  Bundle ID [" + id + "].");
+                        logger.log(WARNING, "Duplicate or concurrency error: Encapsulated Assertion name [" + encapsulatedAssertionName +
+                                "], GUID [" + encapsulatedAssertionGuid + "].  Bundle ID [" + id + "]. Will continue with any remaining installation.");
                     }
                 }
             } catch (SAXException | IOException e) {
