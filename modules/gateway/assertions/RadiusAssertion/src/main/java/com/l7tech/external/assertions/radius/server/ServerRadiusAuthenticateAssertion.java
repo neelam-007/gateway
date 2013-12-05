@@ -112,7 +112,7 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
      * @param context The PolicyEnforementContext
      * @return The LoginCredential or null if not found from the context.
      */
-    private LoginCredentials getLoginCredentials(final PolicyEnforcementContext context) throws AssertionStatusException {
+    LoginCredentials getLoginCredentials(final PolicyEnforcementContext context) throws AssertionStatusException {
         try {
             Message targetMessage = context.getOrCreateTargetMessage(assertion, false);
             return context.getAuthenticationContext(targetMessage).getLastCredentials();
@@ -139,12 +139,9 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
 
         InetAddress inetAddress = InetAddress.getByName(host);
         RadiusClient radiusClient = null;
-        try {
-            SecurePassword secret = securePasswordManager.findByPrimaryKey(assertion.getSecretGoid());
-            if (secret == null) throw new FindException();
-            String s = new String(securePasswordManager.decryptPassword(secret.getEncodedPassword()));
+        String secret = getSharedSecret();
 
-            radiusClient = new RadiusClient(inetAddress, s, authPort, acctPort, timeout);
+        try {
             AttributeList attributeList = new AttributeList();
             for (Map.Entry<String, String> entry : assertion.getAttributes().entrySet() ) {
                 String value = ExpandVariables.process(entry.getValue(), variableMap, getAudit());
@@ -155,8 +152,8 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
             attributeList.add(new Attr_UserName(credentials.getLogin()));
             attributeList.add(new Attr_UserPassword(new String(credentials.getCredentials())));
 
+            radiusClient = getRadiusClient(authPort, acctPort, timeout, inetAddress, secret);
             AccessRequest request = new AccessRequest(radiusClient, attributeList);
-
             RadiusPacket replyPacket = radiusClient.authenticate(request, RadiusClient.getAuthProtocol(assertion.getAuthenticator()), DEFAULT_RETRIES);
             //store RadiusAuthenticationContext in a context variable
             ctx.setVariable(assertion.getPrefix(), createRadiusAuthenticationContext(replyPacket));
@@ -171,12 +168,24 @@ public class ServerRadiusAuthenticateAssertion extends AbstractServerAssertion<R
 
     }
 
+    RadiusClient getRadiusClient(int authPort, int acctPort, int timeout, InetAddress inetAddress, String secret) throws IOException {
+        RadiusClient radiusClient;
+        radiusClient = new RadiusClient(inetAddress, secret, authPort, acctPort, timeout);
+        return radiusClient;
+    }
+
+    String getSharedSecret() throws FindException, ParseException {
+        SecurePassword secret = securePasswordManager.findByPrimaryKey(assertion.getSecretGoid());
+        if (secret == null) throw new FindException();
+        return new String(securePasswordManager.decryptPassword(secret.getEncodedPassword()));
+    }
+
     /**
      * creates RadiusAuthentication context out of reply packet
      * @param replyPacket  RadiusPacket
      * @return  RadiusAuthenticationContext
      */
-    private RadiusAuthenticationContext createRadiusAuthenticationContext(RadiusPacket replyPacket) {
+    RadiusAuthenticationContext createRadiusAuthenticationContext(RadiusPacket replyPacket) {
         AttributeList replyPacketAttributes = replyPacket.getAttributes();
         RadiusAuthenticationContext radiusAuthenticationContext = new RadiusAuthenticationContext();
         for(RadiusAttribute replyAttribute: replyPacketAttributes.getAttributeList()) {
