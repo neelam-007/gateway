@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.addorremovecookie;
+package com.l7tech.external.assertions.managecookie;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
@@ -12,7 +12,7 @@ import java.util.Collections;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
-public class AddOrRemoveCookieAssertion extends MessageTargetableAssertion implements UsesVariables {
+public class ManageCookieAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     public static enum Operation {
         ADD("Add"), REMOVE("Remove"), UPDATE("Update");
@@ -122,13 +122,13 @@ public class AddOrRemoveCookieAssertion extends MessageTargetableAssertion imple
         return meta;
     }
 
-    private static final String META_INITIALIZED = AddOrRemoveCookieAssertion.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = ManageCookieAssertion.class.getName() + ".metadataInitialized";
 
-    private static final String BASE_NAME = "Add or Remove Cookie";
+    private static final String BASE_NAME = "Manage Cookie";
 
-    private static final AssertionNodeNameFactory<AddOrRemoveCookieAssertion> NODE_NAME_FACTORY = new AssertionNodeNameFactory<AddOrRemoveCookieAssertion>() {
+    private static final AssertionNodeNameFactory<ManageCookieAssertion> NODE_NAME_FACTORY = new AssertionNodeNameFactory<ManageCookieAssertion>() {
         @Override
-        public String getAssertionName(final AddOrRemoveCookieAssertion assertion, final boolean decorate) {
+        public String getAssertionName(final ManageCookieAssertion assertion, final boolean decorate) {
             if (decorate) {
                 final StringBuilder sb = new StringBuilder();
                 sb.append(assertion.getOperation().getName());

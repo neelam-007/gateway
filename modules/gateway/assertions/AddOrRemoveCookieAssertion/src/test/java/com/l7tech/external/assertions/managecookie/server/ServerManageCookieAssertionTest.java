@@ -1,7 +1,7 @@
-package com.l7tech.external.assertions.addorremovecookie.server;
+package com.l7tech.external.assertions.managecookie.server;
 
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion;
+import com.l7tech.external.assertions.managecookie.ManageCookieAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
@@ -17,14 +17,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ServerAddOrRemoveCookieAssertionTest {
-    private AddOrRemoveCookieAssertion assertion;
+public class ServerManageCookieAssertionTest {
+    private com.l7tech.external.assertions.managecookie.ManageCookieAssertion assertion;
     private PolicyEnforcementContext context;
     private TestAudit testAudit;
 
     @Before
     public void setup() {
-        assertion = new AddOrRemoveCookieAssertion();
+        assertion = new com.l7tech.external.assertions.managecookie.ManageCookieAssertion();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         testAudit = new TestAudit();
     }
@@ -34,7 +34,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setName("foo");
         assertion.setValue("bar");
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals("bar", cookie.getCookieValue());
@@ -58,7 +58,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setComment("test comment");
         assertion.setSecure(true);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -89,7 +89,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setMaxAge("${maxAge}");
         assertion.setComment("${comment}");
 
-        assertEquals(AssertionStatus.NONE, new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, new ServerManageCookieAssertion(assertion).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -111,7 +111,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setMaxAge("");
         assertion.setComment("");
 
-        assertEquals(AssertionStatus.NONE, new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, new ServerManageCookieAssertion(assertion).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -128,7 +128,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void addCookieNullName() throws Exception {
         assertion.setValue("someValue");
         try {
-            new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context);
+            new ServerManageCookieAssertion(assertion).checkRequest(context);
             fail("Expected PolicyAssertionException");
         } catch (final PolicyAssertionException e) {
             assertEquals("Cookie name is null", e.getMessage());
@@ -140,7 +140,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void addCookieNullValue() throws Exception {
         assertion.setName("foo");
         try {
-            new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context);
+            new ServerManageCookieAssertion(assertion).checkRequest(context);
             fail("Expected PolicyAssertionException");
         } catch (final PolicyAssertionException e) {
             assertEquals("Cookie value is null", e.getMessage());
@@ -154,7 +154,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setValue("bar");
         assertion.setMaxAge("notNumeric");
 
-        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.INVALID_MAX_AGE));
     }
 
@@ -163,7 +163,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setName("${name}");
         assertion.setValue("bar");
 
-        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(context.getCookies().isEmpty());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_COOKIE_NAME));
         assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -175,7 +175,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setName("foo");
         assertion.setValue("newValue");
 
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -188,9 +188,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void removeCookie() throws Exception {
         context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
         assertion.setName("foo");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(context.getCookies().isEmpty());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
     }
@@ -200,18 +200,18 @@ public class ServerAddOrRemoveCookieAssertionTest {
         context.setVariable("name", "foo");
         context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
         assertion.setName("${name}");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(context.getCookies().isEmpty());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
     }
 
     @Test(expected = PolicyAssertionException.class)
     public void removeCookieNullName() throws Exception {
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
         try {
-            new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context);
+            new ServerManageCookieAssertion(assertion).checkRequest(context);
             fail("Expected PolicyAssertionException");
         } catch (final PolicyAssertionException e) {
             assertEquals("Cookie name is null", e.getMessage());
@@ -224,10 +224,10 @@ public class ServerAddOrRemoveCookieAssertionTest {
         final HttpCookie responseCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", true);
         context.addCookie(responseCookie);
         assertion.setName("foo");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
         assertion.setTarget(TargetMessageType.RESPONSE);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(context.getCookies().isEmpty());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
     }
@@ -237,10 +237,10 @@ public class ServerAddOrRemoveCookieAssertionTest {
         final HttpCookie requestCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false);
         context.addCookie(requestCookie);
         assertion.setName("foo");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
         assertion.setTarget(TargetMessageType.RESPONSE);
 
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         assertEquals("foo", context.getCookies().iterator().next().getCookieName());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
@@ -251,9 +251,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void removeCookieNotFound() throws Exception {
         context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
         assertion.setName("notFound");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
 
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         assertEquals("foo", context.getCookies().iterator().next().getCookieName());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
@@ -264,9 +264,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void removeCookieNameResolvesToEmpty() throws Exception {
         context.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost"));
         assertion.setName("${name}");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
 
-        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         assertEquals("foo", context.getCookies().iterator().next().getCookieName());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_COOKIE_NAME));
@@ -279,7 +279,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setName("foo");
         assertion.setValue("bar");
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals("bar", cookie.getCookieValue());
@@ -304,7 +304,7 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setValue("bar");
 
         try {
-            new ServerAddOrRemoveCookieAssertion(assertion).checkRequest(context);
+            new ServerManageCookieAssertion(assertion).checkRequest(context);
             fail("Expected PolicyAssertionException");
         } catch (final PolicyAssertionException e) {
             assertEquals("Unsupported target: testMessage", e.getMessage());
@@ -324,9 +324,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setVersion(1);
         assertion.setMaxAge("99");
         assertion.setSecure(true);
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals(modified, cookie.getCookieValue());
@@ -358,9 +358,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
         assertion.setVersion(1);
         assertion.setMaxAge("${maxAge}");
         assertion.setSecure(true);
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
-        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals(modified, cookie.getCookieValue());
@@ -379,9 +379,9 @@ public class ServerAddOrRemoveCookieAssertionTest {
         context.addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
         assertion.setName("${name}");
         assertion.setValue("bar");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
-        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FAILED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, context.getCookies().size());
         final HttpCookie cookie = context.getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -394,15 +394,15 @@ public class ServerAddOrRemoveCookieAssertionTest {
     public void updateCookieDoesNotExist() throws Exception {
         assertion.setName("foo");
         assertion.setValue("bar");
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerAddOrRemoveCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_NOT_FOUND));
         assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
-    private ServerAddOrRemoveCookieAssertion configureServerAssertion(final ServerAddOrRemoveCookieAssertion serverAssertion) {
+    private ServerManageCookieAssertion configureServerAssertion(final ServerManageCookieAssertion serverAssertion) {
         ApplicationContexts.inject(serverAssertion,
                 CollectionUtils.MapBuilder.<String, Object>builder()
                         .put("auditFactory", testAudit.factory())

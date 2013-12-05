@@ -1,7 +1,6 @@
-package com.l7tech.external.assertions.addorremovecookie.server;
+package com.l7tech.external.assertions.managecookie.server;
 
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -19,12 +18,12 @@ import java.util.Map;
 /**
  * Server side implementation of the AddOrRemoveCookieAssertion.
  *
- * @see com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion
+ * @see com.l7tech.external.assertions.managecookie.ManageCookieAssertion
  */
-public class ServerAddOrRemoveCookieAssertion extends AbstractServerAssertion<AddOrRemoveCookieAssertion> {
+public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7tech.external.assertions.managecookie.ManageCookieAssertion> {
     private final String[] variablesUsed;
 
-    public ServerAddOrRemoveCookieAssertion(final AddOrRemoveCookieAssertion assertion) throws PolicyAssertionException {
+    public ServerManageCookieAssertion(final com.l7tech.external.assertions.managecookie.ManageCookieAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
     }
@@ -125,7 +124,7 @@ public class ServerAddOrRemoveCookieAssertion extends AbstractServerAssertion<Ad
         return cookie;
     }
 
-    private void validateRequiredFields(final AddOrRemoveCookieAssertion.Operation operation) throws PolicyAssertionException {
+    private void validateRequiredFields(final com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation operation) throws PolicyAssertionException {
         if (assertion.getTarget() == TargetMessageType.OTHER) {
             // for now we do not support TargetMessageType.OTHER until we move cookies to be stored on the message instead of the PEC.
             throw new PolicyAssertionException(assertion, "Unsupported target: " + assertion.getOtherTargetMessageVariable());
@@ -133,7 +132,7 @@ public class ServerAddOrRemoveCookieAssertion extends AbstractServerAssertion<Ad
         if (assertion.getName() == null) {
             throw new PolicyAssertionException(assertion, "Cookie name is null");
         }
-        if (operation != AddOrRemoveCookieAssertion.Operation.REMOVE) {
+        if (operation != com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE) {
             if (assertion.getValue() == null) {
                 throw new PolicyAssertionException(assertion, "Cookie value is null");
             }

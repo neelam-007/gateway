@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.addorremovecookie;
+package com.l7tech.external.assertions.managecookie;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
@@ -8,19 +8,19 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class AddOrRemoveCookieAssertionTest {
-    private AddOrRemoveCookieAssertion assertion;
-    private AssertionNodeNameFactory<AddOrRemoveCookieAssertion> assertionNameFactory;
+public class ManageCookieAssertionTest {
+    private ManageCookieAssertion assertion;
+    private AssertionNodeNameFactory<ManageCookieAssertion> assertionNameFactory;
 
     @Before
     public void setup() {
-        assertion = new AddOrRemoveCookieAssertion();
+        assertion = new ManageCookieAssertion();
         assertionNameFactory = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
     }
 
     @Test
     public void getAssertionNameDoNotDecorate() {
-        assertEquals("Add or Remove Cookie", assertionNameFactory.getAssertionName(assertion, false));
+        assertEquals("Manage Cookie", assertionNameFactory.getAssertionName(assertion, false));
     }
 
     @Test
@@ -32,14 +32,14 @@ public class AddOrRemoveCookieAssertionTest {
 
     @Test
     public void getAssertionNameRemove() {
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.REMOVE);
+        assertion.setOperation(ManageCookieAssertion.Operation.REMOVE);
         assertion.setName("foo");
         assertEquals("Request: Remove Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
     }
 
     @Test
     public void getAssertionNameUpdate() {
-        assertion.setOperation(AddOrRemoveCookieAssertion.Operation.UPDATE);
+        assertion.setOperation(ManageCookieAssertion.Operation.UPDATE);
         assertion.setName("foo");
         assertEquals("Request: Update Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
     }

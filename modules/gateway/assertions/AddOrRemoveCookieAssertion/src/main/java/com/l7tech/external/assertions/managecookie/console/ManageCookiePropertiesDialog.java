@@ -1,17 +1,17 @@
-package com.l7tech.external.assertions.addorremovecookie.console;
+package com.l7tech.external.assertions.managecookie.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
-import com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion;
+import com.l7tech.external.assertions.managecookie.ManageCookieAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
-import static com.l7tech.external.assertions.addorremovecookie.AddOrRemoveCookieAssertion.Operation.*;
+import static com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.*;
 
-public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCancelSupport<AddOrRemoveCookieAssertion> {
+public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSupport<ManageCookieAssertion> {
     private JPanel contentPanel;
     private JTextField nameTextField;
     private JTextField valueTextField;
@@ -24,14 +24,14 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     private JComboBox operationComboBox;
     private InputValidator validators;
 
-    public AddOrRemoveCookiePropertiesDialog(final Frame parent, final AddOrRemoveCookieAssertion assertion) {
+    public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
         initComponents();
         enableDisable();
     }
 
     @Override
-    public void setData(final AddOrRemoveCookieAssertion assertion) {
+    public void setData(final ManageCookieAssertion assertion) {
         operationComboBox.setSelectedItem(assertion.getOperation());
         nameTextField.setText(assertion.getName());
         valueTextField.setText(assertion.getValue());
@@ -44,12 +44,12 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     }
 
     @Override
-    public AddOrRemoveCookieAssertion getData(final AddOrRemoveCookieAssertion assertion) throws ValidationException {
+    public ManageCookieAssertion getData(final ManageCookieAssertion assertion) throws ValidationException {
         final String error = validators.validate();
         if (error != null) {
             throw new ValidationException(error);
         }
-        assertion.setOperation((AddOrRemoveCookieAssertion.Operation) operationComboBox.getSelectedItem());
+        assertion.setOperation((ManageCookieAssertion.Operation) operationComboBox.getSelectedItem());
         assertion.setName(nameTextField.getText().trim());
         assertion.setValue(valueTextField.getText().trim());
         assertion.setDomain(domainTextField.getText().trim());
@@ -68,11 +68,11 @@ public class AddOrRemoveCookiePropertiesDialog extends AssertionPropertiesOkCanc
     @Override
     protected void initComponents() {
         super.initComponents();
-        operationComboBox.setModel(new DefaultComboBoxModel(new AddOrRemoveCookieAssertion.Operation[]{AddOrRemoveCookieAssertion.Operation.ADD, AddOrRemoveCookieAssertion.Operation.REMOVE}));
+        operationComboBox.setModel(new DefaultComboBoxModel(new ManageCookieAssertion.Operation[]{ManageCookieAssertion.Operation.ADD, ManageCookieAssertion.Operation.REMOVE}));
         operationComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                return super.getListCellRendererComponent(list, value instanceof AddOrRemoveCookieAssertion.Operation ? ((AddOrRemoveCookieAssertion.Operation) value).getName() : value, index, isSelected, cellHasFocus);
+                return super.getListCellRendererComponent(list, value instanceof ManageCookieAssertion.Operation ? ((ManageCookieAssertion.Operation) value).getName() : value, index, isSelected, cellHasFocus);
             }
         });
         operationComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
