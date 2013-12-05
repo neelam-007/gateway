@@ -19,6 +19,16 @@ public class RadiusAssertion extends Assertion {
 
     public static String REASON_CODE = "reasonCode";
 
+    private static final Set<String> excludedAuthenticators;
+    //the following authenticators are excluded from the set due to implementation complexity.
+    //TODO: implement support for excluded authenticators
+    static{
+        excludedAuthenticators = new HashSet<>();
+        excludedAuthenticators.add("eap-tls");
+        excludedAuthenticators.add("eap-ttls");
+        excludedAuthenticators.add("peap");
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -79,14 +89,15 @@ public class RadiusAssertion extends Assertion {
          * @return a list of registered authenticators
          */
         public String[] getAuthenticators() {
-            String[] list = new String[authenticators.size()];
+            List<String> list = new ArrayList<>();
 
-            int i = 0;
             for (Map.Entry<String, Class<?>> entry: authenticators.entrySet()) {
-                list[i] = entry.getKey();
-                i++;
+                if(excludedAuthenticators.contains(entry.getKey())) continue;
+                list.add(entry.getKey());
             }
-            return list;
+            return list.toArray(new String[]{});
         }
+
+
     }
 }
