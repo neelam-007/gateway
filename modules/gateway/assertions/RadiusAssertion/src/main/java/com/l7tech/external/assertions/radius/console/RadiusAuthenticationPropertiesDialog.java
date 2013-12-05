@@ -116,15 +116,15 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
             @Override
             public String getValidationError() {
                 if (StringUtils.isBlank(prefixTargetVariablePanel.getVariable())) {
-                    return "Radius Variable Prefix must not be empty!";
+                    return Utilities.removeColonFromLabel(radiusVariablePrefixLabel) + " must not be empty!";
                 } else if(!VariableMetadata.isNameValid(prefixTargetVariablePanel.getVariable())) {
-                    return "Radius Variable Prefix must have valid name";
+                    return Utilities.removeColonFromLabel(radiusVariablePrefixLabel) + " must have valid name";
                 }
                 return null;
             }
         });
-        okValidator.constrainTextFieldToBeNonEmpty(hostLabel.getText(), hostTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty(authPortLabel.getText(), authPortTextField, new InputValidator.ComponentValidationRule(authPortTextField) {
+        okValidator.constrainTextFieldToBeNonEmpty(Utilities.removeColonFromLabel(hostLabel), hostTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(Utilities.removeColonFromLabel(authPortLabel), authPortTextField, new InputValidator.ComponentValidationRule(authPortTextField) {
             @Override
             public String getValidationError() {
 
@@ -138,14 +138,15 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                     }
 
                     if(port < 0 || port > 65535)
-                        return  "Invalid port number " + text + "\nValue must be in the range between 0 and 65535";
+                        return  "Invalid " + Utilities.removeColonFromLabel(authPortLabel) + " number " + text + "\nValue must be in the range between 0 and 65535";
+
                 }
 
                 return null;
             }
         });
-        okValidator.constrainTextFieldToBeNonEmpty(acctPortLabel.getText(), acctPortTextField, null);
-        okValidator.constrainTextFieldToBeNonEmpty(timeoutSecLabel.getText(), timeoutTextField, new InputValidator.ComponentValidationRule(timeoutTextField) {
+        okValidator.constrainTextFieldToBeNonEmpty(Utilities.removeColonFromLabel(acctPortLabel), acctPortTextField, null);
+        okValidator.constrainTextFieldToBeNonEmpty(Utilities.removeColonFromLabel(timeoutSecLabel), timeoutTextField, new InputValidator.ComponentValidationRule(timeoutTextField) {
             @Override
             public String getValidationError() {
 
@@ -165,7 +166,7 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                 return null;
             }
         });
-        okValidator.ensureComboBoxSelection(secretLabel.getText(), securePasswordComboBox);
+        okValidator.ensureComboBoxSelection(Utilities.removeColonFromLabel(secretLabel), securePasswordComboBox);
 
         InputValidator.ValidationRule authenticatorRule =
                 new InputValidator.ComponentValidationRule(authenticatorComboBox) {
@@ -173,10 +174,10 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                     public String getValidationError() {
                         if (authenticatorComboBox.getSelectedItem() != null ) {
                                 if (!getRadiusAdmin().isAuthenticatorSupport((String) authenticatorComboBox.getSelectedItem())) {
-                                    return "The Authenticator " + authenticatorComboBox.getSelectedItem() + " is not supported.";
+                                    return "The " + Utilities.removeColonFromLabel(authenticatorLabel) + " " + authenticatorComboBox.getSelectedItem() + " is not supported.";
                                 }
                         } else {
-                            return "The Authenticator must not be empty.";
+                            return "The " + Utilities.removeColonFromLabel(authenticatorLabel) + " " + " must not be empty.";
                         }
                         return null;
                     }

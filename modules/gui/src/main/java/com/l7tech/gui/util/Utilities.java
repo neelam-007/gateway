@@ -1781,4 +1781,15 @@ public class Utilities {
         button.setForeground(Color.BLUE);
         button.setMargin(new Insets(0, 0, 0, 0));
     }
+
+    /**
+     * Removes colon and any characters after the colon until the end of the string from the label's text
+     * @param label JLabel component
+     * @return String containing no colon or any subsequent characters until the end of the string
+     */
+    public static String removeColonFromLabel(JLabel label) {
+        if(label == null) return null;
+        String text = label.getText();
+        return text.replaceAll(":.*$", "").trim();
+    }
 }
