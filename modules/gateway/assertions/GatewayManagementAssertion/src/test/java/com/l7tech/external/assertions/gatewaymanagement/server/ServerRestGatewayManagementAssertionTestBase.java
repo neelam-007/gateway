@@ -82,9 +82,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
-        TestIdentityProviderConfigManager identityProviderConfigManager = applicationContext.getBean("identityProviderConfigManager", TestIdentityProviderConfigManager.class);
         identityProviderConfig = TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG;
-        identityProviderConfigManager.save(identityProviderConfig);
     }
 
     protected static IdentityProviderConfig provider(final Goid oid, final IdentityProviderType type, final String name, String... props) {
