@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
 	<info organisation="com.l7tech"
-		module="AddOrRemoveCookieAssertion"
+		module="ManageCookieAssertion"
         status="integration"
 	>
 	</info>
@@ -9,7 +9,7 @@
         <include file="../assertion-ivyconfiguration.xml"/>
 	</configurations>
 	<publications>
-		<artifact name="AddOrRemoveCookieAssertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="ManageCookieAssertion" type="aar" ext="aar" conf="master"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"

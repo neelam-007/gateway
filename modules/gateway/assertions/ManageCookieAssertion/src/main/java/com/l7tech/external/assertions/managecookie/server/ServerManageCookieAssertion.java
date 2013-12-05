@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Server side implementation of the AddOrRemoveCookieAssertion.
+ * Server side implementation of the ManageCookieAssertion.
  *
  * @see com.l7tech.external.assertions.managecookie.ManageCookieAssertion
  */
