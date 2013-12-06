@@ -23,6 +23,8 @@
 
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
-                
+
+        <dependency name="jersey-wadl-doclet" org="jersey" rev="2.1" force="true" conf="compile->default"/>
+
 	</dependencies>
 </ivy-module>

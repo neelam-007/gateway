@@ -118,10 +118,11 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
         }
         if(existingResource != null){
             factory.updateResource(id, resource);
+            return Response.ok().entity(toReference(resource)).build();
         } else {
             factory.createResource(id, resource);
+            return Response.created(uriInfo.getAbsolutePath()).entity(toReference(resource)).build();
         }
-        return Response.ok().entity(toReference(resource)).build();
     }
 
     @Override

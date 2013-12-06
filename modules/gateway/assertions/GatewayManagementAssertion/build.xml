@@ -9,7 +9,7 @@
     <!--
       Override compile-main-resources and add dependency on WSDL generation
     -->
-    <target name="compile-main-resources" depends="common.compile-main-resources, generate-wsdl"/>
+    <target name="compile-main-resources" depends="common.compile-main-resources, generate-wsdl, generate-javadoc"/>
 
     <target name="generate-wsdl" depends="compile-main-java">
         <echo>Generating WSDL for Gateway Management service</echo>
@@ -61,6 +61,40 @@
             <fileset dir="${basedir}/build/etc/wsdl">
                 <include name="*.wsdl"/>
                 <include name="*.xsd"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- This target generates the javadoc xml file that is used by Jersey to add java docs to the Jersey WADL -->
+    <target name="generate-javadoc" depends="compile-main-java">
+        <property name="gatewaymanagementassertion.javadoc.build.dir" value="${basedir}/build/etc/javadoc"/>
+        <mkdir dir="${gatewaymanagementassertion.javadoc.build.dir}"/>
+        <property name="gatewaymanagementassertion.javadoc.dest.dir" value="${classes.main.dir}"/>
+        <path id="javadoc.src.path">
+            <pathelement location="${src.main.java.dir}"/>
+        </path>
+        <ivy:cachepath pathid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+        <path id="javadoc.class.path">
+            <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+        </path>
+        <!-- Create the java doc -->
+        <javadoc sourcepathref="javadoc.src.path"
+                 classpathref="javadoc.class.path"
+                 packagenames="com.l7tech.external.assertions.gatewaymanagement.server.rest.*"
+                 defaultexcludes="yes"
+                 version="true"
+                 maxmemory="512m"
+                 useexternalfile="yes"
+                 failonerror="yes">
+            <doclet name="org.glassfish.jersey.wadl.doclet.ResourceDoclet" pathref="javadoc.class.path">
+                <param name="-output" value="${basedir}/build/etc/javadoc/resourcedoc.xml" />
+            </doclet>
+        </javadoc>
+
+        <!-- Move the javadoc to the classes directory so it get properly aar'd up -->
+        <copy todir="${gatewaymanagementassertion.javadoc.dest.dir}">
+            <fileset dir="${gatewaymanagementassertion.javadoc.build.dir}">
+                <include name="*.xml"/>
             </fileset>
         </copy>
     </target>

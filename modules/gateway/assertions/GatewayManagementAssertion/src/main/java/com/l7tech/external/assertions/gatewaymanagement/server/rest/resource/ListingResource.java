@@ -40,7 +40,7 @@ public interface ListingResource {
      * @param count   The total number of entities to return. The returned list can be shorter is there are not enough
      *                entities
      * @param sort    The property to sort the results by.
-     * @param order   The order tro sort by. either asc or desc
+     * @param order   The order to sort by. Either asc or desc
      * @return A list of entities. If the list is empty then no entities were found.
      */
     @GET

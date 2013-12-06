@@ -39,6 +39,8 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     private Collection<Class<? extends Annotation>> autoScannedComponentAnnotations;
     //Additional component objects to add to the rest application.
     private Collection<?> additionalComponentObjects;
+    //Additional properties to give the rest application.
+    private Map<String, Object> resourceConfigProperties;
 
     /**
      * This initializes the rest agent. It will create a new jersey application.
@@ -61,6 +63,13 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
                 return resourceClassSet;
             }
         });
+
+        //Add any additional properties to the rest application.
+        if(resourceConfigProperties != null && !resourceConfigProperties.isEmpty()) {
+            for(Map.Entry<String, Object> entry : resourceConfigProperties.entrySet()){
+                resourceConfig.property(entry.getKey(), entry.getValue());
+            }
+        }
 
         //add the injection resolver feature so that @SpringBean annotations will be properly processed.
         if (applicationContext != null) {
@@ -198,5 +207,22 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     public void setAdditionalComponentObjects(Collection<?> additionalComponentObjects) {
         checkInitialized();
         this.additionalComponentObjects = additionalComponentObjects;
+    }
+
+    /**
+     * Returns the Map of additional properties to add to the rest application
+     * @return The Map of additional properties to add to the rest application
+     */
+    public Map<String, Object> getResourceConfigProperties() {
+        return Collections.unmodifiableMap(resourceConfigProperties);
+    }
+
+    /**
+     * Sets the Map of additional properties to add to the rest application
+     * @param resourceConfigProperties The Map of additional properties to add to the rest application
+     */
+    public void setResourceConfigProperties(Map<String, Object> resourceConfigProperties) {
+        checkInitialized();
+        this.resourceConfigProperties = resourceConfigProperties;
     }
 }
