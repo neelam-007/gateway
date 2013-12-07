@@ -87,7 +87,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
 
         ClusterProperty createdEntity = mockClusterPropertyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
-        assertEquals("Cluster property username:", createObject.getValue(), createdEntity.getValue());
+        assertEquals("Cluster property value:", createObject.getValue(), createdEntity.getValue());
     }
 
     @Test

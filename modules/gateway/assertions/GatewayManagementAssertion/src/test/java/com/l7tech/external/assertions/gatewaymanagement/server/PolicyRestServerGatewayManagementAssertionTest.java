@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -20,6 +21,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -36,6 +38,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
     private static PolicyManagerStub policyManager;
     private static final String policyBasePath = "policies/";
     private Folder rootFolder;
+    private FolderManagerStub folderManager;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -45,7 +48,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
     @Before
     public void before() throws Exception {
         super.before();
-        FolderManagerStub folderManager = applicationContext.getBean("folderManager", FolderManagerStub.class);
+        folderManager = applicationContext.getBean("folderManager", FolderManagerStub.class);
         rootFolder = new Folder("ROOT FOLDER", null);
         folderManager.save(rootFolder);
 
@@ -81,6 +84,12 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
     @After
     public void after() throws Exception {
         super.after();
+
+        Collection<FolderHeader> folders = new ArrayList<>(folderManager.findAllHeaders());
+        for (EntityHeader entity : folders) {
+            folderManager.delete(entity.getGoid());
+        }
+
         ArrayList<PolicyHeader> policies = new ArrayList<>(policyManager.findAllHeaders());
         for(EntityHeader policy : policies){
             policyManager.delete(policy.getGoid());
