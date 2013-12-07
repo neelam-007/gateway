@@ -117,15 +117,15 @@ public class PolicyBundleInstaller {
         logger.info("Finished installing bundle: " + context.getBundleInfo());
     }
 
-    FolderInstaller getFolderInstaller() {
+    public FolderInstaller getFolderInstaller() {
         return folderInstaller;
     }
 
-    ServiceInstaller getServiceInstaller() {
+    public ServiceInstaller getServiceInstaller() {
         return serviceInstaller;
     }
 
-    PolicyInstaller getPolicyInstaller() {
+    public PolicyInstaller getPolicyInstaller() {
         return policyInstaller;
     }
 

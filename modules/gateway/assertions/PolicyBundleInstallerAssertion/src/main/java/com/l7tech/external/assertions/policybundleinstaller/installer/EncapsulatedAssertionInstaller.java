@@ -20,6 +20,7 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -218,11 +219,11 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
         }
     }
 
-    private static String getPrefixedName(@Nullable String prefix, @NotNull String encapsulatedAssertionName) {
-        return prefix + " " + encapsulatedAssertionName;
+    protected static String getPrefixedName(@Nullable String prefix, @NotNull String encapsulatedAssertionName) {
+        return StringUtils.isEmpty(prefix) ? encapsulatedAssertionName : prefix + " " + encapsulatedAssertionName;
     }
 
-    private static String getPrefixedGuid(@Nullable String prefix, @NotNull String guid) {
-        return (prefix + guid).substring(0, guid.length());
+    protected static String getPrefixedGuid(@Nullable String prefix, @NotNull String guid) {
+        return prefix == null ? guid : (prefix + guid).substring(0, guid.length());
     }
 }
