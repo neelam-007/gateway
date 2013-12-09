@@ -44,6 +44,7 @@ public class TrustedCertificateInstaller extends BaseInstaller {
         final BundleInfo bundleInfo = context.getBundleInfo();
         final Document certificateEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), CERTIFICATE, true);
         final Map<Element, Element> certificateMap = findCertificateSerialNumbersAndNamesFromEnumeration(certificateEnumDoc);
+        logger.finest("Dry run checking " + certificateMap.size() + " trusted certificate(s).");
         for (Element certSerialNumElm : certificateMap.keySet()) {
             checkInterrupted();
             final String serialNumber = XmlUtil.getTextValue(certSerialNumElm);
@@ -79,6 +80,7 @@ public class TrustedCertificateInstaller extends BaseInstaller {
      */
     private void installTrustedCertificate(final Document trustedCertEnumeration) throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse, InterruptedException, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
         final List<Element> certificateElms = GatewayManagementDocumentUtilities.getEntityElements(trustedCertEnumeration.getDocumentElement(), "TrustedCertificate");
+        logger.finest("Installing " + certificateElms.size() + " trusted certificate(s).");
         for (Element certificateElm : certificateElms) {
             checkInterrupted();
 
@@ -98,6 +100,7 @@ public class TrustedCertificateInstaller extends BaseInstaller {
             final String certificateXmlTemplate = XmlUtil.nodeToStringQuiet(certificateElm);
             final String createCertificateXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), CERTIFICATE_MGMT_NS, certificateXmlTemplate);
 
+            logger.finest("Creating trusted certificate with serial number '" + serialNumber + "' .");
             final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createCertificateXml);
 
             final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
@@ -109,6 +112,7 @@ public class TrustedCertificateInstaller extends BaseInstaller {
 
     @NotNull
     private List<Goid> findMatchingCertificateBySerialNumber(String certificateSerialNumber) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        logger.finest("Finding trusted certificate serial number '" + certificateSerialNumber + "'.");
         final String certificateFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 CERTIFICATE_MGMT_NS, 10, "/l7:TrustedCertificate/l7:CertificateData/l7:SerialNumber[text()='" + certificateSerialNumber + "']");
 

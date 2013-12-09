@@ -83,6 +83,8 @@ public class PolicyBundleInstaller {
             InterruptedException,
             AccessDeniedManagementResponse {
 
+        logger.fine("Conflict checking bundle: " + context.getBundleInfo().getId());
+
         final Map<String, String> conflictingPolicyIdsNames = new HashMap<>();
         final Map<String, String> policyIdsNames =  policyInstaller.dryRunInstall(dryRunEvent, conflictingPolicyIdsNames);
         encapsulatedAssertionInstaller.dryRunInstall(dryRunEvent, policyIdsNames, conflictingPolicyIdsNames);
@@ -90,6 +92,8 @@ public class PolicyBundleInstaller {
         trustedCertificateInstaller.dryRunInstall(dryRunEvent);
         jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
         assertionInstaller.dryRunInstall(dryRunEvent);
+
+        logger.fine("Finished conflict checking bundle: " + context.getBundleInfo());
     }
 
     /**

@@ -41,6 +41,7 @@ public class AssertionInstaller extends BaseInstaller {
             final Document enumerationDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), ASSERTION, true);
             if (enumerationDoc != null) {
                 final List<Element> assertionElms = GatewayManagementDocumentUtilities.getEntityElements(enumerationDoc.getDocumentElement(), "Assertion");
+                logger.finest("Dry run checking " + assertionElms.size() + " assertion(s).");
                 for (Element assertionElm: assertionElms) {
                     final Element assertionNameElm = XmlUtil.findFirstDescendantElement(assertionElm, MGMT_VERSION_NAMESPACE, "Name");
                     final Element policyElm = XmlUtil.findFirstDescendantElement(assertionElm, GatewayManagementDocumentUtilities.getNamespaceMap().get("wsp"), "Policy");

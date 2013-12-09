@@ -61,10 +61,10 @@ public class JdbcConnectionInstaller extends BaseInstaller {
         checkInterrupted();
         final BundleInfo bundleInfo = context.getBundleInfo();
         final Set<String> jdbcConnRefs = bundleInfo.getJdbcConnectionReferences();
+        logger.finest("Dry run checking " + jdbcConnRefs.size() + " JDBC reference(s).");
         final BundleMapping bundleMapping = context.getBundleMapping();
         if (!jdbcConnRefs.isEmpty()) {
-            final Map<String, String> jdbcMappings =
-                    (bundleMapping != null) ? bundleMapping.getJdbcMappings() : new HashMap<String, String>();
+            final Map<String, String> jdbcMappings = (bundleMapping != null) ? bundleMapping.getJdbcMappings() : new HashMap<String, String>();
 
             // validate each, consider any mapping that may be present.
             for (String jdbcConnRef : jdbcConnRefs) {
@@ -84,6 +84,7 @@ public class JdbcConnectionInstaller extends BaseInstaller {
 
     @NotNull
     private List<Goid> findMatchingJdbcConnection(String jdbcConnection) throws GatewayManagementDocumentUtilities.AccessDeniedManagementResponse, InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+        logger.finest("Finding JDBC connection '" + jdbcConnection + "'.");
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 JDBC_MGMT_NS, 10, "/l7:JDBCConnection/l7:Name[text()='" + jdbcConnection + "']");
 

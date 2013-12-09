@@ -46,6 +46,7 @@ public class ServiceInstaller extends BaseInstaller {
         final BundleInfo bundleInfo = context.getBundleInfo();
         final Document serviceEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), SERVICE, true);
         final Map<Element, Element> serviceDetailMap = GatewayManagementDocumentUtilities.findServiceNamesAndUrlPatternsFromEnumeration(serviceEnumDoc);
+        logger.finest("Dry run checking " + serviceDetailMap.size() + " service(s).");
         for (Element nameElmt: serviceDetailMap.keySet()) {
             checkInterrupted();
 
@@ -115,8 +116,12 @@ public class ServiceInstaller extends BaseInstaller {
             InterruptedException,
             AccessDeniedManagementResponse {
 
-        final Map<String, Goid> oldIdsToNewServiceIds = new HashMap<>();
+
         final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceMgmtEnumeration.getDocumentElement(), "Service");
+        int serviceElmsSize = serviceElms.size();
+        logger.finest("Installing " + serviceElmsSize + " policies.");
+
+        final Map<String, Goid> oldIdsToNewServiceIds = new HashMap<>(serviceElmsSize);
         for (Element serviceElm : serviceElms) {
             checkInterrupted();
 
@@ -183,6 +188,7 @@ public class ServiceInstaller extends BaseInstaller {
             final String serviceXmlTemplate = XmlUtil.nodeToStringQuiet(serviceElmWritable);
             final String createServiceXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), SERVICES_MGMT_NS, serviceXmlTemplate);
 
+            logger.finest("Creating service.");
             final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createServiceXml);
 
             final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
@@ -219,6 +225,7 @@ public class ServiceInstaller extends BaseInstaller {
      */
     @NotNull
     private List<Goid> findMatchingServiceByUrl(String urlMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
+        logger.finest("Finding service URL '" + urlMapping + "'.");
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
                 "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
 
@@ -234,14 +241,14 @@ public class ServiceInstaller extends BaseInstaller {
      */
     @NotNull
     private List<Goid> findMatchingServiceByNameWithoutResolutionUrl(String nameMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        final List<Goid> foundIds = new ArrayList<>();
-
+        logger.finest("Finding service name '" + nameMapping + "'.");
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
                 "/l7:Service/l7:ServiceDetail/l7:Name[text()='" + nameMapping + "']");
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
 
         // Remove ids associated with some services having resolution url, since service conflict with resolution url has been done by findMatchingServiceByUrl.
         final List<Goid> nameMatchedServices = GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+        final List<Goid> foundIds = new ArrayList<>(nameMatchedServices.size());
         for (Goid id: nameMatchedServices) {
             String oidFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
                     "/l7:Service/l7:ServiceDetail[@id='" + id + "']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern");

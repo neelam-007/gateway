@@ -64,6 +64,7 @@ public class PolicyInstaller extends BaseInstaller {
         final Document policyEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), POLICY, true);
         if (policyEnumDoc != null) {
             final List<Element> policyNamesElms = findAllNamesFromEnumeration(policyEnumDoc);
+            logger.finest("Dry run checking " + policyNamesElms.size() + " policies.");
             for (Element policyNamesElm : policyNamesElms) {
                 checkInterrupted();
                 final String policyName = getPrefixedPolicyName(DomUtils.getTextValue(policyNamesElm));
@@ -135,6 +136,7 @@ public class PolicyInstaller extends BaseInstaller {
 
     @NotNull
     private List<Goid> findMatchingPolicy(String policyName) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
+        logger.finest("Finding policy name '" + policyName + "'.");
         final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
                 POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
 
@@ -169,9 +171,11 @@ public class PolicyInstaller extends BaseInstaller {
             AccessDeniedManagementResponse {
 
         final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyMgmtEnumeration.getDocumentElement(), "Policy");
+        int policyElmsSize = enumPolicyElms.size();
+        logger.finest("Installing " + policyElmsSize + " policies.");
 
-        final Map<String, String> guidToName = new HashMap<>();
-        final Map<String, Element> allPolicyElms = new HashMap<>();
+        final Map<String, String> guidToName = new HashMap<>(policyElmsSize);
+        final Map<String, Element> allPolicyElms = new HashMap<>(policyElmsSize);
         for (Element policyElm : enumPolicyElms) {
             final Element name = XmlUtil.findFirstDescendantElement(policyElm, BundleUtils.L7_NS_GW_MGMT, "Name");
             final String policyName = DomUtils.getTextValue(name, true);
@@ -180,7 +184,7 @@ public class PolicyInstaller extends BaseInstaller {
             allPolicyElms.put(guid, policyElm);
         }
 
-        final Map<String, String> oldGuidsToNewGuids = new HashMap<>();
+        final Map<String, String> oldGuidsToNewGuids = new HashMap<>(policyElmsSize);
         // fyi: circular policy includes are not supported via the Policy Manager - assume they will not be found
         for (Element policyElm : enumPolicyElms) {
             // recursive call if policy includes an include
@@ -221,6 +225,7 @@ public class PolicyInstaller extends BaseInstaller {
 
         if (oldGuidsToNewGuids.containsKey(policyGuid)) {
             // already created
+            logger.finest("Policy with GUID '" + policyGuid + "' already created.");
             return;
         }
 
@@ -285,6 +290,7 @@ public class PolicyInstaller extends BaseInstaller {
         }
 
         final String createPolicyXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), POLICIES_MGMT_NS, policyXmlTemplate);
+        logger.finest("Creating policy '" + policyNameToUse + "' .");
         final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createPolicyXml);
 
         final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
@@ -313,6 +319,7 @@ public class PolicyInstaller extends BaseInstaller {
 
         final String getPolicyXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
+        logger.finest("Getting GUID for policy name '" + policyName + "'.");
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(getPolicyXml);
         final ElementCursor cursor = new DomElementCursor(documentPair.right);
 
@@ -331,6 +338,7 @@ public class PolicyInstaller extends BaseInstaller {
 
         final String getPolicyXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
+        logger.finest("Getting GOID for policy name '" + policyName + "'.");
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(getPolicyXml);
         final ElementCursor cursor = new DomElementCursor(documentPair.right);
 
