@@ -190,6 +190,14 @@
                     &lt;L7p:Base64Expression stringValue="LSBBUEkgUG9ydGFsIEludGVncmF0aW9uIGlzIGNvbmZpZ3VyZWQ="/&gt;
                     &lt;L7p:VariableToSet stringValue="customError"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="PORTAL_INTEGRATION"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:All&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
