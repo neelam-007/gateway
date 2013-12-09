@@ -32,7 +32,7 @@ public class OAuthInstallerTaskDialog extends BundleInstallerDialog {
     private boolean integrateApiPortal = false;
 
     public OAuthInstallerTaskDialog(Frame owner) {
-        super(owner, OAUTH_FOLDER + " Toolkit Installer", null);
+        super(owner, OAUTH_FOLDER, null);
 
         JButton manageSecureZoneDatabaseButton = new JButton("Manage OTK Database");
         customizableButtonPanel.add(manageSecureZoneDatabaseButton);
