@@ -56,7 +56,7 @@ public final class ExpandVariables {
         return processSingleVariableAsDisplayableObject(expr, vars, audit, strict());
     }
 
-    private static boolean strict() {
+    static boolean strict() {
         return ConfigFactory.getBooleanProperty( ServerConfigParams.PARAM_TEMPLATE_STRICTMODE, false );
     }
 
@@ -271,7 +271,7 @@ public final class ExpandVariables {
     }
 
     @Nullable
-    private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
+    static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
         String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
             badVariable(syntax.remainingName, strict, audit);
