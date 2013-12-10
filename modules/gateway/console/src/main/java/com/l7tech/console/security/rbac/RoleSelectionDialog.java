@@ -3,12 +3,11 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.RbacUtilities;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.CheckBoxSelectableTableModel;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
@@ -17,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -117,11 +117,14 @@ public class RoleSelectionDialog extends JDialog {
                 }));
         try {
             final ArrayList<Role> rows = new ArrayList<>();
-            final Collection<Role> allRoles = Registry.getDefault().getRbacAdmin().findAllRoles();
+            final Collection<EntityHeader> headers = Registry.getDefault().getRbacAdmin().findAllRoleHeaders();
             final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-            for (final Role role : allRoles) {
-                if (!rolesToFilter.contains(role) && securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role))) {
-                    rows.add(role);
+            for (final EntityHeader header : headers) {
+                if (header instanceof RoleEntityHeader) {
+                    final Role role = RbacUtilities.fromEntityHeader((RoleEntityHeader) header);
+                    if (!rolesToFilter.contains(role) && securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role))) {
+                        rows.add(role);
+                    }
                 }
             }
             rolesModel.setSelectableObjects(rows);
@@ -130,5 +133,50 @@ public class RoleSelectionDialog extends JDialog {
             rolesModel.setSelectableObjects(Collections.<Role>emptyList());
         }
         tablePanel.configure(rolesModel, new int[]{NAME_COL_INDEX}, ROLES);
+        tablePanel.getSelectableTable().getColumnModel().getColumn(NAME_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (component instanceof JLabel) {
+                    final RoleLabel roleLabel = new RoleLabel(value.toString(), rolesModel.getSelectableObject(table.convertRowIndexToModel(row)));
+                    roleLabel.setOpaque(true);
+                    if (isSelected) {
+                        roleLabel.setBackground(table.getSelectionBackground());
+                        roleLabel.setForeground(table.getSelectionForeground());
+                    } else {
+                        roleLabel.setBackground(table.getBackground());
+                        roleLabel.setForeground(table.getForeground());
+                    }
+                    component = roleLabel;
+                }
+                return component;
+            }
+        });
+    }
+
+    /**
+     * Custom JLabel for a Role which fetches the tool tip as needed.
+     */
+    private class RoleLabel extends JLabel {
+        private final Role role;
+
+        public RoleLabel(@NotNull final String label, @NotNull final Role role) {
+            super(label);
+            this.role = role;
+        }
+
+        @Override
+        public String getToolTipText() {
+            String toolTip = getText();
+            try {
+                final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getGoid());
+                if (found != null) {
+                    toolTip = Registry.getDefault().getEntityNameResolver().getNameForEntity(found, true);
+                }
+            } catch (final FindException | PermissionDeniedException e) {
+                logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            return toolTip;
+        }
     }
 }

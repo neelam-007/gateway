@@ -16,6 +16,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.hibernate.Criteria;
+import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
@@ -190,7 +191,9 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 userAssignmentQuery.add(Restrictions.eq("entityType", EntityType.USER.getName()));
                 final List<RoleAssignment> uras = (List<RoleAssignment>) userAssignmentQuery.list();
                 for ( final RoleAssignment ra : uras ) {
-                    roles.add( ra.getRole() );
+                    final Role role = ra.getRole();
+                    initializeLazilyLoaded(role);
+                    roles.add(role);
                 }
 
                 //Now get the Roles the user can access via it's group membership
@@ -218,7 +221,9 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                     }
                     if ( header != null ) {
                         if ( header.isEnabled() ) {
-                            roles.add(ra.getRole());
+                            final Role role = ra.getRole();
+                            initializeLazilyLoaded(role);
+                            roles.add(role);
                         } else {
                             disabledGroupsWithRoles.add( header.getName() );
                         }
@@ -263,7 +268,9 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
 
                 for (Object aGList : gList) {
                     RoleAssignment ra = (RoleAssignment) aGList;
-                    roles.add(ra.getRole());
+                    final Role role = ra.getRole();
+                    initializeLazilyLoaded(role);
+                    roles.add(role);
                 }
 
                 return roles;
@@ -383,7 +390,11 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 Criteria crit = session.createCriteria(Role.class);
                 crit.add(Restrictions.eq("entityTypeName", etype.name()));
                 crit.add(Restrictions.eq("entityGoid", entityId));
-                return crit.list();
+                final List list = crit.list();
+                for (Object o : list) {
+                    initializeLazilyLoaded((Role)o);
+                }
+                return list;
             }
         });
     }
@@ -640,6 +651,22 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                             ExceptionUtils.getDebugException(e));
                 }
             }
+        }
+    }
+
+    @Override
+    protected EntityHeader newHeader(final Role role) {
+        return new RoleEntityHeader(role.getGoid(), role.getName(), role.getDescription(), role.getVersion(), role.isUserCreated(), role.getEntityGoid(), role.getEntityType());
+    }
+
+    @Override
+    protected void initializeLazilyLoaded(final Role retrievedEntity) {
+        initializePermissions(retrievedEntity);
+    }
+
+    private void initializePermissions(final Role role) {
+        if (role != null && !Hibernate.isInitialized(role.getPermissions())) {
+            Hibernate.initialize(role.getPermissions());
         }
     }
 }

@@ -104,7 +104,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_GOID);
                     q.setParameter(0, goid);
-                    return (ET)q.uniqueResult();
+                    final ET et = (ET) q.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (Exception e) {
@@ -172,7 +174,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 protected ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());
                     criteria.add( criterion );
-                    return (ET)criteria.uniqueResult();
+                    final ET et = (ET) criteria.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (HibernateException e) {
@@ -268,7 +272,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     criteria.setFirstResult( offset );
                     criteria.setMaxResults( count );
 
-                    return (List<ET>)criteria.list();
+                    final List<ET> list = (List<ET>) criteria.list();
+                    for (final ET et : list) {
+                        initializeLazilyLoaded(et);
+                    }
+                    return list;
                 }
             });
         } catch (Exception e) {
@@ -361,7 +369,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     protected List<ET> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                         Criteria criteria = session.createCriteria(getImpClass());
                         criteria.add( criterion );
-                        return (List<ET>)criteria.list();
+                        final List<ET> list = (List<ET>) criteria.list();
+                        for (final ET et : list) {
+                            initializeLazilyLoaded(et);
+                        }
+                        return list;
                     }
                 });
         } catch (Exception e) {
@@ -930,7 +942,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     Criteria criteria = session.createCriteria(getImpClass());
                     addFindByNameCriteria(criteria);
                     criteria.add(Restrictions.eq(F_NAME, name));
-                    return (ET)criteria.uniqueResult();
+                    final ET et = (ET) criteria.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (HibernateException e) {
@@ -1048,6 +1062,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected void addedToCache(PersistentEntity ent) { }
 
     /**
+     * Override this method to initialize any lazily loaded fields of retrieved entities.
+     *
+     * This will be called on retrieved entities unless they are retrieved as part of a find all method.
+     *
+     * @param retrievedEntity the retrieved entity.
+     */
+    protected void initializeLazilyLoaded(ET retrievedEntity) {}
+
+    /**
      * Perform some action while holding the cache write lock.
      * It is an error to invoke this method if the current thread already
      * holds the cache read lock.
@@ -1156,7 +1179,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return (ET)session.get(impClass, goid);
+                    final ET et = (ET) session.get(impClass, goid);
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (Exception e) {
@@ -1200,7 +1225,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     } else {
                         criteria.add( Restrictions.eq( property, value ) );
                     }
-                    return criteria.list();
+                    final List list = criteria.list();
+                    for (final Object o : list) {
+                        initializeLazilyLoaded((ET)o);
+                    }
+                    return list;
                 }
             } );
         } catch (DataAccessException e) {

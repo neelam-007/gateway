@@ -54,9 +54,11 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private Tag tag;
     private boolean userCreated = false;
 
+    /**
+     * Lazily loaded see SSM-4544.
+     */
     @Valid
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
-    @Fetch(FetchMode.SUBSELECT)
+    @OneToMany(cascade=CascadeType.ALL, mappedBy="role")
     @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     public Set<Permission> getPermissions() {
         return permissions;

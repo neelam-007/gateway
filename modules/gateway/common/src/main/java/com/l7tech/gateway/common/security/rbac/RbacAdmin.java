@@ -33,10 +33,19 @@ public interface RbacAdmin {
 
     /**
      * Finds a collection of EntityHeaders for all {@link Role}s known to the SSG.
+     *
+     * Role permissions will not be loaded and must be retrieved separately.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     Collection<Role> findAllRoles() throws FindException;
+
+    /**
+     * @return a collection of EntityHeader for all Roles known to the SSG.
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_HEADERS)
+    Collection<EntityHeader> findAllRoleHeaders() throws FindException;
 
     /**
      * Returns the single Role with the specified OID, or null if no Role with the given OID exists.
@@ -194,4 +203,12 @@ public interface RbacAdmin {
      */
     @Secured(types=EntityType.ASSERTION_ACCESS, stereotype=SAVE_OR_UPDATE)
     Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException;
+
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
+    EntityHeader findHeader(EntityType entityType, Serializable pk) throws FindException;
+
+    @Transactional(readOnly=true)
+    @Secured(types = EntityType.ANY, stereotype = FIND_ENTITY)
+    Entity find(@NotNull EntityHeader header) throws FindException;
 }

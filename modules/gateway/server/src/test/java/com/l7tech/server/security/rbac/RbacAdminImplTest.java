@@ -2,6 +2,7 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
@@ -20,10 +21,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -55,12 +53,12 @@ public class RbacAdminImplTest {
         zones = new ArrayList<SecurityZone>();
         zones.add(zone);
         ApplicationContexts.inject(admin, CollectionUtils.<String, Object>mapBuilder()
-            .put("securityZoneManager", securityZoneManager)
-            .put("assertionRegistry", assertionRegistry)
-            .put("assertionAccessManager", assertionAccessManager)
-            .put("entityCrud", entityCrud)
-            .put("identityProviderFactory", identityProviderFactory)
-            .unmodifiableMap());
+                .put("securityZoneManager", securityZoneManager)
+                .put("assertionRegistry", assertionRegistry)
+                .put("assertionAccessManager", assertionAccessManager)
+                .put("entityCrud", entityCrud)
+                .put("identityProviderFactory", identityProviderFactory)
+                .unmodifiableMap());
     }
 
     @Test
@@ -156,6 +154,16 @@ public class RbacAdminImplTest {
         assertEquals(1, assignedRoles.size());
         final Role assignedRole = assignedRoles.iterator().next();
         assertEquals(connection, assignedRole.getCachedSpecificEntity());
+    }
+
+    @Test
+    public void findAllRoleHeaders() throws Exception {
+        when(roleManager.findAllHeaders()).thenReturn(Collections.<EntityHeader>singletonList(new RoleEntityHeader(new Goid(0, 1), "name", "description", 1, true, new Goid(1, 2), EntityType.SERVICE)));
+        final Collection<EntityHeader> headers = admin.findAllRoleHeaders();
+
+        assertEquals(1, headers.size());
+        assertTrue(headers.iterator().next() instanceof RoleEntityHeader);
+        verify(roleManager).findAllHeaders();
     }
 
     private SecurityZone createSecurityZone(final Goid goid) {

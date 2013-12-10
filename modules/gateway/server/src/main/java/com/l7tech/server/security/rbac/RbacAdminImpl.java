@@ -59,6 +59,11 @@ public class RbacAdminImpl implements RbacAdmin {
         return attachEntities(roleManager.findByPrimaryKey(goid));
     }
 
+    @Override
+    public Collection<EntityHeader> findAllRoleHeaders() throws FindException {
+        final Collection<EntityHeader> allHeaders = roleManager.findAllHeaders();
+        return allHeaders;
+    }
 
     public Collection<Permission> findCurrentUserPermissions() throws FindException {
         User u = JaasUtils.getCurrentUser();
@@ -135,20 +140,6 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     private Role attachEntities(Role theRole) {
-        for (Permission permission : theRole.getPermissions()) {
-            for (ScopePredicate scopePredicate : permission.getScope()) {
-                if (scopePredicate instanceof ObjectIdentityPredicate) {
-                    ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
-                    final String id = oip.getTargetEntityId();
-                    try {
-                        oip.setHeader(entityCrud.findHeader(permission.getEntityType(), id));
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
-                }
-            }
-        }
-
         Goid entityGoid = theRole.getEntityGoid();
         EntityType entityType = theRole.getEntityType();
         if (entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
@@ -262,5 +253,15 @@ public class RbacAdminImpl implements RbacAdmin {
         } catch (FindException | SaveException e) {
             throw new UpdateException("Unable to update assertion access: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    @Override
+    public EntityHeader findHeader(EntityType entityType, Serializable pk) throws FindException {
+        return entityCrud.findHeader(entityType, pk);
+    }
+
+    @Override
+    public Entity find(@NotNull EntityHeader header) throws FindException {
+        return entityCrud.find(header);
     }
 }
