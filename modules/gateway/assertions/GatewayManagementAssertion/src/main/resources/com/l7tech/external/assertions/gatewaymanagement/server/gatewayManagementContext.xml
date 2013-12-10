@@ -274,4 +274,6 @@
             </map>
         </property>
     </bean>
+
+    <bean id="restResourceLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocatorImpl" />
 </beans>

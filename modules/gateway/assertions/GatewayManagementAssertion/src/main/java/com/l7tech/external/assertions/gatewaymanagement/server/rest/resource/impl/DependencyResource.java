@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.DependencyAnalysisMO;
 import com.l7tech.gateway.api.DependencyMO;
@@ -10,7 +11,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
-import org.springframework.context.ApplicationContext;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -18,7 +18,6 @@ import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This is a provider for dependencies. It finds the dependencies of entities that can have dependencies.
@@ -31,7 +30,7 @@ public class DependencyResource {
     private DependencyAnalyzer dependencyAnalyzer;
 
     @SpringBean
-    private ApplicationContext applicationContext;
+    private RestResourceLocator restResourceLocator;
 
     private EntityHeader entityHeader;
 
@@ -93,12 +92,9 @@ public class DependencyResource {
     }
 
     private Reference buildReferenceFromEntityHeader(EntityHeader entityHeader) {
-        //TODO: cache RestEntityResource beans?
-        Map<String, RestEntityResource> beans = applicationContext.getBeansOfType(RestEntityResource.class);
-        for(RestEntityResource restEntityResource : beans.values()){
-            if(restEntityResource.getEntityType().equals(entityHeader.getType())){
-                return restEntityResource.toReference(entityHeader);
-            }
+        RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
+        if(restEntityResource != null) {
+            return restEntityResource.toReference(entityHeader);
         }
         throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType());
     }
