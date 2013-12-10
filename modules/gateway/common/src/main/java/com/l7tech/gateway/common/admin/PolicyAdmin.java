@@ -246,6 +246,17 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     PolicyVersion findActivePolicyVersionForPolicy(Goid policyGoid) throws FindException;
 
     /**
+     * Get the particular PolicyVersion matching two keys: policyGoid and ordinal.
+     *
+     * @param policyGoid: the policy GOID
+     * @param versionOrdinal: the policy version ordinal
+     * @return the PolicyVersion with full details
+     * @throws FindException: thrown if found more than one PolicyVersion.
+     */
+    @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
+    PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException;
+
+    /**
      * Clear the active version for the specified policy.
      * This will have the effect of disabling the current Policy, but without adding any new entries to this policy's
      * revision history.

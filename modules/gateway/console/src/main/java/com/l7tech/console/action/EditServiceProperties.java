@@ -117,27 +117,8 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         }
                     }
 
-                    // update name on top of editor if that service is being edited
-                    final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
-                    JComponent jc = cws.getComponent();
-                    if (jc == null || !(jc instanceof PolicyEditorPanel)) return;
-
-                    PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                    try {
-                        final EntityWithPolicyNode pn = pe.getPolicyNode();
-
-                        if (pn instanceof ServiceNode) {
-                            PublishedService editedSvc = ((ServiceNode) pn).getEntity();
-                            // if currently edited service was deleted
-                            if (Goid.equals(serviceNode.getEntityGoid(), editedSvc.getGoid())) {
-                                // update name on top of editor
-                                pe.changeSubjectName(serviceNode.getName());
-                                pe.updateHeadings();
-                            }
-                        }
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "problem modifying policy editor title");
-                    }
+                    // update the tab title of any specific policy editor, which could be currently opened or in idle.
+                    serviceNode.firePropertyChange(this, PolicyEditorPanel.TAB_TITLE_CHANGE_PROPERTY, null, serviceNode.getName());
                 }
                 serviceNode.clearCachedEntities();
             }

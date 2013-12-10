@@ -73,6 +73,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
 
     public static final String POLICYNAME_PROPERTY = "policy.name";
+    public static final String TAB_TITLE_CHANGE_PROPERTY = "tabTitle.change";
     public static final String SHOW_COMMENTS = "COMMENTS.SHOWSTATE";
 
     private static final String PREF_PREFIX = "policy.editor.";
@@ -688,6 +689,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         String displayName = getDisplayName();
         setName(displayName);
         getSplitPane().setName(displayName);
+        topComponents.getCurrentWorkspace().updateTabTitle(this, displayName);
     }
 
     public void updateAssertions( final AssertionTreeNode atn ) {
@@ -807,7 +809,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * 
      * @return ToolBarForTable
      */
-    private PolicyEditToolBar getToolBar() {
+    public PolicyEditToolBar getToolBar() {
         if (policyEditorToolbar != null) return policyEditorToolbar;
         policyEditorToolbar = new PolicyEditToolBar(enableUddi);
         policyEditorToolbar.setFloatable(false);
@@ -817,7 +819,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      */
-    final class PolicyEditToolBar extends JToolBar {
+    public final class PolicyEditToolBar extends JToolBar {
         private JButton buttonSaveAndActivate;
         private JButton buttonSaveOnly;
         private JButton buttonValidate;
@@ -879,7 +881,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             add(displayAssertionNumsBtn);
         }
 
-        private void setSaveButtonsEnabled(boolean enabled) {
+        public void setSaveButtonsEnabled(boolean enabled) {
             buttonSaveAndActivate.setEnabled(enabled);
             buttonSaveAndActivate.getAction().setEnabled(enabled);
             buttonSaveOnly.setEnabled(enabled);
@@ -1643,6 +1645,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   renderPolicy();
                   policyEditorToolbar.setSaveButtonsEnabled(true);
                   validatePolicy();
+              } else if (TAB_TITLE_CHANGE_PROPERTY.equals(evt.getPropertyName())) {
+                  subjectName = (String) evt.getNewValue();
+                  updateHeadings();
               }
           }
       };
@@ -1728,14 +1733,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     @Override
     public void componentRemoved(ContainerEvent e) {
+        if (this != e.getChild()) {
+            // For some unknown reason, the non-deleted tab calls this method too.
+            // In this case, do not reset the policy editor panel.  Also See componentWillRemove(...)
+            return;
+        }
+
         log.fine("Resetting the policy editor panel");
         subject.removePropertyChangeListener(policyPropertyChangeListener);
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
-        final PolicyToolBar pt = topComponents.getPolicyToolBar();
-        if (pt != null) {
-            pt.unregisterPolicyTree(policyTree);
-        }
     }
 
     /**
@@ -1766,7 +1773,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (!TopComponents.getInstance().isConnectionLost()) {
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       "<html><center><b>Do you want to save changes to service policy " +
-                      "for<br> '" + HtmlUtil.escapeHtmlCharacters(subjectName) + "' ?</b><br>The changed policy will not be activated.</center></html>",
+                      "for<br> '" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "' ?</b><br>The changed policy will not be activated.</center></html>",
                       "Save Service Policy",
                       JOptionPane.YES_NO_CANCEL_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
@@ -1898,6 +1905,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         validating = false;
                     }
                 }
+                // Update the titles of other tabs associated to the same service/policy entity node
+                TopComponents.getInstance().getCurrentWorkspace().updateTabsVersionNumAndActiveStatus(activateAsWell);
             }
         };
         ret.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);

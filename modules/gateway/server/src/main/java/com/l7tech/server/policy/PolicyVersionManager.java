@@ -49,6 +49,16 @@ public interface PolicyVersionManager extends EntityManager<PolicyVersion, Entit
     PolicyVersion findActiveVersionForPolicy(Goid policyGoid) throws FindException;
 
     /**
+     * Get the particular PolicyVersion matching two keys: policyGoid and ordinal.
+     *
+     * @param policyGoid: the policy GOID
+     * @param versionOrdinal: the policy version ordinal
+     * @return the PolicyVersion with full details
+     * @throws FindException: thrown if found more than one PolicyVersion.
+     */
+    PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException;
+
+    /**
      * Examine the specified policy and record a new PolicyVersion if necessary.
      *
      * @param newPolicy a possibly-mutated policy that has not yet been committed to the database.

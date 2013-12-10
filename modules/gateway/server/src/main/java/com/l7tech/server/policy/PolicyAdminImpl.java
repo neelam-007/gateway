@@ -616,6 +616,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
+    public PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException {
+        return policyVersionManager.findPolicyVersionForPolicy(policyGoid, versionOrdinal);
+    }
+
+    @Override
     public void clearActivePolicyVersion(Goid policyGoid) throws FindException, UpdateException {
         Policy policy = policyManager.findByPrimaryKey(policyGoid);
         if (policy == null) throw new FindException("No Policy found with policyGoid=" + policyGoid);

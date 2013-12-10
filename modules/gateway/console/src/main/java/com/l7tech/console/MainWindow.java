@@ -1541,17 +1541,11 @@ public class MainWindow extends JFrame implements SheetHolder {
                             servicesAndPoliciesTree.refresh(rootNode);
                             alreadyRefreshed.add(servicesAndPoliciesTree);
                         }
-                        // no matter what, always refresh the policy editor panel if it is showing
+
+                        // No matter what, always refresh all policy editor panels
                         final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                        final JComponent jc = cw.getComponent();
-                        if (jc != null && jc instanceof PolicyEditorPanel) {
-                            PolicyEditorPanel pep = (PolicyEditorPanel) jc;
-                            if (pep.getPolicyTree() != null) {
-                                alreadyRefreshed.add(pep.getPolicyTree());
-                                pep.getPolicyTree().refresh();
-                                alreadyRefreshed.add(pep.getPolicyTree());
-                            }
-                        }
+                        cw.refreshWorkspace();
+
                         final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                         final Component c = kbm.getFocusOwner();
                         log.finest("the focus owner is " + (c == null ? "NULL" : c.getClass()));
@@ -2711,6 +2705,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
         addLogonListener(policyToolBar);
         return policyToolBar;
+    }
+
+    public void setPolicyToolBar(PolicyToolBar policyToolBar) {
+        this.policyToolBar = policyToolBar;
     }
 
     private void configureScrollPane(JScrollPane js) {

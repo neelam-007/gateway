@@ -45,6 +45,11 @@ public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,En
     }
 
     @Override
+    public PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException {
+        throw new FindException("Not Implemented");
+    }
+
+    @Override
     public PolicyVersion findLatestRevisionForPolicy( final Goid policyOid ) {
         throw new UnsupportedOperationException("Not Implemented");
     }

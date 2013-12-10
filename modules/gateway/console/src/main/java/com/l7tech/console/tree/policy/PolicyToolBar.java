@@ -339,7 +339,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             rootAssertionNode : lastAssertionNode;
     }
 
-    private void updateActions() {
+    public void updateActions() {
         boolean validPNode = validPaletteNode();
         boolean validPolicyAssertionNode = validPolicyAssertionNode();
         disableAll();
