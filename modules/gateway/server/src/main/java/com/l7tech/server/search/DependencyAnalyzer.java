@@ -3,6 +3,7 @@ package com.l7tech.server.search;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.processors.ServiceDependencyProcessor;
 import com.l7tech.util.CollectionUtils;
 
 import java.util.List;
@@ -24,6 +25,8 @@ public interface DependencyAnalyzer {
 
     public static final String ReturnAssertionsAsDependenciesOptionKey = "returnAssertionsAsDependencies";
 
+    public static final String ReturnServicePoliciesAsDependencies = "returnServicePoliciesAsDependencies";
+
     /**
      * The default search options:
      * <pre><table>
@@ -32,7 +35,11 @@ public interface DependencyAnalyzer {
      *     <tr><td>returnAssertionsAsDependencies</td><td>true</td></tr>
      * </table></pre>
      */
-    public static final Map<String, String> DefaultSearchOptions = CollectionUtils.MapBuilder.<String, String>builder().put(SearchDepthOptionKey, "-1").put(ReturnAssertionsAsDependenciesOptionKey, "true").unmodifiableMap();
+    public static final Map<String, String> DefaultSearchOptions = CollectionUtils.MapBuilder.<String, String>builder()
+            .put(SearchDepthOptionKey, "-1")
+            .put(ReturnAssertionsAsDependenciesOptionKey, "true")
+            .put(ReturnServicePoliciesAsDependencies, "false")
+            .unmodifiableMap();
 
     /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling getDependencies(entity,

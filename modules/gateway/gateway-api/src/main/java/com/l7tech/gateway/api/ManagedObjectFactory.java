@@ -641,6 +641,10 @@ public class ManagedObjectFactory {
         return new References(references);
     }
 
+    public static Bundle createBundle(){
+        return new Bundle();
+    }
+
     /**
      * General purpose exception for factory errors.
      */

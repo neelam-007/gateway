@@ -2528,6 +2528,10 @@
                     <bean class="com.l7tech.server.search.processors.PolicyDependencyProcessor"/>
                 </entry>
                 <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE"/></key>
+                    <bean class="com.l7tech.server.search.processors.ServiceDependencyProcessor"/>
+                </entry>
+                <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/></key>
                     <bean class="com.l7tech.server.search.processors.FolderDependencyProcessor"/>
                 </entry>
