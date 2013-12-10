@@ -45,6 +45,9 @@ public class DependentEntity extends DependentObject {
             case GENERIC: return Dependency.DependencyType.GENERIC;
             case ANY: return Dependency.DependencyType.ANY;
             case SECURITY_ZONE: return Dependency.DependencyType.SECURITY_ZONE;
+            case ENCAPSULATED_ASSERTION: return Dependency.DependencyType.ENCAPSULATED_ASSERTION;
+            case POLICY_ALIAS: return Dependency.DependencyType.POLICY_ALIAS;
+            case SERVICE_ALIAS: return Dependency.DependencyType.SERVICE_ALIAS;
         }
         throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
     }
