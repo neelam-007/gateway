@@ -36,6 +36,7 @@ UPDATE otk_version SET current_version='otk2.0';
 --
 -- Adding an index to oauth_token. This will improve the overall performance
 CREATE INDEX oat_idx_expiration ON oauth_token (expiration);
+CREATE INDEX oat_idx_rowner_client ON oauth_token(resource_owner,client_key);
 --
 -- Drop an existing foreign key. This will be handled in polcy when ever the client_name gets updated
 ALTER TABLE oauth_client_key DROP FOREIGN KEY ock_fk_clientName;

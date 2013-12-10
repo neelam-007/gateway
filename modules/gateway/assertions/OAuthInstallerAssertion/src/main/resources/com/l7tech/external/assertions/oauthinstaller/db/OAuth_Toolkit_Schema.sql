@@ -59,6 +59,7 @@ CREATE TABLE oauth_token (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 -- Adding an index to oauth_token. This will improve the overall performance
 CREATE INDEX oat_idx_expiration ON oauth_token (expiration);
+CREATE INDEX oat_idx_rowner_client ON oauth_token(resource_owner,client_key);
 --
 -- This table holds temporary tokens
 -- oauth 1.0 = request_token
