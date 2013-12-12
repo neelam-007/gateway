@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
@@ -62,7 +62,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private SelectableFilterableTablePanel tablePanel;
     private JPanel borderPanel;
     private JLabel setLabel;
-    private CheckBoxSelectableTableModel<EntityHeader> dataModel;
+    private SelectableTableModel<EntityHeader> dataModel;
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
@@ -150,7 +150,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     }
 
     private void initTable() {
-        dataModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), CHECK_BOX_COL_INDEX,
+        dataModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), true, CHECK_BOX_COL_INDEX,
                 column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
                     public Boolean call(final EntityHeader header) {
@@ -266,7 +266,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                         logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
-                dataModel.setSelectableObjects(headers);
+                dataModel.setRows(headers);
                 boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderId || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
                 showHidePathColumn(showPath);
             } catch (final FindException ex) {
@@ -335,7 +335,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                     for (final EntityHeader header : selectedEntities) {
                         if (PersistentEntity.DEFAULT_GOID.equals(header.getGoid()) || GoidRange.WRAPPED_OID.isInRange(header.getGoid())) {
-                            final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
+                            final int rowIndex = dataModel.getRowIndex(header);
                             // save a new assertion access
                             final String assertionClassName = assertionNames.get(header.getGoid());
                             final AssertionAccess assertionAccess = new AssertionAccess(assertionClassName);
@@ -362,7 +362,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
                     for (final EntityHeader header : selectedEntities) {
                         if (GoidRange.ZEROED_PREFIX.isInRange(header.getGoid()) && header.getGoid().getLow() < 0) {
-                            final int rowIndex = dataModel.getRowIndexForSelectableObject(header);
+                            final int rowIndex = dataModel.getRowIndex(header);
                             // save new key metadata
                             if (header instanceof KeyMetadataHeaderWrapper) {
                                 final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;

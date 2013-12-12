@@ -7,7 +7,7 @@ import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
-import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
@@ -106,10 +106,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     private JPanel zonesAvailablePanel;
     private JPanel zonesUnavailablePanel;
     private JCheckBox uddiServiceCheckBox;
-    private CheckBoxSelectableTableModel<SecurityZone> zonesModel;
-    private CheckBoxSelectableTableModel<FolderHeader> foldersModel;
+    private SelectableTableModel<SecurityZone> zonesModel;
+    private SelectableTableModel<FolderHeader> foldersModel;
     private SimpleTableModel<AttributePredicate> attributesModel;
-    private CheckBoxSelectableTableModel<EntityHeader> specificObjectsModel;
+    private SelectableTableModel<EntityHeader> specificObjectsModel;
     private static Map<String, String> validComparisons = new HashMap<>();
     private PermissionsConfig config;
     private Component typesTab;
@@ -306,7 +306,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private void initSpecificObjects() {
-        specificObjectsModel = TableUtil.configureSelectableTable(specificObjectsTablePanel.getSelectableTable(), CHECK_COL_INDEX,
+        specificObjectsModel = TableUtil.configureSelectableTable(specificObjectsTablePanel.getSelectableTable(), true, CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
                     public Boolean call(final EntityHeader header) {
@@ -320,7 +320,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                     }
                 }));
         specificObjectsModel.addTableModelListener(notifyListener);
-        specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+        specificObjectsModel.setRows(Collections.<EntityHeader>emptyList());
         specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, null);
     }
 
@@ -426,7 +426,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
     }
 
     private void initFoldersTable() {
-        foldersModel = TableUtil.configureSelectableTable(foldersTablePanel.getSelectableTable(), CHECK_COL_INDEX,
+        foldersModel = TableUtil.configureSelectableTable(foldersTablePanel.getSelectableTable(), true, CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, FolderHeader>() {
                     @Override
                     public Boolean call(final FolderHeader folder) {
@@ -470,15 +470,15 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         foldersModel.addTableModelListener(notifyListener);
         try {
             final Collection<FolderHeader> folders = Registry.getDefault().getFolderAdmin().findAllFolders();
-            foldersModel.setSelectableObjects(new ArrayList<>(folders));
+            foldersModel.setRows(new ArrayList<>(folders));
         } catch (final FindException e) {
-            foldersModel.setSelectableObjects(Collections.<FolderHeader>emptyList());
+            foldersModel.setRows(Collections.<FolderHeader>emptyList());
         }
         foldersTablePanel.configure(foldersModel, new int[]{NAME_COL_INDEX}, "folders");
     }
 
     private void initZonesTable() {
-        zonesModel = TableUtil.configureSelectableTable(zonesTablePanel.getSelectableTable(), CHECK_COL_INDEX,
+        zonesModel = TableUtil.configureSelectableTable(zonesTablePanel.getSelectableTable(), true, CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, SecurityZone>() {
                     @Override
                     public Boolean call(final SecurityZone zone) {
@@ -500,7 +500,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         final ArrayList<SecurityZone> zones = new ArrayList<>();
         zones.add(SecurityZoneUtil.getNullZone());
         zones.addAll(SecurityZoneUtil.getSortedReadableSecurityZones());
-        zonesModel.setSelectableObjects(zones);
+        zonesModel.setRows(zones);
         zonesModel.addTableModelListener(notifyListener);
         zonesTablePanel.configure(zonesModel, new int[]{NAME_COL_INDEX}, "zones");
     }
@@ -619,7 +619,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-        specificObjectsModel.setSelectableObjects(entities);
+        specificObjectsModel.setRows(entities);
         specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, typePlural);
     }
 
@@ -649,10 +649,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             } catch (final FindException ex) {
                 logger.log(Level.WARNING, "Unable to retrieve identities: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
-            specificObjectsModel.setSelectableObjects(identities);
+            specificObjectsModel.setRows(identities);
             specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName.toLowerCase());
         } else {
-            specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+            specificObjectsModel.setRows(Collections.<EntityHeader>emptyList());
             specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName.toLowerCase());
         }
     }
@@ -678,10 +678,10 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             } catch (final FindException ex) {
                 logger.log(Level.WARNING, "Unable to retrieve trusted esm users: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
             }
-            specificObjectsModel.setSelectableObjects(userHeaders);
+            specificObjectsModel.setRows(userHeaders);
             specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName);
         } else {
-            specificObjectsModel.setSelectableObjects(Collections.<EntityHeader>emptyList());
+            specificObjectsModel.setRows(Collections.<EntityHeader>emptyList());
             specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, pluralName);
         }
     }

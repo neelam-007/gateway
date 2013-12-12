@@ -1,21 +1,26 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.security.rbac.RoleSelectionDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.comparator.NamedEntityComparator;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -32,14 +37,14 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     private JTextField providerNameField;
     private JComboBox<PolicyHeader> policyComboBox;
     private JCheckBox adminEnabledCheckbox;
-    private JComboBox<Pair<Role, String>> roleComboBox;
     private SecurityZoneWidget zoneControl;
     private JCheckBox defaultRoleCheckBox;
     private JLabel authPoliciesWarningLabel;
+    private JTextField roleTextField;
+    private JButton roleSelectButton;
 
     private java.util.List<PolicyHeader> policies;
-    private java.util.List<Role> roles;
-    private java.util.List<Pair<Role, String>> rolesWithNames;
+    private Role selectedRole;
 
     private boolean finishAllowed = false;
 
@@ -63,22 +68,6 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
         if (Registry.getDefault().isAdminContextPresent()) {
             policies = loadPolicies();
             policyComboBox.setModel(new DefaultComboBoxModel<>(policies.toArray(new PolicyHeader[policies.size()])));
-
-            loadRoles();
-
-            //noinspection unchecked,Convert2Diamond
-            roleComboBox.setModel(new DefaultComboBoxModel<Pair<Role, String>>(rolesWithNames.<Pair<Role, String>>toArray(new Pair[rolesWithNames.size()])));
-            roleComboBox.setRenderer(new DefaultListCellRenderer() {
-                @Override
-                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                    if (value instanceof Pair) {
-                        @SuppressWarnings("unchecked")
-                        Pair<Role, String> pair = (Pair<Role, String>) value;
-                        value = pair.right;
-                    }
-                    return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                }
-            });
         }
 
         if (policies == null || policies.isEmpty()) {
@@ -92,25 +81,37 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
         adminEnabledCheckbox.addActionListener(listener);
         defaultRoleCheckBox.addActionListener(listener);
         policyComboBox.addActionListener(listener);
-        roleComboBox.addActionListener(listener);
+
+        roleSelectButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), "Select Default Role", Collections.<Role>emptyList(), false);
+                selectDialog.pack();
+                DialogDisplayer.display(selectDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (selectDialog.isConfirmed()) {
+                            final Role selected = selectDialog.getSelectedRoles().iterator().next();
+                            if (selected != null) {
+                                try {
+                                    // retrieve role with attached entities
+                                    selectedRole = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(selected.getGoid());
+                                } catch (final FindException | PermissionDeniedException ex) {
+                                    logger.log(Level.WARNING, "Unable to retrieve selected role: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Unable to retrieve selected role", "Error", JOptionPane.ERROR_MESSAGE, null);
+                                }
+                            } else {
+                                selectedRole = null;
+                            }
+                            roleTextField.setText(selectedRole == null ? StringUtils.EMPTY : getNameForRole(selectedRole));
+                            updateControlButtonState();
+                        }
+                    }
+                });
+            }
+        });
 
         updateControlButtonState();
-    }
-
-    private void loadRoles() {
-        try {
-            final ArrayList<Role> roles = new ArrayList<>(Registry.getDefault().getRbacAdmin().findAllRoles());
-            Collections.sort(roles, new NamedEntityComparator());
-            this.roles = roles;
-            this.rolesWithNames = new ArrayList<>();
-            for (Role role : roles) {
-                rolesWithNames.add(new Pair<>(role, getNameForRole(role)));
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to load roles; " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            this.roles = Collections.emptyList();
-            this.rolesWithNames = Collections.emptyList();
-        }
     }
 
     private String getNameForRole(Role role) {
@@ -193,17 +194,18 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
 
     private void selectRole(Goid roleId) {
         if (roleId == null) {
-            roleComboBox.setSelectedItem(null);
+            roleTextField.setText(StringUtils.EMPTY);
         } else {
-            for (int i = 0; i < roles.size(); i++) {
-                Role role = roles.get(i);
-                if (roleId.equals(role.getGoid())) {
-                    roleComboBox.setSelectedIndex(i);
-                    return;
+            try {
+                final Role role = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(roleId);
+                if (role != null) {
+                    selectedRole = role;
+                    roleTextField.setText(getNameForRole(role));
                 }
+            } catch (final FindException | PermissionDeniedException e) {
+                logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                roleTextField.setText(roleId.toString());
             }
-
-            roleComboBox.setSelectedIndex(-1);
         }
     }
 
@@ -235,10 +237,7 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
 
             config.setAdminEnabled(adminEnabledCheckbox.isSelected());
 
-            @SuppressWarnings("unchecked")
-            Pair<Role, String> pair = (Pair<Role, String>) roleComboBox.getSelectedItem();
-            Role role = pair == null ? null : pair.left;
-            config.setDefaultRoleId(!defaultRoleCheckBox.isSelected() || role == null ? null : role.getGoid());
+            config.setDefaultRoleId(!defaultRoleCheckBox.isSelected() || selectedRole == null ? null : selectedRole.getGoid());
 
             config.setSecurityZone(zoneControl.getSelectedZone());
         }
@@ -253,13 +252,14 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
         if (policyComboBox.getSelectedItem() == null)
             ok = false;
 
-        if (adminEnabledCheckbox.isSelected() && defaultRoleCheckBox.isSelected() && roleComboBox.getSelectedItem() == null)
+        if (adminEnabledCheckbox.isSelected() && defaultRoleCheckBox.isSelected() && selectedRole == null)
             ok = false;
 
         finishAllowed = ok;
 
         defaultRoleCheckBox.setEnabled(adminEnabledCheckbox.isSelected());
-        roleComboBox.setEnabled(defaultRoleCheckBox.isSelected());
+        roleTextField.setEnabled(defaultRoleCheckBox.isSelected());
+        roleSelectButton.setEnabled(defaultRoleCheckBox.isSelected());
 
         // notify the wizard to update the state of the control buttons
         notifyListeners();

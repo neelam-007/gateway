@@ -128,7 +128,7 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
             addButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), identity.getName(), rolesModel.getRows());
+                    final RoleSelectionDialog selectDialog = new RoleSelectionDialog(TopComponents.getInstance().getTopParent(), "Add Roles to " + identity.getName(), rolesModel.getRows());
                     selectDialog.pack();
                     Utilities.centerOnParentWindow(selectDialog);
                     DialogDisplayer.display(selectDialog, new Runnable() {
