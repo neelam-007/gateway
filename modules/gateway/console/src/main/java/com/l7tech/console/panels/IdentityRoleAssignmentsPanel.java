@@ -4,6 +4,7 @@ import com.l7tech.console.security.rbac.BasicRolePropertiesPanel;
 import com.l7tech.console.security.rbac.RoleSelectionDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gui.SimpleTableModel;
@@ -138,12 +139,21 @@ public class IdentityRoleAssignmentsPanel extends JPanel {
                                 final List<Role> selectedRoles = selectDialog.getSelectedRoles();
                                 if (!selectedRoles.isEmpty()) {
                                     for (final Role selectedRole : selectedRoles) {
-                                        if (entityType == EntityType.GROUP) {
-                                            selectedRole.addAssignedGroup((Group) identity);
-                                        } else if (entityType == EntityType.USER) {
-                                            selectedRole.addAssignedUser((User) identity);
+                                        try {
+                                            final Role roleWithPermissions = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(selectedRole.getGoid());
+                                            if (roleWithPermissions != null) {
+                                                if (entityType == EntityType.GROUP) {
+                                                    roleWithPermissions.addAssignedGroup((Group) identity);
+                                                } else if (entityType == EntityType.USER) {
+                                                    roleWithPermissions.addAssignedUser((User) identity);
+                                                }
+                                                rolesModel.addRow(roleWithPermissions);
+                                            } else {
+                                                log.log(Level.WARNING, "Selected role with goid " + selectedRole.getGoid() + " does not exist.");
+                                            }
+                                        } catch (final FindException | PermissionDeniedException e) {
+                                            log.log(Level.WARNING, "Unable to retrieve selected role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                         }
-                                        rolesModel.addRow(selectedRole);
                                     }
                                 }
                             }
