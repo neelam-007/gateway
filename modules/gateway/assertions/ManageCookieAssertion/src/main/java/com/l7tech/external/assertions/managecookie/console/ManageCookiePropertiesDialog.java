@@ -9,7 +9,8 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
-import static com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.*;
+
+import static com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE;
 
 public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSupport<ManageCookieAssertion> {
     private JPanel contentPanel;
@@ -19,9 +20,9 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JTextField pathTextField;
     private JTextField commentTextField;
     private JTextField maxAgeTextField;
-    private JComboBox versionComboBox;
     private JCheckBox secureCheckBox;
     private JComboBox operationComboBox;
+    private JTextField versionTextField;
     private InputValidator validators;
 
     public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
@@ -39,7 +40,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         pathTextField.setText(assertion.getCookiePath());
         commentTextField.setText(assertion.getComment());
         maxAgeTextField.setText(assertion.getMaxAge());
-        versionComboBox.setSelectedItem(assertion.getVersion());
+        versionTextField.setText(assertion.getVersion());
         secureCheckBox.setSelected(assertion.isSecure());
     }
 
@@ -55,7 +56,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         assertion.setDomain(domainTextField.getText().trim());
         assertion.setCookiePath(pathTextField.getText().trim());
         assertion.setMaxAge(maxAgeTextField.getText().trim());
-        assertion.setVersion((Integer) versionComboBox.getSelectedItem());
+        assertion.setVersion(versionTextField.getText().trim());
         assertion.setSecure(secureCheckBox.isSelected());
         return assertion;
     }
@@ -68,7 +69,8 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     @Override
     protected void initComponents() {
         super.initComponents();
-        operationComboBox.setModel(new DefaultComboBoxModel(new ManageCookieAssertion.Operation[]{ManageCookieAssertion.Operation.ADD, ManageCookieAssertion.Operation.REMOVE}));
+        operationComboBox.setModel(new DefaultComboBoxModel
+                (new ManageCookieAssertion.Operation[]{ManageCookieAssertion.Operation.ADD, ManageCookieAssertion.Operation.REMOVE, ManageCookieAssertion.Operation.UPDATE}));
         operationComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
@@ -81,10 +83,9 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
                 enableDisable();
             }
         }));
-        versionComboBox.setModel(new DefaultComboBoxModel(new Integer[]{1, 0}));
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty("name", nameTextField, null);
-        validators.ensureComboBoxSelection("version", versionComboBox);
+        validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "version", versionTextField));
         validators.ensureComboBoxSelection("operation", operationComboBox);
         final IntegerOrContextVariableValidationRule maxAgeRule = new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "max age", maxAgeTextField);
         maxAgeRule.setAllowEmpty(true);
@@ -98,7 +99,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         pathTextField.setEnabled(op != REMOVE);
         maxAgeTextField.setEnabled(op != REMOVE);
         commentTextField.setEnabled(op != REMOVE);
-        versionComboBox.setEnabled(op != REMOVE);
+        versionTextField.setEnabled(op != REMOVE);
         secureCheckBox.setEnabled(op != REMOVE);
     }
 }

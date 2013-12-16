@@ -110,13 +110,22 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
             final String domain = assertion.getDomain() == null ? null : ExpandVariables.process(assertion.getDomain(), variableMap, getAudit());
             final String maxAge = assertion.getMaxAge() == null ? null : ExpandVariables.process(assertion.getMaxAge(), variableMap, getAudit());
             final String comment = assertion.getComment() == null ? null : ExpandVariables.process(assertion.getComment(), variableMap, getAudit());
+            final String versionStr = ExpandVariables.process(assertion.getVersion(), variableMap, getAudit());
+            Integer version = null;
             try {
-                final Integer maxAgeInt = StringUtils.isBlank(maxAge) ? -1 : Integer.valueOf(maxAge);
-                cookie = new HttpCookie(name, value, assertion.getVersion(), StringUtils.isBlank(path) ? null : path,
-                        StringUtils.isBlank(domain) ? null : domain, maxAgeInt, assertion.isSecure(),
-                        StringUtils.isBlank(comment) ? null : comment, assertion.getTarget() == TargetMessageType.RESPONSE);
+                version = Integer.valueOf(versionStr);
             } catch (final NumberFormatException e) {
-                logAndAudit(AssertionMessages.INVALID_MAX_AGE, maxAge);
+                logAndAudit(AssertionMessages.INVALID_COOKIE_VERSION, versionStr);
+            }
+            if (version != null) {
+                try {
+                    final Integer maxAgeInt = StringUtils.isBlank(maxAge) ? -1 : Integer.valueOf(maxAge);
+                    cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
+                            StringUtils.isBlank(domain) ? null : domain, maxAgeInt, assertion.isSecure(),
+                            StringUtils.isBlank(comment) ? null : comment, assertion.getTarget() == TargetMessageType.RESPONSE);
+                } catch (final NumberFormatException e) {
+                    logAndAudit(AssertionMessages.INVALID_COOKIE_MAX_AGE, maxAge);
+                }
             }
         } else {
             logAndAudit(AssertionMessages.EMPTY_COOKIE_NAME);
@@ -131,6 +140,9 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
         }
         if (assertion.getName() == null) {
             throw new PolicyAssertionException(assertion, "Cookie name is null");
+        }
+        if (assertion.getVersion() == null) {
+            throw new PolicyAssertionException(assertion, "Cookie version is null");
         }
         if (operation != com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE) {
             if (assertion.getValue() == null) {

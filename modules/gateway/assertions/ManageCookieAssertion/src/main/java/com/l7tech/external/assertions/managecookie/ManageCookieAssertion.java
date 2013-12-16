@@ -70,11 +70,11 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         this.cookiePath = cookiePath;
     }
 
-    public int getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(final int version) {
+    public void setVersion(@NotNull final String version) {
         this.version = version;
     }
 
@@ -104,7 +104,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions(name, value, domain, cookiePath, maxAge, comment);
+        return super.doGetVariablesUsed().withExpressions(name, value, domain, cookiePath, maxAge, comment, version);
     }
 
     public AssertionMetadata meta() {
@@ -155,7 +155,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
 
     private String cookiePath;
 
-    private int version = 1;
+    private String version;
 
     private String maxAge;
 

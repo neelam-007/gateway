@@ -106,14 +106,6 @@
           <text value="Secure"/>
         </properties>
       </component>
-      <component id="f3c35" class="javax.swing.JComboBox" binding="versionComboBox">
-        <constraints>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <editable value="true"/>
-        </properties>
-      </component>
       <component id="effc8" class="javax.swing.JTextField" binding="maxAgeTextField">
         <constraints>
           <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
@@ -141,6 +133,14 @@
       <component id="2bdc3" class="javax.swing.JComboBox" binding="operationComboBox">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="a39d8" class="javax.swing.JTextField" binding="versionTextField">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
         </constraints>
         <properties/>
       </component>
