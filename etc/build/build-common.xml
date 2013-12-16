@@ -510,7 +510,8 @@
                fork="on" 
                forkmode="once" 
                errorproperty="test.error"
-               failureproperty="test.failure">
+               failureproperty="test.failure"
+               maxmemory="1024m">
             <jvmarg value="-ea"/>
             <jvmarg value="-XX:MaxPermSize=256m"/>
 
