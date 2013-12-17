@@ -367,6 +367,7 @@
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
         <!-- roleManager can be null since the EMS currently does not allow ID provider configs to be created or updated -->
         <property name="roleManager"><null/></property>
+        <property name="config" ref="serverConfig"/>
     </bean>
 
     <!-- Internal identity provider -->

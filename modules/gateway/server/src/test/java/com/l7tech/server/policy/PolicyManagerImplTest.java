@@ -1,19 +1,23 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.RoleMatchingTestUtil;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.test.BugId;
+import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.verify;
+import java.util.Properties;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PolicyManagerImplTest {
@@ -27,10 +31,12 @@ public class PolicyManagerImplTest {
     @Mock
     private PolicyCache policyCache;
     private Policy policy;
+    private Properties properties;
 
     @Before
     public void setup() {
-        manager = new PolicyManagerImpl(roleManager, aliasManager, folderManager, policyCache);
+        properties = new Properties();
+        manager = new PolicyManagerImpl(roleManager, aliasManager, folderManager, policyCache, new MockConfig(properties));
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false);
     }
 
@@ -39,5 +45,18 @@ public class PolicyManagerImplTest {
     public void addManagePolicyRoleCanReadAllAssertions() throws Exception {
         manager.addManagePolicyRole(policy);
         verify(roleManager).save(argThat(RoleMatchingTestUtil.canReadAllAssertions()));
+    }
+
+    @Test
+    public void createRoles() throws Exception {
+        manager.createRoles(policy);
+        verify(roleManager).save(any(Role.class));
+    }
+
+    @Test
+    public void createRolesSkipped() throws Exception {
+        properties.setProperty(PolicyManagerImpl.AUTO_CREATE_ROLE_PROPERTY, "false");
+        manager.createRoles(policy);
+        verify(roleManager, never()).save(any(Role.class));
     }
 }

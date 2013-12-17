@@ -294,7 +294,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 policyChecker.checkPolicy(policy);
                 final Goid goid = policyManager.save(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, activateAsWell, true);
-                policyManager.addManagePolicyRole(policy);
+                policyManager.createRoles(policy);
                 return new PolicyCheckpointState(goid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
                 final Policy existing = policyManager.findByPrimaryKey(policy.getGoid());
@@ -415,7 +415,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                     policyChecker.checkPolicy(dependencyNode.policy);
                     policyManager.save(dependencyNode.policy);
                     policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
-                    policyManager.addManagePolicyRole(dependencyNode.policy);
+                    policyManager.createRoles(dependencyNode.policy);
                     fragmentNameGuidMap.put(dependencyNode.policy.getName(), dependencyNode.policy.getGuid());
                 }
 
@@ -504,7 +504,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             policy.disable();
             ensureGuid( policy );
             Goid goid = policyManager.save(policy);
-            policyManager.addManagePolicyRole(policy);
+            policyManager.createRoles(policy);
             try {
                 policyChecker.checkPolicy(policy);
             } catch (IOException e) {

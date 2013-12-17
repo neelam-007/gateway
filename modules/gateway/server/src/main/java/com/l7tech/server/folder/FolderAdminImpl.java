@@ -98,8 +98,7 @@ public class FolderAdminImpl implements FolderAdmin {
                 goid = folderManager.save(folder);
                 folder.setGoid(goid);
                 try {
-                    folderManager.addManageFolderRole( folder );
-                    folderManager.addReadonlyFolderRole( folder );
+                    folderManager.createRoles(folder);
                 } catch (SaveException e) {
                     throw new SaveException("Error creating Role for Folder.", e);
                 }

@@ -49,6 +49,7 @@ public class FolderAdminImplTest {
         folderAdmin = new FolderAdminImpl(folderManager, entityManagerMap, rbacServices);
         user = new InternalUser("test");
         rootFolder = new Folder("root", null);
+        rootFolder.setGoid(new Goid("0000000000000000ffffffffffffec76"));
         toFolder = new Folder("to", rootFolder);
         fromFolder = new Folder("from", rootFolder);
     }
@@ -172,6 +173,15 @@ public class FolderAdminImplTest {
         folderAdmin.deleteFolder(folderGoid);
         // once per manager
         verify(folderedEntityManager, times(2)).findByFolder(folderGoid);
+    }
+
+    @Test
+    public void saveFolderCreatesRoles() throws Exception {
+        when(folderManager.findRootFolder()).thenReturn(rootFolder);
+        when(folderManager.findByPrimaryKey(toFolder.getFolder().getGoid())).thenReturn(rootFolder);
+        when(folderManager.save(toFolder)).thenReturn(new Goid(1, 2));
+        folderAdmin.saveFolder(toFolder);
+        verify(folderManager).createRoles(toFolder);
     }
 
     private void moveEntityToFolderAsUser(final Folder moveTo, final PersistentEntity toMove) {

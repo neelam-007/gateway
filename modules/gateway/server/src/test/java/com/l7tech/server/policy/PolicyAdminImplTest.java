@@ -23,8 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 
@@ -164,6 +163,14 @@ public class PolicyAdminImplTest {
 
         policyAdmin.savePolicy(toUpdate, true);
         verify(policyChecker, never()).checkPolicy(toUpdate);
+    }
+
+    @Test
+    public void savePolicyCreatesRoles() throws Exception {
+        final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "<xml/>", false);
+        when(policyVersionManager.checkpointPolicy(policy, true, true)).thenReturn(new PolicyVersion());
+        policyAdmin.savePolicy(policy, true);
+        verify(policyManager).createRoles(policy);
     }
 
     private static final String allLicensedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

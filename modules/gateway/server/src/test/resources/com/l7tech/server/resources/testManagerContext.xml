@@ -60,6 +60,7 @@
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer"
           parent="hibernateBean">
         <property name="roleManager" ref="roleManager"/>
+        <property name="config" ref="serverConfig"/>
     </bean>
 
     <!-- Non Manager related -->
@@ -123,6 +124,7 @@
 
     <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl" parent="hibernateBean"/>

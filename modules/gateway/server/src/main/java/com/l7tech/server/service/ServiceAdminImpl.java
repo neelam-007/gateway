@@ -312,7 +312,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                     policyChecker.checkPolicy(policy);
                     policyVersionManager.checkpointPolicy(policy, true, true);
                 }
-                serviceManager.addManageServiceRole(service);
+                serviceManager.createRoles(service);
             }
         } catch (ObjectModelException | IOException e) {
             throw new SaveException(e);
