@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.Resource;
-import com.l7tech.gateway.api.ResourceDocumentMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -78,7 +75,9 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         Response response = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        ResourceDocumentMO result = ManagedObjectFactory.read(response.getBody(), ResourceDocumentMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ResourceDocumentMO result = (ResourceDocumentMO) reference.getResource();
 
         assertEquals("Document resource identifier:", resource.getId(), result.getId());
         assertEquals("Document resource source url:", resource.getUri(), result.getResource().getSourceUrl());
@@ -206,7 +205,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         Response responseGet = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ResourceDocumentMO entityGot = MarshallingUtils.unmarshal(ResourceDocumentMO.class, source);
+        ResourceDocumentMO entityGot = (ResourceDocumentMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getProperties().put("description", "new description");

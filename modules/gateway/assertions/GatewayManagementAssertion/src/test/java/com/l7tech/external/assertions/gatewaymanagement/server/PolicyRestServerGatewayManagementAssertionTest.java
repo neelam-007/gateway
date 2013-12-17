@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
@@ -101,7 +102,9 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         Response response = processRequest(policyBasePath + policy1.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        PolicyMO policyReturned = ManagedObjectFactory.read(response.getBody(), PolicyMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        PolicyMO policyReturned = (PolicyMO) reference.getResource();
 
         Assert.assertEquals(policy1.getId(), policyReturned.getId());
         Assert.assertEquals(policy1.getName(), policyReturned.getPolicyDetail().getName());
@@ -212,7 +215,8 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         Response response = processRequest(policyBasePath + policy2.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        PolicyMO policyReturned = ManagedObjectFactory.read(response.getBody(), PolicyMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         policyReturned.getPolicyDetail().setName("Policy Updated");
 

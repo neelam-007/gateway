@@ -2,17 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.StoredPasswordMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.globalresources.HttpConfigurationManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
@@ -72,7 +67,9 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         Response response = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        StoredPasswordMO result = ManagedObjectFactory.read(response.getBody(), StoredPasswordMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        StoredPasswordMO result = (StoredPasswordMO) reference.getResource();
 
         assertEquals("Secure Password identifier:", securePassword.getId(), result.getId());
         assertEquals("Secure Password Name:", securePassword.getName(), result.getName());
@@ -120,7 +117,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         Response responseGet = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        StoredPasswordMO entityGot = MarshallingUtils.unmarshal(StoredPasswordMO.class, source);
+        StoredPasswordMO entityGot = (StoredPasswordMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("Updated name");

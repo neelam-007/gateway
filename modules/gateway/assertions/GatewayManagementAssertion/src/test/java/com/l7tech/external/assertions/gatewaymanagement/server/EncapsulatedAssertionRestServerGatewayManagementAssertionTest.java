@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
@@ -129,7 +130,9 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         Response response = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        EncapsulatedAssertionMO result = ManagedObjectFactory.read(response.getBody(), EncapsulatedAssertionMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        EncapsulatedAssertionMO result = (EncapsulatedAssertionMO) reference.getResource();
 
         assertEquals("Encapsulated Assertion identifier:", encassConfig.getId(), result.getId());
         assertEquals("Encapsulated Assertion name:", encassConfig.getName(), result.getName());
@@ -208,7 +211,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = MarshallingUtils.unmarshal(EncapsulatedAssertionMO.class, source);
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
@@ -225,7 +228,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = MarshallingUtils.unmarshal(EncapsulatedAssertionMO.class, source);
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setGuid("Updated GUID");
@@ -242,7 +245,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = MarshallingUtils.unmarshal(EncapsulatedAssertionMO.class, source);
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("Update Encass Name");

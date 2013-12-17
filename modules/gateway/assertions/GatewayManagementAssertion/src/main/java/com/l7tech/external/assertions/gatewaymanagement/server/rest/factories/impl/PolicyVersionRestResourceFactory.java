@@ -1,7 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.PolicyVersionMO;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.PolicyVersionMO;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -56,9 +57,9 @@ public class PolicyVersionRestResourceFactory {
             return Functions.map(policyVersions, new Functions.Unary<PolicyVersionMO, PolicyVersion>() {
                 @Override
                 public PolicyVersionMO call(PolicyVersion policyVersion) {
-                    PolicyVersionMO policyVersionMO = new PolicyVersionMO();
+                    PolicyVersionMO policyVersionMO = ManagedObjectFactory.createPolicyVersionMO();
                     policyVersionMO.setId(policyVersion.getId());
-                    policyVersionMO.setVersion(policyVersion.getOrdinal());
+                    policyVersionMO.setOrdinal(policyVersion.getOrdinal());
                     return policyVersionMO;
                 }
             });
@@ -84,13 +85,13 @@ public class PolicyVersionRestResourceFactory {
      * @return The policy Version MO
      */
     private PolicyVersionMO buildMO(PolicyVersion policyVersion) {
-        PolicyVersionMO policyVersionMO = new PolicyVersionMO();
+        PolicyVersionMO policyVersionMO = ManagedObjectFactory.createPolicyVersionMO();
         policyVersionMO.setActive(policyVersion.isActive());
         policyVersionMO.setComment(policyVersion.getName());
         policyVersionMO.setId(policyVersion.getId());
         policyVersionMO.setPolicyId(policyVersion.getPolicyGoid().toString());
         policyVersionMO.setTime(policyVersion.getTime());
-        policyVersionMO.setVersion(policyVersion.getOrdinal());
+        policyVersionMO.setOrdinal(policyVersion.getOrdinal());
         policyVersionMO.setXml(policyVersion.getXml());
         return policyVersionMO;
     }

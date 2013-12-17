@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.DependencyAnalysisMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -93,7 +94,8 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        ServiceMO result = MarshallingUtils.unmarshal(ServiceMO.class, source);
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ServiceMO result = (ServiceMO) reference.getResource();
 
         assertEquals("Service identifier:", publishedService.getId(), result.getId());
         assertEquals("Service name:", publishedService.getName(), result.getServiceDetail().getName());
@@ -125,7 +127,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Response responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceMO entityGot = MarshallingUtils.unmarshal(ServiceMO.class, source);
+        ServiceMO entityGot = (ServiceMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getServiceDetail().setName("Updated Service Name");

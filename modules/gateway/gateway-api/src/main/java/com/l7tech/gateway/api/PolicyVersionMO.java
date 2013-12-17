@@ -1,4 +1,6 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.entities;
+package com.l7tech.gateway.api;
+
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -11,38 +13,29 @@ import javax.xml.bind.annotation.XmlType;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "PolicyVersion")
-@XmlType(name = "PolicyVersionType")
-public class PolicyVersionMO {
+@XmlType(name = "PolicyVersionType", propOrder = {"ordinal", "comment", "policyId", "time", "active", "xml", "extension", "extensions"})
+public class PolicyVersionMO extends ElementExtendableAccessibleObject {
     private String id;
-    private long version;
+    private long ordinal;
     private String comment;
     private String policyId;
     private long time;
     private boolean active;
     private String xml;
 
-    public PolicyVersionMO() {
+    PolicyVersionMO() {
     }
 
-    @XmlAttribute(name="id")
-    public String getId() {
-        return id;
+    @XmlElement(name = "ordinal")
+    public long getOrdinal() {
+        return ordinal;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setOrdinal(long ordinal) {
+        this.ordinal = ordinal;
     }
 
-    @XmlElement(name="version")
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
-    @XmlElement(name="comment")
+    @XmlElement(name = "comment")
     public String getComment() {
         return comment;
     }
@@ -51,7 +44,7 @@ public class PolicyVersionMO {
         this.comment = comment;
     }
 
-    @XmlElement(name="policyId")
+    @XmlElement(name = "policyId")
     public String getPolicyId() {
         return policyId;
     }
@@ -60,7 +53,7 @@ public class PolicyVersionMO {
         this.policyId = policyId;
     }
 
-    @XmlElement(name="time")
+    @XmlElement(name = "time")
     public long getTime() {
         return time;
     }
@@ -69,7 +62,7 @@ public class PolicyVersionMO {
         this.time = time;
     }
 
-    @XmlElement(name="active")
+    @XmlElement(name = "active")
     public boolean isActive() {
         return active;
     }
@@ -78,7 +71,7 @@ public class PolicyVersionMO {
         this.active = active;
     }
 
-    @XmlElement(name="xml")
+    @XmlElement(name = "xml")
     public String getXml() {
         return xml;
     }

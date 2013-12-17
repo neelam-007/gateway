@@ -1,9 +1,8 @@
 package com.l7tech.gateway.api;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
+import javax.xml.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This represents a reference to a rest entity.
@@ -11,66 +10,96 @@ import javax.xml.bind.annotation.XmlValue;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "Reference")
-@XmlType(name = "EntityReferenceType")
+@XmlType(name = "EntityReferenceType", propOrder = {"title", "id", "type", "links", "resourceList"})
 public class Reference {
-    private String href;
-    private String entityId;
-    private String entityType;
-    private String content;
+    private String id;
+    private String type;
+    private String title;
+    private List<Link> links;
+    private Object resource;
 
     Reference() {
     }
 
-    Reference(String href, String entityId, String entityType, String content) {
-        this.href = href;
-        this.content = content;
-        this.entityId = entityId;
-        this.entityType = entityType;
+    @XmlElement(name = "id", required = true)
+    public String getId() {
+        return id;
     }
 
-    /**
-     * The uri to retrieve the entity from.
-     *
-     * @return The uri to retrieve the entity from
-     */
-    @XmlAttribute(name = "href")
-    public String getHref() {
-        return href;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setHref(String href) {
-        this.href = href;
+    @XmlElement(name = "type", required = true)
+    public String getType() {
+        return type;
     }
 
-    @XmlAttribute(name = "entityId")
-    public String getEntityId() {
-        return entityId;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public void setEntityId(String entityId) {
-        this.entityId = entityId;
+    @XmlElement(name = "title", required = true)
+    public String getTitle() {
+        return title;
     }
 
-    @XmlAttribute(name = "entityType")
-    public String getEntityType() {
-        return entityType;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public void setEntityType(String entityType) {
-        this.entityType = entityType;
+    @XmlElement(name = "link")
+    public List<Link> getLinks() {
+        return links;
     }
 
-    /**
-     * The content of the reference element
-     *
-     * @return The content
-     */
-    @XmlValue
-    public String getContent() {
-        return content;
+    public void setLinks(List<Link> links) {
+        this.links = links;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    @XmlElementRefs({
+            @XmlElementRef(type = ActiveConnectorMO.class),
+            @XmlElementRef(type = TrustedCertificateMO.class),
+            @XmlElementRef(type = ClusterPropertyMO.class),
+            @XmlElementRef(type = CustomKeyValueStoreMO.class),
+            @XmlElementRef(type = ResourceDocumentMO.class),
+            @XmlElementRef(type = EmailListenerMO.class),
+            @XmlElementRef(type = EncapsulatedAssertionMO.class),
+            @XmlElementRef(type = FolderMO.class),
+            @XmlElementRef(type = GenericEntityMO.class),
+            @XmlElementRef(type = HttpConfigurationMO.class),
+            @XmlElementRef(type = IdentityProviderMO.class),
+            @XmlElementRef(type = JDBCConnectionMO.class),
+            @XmlElementRef(type = JMSDestinationMO.class),
+            @XmlElementRef(type = PolicyAliasMO.class),
+            @XmlElementRef(type = PolicyMO.class),
+            @XmlElementRef(type = PolicyVersionMO.class),
+            @XmlElementRef(type = ServiceMO.class),
+            @XmlElementRef(type = RbacRoleMO.class),
+            @XmlElementRef(type = StoredPasswordMO.class),
+            @XmlElementRef(type = SecurityZoneMO.class),
+            @XmlElementRef(type = ServiceAliasMO.class),
+    })
+    @XmlAnyElement(lax = true)
+    @XmlElementWrapper(name = "resource", required = false)
+    private List<Object> getResourceList() {
+        if (resource == null) {
+            return null;
+        }
+        ArrayList<Object> list = new ArrayList<>(1);
+        list.add(resource);
+        return list;
+    }
+
+    private void setResourceList(List<Object> content) {
+        this.resource = content != null && !content.isEmpty() ? content.get(0) : null;
+    }
+
+    public Object getResource() {
+        return resource;
+    }
+
+    public void setResource(Object resource) {
+        this.resource = resource;
     }
 }

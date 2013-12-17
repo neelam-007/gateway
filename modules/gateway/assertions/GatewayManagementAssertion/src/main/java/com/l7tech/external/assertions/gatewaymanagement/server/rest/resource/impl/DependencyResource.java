@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.DependencyAnalysisMO;
-import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -77,18 +74,13 @@ public class DependencyResource {
     }
 
     private Reference toReference(DependentObject dependent) {
-        final Reference reference;
         if (dependent instanceof DependentAssertion) {
-            reference = ManagedObjectFactory.createReference();
-            reference.setContent(dependent.getName());
-            reference.setEntityType(dependent.getDependencyType().name());
-            reference.setEntityType("Assertion");
+            return new ReferenceBuilder(dependent.getName(), null, "Assertion").build();
         } else if (dependent instanceof DependentEntity) {
-            reference = buildReferenceFromEntityHeader(((DependentEntity) dependent).getEntityHeader());
+            return buildReferenceFromEntityHeader(((DependentEntity) dependent).getEntityHeader());
         } else {
             throw new IllegalArgumentException("Unknown dependency type: " + dependent.getClass());
         }
-        return reference;
     }
 
     private Reference buildReferenceFromEntityHeader(EntityHeader entityHeader) {

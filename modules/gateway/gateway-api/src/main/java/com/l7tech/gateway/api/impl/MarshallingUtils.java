@@ -108,7 +108,7 @@ public class MarshallingUtils {
         return domSource.getNode()==null ? null : unmarshal( objectClass, domSource, false );
     }
 
-    static JAXBContext getJAXBContext() throws JAXBException {
+    public static JAXBContext getJAXBContext() throws JAXBException {
         JAXBContext context = MarshallingUtils.context;
 
         if ( context == null ) {

@@ -7,6 +7,8 @@ import com.l7tech.util.HexUtils;
 import org.w3c.dom.Document;
 
 import javax.security.auth.x500.X500Principal;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -578,6 +580,9 @@ public class ManagedObjectFactory {
         MarshallingUtils.marshal( mo, result, false );
     }
 
+    public static JAXBContext getJAXBContext() throws JAXBException {
+        return MarshallingUtils.getJAXBContext();
+    }
 
     public static Class[] getAllManagedObjectClasses(){
         return new Class[]{
@@ -613,7 +618,9 @@ public class ManagedObjectFactory {
                 DependencyAnalysisMO.class,
                 DependencyMO.class,
                 Reference.class,
-                References.class
+                References.class,
+                Link.class,
+                PolicyVersionMO.class
         };
     }
 
@@ -629,16 +636,24 @@ public class ManagedObjectFactory {
         return new Reference();
     }
 
-    public static Reference createReference(String uri, String strId, String name, String content) {
-        return new Reference(uri, strId, name, content);
-    }
-
     public static References createReferences() {
         return new References();
     }
 
     public static References createReferences(List<Reference> references) {
         return new References(references);
+    }
+
+    public static Link createLink(){
+        return new Link();
+    }
+
+    public static Link createLink(String rel, String uri){
+        return new Link(rel, uri);
+    }
+
+    public static PolicyVersionMO createPolicyVersionMO() {
+        return new PolicyVersionMO();
     }
 
     public static Bundle createBundle(){

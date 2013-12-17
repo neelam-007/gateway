@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -75,12 +76,13 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         Response response = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        ActiveConnectorMO result = ManagedObjectFactory.read(response.getBody(), ActiveConnectorMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
 
-        assertEquals("Active connector identifier:", activeConnector.getId(), result.getId());
-        assertEquals("Active connector name:", activeConnector.getName(), result.getName());
-        assertEquals("Active connector type:", activeConnector.getType(), result.getType());
-        assertEquals("Active connector hardwired id:", activeConnector.getHardwiredServiceGoid().toString(), result.getHardwiredId());
+        assertEquals("Active connector identifier:", activeConnector.getId(), reference.getId());
+        assertEquals("Active connector name:", activeConnector.getName(), ((ActiveConnectorMO) reference.getResource()).getName());
+        assertEquals("Active connector type:", activeConnector.getType(), ((ActiveConnectorMO) reference.getResource()).getType());
+        assertEquals("Active connector hardwired id:", activeConnector.getHardwiredServiceGoid().toString(), ((ActiveConnectorMO) reference.getResource()).getHardwiredId());
     }
 
     @Test
@@ -139,7 +141,7 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         Response responseGet = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ActiveConnectorMO entityGot = MarshallingUtils.unmarshal(ActiveConnectorMO.class, source);
+        ActiveConnectorMO entityGot = (ActiveConnectorMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
@@ -171,6 +173,8 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
     public void listEntitiesTest() throws Exception {
 
         Response response = processRequest(activeConnectorBasePath, HttpMethod.GET, null, "");
+        logger.info(response.toString());
+
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

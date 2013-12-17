@@ -4,6 +4,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -69,7 +70,9 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         Response response = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        TrustedCertificateMO result = ManagedObjectFactory.read(response.getBody(), TrustedCertificateMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        TrustedCertificateMO result = (TrustedCertificateMO) reference.getResource();
 
         assertEquals("Certificate identifier:", cert.getId(), result.getId());
         assertEquals("Certificate name:", cert.getName(), result.getName());
@@ -126,7 +129,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         Response responseGet = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        TrustedCertificateMO entityGot = MarshallingUtils.unmarshal(TrustedCertificateMO.class, source);
+        TrustedCertificateMO entityGot = (TrustedCertificateMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");

@@ -4,10 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Resource;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -72,11 +69,11 @@ public class BundleResource {
 
     private Resource getManagedObject(DependentEntity dependent) throws ResourceFactory.ResourceNotFoundException, IOException {
         RestEntityResource resource = restResourceLocator.findByEntityType(dependent.getDependencyType().getEntityType());
-        Response entity = resource.getResource(dependent.getEntityHeader().getStrId());
+        Reference reference = resource.getResource(dependent.getEntityHeader().getStrId());
         Resource resourceMO = ManagedObjectFactory.createResource();
         resourceMO.setId(dependent.getEntityHeader().getStrId());
         resourceMO.setType(dependent.getEntityHeader().getType().name());
-        resourceMO.setContent(XmlUtil.nodeToString(ManagedObjectFactory.write((ManagedObject) entity.getEntity())));
+        resourceMO.setContent(XmlUtil.nodeToString(ManagedObjectFactory.write((ManagedObject) reference.getResource())));
         return resourceMO;
     }
 

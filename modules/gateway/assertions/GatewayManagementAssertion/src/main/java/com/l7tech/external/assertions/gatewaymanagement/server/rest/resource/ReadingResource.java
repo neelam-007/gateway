@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.objectmodel.FindException;
 
 import javax.ws.rs.GET;
@@ -25,5 +26,5 @@ public interface ReadingResource {
      */
     @GET
     @Path("{id}")
-    public Response getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException;
+    public Reference getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException;
 }

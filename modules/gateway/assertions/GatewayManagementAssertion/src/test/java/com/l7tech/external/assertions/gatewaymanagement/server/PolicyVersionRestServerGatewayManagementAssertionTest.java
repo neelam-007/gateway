@@ -1,9 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.entities.PolicyVersionMO;
+import com.l7tech.gateway.api.PolicyVersionMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -95,10 +96,9 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
         Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
-
-        JAXBContext jsxb = JAXBContext.newInstance(PolicyVersionMO.class);
-        PolicyVersionMO policyVersionReturned = jsxb.createUnmarshaller().unmarshal(source, PolicyVersionMO.class).getValue();
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        PolicyVersionMO policyVersionReturned = (PolicyVersionMO) reference.getResource();
 
         Assert.assertEquals(policyVersion.getId(), policyVersionReturned.getId());
         Assert.assertEquals(policyVersion.getName(), policyVersionReturned.getComment());

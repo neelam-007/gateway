@@ -2,9 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ServiceAliasMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
@@ -134,7 +132,8 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         Response response = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        ServiceAliasMO result = ManagedObjectFactory.read(response.getBody(), ServiceAliasMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ServiceAliasMO result = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         assertEquals("Service Alias identifier:", serviceAlias.getId(), result.getId());
         assertEquals("Service Alias ref service id:", serviceAlias.getEntityGoid().toString(), result.getServiceReference().getId());
@@ -240,7 +239,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         Response responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceAliasMO entityGot = MarshallingUtils.unmarshal(ServiceAliasMO.class, source);
+        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getServiceReference().setId(publishedService2.getId());
@@ -257,7 +256,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         Response responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceAliasMO entityGot = MarshallingUtils.unmarshal(ServiceAliasMO.class, source);
+        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setFolderId(folder2.getId());

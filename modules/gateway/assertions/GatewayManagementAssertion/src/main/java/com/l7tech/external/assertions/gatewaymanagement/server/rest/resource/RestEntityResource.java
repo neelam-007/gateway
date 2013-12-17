@@ -5,6 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Re
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.ReferenceBuilder;
+import com.l7tech.gateway.api.References;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
@@ -58,7 +60,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     public abstract EntityType getEntityType();
 
     @Override
-    public Response listResources(final int offset, final int count, final String sort, final String order) {
+    public References listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
         if(sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
@@ -70,7 +72,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
                 return toReference(resource);
             }
         });
-        return Response.ok(ManagedObjectFactory.createReferences(references)).build();
+        return ManagedObjectFactory.createReferences(references);
     }
 
     protected abstract Reference toReference(R resource);
@@ -79,19 +81,20 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
         return toReference(entityHeader.getStrId(), entityHeader.getName());
     }
 
-    protected Reference toReference(String id, String content){
-        Reference reference = ManagedObjectFactory.createReference();
-        reference.setHref(RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id));
-        reference.setEntityId(id);
-        reference.setEntityType(getEntityType().name());
-        reference.setContent(content);
-        return reference;
+    protected Reference toReference(String id, String title){
+        return new ReferenceBuilder(title, id, getEntityType().name())
+                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id)))
+                .build();
     }
 
     @Override
-    public Response getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Reference getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        return Response.ok(resource).build();
+        return new ReferenceBuilder(toReference(resource))
+                .setContent(resource)
+                .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
+                .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
+                .build();
     }
 
     @Override

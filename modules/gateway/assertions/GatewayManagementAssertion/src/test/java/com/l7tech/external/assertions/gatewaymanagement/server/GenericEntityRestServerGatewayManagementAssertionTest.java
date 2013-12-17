@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.GenericEntityMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
@@ -73,7 +74,9 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         Response response = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        GenericEntityMO result = ManagedObjectFactory.read(response.getBody(), GenericEntityMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        GenericEntityMO result = (GenericEntityMO) reference.getResource();
 
         assertEquals("Generic Entity identifier:", genericEntity.getId(), result.getId());
         assertEquals("Generic Entity name:", genericEntity.getName(), result.getName());
@@ -117,7 +120,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         Response responseGet = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        GenericEntityMO entityGot = MarshallingUtils.unmarshal(GenericEntityMO.class, source);
+        GenericEntityMO entityGot = (GenericEntityMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("New Generic Entity");

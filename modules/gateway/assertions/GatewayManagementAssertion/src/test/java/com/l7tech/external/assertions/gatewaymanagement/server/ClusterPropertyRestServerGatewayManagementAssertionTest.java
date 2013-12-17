@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.ClusterPropertyMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -69,7 +70,9 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         Response response = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        ClusterPropertyMO result = ManagedObjectFactory.read(response.getBody(), ClusterPropertyMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ClusterPropertyMO result = (ClusterPropertyMO) reference.getResource();
 
         assertEquals("Cluster property identifier:", clusterProperty.getId(), result.getId());
         assertEquals("Cluster property name:", clusterProperty.getName(), result.getName());
@@ -129,7 +132,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         Response responseGet = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ClusterPropertyMO entityGot = MarshallingUtils.unmarshal(ClusterPropertyMO.class, source);
+        ClusterPropertyMO entityGot = (ClusterPropertyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setValue("Updated user");

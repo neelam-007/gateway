@@ -5,8 +5,11 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
+import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -41,8 +44,10 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
+import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -177,14 +182,16 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         }
     }
 
-    protected String getFirstReferencedGoid(Response response) {
-        String body = response.getBody();
-        Pattern pattern = Pattern.compile(".*href=\"([^\"]+).*");
-        Matcher matcher = pattern.matcher(body);
-        Assert.assertTrue(matcher.matches());
-        String uri = matcher.group(1);
+    protected String getFirstReferencedGoid(Response response) throws IOException {
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
 
-        return uri.substring(uri.lastIndexOf('/') + 1);
+        for(Link link : reference.getLinks()){
+            if("self".equals(link.getRel())){
+                return link.getUri().substring(link.getUri().lastIndexOf('/') + 1);
+            }
+        }
+        return null;
     }
 
     @After

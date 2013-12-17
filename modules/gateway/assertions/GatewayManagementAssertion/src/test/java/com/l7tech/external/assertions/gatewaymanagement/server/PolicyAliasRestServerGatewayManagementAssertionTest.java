@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.AliasHeader;
@@ -132,7 +133,9 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         Response response = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        PolicyAliasMO result = ManagedObjectFactory.read(response.getBody(), PolicyAliasMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        PolicyAliasMO result = (PolicyAliasMO) reference.getResource();
 
         assertEquals("Policy Alias identifier:", policyAlias.getId(), result.getId());
         assertEquals("Policy Alias ref policy id:", policyAlias.getEntityGoid().toString(), result.getPolicyReference().getId());
@@ -237,7 +240,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         Response responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        PolicyAliasMO entityGot = MarshallingUtils.unmarshal(PolicyAliasMO.class, source);
+        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
@@ -254,7 +257,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         Response responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        PolicyAliasMO entityGot = MarshallingUtils.unmarshal(PolicyAliasMO.class, source);
+        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setFolderId(folder2.getId());

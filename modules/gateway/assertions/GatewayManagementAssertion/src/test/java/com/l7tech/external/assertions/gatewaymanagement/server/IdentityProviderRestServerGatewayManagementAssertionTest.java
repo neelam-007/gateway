@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -68,7 +69,9 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
         Response response = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        IdentityProviderMO result = ManagedObjectFactory.read(response.getBody(), IdentityProviderMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        IdentityProviderMO result = (IdentityProviderMO) reference.getResource();
 
         assertEquals("Identity Provider identifier:", idProviderConfig.getId(), result.getId());
         assertEquals("Identity Provider name:", idProviderConfig.getName(), result.getName());
@@ -116,7 +119,7 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
         Response responseGet = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        IdentityProviderMO entityGot = MarshallingUtils.unmarshal(IdentityProviderMO.class, source);
+        IdentityProviderMO entityGot = (IdentityProviderMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");

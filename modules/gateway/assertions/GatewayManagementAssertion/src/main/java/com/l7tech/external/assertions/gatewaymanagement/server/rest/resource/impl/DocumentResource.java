@@ -5,11 +5,13 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.ReferenceBuilder;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
@@ -29,7 +31,8 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
+    @NotNull
+    public EntityType getEntityType() {
         return EntityType.RESOURCE_ENTRY;
     }
 
@@ -40,8 +43,8 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
 
     @Override
     public Reference toReference(EntityHeader entityHeader) {
-        if(entityHeader instanceof ResourceEntryHeader){
-            return ManagedObjectFactory.createReference(RestEntityResourceUtils.createURI(uriInfo.getAbsolutePath(), entityHeader.getStrId()), entityHeader.getStrId(), getEntityType().name(), ((ResourceEntryHeader) entityHeader).getUri());
+        if (entityHeader instanceof ResourceEntryHeader) {
+            return toReference(((ResourceEntryHeader) entityHeader).getUri(), entityHeader.getStrId());
         } else {
             return super.toReference(entityHeader);
         }

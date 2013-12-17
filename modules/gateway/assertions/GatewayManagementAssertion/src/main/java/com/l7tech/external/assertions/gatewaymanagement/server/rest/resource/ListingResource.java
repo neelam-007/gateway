@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.XslStyleSheetResource;
+import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.References;
 import org.glassfish.jersey.message.XmlHeader;
 
 import javax.validation.constraints.Max;
@@ -46,6 +48,6 @@ public interface ListingResource {
     @GET
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    Response listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
+    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    References listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
 }

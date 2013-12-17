@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -82,7 +83,9 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         Response response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        HttpConfigurationMO result = ManagedObjectFactory.read(response.getBody(), HttpConfigurationMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        HttpConfigurationMO result = (HttpConfigurationMO) reference.getResource();
 
         assertEquals("Http configuration identifier:", httpConfiguration.getId(), result.getId());
         assertEquals("Http configuration username:", httpConfiguration.getUsername(), result.getUsername());
@@ -126,7 +129,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         Response responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        HttpConfigurationMO entityGot = MarshallingUtils.unmarshal(HttpConfigurationMO.class, source);
+        HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setUsername("Updated user");

@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.email.EmailListener;
@@ -75,7 +76,9 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         Response response = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        EmailListenerMO result = ManagedObjectFactory.read(response.getBody(), EmailListenerMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        EmailListenerMO result = (EmailListenerMO) reference.getResource();
 
         assertEquals("Email listener identifier:", emailListener.getId(), result.getId());
         assertEquals("Email listener name:", emailListener.getName(), result.getName());
@@ -119,7 +122,7 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         Response responseGet = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EmailListenerMO entityGot = MarshallingUtils.unmarshal(EmailListenerMO.class, source);
+        EmailListenerMO entityGot = (EmailListenerMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("Updated New Email Listener");

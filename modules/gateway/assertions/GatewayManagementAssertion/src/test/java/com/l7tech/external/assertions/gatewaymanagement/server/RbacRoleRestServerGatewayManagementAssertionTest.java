@@ -1,12 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.RbacRoleAssignmentMO;
-import com.l7tech.gateway.api.RbacRoleMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.UserBean;
@@ -69,7 +66,9 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Response response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        RbacRoleMO roleReturned = ManagedObjectFactory.read(response.getBody(), RbacRoleMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        RbacRoleMO roleReturned = (RbacRoleMO) reference.getResource();
 
         Assert.assertEquals(role.getId(), roleReturned.getId());
         Assert.assertEquals(role.getName(), roleReturned.getName());
@@ -152,7 +151,8 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Response response = processRequest(roleBasePath + roleCustom.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        RbacRoleMO roleReturned = ManagedObjectFactory.read(response.getBody(), RbacRoleMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         roleReturned.setDescription("My Custom Role Updated");
 
@@ -171,7 +171,8 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         Response response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        RbacRoleMO roleReturned = ManagedObjectFactory.read(response.getBody(), RbacRoleMO.class);
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         roleReturned.setDescription("My Custom Role Updated");
 
