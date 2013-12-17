@@ -14,21 +14,13 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.springframework.beans.factory.DisposableBean;
 
 import javax.jms.*;
+import javax.jms.Queue;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -391,34 +383,52 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             this.pool = new GenericObjectPool<JmsBag>( new PoolableObjectFactory<JmsBag>() {
                 @Override
                 public JmsBag makeObject() throws Exception {
-                    Session session;
-                    if (endpointConfig.getEndpoint().isMessageSource()) {
-                        session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
-                    } else {
-                        session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                    }
-
+                    Session session = null;
                     MessageConsumer consumer = null;
                     MessageProducer producer = null;
-
-                    if (endpointConfig.getEndpoint().isMessageSource()) {
-                        //Create the consumer
-                        final String destinationName = endpointConfig.getEndpoint().getDestinationName();
-                        Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
-                        consumer = JmsUtil.createMessageConsumer(session, destination);
-
-                        Destination failureQueue = getFailureQueue(bag.getJndiContext());
-                        if (failureQueue != null) {
-                            producer = JmsUtil.createMessageProducer(session, failureQueue);
+                    final String destinationName = endpointConfig.getEndpoint().getDestinationName();
+                    try{
+                        if (endpointConfig.getEndpoint().isMessageSource()) {
+                            session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                        } else {
+                            session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
                         }
-                    } else {
-                        final String destinationName = endpointConfig.getEndpoint().getDestinationName();
-                        Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
-                        producer = JmsUtil.createMessageProducer(session, destination);
-                    }
 
-                    return new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
-                            bag.getConnection(), session, consumer, producer, CachedConnection.this );
+                        if (endpointConfig.getEndpoint().isMessageSource()) {
+                            //Create the consumer
+                            Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
+                            consumer = JmsUtil.createMessageConsumer(session, destination);
+
+                            Destination failureQueue = getFailureQueue(bag.getJndiContext());
+                            if (failureQueue != null) {
+                                producer = JmsUtil.createMessageProducer(session, failureQueue);
+                            }
+                        } else {
+                           Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
+                            producer = JmsUtil.createMessageProducer(session, destination);
+                        }
+
+                        return new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
+                                bag.getConnection(), session, consumer, producer, CachedConnection.this );
+                    } catch(Exception ex) {
+                        //do the clean up and rethrow the exception
+                        try {
+                            if(producer != null) producer.close();
+                        } catch (JMSException e) {
+                           logger.log(Level.WARNING, "Unable to close producer for the destination: " + destinationName);
+                        }
+                        try {
+                            if(consumer != null) consumer.close();
+                        } catch (JMSException e) {
+                            logger.log(Level.WARNING, "Unable to close consumer for the destination: " + destinationName);
+                        }
+                        try {
+                            if(session != null) session.close();
+                        } catch (JMSException e) {
+                            logger.log(Level.WARNING, "Unable to close JMS session");
+                        }
+                        throw ex;
+                    }
                 }
 
                 @Override
@@ -488,8 +498,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
             touch();
             try {
-               JmsBag jmsBag = pool.borrowObject();
-                return jmsBag;
+                return pool.borrowObject();
             } catch (JMSException e) {
                 throw new JmsRuntimeException(e);
             } catch (NamingException e) {
@@ -568,7 +577,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         public void unRef() {
             int references = referenceCount.decrementAndGet();
-            if ( references <= 0 ) {
+            //check if no one references the cached session or if the endpoint is inbound which we have to clean up anyways
+            if ( references <= 0 || endpointConfig.getEndpoint().isMessageSource()) {
                 logger.log(
                         Level.FINE,
                         "Closing JMS connection ({0}), version {1}:{2}",
