@@ -40,10 +40,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
-import com.l7tech.server.AssertionAccessManagerStub;
-import com.l7tech.server.EntityFinderStub;
-import com.l7tech.server.EntityManagerStub;
-import com.l7tech.server.MockClusterPropertyManager;
+import com.l7tech.server.*;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -76,10 +73,12 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
+import com.l7tech.server.transport.SsgConnectorManagerStub;
 import com.l7tech.server.transport.email.EmailListenerManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ResourceClassLoader;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
@@ -5122,7 +5121,10 @@ public class ServerGatewayManagementAssertionTest {
         gb2.setUniqueIdentifier(new Goid(0, 4).toString());
         TestIdentityProvider.addGroup(gb2);
         Mockito.when(identityProviderFactory.getProvider(Matchers.eq(new Goid(0, -2L)))).thenReturn(testIdentityProvider);
-        applicationContext.getBeanFactory().registerSingleton( "identityProviderFactory", identityProviderFactory);
+        applicationContext.getBeanFactory().registerSingleton("identityProviderFactory", identityProviderFactory);
+        applicationContext.getBeanFactory().registerSingleton( "ssgConnectorManager", new SsgConnectorManagerStub());
+        applicationContext.getBeanFactory().registerSingleton( "applicationEventProxy", new ApplicationEventProxy());
+        applicationContext.getBeanFactory().registerSingleton( "defaultKey",new TestDefaultKey());
         applicationContext.getBeanFactory().registerSingleton( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi", null),
                 jmsConnection( 2L, "Test Endpoint 2", "com.context.Classname", "qcf 2", "ldap://jndi2", JmsProviderType.Weblogic)));

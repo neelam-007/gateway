@@ -47,6 +47,17 @@ public class RestResourceFactoryUtils {
         }
     };
 
+
+    /**
+     * The default int conversion function to use when building search filters.
+     */
+    public static Functions.UnaryThrows<Integer, String, IllegalArgumentException> intConvert = new Functions.UnaryThrows<Integer, String, IllegalArgumentException>() {
+        @Override
+        public Integer call(String s) throws IllegalArgumentException {
+            return Integer.parseInt(s);
+        }
+    };
+
     /**
      * Creates a string conversion function that allows a specific set of string to be used. Can also specify case
      * sensitivity. False by default

@@ -63,6 +63,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         return new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, context);
     }
 
+    protected ApplicationContext getAssertionContext(){return assertionContext;}
+
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
                                              final Message message,

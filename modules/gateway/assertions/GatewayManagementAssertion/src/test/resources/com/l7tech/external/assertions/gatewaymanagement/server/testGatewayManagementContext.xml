@@ -59,10 +59,12 @@
         <constructor-arg index="18" ref="securePasswordManager" />
     </bean>
 
+    <bean id="transactionManager" class="com.l7tech.server.PlatformTransactionManagerStub"/>
+
     <bean id="entityResourceFactoryParent" abstract="true">
         <constructor-arg index="0" ref="rbacServices"/>
         <constructor-arg index="1" ref="securityFilter"/>
-        <constructor-arg index="2"><bean class="com.l7tech.server.PlatformTransactionManagerStub"/></constructor-arg>
+        <constructor-arg index="2" ref="transactionManager"/>
     </bean>
 
     <bean id="folderResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
@@ -123,7 +125,7 @@
         <constructor-arg index="5" ref="clusterPropertyCache"/>
         <constructor-arg index="6" ref="clusterPropertyManager"/>
         <constructor-arg index="7"><null/></constructor-arg>
-        <constructor-arg index="8"><null/></constructor-arg>
+        <constructor-arg index="8" ref="applicationEventProxy"/>
         <constructor-arg index="9" ref="securityZoneManager"/>
     </bean>
     <bean id="securePasswordResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory" parent="entityResourceFactoryParent">
@@ -187,7 +189,10 @@
         <constructor-arg index="5" ref="folderResourceFactory"/>
         <constructor-arg index="6" ref="securityZoneManager"/>
     </bean>
-
+    <bean id="listenPortResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.ListenPortResourceFactory" parent="entityResourceFactoryParent">
+        <constructor-arg index="3" ref="ssgConnectorManager"/>
+        <constructor-arg index="4" ref="securityZoneManager"/>
+    </bean>
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>

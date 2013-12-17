@@ -71,6 +71,7 @@ public class Reference {
             @XmlElementRef(type = IdentityProviderMO.class),
             @XmlElementRef(type = JDBCConnectionMO.class),
             @XmlElementRef(type = JMSDestinationMO.class),
+            @XmlElementRef(type = ListenPortMO.class),
             @XmlElementRef(type = PolicyAliasMO.class),
             @XmlElementRef(type = PolicyMO.class),
             @XmlElementRef(type = PolicyVersionMO.class),

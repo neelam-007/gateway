@@ -420,6 +420,8 @@
         </property>
     </bean>
 
+    <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerStub"/>
+
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
 
     <bean id="inboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.InboundSecureConversationContextManager">
