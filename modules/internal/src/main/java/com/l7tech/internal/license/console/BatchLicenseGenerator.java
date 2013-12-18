@@ -181,7 +181,7 @@ public class BatchLicenseGenerator {
         }
 
         licenseDetailsRecord.setFeatureSetCode(featureSetCode);
-        licenseDetailsRecord.setFeatureSet(getFeatureSet(featureSetCode));
+        licenseDetailsRecord.setFeatureSets(getFeatureSets(featureSetCode));
         licenseDetailsRecord.setAttributes(new HashSet<>(Arrays.asList(record.get(ATTRIBUTES_FIELD).split(","))));
 
         int number;
@@ -223,7 +223,10 @@ public class BatchLicenseGenerator {
         spec.setAttributes(licenseDetails.getAttributes());
         spec.setFeatureLabel(licenseDetails.getFeatureLabel());
         spec.setEulaText(eula);
-        spec.addRootFeature(licenseDetails.getFeatureSet());
+
+        for (String featureSet : licenseDetails.getFeatureSets()) {
+            spec.addRootFeature(featureSet);
+        }
 
         for(int j = 0; j < licenseCount; j++) {
             spec.setLicenseId(LicenseGenerator.generateRandomId(RANDOM));
@@ -284,14 +287,22 @@ public class BatchLicenseGenerator {
         return productName;
     }
 
-    private String getFeatureSet(String featureSetCode) throws LicenseGeneratorException {
-        String featureSetName = FEATURE_SETS.get(featureSetCode);
+    private List<String> getFeatureSets(String featureSetCode) throws LicenseGeneratorException {
+        String featureSets = FEATURE_SETS.get(featureSetCode);
 
-        if(null == featureSetName || !LicenseGeneratorFeatureSets.getProductProfiles().containsKey(featureSetName)) {
-            throw new LicenseGeneratorException("Unrecognized feature set \"" + featureSetCode + "\".");
+        if(null == featureSets) {
+            throw new LicenseGeneratorException("Unrecognized feature set code \"" + featureSetCode + "\".");
         }
 
-        return featureSetName;
+        List<String> featureSetList = Arrays.asList(featureSets.split(","));
+
+        for (String featureSetName : featureSetList) {
+            if(!LicenseGeneratorFeatureSets.getProductProfiles().containsKey(featureSetName)) {
+                throw new LicenseGeneratorException("Unrecognized feature set name \"" + featureSetName + "\".");
+            }
+        }
+
+        return featureSetList;
     }
 
     private Calendar getExpirationDate(String duration) {
@@ -331,7 +342,6 @@ public class BatchLicenseGenerator {
         private String ipAddress;
         private String product;
         private String productCode;
-        private String featureSet;
         private String featureSetCode;
         private String majorVersion;
         private String minorVersion;
@@ -340,6 +350,7 @@ public class BatchLicenseGenerator {
         private String identifier;
 
         private Date expiryDate;
+        private List<String> featureSets;
         private HashSet<String> attributes;
 
         public int getNumber() {
@@ -446,12 +457,12 @@ public class BatchLicenseGenerator {
             this.expiryDate = expiryDate;
         }
 
-        public String getFeatureSet() {
-            return featureSet;
+        public List<String> getFeatureSets() {
+            return featureSets;
         }
 
-        public void setFeatureSet(String featureSet) {
-            this.featureSet = featureSet;
+        public void setFeatureSets(List<String> featureSets) {
+            this.featureSets = featureSets;
         }
 
         public String getFeatureSetCode() {
