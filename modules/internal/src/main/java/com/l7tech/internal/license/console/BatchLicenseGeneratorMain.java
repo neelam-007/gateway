@@ -68,7 +68,7 @@ public class BatchLicenseGeneratorMain {
         //disable logging set up for other modules - unimportant to the batch license generation
         LogManager.getLogManager().reset();
 
-        if(System.currentTimeMillis() < 0) {
+        if (System.currentTimeMillis() < 0) {
             throw new NullPointerException();
         }
 
@@ -89,7 +89,7 @@ public class BatchLicenseGeneratorMain {
 
             BatchLicenseGenerator batchGenerator;
 
-            if(saveSignedLicenses) {
+            if (saveSignedLicenses) {
                 KeyStore keyStore = loadKeyStore();
                 X509Certificate signerCert = getSignerCert(keyStore);
                 PrivateKey signerKey = getSignerKey(keyStore);
@@ -108,45 +108,41 @@ public class BatchLicenseGeneratorMain {
 
                 String signedArchiveFileName = record.getLicensee() +
                         UNDERSCORE_SEPARATOR + record.getProductCode() +
+                        UNDERSCORE_SEPARATOR + record.getFeatureSetCode() +
                         UNDERSCORE_SEPARATOR + generationTimeFormatted +
                         UNDERSCORE_SEPARATOR + record.getIdentifier() +
                         LICENSE_ARCHIVE_FILE_EXTENSION;
 
-                if(saveUnsignedLicenses) {
+                if (saveUnsignedLicenses) {
                     String unsignedArchiveFileName = UNSIGNED_PREFIX + signedArchiveFileName;
                     File archiveUnsigned = createLicenseArchive(unsignedLicenses, unsignedArchiveFileName);
 
-                    if(printLicensePaths) {
+                    if (printLicensePaths) {
                         System.out.println(archiveUnsigned.getAbsolutePath());
                     }
                 }
 
-                if(saveSignedLicenses) {
+                if (saveSignedLicenses) {
                     Map<String,Document> signedLicenses = batchGenerator.signLicenses(unsignedLicenses);
                     File archiveSigned = createLicenseArchive(signedLicenses, signedArchiveFileName);
 
-                    if(printLicensePaths) {
+                    if (printLicensePaths) {
                         System.out.println(archiveSigned.getAbsolutePath());
                     }
                 }
             }
-        } catch (LicenseGeneratorException e) {
+        } catch (LicenseGeneratorException | GeneralSecurityException | IOException e) {
             System.err.println(e.getMessage());
 
-            if(null != e.getCause()) {
+            if (null != e.getCause()) {
                 System.err.println(e.getCause().getMessage());
             }
 
             System.exit(1);
-        } catch (GeneralSecurityException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
         }
     }
 
+    @SuppressWarnings("static-access")  // the use of OptionBuilder in this method is as intended
     private static void processCommandLineArguments(String[] commandLineArguments) {
         Option helpOpt = new Option(OPTION_HELP_OPT, OPTION_HELP_DESCRIPTION);
 
@@ -171,7 +167,7 @@ public class BatchLicenseGeneratorMain {
         Option verboseOpt = OptionBuilder.withDescription(OPTION_VERBOSE_DESCRIPTION)
                 .create(OPTION_VERBOSE_OPT);
 
-        if(0 == commandLineArguments.length) {
+        if (0 == commandLineArguments.length) {
             printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, verboseOpt, helpOpt);
             System.exit(1);
         }
@@ -195,7 +191,7 @@ public class BatchLicenseGeneratorMain {
         try {
             cmd = parser.parse(helpOptions, commandLineArguments, true);
 
-            if(cmd.hasOption(OPTION_HELP_OPT)) {
+            if (cmd.hasOption(OPTION_HELP_OPT)) {
                 printHelp(fileOpt, eulaOpt, saveUnsignedOnlyOpt, saveBothOpt, verboseOpt, helpOpt);
                 System.exit(0);
             }
@@ -213,15 +209,15 @@ public class BatchLicenseGeneratorMain {
                 ? eulaFilePaths.get(eulaValue)
                 : eulaValue;
 
-        if(cmd.hasOption(saveUnsignedOnlyOpt.getOpt())) {
+        if (cmd.hasOption(saveUnsignedOnlyOpt.getOpt())) {
             saveSignedLicenses = false;
             saveUnsignedLicenses = true;
-        } else if(cmd.hasOption(saveBothOpt.getOpt())) {
+        } else if (cmd.hasOption(saveBothOpt.getOpt())) {
             saveSignedLicenses = true;
             saveUnsignedLicenses = true;
         }
 
-        if(cmd.hasOption(verboseOpt.getOpt())) {
+        if (cmd.hasOption(verboseOpt.getOpt())) {
             printLicensePaths = true;
         }
     }
@@ -231,7 +227,7 @@ public class BatchLicenseGeneratorMain {
 
         Options allOptions = new Options();
 
-        for(Option option : orderedList) {
+        for (Option option : orderedList) {
             allOptions.addOption(option);
         }
 
@@ -258,14 +254,12 @@ public class BatchLicenseGeneratorMain {
 
         File archive = new File(archiveFileName);
 
-        if(archive.exists()) {
+        if (archive.exists()) {
             throw new LicenseGeneratorException("License archive file '" + archiveFileName + "' already exists! " +
                     "Only one record for each Licensee/Product combination can be present in the input file.");
         }
 
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive));
-
-        try {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(archive))) {
             for (String name : licenses.keySet()) {
                 Document license = licenses.get(name);
                 String xmlString = XmlUtil.nodeToFormattedString(license);
@@ -274,9 +268,8 @@ public class BatchLicenseGeneratorMain {
                 zos.write(xmlString.getBytes(), 0, xmlString.length());
                 zos.closeEntry();
             }
-        } finally {
-            zos.close();
         }
+
 
         return new File(archiveFileName);
     }
@@ -308,9 +301,9 @@ public class BatchLicenseGeneratorMain {
             throw new LicenseGeneratorException("Error reading EULA properties file!", e);
         }
 
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
-        for(String property : eulaProperties.stringPropertyNames()) {
+        for (String property : eulaProperties.stringPropertyNames()) {
             map.put(property, eulaProperties.getProperty(property));
         }
 
@@ -320,9 +313,9 @@ public class BatchLicenseGeneratorMain {
     private static Map<String, String> createUnmodifiableMapFromBundle(String bundleLocation) {
         ResourceBundle bundle = ResourceBundle.getBundle(bundleLocation);
 
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
-        for(String code : bundle.keySet()) {
+        for (String code : bundle.keySet()) {
             map.put(code, bundle.getString(code));
         }
 
