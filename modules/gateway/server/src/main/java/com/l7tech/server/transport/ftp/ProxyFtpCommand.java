@@ -10,14 +10,12 @@ import org.apache.ftpserver.impl.FtpServerContext;
 import java.io.IOException;
 
 /**
- * @author nilic
  * @author jwilliams
  */
-abstract class BaseCommand extends AbstractCommand { // TODO jwilliams: rename to ProxyFtpCommand or something? Add to command factory, creating each instance with the ftpMethod constructor
-
+class ProxyFtpCommand extends AbstractCommand {
     private FtpMethod ftpMethod;
 
-    public BaseCommand(FtpMethod ftpMethod) {
+    public ProxyFtpCommand(FtpMethod ftpMethod) {
         this.ftpMethod = ftpMethod;
     }
 
@@ -28,10 +26,6 @@ abstract class BaseCommand extends AbstractCommand { // TODO jwilliams: rename t
 
         FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
 
-        requestProcessor.process(getFtpMethod(), request, session);
-    }
-
-    protected FtpMethod getFtpMethod() {
-        return ftpMethod;
+        requestProcessor.process(session, context, request, ftpMethod);
     }
 }

@@ -64,7 +64,6 @@ public class FtpRequestProcessorFactory {
                 serviceManager,
                 overrideContentType,
                 hardwiredServiceGoid,
-                connector.getProperty("service"),
                 connector.getGoid(),
                 connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L));
     }

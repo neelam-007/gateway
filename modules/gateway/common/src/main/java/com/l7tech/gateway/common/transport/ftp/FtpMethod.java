@@ -14,8 +14,8 @@ public class FtpMethod implements Serializable {    // TODO jwilliams: refactor 
     /** Map for looking up instance by wspName. */
     private static final Map<String, FtpMethod> _wspNameMap = new HashMap<>();
 
-    public static final FtpMethod FTP_GET  = new FtpMethod("RETR" , "Transfer a copy of the file", FtpMethodEnum.FTP_GET); // TODO jwilliams: rename "FTP_RETR"
-    public static final FtpMethod FTP_PUT  = new FtpMethod("STOR" , "Accept the data and to store the data as a file at the server site", FtpMethodEnum.FTP_PUT); // TODO jwilliams: rename "FTP_STOR"
+    public static final FtpMethod FTP_RETR = new FtpMethod("RETR" , "Transfer a copy of the file", FtpMethodEnum.FTP_RETR);
+    public static final FtpMethod FTP_STOR = new FtpMethod("STOR" , "Accept the data and to store the data as a file at the server site", FtpMethodEnum.FTP_STOR);
     public static final FtpMethod FTP_DELE = new FtpMethod("DELE", "Delete file", FtpMethodEnum.FTP_DELE);
     public static final FtpMethod FTP_LIST = new FtpMethod("LIST", "Returns information of a file or directory if specified, else information of the current working directory is returned", FtpMethodEnum.FTP_LIST);
     public static final FtpMethod FTP_ABOR = new FtpMethod("ABOR", "Abort an active file transfer", FtpMethodEnum.FTP_ABOR);
@@ -64,17 +64,18 @@ public class FtpMethod implements Serializable {    // TODO jwilliams: refactor 
     public static final FtpMethod FTP_USER = new FtpMethod("USER", "Authentication username", FtpMethodEnum.FTP_USER);
     public static final FtpMethod FTP_LOGIN = new FtpMethod("LOGIN", "Log in user", FtpMethodEnum.FTP_LOGIN);
 
-    public enum FtpMethodEnum { FTP_GET, FTP_PUT, FTP_DELE, FTP_LIST, FTP_ABOR, FTP_ACCT, FTP_ADAT, FTP_ALLO, FTP_APPE, FTP_AUTH, FTP_CCC, FTP_CDUP,
+    public enum FtpMethodEnum {
+        FTP_RETR, FTP_STOR, FTP_DELE, FTP_LIST, FTP_ABOR, FTP_ACCT, FTP_ADAT, FTP_ALLO, FTP_APPE, FTP_AUTH, FTP_CCC, FTP_CDUP,
         FTP_CONF, FTP_CWD, FTP_ENC, FTP_EPRT, FTP_EPSV, FTP_FEAT, FTP_HELP, FTP_LANG, FTP_MDTM, FTP_MIC, FTP_MKD, FTP_MLSD, FTP_MLST, FTP_MODE, FTP_NLST, FTP_NOOP, FTP_OPTS,
         FTP_PASS, FTP_PASV, FTP_PBSZ, FTP_PORT, FTP_PROT, FTP_PWD, FTP_QUIT, FTP_REIN, FTP_RMD, FTP_RNFR, FTP_RNTO, FTP_SITE, FTP_SIZE, FTP_STAT, FTP_STOU,
         FTP_STRU, FTP_SYST, FTP_TYPE, FTP_USER, FTP_LOGIN }
 
-    private static final FtpMethod[] _ftpMethods = new FtpMethod[] { FTP_GET, FTP_PUT, FTP_DELE, FTP_LIST, FTP_ABOR, FTP_ACCT, FTP_ADAT, FTP_ALLO, FTP_APPE, FTP_AUTH, FTP_CCC, FTP_CDUP,
+    private static final FtpMethod[] _ftpMethods = new FtpMethod[] {FTP_RETR, FTP_STOR, FTP_DELE, FTP_LIST, FTP_ABOR, FTP_ACCT, FTP_ADAT, FTP_ALLO, FTP_APPE, FTP_AUTH, FTP_CCC, FTP_CDUP,
         FTP_CONF, FTP_CWD, FTP_ENC, FTP_EPRT, FTP_EPSV, FTP_FEAT, FTP_HELP, FTP_LANG, FTP_MDTM, FTP_MIC, FTP_MKD, FTP_MLSD, FTP_MLST, FTP_MODE, FTP_NLST, FTP_NOOP, FTP_OPTS,
         FTP_PASS, FTP_PASV, FTP_PBSZ, FTP_PORT, FTP_PROT, FTP_PWD, FTP_QUIT, FTP_REIN, FTP_RMD, FTP_RNFR, FTP_RNTO, FTP_SITE, FTP_SIZE, FTP_STAT, FTP_STOU,
         FTP_STRU, FTP_SYST, FTP_TYPE, FTP_USER, FTP_LOGIN };
 
-    private static final String[] _wspNames = new String[] { FTP_GET.getWspName(),FTP_PUT.getWspName(), FTP_DELE.getWspName(), FTP_LIST.getWspName(),
+    private static final String[] _wspNames = new String[] { FTP_RETR.getWspName(), FTP_STOR.getWspName(), FTP_DELE.getWspName(), FTP_LIST.getWspName(),
             FTP_ABOR.getWspName(), FTP_ACCT.getWspName(), FTP_ADAT.getWspName(), FTP_ALLO.getWspName(), FTP_APPE.getWspName(), FTP_AUTH.getWspName(),
             FTP_CCC.getWspName(), FTP_CDUP.getWspName(), FTP_CONF.getWspName(), FTP_CWD.getWspName(), FTP_ENC.getWspName(), FTP_EPRT.getWspName(), FTP_EPSV.getWspName(),
             FTP_FEAT.getWspName(), FTP_HELP.getWspName(), FTP_LANG.getWspName(), FTP_MDTM.getWspName(), FTP_MIC.getWspName(), FTP_MKD.getWspName(), FTP_MLSD.getWspName(), FTP_MLST.getWspName(), FTP_MODE.getWspName(), FTP_NLST.getWspName(),

@@ -423,10 +423,12 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         final CountDownLatch gotData = new CountDownLatch(1);
         //This will hold any exceptions that may have been thrown attempting to retrieve the input stream to the file
         final AtomicReference<Throwable> gettingStreamException = new AtomicReference<>(null);
+
         // Get the response byte limit
         final long byteLimit = getByteLimit(variables);
         final AtomicLong fileSize = new AtomicLong(-1);
         final PipedInputStream pis = new PipedInputStream();
+
         try {
             final PipedOutputStream pos = new PipedOutputStream(pis);
             // Get the file length

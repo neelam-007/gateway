@@ -405,7 +405,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
 
             Message gatewayResponseMessage = new Message();
-            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class, OutboundHeadersKnob.class );
+            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class, OutboundHeadersKnob.class ); // TODO jwilliams: see here for preservable knob attachment
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, gatewayResponseMessage, replyExpected);
 
             boolean stealthMode = false;

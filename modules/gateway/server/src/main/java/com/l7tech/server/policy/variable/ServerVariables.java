@@ -237,42 +237,63 @@ public class ServerVariables {
                     return hrk == null ? null : hrk.getQueryString();
                 }
             }),
-            new Variable("request.ftp.command", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".command", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
                     return frk == null ? null : frk.getCommand();
                 }
             }),
-            new Variable("request.ftp.path", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".argument", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : frk.getArgument();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".path", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
                     return frk == null ? null : frk.getPath();
                 }
             }),
-            new Variable("request.ftp.file", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".file", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                    return frk == null ? null : frk.getFile();
+                    // request.ftp.file is deprecated, now an alias for request.ftp.argument
+                    return frk == null ? null : frk.getArgument();
                 }
             }),
-            new Variable("request.ftp.unique", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".unique", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
                     return frk == null ? null : String.valueOf(frk.isUnique());
                 }
             }),
-            new Variable("request.ftp.secure", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_REQUEST_FTP + ".secure", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
                     return frk == null ? null : String.valueOf(frk.isSecure());
                 }
             }),
-            // TODO jwilliams: add server variable for "directory"?
+            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replyCode", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpResponseKnob frk = context.getResponse().getKnob(FtpResponseKnob.class);
+                    return frk == null ? null : String.valueOf(frk.getReplyCode());
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replyData", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpResponseKnob frk = context.getResponse().getKnob(FtpResponseKnob.class);
+                    return frk == null ? null : String.valueOf(frk.getReplyData());
+                }
+            }),
             new Variable("request.ssh.path", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {

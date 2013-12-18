@@ -128,6 +128,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JPanel builtinServicesPanel;
     private ByteLimitPanel requestByteLimitPanel;
     private SecurityZoneWidget zoneControl;
+    private JRadioButton extendedSupportRadioButton;
+    private JRadioButton uploadOnlySupportRadioButton;
     private boolean readOnly;
 
     private SsgConnector connector;
@@ -548,6 +550,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
                     msg = "A " + td + " port must be directly associated with a valid published service unless the content type is XML.";
                 }
+
+                // TODO jwilliams: add case for FTPS - "An FTP(S) port must be directly associated with a valid published service unless using Legacy Mode"
 
                 if (hardwiredServiceCheckBox.isSelected() && serviceNameComboBox.getSelectedItem() != null)
                     return null;

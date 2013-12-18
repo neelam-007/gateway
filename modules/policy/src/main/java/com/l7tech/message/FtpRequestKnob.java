@@ -17,18 +17,18 @@ public interface FtpRequestKnob extends TcpKnob, UriKnob {
     String getCommand();
 
     /**
-     * The path of the file being uploaded.
+     * The argument string for the command.
      *
-     * @return the file path
+     * @return the argument string, or null if none given
      */
-    String getPath();
+    String getArgument();
 
     /**
-     * The name of the file being uploaded.
+     * The current working directory of the FTP session.
      *
-     * @return the file name
+     * @return the working directory
      */
-    String getFile();
+    String getPath();
 
     /**
      * The (constructed) URL for this request (e.g. ftps://gateway:2121/ssg/soap/file.xml).
@@ -40,10 +40,13 @@ public interface FtpRequestKnob extends TcpKnob, UriKnob {
     String getRequestUrl();
 
     /**
-     * True for STOU, false for STOR
+     * True for STOU, false for any other command.
      *
-     * @return true if storing with a unique file name
+     * DEPRECATED: Use {@link #getCommand()} to determine if the command is STOU.
+     *
+     * @return true iff command is STOU
      */
+    @Deprecated
     boolean isUnique();
 
     /**

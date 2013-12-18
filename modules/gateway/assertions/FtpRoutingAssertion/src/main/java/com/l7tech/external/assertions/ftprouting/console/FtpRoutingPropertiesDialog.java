@@ -59,6 +59,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private static final String PROTOCOL_COMBO_ITEM_FTPS_EXPLICIT_LABEL = getResourceString("explicitSslDescription");
     private static final String PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL = getResourceString("implicitSslDescription");
 
+    private static final String OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT = getResourceString("failOnTransientError");
+    private static final String OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT = getResourceString("failOnPermanentError");
+    private static final String OUTCOME_COMBO_ITEM_FAIL_ON_NO_RESPONSE = getResourceString("failOnNoResponse");
+
     private static final int COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX = 0;
     private static final String COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL = getResourceString("commandTypeFromVariable");
 
@@ -92,10 +96,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JButton manageStoredPasswordsButton;
     private JPanel commandVariablePanelHolder;
     private JComboBox<String> protocolComboBox;
+    private JComboBox<String> assertionOutcomeComboBox;
     private PrivateKeysComboBox clientCertComboBox;
-    private JPasswordField plaintextPasswordField;
+    private JPasswordField passwordExpressionField;
     private JRadioButton storedPasswordRadioButton;
-    private JRadioButton plaintextPasswordRadioButton;
+    private JRadioButton passwordExpressionRadioButton;
     private JLabel plainTextPasswordWarningLabel;
     private JCheckBox autoFilenameCheckBox;
     private JLabel userNameLabel;
@@ -216,6 +221,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
+        // Protocol
+        assertionOutcomeComboBox.addItem(OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT);
+        assertionOutcomeComboBox.addItem(OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT);
+        assertionOutcomeComboBox.addItem(OUTCOME_COMBO_ITEM_FAIL_ON_NO_RESPONSE);
+
+        assertionOutcomeComboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
+
         // --- Authentication tab ---
 
         // Pass through credentials option
@@ -247,7 +259,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         });
 
         // Plaintext password option
-        plaintextPasswordRadioButton.addItemListener(new ItemListener() {
+        passwordExpressionRadioButton.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableCredentialsPanelComponents();
@@ -266,8 +278,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         });
 
         // Plaintext password
-        echoChar = plaintextPasswordField.getEchoChar();
-        Utilities.enableGrayOnDisabled(plaintextPasswordField);
+        echoChar = passwordExpressionField.getEchoChar();
+        Utilities.enableGrayOnDisabled(passwordExpressionField);
 
         // Context variable in password check box
         Utilities.enableGrayOnDisabled(contextVariableInPasswordCheckBox);
@@ -275,8 +287,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         contextVariableInPasswordCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                plaintextPasswordField.enableInputMethods(contextVariableInPasswordCheckBox.isSelected());
-                plaintextPasswordField.setEchoChar(contextVariableInPasswordCheckBox.isSelected() ? (char) 0 : echoChar);
+                passwordExpressionField.enableInputMethods(contextVariableInPasswordCheckBox.isSelected());
+                passwordExpressionField.setEchoChar(contextVariableInPasswordCheckBox.isSelected() ? (char) 0 : echoChar);
             }
         });
 
@@ -428,7 +440,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             @Override
             public String getValidationError() {
                 if(specifyUserCredsRadioButton.isSelected()
-                        && !storedPasswordRadioButton.isSelected() && !plaintextPasswordRadioButton.isSelected()) {
+                        && !storedPasswordRadioButton.isSelected() && !passwordExpressionRadioButton.isSelected()) {
                     return getResourceString("passwordSourceUnspecifiedError");
                 }
 
@@ -453,10 +465,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         });
 
         // only plaintext passwords can be used in the connection test
-        connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(plaintextPasswordRadioButton) {
+        connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(passwordExpressionRadioButton) {
             @Override
             public String getValidationError() {
-                if(!plaintextPasswordRadioButton.isSelected()) {
+                if(!passwordExpressionRadioButton.isSelected()) {
                     return getResourceString("connectionTestFailurePasswordNotPlaintextMessage");
                 }
 
@@ -466,11 +478,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // if plaintext password is selected, the password must be specified
         inputValidator.addRule(
-                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("plaintextPasswordRadioButton"),
-                        plaintextPasswordField, null));
+                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
+                        passwordExpressionField, null));
         connectionTestValidator.addRule(
-                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("plaintextPasswordRadioButton"),
-                        plaintextPasswordField, null));
+                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
+                        passwordExpressionField, null));
 
         // client certificate must be specified if the field is enabled
         InputValidator.ValidationRule clientCertRule = new InputValidator.ComponentValidationRule(clientCertComboBox) {
@@ -577,18 +589,18 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // enable/disable credentials type options
         storedPasswordRadioButton.setEnabled(isSpecifyUserCreds);
-        plaintextPasswordRadioButton.setEnabled(isSpecifyUserCreds);
+        passwordExpressionRadioButton.setEnabled(isSpecifyUserCreds);
 
         // enable/disable stored password control
         storedPasswordComboBox.setEnabled(isSpecifyUserCreds && storedPasswordRadioButton.isSelected());
         manageStoredPasswordsButton.setEnabled(isSpecifyUserCreds && storedPasswordRadioButton.isSelected());
 
         // enable/disable password field and context variable check box
-        plaintextPasswordField.setEnabled(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
-        contextVariableInPasswordCheckBox.setEnabled(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
+        passwordExpressionField.setEnabled(isSpecifyUserCreds && passwordExpressionRadioButton.isSelected());
+        contextVariableInPasswordCheckBox.setEnabled(isSpecifyUserCreds && passwordExpressionRadioButton.isSelected());
 
         // show/hide plaintext warning label
-        plainTextPasswordWarningLabel.setVisible(isSpecifyUserCreds && plaintextPasswordRadioButton.isSelected());
+        plainTextPasswordWarningLabel.setVisible(isSpecifyUserCreds && passwordExpressionRadioButton.isSelected());
     }
 
     private void populateRequestSourceComboBox(FtpRoutingAssertion assertion) {
@@ -633,6 +645,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             protocolComboBox.setSelectedItem(PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL);
         }
 
+        if (assertion.isFailOnPermanent()) {
+            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT);
+        } else if (assertion.isFailOnTransient()) {
+            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT);
+        } else {
+            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_NO_RESPONSE);
+        }
+
         // server settings
         verifyServerCertCheckBox.setSelected(assertion.isVerifyServerCert());
         hostNameTextField.setText(assertion.getHostName());
@@ -641,7 +661,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // ftp command
         if (assertion.getFtpMethod() == null) {
-            if (assertion.getOtherCommand()) {
+            if (assertion.isCommandFromVariable()) {
                 commandComboBox.setSelectedIndex(COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
                 commandVariablePanel.setVariable(assertion.getFtpMethodOtherCommand());
             } else {
@@ -659,7 +679,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         populateRequestSourceComboBox(assertion);
 
         /*
-        messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
+        messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false)); // TODO jwilliams: check this...
         final MessageTargetableSupport responseTarget = new MessageTargetableSupport(assertion.getResponseTarget());
         messageTargetComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
          */
@@ -698,9 +718,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 storedPasswordRadioButton.setSelected(true);
                 storedPasswordComboBox.setSelectedSecurePassword(assertion.getPasswordGoid());
             } else {
-                plaintextPasswordRadioButton.setSelected(true);
-                plaintextPasswordField.setText(assertion.getPassword());
-                plaintextPasswordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
+                passwordExpressionRadioButton.setSelected(true);
+                passwordExpressionField.setText(assertion.getPassword());
+                passwordExpressionField.enableInputMethods(assertion.isPasswordUsesContextVariables());
                 contextVariableInPasswordCheckBox.setSelected(assertion.isPasswordUsesContextVariables());
             }
         }
@@ -734,6 +754,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         fillAssertionConnectionData(assertion);
         fillAssertionCommandData(assertion);
+        fillAssertionOutcomeHandlingData(assertion);
         fillAssertionCredentialsData(assertion);
         fillAssertionAdvancedData(assertion);
 
@@ -764,11 +785,25 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
     }
 
+    private void fillAssertionOutcomeHandlingData(final FtpRoutingAssertion assertion) {
+         // assertion outcome handling
+        if (OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT.equals(assertionOutcomeComboBox.getSelectedItem())) {
+            assertion.setFailOnPermanent(true);
+            assertion.setFailOnTransient(true);
+        } else if (OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT.equals(assertionOutcomeComboBox.getSelectedItem())) {
+            assertion.setFailOnPermanent(false);
+            assertion.setFailOnTransient(true);
+        } else {
+            assertion.setFailOnPermanent(false);
+            assertion.setFailOnTransient(false);
+        }
+    }
+
     private void fillAssertionCommandData(final FtpRoutingAssertion assertion) {
         // ftp command
         if (commandVariablePanel.isEnabled()) {
             assertion.setFtpMethod(null);
-            assertion.setOtherCommand(true);
+            assertion.setCommandFromVariable(true);
             assertion.setFtpMethodOtherCommand(commandVariablePanel.getVariable());
         } else {
             Object selectedCommand = commandComboBox.getSelectedItem();
@@ -821,7 +856,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (passThroughCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
             userNameTextField.setText(StringUtils.EMPTY);
-            plaintextPasswordField.setText(StringUtils.EMPTY);
+            passwordExpressionField.setText(StringUtils.EMPTY);
             assertion.setPasswordGoid(null);
         } else if (specifyUserCredsRadioButton.isSelected()) {
             assertion.setCredentialsSource(FtpCredentialsSource.SPECIFIED);
@@ -831,7 +866,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 assertion.setPassword(null);
             } else {
                 assertion.setPasswordGoid(null);
-                assertion.setPassword(new String(plaintextPasswordField.getPassword()));
+                assertion.setPassword(new String(passwordExpressionField.getPassword()));
             }
         }
 
@@ -868,6 +903,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             final FtpRoutingAssertion a = new FtpRoutingAssertion();
 
             fillAssertionConnectionData(a);
+            fillAssertionOutcomeHandlingData(a);
             fillAssertionCommandData(a);
             fillAssertionCredentialsData(a);
 
@@ -1024,7 +1060,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
 
         return method != null &&
-                (method.equals(FtpMethod.FTP_PUT)
+                (method.equals(FtpMethod.FTP_STOR)
                         || method.equals(FtpMethod.FTP_APPE)
                         || method.equals(FtpMethod.FTP_STOU));
     }
@@ -1032,13 +1068,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private boolean isCommandRetrieve(String command) {
         FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
 
-        return method != null && method.equals(FtpMethod.FTP_GET);
+        return method != null && method.equals(FtpMethod.FTP_RETR);
     }
 
     private FtpMethod[] getFtpMethods() {
         return new FtpMethod[] {
-                FtpMethod.FTP_GET,
-                FtpMethod.FTP_PUT,
+                FtpMethod.FTP_RETR,
+                FtpMethod.FTP_STOR,
                 FtpMethod.FTP_DELE,
                 FtpMethod.FTP_LIST,
                 FtpMethod.FTP_ABOR,

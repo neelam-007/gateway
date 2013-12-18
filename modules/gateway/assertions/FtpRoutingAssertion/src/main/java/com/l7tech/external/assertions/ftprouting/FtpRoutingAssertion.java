@@ -76,7 +76,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Port number. Can contain context variables. */
     private String _port = Integer.toString(DEFAULT_FTP_PORT);
 
-    /** Destination directory pattern. Can contain context variables. */
+    /** Working directory. Can contain context variables. (Formerly used to specify upload directory.) */
     private String _directory;
 
     /** Where the file name on server will come from. */
@@ -123,6 +123,10 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private MessageTargetableSupport _responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
 
     private String _responseByteLimit;
+
+    private boolean failOnTransient = true;
+
+    private boolean failOnPermanent = true;
 
     private MessageTargetableSupport defaultRequestTarget() {
         return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
@@ -303,11 +307,11 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this.passwordGoid = passwordGoid;
     }
 
-    public boolean getOtherCommand() { // TODO jwilliams: refactor to "isCommandFromVariable" or something
+    public boolean isCommandFromVariable() {
         return _otherCommand;
     }
 
-    public void setOtherCommand( boolean otherCommand ) {
+    public void setCommandFromVariable(boolean otherCommand) {
         this._otherCommand = otherCommand;
     }
 
@@ -325,6 +329,22 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setResponseByteLimit(String responseByteLimit) {
         this._responseByteLimit = responseByteLimit;
+    }
+
+    public boolean isFailOnPermanent() {
+        return failOnPermanent;
+    }
+
+    public void setFailOnPermanent(boolean failOnPermanent) {
+        this.failOnPermanent = failOnPermanent;
+    }
+
+    public boolean isFailOnTransient() {
+        return failOnTransient;
+    }
+
+    public void setFailOnTransient(boolean failOnTransient) {
+        this.failOnTransient = failOnTransient;
     }
 
     @Override
@@ -357,9 +377,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Route requests from the Gateway to a backend FTP(S) server, using passive mode FTP.");
-
-        // ensure inbound FTP transport gets wired up
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ftprouting.server.FtpServerModuleLoadListener");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
@@ -441,7 +458,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     public String[] getVariablesUsed() {
         final List<String> expressions = new ArrayList<>();
 
-        if (getOtherCommand()) {
+        if (isCommandFromVariable()) {
             expressions.add(Syntax.getVariableExpression(_ftpMethodOtherCommand));
         }
 

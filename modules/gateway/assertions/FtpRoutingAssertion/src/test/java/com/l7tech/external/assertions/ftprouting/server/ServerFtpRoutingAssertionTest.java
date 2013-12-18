@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.ftprouting.server;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
@@ -21,7 +20,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.util.*;
-import com.l7tech.xml.xpath.*;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.usermanager.impl.BaseUser;
 import org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission;
@@ -33,7 +31,6 @@ import org.junit.Test;
 import org.mockftpserver.fake.FakeFtpServer;
 import org.mockftpserver.fake.UserAccount;
 import org.mockftpserver.fake.filesystem.*;
-import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -120,7 +117,41 @@ public class ServerFtpRoutingAssertionTest {
     }
 
     @Test
-    public void testAcct() throws Exception {
+    public void testPWD_Success() throws Exception {
+        FtpFileDetails testFile = LOG_FILE_DETAILS;
+        FtpMethod testMethod = FtpMethod.FTP_PWD;
+
+        // set up file system
+        addFile(fakeFtpServer.getFileSystem(), testFile);
+
+        // create assertion
+        FtpRoutingAssertion assertion = createAssertion();
+
+        assertion.setFtpMethod(testMethod);
+        assertion.setArguments(testFile.getName());
+        assertion.setDirectory(testFile.getDirectory());
+        assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
+        assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer(assertion);
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
+
+        // run server assertion
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        FtpResponseKnob ftpResponseKnob = context.getResponse().getKnob(FtpResponseKnob.class);
+
+        assertEquals(257, ftpResponseKnob.getReplyCode());
+        assertEquals("\"" + testFile.getDirectory() + "\"", ftpResponseKnob.getReplyData().trim());
+    }
+
+    @Test
+    public void testAcct_FailOnInvalidCommand() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
         FtpMethod testMethod = FtpMethod.FTP_ACCT;
 
@@ -144,16 +175,12 @@ public class ServerFtpRoutingAssertionTest {
         // run server assertion
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(AssertionStatus.NONE, status);
-
-        String responseContent =
-                new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
-
-        assertEquals("230 ACCT completed for jdoe.", responseContent.trim());
+        // TODO jwilliams: check correct audit is present
+        assertEquals(AssertionStatus.FAILED, status);
     }
 
     @Test
-    public void testList() throws Exception {
+    public void testLIST_Success() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
         FtpMethod testMethod = FtpMethod.FTP_LIST;
 
@@ -189,7 +216,7 @@ public class ServerFtpRoutingAssertionTest {
     @Test
     public void testGetLogFile() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_GET;
+        FtpMethod testMethod = FtpMethod.FTP_RETR;
 
         // set up file system
         addFile(fakeFtpServer.getFileSystem(), testFile);
@@ -224,7 +251,7 @@ public class ServerFtpRoutingAssertionTest {
     @Test
     public void testGetXmlFile() throws Exception {
         FtpFileDetails testFile = XML_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_GET;
+        FtpMethod testMethod = FtpMethod.FTP_RETR;
 
         // set up file system
         addFile(fakeFtpServer.getFileSystem(), testFile);
@@ -259,7 +286,7 @@ public class ServerFtpRoutingAssertionTest {
     @Test
     public void testPutLogFile() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_PUT;
+        FtpMethod testMethod = FtpMethod.FTP_STOR;
 
         // set up file system
         addDirectory(fakeFtpServer.getFileSystem(), testFile);
@@ -290,7 +317,7 @@ public class ServerFtpRoutingAssertionTest {
     @Test
     public void testPutXmlFile() throws Exception {
         FtpFileDetails testFile = XML_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_PUT;
+        FtpMethod testMethod = FtpMethod.FTP_STOR;
 
         // set up file system
         addDirectory(fakeFtpServer.getFileSystem(), testFile);
@@ -413,7 +440,7 @@ public class ServerFtpRoutingAssertionTest {
                 ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(fileContents.getBytes()), Message.getMaxBytes());
 
         // attach knob to request representing org.apache.ftpserver.ftplet.FtpSession information
-        request.attachFtpKnob(
+        request.attachFtpRequestKnob(
                 new FtpRequestKnob() {
                     @Override
                     public int getLocalPort() {
@@ -451,12 +478,12 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public String getFile() {
-                        return file;
+                    public String getCommand() {
+                        return null;
                     }
 
                     @Override
-                    public String getCommand() {
+                    public String getArgument() {
                         return null;
                     }
 
@@ -527,7 +554,7 @@ public class ServerFtpRoutingAssertionTest {
         request.initialize(createStashManager(),
                 ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(new byte[0]), Message.getMaxBytes());
 
-        request.attachFtpKnob(
+        request.attachFtpRequestKnob(
                 new FtpRequestKnob() {
                     @Override
                     public int getLocalPort() {
@@ -565,12 +592,12 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public String getFile() {
-                        return file;
+                    public String getCommand() {
+                        return null;
                     }
 
                     @Override
-                    public String getCommand() {
+                    public String getArgument() {
                         return null;
                     }
 
