@@ -292,6 +292,8 @@ fi
 
 # Change issue. This may move to a layer7-release file
 echo "Layer 7 Gateway v%{version}" >/etc/issue
+# SSG-7995: need to update issue.net as well so the correct version is displayed for ssh connections
+echo "Layer 7 Gateway v%{version}" >/etc/issue.net
 # SSG-7673: This isn't interpretted correctly by sshd
 #echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
