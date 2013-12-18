@@ -68,8 +68,8 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
-     * Set the active component for the work space.
-     * 
+     * Set the component in the work space and update other tabs' active status if applicable
+     *
      * @param jc the new component to host
      */
     public void setComponent(JComponent jc) throws ActionVetoException {
@@ -159,7 +159,17 @@ public class WorkSpacePanel extends JPanel {
 
         // Maybe the opened service/policy has a few other versions that have been added into the policy editor panel,
         // so other tabs should keep their versions number unchanged and update active status as inactive.
-        updateTabsVersionNumAndActiveStatus(true);
+        if (jc instanceof PolicyEditorPanel) {
+            try {
+                final boolean currentActiveStatus = ((PolicyEditorPanel) jc).getPolicyNode().getPolicy().isVersionActive();
+                updateTabsVersionNumAndActiveStatus(false, currentActiveStatus);
+            } catch (FindException e) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
+                    "Open Policy Tab Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
+
     }
 
     /**
@@ -208,6 +218,7 @@ public class WorkSpacePanel extends JPanel {
         private JLabel tabTitleLabel; // tab display name
         private JComponent component; // a PolicyEditorPanel or HomePanel object
         private long version;         // to preserve policy/service version number for this tab
+        private boolean active;       // to preserve policy active status
 
         TabTitleComponentPanel(final JComponent component) {
             super(new FlowLayout(FlowLayout.LEFT, 0, 2));
@@ -237,6 +248,14 @@ public class WorkSpacePanel extends JPanel {
             this.version = version;
         }
 
+        public boolean isActive() {
+            return active;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
         private void initializeComponents() {
             // Add a tab label to display tab title
             tabTitleLabel = new JLabel(component.getName());
@@ -260,6 +279,7 @@ public class WorkSpacePanel extends JPanel {
 
             if (component instanceof PolicyEditorPanel) {
                 version = ((PolicyEditorPanel) component).getVersionNumber();
+                active = ((PolicyEditorPanel) component).isVersionActive();
             }
         }
     }
@@ -841,37 +861,45 @@ public class WorkSpacePanel extends JPanel {
     /**
      * When user adds a service/policy into the policy editor panel, the service/policy maybe has a few other versions,
      * which have been added into the policy editor panel, so other tabs should keep their versions number unchanged and
-     * update active status as inactive depending on the flag toUpdateActiveStatusToInactive.
+     * update active status as inactive depending on the previous and new active status of the selected component.
      *
      * The method should be called in one other case, where a version of the opened service/policy is edited and saved,
      * then all other tabs associated with the service/policy should keep their versions number unchanged and update
-     * active status as inactive depending on the flag toUpdateActiveStatusToInactive.
+     * active status as inactive depending on the previous and new active status of the selected component.
      *
-     * @param toUpdateActiveStatusToInactive: a flag to indicate if active status will be updated to "inactive".
+     * @param prevActiveStatus: previous active status of the selected component: true means "active" and false means "inactive"
+     * @param newActiveStatus: new active status of the selected component: true means "active" and false means "inactive".
      */
-    public void updateTabsVersionNumAndActiveStatus(boolean toUpdateActiveStatusToInactive) {
+    public void updateTabsVersionNumAndActiveStatus(boolean prevActiveStatus, boolean newActiveStatus) {
         final JComponent selectedComponent = getComponent();
 
         if (selectedComponent instanceof PolicyEditorPanel) {
             final EntityWithPolicyNode policyNode = ((PolicyEditorPanel) selectedComponent).getPolicyNode();
             final long version = ((PolicyEditorPanel) selectedComponent).getVersionNumber();
+            final boolean active = ((PolicyEditorPanel) selectedComponent).isVersionActive();
 
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 final Component component = tabbedPane.getComponentAt(i);
                 if (component instanceof PolicyEditorPanel) {
-                    final EntityWithPolicyNode tempNode = ((PolicyEditorPanel) component).getPolicyNode();
+                    final EntityWithPolicyNode tempEntityNode = ((PolicyEditorPanel) component).getPolicyNode();
                     final long tempVersion = ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).getVersion();
+                    final boolean tempActive = ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).isActive();
 
                     if (selectedComponent == component) {
-                        // If it is the selected component, update "version" in its TabTitleComponentPanel object
+                        // If it is the selected component, update "version" and "active" in its TabTitleComponentPanel object
                         // just in case its version has been changed.
                         ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setVersion(version);
-                    } else if  (policyNode == tempNode && version != tempVersion) {
-                        // Update the active status to be inactive, depending on the flag, toUpdateActiveStatusToInactive
-                        if (toUpdateActiveStatusToInactive) {
+                        ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setActive(active);
+                    } else if  (policyNode == tempEntityNode && version != tempVersion) {
+                        // Update the active status to be inactive, depending on the flags, prevActiveStatus and newActiveStatus
+                        if ((prevActiveStatus != newActiveStatus) && newActiveStatus) {
                             ((PolicyEditorPanel) component).setOverrideVersionActive(false);
+                            ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setActive(false);
+                        } else {
+                            // Otherwise, keep other tabs' active status unchanged (since selectedComponent and component share the same latest PolicyEditorSubject object).
+                            ((PolicyEditorPanel) component).setOverrideVersionActive(tempActive);
                         }
-                        // Keep other tabs' version to be unchanged
+                        // Keep other tabs' version unchanged
                         ((PolicyEditorPanel) component).setOverrideVersionNumber(tempVersion);
 
                         // Redraw tab title

@@ -1868,6 +1868,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         SecureAction ret = new SavePolicyAction(activateAsWell) {
             @Override
             protected void performAction() {
+                final boolean prevActiveStatus = PolicyEditorPanel.this.isVersionActive();
+
                 // fla, bugzilla 1094. all saves are now preceeded by a validation action
                 if (!validating) {
                     try {
@@ -1906,7 +1908,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     }
                 }
                 // Update the titles of other tabs associated to the same service/policy entity node
-                TopComponents.getInstance().getCurrentWorkspace().updateTabsVersionNumAndActiveStatus(activateAsWell);
+                TopComponents.getInstance().getCurrentWorkspace().updateTabsVersionNumAndActiveStatus(prevActiveStatus, activateAsWell);
             }
         };
         ret.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);
