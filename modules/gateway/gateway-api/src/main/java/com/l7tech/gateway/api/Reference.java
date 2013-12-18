@@ -1,5 +1,7 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.util.NonObfuscatable;
+
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +85,8 @@ public class Reference {
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "resource", required = false)
+    //This needs to be NonObfuscatable in order to avoid jaxb issues
+    @NonObfuscatable
     private List<Object> getResourceList() {
         if (resource == null) {
             return null;
