@@ -23,10 +23,15 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     private boolean allowEmpty;
 
     public IntegerOrContextVariableValidationRule(final int minimum, final int maximum, final String fieldName, final JTextComponent textComponent) {
+        this(minimum, maximum, fieldName, textComponent, false);
+    }
+
+    public IntegerOrContextVariableValidationRule(final int minimum, final int maximum, final String fieldName, final JTextComponent textComponent, final boolean allowEmpty) {
         this.minimum = minimum;
         this.maximum = maximum;
         this.fieldName = fieldName;
         this.component = textComponent;
+        this.allowEmpty = allowEmpty;
     }
 
     /**

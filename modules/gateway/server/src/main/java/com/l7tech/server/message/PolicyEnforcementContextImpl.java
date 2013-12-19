@@ -34,6 +34,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
@@ -301,7 +302,9 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     public void addCookie(HttpCookie cookie) {
         Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
         for (HttpCookie currentCookie : cookies) {
-            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
+            if (ObjectUtils.equals(currentCookie.getCookieName(), cookie.getCookieName()) &&
+                    ObjectUtils.equals(currentCookie.getDomain(), cookie.getDomain()) &&
+                    ObjectUtils.equals(currentCookie.getPath(), cookie.getPath())) {
                 toRemove.add(currentCookie);
             }
         }
@@ -311,13 +314,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     @Override
     public void deleteCookie(HttpCookie cookie) {
-        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
-        for (HttpCookie currentCookie : cookies) {
-            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
-                toRemove.add(currentCookie);
-            }
-        }
-        cookies.removeAll(toRemove);
+        cookies.remove(cookie);
     }
 
     @Override

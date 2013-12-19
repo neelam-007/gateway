@@ -1,18 +1,27 @@
 package com.l7tech.external.assertions.managecookie;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.NameValuePair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
+import java.util.*;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 public class ManageCookieAssertion extends MessageTargetableAssertion implements UsesVariables {
+    public static final String NAME = "name";
+    public static final String DOMAIN = "domain";
+    public static final String PATH = "path";
+    public static final String VALUE = "value";
+    public static final String VERSION = "version";
+    public static final String MAX_AGE = "max-age";
+    public static final String COMMENT = "comment";
+    public static final String SECURE = "secure";
 
     public static enum Operation {
         ADD("Add"), REMOVE("Remove"), UPDATE("Update");
@@ -38,73 +47,36 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         this.operation = operation;
     }
 
-    public String getName() {
-        return name;
+    @NotNull
+    public Map<String, CookieCriteria> getCookieCriteria() {
+        return cookieCriteria;
     }
 
-    public void setName(@NotNull final String name) {
-        this.name = name;
+    public void setCookieCriteria(@NotNull final Map<String, CookieCriteria> cookieCriteria) {
+        this.cookieCriteria.clear();
+        this.cookieCriteria.putAll(cookieCriteria);
     }
 
-    public String getValue() {
-        return value;
+    @NotNull
+    public Map<String, CookieAttribute> getCookieAttributes() {
+        return cookieAttributes;
     }
 
-    public void setValue(@NotNull final String value) {
-        this.value = value;
-    }
-
-    public String getDomain() {
-        return domain;
-    }
-
-    public void setDomain(@Nullable final String domain) {
-        this.domain = domain;
-    }
-
-    public String getCookiePath() {
-        return cookiePath;
-    }
-
-    public void setCookiePath(@Nullable final String cookiePath) {
-        this.cookiePath = cookiePath;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(@NotNull final String version) {
-        this.version = version;
-    }
-
-    public String getMaxAge() {
-        return maxAge;
-    }
-
-    public void setMaxAge(@Nullable final String maxAge) {
-        this.maxAge = maxAge;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(@Nullable final String comment) {
-        this.comment = comment;
-    }
-
-    public boolean isSecure() {
-        return secure;
-    }
-
-    public void setSecure(final boolean secure) {
-        this.secure = secure;
+    public void setCookieAttributes(@NotNull final Map<String, CookieAttribute> cookieAttributes) {
+        this.cookieAttributes.clear();
+        this.cookieAttributes.putAll(cookieAttributes);
     }
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions(name, value, domain, cookiePath, maxAge, comment, version);
+        final List<String> varsUsed = new ArrayList<>();
+        for (final CookieCriteria criteria : cookieCriteria.values()) {
+            varsUsed.add(criteria.getValue());
+        }
+        for (final CookieAttribute attribute : cookieAttributes.values()) {
+            varsUsed.add(attribute.getValue());
+        }
+        return super.doGetVariablesUsed().withExpressions(varsUsed);
     }
 
     public AssertionMetadata meta() {
@@ -116,7 +88,11 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Collections.<TypeMapping>singletonList(new Java5EnumTypeMapping(Operation.class, "operation"))));
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                new Java5EnumTypeMapping(Operation.class, "operation"),
+                new BeanTypeMapping(CookieAttribute.class, "cookieAttribute"),
+                new BeanTypeMapping(CookieCriteria.class, "cookieCriteria")
+        )));
         meta.put(POLICY_NODE_NAME_FACTORY, NODE_NAME_FACTORY);
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -132,11 +108,13 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
             if (decorate) {
                 final StringBuilder sb = new StringBuilder();
                 sb.append(assertion.getOperation().getName());
-                sb.append(" Cookie ");
-                sb.append(assertion.getName());
-                if (assertion.getOperation() == Operation.ADD) {
-                    sb.append("=");
-                    sb.append(assertion.getValue());
+                sb.append(" Cookie");
+                if (assertion.getOperation() == Operation.ADD && assertion.getCookieAttributes().containsKey(NAME)) {
+                    sb.append(" " + assertion.getCookieAttributes().get(NAME).getValue());
+                    if (assertion.getCookieAttributes().containsKey(VALUE)) {
+                        sb.append("=");
+                        sb.append(assertion.getCookieAttributes().get(VALUE).getValue());
+                    }
                 }
                 return AssertionUtils.decorateName(assertion, sb);
             } else {
@@ -147,19 +125,47 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
 
     private Operation operation = Operation.ADD;
 
-    private String name;
+    private final Map<String, CookieCriteria> cookieCriteria = new HashMap<>();
 
-    private String value;
+    private final Map<String, CookieAttribute> cookieAttributes = new HashMap<>();
 
-    private String domain;
+    public static class CookieAttribute extends NameValuePair {
+        private boolean useOriginalValue;
 
-    private String cookiePath;
+        public CookieAttribute() {
+        }
 
-    private String version;
+        public CookieAttribute(final String name, final String value, final boolean useOriginalValue) {
+            super(name, value);
+            this.useOriginalValue = useOriginalValue;
+        }
 
-    private String maxAge;
+        public boolean isUseOriginalValue() {
+            return useOriginalValue;
+        }
 
-    private String comment;
+        public void setUseOriginalValue(final boolean useOriginalValue) {
+            this.useOriginalValue = useOriginalValue;
+        }
+    }
 
-    private boolean secure;
+    public static class CookieCriteria extends NameValuePair {
+        private boolean regex;
+
+        public CookieCriteria() {
+        }
+
+        public CookieCriteria(final String name, final String value, final boolean regex) {
+            super(name, value);
+            this.regex = regex;
+        }
+
+        public boolean isRegex() {
+            return regex;
+        }
+
+        public void setRegex(final boolean regex) {
+            this.regex = regex;
+        }
+    }
 }

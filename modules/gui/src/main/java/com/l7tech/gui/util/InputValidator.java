@@ -261,6 +261,13 @@ public class InputValidator implements FocusListener {
     }
 
     /**
+     * Remove all rules.
+     */
+    public void clearRules() {
+        rules.clear();
+    }
+
+    /**
      * Remove a validation rule.
      * @param rule the rule to remove
      * @return true iff. a rule was removed
