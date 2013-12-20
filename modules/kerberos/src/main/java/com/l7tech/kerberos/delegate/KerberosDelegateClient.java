@@ -62,15 +62,12 @@ public class KerberosDelegateClient extends KerberosClient {
                 krbSubject = cacheSubject;
             }
 
-            String principalName = null;
-            for (Principal principal : krbSubject.getPrincipals()) {
-                if (principal instanceof KerberosPrincipal) {
-                    principalName = principal.getName();
-                    break;
-                }
-            }
+            KerberosPrincipal krbPrincipal = getKerberosPrincipalFromSubject(krbSubject);
+            String principalName = krbPrincipal.getName();
+            String realm = krbPrincipal.getRealm();
 
-            ticket = getKerberosSelfServiceTicket(principalName, krbSubject, behalfOf, null);
+
+            ticket = getKerberosSelfServiceTicket(principalName, krbSubject, behalfOf, realm);
             // create a new cache entry
             if (ticket != null && cacheSubject == null)
                 ticketCache.add(ticketCacheKey, kerberosSubject, loginContext, ticket);
@@ -97,6 +94,17 @@ public class KerberosDelegateClient extends KerberosClient {
         return ticket;
 
 
+    }
+
+    private KerberosPrincipal getKerberosPrincipalFromSubject(Subject krbSubject) {
+        KerberosPrincipal krbPrincipal = null;
+        for (Principal principal : krbSubject.getPrincipals()) {
+            if (principal instanceof KerberosPrincipal) {
+                krbPrincipal = (KerberosPrincipal)principal;
+                break;
+            }
+        }
+        return krbPrincipal;
     }
 
     /**
@@ -129,7 +137,9 @@ public class KerberosDelegateClient extends KerberosClient {
                 krbSubject = kerberosSubject;
             }
 
-            ticket = getKerberosSelfServiceTicket(keyTabPrincipal, krbSubject, behalfOf, null);
+            KerberosPrincipal krbPrincipal = getKerberosPrincipalFromSubject(krbSubject);
+
+            ticket = getKerberosSelfServiceTicket(keyTabPrincipal, krbSubject, behalfOf, krbPrincipal.getRealm());
 
             if (ticket != null && cacheSubject == null) {
                 ticketCache.add(ticketCacheKey, krbSubject, loginContext, ticket);

@@ -15,6 +15,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Generates Kerberos configuration for SecureSpan Bridge and Gateway.
@@ -75,7 +77,21 @@ public class KerberosConfig implements KerberosConfigConstants {
      * @throws KerberosException
      */
     public static String getKeytabPrincipal(String principal) throws KerberosException {
-        String principalName = principalCache.get(principal);
+        String principalName = null;
+        //determine if the principal is actually matching the realm and convert it to lower case
+        if(principal != null) {
+            Matcher m = SPN_PATTERN.matcher(principal);
+            if(m.find() && m.groupCount() == 3){
+              if(m.group(1) == null && m.group(3) != null) {
+                principalName = principalCache.get(m.group(3).toLowerCase());
+              }
+            }
+        }
+        // it's not a realm so it might be a principal
+        if(principalName == null) {
+            principalName = principalCache.get(principal);
+        }
+        // neither of the above so we need to match the domain
         if (principalName == null && kerberosFiles != null) {
             if ( principal != null) {
                 Map<String, String> realms = kerberosFiles.krb5Prop.getRealms();
@@ -88,7 +104,7 @@ public class KerberosConfig implements KerberosConfigConstants {
                 }
             }
             if (principalName == null) {
-                return kerberosFiles.getDefaultPrinciple();
+                return kerberosFiles.getDefaultPrinciple(); //when nothing matches get default principal
             }
         }
         return principalName;
@@ -178,6 +194,8 @@ public class KerberosConfig implements KerberosConfigConstants {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());
+
+    private static final Pattern SPN_PATTERN = Pattern.compile("((\\w+/[A-Za-z0-9\\-\\.]+)@?)*([A-Z0-9\\-\\.]*[^\\W]){0,1}");
 
     protected static KerberosConfigFiles kerberosFiles;
     protected static Map<String, String> principalCache = new HashMap<String, String>();
