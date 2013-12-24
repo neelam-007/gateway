@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
@@ -44,7 +45,7 @@ public class SiteMinderHost implements Serializable {
 
 
     public SiteMinderHost(String smHostConfPath) throws IOException {
-        try (Reader reader = new BufferedReader(new FileReader(new File(smHostConfPath)))) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(smHostConfPath)), Charset.forName("UTF-8")))) {
             Properties prop = new Properties();
             prop.load(reader);
             hostname = getValue(prop, HOST_NAME);

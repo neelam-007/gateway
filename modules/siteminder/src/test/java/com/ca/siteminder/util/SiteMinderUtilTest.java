@@ -14,10 +14,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Writer;
+import java.io.*;
+import java.nio.charset.Charset;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -95,7 +93,7 @@ public class SiteMinderUtilTest {
         File tmpDir = null;
         try{
             tmpDir = FileUtils.createTempDirectory("SMTEST", null, null, false);
-            try(Writer writer = new BufferedWriter(new FileWriter(new File(tmpDir.getAbsolutePath() + File.separator + "smHostTest.conf")))) {
+            try(Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(tmpDir.getAbsolutePath() + File.separator + "smHostTest.conf")), Charset.forName("UTF-8")))) {
                 writer.write(SMHOST_FILE);
             }
             SiteMinderHost smHost = new SiteMinderHost(tmpDir.getAbsolutePath() + File.separator + "smHostTest.conf");
