@@ -513,6 +513,28 @@ public class ManagedObjectFactory {
         return new RbacRolePredicateMO();
     }
 
+
+    /**
+     * Create a new Password instance.
+     *
+     * @return The new instance
+     */
+    public static Password createPassword() {
+        return new Password();
+    }
+
+
+    /**
+     * Create a new PrivateKeyRestExport instance.
+     *
+     * @return The new instance
+     */
+    public static PrivateKeyRestExport createPrivateKeyRestExportMO() {
+        return new PrivateKeyRestExport();
+    }
+
+
+
     /**
      * Read a managed object from the given data.
      *

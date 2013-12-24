@@ -142,7 +142,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return transactional(new TransactionalCallback<List<PrivateKeyMO>>() {
             @Override
             public List<PrivateKeyMO> execute() throws ObjectModelException {
-                return Functions.map( CollectionUtils.safeSubList(getEntityHeaders(Functions.map(filters.get("alias"), new Unary<String, Object>() {
+                return Functions.map( CollectionUtils.safeSubList(getEntityHeaders(!filters.containsKey("alias")?null:Functions.map(filters.get("alias"), new Unary<String, Object>() {
                     @Override
                     public String call(Object o) {
                         return o.toString();

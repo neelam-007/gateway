@@ -15,7 +15,7 @@ import java.util.List;
  * @author rmak
  */
 public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
-    final SsgKeyFinder ssgKeyFinder;
+    SsgKeyFinder ssgKeyFinder;
 
     public SsgKeyStoreManagerStub() {
         this(null);
@@ -23,6 +23,10 @@ public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
 
     public SsgKeyStoreManagerStub(SsgKeyFinder keyFinder) {
         this.ssgKeyFinder = keyFinder != null ? keyFinder : new SsgKeyFinderStub();
+    }
+
+    public void setKeyFinder(SsgKeyFinder keyFinder) {
+        this.ssgKeyFinder = keyFinder;
     }
 
     @Override

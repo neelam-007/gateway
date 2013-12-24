@@ -77,6 +77,7 @@ public class Reference {
             @XmlElementRef(type = PolicyAliasMO.class),
             @XmlElementRef(type = PolicyMO.class),
             @XmlElementRef(type = PolicyVersionMO.class),
+            @XmlElementRef(type = PrivateKeyMO.class),
             @XmlElementRef(type = ServiceMO.class),
             @XmlElementRef(type = RbacRoleMO.class),
             @XmlElementRef(type = StoredPasswordMO.class),
