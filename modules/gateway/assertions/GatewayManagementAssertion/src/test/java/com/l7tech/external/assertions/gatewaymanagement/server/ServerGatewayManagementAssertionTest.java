@@ -111,6 +111,8 @@ import java.text.MessageFormat;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -1624,15 +1626,31 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testCreateAssertionSecurityZone() throws Exception {
+    public void testCreateFailAssertionSecurityZone() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/assertionSecurityZones";
         String payload =
                 "<l7:AssertionSecurityZone xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"  securityZoneId=\"00000000000000000000000000000002\">\n" +
                         "   <l7:Name>New Assertion Security Zone</l7:Name>\n" +
                         "</l7:AssertionSecurityZone>";
 
-        String expectedId = new Goid(0,3).toString();
-        doCreate(resourceUri, payload, expectedId);
+        doCreateFail(resourceUri, payload, "wsa:ActionNotSupported");
+    }
+
+    @Test
+    public void testDeleteFailAssertionSecurityZone() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/assertionSecurityZones</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:b2794ffb-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,2).toHexString()+"</wsman:Selector></wsman:SelectorSet></s:Header><s:Body/></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element faultElement = XmlUtil.findExactlyOneChildElementByName(soapBody, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Fault");
+        final Element codeElement = XmlUtil.findExactlyOneChildElementByName(faultElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Code");
+        final Element subcodeElement = XmlUtil.findExactlyOneChildElementByName(codeElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
+        final Element valueElement = XmlUtil.findExactlyOneChildElementByName(subcodeElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+
+        final String code = XmlUtil.getTextValue( valueElement );
+
+        assertEquals("SOAP Fault subcode", "wsa:ActionNotSupported", code);
     }
 
     @Test
