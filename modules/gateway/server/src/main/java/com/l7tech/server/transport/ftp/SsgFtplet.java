@@ -2,7 +2,6 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.objectmodel.Goid;
 import org.apache.ftpserver.ftplet.DataConnectionFactory;
 import org.apache.ftpserver.ftplet.DefaultFtpReply;
@@ -85,11 +84,11 @@ public class SsgFtplet extends DefaultFtplet {
         String fileName = ftpRequest.getArgument();
 
         if (logger.isLoggable(Level.FINE))
-            logger.log(Level.FINE, "Handling " + FtpMethod.FTP_LOGIN.getWspName() + " for file ''{0}'' (unique:{1}).", new Object[] {fileName, unique});
+            logger.log(Level.FINE, "Handling " + ftpRequest.getCommand() + " for file ''{0}'' (unique:{1}).", new Object[] {fileName, unique});
 
         if (!ftpServerManager.isLicensed()) {
             if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Failing " + FtpMethod.FTP_LOGIN.getWspName() + " (FTP server not licensed).");
+                logger.log(Level.INFO, "Failing " + ftpRequest.getCommand() + " (FTP server not licensed).");
 
             ftpSession.write(new DefaultFtpReply(FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN,
                     "Service not available (not licensed)."));

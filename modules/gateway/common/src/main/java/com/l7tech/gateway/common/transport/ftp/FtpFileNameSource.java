@@ -19,7 +19,6 @@ public final class FtpFileNameSource implements Serializable {
     private static final Map<String, FtpFileNameSource> _wspNameMap = new HashMap<>();
 
     public static final FtpFileNameSource AUTO = new FtpFileNameSource("auto", "auto-generated");
-    //TODO jwilliams: remove PATTERN source - only need ARGUMENT? N.B. used by SFTP too
     public static final FtpFileNameSource PATTERN = new FtpFileNameSource("pattern", "user-specified pattern");
     public static final FtpFileNameSource ARGUMENT = new FtpFileNameSource("argument", "user-specified pattern");
 

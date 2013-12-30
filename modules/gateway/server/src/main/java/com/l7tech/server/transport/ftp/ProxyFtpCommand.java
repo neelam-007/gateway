@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.common.ftp.FtpCommand;
 import org.apache.ftpserver.command.AbstractCommand;
 import org.apache.ftpserver.ftplet.FtpException;
 import org.apache.ftpserver.ftplet.FtpRequest;
@@ -13,10 +13,10 @@ import java.io.IOException;
  * @author jwilliams
  */
 class ProxyFtpCommand extends AbstractCommand {
-    private FtpMethod ftpMethod;
+    private FtpCommand command;
 
-    public ProxyFtpCommand(FtpMethod ftpMethod) {
-        this.ftpMethod = ftpMethod;
+    public ProxyFtpCommand(FtpCommand command) {
+        this.command = command;
     }
 
     @Override
@@ -26,6 +26,6 @@ class ProxyFtpCommand extends AbstractCommand {
 
         FtpRequestProcessor requestProcessor = ssgContext.getRequestProcessor();
 
-        requestProcessor.process(session, context, request, ftpMethod);
+        requestProcessor.process(session, context, request, command);
     }
 }

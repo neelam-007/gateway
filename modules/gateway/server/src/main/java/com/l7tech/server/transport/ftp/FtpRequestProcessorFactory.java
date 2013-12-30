@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
@@ -31,9 +30,6 @@ public class FtpRequestProcessorFactory {
 
     @Autowired
     private EventChannel messageProcessingEventChannel;
-
-    @Autowired
-    private ServiceManager serviceManager;
 
     /**
      * Creates a new FtpRequestProcessor for the specified SsgConnector.
@@ -61,7 +57,6 @@ public class FtpRequestProcessorFactory {
                 soapFaultManager,
                 stashManagerFactory,
                 messageProcessingEventChannel,
-                serviceManager,
                 overrideContentType,
                 hardwiredServiceGoid,
                 connector.getGoid(),

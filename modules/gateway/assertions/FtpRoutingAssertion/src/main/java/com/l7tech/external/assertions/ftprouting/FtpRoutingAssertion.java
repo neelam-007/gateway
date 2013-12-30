@@ -4,11 +4,9 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -17,10 +15,7 @@ import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.WspEnumTypeMapping;
-import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
@@ -113,7 +108,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private int _timeout = DEFAULT_TIMEOUT;
 
     /** FTP Command to use to upload or download the file*/
-    private FtpMethod _ftpMethod;
+    private FtpCommand ftpCommand;
 
     private String _arguments;
 
@@ -282,12 +277,12 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this._responseTarget = responseTarget;
     }
 
-    public FtpMethod getFtpMethod() {
-        return _ftpMethod;
+    public FtpCommand getFtpCommand() {
+        return ftpCommand;
     }
 
-    public void setFtpMethod(@Nullable FtpMethod ftpMethod) {
-        this._ftpMethod = ftpMethod;
+    public void setFtpCommand(@Nullable FtpCommand ftpCommand) {
+        this.ftpCommand = ftpCommand;
     }
 
     public String getArguments() {
@@ -315,11 +310,11 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this._otherCommand = otherCommand;
     }
 
-    public String getFtpMethodOtherCommand() {
+    public String getOtherFtpCommand() {
         return _ftpMethodOtherCommand;
     }
 
-    public void setFtpMethodOtherCommand( String ftpMethodOtherCommand ) {
+    public void setFtpCommandVariable(@Nullable String ftpMethodOtherCommand) {
         this._ftpMethodOtherCommand = ftpMethodOtherCommand;
     }
 
@@ -442,7 +437,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
             new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
-            new WspEnumTypeMapping(FtpMethod.class, "ftpCommand")
+            new Java5EnumTypeMapping(FtpCommand.class, "ftpCommand")
         )));
 
         // request default feature set name for our class name, since we are a known optional module

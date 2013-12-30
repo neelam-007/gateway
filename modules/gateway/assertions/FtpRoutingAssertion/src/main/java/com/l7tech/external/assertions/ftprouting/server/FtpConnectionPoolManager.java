@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 /**
  * @author nilic
  */
-public class FtpConnectionPoolManager extends ConnectionPoolManager {   //- PUBLIC   // TODO jwilliams: Compare existing connection pool implementations
+public class FtpConnectionPoolManager extends ConnectionPoolManager {   //- PUBLIC
 
     /**
      * Create a manager with the default binding timeout / max age and default

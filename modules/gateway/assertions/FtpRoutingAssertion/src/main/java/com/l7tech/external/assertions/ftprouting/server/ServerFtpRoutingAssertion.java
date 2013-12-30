@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ftprouting.server;
 
 import com.jscape.inet.ftp.*;
 import com.jscape.inet.ftps.Ftps;
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.LoggingAudit;
@@ -15,7 +16,6 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.util.*;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -160,47 +160,63 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             ftpClient = getFtpClient(identity, userName, password, variableExpander, assertion.getSecurity());
         } catch (FtpException e) {
-            e.printStackTrace();
-            // TODO jwilliams: log and audit - couldn't create connection
+            logAndAudit(AssertionMessages.FTP_ROUTING_CONNECTION_ERROR,
+                    new String[] {e.getMessage()}, getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
-        FtpMethod ftpMethod;
+        FtpCommand ftpCommand;
 
         if (assertion.isCommandFromVariable()) {
-            String otherCommand = variableExpander.expandVariables(Syntax.getVariableExpression(assertion.getFtpMethodOtherCommand()));
-            ftpMethod = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(otherCommand);
+            String otherCommand = variableExpander.expandVariables(Syntax.getVariableExpression(assertion.getOtherFtpCommand()));
+
+            try {
+                ftpCommand = FtpCommand.valueOf(otherCommand);
+            } catch (IllegalArgumentException e) {
+                // command from variable was unrecognized/unsupported - cannot perform routing
+                logAndAudit(AssertionMessages.FTP_ROUTING_UNSUPPORTED_COMMAND, otherCommand);
+                return AssertionStatus.FAILED;
+            }
+        } else if (null != assertion.getFtpCommand()) {
+            ftpCommand = assertion.getFtpCommand();
         } else {
-            ftpMethod = assertion.getFtpMethod();
+            // no command specified - should not be possible
+            logAndAudit(AssertionMessages.FTP_ROUTING_NO_COMMAND);
+            return AssertionStatus.FAILED;
         }
 
+        FtpReply reply;
+
         try {
-            switch (ftpMethod.getFtpMethodEnum()) {
-                case FTP_APPE:
-                case FTP_STOU:
-                case FTP_STOR:
+            switch (ftpCommand) {
+                case APPE:
+                case STOU:
+                case STOR:
                     final InputStream messageBodyStream;
 
                     try {
-                        messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream(); // TODO jwilliams: is this necessary at all before we know what command we're going to route?
+                        messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
                     } catch (NoSuchPartException e) {
-                        throw new CausedIOException("Unable to get request body.", e); // TODO jwilliams: is just throwing an exception the right way to handle this?
+                        logAndAudit(AssertionMessages.NO_SUCH_PART,
+                                new String[]{assertion.get_requestTarget().getTargetName(), e.getWhatWasMissing()},
+                                ExceptionUtils.getDebugException(e));
+
+                        return AssertionStatus.BAD_REQUEST;
                     }
 
                     final long bodyContentLength = mimeKnob.getContentLength();
 
-                    routeUpload(context, ftpClient, messageBodyStream, bodyContentLength, ftpMethod, arguments);
+                    reply = routeUpload(ftpClient, messageBodyStream, bodyContentLength, ftpCommand, arguments);
 
                     break;
-                case FTP_RETR:
-                    routeDownload(context, ftpClient, arguments);
-
+                case RETR:
+                    reply = routeDownload(ftpClient, arguments);
                     break;
                 default:
-                    routeOtherCommand(context, ftpClient, ftpMethod, arguments);
+                    reply = routeOtherCommand(ftpClient, ftpCommand, arguments);
             }
         } catch (FtpRoutingException e) {
-            logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, getHostName(variableExpander), e.getMessage()); // TODO jwilliams: use right error message
+            logAndAudit(AssertionMessages.FTP_ROUTING_ERROR, getHostName(variableExpander), e.getMessage()); // TODO jwilliams: get error message of cause
             return AssertionStatus.FAILED;
         } catch (DataSizeLimitExceededException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
@@ -209,21 +225,32 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             return AssertionStatus.FAILED;
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage());
-            e.printStackTrace(); // TODO jwilliams: handle properly
+            // TODO jwilliams: handle properly
             throw e;
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "INTERRUPTED EXCEPTION!!!!  " + getMessage(e));
             e.printStackTrace();
             // TODO jwilliams: handle properly
+            return AssertionStatus.FAILED;
         } catch (Throwable throwable) {
+            // TODO jwilliams: remove, handle more finely
             logger.log(Level.WARNING, "SERIOUS UNEXPECTED ISSUE!!!!  " + getMessage(throwable));
             throwable.printStackTrace();
+            return AssertionStatus.FAILED;
         }
 
+        // TODO jwilliams: examine FtpReply, decide on response
+        if (null == reply) {
+            return AssertionStatus.FAILED;
+        }
+
+        createResponseMessage(context, reply);
+
+        logAndAudit(AssertionMessages.FTP_ROUTING_SUCCEEDED);
         return AssertionStatus.NONE;
     }
 
-    private ClientIdentity createClientIdentity(PolicyEnforcementContext context, Message request, String userName) { // TODO jwilliams: if it's not HTTP or FTP then there will be no identity info!
+    private ClientIdentity createClientIdentity(PolicyEnforcementContext context, Message request, String userName) {
         FtpRequestKnob ftpRequest = request.getKnob(FtpRequestKnob.class);
 
         if (ftpRequest != null) {
@@ -272,8 +299,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private void routeUpload(final PolicyEnforcementContext context, final FtpClientWrapper ftp, final InputStream is,
-                             final long count, final FtpMethod ftpMethod, final String filename)
+    private FtpReply routeUpload(final FtpClientWrapper ftp, final InputStream is,
+                                 final long count, final FtpCommand ftpCommand, final String filename)
             throws FtpRoutingException, IOException {
         final FtpReplyListener replyListener = new FtpReplyListener() {
             @Override
@@ -287,14 +314,14 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             ftp.addFtpListener(replyListener);
 
-            switch (ftpMethod.getFtpMethodEnum()) {
-                case FTP_STOR:
+            switch (ftpCommand) {
+                case STOR:
                     ftp.upload(is, filename);
                     break;
-                case FTP_APPE:
+                case APPE:
                     ftp.upload(is, filename, true);
                     break;
-                case FTP_STOU:
+                case STOU:
                     ftp.uploadUnique(is, filename);
                     break;
                 default:
@@ -312,14 +339,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             throw new FtpRoutingException("File '" + filename + "' upload truncated to " + replyListener.getSize() + " bytes.");
         }
 
-        FtpReply ftpReply = new FtpReply(replyListener.getReplyCode(),
+        return new FtpReply(replyListener.getReplyCode(),
                 replyListener.getReplyData(), new ByteArrayInputStream(new byte[0]));
-
-        createResponseMessage(context, ftpReply);
     }
 
-    private void routeDownload(final PolicyEnforcementContext context, final FtpClientWrapper ftpClient,
-                               final String fileToDownload) throws Throwable {
+    private FtpReply routeDownload(final FtpClientWrapper ftpClient, final String fileToDownload) throws Throwable {
         // used to wait for download to start
         final CountDownLatch startSignal = new CountDownLatch(1); // TODO jwilliams: use listener progress event to update? is a progress event guaranteed to be thrown at least once for each download?
 
@@ -329,9 +353,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         // hold the details of the reply to the download command if one was returned
         final AtomicReference<FtpReply> downloadReply = new AtomicReference<>(null); // TODO jwilliams: may not have any value
 
-        // response byte limit
-        long byteLimit = getResponseByteLimit(context);
-
+        // input stream that will be connected to the FTP download output stream
         final PipedInputStream pis = new PipedInputStream();
 
         try {
@@ -355,6 +377,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                         @Override
                         public void progress(FtpProgressEvent ftpProgressEvent) {
                             // indicate the download has started
+                            logger.log(Level.INFO, "Download PROGRESS indicated: " + ftpProgressEvent.getFilename());
                             startSignal.countDown();
                         }
 
@@ -369,27 +392,26 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     ftpClient.addFtpListener(replyListener);
 
                     try {
-                        // TODO jwilliams: do something useful with listener results
                         logger.log(Level.INFO, "Download STARTING, start signal: " + startSignal.getCount());
-
 
                         ftpClient.download(pos, fileToDownload);
 
-                        Ftp f = ftpClient.getClient();
-
-                        f.getInputStream(fileToDownload, 0L);
-
-
                         logger.log(Level.INFO, "Download FINISHED, start signal: " + startSignal.getCount());
-                    } catch (FtpException e) {
-                        // save the exception thrown trying to download the file
-                        downloadException.set(e); // TODO jwilliams: save listener results?
-                        logger.log(Level.WARNING, "FTP Exception in download: " + e.getMessage());
-                        // save the FTP reply details, if available
-                        downloadReply.set(new FtpReply(replyListener.getReplyCode(),
-                                replyListener.getReplyData(), null));
 
-                        throw e;
+                        downloadReply.set(new FtpReply(replyListener.getReplyCode(),
+                                replyListener.getReplyData(), pis));
+                    } catch (FtpException e) {
+                        e.printStackTrace();
+
+                        // save the exception thrown trying to download the file
+                        downloadException.set(e);
+                        logger.log(Level.WARNING, "FTP Exception in download: " + e.getMessage());
+
+                        // save the FTP reply details
+                        downloadReply.set(new FtpReply(replyListener.getReplyCode(),
+                                replyListener.getReplyData(), pis));
+
+                        throw e; // TODO jwilliams: wrapping in FtpRoutingException would be more consistent?
                     } finally {
                         // call countdown in case it hasn't been called already
                         startSignal.countDown();
@@ -430,21 +452,18 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             throw exceptionThrown;
         }
 
-        final Message response;
+        // the reply details may not be available - return them if they are, or use default code/detail values for the FtpResponseKnob
+        FtpReply ftpReply = downloadReply.get();
 
-        try {
-            response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
-        } catch (NoSuchVariableException e) {
-            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        if (null == ftpReply) {
+            ftpReply = new FtpReply(0, null, pis);
         }
 
-        logger.log(Level.INFO, "Initializing response");
-        response.initialize(stashManagerFactory.createStashManager(),
-                ContentTypeHeader.OCTET_STREAM_DEFAULT, pis, byteLimit);
+        return ftpReply;
     }
 
-    private void routeOtherCommand(final PolicyEnforcementContext context, final FtpClientWrapper ftpClient,
-                                   final FtpMethod ftpMethod, final String arguments)
+    private FtpReply routeOtherCommand(final FtpClientWrapper ftpClient,
+                                       final FtpCommand ftpCommand, final String arguments)
             throws FtpRoutingException, IOException {
         InputStream is = null;
 
@@ -453,46 +472,46 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             ftpClient.addFtpListener(replyListener);
 
-            switch (ftpMethod.getFtpMethodEnum()) {
-                case FTP_DELE:
+            switch (ftpCommand) {
+                case DELE:
                     ftpClient.deleteFile(arguments); // TODO jwilliams: look at recursive option - defined in arguments? refer to RFC & Apache FTP Server implementation
                     break;
-                case FTP_MKD:
+                case MKD:
                     ftpClient.makeDir(arguments);
                     break;
-                case FTP_RMD:
+                case RMD:
                     ftpClient.deleteDir(arguments, true);
                     break;
-                case FTP_NOOP:
+                case NOOP:
                     ftpClient.noop();
                     break;
-                case FTP_CWD:
+                case CWD:
                     ftpClient.setDir(arguments);
                     break;
-                case FTP_CDUP:
+                case CDUP:
                     ftpClient.setDirUp();
                     break;
-                case FTP_PWD:
+                case PWD:
                     ftpClient.getDir();
                     break;
-                case FTP_SIZE:
+                case SIZE:
                     ftpClient.getFilesize(arguments);
                     break;
-                case FTP_MDTM:
+                case MDTM:
                     ftpClient.getFileTimestamp(arguments); // TODO jwilliams: check actually issuing MDTM command (use listener event)
                     break;
-                case FTP_MLST:
+                case MLST:
                     ftpClient.getMachineFileListing(arguments); // TODO jwilliams: check actually issuing MLST command (use listener event)
                     break;
-                case FTP_MLSD:
+                case MLSD:
                     Enumeration machineDirListingEnum = ftpClient.getMachineDirListing(arguments);
                     is = new ByteArrayInputStream(createRawListing(machineDirListingEnum).getBytes());
                     break;
-                case FTP_LIST:
+                case LIST:
                     Enumeration dirListingEnum = ftpClient.getDirListing(); // TODO jwilliams: handle arguments case
                     is = new ByteArrayInputStream(createRawListing(dirListingEnum).getBytes());
                     break;
-                case FTP_NLST:
+                case NLST:
                     Enumeration fileNames = ftpClient.getNameListing(); // TODO jwilliams: handle arguments case
 
                     StringBuilder sb = new StringBuilder();
@@ -506,7 +525,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     is = new ByteArrayInputStream(sb.toString().getBytes());
                     break;
                 default:
-                    throw new FtpRoutingException("Unsupported command '" + ftpMethod.getWspName() + "'"); // TODO jwilliams: handle this in switch statement that picks upload/download/other
+                    // command not supported/implemented - cannot perform routing
+                    logAndAudit(AssertionMessages.FTP_ROUTING_UNSUPPORTED_COMMAND, ftpCommand.toString());
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
             }
         } catch (FtpException e) {
             // TODO jwilliams: check assertion setting for failure action, check code, throw FtpRoutingException or let processing continue
@@ -515,12 +536,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             ftpClient.removeFtpListener(replyListener);
         }
 
-        FtpReply ftpReply =
-                new FtpReply(replyListener.getReplyCode(),
-                        replyListener.getReplyData(),
-                        null != is ? is : new ByteArrayInputStream(new byte[0]));
-
-        createResponseMessage(context, ftpReply);
+        return new FtpReply(replyListener.getReplyCode(), replyListener.getReplyData(),
+                null != is ? is : new ByteArrayInputStream(new byte[0]));
     }
 
     private Message createResponseMessage(PolicyEnforcementContext context, FtpReply ftpReply) throws IOException {
@@ -536,11 +553,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 ContentTypeHeader.OCTET_STREAM_DEFAULT, ftpReply.getDataStream(), getResponseByteLimit(context));
 
         response.attachFtpResponseKnob(buildFtpResponseKnob(ftpReply));
-
-        // force all message parts to be initialized, it is by default lazy
-        logger.log(Level.FINER, "Reading FTP(S) response.");
-        response.getMimeKnob().getContentLength();
-        logger.log(Level.FINER, "Read FTP(S) response.");
+        // TODO jwilliams: set ftpReply.getCode to 'failureCode' context variable or something, only if there's a failure - response knob should be hidden to user
 
         return response;
     }
@@ -771,11 +784,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private FtpClientWrapper buildFtpsClient(final Ftps ftps) {
         return new FtpClientWrapper() {
             @Override
-            public Ftp getClient() {
-                return null;
-            }
-
-            @Override
             public void addFtpListener(FtpListener listener) {
                 ftps.addFtpListener(listener);
             }
@@ -874,11 +882,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     private FtpClientWrapper buildFtpClient(final Ftp ftp) {
         return new FtpClientWrapper() {
-            @Override
-            public Ftp getClient() {
-                return ftp;
-            }
-
             @Override
             public void addFtpListener(FtpListener listener) {
                 ftp.addFtpListener(listener);
@@ -984,8 +987,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     private static interface FtpClientWrapper {
 
-        public Ftp getClient();
-
         public void addFtpListener(FtpListener listener);
 
         public void removeFtpListener(FtpListener listener);
@@ -1079,7 +1080,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
                 logger.log(Level.INFO, "--FTP RESPONSE EVENT: " + replyCode + " " + replyData);
             } catch (StringIndexOutOfBoundsException | NumberFormatException e) {
-                replyCode = 0; // TODO jwilliams: Spit bics
+                replyCode = 0; // should never happen
                 replyData = null;
             }
         }

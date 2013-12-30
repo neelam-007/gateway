@@ -10,7 +10,7 @@ import java.util.Map;
  * @author nilic
  * @author jwilliams
  */
-public class FtpMethod implements Serializable {    // TODO jwilliams: refactor this to just use underlying enum?
+public class FtpMethod implements Serializable {
     /** Map for looking up instance by wspName. */
     private static final Map<String, FtpMethod> _wspNameMap = new HashMap<>();
 

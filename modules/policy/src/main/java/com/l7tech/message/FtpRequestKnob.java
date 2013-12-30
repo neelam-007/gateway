@@ -1,5 +1,7 @@
 package com.l7tech.message;
 
+import com.l7tech.common.ftp.FtpCommand;
+
 import java.net.PasswordAuthentication;
 
 /**
@@ -14,7 +16,7 @@ public interface FtpRequestKnob extends TcpKnob, UriKnob {
      *
      * @return the FTP command
      */
-    String getCommand();
+    FtpCommand getCommand();
 
     /**
      * The argument string for the command.

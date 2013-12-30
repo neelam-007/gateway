@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ftpcredential.server;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.Message;
@@ -45,7 +46,7 @@ public class ServerFtpCredentialAssertionTest {
                 }
 
                 @Override
-                public String getCommand() {
+                public FtpCommand getCommand() {
                     return null;
                 }
 

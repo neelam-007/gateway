@@ -4,15 +4,12 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
@@ -38,6 +35,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+
+import static com.l7tech.common.ftp.FtpCommand.*;
 
 /**
  * Dialog for editing the FtpRoutingAssertion.
@@ -70,6 +69,21 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private static final int PORT_RANGE_START = 1;
     private static final int PORT_RANGE_END = 65535;
+    public static final FtpCommand[] COMMANDS = new FtpCommand[]{
+            APPE,
+            STOR,
+            STOU,
+            RETR,
+            DELE,
+            LIST,
+            MLSD,
+            MLST,
+            NLST,
+            MKD,
+            RMD,
+            MDTM,
+            SIZE
+    };
 
     private JPanel _mainPanel;
     private JCheckBox verifyServerCertCheckBox;
@@ -188,8 +202,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         commandComboBoxModel.insertElementAt(COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL, COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
 
-        for (FtpMethod ftpMethod : getFtpMethods()) {
-            commandComboBoxModel.addElement(ftpMethod.getWspName());
+        for (FtpCommand ftpCommand : COMMANDS) {
+            commandComboBoxModel.addElement(ftpCommand.toString());
         }
 
         commandComboBox.setModel(commandComboBoxModel);
@@ -319,12 +333,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         connectionTestValidator = new InputValidator(this, getResourceString("errorTitle"));
 
         // host must be set
-        inputValidator.addRule(
-                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
-                hostNameTextField, null));
-        connectionTestValidator.addRule(
-                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
-                hostNameTextField, null));
+        inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostNameTextField, null);
+        connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),
+                hostNameTextField, null);
 
         // port number must be within allowable range or reference a valid context variable
         InputValidator.ValidationRule portNumberRule = new InputValidator.ComponentValidationRule(portNumberTextField) {
@@ -338,16 +349,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         };
 
-        // connection timeout must be set
-        inputValidator.addRule(
-                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
-                        timeoutTextField, null));
-        connectionTestValidator.addRule(
-                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
-                        timeoutTextField, null));
-
         inputValidator.addRule(portNumberRule);
         connectionTestValidator.addRule(portNumberRule);
+
+        // connection timeout must be set
+        inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"), timeoutTextField, null);
+        connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
+                timeoutTextField, null);
 
         // the ftp command combo box must have a selection
         inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
@@ -366,7 +374,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
             @Override
             public String getValidationError() {
-                if (isCommandTypeFromVariable() && (commandVariablePanel.getVariable().trim().isEmpty())) {
+                if (isCommandFromVariable() && (commandVariablePanel.getVariable().trim().isEmpty())) {
                     return getResourceString("commandVariableNullError");
                 }
 
@@ -388,7 +396,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (isCommandUploadType((String) commandComboBox.getSelectedItem())) {
+                if (isCommandFromVariable() || isCommandUploadType((String) commandComboBox.getSelectedItem())) {
                     if (!autoFilenameCheckBox.isSelected() && argumentsTextField.getText().trim().isEmpty()) {
                         return getResourceString("filenameNullForUploadCommandError");
                     }
@@ -427,12 +435,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         });
 
         // username must be set if the specify credentials option has been selected
-        inputValidator.addRule(
-                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
-                        userNameTextField, null));
-        connectionTestValidator.addRule(
-                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
-                        userNameTextField, null));
+        inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"), userNameTextField, null);
+        connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),
+                userNameTextField, null);
 
         // a password option must be selected if specify credentials selected
         InputValidator.ComponentValidationRule passwordSourceRule =
@@ -464,7 +469,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        // only plaintext passwords can be used in the connection test
+        // only plaintext passwords can be used in the connection test // TODO jwilliams: confirm this
         connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(passwordExpressionRadioButton) {
             @Override
             public String getValidationError() {
@@ -477,12 +482,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         });
 
         // if plaintext password is selected, the password must be specified
-        inputValidator.addRule(
-                inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
-                        passwordExpressionField, null));
-        connectionTestValidator.addRule(
-                connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
-                        passwordExpressionField, null));
+        inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
+                passwordExpressionField, null);
+        connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("passwordExpressionRadioButton"),
+                passwordExpressionField, null);
 
         // client certificate must be specified if the field is enabled
         InputValidator.ValidationRule clientCertRule = new InputValidator.ComponentValidationRule(clientCertComboBox) {
@@ -500,12 +503,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(clientCertRule);
         connectionTestValidator.addRule(clientCertRule);
 
-        // STOU command cannot use auto-generated file name
+        // STOU command cannot use auto-generated file name // TODO jwilliams: confirm this - need to test & thoroughly document STOU
         inputValidator.addRule(new InputValidator.ComponentValidationRule(autoFilenameCheckBox) {
             @Override
             public String getValidationError() {
-                if (autoFilenameCheckBox.isSelected()
-                        && (commandComboBox.getSelectedItem()).equals(FtpMethod.FTP_STOU.getWspName())) {
+                if (autoFilenameCheckBox.isSelected() && (commandComboBox.getSelectedItem()).equals(FtpCommand.STOU)) {
                     return MessageFormat.format(getResourceString("stouAutoFilenameError"), getDefaultPortNumber());
                 }
 
@@ -544,7 +546,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void enableOrDisableCommandSettingsComponents() {
-        commandVariablePanel.setEnabled(isCommandTypeFromVariable());
+        commandVariablePanel.setEnabled(isCommandFromVariable());
 
         if (commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
             messageSourceComboBox.setEnabled(false);
@@ -557,7 +559,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 responseLimitPanel.setEnabled(true);
                 autoFilenameCheckBox.setEnabled(true);
             } else {
-                boolean isUploadCommand = isCommandUploadType((String) commandComboBox.getSelectedItem());
+                boolean isUploadCommand = isCommandFromVariable() ||
+                        isCommandUploadType((String) commandComboBox.getSelectedItem());
 
                 messageSourceComboBox.setEnabled(isUploadCommand);
                 autoFilenameCheckBox.setEnabled(isUploadCommand);
@@ -660,17 +663,16 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
 
         // ftp command
-        if (assertion.getFtpMethod() == null) {
+        if (assertion.getFtpCommand() == null) {
             if (assertion.isCommandFromVariable()) {
                 commandComboBox.setSelectedIndex(COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
-                commandVariablePanel.setVariable(assertion.getFtpMethodOtherCommand());
+                commandVariablePanel.setVariable(assertion.getOtherFtpCommand());
             } else {
                 commandComboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
                 enableOrDisableCommandSettingsComponents();
             }
         } else {
-            final String ftpMethod = assertion.getFtpMethod().getWspName();
-            commandComboBox.setSelectedItem(ftpMethod);
+            commandComboBox.setSelectedItem(assertion.getFtpCommand());
         }
 
         // message source
@@ -801,16 +803,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private void fillAssertionCommandData(final FtpRoutingAssertion assertion) {
         // ftp command
-        if (commandVariablePanel.isEnabled()) {
-            assertion.setFtpMethod(null);
+        if (isCommandFromVariable()) {
             assertion.setCommandFromVariable(true);
-            assertion.setFtpMethodOtherCommand(commandVariablePanel.getVariable());
+            assertion.setFtpCommand(null);
+            assertion.setFtpCommandVariable(commandVariablePanel.getVariable());
         } else {
-            Object selectedCommand = commandComboBox.getSelectedItem();
-
-            if (selectedCommand != null) { // TODO jwilliams: this is a fix to allow testing a connection without specifying a command first - need a better solution
-                assertion.setFtpMethod((FtpMethod) FtpMethod.getEnumTranslator().stringToObject(selectedCommand.toString()));
-            }
+            assertion.setCommandFromVariable(false);
+            assertion.setFtpCommandVariable(null);
+            assertion.setFtpCommand(FtpCommand.valueOf(commandComboBox.getSelectedItem().toString()));
         }
 
         // message source
@@ -1052,75 +1052,20 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         return isValid;
     }
 
-    private boolean isCommandTypeFromVariable() {
+    private boolean isCommandFromVariable() {
         return commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX;
     }
 
-    private boolean isCommandUploadType(String command) {
-        FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
+    private boolean isCommandUploadType(String commandString) {
+        FtpCommand command = FtpCommand.valueOf(commandString);
 
-        return method != null &&
-                (method.equals(FtpMethod.FTP_STOR)
-                        || method.equals(FtpMethod.FTP_APPE)
-                        || method.equals(FtpMethod.FTP_STOU));
+        return command == STOR || command == APPE || command == STOU;
     }
 
-    private boolean isCommandRetrieve(String command) {
-        FtpMethod method = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(command);
+    private boolean isCommandRetrieve(String commandString) {
+        FtpCommand command = FtpCommand.valueOf(commandString);
 
-        return method != null && method.equals(FtpMethod.FTP_RETR);
-    }
-
-    private FtpMethod[] getFtpMethods() {
-        return new FtpMethod[] {
-                FtpMethod.FTP_RETR,
-                FtpMethod.FTP_STOR,
-                FtpMethod.FTP_DELE,
-                FtpMethod.FTP_LIST,
-                FtpMethod.FTP_ABOR,
-                FtpMethod.FTP_ACCT,
-                FtpMethod.FTP_ADAT,
-                FtpMethod.FTP_ALLO,
-                FtpMethod.FTP_APPE,
-                FtpMethod.FTP_AUTH,
-                FtpMethod.FTP_CCC,
-                FtpMethod.FTP_CDUP,
-                FtpMethod.FTP_CONF,
-                FtpMethod.FTP_CWD,
-                FtpMethod.FTP_ENC,
-                FtpMethod.FTP_EPRT,
-                FtpMethod.FTP_EPSV,
-                FtpMethod.FTP_FEAT,
-                FtpMethod.FTP_HELP,
-                FtpMethod.FTP_LANG,
-                FtpMethod.FTP_MDTM,
-                FtpMethod.FTP_MIC,
-                FtpMethod.FTP_MKD,
-                FtpMethod.FTP_MLSD,
-                FtpMethod.FTP_MLST,
-                FtpMethod.FTP_MODE,
-                FtpMethod.FTP_NLST,
-                FtpMethod.FTP_NOOP,
-                FtpMethod.FTP_OPTS,
-                FtpMethod.FTP_PASS,
-                FtpMethod.FTP_PASV,
-                FtpMethod.FTP_PBSZ,
-                FtpMethod.FTP_PORT,
-                FtpMethod.FTP_PROT,
-                FtpMethod.FTP_PWD,
-                FtpMethod.FTP_QUIT,
-                FtpMethod.FTP_REIN,
-                FtpMethod.FTP_RMD,
-                FtpMethod.FTP_RNFR,
-                FtpMethod.FTP_RNTO,
-                FtpMethod.FTP_SITE,
-                FtpMethod.FTP_SIZE,
-                FtpMethod.FTP_STAT,
-                FtpMethod.FTP_STOU,
-                FtpMethod.FTP_STRU,
-                FtpMethod.FTP_SYST,
-                FtpMethod.FTP_TYPE,
-                FtpMethod.FTP_USER  };
+        return command == RETR;
     }
 
     /**
