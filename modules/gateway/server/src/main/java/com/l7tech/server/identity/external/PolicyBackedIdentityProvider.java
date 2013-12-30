@@ -10,4 +10,5 @@ import com.l7tech.server.identity.HasDefaultRole;
  * Non-listable identity provider that authenticates users by executing a policy.
  */
 public interface PolicyBackedIdentityProvider extends AuthenticatingIdentityProvider<VirtualPolicyUser, VirtualPolicyGroup, PolicyBackedUserManager, PolicyBackedGroupManager>, ConfigurableIdentityProvider, HasDefaultRole {
+
 }

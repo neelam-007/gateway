@@ -7,6 +7,8 @@ import com.l7tech.util.HexUtils;
 import org.w3c.dom.Document;
 
 import javax.security.auth.x500.X500Principal;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -17,6 +19,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Factory for managed objects.
@@ -510,6 +513,28 @@ public class ManagedObjectFactory {
         return new RbacRolePredicateMO();
     }
 
+
+    /**
+     * Create a new Password instance.
+     *
+     * @return The new instance
+     */
+    public static Password createPassword() {
+        return new Password();
+    }
+
+
+    /**
+     * Create a new PrivateKeyRestExport instance.
+     *
+     * @return The new instance
+     */
+    public static PrivateKeyRestExport createPrivateKeyRestExportMO() {
+        return new PrivateKeyRestExport();
+    }
+
+
+
     /**
      * Read a managed object from the given data.
      *
@@ -577,6 +602,9 @@ public class ManagedObjectFactory {
         MarshallingUtils.marshal( mo, result, false );
     }
 
+    public static JAXBContext getJAXBContext() throws JAXBException {
+        return MarshallingUtils.getJAXBContext();
+    }
 
     public static Class[] getAllManagedObjectClasses(){
         return new Class[]{
@@ -608,8 +636,50 @@ public class ManagedObjectFactory {
                 RbacRoleMO.class,
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
-                RbacRolePredicateMO.class
+                RbacRolePredicateMO.class,
+                DependencyAnalysisMO.class,
+                DependencyMO.class,
+                Reference.class,
+                References.class,
+                Link.class,
+                PolicyVersionMO.class
         };
+    }
+
+    public static DependencyAnalysisMO createDependencyResultsMO() {
+        return new DependencyAnalysisMO();
+    }
+
+    public static DependencyMO createDependencyMO() {
+        return new DependencyMO();
+    }
+
+    public static Reference createReference() {
+        return new Reference();
+    }
+
+    public static References createReferences() {
+        return new References();
+    }
+
+    public static References createReferences(List<Reference> references) {
+        return new References(references);
+    }
+
+    public static Link createLink(){
+        return new Link();
+    }
+
+    public static Link createLink(String rel, String uri){
+        return new Link(rel, uri);
+    }
+
+    public static PolicyVersionMO createPolicyVersionMO() {
+        return new PolicyVersionMO();
+    }
+
+    public static Bundle createBundle(){
+        return new Bundle();
     }
 
     /**

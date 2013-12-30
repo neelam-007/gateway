@@ -29,9 +29,8 @@ import com.sun.ws.management.server.WSManAgent;
 import com.sun.ws.management.server.reflective.WSManReflectiveAgent;
 import com.sun.ws.management.soap.SOAP;
 import com.sun.ws.management.transport.ContentType;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -41,12 +40,7 @@ import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPConstants;
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPPart;
+import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -69,8 +63,8 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     //- PUBLIC
 
     public ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
-                                             final BeanFactory context ) throws PolicyAssertionException {
-        this( assertion, context, "gatewayManagementContext.xml", true );
+                                             final ApplicationContext applicationContext ) throws PolicyAssertionException {
+        this( assertion, applicationContext, "gatewayManagementContext.xml", true );
     }
 
     @Override
@@ -103,7 +97,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     //- PROTECTED
 
     protected ServerGatewayManagementAssertion( final GatewayManagementAssertion assertion,
-                                                final BeanFactory context,
+                                                final ApplicationContext context,
                                                 final String assertionContextResource,
                                                 final boolean maskContextClassLoader ) throws PolicyAssertionException {
         super(assertion);
@@ -117,14 +111,12 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     private static final AtomicReference<WSManReflectiveAgent> sharedAgent = new AtomicReference<WSManReflectiveAgent>();
 
     private final WSManAgent agent;
-    private final XmlBeanFactory assertionContext;
+    private final ApplicationContext assertionContext;
     private final boolean maskContextClassLoader;
 
-    private static XmlBeanFactory buildContext( final BeanFactory context,
+    private static ApplicationContext buildContext( final ApplicationContext context,
                                               final String assertionContextResource ) {
-        XmlBeanFactory assertionContext = new XmlBeanFactory(new ClassPathResource(assertionContextResource, ServerGatewayManagementAssertion.class), context);
-        assertionContext.preInstantiateSingletons();
-        return assertionContext;
+        return new ClassPathXmlApplicationContext(new String[] {assertionContextResource}, ServerGatewayManagementAssertion.class, context);
     }
 
     private static WSManReflectiveAgent getAgent( final Audit audit, final Logger logger, final Assertion assertion ) throws PolicyAssertionException {

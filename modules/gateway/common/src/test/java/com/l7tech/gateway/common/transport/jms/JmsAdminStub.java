@@ -140,12 +140,8 @@ public class JmsAdminStub implements JmsAdmin {
     }
 
     @Override
-    public boolean isValidThreadPoolSize(String size) {
+    public boolean isValidConsumerConnectionSize(String size) {
         return true;
     }
 
-    @Override
-    public boolean isDedicatedThreadPoolEnabled() {
-        return true;
-    }
 }

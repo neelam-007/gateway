@@ -3,11 +3,7 @@
  */
 package com.l7tech.policy;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import static com.l7tech.policy.PolicyType.Supertype.SERVICE;
 import static com.l7tech.policy.PolicyType.Supertype.*;
@@ -79,7 +75,12 @@ public enum PolicyType {
      * A policy that is for internal use (see {@link Policy#getInternalTag} for what kind of internal policy it is)
      */
     INTERNAL(FRAGMENT, "Internal Use Policy", true, getAuditMessageFilterTags(), false),
-    
+
+    /**
+     * A policy that is invoked by a policy-backed identity provider in order to perform some operation (such as authentication or, perhaps someday, user lookup).
+     * Currently not zoneable to help protect people from accidentally giving away the keys to the kingdom by inadvertently allowing ability to modify these policies.
+     */
+    IDENTITY_PROVIDER_POLICY(FRAGMENT, "Policy-Backed Identity Provider Policy Fragment", true, getIdentityProviderTags(), false),
     ;
 
     public static final String TAG_GLOBAL_MESSAGE_RECEIVED = "message-received";
@@ -91,6 +92,8 @@ public enum PolicyType {
 
     public static final String TAG_AUDIT_MESSAGE_FILTER = "audit-message-filter";
     public static final String TAG_AUDIT_VIEWER = "audit-viewer";
+
+    public static final String TAG_PIDP_PASSWORD_AUTH = "password-auth";
 
     @Override
     public String toString() {
@@ -155,6 +158,10 @@ public enum PolicyType {
 
     public static Collection<String> getAuditMessageFilterTags(){
         return Arrays.asList( TAG_AUDIT_MESSAGE_FILTER, TAG_AUDIT_VIEWER);
+    }
+
+    public static Collection<String> getIdentityProviderTags() {
+        return Arrays.asList(TAG_PIDP_PASSWORD_AUTH);
     }
 
     /**

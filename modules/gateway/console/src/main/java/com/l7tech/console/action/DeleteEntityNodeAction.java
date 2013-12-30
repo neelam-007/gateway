@@ -3,7 +3,6 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
@@ -192,10 +191,7 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
             rootNode.removeAlias(oldServiceGoid, node);
         }
 
-        //Update the workspace if this service was being displayed
-        PolicyEditorPanel pe = creg.getPolicyEditorPanel();
-        if (pe != null && Goid.equals(pe.getPolicyNode().getEntityGoid(), entityNode.getEntityGoid())) {
-            new HomeAction().performAction();
-        }
+        // Remove all tabs related to the deleted entity node.
+        creg.getCurrentWorkspace().removeTabsRelatedToPolicyNode(entityNode);
     }
 }

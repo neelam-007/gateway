@@ -12,7 +12,12 @@ public interface KeyValueStoreServices {
     static final String CONSOLE_CONTEXT_KEY = "keyValueStoreServices";
 
     /**
-     * The internal transactional store name.
+     * The internal transactional store name.<p>
+     * Scope: Cluster wide<br>
+     * Caching: None<br>
+     * Change visibility: Immediate, cluster wide<br>
+     * Change notification: Within 10 seconds, cluster wide<br>
+     * Transactional: Full ACID, reads and writes via Admin API
      */
     static final String INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME = "internalTransactional";
 

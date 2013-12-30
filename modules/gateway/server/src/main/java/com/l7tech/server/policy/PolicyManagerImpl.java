@@ -12,6 +12,7 @@ import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
@@ -20,6 +21,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Disjunction;
 import org.hibernate.criterion.Restrictions;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +41,9 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Policy, PolicyHeader> implements PolicyManager {
     private static final Logger logger = Logger.getLogger(PolicyManagerImpl.class.getName());
-    
     String ROLE_NAME_TYPE_SUFFIX = "Policy";
-    String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 
+    String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, PolicyAdmin.ROLE_NAME_TYPE_SUFFIX));
 
@@ -51,19 +52,24 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
      */
     private static final boolean multipleGlobalPolicies = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.multipleGlobalPolicies", false );
 
+    static final String AUTO_CREATE_ROLE_PROPERTY = "rbac.autoRole.managePolicy.autoCreate";
+
     private final PolicyCache policyCache;
     private final RoleManager roleManager;
     private final PolicyAliasManager policyAliasManager;
     private final FolderManager folderManager;
+    private final Config config;
 
     public PolicyManagerImpl( final RoleManager roleManager,
                               final PolicyAliasManager policyAliasManager,
                               final FolderManager folderManager,
-                              final PolicyCache policyCache ) {
+                              final PolicyCache policyCache,
+                              final @NotNull Config config) {
         this.roleManager = roleManager;
         this.policyAliasManager = policyAliasManager;
         this.folderManager = folderManager;
         this.policyCache = policyCache;
+        this.config = config;
     }
 
     @Override
@@ -245,7 +251,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
 
     @Override
     public void createRoles( final Policy policy ) throws SaveException {
-        addManagePolicyRole( policy );    
+        if (config.getBooleanProperty(AUTO_CREATE_ROLE_PROPERTY, true)) {
+            addManagePolicyRole( policy );
+        }
     }
 
     @Override

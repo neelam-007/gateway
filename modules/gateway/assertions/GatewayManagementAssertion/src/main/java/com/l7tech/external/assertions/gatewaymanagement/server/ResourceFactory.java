@@ -7,10 +7,12 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
@@ -77,6 +79,14 @@ public interface ResourceFactory<R> {
     Map<String,String> createResource( Object resource ) throws InvalidResourceException;
 
     /**
+     * Create a new resource with the given id.
+     * @param id The id to create the resource with.
+     * @param resource The new resource to create
+     * @return The resource selectors.
+     */
+    Map<String,String> createResource(String id, Object resource) throws InvalidResourceException;
+
+    /**
      * Get the resource that matches the given selectors.
      *
      * @param selectorMap The map of selectors
@@ -115,6 +125,18 @@ public interface ResourceFactory<R> {
      * @return The collection of resource selectors.
      */
     Collection<Map<String, String>> getResources();
+
+    /**
+     * Gets all resources given the offset, count, sort, and filter properties.
+     * @param offset The offset to start returning resources from
+     * @param count The number of resources to return
+     * @param sort The property to sort the resources by.
+     * @param ascending The sort order.
+     * @param filters The filters to search for entities with.
+     * @return The entities found
+     */
+    List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters);
+
 
     /**
      * Annotation for the resource name.

@@ -26,7 +26,7 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.licensing.UpdatableCompositeLicenseManager;
-import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
 import com.l7tech.server.security.keystore.luna.LunaProber;
@@ -381,8 +381,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
         Collection<ModuleInfo> ret = new ArrayList<>();
-        Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
-        for (AssertionModule module : modules) {
+        Set<ModularAssertionModule> modules = assertionRegistry.getLoadedModules();
+        for (ModularAssertionModule module : modules) {
             Collection<String> assertions = new ArrayList<>();
             for (Assertion assertion : module.getAssertionPrototypes())
                 assertions.add(assertion.getClass().getName());

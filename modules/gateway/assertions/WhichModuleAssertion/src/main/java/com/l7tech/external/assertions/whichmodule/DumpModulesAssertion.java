@@ -4,7 +4,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.AssertionModule;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -55,9 +55,9 @@ public class DumpModulesAssertion extends Assertion implements SetsVariables {
         @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
-            Set<AssertionModule> mods = assertionRegistry.getLoadedModules();
+            Set<ModularAssertionModule> mods = assertionRegistry.getLoadedModules();
             StringBuffer sb = new StringBuffer();
-            for (AssertionModule mod : mods) {
+            for (ModularAssertionModule mod : mods) {
 
                 sb.append("<module>\n");
                 sb.append("    <name>").append(mod.getName()).append("</name>\n");

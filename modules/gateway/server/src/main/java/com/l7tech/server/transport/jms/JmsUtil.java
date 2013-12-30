@@ -581,19 +581,6 @@ public class JmsUtil {
     }
 
     /**
-     * Is the given connection with dedicated thread pool.
-     * @param connection The JMS Connection
-     * @return True when the thread pool is
-     */
-    public static boolean isDedicatedThreadPool(JmsConnection connection) {
-        String isDedicatedPool = connection.properties().getProperty(JmsConnection.PROP_IS_DEDICATED_POOL);
-        if (isDedicatedPool != null && Boolean.parseBoolean(isDedicatedPool)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Retrieves all JMS headers from the given Message and stores them in a map.
      * <p/>
      * Possible headers:

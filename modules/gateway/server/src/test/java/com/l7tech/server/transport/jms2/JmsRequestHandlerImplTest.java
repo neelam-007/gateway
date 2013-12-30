@@ -102,7 +102,7 @@ public class JmsRequestHandlerImplTest {
             }
         });
 
-        handler.onMessage(endpointConfig, jmsBag, false, null, jmsRequest);
+        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
     }
 
     @Test(expected = JmsRuntimeException.class)
@@ -114,7 +114,7 @@ public class JmsRequestHandlerImplTest {
         when(endpointConfig.getConnection()).thenReturn(jmsConnection);
         when(jmsConnection.properties()).thenReturn(connectionProperties);
 
-        handler.onMessage(endpointConfig, jmsBag, false, null, jmsRequest);
+        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
 
         verify(messageProcessor, never()).processMessage(any(PolicyEnforcementContext.class));
         verify(jmsBag, never()).getSession();

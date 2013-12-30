@@ -15,6 +15,7 @@
 
 # Define variables that will not be taken from the radius_ldap_setup.conf file:
 
+LDAPS_CERTS_DIR="/etc/openldap/certs"
 OPENLDAP_CONF_FILE="/etc/openldap/ldap.conf"
 NSS_LDAP_CONF_FILE="/etc/nslcd.conf"
 NSS_CONF_FILE="/etc/nsswitch.conf"
@@ -540,32 +541,45 @@ else
         # up to this point whether it is ldap or ldaps is not important
 	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
 		toLog "   Info - '$LDAP_TYPE' will be configured."
+		if [ ! -d "$LDAPS_CERTS_DIR" ]; then
+  			mkdir "$LDAPS_CERTS_DIR"
+			if [ $? -ne 0 ]; then
+				toLog "    ERROR - creating ldap cacert directory"
+				STATUS=1
+			fi  			
+		fi
 		# cacert url or file
 		# Instead of using the TLS_CACERTDIR directive that is discourage, the TLS_CACERT directive
 		# will be used to specify the one file that will contain all the necessary CA certificates.
 		# For both situations (using URL or a previously copied file as the CA certificate) the file will end up in the /etc/openldap/cacerts directory.
 		if [ "X$LDAP_CACERT_URL" != "X" ]; then
+			## replace space with %20
+			LDAP_CACERT_URL=$(echo "$LDAP_CACERT_URL" | sed 's/ /%20/g')
 			URL_CACERT_FILE=$(echo "$LDAP_CACERT_URL" | sed 's/.*\///')
-			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
+			## have to specify the output file, otherwise the output file name may contain spaces
+			wget -O "$URL_CACERT_FILE"  --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
 			if [ $? -ne 0 ]; then
 				toLog "    ERROR - Retrieving the CA certificate from URL failed!"
 				STATUS=1
 			else
 				if [ -s "$URL_CACERT_FILE" ]; then
 					toLog "    Success - CA certificate has been retreived successfuly."
-					mv -f --backup=numbered $URL_CACERT_FILE /etc/openldap/cacerts/
+					mv -f --backup=numbered "$URL_CACERT_FILE" "$LDAPS_CERTS_DIR"
 					if [ $? -ne 0 ]; then
-						toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed!"
+						toLog "    ERROR - Installing the CA certificate in $LDAPS_CERTS_DIR directory failed!"
 						STATUS=1
 					else
 						toLog "    Success - CA certificate installation completed."
 						CACERT_FILE_NAME=$URL_CACERT_FILE
 					fi
+				else
+					toLog "    ERROR - Retrieving the CA certificate from URL failed!"
+					STATUS=1
 				fi
 			fi
 		# a file copied via scp on the SSG system will be used:
 		elif [ -s "$LDAP_CACERT_FILE" ]; then
-			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
+			/bin/cp -a --backup=numbered "$LDAP_CACERT_FILE" $LDAPS_CERTS_DIR
 			if [ $? -ne 0 ]; then
 				toLog "    ERROR - Copying the CA certificate file failed."
 				STATUS=1
@@ -577,12 +591,12 @@ else
 
 		# TLS_CACERT in /etc/openldap/ldap.conf
 		if [ "X$CACERT_FILE_NAME" != "X" ]; then
-			echo "TLS_CACERT /etc/openldap/cacerts/$CACERT_FILE_NAME" >> $OPENLDAP_CONF_FILE
-			if [ $? -ne 0 ] || [ "X$(grep "^TLS_CACERT" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "X/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
+			echo "TLS_CACERT $LDAPS_CERTS_DIR/$CACERT_FILE_NAME" >> $OPENLDAP_CONF_FILE
+			if [ $? -ne 0 ] || [ "X$(grep "^TLS_CACERT " $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR/$CACERT_FILE_NAME" ]; then
 				toLog "    ERROR - Configuring 'TLS_CACERT' field in $OPENLDAP_CONF_FILE failed."
 				STATUS=1
 			else
-				toLog "    Success - 'TLS_CACERT' set to /etc/openldap/cacerts/$CACERT_FILE_NAME in $OPENLDAP_CONF_FILE."
+				toLog "    Success - 'TLS_CACERT' set to $LDAPS_CERTS_DIR/$CACERT_FILE_NAME in $OPENLDAP_CONF_FILE."
 			fi
 		fi
 			
@@ -600,12 +614,12 @@ else
 				
 		# tls_cacert in /etc/ldap.conf
 		if [ "X$CACERT_FILE_NAME" != "X" ]; then
-			sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacert /etc/openldap/cacerts/$CACERT_FILE_NAME\n|" $NSS_LDAP_CONF_FILE
-			if [ $? -ne 0 ] || [ "X$(grep "^tls_cacert" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
-				toLog "    ERROR - Configuring 'tls_cacert' field in $NSS_LDAP_CONF_FILE failed."
+			sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacertdir $LDAPS_CERTS_DIR\n|" $NSS_LDAP_CONF_FILE
+			if [ $? -ne 0 ] || [ "X$(grep "^tls_cacertdir" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR" ]; then
+				toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed."
 				STATUS=1
 			else
-				toLog "    Success - 'tls_cacert' set to /etc/openldap/cacerts/$CACERT_FILE_NAME in $NSS_LDAP_CONF_FILE."
+				toLog "    Success - 'tls_cacertdir' set to $LDAPS_CERTS_DIR in $NSS_LDAP_CONF_FILE."
 			fi
 		fi
 				

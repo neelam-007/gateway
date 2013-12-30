@@ -31,10 +31,9 @@ public class BundleComponent extends JPanel{
     }
 
     /**
-     *
-     * @param bundleName
-     * @param bundleDesc
-     * @param version
+     * @param bundleName Bundle name
+     * @param bundleDesc Bundle description
+     * @param version Version
      * @param jdbcConnectionNames Note currently only the first returned via iterator.next will be used.
      */
     public BundleComponent(@NotNull String bundleName, @NotNull String bundleDesc, @NotNull String version, @NotNull Set<String> jdbcConnectionNames) {
@@ -60,12 +59,6 @@ public class BundleComponent extends JPanel{
             });
             refreshJdbcConnections();
 
-            // remember all existing connections
-            final int itemCount = availableJdbcConnsComboBox.getItemCount();
-            for (int i = 0; i < itemCount; i++) {
-                final String existingConn = availableJdbcConnsComboBox.getItemAt(i).toString();
-                mappedJdbcConnections.put(existingConn, existingConn);
-            }
         } else {
             jdbcPanel.setVisible(false);
         }
@@ -92,7 +85,7 @@ public class BundleComponent extends JPanel{
     @NotNull
     public Map<String, String> getMappedJdbcConnections() {
 
-        final Map<String, String> returnMap = new HashMap<String, String>();
+        final Map<String, String> returnMap = new HashMap<>();
         final Object selectedConn = availableJdbcConnsComboBox.getSelectedItem();
         if (selectedConn != null) {
             final String mappedConn = selectedConn.toString();
@@ -123,13 +116,20 @@ public class BundleComponent extends JPanel{
                 Collections.sort(allConnNames);
                 for (String connName : allConnNames) {
                     availableJdbcConnsComboBox.addItem(connName);
-                    if (existingSelection != null && connName.equals(existingSelection)) {
+                    if (existingSelection != null && connName.toLowerCase().equals(existingSelection.toLowerCase())) {
                         keepExistingSelection = true;
                     }
                 }
 
                 if (keepExistingSelection) {
-                    availableJdbcConnsComboBox.setSelectedItem(existingSelection);
+                    ComboBoxModel<String> dataModel = availableJdbcConnsComboBox.getModel();
+                    for (int i = 0; i < dataModel.getSize(); i++) {
+                        String element = dataModel.getElementAt(i);
+                        if (element != null && existingSelection.toLowerCase().equals(element.toLowerCase())) {
+                            availableJdbcConnsComboBox.setSelectedIndex(i);
+                            break;
+                        }
+                    }
                 } else {
                     availableJdbcConnsComboBox.setSelectedIndex(-1);
                 }
@@ -146,6 +146,4 @@ public class BundleComponent extends JPanel{
     // - PRIVATE
 
     private static final Logger logger = Logger.getLogger(BundleComponent.class.getName());
-    private final Map<String, String> mappedJdbcConnections = new HashMap<String, String>();
-
 }

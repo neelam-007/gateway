@@ -2,8 +2,9 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -20,21 +21,25 @@ import java.util.Map;
 public abstract class ServerXpathBasedAssertion<AT extends XpathBasedAssertion> extends AbstractServerAssertion<AT> {
     private final String xpath;
     private final CompiledXpath compiledXpath;
-    private final String dynamicVarName;
+    private final String[] dynamicVars;
 
     public ServerXpathBasedAssertion(AT assertion) {
         super(assertion);
-        dynamicVarName = XpathBasedAssertion.getFullyDynamicXpathVariableName(assertion.pattern());
+
+        this.xpath = assertion.pattern();
+
+        this.dynamicVars = XpathBasedAssertion.isFullyDynamicXpath(xpath)
+            ? Syntax.getReferencedNames(xpath)
+            : null;
 
         CompiledXpath compiledXpath;
         try {
-            compiledXpath = dynamicVarName != null ? null : assertion.getXpathExpression().compile();
+            compiledXpath = dynamicVars != null ? null : assertion.getXpathExpression().compile();
         } catch (InvalidXpathException e) {
             logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID, null, ExceptionUtils.getDebugException(e));
             // Invalid expression -- disable processing
             compiledXpath = null;
         }
-        this.xpath = assertion.pattern();
         this.compiledXpath = compiledXpath;
     }
 
@@ -46,25 +51,17 @@ public abstract class ServerXpathBasedAssertion<AT extends XpathBasedAssertion> 
         if (compiledXpath != null)
             return compiledXpath;
 
-        if (dynamicVarName == null)
+        if (dynamicVars == null)
             return null;
 
         return compileDynamicXpath(context);
     }
 
     private CompiledXpath compileDynamicXpath(PolicyEnforcementContext context) {
-        String expression = null;
-        try {
-            Object val = context.getVariable(dynamicVarName);
-            if (val instanceof CharSequence) {
-                CharSequence charSequence = (CharSequence) val;
-                expression = charSequence.toString();
-            }
-        } catch (NoSuchVariableException e) {
-            // fallthrough and leave null
-        }
+        Map<String, ?> varMap = context.getVariableMap(dynamicVars, getAudit());
+        String expression = ExpandVariables.process(xpath, varMap, getAudit());
 
-        if (expression == null) {
+        if (expression.length() < 1) {
             logAndAudit(AssertionMessages.XPATH_DYNAMIC_PATTERN_INVALID);
             return null;
         }

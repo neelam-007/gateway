@@ -372,6 +372,23 @@ public final class CollectionUtils {
     }
 
     /**
+     * This is a sub list call that will never throw IndexOutOfBoundsException. If the from index is greater then the
+     * list length the empty list will be returned. If the toIndex is greater then the list length then a list from the
+     * from index to the end of the list will be returned. Otherwise the regular subList call will be made.
+     *
+     * @param list      The list to subList
+     * @param fromIndex low endpoint (inclusive) of the subList
+     * @param toIndex   high endpoint (exclusive) of the subList
+     * @param <T>       The list type
+     * @return The subList
+     */
+    @NotNull
+    public static <T> List<T> safeSubList(final List<T> list, int fromIndex, int toIndex) {
+        int listSize = list.size();
+        return fromIndex > listSize ? Collections.<T>emptyList() : toIndex > listSize ? list.subList(fromIndex, listSize) : list.subList(fromIndex, toIndex);
+    }
+
+    /**
      * Create a map builder for a HashMap.
      *
      * @param <K> The key type

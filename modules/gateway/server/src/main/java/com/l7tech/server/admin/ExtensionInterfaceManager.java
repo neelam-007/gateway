@@ -2,7 +2,7 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
-import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
+import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice;
 import com.l7tech.util.ClassUtils;
@@ -286,15 +286,30 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
         return ref == null ? null : ref.get();
     }
 
-    void unregisterAllFromClassLoader(ClassLoader classLoader) {
+    /**
+     * Unregister all extension interfaces from the specified class loader.<br/>
+     * This is a dirty solution and is only used for custom assertions hot-swap.
+     *
+     * @param classLoader    the specified class loader
+     */
+    public void unregisterAllFromClassLoader(ClassLoader classLoader) {
         try {
             lock.writeLock().lock();
+
+            List<String> classesToRemove = new ArrayList<>();
 
             Iterator<InterfaceImpl> it = implsByInterfaceClassAndId.values().iterator();
             while (it.hasNext()) {
                 InterfaceImpl next = it.next();
-                if (next.getRawImpl().getClass().getClassLoader() == classLoader)
+                if (next.getRawImpl().getClass().getClassLoader() == classLoader) {
                     it.remove();
+                    classesToRemove.add(next.getKey().getInterfaceClass().getName());
+                }
+            }
+
+            // additionally remove from classesByName
+            for (String classToRemove : classesToRemove) {
+                classesByName.remove(classToRemove);
             }
 
         } finally {

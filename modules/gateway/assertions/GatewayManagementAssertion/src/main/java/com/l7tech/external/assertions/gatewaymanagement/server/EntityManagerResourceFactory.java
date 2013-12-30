@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.*;
-import com.l7tech.util.Eithers.*;
+import com.l7tech.util.Eithers.E2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -58,6 +58,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
     @Override
     public Map<String, String> createResource( final Object resource ) throws InvalidResourceException {
+        return createResource(null, resource);
+    }
+
+    @Override
+    public Map<String, String> createResource( @Nullable final String id, final Object resource ) throws InvalidResourceException {
         checkReadOnly();
 
         final Goid goid = Eithers.extract(transactional(new TransactionalCallback<Either<InvalidResourceException, Goid>>() {
@@ -85,7 +90,13 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                         validate(entity);
                     }
 
-                    final Goid goid = doSaveEntity(entityBag.getEntity());
+                    final Goid goid;
+                    if(id != null){
+                        goid = Goid.parseGoid(id);
+                        doSaveEntity(goid, entityBag.getEntity());
+                    } else {
+                        goid = doSaveEntity(entityBag.getEntity());
+                    }
                     afterCreateEntity(entityBag, goid);
 
                     if (manager instanceof RoleAwareEntityManager) {
@@ -109,6 +120,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         return manager.save(entity);
     }
 
+    // save the entity to the manager
+    protected void doSaveEntity(Goid id, E entity) throws SaveException {
+        manager.save(id, entity);
+    }
+
     @Override
     public R getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         return Eithers.extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,R>>(){
@@ -130,11 +146,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         Collection<Map<String,String>> resources = Collections.emptyList();
 
         try {
-            Collection<EH> headers = manager.findAllHeaders();
+            List<EH> headers = new ArrayList<>(manager.findAllHeaders());
             headers = accessFilter(headers, manager.getEntityType(), OperationType.READ, null);
             headers = filterHeaders( headers );
 
-            resources = new ArrayList<Map<String,String>>( headers.size() );
+            resources = new ArrayList<>( headers.size() );
 
             for ( EntityHeader header : headers ) {
                 resources.add( Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() ) );
@@ -144,6 +160,26 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         }
 
         return resources;
+    }
+
+    @Override
+    public List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
+        try {
+            List<E> entities = manager.findPagedMatching(offset, count, sort, ascending, filters);
+            entities = accessFilter(entities, manager.getEntityType(), OperationType.READ, null);
+            entities = filterEntities(entities);
+
+            return Functions.map(entities, new Functions.UnaryThrows<R, E, ObjectModelException>() {
+                @Override
+                public R call(E e) throws ObjectModelException {
+                    return identify(asResource(loadEntityBag(e)), e);
+                }
+            });
+        } catch (ObjectModelException e) {
+            handleObjectModelException(e);
+        }
+
+        return Collections.emptyList();
     }
 
     @Override
@@ -341,8 +377,23 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param headers The headers to filter.
      * @return The filtered collection.
      */
-    protected Collection<EH> filterHeaders( final Collection<EH> headers ) {
+    protected List<EH> filterHeaders( final List<EH> headers ) {
         return headers;
+    }
+
+    /**
+     * Filter access to the entities.
+     *
+     * @param entities The entities to filter.
+     * @return The filtered collection.
+     */
+    private List<E> filterEntities(final List<E> entities) {
+        return Functions.grep(entities, new Functions.Unary<Boolean, E>() {
+            @Override
+            public Boolean call(E e) {
+                return filterEntity(e) != null;
+            }
+        });
     }
 
     /**

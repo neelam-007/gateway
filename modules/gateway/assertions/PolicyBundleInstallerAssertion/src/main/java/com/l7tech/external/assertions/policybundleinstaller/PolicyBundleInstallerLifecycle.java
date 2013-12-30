@@ -39,14 +39,13 @@ import java.util.logging.Logger;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
-
 import static com.l7tech.util.Functions.Nullary;
 
-public class PolicyBundleInstallerLifecycle implements ApplicationListener{
+public class PolicyBundleInstallerLifecycle implements ApplicationListener {
 
     public PolicyBundleInstallerLifecycle(final ApplicationContext spring) {
-        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        this.applicationEventProxy.addApplicationListener(this);
+        ApplicationEventProxy applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
         isLicensed.set(isLicensed());
     }
@@ -106,23 +105,16 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
                 final PolicyBundleInstallerContext context = dryRunEvent.getContext();
 
                 final PolicyBundleInstaller installer = new PolicyBundleInstaller(getGatewayMgmtInvoker(), context, new Functions.Nullary<Boolean>() {
-                                    @Override
-                                    public Boolean call() {
-                                        return dryRunEvent.isCancelled();
-                                    }
-                                });
+                    @Override
+                    public Boolean call() {
+                        return dryRunEvent.isCancelled();
+                    }
+                });
 
                 try {
                     installer.dryRunInstallBundle(dryRunEvent);
-                } catch (BundleResolver.BundleResolverException e) {
-                    dryRunEvent.setProcessingException(e);
-                } catch (BundleResolver.UnknownBundleException e) {
-                    dryRunEvent.setProcessingException(e);
-                } catch (BundleResolver.InvalidBundleException e) {
-                    dryRunEvent.setProcessingException(e);
-                } catch (InterruptedException e) {
-                    dryRunEvent.setProcessingException(e);
-                } catch (AccessDeniedManagementResponse e) {
+                } catch (BundleResolver.BundleResolverException | BundleResolver.UnknownBundleException | BundleResolver.InvalidBundleException
+                        | InterruptedException | AccessDeniedManagementResponse e) {
                     dryRunEvent.setProcessingException(e);
                 } finally {
                     dryRunEvent.setProcessed(true);
@@ -155,9 +147,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
     // - PRIVATE
     private static PolicyBundleInstallerLifecycle instance = null;
     private static final Logger logger = Logger.getLogger(PolicyBundleInstallerLifecycle.class.getName());
-    private final ApplicationEventProxy applicationEventProxy;
     private final ApplicationContext spring;
-    private final AtomicReference<ServerAssertion> serverMgmtAssertion = new AtomicReference<ServerAssertion>();
+    private final AtomicReference<ServerAssertion> serverMgmtAssertion = new AtomicReference<>();
     private final AtomicBoolean isLicensed = new AtomicBoolean(false);
 
     private static final String GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -231,24 +222,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener{
 
         try {
             installer.installBundle();
-        } catch (PolicyBundleInstaller.InstallationException e) {
-            installEvent.setProcessingException(e);
-        } catch (BundleResolver.UnknownBundleException e) {
-            installEvent.setProcessingException(e);
-        } catch (BundleResolver.BundleResolverException e) {
-            installEvent.setProcessingException(e);
-        } catch (InterruptedException e) {
-            installEvent.setProcessingException(e);
-        } catch (BundleResolver.InvalidBundleException e) {
-            installEvent.setProcessingException(e);
-        } catch (UnexpectedManagementResponse e) {
-            installEvent.setProcessingException(e);
-        } catch (AccessDeniedManagementResponse e) {
-            installEvent.setProcessingException(e);
-        } catch (IOException e) {
-            installEvent.setProcessingException(e);
-        } catch (RuntimeException e) {
-            // catch all for any runtime exceptions
+        } catch (PolicyBundleInstaller.InstallationException | BundleResolver.UnknownBundleException | BundleResolver.BundleResolverException
+                | InterruptedException | BundleResolver.InvalidBundleException | UnexpectedManagementResponse | AccessDeniedManagementResponse | IOException | RuntimeException e) {
             installEvent.setProcessingException(e);
         }
 

@@ -68,6 +68,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     }
 
     @Override
+    public Map<String, String> createResource(String id,  final Object resource ) throws InvalidResourceException {
+        throw new IllegalStateException("Read only");
+    }
+
+    @Override
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         throw new IllegalStateException("Read only");
     }
@@ -344,11 +349,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     /**
      * Filter a collection of entities or entity types.
      */
-    final protected <ET> Collection<ET> accessFilter( final Collection<ET> entities,
+    final protected <ET> List<ET> accessFilter( final List<ET> entities,
                                                       final EntityType entityType,
                                                       final OperationType operationType,
                                                       @Nullable final String otherOperationName ) throws FindException {
-        final Collection<ET> filteredEntities;
+        final List<ET> filteredEntities;
         final User user = JaasUtils.getCurrentUser();
 
         if ( user != null ) {

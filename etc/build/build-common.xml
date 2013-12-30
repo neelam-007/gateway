@@ -235,7 +235,7 @@
           Modules JAR signing task with presets
         -->
         <presetdef name="sign-jar">
-            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer4" storepass="password" jar="${jar.file}">
+            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer5" storepass="password" jar="${jar.file}">
                 <path>
                     <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
                 </path>
@@ -510,7 +510,8 @@
                fork="on" 
                forkmode="once" 
                errorproperty="test.error"
-               failureproperty="test.failure">
+               failureproperty="test.failure"
+               maxmemory="2048m">
             <jvmarg value="-ea"/>
             <jvmarg value="-XX:MaxPermSize=256m"/>
 

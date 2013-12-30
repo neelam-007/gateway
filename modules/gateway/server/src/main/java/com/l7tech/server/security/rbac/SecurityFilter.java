@@ -22,5 +22,5 @@ public interface SecurityFilter {
      * @return The filtered entity collection
      * @throws FindException If an error occurs determining security permissions.
      */
-    <T> Collection<T> filter( Collection<T> entityCollection, User user, OperationType type, @Nullable String operationName ) throws FindException;
+    <T, C extends Collection<T>> C filter( C entityCollection, User user, OperationType type, @Nullable String operationName ) throws FindException;
 }

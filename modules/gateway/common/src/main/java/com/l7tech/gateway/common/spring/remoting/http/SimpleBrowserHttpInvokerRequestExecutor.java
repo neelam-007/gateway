@@ -1,27 +1,28 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
+import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.util.FilterClassLoader;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.BinaryThrows;
+import com.l7tech.util.InetAddressUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
+import org.springframework.remoting.httpinvoker.SimpleHttpInvokerRequestExecutor;
+import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.net.HttpURLConnection;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.HttpURLConnection;
-import java.io.IOException;
 
 import static com.l7tech.util.CollectionUtils.toSet;
-import com.l7tech.util.FilterClassLoader;
-import com.l7tech.util.Functions.BinaryThrows;
-import com.l7tech.util.InetAddressUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.remoting.httpinvoker.SimpleHttpInvokerRequestExecutor;
-import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
-import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
-
-import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 
 /**
  * Extension of the Spring SimpleHttpInvokerRequestExecutor for setting host/session.
@@ -48,14 +49,29 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
         this.useExcludedPackages.set( !this.excludedBeanPackages.isEmpty() );
     }
 
-    public void setSession(String host, int port, String sessionId) {
+    @Override
+    public <R, E extends Throwable> R doWithSession(String host, int port, String sessionId, Functions.NullaryThrows<R, E> block) throws E {
         SessionSupport.SessionInfo info = sessionInfoHolder.getSessionInfo();
-        info.host = host;
-        info.port = port;
-        info.sessionId = sessionId;
+        final String oldHost = info.host;
+        final int oldPort = info.port;
+        final String oldSessionId = info.sessionId;
+
+        try {
+            info.host = host;
+            info.port = port;
+            info.sessionId = sessionId;
+
+            return block.call();
+        } finally {
+            info.host = oldHost;
+            info.port = oldPort;
+            info.sessionId = oldSessionId;
+        }
     }
 
-    public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
+    @Override
+    public <R, E extends Throwable> R doWithTrustFailureHandler(SSLTrustFailureHandler failureHandler, Functions.NullaryThrows<R, E> block) throws E {
+        return block.call();
     }
 
     //- PROTECTED

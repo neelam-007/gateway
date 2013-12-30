@@ -2,10 +2,10 @@ package com.l7tech.server.log;
 
 import com.l7tech.gateway.common.log.SinkConfiguration;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.logging.*;
 
 /**
  * MessageSink for logging to the console.
@@ -54,12 +54,32 @@ public class ConsoleMessageSink extends MessageSinkSupport {
         Logger rootLogger = Logger.getLogger("");
         Handler[] rootHandlers = rootLogger.getHandlers();
         for ( Handler handler : rootHandlers ) {
-            if ( handler instanceof ConsoleHandler ) {
+            if ( handler instanceof L7ConsoleHandler ) {
                 consoleHandler = handler;
                 break;
             }
         }
 
         return consoleHandler;
+    }
+
+    public static class L7ConsoleHandler extends StreamHandler {
+        private static final OutputStream out = new FileOutputStream(FileDescriptor.err);
+
+        public L7ConsoleHandler() {
+            super();
+            setOutputStream( out );
+        }
+
+        @Override
+        public synchronized void publish(LogRecord record) {
+            super.publish(record);
+            flush();
+        }
+
+        @Override
+        public synchronized void close() throws SecurityException {
+            flush();
+        }
     }
 }

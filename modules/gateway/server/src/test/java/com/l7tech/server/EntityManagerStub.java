@@ -4,8 +4,8 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -84,9 +84,10 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
 
     @Override
     public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
-        EH[] dest = (EH[]) new EntityHeader[limit];
-        EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
-        System.arraycopy(all, offset, dest, 0, limit);
+        int rtnSize = offset+limit>headers.size()?headers.size()-offset:limit;
+        EH[] dest = (EH[]) new EntityHeader[rtnSize];
+        EH[] all = (EH[]) headers.values().toArray(new EntityHeader[rtnSize]);
+        System.arraycopy(all, offset, dest, 0, rtnSize);
         return Arrays.asList(dest);
     }
 
@@ -109,6 +110,11 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public synchronized Collection<ET> findAll() throws FindException {
         return Collections.unmodifiableCollection(entities.values());
+    }
+
+    @Override
+    public synchronized List<ET> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return new ArrayList<>(entities.values());
     }
 
     @Override
@@ -140,6 +146,15 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         headers.put(goid, header(entity));
 
         return goid;
+    }
+
+    @Override
+    public synchronized void save(Goid id, ET entity) throws SaveException {
+        if(GoidRange.RESERVED_RANGE.isInRange(id)) throw new SaveException("Cannot save entity with ID in reserved Range. ID: " + id);
+        entity.setGoid(id);
+
+        entities.put(id, entity);
+        headers.put(id, header(entity));
     }
 
     private String name(ET entity) {

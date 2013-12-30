@@ -196,7 +196,7 @@
                 </copy>
                 <manifest file="${build.etc}/@{filename}" mode="update">
                     <attribute name="Implementation-Title" value="${app.name}"/>
-                    <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
+                    <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}"/>
                     <attribute name="Implementation-Vendor" value="${vendor.name}"/>
                     <attribute name="Class-Path" value="@{pathPrefix} ${@{propertyPrefix}.libs.path}"/>
                     <section/>
@@ -1384,9 +1384,6 @@
         <property name="build.version.label" value=""/>
         <property name="build.version.revision" value=""/>
 
-        <condition property="build.version" value="${build.version.major}.${build.version.minor}${build.version.label}">
-            <equals arg1="0" arg2="${build.version.subminor}"/>
-        </condition>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
         <property name="build.rpmversion" value="${build.version}"/>
     </target>
@@ -1398,9 +1395,6 @@
         <property name="build.em.version.label" value=""/>
         <property name="build.em.version.revision" value=""/>
 
-        <condition property="build.em.version" value="${build.em.version.major}.${build.em.version.minor}${build.em.version.label}">
-            <equals arg1="0" arg2="${build.em.version.subminor}"/>
-        </condition>
         <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
         <property name="build.em.rpmversion" value="${build.em.version}"/>
     </target>
@@ -1412,9 +1406,6 @@
         <property name="build.api.version.label" value=""/>
         <property name="build.api.version.revision" value=""/>
 
-        <condition property="build.api.version" value="${build.api.version.major}.${build.api.version.minor}${build.api.version.label}">
-            <equals arg1="0" arg2="${build.api.version.subminor}"/>
-        </condition>
         <property name="build.api.version" value="${build.api.version.major}.${build.api.version.minor}.${build.api.version.subminor}${build.api.version.label}"/>
         <property name="build.api.rpmversion" value="${build.api.version}"/>
     </target>
@@ -3614,17 +3605,8 @@
         <property file="build.version" prefix="file"/>
         <property name="build.label" value=""/>
 
-        <condition property="official.build.version" value="${file.build.version.major}.${file.build.version.minor}${build.label}">
-            <equals arg1="0" arg2="${file.build.version.subminor}"/>
-        </condition>
         <property name="official.build.version" value="${file.build.version.major}.${file.build.version.minor}.${file.build.version.subminor}${build.label}"/>
-        <condition property="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}${build.label}">
-            <equals arg1="0" arg2="${file.build.em.version.subminor}"/>
-        </condition>
         <property name="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}.${file.build.em.version.subminor}${build.label}"/>
-        <condition property="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}${build.label}">
-            <equals arg1="0" arg2="${file.build.api.version.subminor}"/>
-        </condition>
         <property name="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}.${file.build.api.version.subminor}${build.label}"/>
         <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
     </target>

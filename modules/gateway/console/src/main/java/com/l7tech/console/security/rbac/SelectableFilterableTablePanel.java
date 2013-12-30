@@ -1,7 +1,7 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
-import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.Utilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,8 @@ public class SelectableFilterableTablePanel extends JPanel {
     private JLabel noEntitiesLabel;
     private JScrollPane scrollPane;
     private JPanel noEntitiesPanel;
-    private CheckBoxSelectableTableModel model;
+    private JPanel buttonPanel;
+    private SelectableTableModel model;
     private int[] filterableColumns;
     private int[] sortableColumns;
     private boolean[] sortOrder;
@@ -52,7 +53,7 @@ public class SelectableFilterableTablePanel extends JPanel {
      * @param filterableColumns     column indices which are filterable.
      * @param selectableObjectLabel the label to display for the types of objects in the table (ex. no 'selectObjectLabel' are available). Default is 'items'.
      */
-    public void configure(@NotNull final CheckBoxSelectableTableModel model, @NotNull final int[] filterableColumns, @Nullable final String selectableObjectLabel) {
+    public void configure(@NotNull final SelectableTableModel model, @NotNull final int[] filterableColumns, @Nullable final String selectableObjectLabel) {
         configure(model, filterableColumns, null, null, null, selectableObjectLabel);
     }
 
@@ -66,7 +67,7 @@ public class SelectableFilterableTablePanel extends JPanel {
      * @param comparators           comparators for sortable columns. See See {@link Utilities#setRowSorter(javax.swing.JTable, javax.swing.table.TableModel, int[], boolean[], java.util.Comparator[])}.
      * @param selectableObjectLabel the label to display for the types of objects in the table (ex. no 'selectObjectLabel' are available). Default is 'items'.
      */
-    public void configure(@NotNull final CheckBoxSelectableTableModel model, @NotNull final int[] filterableColumns,
+    public void configure(@NotNull final SelectableTableModel model, @NotNull final int[] filterableColumns,
                           @Nullable final int[] sortableColumns,
                           @Nullable final boolean[] columnSortOrders,
                           @Nullable final Comparator[] comparators,
@@ -77,6 +78,12 @@ public class SelectableFilterableTablePanel extends JPanel {
         this.sortOrder = columnSortOrders;
         this.comparators = comparators;
         this.selectableObjectLabel = selectableObjectLabel == null ? ITEMS : selectableObjectLabel;
+        if (!model.isAllowMultipleSelect()) {
+            buttonPanel.setEnabled(false);
+            buttonPanel.setVisible(false);
+            selectionLabel.setEnabled(false);
+            selectionLabel.setVisible(false);
+        }
         loadCount();
         loadSelectionCount();
         initFiltering();
@@ -192,7 +199,9 @@ public class SelectableFilterableTablePanel extends JPanel {
     }
 
     private void loadSelectionCount() {
-        final int numSelected = model == null ? 0 : model.getSelected().size();
-        selectionLabel.setText(numSelected + " " + selectableObjectLabel + " selected");
+        if (model == null || model.isAllowMultipleSelect()) {
+            final int numSelected = model == null ? 0 : model.getSelected().size();
+            selectionLabel.setText(numSelected + " " + selectableObjectLabel + " selected");
+        }
     }
 }

@@ -15,10 +15,16 @@
 
         <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>
         <dependency name="layer7-policy-exporter" rev="latest.integration" force="true" conf="core->master"/>
+        <dependency name="layer7-gateway-rest-toolkit" rev="latest.integration" force="true" conf="core"/>
+
+        <dependency name="javax.ws.rs-api" org="jax-rs" rev="2.0" force="true" conf="core"/>
+
         <dependency name="wiseman" org="net.java.wiseman" rev="1.0" force="true" conf="core"/>
 
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
-                
+
+        <dependency name="jersey-wadl-doclet" org="jersey" rev="2.1" force="true" conf="compile->default"/>
+
 	</dependencies>
 </ivy-module>

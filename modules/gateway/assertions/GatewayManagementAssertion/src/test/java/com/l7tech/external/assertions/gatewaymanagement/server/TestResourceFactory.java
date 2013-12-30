@@ -8,10 +8,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * ResourceFactory for testing custom methods
@@ -60,6 +57,10 @@ public class TestResourceFactory implements ResourceFactory<Object> {
         throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "create not supported");
     }
 
+    public Map<String,String> createResource(String id, Object resource) throws InvalidResourceException {
+        throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "create not supported");
+    }
+
     @Override
     public Object getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         throw new ResourceNotFoundException("Resource not found " + selectorMap);
@@ -78,6 +79,11 @@ public class TestResourceFactory implements ResourceFactory<Object> {
 
     @Override
     public Collection<Map<String, String>> getResources() {
+        return null;
+    }
+
+    @Override
+    public List<Object> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
         return null;
     }
 

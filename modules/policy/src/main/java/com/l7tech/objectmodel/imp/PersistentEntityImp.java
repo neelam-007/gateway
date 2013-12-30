@@ -24,6 +24,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     private int version;
     protected final transient long loadTime;
     protected transient boolean locked; // read-only when locked
+    protected transient boolean preserveId;
 
     private static final long serialVersionUID = 5416621649996405984L;
 
@@ -31,6 +32,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         goid = DEFAULT_GOID;
         loadTime = System.currentTimeMillis();
         locked = false;
+        preserveId = false;
     }
 
     protected PersistentEntityImp(final PersistentEntity entity) {
@@ -60,6 +62,16 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     @XmlTransient
     public boolean isUnsaved() {
         return DEFAULT_GOID.equals(goid);
+    }
+
+    @Transient
+    @XmlTransient
+    boolean isPreserveId() {
+        return preserveId;
+    }
+
+    void preserveId() {
+         preserveId = true;
     }
 
     /**

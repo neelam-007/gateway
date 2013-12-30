@@ -38,10 +38,10 @@ public class TrustedCertTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(trustedCertHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependent()).getInternalID()));
-        Assert.assertEquals(EntityType.TRUSTED_CERT, ((DependentEntity) result.getDependent()).getEntityType());
+        Assert.assertEquals(trustedCertOid, new Goid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
+        Assert.assertEquals(EntityType.TRUSTED_CERT, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
-        Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getInternalID());
-        Assert.assertEquals(EntityType.SECURITY_ZONE, ((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityType());
+        Assert.assertEquals(securityZoneGoid.toHexString(), ((DependentEntity) result.getDependencies().get(0).getDependent()).getEntityHeader().getStrId());
+        Assert.assertEquals(EntityType.SECURITY_ZONE, ((DependentEntity) result.getDependencies().get(0).getDependent()).getDependencyType().getEntityType());
     }
 }

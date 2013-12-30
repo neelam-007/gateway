@@ -3,10 +3,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.transport.email.EmailListenerManagerStub;
-import com.l7tech.util.*;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.server.transport.email.EmailListenerManager;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions.UnaryVoidThrows;
+import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +27,7 @@ import static org.junit.Assert.*;
 public class ServerGatewayManagementAssertionTestEmail extends ServerGatewayManagementAssertionTestBase {
 
     private static final String RESOURCE_URI = "http://ns.l7tech.com/2010/04/gateway-management/emailListeners";
-    private EmailListenerManagerStub emailListenerManager;
+    private EmailListenerManager emailListenerManager;
 
     //- PUBLIC
     @Test
@@ -289,15 +291,16 @@ public class ServerGatewayManagementAssertionTestEmail extends ServerGatewayMana
 
     //- PROTECTED
 
-    protected void moreInit() {
+    protected void moreInit() throws SaveException {
         final EmailListener emailListener = new EmailListener(EmailServerType.POP3);
-        emailListener.setGoid(new Goid(0,1));
+        emailListener.setGoid(new Goid(0, 1));
         emailListener.setName("emailListener1");
         emailListener.setHost("host");
         emailListener.setPort(1234);
         emailListener.setUsername("username");
         emailListener.setPassword("password");
-        emailListenerManager = new EmailListenerManagerStub(emailListener);
-        beanFactory.addBean("emailListenerManager",emailListenerManager );
+
+        emailListenerManager = applicationContext.getBean("emailListenerManager", EmailListenerManager.class);
+        emailListenerManager.save(emailListener);
     }
 }

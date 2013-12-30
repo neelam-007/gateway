@@ -54,4 +54,19 @@ public class RbacUtilitiesTest {
         role.setDescription("Not {0} formatted.");
         assertEquals("Not {0} formatted.", RbacUtilities.getDescriptionString(role, false));
     }
+
+    @Test
+    public void fromEntityHeader() {
+        final Goid roleGoid = new Goid(0, 1);
+        final Goid entityGoid = new Goid(1, 2);
+        final RoleEntityHeader header = new RoleEntityHeader(roleGoid, "name", "description", 1, true, entityGoid, EntityType.SERVICE);
+        final Role role = RbacUtilities.fromEntityHeader(header);
+        assertEquals(roleGoid, role.getGoid());
+        assertEquals("name", role.getName());
+        assertEquals("description", role.getDescription());
+        assertEquals(1, role.getVersion());
+        assertTrue(role.isUserCreated());
+        assertEquals(entityGoid, role.getEntityGoid());
+        assertEquals(EntityType.SERVICE, role.getEntityType());
+    }
 }

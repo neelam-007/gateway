@@ -12,7 +12,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataAccessException;
 
 import java.text.MessageFormat;
@@ -34,12 +36,18 @@ public class IdProvConfManagerServer
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(IdProvConfManagerServer.class.getName());
     private RoleManager roleManager;
-
+    private Config config;
     private static final Pattern replaceRoleName =
         Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, IdentityAdmin.ROLE_NAME_TYPE_SUFFIX));
 
+    static final String AUTO_CREATE_ROLE_PROPERTY = "rbac.autoRole.manageProvider.autoCreate";
+
     public void setRoleManager(RoleManager roleManager) {
         this.roleManager = roleManager;
+    }
+
+    public void setConfig(@NotNull final Config config) {
+        this.config = config;
     }
 
     @Override
@@ -109,8 +117,10 @@ public class IdProvConfManagerServer
     }
 
     @Override
-    public void createRoles( final IdentityProviderConfig config ) throws SaveException {
-        addManageProviderRole( config );
+    public void createRoles( final IdentityProviderConfig providerConfig ) throws SaveException {
+        if (config.getBooleanProperty(AUTO_CREATE_ROLE_PROPERTY, true)) {
+            addManageProviderRole( providerConfig );
+        }
     }
 
     @Override

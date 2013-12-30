@@ -4,10 +4,8 @@ package com.l7tech.gateway.common.siteminder;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.Properties;
 
 public class SiteMinderHost implements Serializable {
@@ -47,9 +45,9 @@ public class SiteMinderHost implements Serializable {
 
 
     public SiteMinderHost(String smHostConfPath) throws IOException {
-        try (FileInputStream fis = new FileInputStream(new File(smHostConfPath))) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(smHostConfPath)), Charset.forName("UTF-8")))) {
             Properties prop = new Properties();
-            prop.load(fis);
+            prop.load(reader);
             hostname = getValue(prop, HOST_NAME);
             hostConfigObject = getValue(prop, HOST_CONFIG_OBJECT);
             policyServer = getValue(prop, POLICY_SERVER);

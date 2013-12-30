@@ -30,7 +30,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
     AtomicLong idCount = new AtomicLong(1);
     private String myCustomConnectorScheme = "MyCustomConnectory";
 
-    private Dependency myDependency = new Dependency(new DependentEntity("dependentName", EntityType.ANY, "PublicID", String.valueOf(idCount.getAndIncrement())));
+    private Dependency myDependency = new Dependency(new DependentEntity("dependentName", EntityType.ANY, new EntityHeader(new Goid(0,1),EntityType.ANY, idCount.getAndIncrement()+"",null)));
 
     @Before
     public void before() {
@@ -63,8 +63,8 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
         DependencySearchResults result = dependencyAnalyzer.getDependencies(entityHeader);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(ssgConnectorOid, Long.parseLong(((DependentEntity) result.getDependent()).getInternalID()));
-        Assert.assertEquals(EntityType.SSG_CONNECTOR, ((DependentEntity) result.getDependent()).getEntityType());
+        Assert.assertEquals(ssgConnectorOid, ((DependentEntity) result.getDependent()).getEntityHeader().getGoid().getLow());
+        Assert.assertEquals(EntityType.SSG_CONNECTOR, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(myDependency, result.getDependencies().get(0));
     }

@@ -3,14 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,7 +16,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -95,11 +91,13 @@ public class MyAccountDialog extends JDialog {
 
     private void createUIComponents() {
         final Set<Role> rolesForUser = new HashSet<>();
+        Role defaultRole = null;
         try {
             rolesForUser.addAll(Registry.getDefault().getRbacAdmin().findRolesForUser(user));
+            defaultRole = Registry.getDefault().getRbacAdmin().findDefaultRoleForIdentityProvider(user.getProviderId());
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve roles for user: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-        assignedRolesPanel = new IdentityRoleAssignmentsPanel(user, rolesForUser, true);
+        assignedRolesPanel = new IdentityRoleAssignmentsPanel(user, rolesForUser, defaultRole, true);
     }
 }

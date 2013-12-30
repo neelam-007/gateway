@@ -8,8 +8,10 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -126,16 +128,34 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public List<PublishedService> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return processRevisions(serviceManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties));
+    }
+
+    @Override
     public Integer getVersion(Goid goid) throws FindException {
         return serviceManager.getVersion(goid);
     }
 
     @Override
     public Goid save(PublishedService service) throws SaveException {
+        return performSave(null, service);
+    }
+
+    @Override
+    public void save(Goid id, PublishedService service) throws SaveException {
+        performSave(id, service);
+    }
+
+    private Goid performSave(@Nullable Goid id, PublishedService service) throws SaveException {
         Policy policy = service.getPolicy();
         if (policy != null)
             policy.setVersion(0);
-        Goid goid = serviceManager.save(service);
+        if(id == null) {
+            id = serviceManager.save(service);
+        } else {
+            serviceManager.save(id, service);
+        }
         if ( policy != null ) {
             try {
                 policyVersionManager.checkpointPolicy(policy, true, true);
@@ -143,7 +163,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
                 throw new SaveException("Unable to save policy version when saving service.", ome);
             }
         }
-        return goid;
+        return id;
     }
 
     @Override
@@ -200,7 +220,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
     
-    private Collection<PublishedService> processRevisions( final Collection<PublishedService> services ) throws FindException {
+    private <C extends Collection<PublishedService>> C processRevisions( final C services ) throws FindException {
         if ( services != null ) {
             for ( PublishedService service : services ) {
                 processRevision( service );

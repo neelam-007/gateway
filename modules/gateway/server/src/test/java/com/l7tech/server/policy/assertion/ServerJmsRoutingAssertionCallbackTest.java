@@ -13,6 +13,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsMessageTestUtility;
 import com.l7tech.server.transport.jms.TextMessageStub;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
@@ -85,7 +86,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
         serverAssertion = new ServerJmsRoutingAssertion(assertion, applicationContext);
         // ensure reply is expected
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
-        callback = serverAssertion.new JmsRoutingCallback(policyContext, endpointConfig, new Destination[]{outbound}, new Destination[]{inbound});
+        callback = serverAssertion.new JmsRoutingCallback(policyContext, endpointConfig, new Destination[]{inbound});
         endpoint = new JmsEndpoint();
         endpoint.setOutboundMessageType(JmsOutboundMessageType.ALWAYS_TEXT);
         jmsResponse = new TextMessageStub();
@@ -102,7 +103,8 @@ public class ServerJmsRoutingAssertionCallbackTest{
 
     @Test
     public void callbackSetsJmsHeadersOnResponse() throws JMSException {
-        callback.doWork(connection, session, contextProvider);
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+        callback.doWork(bag, contextProvider);
 
         assertEquals(RoutingStatus.ROUTED, policyContext.getRoutingStatus());
         JmsMessageTestUtility.assertDefaultHeadersPresent(policyContext.getResponse().getJmsKnob());
@@ -111,8 +113,9 @@ public class ServerJmsRoutingAssertionCallbackTest{
     @Test
     public void callbackErrorSettingJmsHeadersOnResponse() throws JMSException {
         jmsResponse.setThrowExceptionForHeaders(true);
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
 
-        callback.doWork(connection, session, contextProvider);
+        callback.doWork(bag, contextProvider);
 
         assertTrue(callback.getException() instanceof JMSException);
     }

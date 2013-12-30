@@ -38,7 +38,7 @@ public class BatchLicenseGenerator {
     private static final int DESCRIPTION_FIELD = 8;         //required
     private static final int ATTRIBUTES_FIELD = 9;
     private static final int FEATURE_LABEL_FIELD = 10;
-    private static final int FEATURE_SET_CODES_FIELD = 11;  //required
+    private static final int FEATURE_SET_CODE_FIELD = 11;  //required
     private static final int NUMBER_FIELD = 12;             //required
     private static final int IDENTIFIER_FIELD = 13;         //required
 
@@ -80,32 +80,24 @@ public class BatchLicenseGenerator {
     }
 
     public List<LicenseDetailsRecord> readLicenseDetailsRecords(String fileName) throws LicenseGeneratorException, IOException {
-        List<LicenseDetailsRecord> licenseDetailsRecords = new LinkedList<LicenseDetailsRecord>();
+        List<LicenseDetailsRecord> licenseDetailsRecords = new LinkedList<>();
 
-        FileReader fReader = new FileReader(fileName);
-        try {
-            BufferedReader bReader = new BufferedReader(fReader);
-            try {
+        try (FileReader fReader = new FileReader(fileName)) {
+            try (BufferedReader bReader = new BufferedReader(fReader)) {
                 final CSVPreference csvPreference = new CSVPreference('"', ',', "\n");
                 final CSVReader csvReader = new CSVReader(bReader, csvPreference);
 
-                int i = 0;
                 List<String> line = csvReader.readRecord(true);
 
                 while (null != line) {
-                    i++;
-
                     LicenseDetailsRecord licenseDetailsRecord = parseRecord(line);
                     licenseDetailsRecords.add(licenseDetailsRecord);
 
                     line = csvReader.readRecord(true);
                 }
-            } finally {
-                bReader.close();
             }
-        } finally {
-            fReader.close();
         }
+
 
         if(licenseDetailsRecords.size() == 0) {
             throw new LicenseGeneratorException("No records in specified file.");
@@ -176,30 +168,23 @@ public class BatchLicenseGenerator {
 
         String identifier = record.get(IDENTIFIER_FIELD);
 
-        if(identifier.isEmpty()) {
+        if (identifier.isEmpty()) {
             throw new LicenseGeneratorException("Identifier is required: " + record.toString());
         }
 
         licenseDetailsRecord.setIdentifier(identifier);
 
-        String featureSetCodes = record.get(FEATURE_SET_CODES_FIELD).trim();
+        String featureSetCode = record.get(FEATURE_SET_CODE_FIELD).trim();
 
-        if(featureSetCodes.isEmpty()) {
-            throw new LicenseGeneratorException("Feature Sets are required: " + record.toString());
+        if (featureSetCode.isEmpty()) {
+            throw new LicenseGeneratorException("Feature Set is required: " + record.toString());
         }
 
-        ArrayList<String> featureSets = new ArrayList<String>();
+        licenseDetailsRecord.setFeatureSetCode(featureSetCode);
+        licenseDetailsRecord.setFeatureSets(getFeatureSets(featureSetCode));
+        licenseDetailsRecord.setAttributes(new HashSet<>(Arrays.asList(record.get(ATTRIBUTES_FIELD).split(","))));
 
-        if(!featureSetCodes.isEmpty()) {
-            for(String featureSetCode : featureSetCodes.split(",")) {
-                featureSets.add(getFeatureSet(featureSetCode.trim()));
-            }
-        }
-
-        licenseDetailsRecord.setFeatureSets(featureSets);
-        licenseDetailsRecord.setAttributes(new HashSet<String>(Arrays.asList(record.get(ATTRIBUTES_FIELD).split(","))));
-
-        int number = 0;
+        int number;
 
         try {
             number = Integer.parseInt(record.get(NUMBER_FIELD));
@@ -222,7 +207,7 @@ public class BatchLicenseGenerator {
 
         int licenseCount = licenseDetails.getNumber();
 
-        Map<String,Document> licenses = new HashMap<String,Document>(licenseCount);
+        Map<String,Document> licenses = new HashMap<>(licenseCount);
 
         LicenseSpec spec = new LicenseSpec();
         spec.setLicenseeName(licenseDetails.getLicensee());
@@ -239,14 +224,15 @@ public class BatchLicenseGenerator {
         spec.setFeatureLabel(licenseDetails.getFeatureLabel());
         spec.setEulaText(eula);
 
-        for(String feature : licenseDetails.getFeatureSets()) {
-            spec.addRootFeature(feature);
+        for (String featureSet : licenseDetails.getFeatureSets()) {
+            spec.addRootFeature(featureSet);
         }
 
         for(int j = 0; j < licenseCount; j++) {
             spec.setLicenseId(LicenseGenerator.generateRandomId(RANDOM));
             Document license = LicenseGenerator.generateUnsignedLicense(spec, true);
-            licenses.put(generateLicenseName(spec, licenseDetails.getProductCode()), license);
+            licenses.put(generateLicenseName(spec,
+                    licenseDetails.getProductCode(), licenseDetails.getFeatureSetCode()), license);
         }
 
         return licenses;
@@ -254,7 +240,7 @@ public class BatchLicenseGenerator {
 
     public Map<String,Document> signLicenses(Map<String,Document> unsignedLicenses)
             throws LicenseGeneratorException, IOException, GeneralSecurityException {
-        Map<String,Document> signedLicenses = new HashMap<String,Document>(unsignedLicenses.size());
+        Map<String,Document> signedLicenses = new HashMap<>(unsignedLicenses.size());
 
         for(String licenseName : unsignedLicenses.keySet()) {
             Document unsignedLicense = unsignedLicenses.get(licenseName);
@@ -265,7 +251,7 @@ public class BatchLicenseGenerator {
         return signedLicenses;
     }
 
-    private static String generateLicenseName(LicenseSpec spec, String productCode) {
+    private static String generateLicenseName(LicenseSpec spec, String productCode, String featureSetCode) {
         StringBuilder nameBuilder = new StringBuilder();
 
         nameBuilder.append(spec.getLicenseeName());
@@ -273,6 +259,8 @@ public class BatchLicenseGenerator {
         nameBuilder.append(spec.getLicenseId());
         nameBuilder.append(DASH_SEPARATOR);
         nameBuilder.append(productCode);
+        nameBuilder.append(DASH_SEPARATOR);
+        nameBuilder.append(featureSetCode);
 
         if(!spec.getVersionMajor().isEmpty()) {
             nameBuilder.append(DASH_SEPARATOR);
@@ -299,14 +287,22 @@ public class BatchLicenseGenerator {
         return productName;
     }
 
-    private String getFeatureSet(String featureSetCode) throws LicenseGeneratorException {
-        String featureSetName = FEATURE_SETS.get(featureSetCode);
+    private List<String> getFeatureSets(String featureSetCode) throws LicenseGeneratorException {
+        String featureSets = FEATURE_SETS.get(featureSetCode);
 
-        if(null == featureSetName || !LicenseGeneratorFeatureSets.getProductProfiles().containsKey(featureSetName)) {
-            throw new LicenseGeneratorException("Unrecognized feature set \"" + featureSetCode + "\".");
+        if(null == featureSets) {
+            throw new LicenseGeneratorException("Unrecognized feature set code \"" + featureSetCode + "\".");
         }
 
-        return featureSetName;
+        List<String> featureSetList = Arrays.asList(featureSets.split(","));
+
+        for (String featureSetName : featureSetList) {
+            if(!LicenseGeneratorFeatureSets.getProductProfiles().containsKey(featureSetName)) {
+                throw new LicenseGeneratorException("Unrecognized feature set name \"" + featureSetName + "\".");
+            }
+        }
+
+        return featureSetList;
     }
 
     private Calendar getExpirationDate(String duration) {
@@ -346,6 +342,7 @@ public class BatchLicenseGenerator {
         private String ipAddress;
         private String product;
         private String productCode;
+        private String featureSetCode;
         private String majorVersion;
         private String minorVersion;
         private String featureLabel;
@@ -353,7 +350,7 @@ public class BatchLicenseGenerator {
         private String identifier;
 
         private Date expiryDate;
-        private ArrayList<String> featureSets;
+        private List<String> featureSets;
         private HashSet<String> attributes;
 
         public int getNumber() {
@@ -460,12 +457,20 @@ public class BatchLicenseGenerator {
             this.expiryDate = expiryDate;
         }
 
-        public ArrayList<String> getFeatureSets() {
+        public List<String> getFeatureSets() {
             return featureSets;
         }
 
-        public void setFeatureSets(ArrayList<String> featureSets) {
+        public void setFeatureSets(List<String> featureSets) {
             this.featureSets = featureSets;
+        }
+
+        public String getFeatureSetCode() {
+            return featureSetCode;
+        }
+
+        public void setFeatureSetCode(String featureSetCode) {
+            this.featureSetCode = featureSetCode;
         }
 
         public HashSet<String> getAttributes() {

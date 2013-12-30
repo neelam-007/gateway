@@ -79,60 +79,72 @@ public class SecurityProviderImpl extends SecurityProvider
      * If successful, those credentials will be cached for future admin ws calls.
      */
     @Override
-    public void login(PasswordAuthentication creds, String host, boolean validate, String newPassword)
-            throws LoginException, VersionException, InvalidPasswordException {
-        boolean authenticated = false;
+    public void login(final PasswordAuthentication creds, final String host, boolean validate, final String newPassword)
+        throws LoginException, VersionException, InvalidPasswordException {
+        final boolean[] authenticated = {false};
         serverCertificateChain = null;
         resetCredentials();
 
-        ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
+        final ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
+
         try {
-            setPermissiveSslTrustHandler(host, validate);
-            Pair<String, Integer> hostAndPort = getHostAndPort(host);
-            chire.setSession( hostAndPort.left, hostAndPort.right, null );
-            AdminLogin adminLogin = getAdminLoginRemoteReference();
+            final Pair<String, Integer> hostAndPort = getHostAndPort(host);
+            doWithPermissiveSslTrustHandler(host, validate, new Functions.NullaryThrows<Object, Exception>() {
+                @Override
+                public Object call() throws Exception {
+                    return chire.doWithSession( hostAndPort.left, hostAndPort.right, null, new Functions.NullaryThrows<Object, Exception>() {
+                        @Override
+                        public Object call() throws Exception {
 
-            // dummy call, just to establish SSL connection (if none)
-            adminLogin.getServerCertificateVerificationInfo("dummyInvocation", new byte[] {(byte) 1} );
-            if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
-            // check cert if new
-            X509Certificate serverCertificate;
-            if(serverCertificateChain != null) {
-                serverCertificate = serverCertificateChain[0];
-                certsByHost.put(host, serverCertificate);
-            }
-            else {
-                serverCertificate = certsByHost.get(host);
-            }
+                            AdminLogin adminLogin = getAdminLoginRemoteReference();
 
-            if (serverCertificate != null) {
-                validateServer(creds, serverCertificate, adminLogin, host);
-                importCertificate(serverCertificate);
-                certsByHost.values().remove(serverCertificate);
-            }
+                            // dummy call, just to establish SSL connection (if none)
+                            adminLogin.getServerCertificateVerificationInfo("dummyInvocation", new byte[] {(byte) 1} );
+                            if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
-            AdminLoginResult result;
-            //determine the type of logon process should be performed
-            if (newPassword == null) {
-                //proceed with normal logon process
-                result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
-            } else {
-                //proceed with password change and then logon process
-                result = adminLogin.loginWithPasswordUpdate(creds.getUserName(), new String(creds.getPassword()), newPassword);
-            }
+                            // check cert if new
+                            X509Certificate serverCertificate;
+                            if(serverCertificateChain != null) {
+                                serverCertificate = serverCertificateChain[0];
+                                certsByHost.put(host, serverCertificate);
+                            }
+                            else {
+                                serverCertificate = certsByHost.get(host);
+                            }
 
-            // Update the principal with the actual internal user
+                            if (serverCertificate != null) {
+                                validateServer(creds, serverCertificate, adminLogin, host);
+                                importCertificate(serverCertificate);
+                                certsByHost.values().remove(serverCertificate);
+                            }
 
-            String remoteVersion = checkRemoteProtocolVersion(result);
-            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+                            AdminLoginResult result;
+                            //determine the type of logon process should be performed
+                            if (newPassword == null) {
+                                //proceed with normal logon process
+                                result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+                            } else {
+                                //proceed with password change and then logon process
+                                result = adminLogin.loginWithPasswordUpdate(creds.getUserName(), new String(creds.getPassword()), newPassword);
+                            }
 
-            authenticated = true;
+                            // Update the principal with the actual internal user
 
-            User user = result.getUser();
-            String sessionCookie = result.getSessionCookie();
-            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
-            TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+                            String remoteVersion = checkRemoteProtocolVersion(result);
+                            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+
+                            authenticated[0] = true;
+
+                            User user = result.getUser();
+                            String sessionCookie = result.getSessionCookie();
+                            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
+                            TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+                            return null;
+                        }
+                    });
+                }
+            });
         }
         catch( AccessControlException ace ) {
             throw new LoginException( ExceptionUtils.getMessage(ace) );
@@ -149,13 +161,14 @@ public class SecurityProviderImpl extends SecurityProvider
         }
         catch(MalformedURLException murle) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(murle);
-        }
-        finally {
-            resetSslTrustHandler();
-            if (!authenticated) {
+        } catch ( Exception e ) {
+            final String msg = "login failed: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, e);
+            throw (LoginException) new LoginException(msg).initCause(e);
+        } finally {
+            if (!authenticated[0]) {
                 resetCredentials();
             }
-            chire.setSession( null, -1, null );
         }
     }
 
@@ -178,39 +191,45 @@ public class SecurityProviderImpl extends SecurityProvider
 
     // Called by the Applet to connect to the server
     @Override
-    public void login(String sessionId, String host)
+    public void login(final String sessionId, final String host)
             throws LoginException, VersionException {
-        boolean authenticated = false;
+        final boolean[] authenticated = {false};
 
         ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
         final AdminLogin adminLogin;
+
         try {
             adminLogin = getAdminLoginRemoteReference();
+            final Pair<String, Integer> hostAndPort = getHostAndPort(host);
+            chire.doWithSession(hostAndPort.left, hostAndPort.right, null, new Functions.NullaryThrows<Object, Exception>() {
+                @Override
+                public Object call() throws Exception {
+                    AdminLoginResult result = adminLogin.resume(sessionId);
 
-            Pair<String, Integer> hostAndPort = getHostAndPort(host);
-            chire.setSession( hostAndPort.left, hostAndPort.right, null );
-            AdminLoginResult result = adminLogin.resume(sessionId);
+                    String remoteVersion = checkRemoteProtocolVersion(result);
+                    String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
 
-            String remoteVersion = checkRemoteProtocolVersion(result);
-            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+                    authenticated[0] = true;
 
-            authenticated = true;
-
-            User user = result.getUser();
-            String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
-            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
-            TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+                    User user = result.getUser();
+                    String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
+                    setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
+                    TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+                    return null;
+                }
+            });
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
-        } catch (AuthenticationException e) {
+        } catch (AuthenticationException | SecurityException e) {
             throw (LoginException) new LoginException("Session invalid or has lost admin permissions").initCause(e);
-        } catch (SecurityException e) {
-            throw (LoginException) new LoginException("Session invalid or has lost admin permissions").initCause(e);
+        } catch (Exception e) {
+            final String msg = "login failed: " + ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, msg, e);
+            throw (LoginException) new LoginException(msg).initCause(e);
         } finally {
-            if (!authenticated) {
+            if (!authenticated[0]) {
                 resetCredentials();
             }
-            chire.setSession( null, -1, null );
         }
     }
 
@@ -278,8 +297,13 @@ public class SecurityProviderImpl extends SecurityProvider
                         ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
                         try {
                             Pair<String, Integer> hostAndPort = getHostAndPort(host);
-                            chire.setSession( hostAndPort.left, hostAndPort.right, cookie );
-                            adminLogin.logout();
+                            chire.doWithSession( hostAndPort.left, hostAndPort.right, cookie, new Functions.NullaryThrows<Object, RuntimeException>() {
+                                @Override
+                                public Object call() throws RuntimeException {
+                                    adminLogin.logout();
+                                    return null;
+                                }
+                            });
                         } catch (RuntimeException e) {
                             String msg = "Error logging out admin session";
 
@@ -299,8 +323,6 @@ public class SecurityProviderImpl extends SecurityProvider
                             {
                                 logger.log(Level.WARNING, msg + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));                                
                             }
-                        } finally {
-                            chire.setSession( null, -1, null );
                         }
                     }
                 }).start();
@@ -362,14 +384,16 @@ public class SecurityProviderImpl extends SecurityProvider
      * Initialize the SSL logic around login. This registers the trust failure handler
      * that will be invoked if the server cert is not yet present.
      */
-    private void setPermissiveSslTrustHandler(String host, boolean validate) {
-        hostBuffer.setLength(0);
-        if(validate) hostBuffer.append(getHostAndPort(host).left);
-        getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(permissiveSSLTrustFailureHandler);
-    }
-
-    private void resetSslTrustHandler() {
-        getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(null);
+    private <R,E extends Throwable> R doWithPermissiveSslTrustHandler(String host, boolean validate, Functions.NullaryThrows<R,E> block) throws E {
+        final String oldHostBuffer = hostBuffer.toString();
+        try {
+            hostBuffer.setLength(0);
+            if(validate) hostBuffer.append(getHostAndPort(host).left);
+            return getConfigurableHttpInvokerRequestExecutor().doWithTrustFailureHandler(permissiveSSLTrustFailureHandler, block);
+        } finally {
+            hostBuffer.setLength(0);
+            hostBuffer.append(oldHostBuffer);
+        }
     }
 
     /**

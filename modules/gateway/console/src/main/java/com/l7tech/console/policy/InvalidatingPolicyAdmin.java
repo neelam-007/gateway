@@ -130,6 +130,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     @Override
+    public PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException {
+        return delegate.findPolicyVersionForPolicy(policyGoid, versionOrdinal);
+    }
+
+    @Override
     public void clearActivePolicyVersion( Goid policyGoid ) throws FindException, UpdateException {
         delegate.clearActivePolicyVersion( policyGoid );
         fireEntityUpdate( policyGoid );

@@ -13,8 +13,13 @@ import java.util.List;
  */
 public interface BundleResolver {
 
-    public enum BundleItem{
-        FOLDER("Folder.xml"), POLICY("Policy.xml"), SERVICE("Service.xml"), CERTIFICATE("TrustedCertificate.xml"), ASSERTION("Assertion.xml");
+    public enum BundleItem {
+        ASSERTION("Assertion.xml"),
+        CERTIFICATE("TrustedCertificate.xml"),
+        ENCAPSULATED_ASSERTION("EncapsulatedAssertion.xml"),
+        FOLDER("Folder.xml"),
+        POLICY("Policy.xml"),
+        SERVICE("Service.xml");
 
         private BundleItem(String fileName) {
             this.fileName = fileName;
@@ -45,6 +50,12 @@ public interface BundleResolver {
     @Nullable
     Document getBundleItem(@NotNull final String bundleId, @NotNull final BundleItem bundleItem, final boolean allowMissing)
             throws UnknownBundleException, BundleResolverException, InvalidBundleException;
+
+    /**
+     * Set the installation prefix.
+     * @param installationPrefix installation prefix
+     */
+    public void setInstallationPrefix(@Nullable String installationPrefix);
 
     public static class UnknownBundleException extends Exception{
         public UnknownBundleException(String message) {

@@ -1,7 +1,9 @@
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.server.transport.jms2.asynch.JmsTask;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.server.LifecycleException;
@@ -14,6 +16,8 @@ import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -32,9 +36,10 @@ import java.util.logging.Logger;
  *
  * @author: vchan
  */
-public abstract class AbstractJmsEndpointListener implements JmsEndpointListener, MessageListener {
+public abstract class AbstractJmsEndpointListener implements JmsEndpointListener {
 
     private final Logger _logger;
+    protected static final int DEFAULT_RECEIVER = 25;
 
     protected static final String PROPERTY_ERROR_SLEEP = "ioJmsErrorSleep";
     protected static final String PROPERTY_MAX_SIZE = "ioJmsMessageMaxBytes";
@@ -63,7 +68,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     // Runtime stuff
     protected final Object sync = new Object();
     protected JmsBag _jmsBag;
-    protected MessageConsumer _consumer;
+    protected List<JmsBag> receivers = new ArrayList<JmsBag>();
     private Destination _destination;
     private Queue _failureQueue;
     private boolean _stop;
@@ -85,6 +90,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         // create the ListenerThread
         this._listener = new ListenerThread();
         resourceManager = _endpointCfg.getApplicationContext().getBean("jmsResourceManager", JmsResourceManager.class);
+
     }
 
     /**
@@ -108,48 +114,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         }
 
         return bag;
-    }
-
-    /**
-     * Return a consumer that can read messages on the inbound Jms destination.
-     *
-     * @return JMS MessageConsumer for the inbound destination
-     */
-    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
-        synchronized(sync) {
-            if ( _consumer == null ) {
-                _logger.finest( "Getting new MessageConsumer" );
-                boolean ok = false;
-                String message = null;
-                try {
-                    final JmsBag bag = getJmsBag();
-                    final Session session = bag.getSession();
-                    final Destination destination = getDestination();
-                    _consumer = JmsUtil.createMessageConsumer( session, destination );
-                    ok = true;
-                } catch (JMSException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (NamingException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (JmsConfigException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (RuntimeException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (JmsRuntimeException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } finally {
-                    if (!ok) {
-                        fireConnectError(message);
-                    }
-                }
-            }
-            return _consumer;
-        }
     }
 
     protected Destination getDestination() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
@@ -304,14 +268,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      */
     protected void cleanup() {
         // close the consumer
-        if ( _consumer != null ) {
-            try {
-                _consumer.close();
-            } catch ( JMSException e ) {
-                _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
-            }
-            _consumer = null;
-        }
 
         _destination = null;
 
@@ -323,6 +279,9 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             try {
                 // return the jms bag
                 resourceManager.returnJmsBag(_jmsBag);
+                for (JmsBag jmsBag: receivers) {
+                    resourceManager.returnJmsBag(jmsBag);
+                }
             } catch (JmsRuntimeException e) {
                 handleCleanupError("Return Jms Session", e);
             }
@@ -350,37 +309,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             return _stop;
         }
     }
-
-    /**
-     * Listens on the inbound jms queue for a request message.  If a message is present,
-     * it is returned immediately to the caller.  Otherwise, the method will block on the
-     * QueueReceiver.receive() call until the timeout period elapses and returns null.
-     *
-     * @return the request message if one exists on the queue, or null upon timeout
-     * @throws JMSException
-     * @throws NamingException
-     * @throws JmsConfigException
-     */
-    private Message receiveMessage() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
-        MessageConsumer receiver = getConsumer();
-        ensureConnectionStarted();
-
-        Message message = receiver.receive( RECEIVE_TIMEOUT );
-        if (message == null) {
-            //Receive Timeout, keep the cached connection active.
-            resourceManager.touch(_jmsBag);
-        }
-        return message;
-    }
-
-    /**
-     * Perform the processing on a Jms message.  This is the point where an implementation
-     * of the JmsEndpointListener would work in a synchronous / asynchronous manner.
-     *
-     * @param dequeueMessage the message to process
-     * @throws JmsRuntimeException error encountered while processing the jms message
-     */
-    protected abstract void handleMessage(Message dequeueMessage) throws JmsRuntimeException;
 
     public JmsEndpointConfig getEndpointConfig() {
         return this._endpointCfg;
@@ -478,6 +406,23 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             _thread.setDaemon(true);
         }
 
+        private void  createReceiver() throws NamingException, JmsRuntimeException, JMSException, JmsConfigException {
+            int noOfReveiver = DEFAULT_RECEIVER;
+            String consumers = _endpointCfg.getConnection().properties().getProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE);
+            if (consumers != null) {
+                noOfReveiver = Integer.parseInt(consumers);
+            }
+            if (noOfReveiver <1) {
+                noOfReveiver = DEFAULT_RECEIVER;
+            }
+
+            for (int i = 0; i < noOfReveiver; i++) {
+                JmsBag jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
+                jmsBag.getMessageConsumer().setMessageListener(new JmsTask(_endpointCfg, jmsBag ));
+                receivers.add(jmsBag);
+            }
+        }
+
         /**
          *
          */
@@ -494,26 +439,24 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
 
                         if (_endpointCfg.getEndpoint().isQueue()) {
                             //Process Queue
-                            jmsMessage = receiveMessage();
 
-                            log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG,
-                                new Object[]{identify(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
-
-                            if ( jmsMessage != null && !isStop() ) {
-
+                            if (_jmsBag == null) {
+                                //The main JmsBag is only for jndi lookup
+                                _jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
+                                _jmsBag.closeSession();
+                                createReceiver();
                                 oopses[0] = 0;
-
-                                // process on the message
-                                handleMessage(jmsMessage);
-
+                            } else {
+                                Thread.sleep(RECEIVE_TIMEOUT);
                             }
+
                         } else {
                             //Process Topic
-                            if (_consumer == null) {
-                                getConsumer();
+                            if (_jmsBag == null) {
+                                _jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
                                 ensureConnectionStarted();
-                                _consumer.setMessageListener(AbstractJmsEndpointListener.this);
-                                getJmsBag().getConnection().setExceptionListener(new ExceptionListener() {
+                                _jmsBag.getMessageConsumer().setMessageListener(new JmsTask(_endpointCfg, _jmsBag ));
+                                _jmsBag.getConnection().setExceptionListener(new ExceptionListener() {
                                     @Override
                                     public void onException(JMSException e) {
                                         handleError(e, oopses);

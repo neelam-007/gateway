@@ -330,9 +330,9 @@ public class JmsEndpointConfig {
 
             final JmsEndpointKey that = (JmsEndpointKey) o;
 
-            if ( jmsConnectionGoid != that.jmsConnectionGoid) return false;
+            if ( jmsConnectionGoid != null ? !jmsConnectionGoid.equals( that.jmsConnectionGoid ) : that.jmsConnectionGoid != null ) return false;
             if ( jmsConnectionVersion != that.jmsConnectionVersion ) return false;
-            if ( jmsEndpointGoid != that.jmsEndpointGoid) return false;
+            if ( jmsEndpointGoid != null ? !jmsEndpointGoid.equals( that.jmsEndpointGoid ) : that.jmsEndpointGoid != null ) return false;
             if ( jmsEndpointVersion != that.jmsEndpointVersion ) return false;
             if ( destinationQueue != null ? !destinationQueue.equals( that.destinationQueue ) : that.destinationQueue != null )
                 return false;

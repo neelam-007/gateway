@@ -223,6 +223,19 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return found.iterator().next();
     }
 
+    @Override
+    public PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("policyGoid", policyGoid);
+        map.put("ordinal", versionOrdinal);
+        List<PolicyVersion> found = findMatching(Collections.singletonList(map));
+        if (found == null || found.isEmpty())
+            return null;
+        if (found.size() > 1)
+            throw new FindException("Found more than one PolicyVersion with policy_goid=" + policyGoid + " and ordinal=" + versionOrdinal); // can't happen
+        return found.iterator().next();
+    }
+
     private static PolicyVersion snapshot( Policy policy, AdminInfo adminInfo, boolean activated, boolean newEntity) {
         Goid policyGoid = policy.getGoid();
         PolicyVersion ver = new PolicyVersion();

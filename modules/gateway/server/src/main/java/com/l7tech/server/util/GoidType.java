@@ -58,7 +58,14 @@ public class GoidType implements UserType {
     @Override
     public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
         if (value != null) {
-            Goid goid = (Goid) value;
+            final Goid goid;
+            if (value instanceof Goid) {
+                goid = (Goid) value;
+            } else if (value instanceof String) {
+                goid = Goid.parseGoid((String) value);
+            } else {
+                throw new IllegalArgumentException("Invalid Id type. Must be either Goid or String. Given: " + value.getClass().getName());
+            }
             byte[] data = goid.getBytes();
             preparedStatement.setBytes(index, data);
         }

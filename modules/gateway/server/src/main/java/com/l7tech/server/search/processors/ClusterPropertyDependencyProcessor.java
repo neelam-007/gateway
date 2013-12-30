@@ -2,6 +2,7 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
 
@@ -13,6 +14,6 @@ import com.l7tech.server.search.objects.DependentObject;
 public class ClusterPropertyDependencyProcessor extends GenericDependencyProcessor<ClusterProperty> {
     @Override
     public DependentObject createDependentObject(ClusterProperty clusterProperty) {
-        return new DependentEntity(clusterProperty.getName(), EntityType.CLUSTER_PROPERTY, clusterProperty.getName(), clusterProperty.getId());
+        return new DependentEntity(clusterProperty.getName(), EntityType.CLUSTER_PROPERTY, EntityHeaderUtils.fromEntity(clusterProperty));
     }
 }

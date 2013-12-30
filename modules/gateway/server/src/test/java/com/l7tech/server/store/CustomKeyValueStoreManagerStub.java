@@ -5,15 +5,16 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.CustomKeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
+
+    private final Map<String, Set<KeyValueStoreChangeEventListener>> listeners = new HashMap<>();
 
     public CustomKeyValueStoreManagerStub(CustomKeyValueStore... customKeyValueStoresIn) {
         super(customKeyValueStoresIn);
@@ -43,6 +44,25 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
             }
         } catch (FindException e) {
             throw new DeleteException("Unable to delete using key: " + key, e);
+        }
+    }
+
+    @Override
+    public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
+        if (keyPrefixListeners == null) {
+            keyPrefixListeners = new HashSet<>();
+            listeners.put(keyPrefix, keyPrefixListeners);
+        }
+
+        keyPrefixListeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
+        if (keyPrefixListeners != null) {
+            keyPrefixListeners.remove(listener);
         }
     }
 

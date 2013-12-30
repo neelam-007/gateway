@@ -72,7 +72,7 @@ public class HomePagePanel extends JPanel {
         rebuildToolbar();
     }
 
-    private void rebuildToolbar() {
+    protected void rebuildToolbar() {
         toolbarPanel.removeAll();
         toolbarPanel.setLayout(new BorderLayout());
         toolbarPanel.add(getToolbar(), BorderLayout.CENTER);

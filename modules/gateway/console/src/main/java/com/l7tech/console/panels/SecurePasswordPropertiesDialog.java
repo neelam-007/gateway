@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -191,6 +192,12 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     }
                 }
                 doConfirm();
+            }
+        });
+        inputValidator.constrainTextFieldToBeNonEmpty("name", nameField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return VariableMetadata.validateName(nameField.getText());
             }
         });
         inputValidator.constrainTextField(confirmPasswordField, new InputValidator.ValidationRule() {

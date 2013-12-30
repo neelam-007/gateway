@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
+import com.l7tech.util.Functions;
+
 import java.util.Collection;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -61,19 +63,17 @@ public class RemotingContext {
         return createInstance( remoteInterfaceClass, targetObject );
     }
 
-    protected Object doRemoteInvocation( Object targetObject, Method method, Object[] args ) throws Throwable {
-        Object result = null;
-
-        configurableInvoker.setSession( host, port, sessionId );
+    protected Object doRemoteInvocation( final Object targetObject, final Method method, final Object[] args ) throws Throwable {
         try {
-            result = method.invoke( targetObject, args );
+            return configurableInvoker.doWithSession(host, port, sessionId,  new Functions.NullaryThrows<Object, Throwable>() {
+                @Override
+                public Object call() throws Throwable {
+                    return method.invoke( targetObject, args );
+                }
+            });
         } catch ( InvocationTargetException ite ) {
             throw ite.getCause();
-        } finally {
-            configurableInvoker.setSession( null, -1, null );
         }
-
-        return result;
     }
 
     //- PRIVATE

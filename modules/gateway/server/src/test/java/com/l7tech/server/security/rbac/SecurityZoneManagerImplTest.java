@@ -3,7 +3,10 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,6 +14,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Properties;
 import java.util.Set;
 
 import static com.l7tech.server.security.rbac.SecurityZoneManagerImpl.MAX_CHAR_ZONE_NAME;
@@ -28,18 +32,24 @@ public class SecurityZoneManagerImplTest {
     private FolderManager folderManager;
     private SecurityZone zone;
     private Folder rootFolder;
+    private Properties properties;
 
     @Before
     public void setup() throws Exception {
         manager = new SecurityZoneManagerImpl();
-        manager.setRoleManager(roleManager);
-        manager.setFolderManager(folderManager);
         zone = new SecurityZone();
         zone.setName("Test");
-        zone.setGoid(new Goid(0,1234L));
+        zone.setGoid(new Goid(0, 1234L));
         rootFolder = new Folder("RootFolder", null);
-        rootFolder.setGoid(new Goid(0,1111L));
+        rootFolder.setGoid(new Goid(0, 1111L));
         when(folderManager.findRootFolder()).thenReturn(rootFolder);
+        properties = new Properties();
+        ApplicationContexts.inject(manager,
+                CollectionUtils.MapBuilder.<String, Object>builder()
+                        .put("roleManager", roleManager)
+                        .put("folderManager", folderManager)
+                        .put("config", new MockConfig(properties))
+                        .map(), false);
     }
 
     @Test
@@ -59,6 +69,28 @@ public class SecurityZoneManagerImplTest {
     public void createRolesCannotSaveRoles() throws Exception {
         when(roleManager.save(any(Role.class))).thenThrow(new SaveException("mocking exception"));
         manager.createRoles(zone);
+    }
+
+    @Test
+    public void createRolesSkipped() throws Exception {
+        properties.setProperty(SecurityZoneManagerImpl.AUTO_CREATE_VIEW_ROLE_PROPERTY, "false");
+        properties.setProperty(SecurityZoneManagerImpl.AUTO_CREATE_MANAGE_ROLE_PROPERTY, "false");
+        manager.createRoles(zone);
+        verify(roleManager, never()).save(any(Role.class));
+    }
+
+    @Test
+    public void createRolesViewRoleSkipped() throws Exception {
+        properties.setProperty(SecurityZoneManagerImpl.AUTO_CREATE_VIEW_ROLE_PROPERTY, "false");
+        manager.createRoles(zone);
+        verify(roleManager).save(argThat(isManageZoneRole("Test")));
+    }
+
+    @Test
+    public void createRolesManageRoleSkipped() throws Exception {
+        properties.setProperty(SecurityZoneManagerImpl.AUTO_CREATE_MANAGE_ROLE_PROPERTY, "false");
+        manager.createRoles(zone);
+        verify(roleManager).save(argThat(isReadZoneRole("Test")));
     }
 
     @Test
@@ -146,7 +178,7 @@ public class SecurityZoneManagerImplTest {
             String roleType = readOnly ? "View" : "Manage";
             if (o != null) {
                 final Role role = (Role) o;
-                if (role.getName().equals(roleType + " " + expectedZoneName + " Zone (#"+new Goid(0,1234L).toHexString()+")")
+                if (role.getName().equals(roleType + " " + expectedZoneName + " Zone (#" + new Goid(0, 1234L).toHexString() + ")")
                         && role.getEntityType() == EntityType.SECURITY_ZONE
                         && role.getEntityGoid().equals(zone.getGoid())
                         // common permissions

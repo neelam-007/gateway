@@ -82,14 +82,14 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 try {
                     final Object value = context.getVariable(variableName);
                     if (!(value instanceof Message)) {
-                        // Should never happen.
-                        throw new RuntimeException("XML message source (\"" + variableName +
-                                "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + value.getClass() + ").");
+                        final String msg = "context variable of wrong type (expected=" + Message.class.getSimpleName() + ", actual=" + value.getClass().getSimpleName() + ")";
+                        logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, variableName, msg);
+                        return AssertionStatus.SERVER_ERROR;
                     }
                     message = (Message) value;
                 } catch (NoSuchVariableException e) {
-                    // Should never happen.
-                    throw new RuntimeException("XML message source is a non-existent context variable (\"" + variableName + "\").");
+                    logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, variableName);
+                    return AssertionStatus.SERVER_ERROR;
                 }
             }
         }

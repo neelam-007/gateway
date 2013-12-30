@@ -5,13 +5,17 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -36,8 +40,7 @@ public class BundleUtilsTest {
         final BundleInfo bundleInfo = new BundleInfo("not used - test is hardcoded", "Test version", "Test", "Test Desc");
         BundleUtils.findReferences(bundleInfo, new BundleResolver() {
             @Override
-            public Document getBundleItem(@NotNull String bundleId, @NotNull BundleItem bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException {
-
+            public Document getBundleItem(@NotNull String bundleId, @NotNull BundleItem bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException, InvalidBundleException {
                 final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/Bundle1/Service.xml");
                 try {
                     final byte[] bytes = IOUtils.slurpUrl(resourceUrl);
@@ -52,6 +55,11 @@ public class BundleUtilsTest {
             public List<BundleInfo> getResultList() {
                 return Collections.emptyList();
             }
+
+            @Override
+            public void setInstallationPrefix(@Nullable String installationPrefix) {
+                // do nothing
+            }
         });
 
         final Set<String> jdbcConns = bundleInfo.getJdbcConnectionReferences();
@@ -60,7 +68,7 @@ public class BundleUtilsTest {
             System.out.println(s);
         }
 
-        final List<String> strings = new ArrayList<String>(jdbcConns);
+        final List<String> strings = new ArrayList<>(jdbcConns);
         assertTrue(strings.size() == 1);
         assertEquals("Unexpected JDBC Connection found", "OAuth", strings.get(0));
     }

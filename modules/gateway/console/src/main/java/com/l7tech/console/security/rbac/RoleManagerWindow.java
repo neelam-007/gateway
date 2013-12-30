@@ -231,13 +231,23 @@ public class RoleManagerWindow extends JDialog {
     }
 
     private void handleTableChange(@Nullable final Role selectedRole) {
-        propertiesPanel.configure(selectedRole, selectedRole == null ? null : getNameForRole(selectedRole));
+        Role role = selectedRole;
+        if (role != null) {
+            try {
+                // load full role with permissions and attached entity
+                role = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(selectedRole.getGoid());
+                attachPredicateEntities(role);
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+        propertiesPanel.configure(role, role == null ? null : getNameForRole(role));
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        final boolean canUpdate = securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, selectedRole));
-        assignmentsPanel.configure(selectedRole, !canUpdate);
-        editButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() && canUpdate);
-        removeButton.setEnabled(selectedRole != null && selectedRole.isUserCreated() &&
-                securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.RBAC_ROLE, selectedRole)));
+        final boolean canUpdate = securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role));
+        assignmentsPanel.configure(role, !canUpdate);
+        editButton.setEnabled(role != null && role.isUserCreated() && canUpdate);
+        removeButton.setEnabled(role != null && role.isUserCreated() &&
+                securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.RBAC_ROLE, role)));
         filterPanel.allowFiltering(rolesTableModel.getRowCount() > 0);
         loadCount();
     }
@@ -277,7 +287,13 @@ public class RoleManagerWindow extends JDialog {
 
     private void loadTable() {
         try {
-            final ArrayList<Role> roles = new ArrayList<>(Registry.getDefault().getRbacAdmin().findAllRoles());
+            final ArrayList<Role> roles = new ArrayList<>();
+            final Collection<EntityHeader> roleHeaders = Registry.getDefault().getRbacAdmin().findAllRoleHeaders();
+            for (final EntityHeader header : roleHeaders) {
+                if (header instanceof RoleEntityHeader) {
+                    roles.add(RbacUtilities.fromEntityHeader((RoleEntityHeader) header));
+                }
+            }
             Collections.sort(roles, new NamedEntityComparator());
             rolesTableModel.setRows(roles);
         } catch (final FindException e) {
@@ -294,5 +310,22 @@ public class RoleManagerWindow extends JDialog {
             selected = rolesTableModel.getRowObject(modelIndex);
         }
         return selected;
+    }
+
+    private void attachPredicateEntities(final Role role) {
+        for (final Permission permission : role.getPermissions()) {
+            for (final ScopePredicate scopePredicate : permission.getScope()) {
+                if (scopePredicate instanceof ObjectIdentityPredicate) {
+                    final ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
+                    final String id = oip.getTargetEntityId();
+                    try {
+                        final EntityHeader header = Registry.getDefault().getRbacAdmin().findHeader(permission.getEntityType(), id);
+                        oip.setHeader(header);
+                    } catch (FindException | PermissionDeniedException e) {
+                        logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                }
+            }
+        }
     }
 }

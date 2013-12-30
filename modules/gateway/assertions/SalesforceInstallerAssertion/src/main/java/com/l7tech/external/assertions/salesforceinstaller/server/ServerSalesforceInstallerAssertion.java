@@ -4,16 +4,13 @@ import com.l7tech.external.assertions.salesforceinstaller.SalesforceInstallerAss
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.AllModulesClassLoader;
+import com.l7tech.server.policy.module.AllModularAssertionClassLoader;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Server side implementation of the SalesforceInstallerAssertion.
@@ -22,11 +19,11 @@ import javax.inject.Named;
  */
 public class ServerSalesforceInstallerAssertion extends AbstractServerAssertion<SalesforceInstallerAssertion> {
     private final String localHostName;
-    private final AllModulesClassLoader allModulesClassLoader;
+    private final AllModularAssertionClassLoader allModulesClassLoader;
 
     public ServerSalesforceInstallerAssertion( final SalesforceInstallerAssertion assertion, ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
-        allModulesClassLoader = context.getBean("allModulesClassLoader", AllModulesClassLoader.class);
+        allModulesClassLoader = context.getBean("allModulesClassLoader", AllModularAssertionClassLoader.class);
         try {
             localHostName = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {

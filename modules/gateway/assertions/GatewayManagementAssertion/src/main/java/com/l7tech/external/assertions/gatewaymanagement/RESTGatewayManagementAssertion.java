@@ -7,18 +7,11 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.wsdl.Wsdl;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -28,13 +21,13 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 @SuppressWarnings({"serial"})
 @ProcessesRequest
-@RequiresSOAP
-public class RESTGatewayManagementAssertion extends Assertion implements UsesVariables, MessageTargetable{
+public class RESTGatewayManagementAssertion extends Assertion implements MessageTargetable{
 
     //-PUBLIC
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_URI = "uri";
     public static final String SUFFIX_BODY = "body";
+    public static final String SUFFIX_BASE_URI = "baseuri";
 
     public String getVariablePrefix() {
         return variablePrefix;
@@ -63,9 +56,9 @@ public class RESTGatewayManagementAssertion extends Assertion implements UsesVar
         meta.put(SHORT_NAME, "REST Manage Gateway");
         meta.put(DESCRIPTION, "Manage the Gateway with a RESTful interface." );
         meta.put(PROPERTIES_ACTION_NAME, "REST Gateway Management Properties");
-        //meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
+        meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        meta.put(FEATURE_SET_NAME, "set:modularAssertions");      // todo  add to which feature set?
+        meta.put(FEATURE_SET_NAME, "set:modularAssertions");      // todo  new feature set
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.gatewaymanagement.server.GatewayManagementModuleLifecycle");
         meta.put(POLICY_VALIDATOR_CLASSNAME, RESTGatewayManagementAssertion.Validator.class.getName());
         meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);

@@ -1,18 +1,16 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-
-import static com.l7tech.objectmodel.EntityType.GROUP;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.fed.VirtualGroup;
@@ -28,10 +26,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.GROUP;
 
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
@@ -301,7 +302,8 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
             } catch (final FindException e) {
                 log.log(Level.WARNING, "Unable to retrieve groups: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
-            rolesPanel = new IdentityRoleAssignmentsPanel(group, rolesForGroup, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.GROUP, group)));
+            Role defaultRole = null;  // Default roles do not currently apply to groups, only users
+            rolesPanel = new IdentityRoleAssignmentsPanel(group, rolesForGroup, defaultRole, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.GROUP, group)));
         }
         return rolesPanel;
     }

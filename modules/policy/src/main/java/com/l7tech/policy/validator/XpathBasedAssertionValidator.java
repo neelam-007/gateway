@@ -45,9 +45,20 @@ public class XpathBasedAssertionValidator extends NamespaceMigratableAssertionVa
         } else {
             try {
                 final Map<String,String> namespaces = xpathBasedAssertion.namespaceMap();
-                final Set<String> varsUsed = new HashSet(Arrays.asList(assertion.getVariablesUsed()));
+                Set<String> varsUsed = null;
 
-                XpathUtil.validate(pattern, xpathExpression.getXpathVersion(), namespaces);
+                if (assertion.permitsFullyDynamicExpression()) {
+                    // Check for fully-dynamic xpath and skip XPath parsing if so
+                    final String[] vars = Syntax.getReferencedNames(pattern);
+                    if (vars.length > 0)
+                        varsUsed = new HashSet<>(Arrays.asList(vars));
+                }
+
+                if (varsUsed == null) {
+                    // No fully-dynamic Xpath, so we need to validate the expression syntax.
+                    varsUsed = new HashSet<>(Arrays.asList(assertion.getVariablesUsed()));
+                    XpathUtil.validate(pattern, xpathExpression.getXpathVersion(), namespaces);
+                }
 
                 //test expression when it does not use any context variables
                 if(varsUsed.isEmpty()){

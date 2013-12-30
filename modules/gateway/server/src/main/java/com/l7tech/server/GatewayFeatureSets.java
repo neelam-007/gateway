@@ -60,7 +60,7 @@ public class GatewayFeatureSets {
     public static final GatewayFeatureSet PROFILE_ALL;
 
     /** Feature set to use for (usually old) licenses that, while valid, do not explicitly name any feature sets. */
-    public static final GatewayFeatureSet PROFILE_LICENSE_NAMES_NO_FEATURES;
+    public static final String PROFILE_LICENSE_NAMES_NO_FEATURES = "set:Profile:Compat:Pre36License";
 
     // Constants for service names
     public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
@@ -106,6 +106,36 @@ public class GatewayFeatureSets {
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
     private static final String SET_MODULAR_ASSERTIONS = "set:modularAssertions";
+
+    public static final String PROFILE_DATASCREEN = "set:Profile:Datascreen";
+
+    public static final String PROFILE_ACCELERATOR = "set:Profile:Accel";
+
+    public static final String PROFILE_FIREWALL = "set:Profile:Firewall";
+
+    public static final String PROFILE_CLOUD_CONNECT = "set:Profile:CloudConnect";
+
+    public static final String PROFILE_CLOUD_PROTECT = "set:Profile:CloudProtect";
+
+    public static final String PROFILE_GATEWAY = "set:Profile:Gateway";
+
+    public static final String PROFILE_CLOUD_CONTROL = "set:Profile:CloudControl";
+
+    public static final String PROFILE_POLICY_INTEGRATION_POINT = "set:Profile:PolicyIntegrationPoint";
+
+    public static final String SET_PROFILE_GATEWAY_US = "set:Profile:US";
+
+    public static final String PROFILE_FEDERAL = "set:Profile:Federal";
+
+    public static final String PROFILE_API_PROXY = "set:Profile:Api";
+
+    public static final String PROFILE_SALESFORCE_EXTENSION = "set:Profile:Salesforce";
+
+    public static final String PROFILE_NCES_EXTENSION = "set:Profile:NCES";
+
+    public static final String PROFILE_MOBILE_EXTENSION = "set:Profile:Mobile";
+
+    public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
 
     static {
         // Declare all baked-in feature sets
@@ -759,6 +789,59 @@ public class GatewayFeatureSets {
                 "Sophos AntiMalware Assertion",
                 mass("assertion:Sophos"));
 
+        GatewayFeatureSet radiusAssertions =
+                fsr("set:Radius:Assertions",
+                        "The necessary assertions to enable Radius authentication functionality",
+                        mass("assertion:Radius"),
+                        mass("assertion:RadiusAuthenticate"));
+
+        GatewayFeatureSet csrSignerAssertions =
+                fsr("set:CsrSigner:Assertions",
+                        "Assertions to enable CSR Signing functionality",
+                        mass("assertion:CsrSigner"));
+
+        GatewayFeatureSet jsonWebTokenAssertions =
+                fsr("set:JsonWebToken:Assertions",
+                        "Assertions to enable JSON Web Token functionality.",
+                        mass("assertion:JwtDecode"),
+                        mass("assertion:JwtEncode"));
+
+        GatewayFeatureSet openIDConnectAssertions =
+                fsr("set:OpenIDConnect:Assertions",
+                        "Assertions to enable OpenIDConnect functionality, including policy dependencies",
+                        mass("assertion:IDTokenGeneration"),
+                        mass("assertion:IDTokenDecode"),
+                        mass("assertion:OpenIDConnectInstaller"),
+                        csrSignerAssertions,
+                        jsonWebTokenAssertions);
+
+        GatewayFeatureSet applePushNotificationAssertions =
+                fsr("set:ApplePushNotification:Assertions",
+                        "Assertions to enable Apple Push Notification functionality.",
+                        mass("assertion:ApplePushNotification"),
+                        mass("assertion:AppleFeedbackService"));
+
+        GatewayFeatureSet webSocketAssertions =
+                fsr("set:WebSocket:Assertions",
+                        "Assertions to enable WebSocket functionality.",
+                        mass("assertion:WebSocket"),
+                        mass("assertion:WebSocketEntityManager"),
+                        mass("assertion:WebSocketValidation"),
+                        mass("assertion:WebSocketMessageInjection"));
+
+        GatewayFeatureSet xmppAssertions =
+                fsr("set:XMPP:Assertions",
+                        "Assertions to enable XMPP functionality.",
+                        mass("assertion:XMPPGetRemoteCertificate"),
+                        mass("assertion:XMPPStartTLS"),
+                        mass("assertion:XMPPCloseSession"),
+                        mass("assertion:XMPPAssociateSessions"),
+                        mass("assertion:XMPPGetAssociatedSessionId"),
+                        mass("assertion:XMPPGetSessionAttribute"),
+                        mass("assertion:XMPPSendToRemoteHost"),
+                        mass("assertion:XMPPSetSessionAttribute"),
+                        mass("assertion:XMPPOpenServerSession"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -786,7 +869,7 @@ public class GatewayFeatureSets {
         // Naming convention:   set:Profile:ProfileName
         //
         GatewayFeatureSet dataScreen =
-        fsp("set:Profile:Datascreen", "SecureSpan Data Screen",
+        fsp(PROFILE_DATASCREEN, "SecureSpan Data Screen",
             "HTTP/HTML/AJAX/JSON/XML gateway",
             fs(core),
             fs(adminAndEms),
@@ -811,7 +894,7 @@ public class GatewayFeatureSets {
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
-        fsp("set:Profile:Accel", "SecureSpan Accelerator",
+        fsp(PROFILE_ACCELERATOR, "SecureSpan Accelerator",
             "XML acceleration features",
             fs(core),
             fs(adminAndEms),
@@ -834,7 +917,7 @@ public class GatewayFeatureSets {
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
         GatewayFeatureSet profileFirewall =
-        fsp("set:Profile:Firewall", "SecureSpan Firewall",
+        fsp(PROFILE_FIREWALL, "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
             fs(adminAndEms),
@@ -883,16 +966,16 @@ public class GatewayFeatureSets {
             fs(csrfProtectionAssertion),
             mass("assertion:ValidateCertificate"));
 
-        fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
+        fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
             fs(profileFirewall));
 
-        fsp("set:Profile:CloudProtect", "CloudSpan CloudProtect",
+        fsp(PROFILE_CLOUD_PROTECT, "CloudSpan CloudProtect",
             "Same features as XML Firewall for now.",
             fs(profileFirewall));
 
         GatewayFeatureSet profileGateway =
-        fsp("set:Profile:Gateway", "SecureSpan Gateway",
+        fsp(PROFILE_GATEWAY, "SecureSpan Gateway",
             "All features enabled.",
             misc("bundle:Bridge", "Bundled SecureSpan XML VPN Client", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
             fs(core),
@@ -944,25 +1027,26 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(radiusAssertions),
             mass("assertion:ValidateCertificate"));
 
-        fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
+        fsp(PROFILE_CLOUD_CONTROL, "CloudSpan CloudControl",
             "Same features as Gateway for now.",
             fs(profileGateway));
 
-        fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
+        fsp(PROFILE_POLICY_INTEGRATION_POINT, "SecureSpan Policy Integration Point",
             "Same as SecureSpan Gateway.",
             fs(profileGateway));
 
         GatewayFeatureSet profileUs =
-        fsp("set:Profile:US", "SecureSpan Gateway US",
+        fsp(SET_PROFILE_GATEWAY_US, "SecureSpan Gateway US",
             "Adds US features.",
             fs(profileGateway),
             fs(saml2AttributeQueryAssertions),
             fs(usAssertions));
 
         GatewayFeatureSet profileFederal =
-        fsp("set:Profile:Federal", "SecureSpan Federal",
+        fsp(PROFILE_FEDERAL, "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
             fs(core),
             fs(adminAndEms),
@@ -1013,7 +1097,7 @@ public class GatewayFeatureSets {
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
-        fsp("set:Profile:Api", "Layer 7 API Proxy",
+        fsp(PROFILE_API_PROXY, "Layer 7 API Proxy",
             "Same as Data Screen with some additional features",
                 fs(dataScreen),
                 fs(uiRbacRoleEditor),
@@ -1076,7 +1160,7 @@ public class GatewayFeatureSets {
         /**
          * Salesforce Connector
          */
-        GatewayFeatureSet salesforceFeaturePack = fsp("set:Profile:Salesforce",
+        GatewayFeatureSet salesforceFeaturePack = fsp(PROFILE_SALESFORCE_EXTENSION,
                 "Salesforce Connector",
                 "Includes assertions that provide access to Salesforce data",
                 mass("assertion:Salesforce"),
@@ -1087,7 +1171,7 @@ public class GatewayFeatureSets {
         /**
          * NCES Feature Pack
          */
-        GatewayFeatureSet ncesFeaturePack = fsp("set:Profile:NCES",
+        GatewayFeatureSet ncesFeaturePack = fsp(PROFILE_NCES_EXTENSION,
                 "NCES Feature Pack",
                 "Includes NCES and SAML specific assertions",
                 fs(ncesAssertions),
@@ -1097,41 +1181,25 @@ public class GatewayFeatureSets {
         /**
          * Mobile Access Gateway
          *
-         * N.B. As of Halibut 8.0 GA this feature profile has no use. It will not serve any purpose until
-         * the assertions it references have been updated to be licensed from the assertion class.
+         * Applicable as of MAG 2.0.1.
          */
-        GatewayFeatureSet mobileFeaturePack = fsp("set:Profile:Mobile",
+        GatewayFeatureSet mobileFeaturePack = fsp(PROFILE_MOBILE_EXTENSION,
                 "Mobile Access Gateway",
                 "Includes series of assertions required to support existing and future Mobile Access Gateway " +
                         "functionality (requires SOA Gateway license as base)",
-                mass("assertion:CsrSigner"), // CsrSignerAssertion
-                mass("assertion:JwtDecode"), // JsonWebTokenAssertion
-                mass("assertion:JwtEncode"),
-                mass("assertion:IDTokenGeneration"), // OpenIDConnectAssertion
-                mass("assertion:IDTokenDecode"),
-                mass("assertion:OpenIDConnectInstaller"),
-                mass("assertion:ApplePushNotification"), // ApplePushNotificationAssertion
-                mass("assertion:AppleFeedbackService"),
-                mass("assertion:WebSocket"), // WebSocketAssertion
-                mass("assertion:WebSocketEntityManager"),
-                mass("assertion:WebSocketValidation"),
-                mass("assertion:WebSocketMessageInjection"),
-                mass("assertion:XMPPGetRemoteCertificate"), // XMPPAssertion
-                mass("assertion:XMPPStartTLS"),
-                mass("assertion:XMPPCloseSession"),
-                mass("assertion:XMPPAssociateSessions"),
-                mass("assertion:XMPPGetAssociatedSessionId"),
-                mass("assertion:XMPPGetSessionAttribute"),
-                mass("assertion:XMPPSendToRemoteHost"),
-                mass("assertion:XMPPSetSessionAttribute"),
-                mass("assertion:XMPPOpenServerSession"),
+                csrSignerAssertions,
+                jsonWebTokenAssertions,
+                openIDConnectAssertions,
+                applePushNotificationAssertions,
+                webSocketAssertions,
+                xmppAssertions,
                 fs(moduleLoader));
 
         /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
-        PROFILE_ALL = fsp("set:Profile:Development", "Development Mode",
+        PROFILE_ALL = fsp(PROFILE_DEVELOPMENT, "Development Mode",
                 "Everything everywhere, including extension packs and experimental features.",
                 fs(profileGateway),
                 fs(profileFederal),
@@ -1145,12 +1213,12 @@ public class GatewayFeatureSets {
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
-        PROFILE_LICENSE_NAMES_NO_FEATURES =
-        fsp("set:Profile:Compat:Pre36License", "Profile for old license files that don't name any feature sets",
-            "Backward compatibility with license files that lack featureset elements, but would otherwise be perfectly valid. " +
-            "Such licenses were intended to allow upgrades (within their version and date constraints) and should enable " +
-            "at least all features that were enabled by a valid 3.5 license.",
-            fs(PROFILE_ALL));
+        fsp(PROFILE_LICENSE_NAMES_NO_FEATURES, "Profile for old license files that don't name any feature sets",
+                "Backward compatibility with license files that lack featureset elements, but would " +
+                        "otherwise be perfectly valid. Such licenses were intended to allow upgrades " +
+                        "(within their version and date constraints) and should enable at least all features " +
+                        "that were enabled by a valid 3.5 license.",
+                fs(PROFILE_ALL));
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */

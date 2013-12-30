@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.VariableUseSupport.VariablesUsedSupport;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -15,8 +16,6 @@ import javax.xml.soap.SOAPConstants;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -112,25 +111,17 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     }
 
     public static boolean isFullyDynamicXpath(String expression) {
-        return getFullyDynamicXpathVariableName(expression) != null;
-    }
-
-    private static final Pattern SINGLE_VAR_PATTERN = Pattern.compile("^\\$\\{([a-zA-Z_][a-zA-Z0-9_\\-\\.]*)\\}$");
-
-    public static String getFullyDynamicXpathVariableName(String expression) {
-        if (expression == null)
-            return null;
-        Matcher matcher = SINGLE_VAR_PATTERN.matcher(expression);
-        if (!matcher.matches())
-            return null;
-        return matcher.group(1);
+        return expression != null && Syntax.getSingleVariableReferenced(expression) != null;
     }
 
     protected VariablesUsed doGetVariablesUsed() {
         VariablesUsed used = new VariablesUsed();
         if (xpathExpression != null) {
             final String expr = xpathExpression.getExpression();
-            if ( expr != null ) {
+            final String fullyDynamicVar = !permitsFullyDynamicExpression() ? null : Syntax.getSingleVariableReferenced(expr);
+            if ( fullyDynamicVar != null ) {
+                used.addVariables( fullyDynamicVar );
+            } else if ( expr != null ) {
                 used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(expr, xpathExpression.getXpathVersion()) );
             }
         }

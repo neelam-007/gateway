@@ -7,9 +7,11 @@ import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -68,6 +70,11 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
+    public List<Policy> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        return processRevisions( policyManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties) );
+    }
+
+    @Override
     public Collection<PolicyHeader> findAllHeaders() throws FindException {
         return policyManager.findAllHeaders();
     }
@@ -84,15 +91,28 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public Goid save(Policy policy) throws SaveException {
+        return performSave(null, policy);
+    }
+
+    @Override
+    public void save(Goid id, Policy policy) throws SaveException {
+        performSave(id, policy);
+    }
+
+    private Goid performSave(@Nullable Goid id, Policy policy) throws SaveException {
         if (policy != null)
             policy.setVersion(0);
-        Goid goid = policyManager.save(policy);
+        if(id == null){
+            id = policyManager.save(policy);
+        } else {
+            policyManager.save(id, policy);
+        }
         try {
             policyVersionManager.checkpointPolicy(policy, true, true);
         } catch ( ObjectModelException ome ) {
             throw new SaveException("Unable to save policy version.", ome);
         }
-        return goid;
+        return id;
     }
 
     @Override
@@ -200,7 +220,7 @@ public class VersioningPolicyManager implements PolicyManager {
     private final PolicyManager policyManager;
     private final PolicyVersionManager policyVersionManager;
 
-    private Collection<Policy> processRevisions( final Collection<Policy> policies ) throws FindException {
+    private <C extends Collection<Policy>> C processRevisions( final C policies ) throws FindException {
         if ( policies != null ) {
             for ( Policy policy : policies ) {
                 processRevision( policy );    

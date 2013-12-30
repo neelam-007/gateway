@@ -68,7 +68,7 @@ public class JmsBootProcessTest extends JmsTestCase {
             endptMgr.connMgr = connMgr;
             ThreadPoolBean jmsThreadPool = new ThreadPoolBean( config, "JMS Thread Pool", "jmsListenerThreadLimit",
                     "jms.listenerThreadLimit", 25);
-            bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, new PooledJmsEndpointListenerFactory(jmsThreadPool), null);
+            bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, new PooledJmsEndpointListenerFactory(), null);
             bootProcess.setApplicationContext(appCtx);
 
             // add data to queue

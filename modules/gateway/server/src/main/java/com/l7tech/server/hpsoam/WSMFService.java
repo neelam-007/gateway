@@ -1,14 +1,15 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.*;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.service.ServiceManager;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.ISO8601Date;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -31,7 +32,7 @@ import java.util.regex.Pattern;
  * Date: Jul 17, 2007<br/>
  *
  */
-public class WSMFService implements ApplicationContextAware {
+public class WSMFService implements InitializingBean {
     private final Logger logger = Logger.getLogger(WSMFService.class.getName());
     public static final String FOUNDATION_NS = "http://schemas.hp.com/wsmf/2003/03/Foundation";
 
@@ -44,9 +45,9 @@ public class WSMFService implements ApplicationContextAware {
     /** Name of cluster property that determines whether credentials of Admintrators/Operators are required for Agent access. */
     public static final String HPSOAM_REQUIRE_CREDENTIALS = "hpsoamRequireCreds";
 
+    private final ServiceManager serviceManager;
+    private final MessageProcessor messageProcessor;
     private ContainerManagedObject containerMO;
-    private ServiceManager serviceManager;
-    private ApplicationContext applicationContext;
     private long bogusPushEventNr = 0;
     static final Pattern serviceoidPattern = Pattern.compile(".*/service/([0-9a-fA-F]{32}|\\d{1,20}).*");
 
@@ -64,7 +65,12 @@ public class WSMFService implements ApplicationContextAware {
 
     public WSMFService(ServiceManager serviceManager, MessageProcessor messageProcessor) {
         this.serviceManager = serviceManager;
-        this.containerMO = new ContainerManagedObject(serviceManager, messageProcessor);
+        this.messageProcessor = messageProcessor;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.containerMO = isEnabled() ? new ContainerManagedObject(serviceManager, messageProcessor) : null;
     }
 
     public class RequestContext {
@@ -98,7 +104,7 @@ public class WSMFService implements ApplicationContextAware {
             context.serviceid = GoidUpgradeMapper.mapId(EntityType.SERVICE, matcher.group(1));
         }
 
-        if (context.serviceid != null) {
+        if (context.serviceid != null && containerMO != null) {
             return containerMO.respondTo(context);
         }
 
@@ -134,7 +140,7 @@ public class WSMFService implements ApplicationContextAware {
             return pushSubscribe();
         } else if (methodInvoked == WSMFMethod.GET_SUPPEVENTTYPES) {
             return getSupportedEventTypes();
-        } else if (methodInvoked == WSMFMethod.GET) {
+        } else if (methodInvoked == WSMFMethod.GET && containerMO != null) {
             return containerMO.handlePerformanceWindowRequest(context);
         } else if (methodInvoked == WSMFMethod.GET_CANCEL_SUBSCRIPTION) {
             return cancelSubscription();
@@ -202,12 +208,14 @@ public class WSMFService implements ApplicationContextAware {
                    "    <soapenv:Body xmlns:Foundation=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
                    "        <Foundation:GetRelationshipsResponse>\n" +
                    "            <Foundation:RelationshipList>\n");
-        for (ServiceManagedObject service : containerMO.getServiceMOs()) {
-            // hpsoam doesn't care about services that dont have a WSDL
-            out.append("                <Foundation:Relationship>\n");
-            out.append("                    <Foundation:HowRelated>http://schemas.hp.com/wsmf/2003/03/Relations/Contains</Foundation:HowRelated>\n");
-            out.append("                    <Foundation:RelatedObject>" + service.generateMOWsdlUrl(req) + "</Foundation:RelatedObject>\n");
-            out.append("                </Foundation:Relationship>\n");
+        if (containerMO != null) {
+            for (ServiceManagedObject service : containerMO.getServiceMOs()) {
+                // hpsoam doesn't care about services that dont have a WSDL
+                out.append("                <Foundation:Relationship>\n");
+                out.append("                    <Foundation:HowRelated>http://schemas.hp.com/wsmf/2003/03/Relations/Contains</Foundation:HowRelated>\n");
+                out.append("                    <Foundation:RelatedObject>" + service.generateMOWsdlUrl(req) + "</Foundation:RelatedObject>\n");
+                out.append("                </Foundation:Relationship>\n");
+            }
         }
         out.append("            </Foundation:RelationshipList>\n" +
                 "        </Foundation:GetRelationshipsResponse>\n" +
@@ -220,7 +228,7 @@ public class WSMFService implements ApplicationContextAware {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:Foundation=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
                 "    <soapenv:Body>\n" +
-                "        <Foundation:GetCreatedOnResponse>" + ISO8601Date.format(new Date(Long.parseLong(containerMO.getVersion()))) + "</Foundation:GetCreatedOnResponse>\n" +
+                "        <Foundation:GetCreatedOnResponse>" + ISO8601Date.format(new Date(Long.parseLong(containerMO == null ? "0" : containerMO.getVersion()))) + "</Foundation:GetCreatedOnResponse>\n" +
                 "    </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
     }
@@ -253,14 +261,16 @@ public class WSMFService implements ApplicationContextAware {
     }
 
     private String getSpecRelationships(HttpServletRequest req) {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         out.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                    "    <soapenv:Body xmlns:Foundation=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
                    "        <Foundation:GetSpecificRelationshipsResponse>\n" +
                    "            <Foundation:RelationshipObjectList>\n");
-        for (ServiceManagedObject service : containerMO.getServiceMOs()) {
-                out.append("                <Foundation:RelationshipObject>" + service.generateMOWsdlUrl(req) + "</Foundation:RelationshipObject>\n");
+        if (containerMO != null) {
+            for (ServiceManagedObject service : containerMO.getServiceMOs()) {
+                    out.append("                <Foundation:RelationshipObject>").append(service.generateMOWsdlUrl(req)).append("</Foundation:RelationshipObject>\n");
+            }
         }
         out.append("            </Foundation:RelationshipObjectList>\n" +
                    "        </Foundation:GetSpecificRelationshipsResponse>\n" +
@@ -291,7 +301,7 @@ public class WSMFService implements ApplicationContextAware {
             return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                     "    <soapenv:Body xmlns:Foundation=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
-                    "        <Foundation:GetResourceVersionResponse>" + containerMO.getResourceVersion() +
+                    "        <Foundation:GetResourceVersionResponse>" + (containerMO == null ? "" : containerMO.getResourceVersion()) +
                     "</Foundation:GetResourceVersionResponse>\n" +
                     "    </soapenv:Body>\n" +
                     "</soapenv:Envelope>";
@@ -301,7 +311,7 @@ public class WSMFService implements ApplicationContextAware {
             return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                     "    <soapenv:Body xmlns:Foundation=\"http://schemas.hp.com/wsmf/2003/03/Foundation\">\n" +
-                    "        <Foundation:GetManagedObjectVersionResponse>" + containerMO.getVersion() +
+                    "        <Foundation:GetManagedObjectVersionResponse>" + (containerMO == null ? "0" : containerMO.getVersion()) +
                     "</Foundation:GetManagedObjectVersionResponse>\n" +
                     "    </soapenv:Body>\n" +
                     "</soapenv:Envelope>";
@@ -369,15 +379,11 @@ public class WSMFService implements ApplicationContextAware {
                 "</soapenv:Envelope>";
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
     public String handleMOSpecificGET(String fullURL, HttpServletRequest req) {
         Matcher matcher = serviceoidPattern.matcher(fullURL);
-        if (matcher.matches()) {
+        if (matcher.matches() && containerMO != null) {
             return containerMO.handleMOSpecificGET(fullURL, GoidUpgradeMapper.mapId(EntityType.SERVICE, matcher.group(1)), req);
         }
-        throw new RuntimeException("Cannot happen");
+        throw new RuntimeException("WSMFService not enabled on startup");
     }
 }

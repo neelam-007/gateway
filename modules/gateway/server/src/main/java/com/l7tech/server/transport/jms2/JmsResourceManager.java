@@ -1,30 +1,26 @@
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.server.transport.jms.JmsBag;
+import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
+import org.apache.commons.pool.PoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
 import org.springframework.beans.factory.DisposableBean;
 
 import javax.jms.*;
+import javax.jms.Queue;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
-import java.util.concurrent.BlockingQueue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -179,7 +175,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         }
     }
 
-    @Override    
+    @Override
     public void destroy() throws Exception {
         if ( active.compareAndSet( true, false ) ) {
             doShutdown();
@@ -200,12 +196,11 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
          *
          * <p>Exceptions thrown by this class will be propagated to the caller.</p>
          *
-         * @param connection The shared JMS Connection.
-         * @param session The unique JMS session.
+         * @param bag The JmsBag with contained the shared JMS Connection and cached session and producer
          * @param jndiContextProvider Provides access to the shared JNDI context.
          * @throws JMSException If an error occurs.
          */
-        void doWork( Connection connection, Session session, JndiContextProvider jndiContextProvider ) throws JMSException;
+        void doWork( JmsBag bag,  JndiContextProvider jndiContextProvider ) throws JMSException;
     }
 
     /**
@@ -269,10 +264,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      */
     private void doShutdown() {
         logger.info( "Shutting down JMS Connection cache." );
-        
+
         timer.cancel();
         Collection<CachedConnection> connList = connectionHolder.values();
-        
+
         for ( final CachedConnection c : connList ) {
             c.unRef();
         }
@@ -374,7 +369,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final String name;
         private final int endpointVersion;
         private final int connectionVersion;
-        private final BlockingQueue<JmsBag> pool;
+        private final GenericObjectPool<JmsBag> pool;
         private final JmsEndpointConfig endpointConfig;
 
         CachedConnection( final JmsEndpointConfig cfg,
@@ -383,9 +378,105 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             this.name = cfg.getJmsEndpointKey().toString();
             this.endpointVersion = cfg.getEndpoint().getVersion();
             this.connectionVersion = cfg.getConnection().getVersion();
-            this.pool = new LinkedBlockingDeque<JmsBag>();
             this.endpointConfig = cfg;
 
+            this.pool = new GenericObjectPool<JmsBag>( new PoolableObjectFactory<JmsBag>() {
+                @Override
+                public JmsBag makeObject() throws Exception {
+                    Session session = null;
+                    MessageConsumer consumer = null;
+                    MessageProducer producer = null;
+                    final String destinationName = endpointConfig.getEndpoint().getDestinationName();
+                    try{
+                        if (endpointConfig.getEndpoint().isMessageSource()) {
+                            session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                        } else {
+                            session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                        }
+
+                        if (endpointConfig.getEndpoint().isMessageSource()) {
+                            //Create the consumer
+                            Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
+                            consumer = JmsUtil.createMessageConsumer(session, destination);
+
+                            Destination failureQueue = getFailureQueue(bag.getJndiContext());
+                            if (failureQueue != null) {
+                                producer = JmsUtil.createMessageProducer(session, failureQueue);
+                            }
+                        } else {
+                           Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
+                            producer = JmsUtil.createMessageProducer(session, destination);
+                        }
+
+                        return new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
+                                bag.getConnection(), session, consumer, producer, CachedConnection.this );
+                    } catch(Exception ex) {
+                        //do the clean up and rethrow the exception
+                        try {
+                            if(producer != null) producer.close();
+                        } catch (JMSException e) {
+                           logger.log(Level.WARNING, "Unable to close producer for the destination: " + destinationName);
+                        }
+                        try {
+                            if(consumer != null) consumer.close();
+                        } catch (JMSException e) {
+                            logger.log(Level.WARNING, "Unable to close consumer for the destination: " + destinationName);
+                        }
+                        try {
+                            if(session != null) session.close();
+                        } catch (JMSException e) {
+                            logger.log(Level.WARNING, "Unable to close JMS session");
+                        }
+                        throw ex;
+                    }
+                }
+
+                @Override
+                public void destroyObject(JmsBag jmsBag) throws Exception {
+                    jmsBag.closeSession();
+                }
+
+                @Override
+                public boolean validateObject(JmsBag jmsBag) {
+                    return true;
+                }
+
+                @Override
+                public void activateObject(JmsBag jmsBag) throws Exception {
+                }
+
+                @Override
+                public void passivateObject(JmsBag jmsBag) throws Exception {
+                }
+            }, getSessionPoolSize(),GenericObjectPool.WHEN_EXHAUSTED_BLOCK, getSessionPoolMaxWait(), getMaxSessionIdle());
+        }
+
+        private int getSessionPoolSize() {
+            if  (endpointConfig.getEndpoint().isMessageSource()) {
+                return -1;
+            } else {
+                return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_SIZE,
+                    String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
+            }
+        }
+
+        private int getMaxSessionIdle() {
+            if  (endpointConfig.getEndpoint().isMessageSource()) {
+                return -1;
+            } else {
+                return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_MAX_SESSION_IDLE,
+                        String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
+            }
+        }
+
+        private long getSessionPoolMaxWait() {
+            if (endpointConfig.getEndpoint().isMessageSource()) {
+                //The pool is never exhausted, just return a number, it should be ignored.
+                return 0;
+            } else {
+                return Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT,
+                    String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)));
+            }
         }
 
         /**
@@ -407,19 +498,14 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
             touch();
             try {
-               JmsBag jmsBag = pool.poll();
-               if (jmsBag == null) {
-                   Session session;
-                    if (endpointConfig.getEndpoint().isMessageSource()) {
-                        session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
-                    } else {
-                        session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                    }
-                    jmsBag = new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
-                        bag.getConnection(), session, this );
-                }
-                return jmsBag;
+                return pool.borrowObject();
             } catch (JMSException e) {
+                throw new JmsRuntimeException(e);
+            } catch (NamingException e) {
+                throw new JmsRuntimeException(e);
+            } catch (JmsConfigException e) {
+                throw new JmsRuntimeException(e);
+            } catch (Exception e) {
                 throw new JmsRuntimeException(e);
             }
         }
@@ -430,7 +516,11 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
          */
         public void returnJmsBag(JmsBag jmsBag) {
             if (jmsBag != null) {
-                pool.add(jmsBag);
+                try {
+                    pool.returnObject(jmsBag);
+                } catch (Exception e) {
+                    jmsBag.closeSession();
+                }
             }
         }
 
@@ -446,11 +536,11 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     throw new JmsRuntimeException(t);
                 }
 
-                callback.doWork( bag.getConnection(), jmsBag.getSession(), new JndiContextProvider(){
+                callback.doWork( jmsBag, new JndiContextProvider(){
                     @Override
                     public void doWithJndiContext( final JndiContextCallback contextCallback ) throws NamingException  {
                         synchronized( contextLock ) {
-                            contextCallback.doWork( bag.getJndiContext() );                           
+                            contextCallback.doWork( bag.getJndiContext() );
                         }
                     }
 
@@ -467,6 +557,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             }
         }
 
+        protected Queue getFailureQueue(Context context) throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
+            if ( endpointConfig.isTransactional() && endpointConfig.getEndpoint().getFailureDestinationName() != null) {
+                logger.finest( "Getting new FailureQueue" );
+                final String failureDestinationName = endpointConfig.getEndpoint().getFailureDestinationName();
+                return JmsUtil.cast( context.lookup( failureDestinationName ), Queue.class );
+            }
+            return null;
+        }
+
         /**
          * Once a connection is in the cache a return of false from this
          * method indicates that the connection is invalid and should not
@@ -478,19 +577,20 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         public void unRef() {
             int references = referenceCount.decrementAndGet();
-            if ( references <= 0 ) {
+            //check if no one references the cached session or if the endpoint is inbound which we have to clean up anyways
+            if ( references <= 0 || endpointConfig.getEndpoint().isMessageSource()) {
                 logger.log(
                         Level.FINE,
                         "Closing JMS connection ({0}), version {1}:{2}",
                         new Object[]{
                                 name, connectionVersion, endpointVersion
                         });
-                Iterator<JmsBag> itr = pool.iterator();
-                while (itr.hasNext()) {
-                    itr.next().closeSession();
+                try {
+                    pool.close();
+                } catch (Exception e) {
+                    //Ignore if we can't close it.
                 }
                 bag.close();
-                pool.clear();
             }
         }
     }
@@ -543,7 +643,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         }
                     }
                 );
-            
+
             for ( final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
                 if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 && cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) {
                 evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );

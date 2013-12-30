@@ -95,7 +95,8 @@ public class GenericUserPanel extends UserPanel {
         try {
             // Initialize form components
             final Collection<Role> rolesForUser = Registry.getDefault().getRbacAdmin().findRolesForUser(user);
-            rolesPanel = new IdentityRoleAssignmentsPanel(user, new HashSet<>(rolesForUser), !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.USER, user)));
+            final Role defaultRole = Registry.getDefault().getRbacAdmin().findDefaultRoleForIdentityProvider(user.getProviderId());
+            rolesPanel = new IdentityRoleAssignmentsPanel(user, new HashSet<>(rolesForUser), defaultRole, !Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.USER, user)));
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {

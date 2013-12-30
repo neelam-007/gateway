@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ConfigFactory;
@@ -103,7 +104,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_GOID);
                     q.setParameter(0, goid);
-                    return (ET)q.uniqueResult();
+                    final ET et = (ET) q.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (Exception e) {
@@ -144,7 +147,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (uniquePropertyName.trim().isEmpty())
             throw new IllegalArgumentException("uniquePropertyName cannot be empty");
 
-        return findUnique( Collections.<String,Object>singletonMap( uniquePropertyName, uniqueKey ) );
+        return findUnique( Collections.<String,Object>singletonMap(uniquePropertyName, uniqueKey) );
     }
 
     /**
@@ -171,7 +174,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 protected ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());
                     criteria.add( criterion );
-                    return (ET)criteria.uniqueResult();
+                    final ET et = (ET) criteria.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (HibernateException e) {
@@ -267,11 +272,76 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     criteria.setFirstResult( offset );
                     criteria.setMaxResults( count );
 
-                    return (List<ET>)criteria.list();
+                    final List<ET> list = (List<ET>) criteria.list();
+                    for (final ET et : list) {
+                        initializeLazilyLoaded(et);
+                    }
+                    return list;
                 }
             });
         } catch (Exception e) {
             throw new FindException("Couldn't check uniqueness", e);
+        }
+    }
+
+    //TODO: merge this with findPage
+    @Override
+    public List<ET> findPagedMatching(final int offset, final int count, final String sortProperty, final Boolean ascending, final Map<String,List<Object>> matchProperties) throws FindException {
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
+                @SuppressWarnings({ "unchecked" })
+                @Override
+                protected List<ET> doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria criteria = session.createCriteria(getImpClass());
+
+                    // Ensure manager specific criteria are added
+                    addFindAllCriteria( criteria );
+
+                    if(matchProperties!=null && !matchProperties.isEmpty()){
+                        Criterion criterion = reduce( matchProperties.entrySet(), conjunction(), new Functions.Binary<Junction, Junction, Map.Entry<String, List<Object>>>() {
+                            @Override
+                            public Junction call( final Junction junction, final Map.Entry<String, List<Object>> entry ) {
+                                if(!entry.getValue().isEmpty()) {
+                                    junction.add( reduce(entry.getValue(), disjunction(), new Functions.Binary<Junction, Junction, Object>() {
+                                        @Override
+                                        public Junction call(Junction junction, Object o) {
+                                            if (o == NULL) {
+                                                junction.add(Restrictions.isNull(entry.getKey()));
+                                            } else if (o == NOTNULL) {
+                                                junction.add(Restrictions.isNotNull(entry.getKey()));
+                                            } else if (o != null) {
+                                                junction.add(Restrictions.eq(entry.getKey(), o));
+                                            }
+                                            return junction;
+                                        }
+                                    }) );
+                                }
+                                return junction;
+                            }
+                        } );
+
+                        // Add additional criteria
+                        criteria.add( criterion );
+                    }
+
+
+                    if(sortProperty != null){
+                        if ( ascending == null || ascending ) {
+                            criteria.addOrder( Order.asc(sortProperty) );
+                        } else {
+                            criteria.addOrder( Order.desc(sortProperty) );
+                        }
+                    }
+
+                    criteria.setFirstResult( offset );
+                    criteria.setFetchSize( count );
+                    criteria.setMaxResults( count );
+
+                    return (List<ET>)criteria.list();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't find entities", e);
         }
     }
 
@@ -299,7 +369,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     protected List<ET> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                         Criteria criteria = session.createCriteria(getImpClass());
                         criteria.add( criterion );
-                        return (List<ET>)criteria.list();
+                        final List<ET> list = (List<ET>) criteria.list();
+                        for (final ET et : list) {
+                            initializeLazilyLoaded(et);
+                        }
+                        return list;
                     }
                 });
         } catch (Exception e) {
@@ -416,6 +490,39 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Goid");
 
             return (Goid)key;
+        } catch (RuntimeException e) {
+            throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
+        }
+    }
+
+    @Override
+    public void save(Goid id, ET entity) throws SaveException {
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1}) with id {2}", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString(), id.toString() });
+        if(GoidRange.RESERVED_RANGE.isInRange(id)) {
+            throw new SaveException("Cannot save an entity with an id in the reserved range. ID: " + id);
+        }
+        try {
+            try {
+                ET other = findByPrimaryKey(id);
+                if(other != null) throw new DuplicateObjectException("Other entity exists with the given id: " + id);
+            } catch (FindException e) {
+                //do nothing. This means that there is no other entity with the same goid.
+            }
+            if (getUniqueType() != UniqueType.NONE) {
+                final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
+                List others;
+                try {
+                    others = findMatching(constraints);
+                } catch (FindException e) {
+                    throw new SaveException("Couldn't find previous version(s) to check uniqueness", e);
+                }
+
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));
+            }
+
+            PersistentEntityUtil.preserveId(entity);
+            entity.setGoid(id);
+            getHibernateTemplate().save(entity);
         } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
@@ -572,6 +679,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 Criteria criteria = session.createCriteria( getImpClass() );
                 criteria.setFirstResult( offset );
                 criteria.setFetchSize( windowSize );
+                criteria.setMaxResults( windowSize );
                 return (List<ET>) criteria.list();
             }
         } );
@@ -594,6 +702,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 final Criteria criteria = session.createCriteria(getImpClass());
                 criteria.setFirstResult(offset);
                 criteria.setFetchSize(windowSize);
+                criteria.setMaxResults( windowSize );
 
                 if ( filters != null ) {
                     Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
@@ -833,7 +942,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     Criteria criteria = session.createCriteria(getImpClass());
                     addFindByNameCriteria(criteria);
                     criteria.add(Restrictions.eq(F_NAME, name));
-                    return (ET)criteria.uniqueResult();
+                    final ET et = (ET) criteria.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (HibernateException e) {
@@ -951,6 +1062,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected void addedToCache(PersistentEntity ent) { }
 
     /**
+     * Override this method to initialize any lazily loaded fields of retrieved entities.
+     *
+     * This will be called on retrieved entities unless they are retrieved as part of a find all method.
+     *
+     * @param retrievedEntity the retrieved entity.
+     */
+    protected void initializeLazilyLoaded(ET retrievedEntity) {}
+
+    /**
      * Perform some action while holding the cache write lock.
      * It is an error to invoke this method if the current thread already
      * holds the cache read lock.
@@ -1059,7 +1179,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 @SuppressWarnings({ "unchecked" })
                 @Override
                 public ET doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return (ET)session.get(impClass, goid);
+                    final ET et = (ET) session.get(impClass, goid);
+                    initializeLazilyLoaded(et);
+                    return et;
                 }
             });
         } catch (Exception e) {
@@ -1103,7 +1225,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     } else {
                         criteria.add( Restrictions.eq( property, value ) );
                     }
-                    return criteria.list();
+                    final List list = criteria.list();
+                    for (final Object o : list) {
+                        initializeLazilyLoaded((ET)o);
+                    }
+                    return list;
                 }
             } );
         } catch (DataAccessException e) {

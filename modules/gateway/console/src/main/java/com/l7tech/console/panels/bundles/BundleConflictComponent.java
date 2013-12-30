@@ -14,15 +14,17 @@ public class BundleConflictComponent extends JPanel {
 
     private JList<String> serviceConflictList;
     private JList<String> policyConflictList;
+    private JList<String> certificateConflictList;
+    private JList<String> encapsulatedAssertionConflictList;
     private JList<String> missingJdbcConnList;
     private JList<String> missingAssertionList;
     private JPanel mainPanel;
     private JPanel serviceConflictsPanel;
     private JPanel policyConflictsPanel;
+    private JPanel certificateConflictsPanel;
+    private JPanel encapsulatedAssertionConflictsPanel;
     private JPanel jdbcPanel;
     private JPanel assertionPanel;
-    private JPanel certificateConflictsPanel;
-    private JList certificateConflictList;
 
     public BundleConflictComponent(final String bundleId, final PolicyBundleDryRunResult dryRunResult) throws PolicyBundleDryRunResult.UnknownBundleIdException {
         final List<String> serviceConflicts = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.SERVICES);
@@ -33,6 +35,9 @@ public class BundleConflictComponent extends JPanel {
 
         final List<String> conflictCertificates = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.CERTIFICATES);
         buildJList(certificateConflictList, certificateConflictsPanel, conflictCertificates);
+
+        final List<String> conflictEncapsulatedAssertions = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.ENCAPSULATED_ASSERTION);
+        buildJList(encapsulatedAssertionConflictList, encapsulatedAssertionConflictsPanel, conflictEncapsulatedAssertions);
 
         final List<String> missingJdbcConns = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS);
         buildJList(missingJdbcConnList, jdbcPanel, missingJdbcConns);
@@ -47,7 +52,7 @@ public class BundleConflictComponent extends JPanel {
 
     private void buildJList(JList<String> listToBuild, JPanel containingPanel, List<String> items) {
         if (!items.isEmpty()) {
-            final SortedListModel<String> model = new SortedListModel<String>(new Comparator<String>() {
+            final SortedListModel<String> model = new SortedListModel<>(new Comparator<String>() {
                 @Override
                 public int compare(String o1, String o2) {
                     return o1.compareTo(o2);

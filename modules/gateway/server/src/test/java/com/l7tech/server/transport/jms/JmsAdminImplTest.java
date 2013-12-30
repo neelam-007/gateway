@@ -34,9 +34,9 @@ public class JmsAdminImplTest {
 
     @Test
     public void testIsDedicatedThreadPool() {
-        assertFalse(jmsAdmin.isValidThreadPoolSize("A"));
-        assertFalse(jmsAdmin.isValidThreadPoolSize("1"));
-        assertFalse(jmsAdmin.isValidThreadPoolSize("100"));
-        assertTrue(jmsAdmin.isValidThreadPoolSize("10"));
+        assertFalse(jmsAdmin.isValidConsumerConnectionSize("A"));
+        assertTrue(jmsAdmin.isValidConsumerConnectionSize("1"));
+        assertFalse(jmsAdmin.isValidConsumerConnectionSize("100"));
+        assertTrue(jmsAdmin.isValidConsumerConnectionSize("10"));
     }
 }

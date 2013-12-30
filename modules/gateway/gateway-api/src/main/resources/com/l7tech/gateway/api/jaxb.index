@@ -14,6 +14,7 @@ PolicyAliasMO
 PolicyDetail
 PolicyExportResult
 PolicyImportResult
+PrivateKeyRestExport
 PolicyMO
 PolicyReferenceInstruction
 PolicyValidationResult
@@ -40,3 +41,11 @@ CustomKeyValueStoreMO
 SecurityZoneMO
 SiteMinderConfigurationMO
 AssertionSecurityZoneMO
+DependencyAnalysisMO
+DependencyMO
+Reference
+References
+Bundle
+Link
+PolicyVersionMO
+Password

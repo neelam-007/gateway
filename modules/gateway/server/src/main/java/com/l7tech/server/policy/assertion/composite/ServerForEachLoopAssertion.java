@@ -59,6 +59,8 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         int iterations = 0;
         boolean hitLimit = false;
         boolean failed = false;
+        if (!variableExists(context, breakVar))
+            context.setVariable(breakVar, Boolean.FALSE);
         context.setVariable(hitLimitVar, hitLimit);
         while (iterator.hasNext()) {
             if (iterationLimit > 0 && iterations >= iterationLimit) {
@@ -84,6 +86,15 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         context.setVariable(iterationsVar, iterations);
         context.setVariable(hitLimitVar, hitLimit);
         return failed ? AssertionStatus.FAILED : AssertionStatus.NONE;
+    }
+
+    private boolean variableExists(PolicyEnforcementContext context, String var) {
+        try {
+            context.getVariable(var);
+            return true;
+        } catch (NoSuchVariableException e) {
+            return false;
+        }
     }
 
     private boolean isExitLoop(PolicyEnforcementContext context) {

@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Wrapper for GatewayFeatureSets that adds a fake entry for the ESM.  This is a hack but is quicker and safer
- * in the short term than rewriting EsmFeatureSets and GatewayFeatureSets to merge EsmFeatureSet and GatewayFeatureSet
- * into some superclass.
+ * Wrapper for GatewayFeatureSets that excludes legacy product profile entries and adds a fake entry for the ESM.
+ * The fake ESM entry is a hack, but is quicker and safer in the short term than rewriting EsmFeatureSets and
+ * GatewayFeatureSets to merge EsmFeatureSet and GatewayFeatureSet into some superclass.
  */
 public class LicenseGeneratorFeatureSets {
     private static final GatewayFeatureSet PLACEHOLDER_PROFILE_ESM = new GatewayFeatureSet("set:Profile:EnterpriseServiceManager",
@@ -25,14 +25,30 @@ public class LicenseGeneratorFeatureSets {
     }
 
     public static Map<String, GatewayFeatureSet> getProductProfiles() {
-        Map<String, GatewayFeatureSet> profs = new LinkedHashMap<String, GatewayFeatureSet>(GatewayFeatureSets.getProductProfiles());
-        profs.remove(GatewayFeatureSets.PROFILE_LICENSE_NAMES_NO_FEATURES.getName()); // don't show this as an option in GUI
-        profs.put(PLACEHOLDER_PROFILE_ESM.getName(), PLACEHOLDER_PROFILE_ESM);
-        return profs;
+        Map<String, GatewayFeatureSet> allProfiles = GatewayFeatureSets.getProductProfiles();
+
+        Map<String, GatewayFeatureSet> availableProfiles = new LinkedHashMap<>();
+
+        availableProfiles.put(GatewayFeatureSets.PROFILE_API_PROXY,
+                allProfiles.get(GatewayFeatureSets.PROFILE_API_PROXY));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_FIREWALL,
+                allProfiles.get(GatewayFeatureSets.PROFILE_FIREWALL));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_GATEWAY,
+                allProfiles.get(GatewayFeatureSets.PROFILE_GATEWAY));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_NCES_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_NCES_EXTENSION));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_SALESFORCE_EXTENSION));
+        availableProfiles.put(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION,
+                allProfiles.get(GatewayFeatureSets.PROFILE_MOBILE_EXTENSION));
+
+        availableProfiles.put(PLACEHOLDER_PROFILE_ESM.getName(), PLACEHOLDER_PROFILE_ESM);
+
+        return availableProfiles;
     }
 
     public static Map<String, GatewayFeatureSet> getAllFeatureSets() {
-        Map<String, GatewayFeatureSet> sets = new LinkedHashMap<String, GatewayFeatureSet>(GatewayFeatureSets.getAllFeatureSets());
+        Map<String, GatewayFeatureSet> sets = new LinkedHashMap<>(GatewayFeatureSets.getAllFeatureSets());
         sets.put(PLACEHOLDER_PROFILE_ESM.getName(), PLACEHOLDER_PROFILE_ESM);
         return sets;
     }
@@ -49,7 +65,7 @@ public class LicenseGeneratorFeatureSets {
 
         @Override
         public Set<String> getAllEnabledFeatures(Set<String> inputSet) {
-            Set<String> ret = new HashSet<String>();
+            Set<String> ret = new HashSet<>();
             ret.addAll(inputSet);
             ret.addAll(delegate.getAllEnabledFeatures(inputSet));
             return ret;

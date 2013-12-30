@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -77,19 +78,57 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
     }
 
 
-    public void setSession(String host, int port, String sessionId) {
+    @Override
+    public <R, E extends Throwable> R doWithSession(String host, int port, String sessionId, Functions.NullaryThrows<R, E> block) throws E {
         SessionSupport.SessionInfo info = sessionInfoHolder.getSessionInfo();
-        info.host = host;
-        info.port = port;
-        info.sessionId = sessionId;
+        final String oldHost = info.host;
+        final int oldPort = info.port;
+        final String oldSessionId = info.sessionId;
+
+        try {
+            info.host = host;
+            info.port = port;
+            info.sessionId = sessionId;
+
+            return block.call();
+        } finally {
+            info.host = oldHost;
+            info.port = oldPort;
+            info.sessionId = oldSessionId;
+        }
     }
 
-    public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
+    public void setDefaultTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
         synchronized (lock) {
             this.trustFailureHandler = failureHandler;
             if (httpClient instanceof SecureHttpComponentsClient) {
                 //reset connections
                 ((SecureHttpComponentsClient) httpClient).resetConnection();
+            }
+        }
+    }
+
+    @Override
+    public <R, E extends Throwable> R doWithTrustFailureHandler(SSLTrustFailureHandler failureHandler, Functions.NullaryThrows<R, E> block) throws E {
+        final SSLTrustFailureHandler oldFailureHandler;
+        synchronized (lock) {
+            oldFailureHandler = this.trustFailureHandler;
+            this.trustFailureHandler = failureHandler;
+            if (httpClient instanceof SecureHttpComponentsClient) {
+                //reset connections
+                ((SecureHttpComponentsClient) httpClient).resetConnection();
+            }
+        }
+
+        try {
+            return block.call();
+        } finally {
+            synchronized (lock) {
+                this.trustFailureHandler = oldFailureHandler;
+                if (httpClient instanceof SecureHttpComponentsClient) {
+                    //reset connections
+                    ((SecureHttpComponentsClient) httpClient).resetConnection();
+                }
             }
         }
     }

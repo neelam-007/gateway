@@ -27,9 +27,9 @@ import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
-import sun.security.krb5.internal.Ticket;
 
 import javax.inject.Inject;
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -81,7 +81,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         AssertionStatus status = AssertionStatus.NONE;
         String authenticatedUserAccount = null;
 
-        String serviceType = getServiceFromServicePrincipalName(assertion.getServicePrincipalName());
         String realm = ExpandVariables.process(assertion.getRealm(), variableMap, getAudit()).toUpperCase();//realm should always be in upper case
         String spn = ExpandVariables.process(assertion.getServicePrincipalName(), variableMap, getAudit());
         String userRealm = null;
@@ -144,7 +143,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                 }
 
                 if (assertion.isKrbUseGatewayKeytab()) {
-                    svcPrincipal = getServicePrincipal(serviceType, realm);
+                    svcPrincipal = getServicePrincipal(realm);
                     //Check for referral, if user realm != service realm, get referral service ticket.
                     if (userRealm == null || userRealm.trim().length() == 0 || userRealm.equalsIgnoreCase(realm)) {
                         kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, authenticatedUserAccount);
@@ -184,10 +183,10 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     return AssertionStatus.FALSIFIED;
                 }
 
-                Ticket serviceTicket = kst.getServiceTicket();
+                KerberosTicket serviceTicket = kst.getDelegatedKerberosTicket();
 
                 if (assertion.isKrbUseGatewayKeytab()) {
-                    svcPrincipal = getServicePrincipal(serviceType, realm);
+                    svcPrincipal = getServicePrincipal(realm);
                     // construct the ticket from the delegated ticket
                     kerberosServiceTicket = client.getKerberosProxyServiceTicket(targetPrincipalName.getName(), svcPrincipal, serviceTicket);
                 }
@@ -245,23 +244,8 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         return false;
     }
 
-    protected String getServicePrincipal(String serviceType, String realm) throws KerberosException {
-        return KerberosClient.getKerberosAcceptPrincipal(serviceType, realm, true);
-    }
-
-
-    /**
-     * Get service type from the service principal name
-     * ex: http/computer.domain principal has http as service type
-     * @param servicePrincipalName
-     * @return the service type portion of the service principal name otherwise null
-     */
-    protected String getServiceFromServicePrincipalName(String servicePrincipalName) {
-        Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(servicePrincipalName.trim());
-        if (m.find()) {
-            return m.group(1);
-        }
-        return null;
+    protected String getServicePrincipal(String realm) throws KerberosException {
+        return KerberosClient.getKerberosAcceptPrincipal(realm, true);
     }
 
 

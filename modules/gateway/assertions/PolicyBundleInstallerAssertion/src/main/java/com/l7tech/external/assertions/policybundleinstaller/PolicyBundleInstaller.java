@@ -1,54 +1,68 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.policybundleinstaller.installer.*;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
-import com.l7tech.server.policy.bundle.*;
-import com.l7tech.util.*;
-import com.l7tech.xml.DomElementCursor;
-import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.InvalidXpathException;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathResult;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-import org.xml.sax.SAXException;
 
-import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.policybundleinstaller.InstallerUtils.*;
-import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
-import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
-import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
 import static com.l7tech.util.Functions.Nullary;
 
 public class PolicyBundleInstaller {
 
+    public static class InstallationException extends Exception {
+        public InstallationException(String message) {
+            super(message);
+        }
+
+        public InstallationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public InstallationException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
+
+    @NotNull
+    private final PolicyBundleInstallerContext context;
+
+    private final FolderInstaller folderInstaller;
+    private final ServiceInstaller serviceInstaller;
+    private final PolicyInstaller policyInstaller;
+    private final TrustedCertificateInstaller trustedCertificateInstaller;
+    private final EncapsulatedAssertionInstaller encapsulatedAssertionInstaller;
+    private final JdbcConnectionInstaller jdbcConnectionInstaller;
+    private final AssertionInstaller assertionInstaller;
+
     public PolicyBundleInstaller(@NotNull final GatewayManagementInvoker gatewayManagementInvoker,
                                  @NotNull final PolicyBundleInstallerContext context,
                                  @NotNull final Nullary<Boolean> cancelledCallback) {
-        this.gatewayManagementInvoker = gatewayManagementInvoker;
-        this.cancelledCallback = cancelledCallback;
         this.context = context;
+
+        folderInstaller = new FolderInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        policyInstaller = new PolicyInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        encapsulatedAssertionInstaller = new EncapsulatedAssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        serviceInstaller = new ServiceInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        trustedCertificateInstaller = new TrustedCertificateInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        jdbcConnectionInstaller = new JdbcConnectionInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        assertionInstaller = new AssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);
     }
 
     public void setSavePolicyCallback(@Nullable PreBundleSavePolicyCallback savePolicyCallback) {
-        this.savePolicyCallback = savePolicyCallback;
+        policyInstaller.setSavePolicyCallback(savePolicyCallback);
     }
 
     /**
@@ -56,11 +70,11 @@ public class PolicyBundleInstaller {
      *
      * @param dryRunEvent event used to capture any conflicts.
      *
-     * @throws BundleResolver.BundleResolverException
-     * @throws BundleResolver.UnknownBundleException
-     * @throws BundleResolver.InvalidBundleException
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.BundleResolverException
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.UnknownBundleException
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      * @throws InterruptedException
-     * @throws AccessDeniedManagementResponse
+     * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
      */
     public void dryRunInstallBundle(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
             throws BundleResolver.BundleResolverException,
@@ -69,128 +83,17 @@ public class PolicyBundleInstaller {
             InterruptedException,
             AccessDeniedManagementResponse {
 
-        checkInterrupted();
+        logger.fine("Conflict checking bundle: " + context.getBundleInfo().getId());
 
-        final BundleInfo bundleInfo = context.getBundleInfo();
-        final Document serviceEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), SERVICE, true);
+        final Map<String, String> conflictingPolicyIdsNames = new HashMap<>();
+        final Map<String, String> policyIdsNames =  policyInstaller.dryRunInstall(dryRunEvent, conflictingPolicyIdsNames);
+        encapsulatedAssertionInstaller.dryRunInstall(dryRunEvent, policyIdsNames, conflictingPolicyIdsNames);
+        serviceInstaller.dryRunInstall(dryRunEvent);
+        trustedCertificateInstaller.dryRunInstall(dryRunEvent);
+        jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
+        assertionInstaller.dryRunInstall(dryRunEvent);
 
-        final Map<Element, Element> serviceDetailMap = GatewayManagementDocumentUtilities.findServiceNamesAndUrlPatternsFromEnumeration(serviceEnumDoc);
-        for (Element nameElmt: serviceDetailMap.keySet()) {
-            checkInterrupted();
-
-            Element urlPatternElmt = serviceDetailMap.get(nameElmt);
-
-            String conflictObject = null;
-            try {
-                final List<Goid> matchingServices;
-                if (urlPatternElmt != null) {
-                    conflictObject = getPrefixedUrl(DomUtils.getTextValue(urlPatternElmt));
-                    matchingServices = findMatchingServiceByUrl(conflictObject);
-                } else {
-                    conflictObject = XmlUtil.getTextValue(nameElmt);
-                    matchingServices = findMatchingServiceByNameWithoutResolutionUrl(conflictObject);
-                }
-                if (!matchingServices.isEmpty()) {
-                    dryRunEvent.addServiceConflict(conflictObject);
-                }
-            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-                throw new BundleResolver.InvalidBundleException("Could not check for conflict for url pattern or service name'" + conflictObject + "'", e);
-            }
-        }
-
-        checkInterrupted();
-
-        final Document policyEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), POLICY, true);
-        final List<Element> policyNamesElms = GatewayManagementDocumentUtilities.findAllPolicyNamesFromEnumeration(policyEnumDoc);
-        for (Element policyNamesElm : policyNamesElms) {
-            checkInterrupted();
-            final String policyName = getPrefixedPolicyName(DomUtils.getTextValue(policyNamesElm));
-            try {
-                final List<Goid> matchingPolicies = findMatchingPolicy(policyName);
-                if (!matchingPolicies.isEmpty()) {
-                    dryRunEvent.addPolicyNameWithConflict(policyName);
-                }
-            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-                throw new BundleResolver.InvalidBundleException("Could not check for conflict for policy name  '" + policyName + "'", e);
-            }
-        }
-
-        checkInterrupted();
-
-        final Document certificateEnumDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), CERTIFICATE, true);
-        final Map<Element, Element> certificateMap = GatewayManagementDocumentUtilities.findCertificateSerialNumbersAndNamesFromEnumeration(certificateEnumDoc);
-        for (Element certSerialNumElm : certificateMap.keySet()) {
-            checkInterrupted();
-            final String serialNumber = XmlUtil.getTextValue(certSerialNumElm);
-            try {
-                final List<Goid> matchingPolicies = findMatchingCertificateBySerialNumber(serialNumber);
-                if (!matchingPolicies.isEmpty()) {
-                    dryRunEvent.addCertificateNameWithConflict(XmlUtil.getTextValue(certificateMap.get(certSerialNumElm)));
-                }
-            } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-                throw new BundleResolver.InvalidBundleException("Could not check for conflict for certificate serial number  '" + serialNumber + "'", e);
-            }
-        }
-
-        checkInterrupted();
-
-        final Set<String> jdbcConnRefs = bundleInfo.getJdbcConnectionReferences();
-        final BundleMapping bundleMapping = context.getBundleMapping();
-        if (!jdbcConnRefs.isEmpty()) {
-            final Map<String, String> jdbcMappings =
-                    (bundleMapping != null) ? bundleMapping.getJdbcMappings() : new HashMap<String, String>();
-
-            // validate each, consider any mapping that may be present.
-            for (String jdbcConnRef : jdbcConnRefs) {
-                checkInterrupted();
-                final String jdbcConnToVerify = (jdbcMappings.containsKey(jdbcConnRef)) ? jdbcMappings.get(jdbcConnRef) : jdbcConnRef;
-                try {
-                    final List<Goid> foundConns = findMatchingJdbcConnection(jdbcConnToVerify);
-                    if (foundConns.isEmpty()) {
-                        dryRunEvent.addMissingJdbcConnection(jdbcConnToVerify);
-                    }
-                } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-                    throw new BundleResolver.InvalidBundleException("Could not verify JDBC Connection '" + jdbcConnToVerify + "'", e);
-                }
-            }
-        }
-
-        // Check assertion existence if it is required
-        if (context.isCheckingAssertionExistenceRequired()) {
-            final Document enumerationDoc = context.getBundleResolver().getBundleItem(bundleInfo.getId(), ASSERTION, false);
-            final List<Element> assertionElms = GatewayManagementDocumentUtilities.getEntityElements(enumerationDoc.getDocumentElement(), "Assertion");
-            for (Element assertionElm: assertionElms) {
-                final Element assertionNameElm = XmlUtil.findFirstDescendantElement(assertionElm, MGMT_VERSION_NAMESPACE, "Name");
-                final Element policyElm = XmlUtil.findFirstDescendantElement(assertionElm, GatewayManagementDocumentUtilities.getNamespaceMap().get("wsp"), "Policy");
-                final boolean isCustomAssertion = XmlUtil.findFirstDescendantElement(assertionElm, GatewayManagementDocumentUtilities.getNamespaceMap().get("L7p"), "CustomAssertion") != null;
-
-                boolean assertionNotFound = false;
-                try {
-                    Assertion assertions = WspReader.getDefault().parseStrictly(XmlUtil.nodeToString(policyElm), WspReader.OMIT_DISABLED);
-                    // Scan for UnknownAssertion
-                    Iterator it = assertions.preorderIterator();
-                    while (it.hasNext()) {
-                        final Object assertion = it.next();
-                        if (assertion instanceof UnknownAssertion) {
-                            // Custom Assertion class not found because they reside in a different Subversion project
-                            assertionNotFound = true;
-                            break;
-                        }
-                    }
-                } catch (IOException e) {
-                    // Assertion is not installed
-                    assertionNotFound = true;
-                }
-
-                if (assertionNotFound) {
-                    if (assertionNameElm == null) {
-                        throw new IllegalArgumentException("Assertion xml does not contain a Name element.");
-                    }
-
-                    dryRunEvent.addMissingAssertions(XmlUtil.getTextValue(assertionNameElm) + (isCustomAssertion? " (Custom Assertion)":""));
-                }
-            }
-        }
+        logger.fine("Finished conflict checking bundle: " + context.getBundleInfo());
     }
 
     /**
@@ -208,707 +111,41 @@ public class PolicyBundleInstaller {
 
         logger.info("Installing bundle: " + context.getBundleInfo().getId());
 
-        checkInterrupted();
-
-        final Document folderBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), FOLDER, false);
-
-        final Goid folderToInstallInto = context.getFolderGoid();
-        assert folderBundle != null;
-        final Map<String, Goid> oldIdToNewFolderIds = installFolders(folderToInstallInto, folderBundle);
-
-        checkInterrupted();
-
-        // install policies
-        final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), POLICY, true);
-        final Map<String, String> contextOldPolicyGuidsToNewGuids;
-        if (policyBundle == null) {
-            logger.info("No policies to install for bundle " + context.getBundleInfo());
-            contextOldPolicyGuidsToNewGuids = Collections.emptyMap();
-        } else {
-            try {
-                contextOldPolicyGuidsToNewGuids = installPolicies(
-                        oldIdToNewFolderIds,
-                        policyBundle);
-            } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
-                throw new InstallationException(e);
-            }
-        }
-
-        checkInterrupted();
-
-        // install services
-        final Document serviceBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), SERVICE, true);
-        if (serviceBundle == null) {
-            logger.info("No services to install for bundle " + context.getBundleInfo());
-        } else {
-            try {
-                installServices(
-                        oldIdToNewFolderIds,
-                        contextOldPolicyGuidsToNewGuids,
-                        serviceBundle);
-            } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
-                throw new InstallationException(e);
-            }
-        }
-
-        // install trusted certificate
-        final Document certificateBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), CERTIFICATE, true);
-        if (certificateBundle == null) {
-            logger.info("No certificate to install for bundle " + context.getBundleInfo());
-        } else {
-            installTrustedCertificate(certificateBundle);
-        }
+        final Map<String, Goid> oldToNewFolderIds = folderInstaller.install();
+        final Map<String, String> oldToNewPolicyIds = new HashMap<>();
+        final Map<String, String> oldToNewPolicyGuids = policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds);
+        encapsulatedAssertionInstaller.install(oldToNewPolicyIds);
+        serviceInstaller.install(oldToNewFolderIds, oldToNewPolicyGuids, policyInstaller);
+        trustedCertificateInstaller.install();
 
         logger.info("Finished installing bundle: " + context.getBundleInfo());
     }
 
-    public static class InstallationException extends Exception{
-        public InstallationException(String message) {
-            super(message);
-        }
-
-        public InstallationException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public InstallationException(Throwable cause) {
-            super(cause);
-        }
+    public FolderInstaller getFolderInstaller() {
+        return folderInstaller;
     }
 
-    /**
-     * Install all trusted certificates defined by a given certificate enumeration document.
-     * Before installing a certificate, check if the certificate already exists.  If so, skip it, otherwise create it.
-     *
-     * @param trustedCertEnumeration: the Document object defines all trusted certificates.
-     * @throws UnexpectedManagementResponse
-     * @throws InterruptedException
-     * @throws AccessDeniedManagementResponse
-     */
-    public void installTrustedCertificate(final Document trustedCertEnumeration) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        final List<Element> certificateElms = GatewayManagementDocumentUtilities.getEntityElements(trustedCertEnumeration.getDocumentElement(), "TrustedCertificate");
-        for (Element certificateElm : certificateElms) {
-            checkInterrupted();
-
-            final Element certSerialNumElm = XmlUtil.findFirstDescendantElement(certificateElm, MGMT_VERSION_NAMESPACE, "SerialNumber");
-            final Element certificateNameElm = XmlUtil.findFirstDescendantElement(certificateElm, MGMT_VERSION_NAMESPACE, "Name");
-
-            final String serialNumber = XmlUtil.getTextValue(certSerialNumElm);
-            final List<Goid> matchingPolicies = findMatchingCertificateBySerialNumber(serialNumber);
-
-            // If a certificate already exists, skip certificate creation and check the next candidate
-            if (! matchingPolicies.isEmpty()) {
-                logger.info("Not installing a trusted certificate with name '" + DomUtils.getTextValue(certificateNameElm) + "', due to existing certificate with conflicting Thumbprint SHA1");
-                continue;
-            }
-
-            // If no conflict occurs, then create the certificate
-            final String certificateXmlTemplate = XmlUtil.nodeToStringQuiet(certificateElm);
-            final String createCertificateXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), CERTIFICATE_MGMT_NS, certificateXmlTemplate);
-
-            final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createCertificateXml);
-
-            final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
-            if (createdId == null) {
-                final StringBuilder failureDetail = new StringBuilder("Could not create the certificate from the bundle: ")
-                    .append(GatewayManagementDocumentUtilities.getErrorDetails(pair.right));
-                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(failureDetail.toString());
-            }
-        }
+    public ServiceInstaller getServiceInstaller() {
+        return serviceInstaller;
     }
 
-    /**
-     * Note: Services contain nothing unique
-     *
-     * @param oldToNewFolderIds
-     * @param contextOldPolicyGuidsToNewGuids
-     *
-     * @param serviceMgmtEnumeration
-     * @throws BundleResolver.InvalidBundleException
-     *
-     * @throws UnexpectedManagementResponse
-     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
-     *
-     * @throws InterruptedException
-     * @throws AccessDeniedManagementResponse
-     */
-    public void installServices(@NotNull final Map<String, Goid> oldToNewFolderIds,
-                                @NotNull final Map<String, String> contextOldPolicyGuidsToNewGuids,
-                                @NotNull final Document serviceMgmtEnumeration)
-            throws BundleResolver.InvalidBundleException,
-            UnexpectedManagementResponse,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
-            InterruptedException,
-            AccessDeniedManagementResponse {
-
-        final Map<String, Goid> oldIdsToNewServiceIds = new HashMap<String, Goid>();
-        final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceMgmtEnumeration.getDocumentElement(), "Service");
-        for (Element serviceElm : serviceElms) {
-            checkInterrupted();
-
-            final Element serviceElmWritable = parseQuietly(XmlUtil.nodeToStringQuiet(serviceElm)).getDocumentElement();
-            final String id = serviceElmWritable.getAttribute("id");
-            if (oldIdsToNewServiceIds.containsKey(id)) {
-                continue;
-            }
-
-            final Element serviceDetail = getServiceDetailElement(serviceElmWritable);
-            final String bundleFolderId = serviceDetail.getAttribute("folderId");
-
-            if (!oldToNewFolderIds.containsKey(bundleFolderId)) {
-                throw new BundleResolver.InvalidBundleException("Could not find updated folder for service #{" + id + "} in folder " + bundleFolderId);
-            }
-            final Element urlPatternWriteableEl = XmlUtil.findFirstDescendantElement(serviceDetail, MGMT_VERSION_NAMESPACE, "UrlPattern");
-
-            // lets check if the service has a URL mapping and if so, if any service already exists with that mapping.
-            // if it does, then we won't install it.
-            // If the service has no resolution url, then we will check if there exists any conflicts with the same service name.
-
-            if (urlPatternWriteableEl != null) {
-                final String existingUrl = DomUtils.getTextValue(urlPatternWriteableEl, true);
-                final String maybePrefixedUrl = getPrefixedUrl(existingUrl);
-                if (!existingUrl.equals(maybePrefixedUrl)) {
-                    DomUtils.setTextContent(urlPatternWriteableEl, maybePrefixedUrl);
-                }
-
-                final List<Goid> matchingService = findMatchingServiceByUrl(maybePrefixedUrl);
-                if (!matchingService.isEmpty()) {
-                    // Service already exists
-                    logger.info("Not installing service with id #{" + id + "} and routing URI '" + maybePrefixedUrl + "' " +
-                            "due to existing service with conflicting resolution URI");
-                    continue;
-                }
-            } else {
-                final Element serviceNameEl = XmlUtil.findFirstDescendantElement(serviceDetail, MGMT_VERSION_NAMESPACE, "Name");
-                final String serviceName = DomUtils.getTextValue(serviceNameEl);
-                final List<Goid> matchingService = findMatchingServiceByNameWithoutResolutionUrl(serviceName);
-                if (!matchingService.isEmpty()) {
-                    // Service already exists
-                    logger.info("Not installing service with id #{" + id + "} and service name '" + serviceName + "' " +
-                        "due to existing service with conflicting service name");
-                    continue;
-                }
-            }
-
-            final Goid newFolderId = oldToNewFolderIds.get(bundleFolderId);
-            serviceDetail.setAttribute("folderId", String.valueOf(newFolderId));
-
-            final Element policyResourceElmWritable = getPolicyResourceElement(serviceElmWritable, "Service", id);
-            if (policyResourceElmWritable == null) {
-                throw new BundleResolver.InvalidBundleException("Invalid policy element found. Could not retrieve policy XML from resource for Service with id #{" + id + "}");
-            }
-
-            // if this service has any includes we need to update them
-            final Document policyDocumentFromResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", id);
-            final Element serviceDetailElmReadOnly = getServiceDetailElement(serviceElm);
-            updatePolicyDoc(serviceDetailElmReadOnly, "Service", contextOldPolicyGuidsToNewGuids, id, policyResourceElmWritable, policyDocumentFromResource);
-
-            final String serviceXmlTemplate = XmlUtil.nodeToStringQuiet(serviceElmWritable);
-            final String createServiceXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), SERVICES_MGMT_NS, serviceXmlTemplate);
-
-            final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createServiceXml);
-
-            final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
-            if (createdId == null) {
-                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse("Could not get the id for service from bundle with id: #{" + id + "}");
-            }
-
-            oldIdsToNewServiceIds.put(id, createdId);
-        }
+    public PolicyInstaller getPolicyInstaller() {
+        return policyInstaller;
     }
 
-    /**
-     * Note: Policies are unique on name across a gateway
-     *
-     * @param oldToNewFolderIds     gateway mgmt policy elements will reference folder ids. Before publishing a policy
-     *                              we need the actualy folder id that the policy will be published into. This is a map of
-     *                              the folder id contained in the enumeration document for a policy mapped to the actual
-     *                              folder id on the target system which represents the same logical folder.
-     * @param policyMgmtEnumeration the gateway mgmt enumeration containing all policy elements too publish.
-     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse
-     *
-     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
-     *
-     * @throws BundleResolver.InvalidBundleException
-     *
-     * @throws InterruptedException
-     * @throws AccessDeniedManagementResponse
-     */
-    public final Map<String, String> installPolicies(@NotNull final Map<String, Goid> oldToNewFolderIds,
-                                                     @NotNull final Document policyMgmtEnumeration)
-            throws
-            GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
-            BundleResolver.InvalidBundleException,
-            InterruptedException,
-            AccessDeniedManagementResponse {
-
-        final List<Element> enumPolicyElms = GatewayManagementDocumentUtilities.getEntityElements(policyMgmtEnumeration.getDocumentElement(), "Policy");
-
-        final Map<String, String> guidToName = new HashMap<String, String>();
-        final Map<String, Element> allPolicyElms = new HashMap<String, Element>();
-        for (Element policyElm : enumPolicyElms) {
-            final Element name = XmlUtil.findFirstDescendantElement(policyElm, BundleUtils.L7_NS_GW_MGMT, "Name");
-            final String policyName = DomUtils.getTextValue(name, true);
-            final String guid = policyElm.getAttribute("guid");
-            guidToName.put(guid, policyName);
-            allPolicyElms.put(guid, policyElm);
-        }
-
-        final Map<String, String> oldGuidsToNewGuids = new HashMap<String, String>();
-        // fyi: circular policy includes are not supported via the Policy Manager - assume they will not be found
-        for (Element policyElm : enumPolicyElms) {
-            // recursive call if policy includes an include
-            getOrCreatePolicy(policyElm, oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName);
-        }
-
-        return oldGuidsToNewGuids;
+    public EncapsulatedAssertionInstaller getEncapsulatedAssertionInstaller() {
+        return encapsulatedAssertionInstaller;
     }
 
-    /**
-     * Folders will be created if needed. If folders already exist in the parent folder then they will not be modified.
-     * Incoming XML will contain ids for folders, however these are ignored by the management api and new ids will be
-     * assigned.
-     *
-     * @param parentFolderGoid       oid of the parent folder to install into.
-     * @param folderMgmtEnumeration Gateway management enumeration document of folders to install
-     * @return map of all folders ids to ids in the folderMgmtEnumeration. The key is always the folders canned id, the id in the
-     *         folderMgmtEnumeration, the value will either be a new id if the folder was created or it will be the id of the existing
-     *         folder on the target gateway.
-     * @throws AccessDeniedManagementResponse if the admin user does not contain the permission to create any required folder
-     * @throws UnexpectedManagementResponse   if the gateway mgmt assertion returns an unexpected error status
-     * @throws InterruptedException           if the installation is cancelled
-     */
-    public Map<String, Goid> installFolders(final Goid parentFolderGoid,
-                                          @NotNull final Document folderMgmtEnumeration)
-            throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            InterruptedException,
-            AccessDeniedManagementResponse {
-        final List<Element> folderElms = GatewayManagementDocumentUtilities.getEntityElements(folderMgmtEnumeration.getDocumentElement(), "Folder");
-
-        // find the root node
-        final Map<String, Element> folderIdToElement = new HashMap<String, Element>();
-        Element rootFolder = null;
-        for (Element folderElm : folderElms) {
-            final String idAttr = folderElm.getAttribute("id");
-            folderIdToElement.put(idAttr, folderElm);
-            if (idAttr.equals("-5002") || idAttr.equals(new Goid(0,-5002L).toHexString())) {
-                rootFolder = folderElm;
-            }
-        }
-
-        final Stack<Element> toProcess = new Stack<Element>();
-        toProcess.push(rootFolder);
-
-        final Map<String, Goid> oldToNewIds = new HashMap<String, Goid>();
-        // parent folder goid may already be -5002 when installing to the root node
-        oldToNewIds.put("-5002", parentFolderGoid);
-
-        while (!toProcess.isEmpty()) {
-
-            checkInterrupted();
-
-            final Element currentElm = toProcess.pop();
-            final String id = currentElm.getAttribute("id");
-            final String folderId = currentElm.getAttribute("folderId");
-
-            // add all children which have currentElm as their parent
-            for (Element folderElm : folderElms) {
-                final String parentId = folderElm.getAttribute("folderId");
-                if (parentId.equals(id)) {
-                    toProcess.push(folderElm);
-                }
-            }
-
-            if (id.equals("-5002") || id.equals(new Goid(0,-5002L).toHexString())) {
-                // the root node will always already exist
-                continue;
-            }
-
-            final Goid newParentId = oldToNewIds.get(folderId);
-            if (newParentId == null) {
-                throw new RuntimeException("Parent folder " + folderId + " for folder " + id + " not found. Input Folder XML must be corrupt.");
-            }
-
-            final Document document = XmlUtil.createEmptyDocument("Folder", "l7", BundleUtils.L7_NS_GW_MGMT);
-            final Element folder = document.getDocumentElement();
-            folder.setAttribute("folderId", String.valueOf(newParentId));
-            folder.setAttribute("id", id); //this gets overwritten and ignored by mgmt assertion.
-
-            final Element name = DomUtils.createAndAppendElementNS(folder, "Name", BundleUtils.L7_NS_GW_MGMT, "l7");
-            final String folderName = getEntityName(currentElm);
-            final Text nameText = document.createTextNode(folderName);
-            name.appendChild(nameText);
-
-            final String folderXmlTemplate;
-            try {
-                folderXmlTemplate = XmlUtil.nodeToString(document.getDocumentElement());
-            } catch (IOException e) {
-                throw new RuntimeException("Unexpected exception serializing template Folder XML", e);
-            }
-            final String createFolderXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), FOLDER_MGMT_NS, folderXmlTemplate);
-
-            final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createFolderXml);
-            final Goid newId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
-            final Goid idToRecord;
-            if (newId == null) {
-                if (GatewayManagementDocumentUtilities.resourceAlreadyExists(pair.right)) {
-                    idToRecord = getExistingFolderId(newParentId, folderName);
-                } else {
-                    idToRecord = null;
-                }
-            } else {
-                idToRecord = newId;
-            }
-
-            if (idToRecord == null) {
-                throw new RuntimeException("Could not create or find id for xml folder with bundle id: " + id);
-            }
-
-            oldToNewIds.put(id, idToRecord);
-        }
-
-        return oldToNewIds;
+    TrustedCertificateInstaller getTrustedCertificateInstaller() {
+        return trustedCertificateInstaller;
     }
 
-    // - PRIVATE
-
-    @Nullable private PreBundleSavePolicyCallback savePolicyCallback;
-    @NotNull private final GatewayManagementInvoker gatewayManagementInvoker;
-    @NotNull private final PolicyBundleInstallerContext context;
-    @NotNull private final Nullary<Boolean> cancelledCallback;
-    private static final Logger logger = Logger.getLogger(PolicyBundleInstaller.class.getName());
-
-    private String getPrefixedUrl(final String existingUrlPattern) {
-        if (isPrefixValid(context.getInstallationPrefix())) {
-            final String prefixToUse = "/" + context.getInstallationPrefix();
-            return prefixToUse + existingUrlPattern;
-        } else {
-            return existingUrlPattern;
-        }
+    JdbcConnectionInstaller getJdbcConnectionInstaller() {
+        return jdbcConnectionInstaller;
     }
 
-    private Document parseQuietly(String inputXml) {
-        try {
-            return XmlUtil.parse(inputXml);
-        } catch (SAXException e) {
-            throw new RuntimeException("Unexpected internal error parsing XML: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     *
-     * @param enumPolicyElmReadOnly read only access to the Policy Gateay Mgmt element
-     * @param oldGuidsToNewGuids    map of the policy's guid from the gateway mgmt enumeration document to it's actual
-     *                              guid once published. This avoids attempting to publish the same policy more than once.
-     * @param oldToNewFolderIds
-     * @param allPolicyElms
-     * @param guidToName
-     * @throws BundleResolver.InvalidBundleException
-     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
-     * @throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse
-     * @throws InterruptedException
-     * @throws AccessDeniedManagementResponse
-     */
-    private void getOrCreatePolicy(@NotNull final Element enumPolicyElmReadOnly,
-                                   @NotNull final Map<String, String> oldGuidsToNewGuids,
-                                   @NotNull final Map<String, Goid> oldToNewFolderIds,
-                                   @NotNull final Map<String, Element> allPolicyElms,
-                                   @NotNull final Map<String, String> guidToName)
-            throws
-            BundleResolver.InvalidBundleException,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
-            GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            InterruptedException,
-            AccessDeniedManagementResponse {
-
-        final String policyGuid = enumPolicyElmReadOnly.getAttribute("guid");
-
-        if (oldGuidsToNewGuids.containsKey(policyGuid)) {
-            // already created
-            return;
-        }
-
-        final Element enumPolicyElmWritable;
-        try {
-            enumPolicyElmWritable = XmlUtil.parse(XmlUtil.nodeToString(enumPolicyElmReadOnly)).getDocumentElement();
-        } catch (SAXException e) {
-            throw new RuntimeException("Unexpected exception getting a writable policy element", e);
-        } catch (IOException e) {
-            throw new RuntimeException("Unexpected exception getting a writable policy element", e);
-        }
-
-        final Element policyResourceElmWritable = getPolicyResourceElement(enumPolicyElmWritable, "Policy", policyGuid);
-        if (policyResourceElmWritable == null) {
-            throw new BundleResolver.InvalidBundleException("Invalid policy element found. Could not retrieve policy XML from resource");
-        }
-
-        // we want elements that we can modify
-        final Document policyDocWriteEl = getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", policyGuid);
-        // these do not belong to the policyResourceElmWritable document
-        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocWriteEl);
-        for (Element policyIncludeElm : policyIncludes) {
-            final String policyInclude = policyIncludeElm.getAttribute("stringValue");
-            if (!allPolicyElms.containsKey(policyInclude)) {
-                throw new BundleResolver.InvalidBundleException("Policy with guid " + policyInclude + " was not included in bundle "
-                        + context.getBundleInfo().getName() + "#{" + context.getBundleInfo().getId() + "}");
-            }
-            getOrCreatePolicy(allPolicyElms.get(policyInclude), oldGuidsToNewGuids, oldToNewFolderIds, allPolicyElms, guidToName);
-        }
-
-        checkInterrupted();
-
-        final Element policyDetailElmReadOnly = getPolicyDetailElement(enumPolicyElmReadOnly);
-        // get or create
-        // Create a new document and modify it
-        updatePolicyDoc(policyDetailElmReadOnly, "Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes);
-
-        final Element policyDetailWritable = getPolicyDetailElement(enumPolicyElmWritable);
-        final String folderId = policyDetailWritable.getAttribute("folderId");
-        final Goid newFolderId = oldToNewFolderIds.get(folderId);
-        if (newFolderId == null) {
-            throw new BundleResolver.InvalidBundleException("Policy with GUID: " + policyGuid + " is contained within unknown folder id '" + folderId + "' in the bundle");
-        }
-
-        policyDetailWritable.setAttribute("folderId", String.valueOf(newFolderId));
-
-        final String policyNameToUse;
-        // Add prefix if needed
-        if (isPrefixValid(context.getInstallationPrefix())) {
-            final Element nameElementWritable = GatewayManagementDocumentUtilities.getEntityNameElement(policyDetailWritable);
-            final String policyName = DomUtils.getTextValue(nameElementWritable);
-            policyNameToUse = getPrefixedPolicyName(policyName);
-            DomUtils.setTextContent(nameElementWritable, policyNameToUse);
-            assert (policyName.equals(guidToName.get(policyGuid)));
-        } else {
-            policyNameToUse = guidToName.get(policyGuid);
-        }
-
-        final String policyXmlTemplate;
-        try {
-            policyXmlTemplate = XmlUtil.nodeToString(enumPolicyElmWritable);
-        } catch (IOException e) {
-            throw new RuntimeException("Unexpected exception serializing writable policy element", e);
-        }
-
-        final String createPolicyXml = MessageFormat.format(CREATE_ENTITY_XML, getUuid(), POLICIES_MGMT_NS, policyXmlTemplate);
-        final Pair<AssertionStatus, Document> pair = callManagementCheckInterrupted(createPolicyXml);
-
-        final Goid createdId = GatewayManagementDocumentUtilities.getCreatedId(pair.right);
-        String guidToUse = null;
-        if (createdId == null) {
-            if (GatewayManagementDocumentUtilities.resourceAlreadyExists(pair.right)) {
-                guidToUse = getExistingPolicyGuid(policyNameToUse);
-            }
-        } else {
-            // we just created it
-            guidToUse = getExistingPolicyGuid(policyNameToUse);
-        }
-
-        if (guidToUse == null) {
-            throw new RuntimeException("Could not create or get the GUID for policy from bundle with guid: #{" + policyGuid + "}");
-        }
-
-        oldGuidsToNewGuids.put(policyGuid, guidToUse);
-    }
-
-    private boolean isPrefixValid(String installationPrefix) {
-        return installationPrefix != null && !installationPrefix.trim().isEmpty();
-    }
-
-    private String getPrefixedPolicyName(@NotNull String policyName) {
-        if(isPrefixValid(context.getInstallationPrefix())) {
-            return context.getInstallationPrefix() + " " + policyName;
-        } else {
-            return policyName;
-        }
-    }
-
-    private void updatePolicyDoc(Element serviceDetailElmReadOnly,
-                                 String entityType,
-                                 Map<String, String> oldGuidsToNewGuids,
-                                 String identifier,
-                                 Element policyResourceElmWritable,
-                                 Document policyDocumentFromResource)
-            throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
-
-        final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocumentFromResource);
-        updatePolicyDoc(serviceDetailElmReadOnly, entityType, oldGuidsToNewGuids, identifier, policyResourceElmWritable, policyDocumentFromResource, policyIncludes);
-    }
-
-    /**
-     *
-     * @param entityDetailElmReadOnly either a PolicyDetail or a ServiceDetail element which is read only
-     * @param policyIncludesFromPolicyDocument These elements must come from policyDocumentFromResource's Document
-     * @throws BundleResolver.InvalidBundleException
-     * @throws PreBundleSavePolicyCallback.PolicyUpdateException
-     */
-    private void updatePolicyDoc(Element entityDetailElmReadOnly,
-                                 String entityType,
-                                 Map<String, String> oldGuidsToNewGuids,
-                                 String identifier,
-                                 Element policyResourceElmWritable,
-                                 Document policyDocumentFromResource,
-                                 @NotNull List<Element> policyIncludesFromPolicyDocument)
-            throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
-        updatePolicyIncludes(oldGuidsToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
-
-        final BundleMapping bundleMapping = context.getBundleMapping();
-        if (bundleMapping != null) {
-            final Map<String, String> mappedJdbcReferences = bundleMapping.getJdbcMappings();
-            if (!mappedJdbcReferences.isEmpty()) {
-                final List<Element> jdbcReferencesElms = findJdbcReferences(policyDocumentFromResource.getDocumentElement());
-                for (Element jdbcRefElm : jdbcReferencesElms) {
-                    try {
-                        final Element connNameElm = XmlUtil.findExactlyOneChildElementByName(jdbcRefElm, BundleUtils.L7_NS_POLICY, "ConnectionName");
-                        final String policyConnName = connNameElm.getAttribute("stringValue").trim();
-                        if (mappedJdbcReferences.containsKey(policyConnName)) {
-                            connNameElm.setAttribute("stringValue", mappedJdbcReferences.get(policyConnName));
-                        }
-
-                    } catch (TooManyChildElementsException e) {
-                        throw new BundleResolver.InvalidBundleException("Could not find jdbc reference to update: " + ExceptionUtils.getMessage(e));
-                    } catch (MissingRequiredElementException e) {
-                        throw new BundleResolver.InvalidBundleException("Could not find jdbc reference to update: " + ExceptionUtils.getMessage(e));
-                    }
-                }
-            }
-        }
-
-        if (savePolicyCallback != null) {
-            savePolicyCallback.prePublishCallback(context.getBundleInfo(), entityDetailElmReadOnly, policyDocumentFromResource);
-        }
-
-        //write changes back to the resource document
-        DomUtils.setTextContent(policyResourceElmWritable, XmlUtil.nodeToStringQuiet(policyDocumentFromResource));
-    }
-
-    /**
-     * See if any existing service contains a service with the same urlMapping e.g. resolution URI
-     *
-     * @param urlMapping URI Resolution value for the search
-     * @return list of ids of any existing service which have this routing uri
-     */
-    @NotNull
-    private List<Goid> findMatchingServiceByUrl(String urlMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
-            "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-    }
-
-    /**
-     * See if any existing service without resolution url contains a service with the same nameMapping e.g. service name
-     *
-     * @param nameMapping the service name for the search
-     * @return list of ids of any existing service which have the same service name as nameMapping and do not have resolution url.
-     */
-    @NotNull
-    private List<Goid> findMatchingServiceByNameWithoutResolutionUrl(String nameMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        final List<Goid> foundIds = new ArrayList<>();
-
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
-            "/l7:Service/l7:ServiceDetail/l7:Name[text()='" + nameMapping + "']");
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-
-        // Remove ids associated with some services having resolution url, since service conflict with resolution url has been done by findMatchingServiceByUrl.
-        final List<Goid> nameMatchedServices = GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-        for (Goid id: nameMatchedServices) {
-            String oidFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
-                "/l7:Service/l7:ServiceDetail[@id='" + id + "']/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern");
-            Pair<AssertionStatus, Document> matchedPair = callManagementCheckInterrupted(oidFilter);
-            List<Goid> matchedIds = GatewayManagementDocumentUtilities.getSelectorId(matchedPair.right, true);
-
-            if (matchedIds.isEmpty()) {
-                foundIds.add(id);
-            }
-        }
-
-        return foundIds;
-    }
-
-    private Pair<AssertionStatus, Document> callManagementCheckInterrupted(String requestXml) throws InterruptedException,
-            AccessDeniedManagementResponse, UnexpectedManagementResponse {
-
-        final Pair<AssertionStatus, Document> documentPair;
-        try {
-            documentPair = callManagementAssertion(gatewayManagementInvoker, requestXml);
-        } catch (UnexpectedManagementResponse e) {
-            if (e.isCausedByMgmtAssertionInternalError() && cancelledCallback.call()) {
-                throw new InterruptedException("Possible interruption detected due to internal error");
-            } else {
-                throw e;
-            }
-        } catch (AccessDeniedManagementResponse e) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Access denied for request:" + e.getDeniedRequest());
-            }
-            throw e;
-        }
-        return documentPair;
-    }
-
-    @NotNull
-    private List<Goid> findMatchingPolicy(String policyName) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-    }
-
-    @NotNull
-    private List<Goid> findMatchingCertificateBySerialNumber(String certificateSerialNumber) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
-        final String certificateFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-            CERTIFICATE_MGMT_NS, 10, "/l7:TrustedCertificate/l7:CertificateData/l7:SerialNumber[text()='" + certificateSerialNumber + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(certificateFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-    }
-
-    @NotNull
-    private List<Goid> findMatchingJdbcConnection(String jdbcConnection) throws AccessDeniedManagementResponse, InterruptedException, UnexpectedManagementResponse {
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                JDBC_MGMT_NS, 10, "/l7:JDBCConnection/l7:Name[text()='" + jdbcConnection + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
-    }
-
-    @Nullable
-    private String getExistingPolicyGuid(String policyName) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
-
-        final String getPolicyXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(getPolicyXml);
-        final ElementCursor cursor = new DomElementCursor(documentPair.right);
-
-        final XpathResult xpathResult;
-        try {
-            xpathResult = cursor.getXpathResult(
-                    new XpathExpression("string(/env:Envelope/env:Body/l7:Policy/@guid)", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
-        } catch (XPathExpressionException e) {
-            throw new RuntimeException("Unexpected exception performing xpath to obtain policy guid for policy name '" + policyName + "'", e);
-        } catch (InvalidXpathException e) {
-            throw new RuntimeException("Unexpected exception performing xpath to obtain policy guid for policy name '" + policyName + "'", e);
-        }
-        return xpathResult.getString();
-    }
-
-    @Nullable
-    private Goid getExistingFolderId(Goid parentId, String folderName)
-            throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        final String folderFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                FOLDER_MGMT_NS, 10, "/l7:Folder[@folderId='" + parentId + "']/l7:Name[text()='" + folderName + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(folderFilter);
-        return GatewayManagementDocumentUtilities.getCreatedId(documentPair.right);
-    }
-
-    private void checkInterrupted() throws InterruptedException {
-        if (cancelledCallback.call() || Thread.interrupted()) {
-            throw new InterruptedException();
-        }
+    AssertionInstaller getAssertionInstaller() {
+        return assertionInstaller;
     }
 }

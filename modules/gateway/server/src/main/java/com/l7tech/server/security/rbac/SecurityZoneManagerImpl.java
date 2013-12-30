@@ -7,6 +7,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,8 +29,12 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
     @Override
     public void createRoles(final SecurityZone zone) throws SaveException {
         final Folder rootFolder = findRootFolder();
-        addReadSecurityZoneRole(zone, rootFolder);
-        addManageSecurityZoneRole(zone, rootFolder);
+        if (config.getBooleanProperty(AUTO_CREATE_VIEW_ROLE_PROPERTY, true)) {
+            addReadSecurityZoneRole(zone, rootFolder);
+        }
+        if (config.getBooleanProperty(AUTO_CREATE_MANAGE_ROLE_PROPERTY, true)) {
+            addManageSecurityZoneRole(zone, rootFolder);
+        }
     }
 
     @Override
@@ -50,14 +56,8 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
         }
     }
 
-    void setRoleManager(final RoleManager roleManager) {
-        this.roleManager = roleManager;
-    }
-
-    void setFolderManager(final FolderManager folderManager) {
-        this.folderManager = folderManager;
-    }
-
+    static final String AUTO_CREATE_VIEW_ROLE_PROPERTY = "rbac.autoRole.viewZone.autoCreate";
+    static final String AUTO_CREATE_MANAGE_ROLE_PROPERTY = "rbac.autoRole.manageZone.autoCreate";
     static final String READ_ZONE_ROLE_DESCRIPTION_FORMAT = "Users assigned to the {0} role have the ability to read entities within the {1} security zone.";
     static final String MANAGE_ZONE_ROLE_DESCRIPTION_FORMAT = "Users assigned to the {0} role have the ability to create, read, update and delete entities within the {1} security zone.";
     static final Pattern RENAME_ROLE_PATTERN =
@@ -71,6 +71,8 @@ public class SecurityZoneManagerImpl extends HibernateEntityManager<SecurityZone
     private RoleManager roleManager;
     @Inject
     private FolderManager folderManager;
+    @Inject
+    private Config config;
 
     private Folder findRootFolder() throws SaveException {
         final Folder rootFolder;

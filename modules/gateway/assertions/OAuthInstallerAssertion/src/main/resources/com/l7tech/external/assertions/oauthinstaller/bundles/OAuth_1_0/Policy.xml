@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="60cec430-0767-429c-8eff-62891c2eb343"
-               id="123961350" version="6">
-        <l7:PolicyDetail folderId="123600897" guid="60cec430-0767-429c-8eff-62891c2eb343" id="123961350" version="6">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="707e417d-02e5-4812-a918-82ad6df2f36d"
+               id="57477c668279c3c8d34da687b89a7c09" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7a49" guid="707e417d-02e5-4812-a918-82ad6df2f36d"
+                         id="57477c668279c3c8d34da687b89a7c09" version="1">
             <l7:Name>OAuth 1.0 Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>7</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -20,16 +21,13 @@
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Policy Fragment: OAuth Context Variables"/&gt;
-                    &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_oauth_ovp_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjEvYXV0aG9yaXplL3dlYnNpdGU="/>
-                    &lt;L7p:VariableToSet stringValue="oauth_v1_website_path"/>
+                    &lt;L7p:Base64Expression stringValue="L2F1dGgvb2F1dGgvdjEvYXV0aG9yaXplL3dlYnNpdGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_website_path"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
@@ -52,14 +50,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="a1d0576f-ad44-4142-bd1f-e7b15c37d52f"
-               id="123731970" version="2">
-        <l7:PolicyDetail folderId="123600903" guid="a1d0576f-ad44-4142-bd1f-e7b15c37d52f" id="123731970" version="2">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="6b741ac7-9dae-44c8-8cb3-ada888acf173"
+               id="57477c668279c3c8d34da687b89a7c2f" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7a89" guid="6b741ac7-9dae-44c8-8cb3-ada888acf173"
+                         id="57477c668279c3c8d34da687b89a7c2f" version="1">
             <l7:Name>Require OAuth 1.0 Token</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>3</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -73,19 +72,21 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth access token"/&gt;
+                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth
+                    access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Input: the http request including the oauth header"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier, authorizationHeader"/&gt;
+                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier,
+                    authorizationHeader"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="60cec430-0767-429c-8eff-62891c2eb343"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="707e417d-02e5-4812-a918-82ad6df2f36d"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue="35aa8869-8319-44e0-a6b6-2ed2ce59001e"/&gt;
+                    &lt;L7p:PolicyGuid stringValue="eacb4930-8cb2-4561-94b9-bc374d4290a1"/&gt;
                     &lt;/L7p:Include&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -237,14 +238,13 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="fded77d9-893f-4dcd-99bf-859988d65072"
-               id="123731972" version="0">
-        <l7:PolicyDetail folderId="123600898" guid="fded77d9-893f-4dcd-99bf-859988d65072" id="123731972" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f11f919b-6cf0-4aaa-94ed-dac5173e419a" id="57477c668279c3c8d34da687b89a7c42" version="5">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7bc9" guid="f11f919b-6cf0-4aaa-94ed-dac5173e419a" id="57477c668279c3c8d34da687b89a7c42" version="5">
             <l7:Name>getClientSignature</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>1</l7:LongValue>
+                    <l7:LongValue>6</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -254,8 +254,7 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Generates the HMAC-SHA1 signature for the test client"/&gt;
@@ -345,8 +344,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Detail stringValue="SignatureBaseString: ${oauth.sigBaseString}, secret_for_signature:
-                    '${consumer_key_secret}&amp;amp;${token_secret}', ssg_signature: ${signature}"/&gt;
+                    &lt;L7p:Detail stringValue="SignatureBaseString: ${oauth.sigBaseString}, secret_for_signature:                     '${consumer_key_secret}&amp;amp;${token_secret}', ssg_signature: ${signature}"/&gt;
                     &lt;L7p:Enabled booleanValue="false"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
@@ -371,14 +369,15 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="35aa8869-8319-44e0-a6b6-2ed2ce59001e"
-               id="123731969" version="0">
-        <l7:PolicyDetail folderId="123600902" guid="35aa8869-8319-44e0-a6b6-2ed2ce59001e" id="123731969" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="eacb4930-8cb2-4561-94b9-bc374d4290a1"
+               id="57477c668279c3c8d34da687b89a7c1c" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7ac9" guid="eacb4930-8cb2-4561-94b9-bc374d4290a1"
+                         id="57477c668279c3c8d34da687b89a7c1c" version="1">
             <l7:Name>Authenticate OAuth 1.0 Parameter</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>1</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -392,17 +391,16 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth access token"/&gt;
+                    &lt;L7p:Comment stringValue="The fragment enables an API/ Service endpoint to require a valid oauth
+                    access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Input: the http request including the oauth header"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier, authorizationHeader"/&gt;
+                    &lt;L7p:Comment stringValue="Output: oauth_consumer_key, oauth_token, oauth_verifier,
+                    authorizationHeader"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Policy Fragment: Authenticate OAuth 1.0 Parameter"/&gt;
-                    &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue=""/&gt;
                     &lt;L7p:VariableToSet stringValue="oauth_token"/&gt;
@@ -455,7 +453,7 @@
                     &lt;L7p:Base64ResponseBody stringValue="JHtyZXF1ZXN0Lmh0dHAubWV0aG9kfSBub3QgcGVybWl0dGVk"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus intValue="400"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
@@ -538,7 +536,7 @@
                     &lt;L7p:Base64ResponseBody stringValue="TWlzc2luZyBvYXV0aF9zaWduYXR1cmU="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus intValue="400"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;L7p:assertionComment&gt;
@@ -634,7 +632,7 @@
                     &lt;L7p:Base64ResponseBody stringValue="JHtvYXV0aC5lcnJvcn0="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
-                    &lt;L7p:ResponseStatus intValue="400"/&gt;
+                    &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;L7p:FalseAssertion/&gt;
                     &lt;/wsp:All&gt;
@@ -868,14 +866,13 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="d1d995ab-c7c8-4354-b005-ec3deeedc3a5"
-               id="123961345" version="4">
-        <l7:PolicyDetail folderId="123600896" guid="d1d995ab-c7c8-4354-b005-ec3deeedc3a5" id="123961345" version="4">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="ffe30a9e-0d90-45cb-8419-d5c85c883642" id="57477c668279c3c8d34da687b89a753c" version="3">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="ffe30a9e-0d90-45cb-8419-d5c85c883642" id="57477c668279c3c8d34da687b89a753c" version="3">
             <l7:Name>Token Lifetime Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>5</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -884,41 +881,41 @@
         </l7:PolicyDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_consumer_key_lifetime_m&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_consumer_key_lifetime_m"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;ODY0MDA=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_access_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="ODY0MDA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_access_token_lifetime_s"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MzAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth_v1_request_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MzAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth_v1_request_token_lifetime_s"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;NjAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_auth_code_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="NjAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_auth_code_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MzYwMA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_access_token_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="MzYwMA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_access_token_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;NjA0ODAw&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;oauth2_refresh_token_lifetime_sec&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="NjA0ODAw"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_refresh_token_lifetime_sec"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:ExportVariables&gt;
-                    &lt;L7p:ExportedVars stringArrayValue=&quot;included&quot;&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_access_token_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_auth_code_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth2_refresh_token_lifetime_sec&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_access_token_lifetime_s&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_consumer_key_lifetime_m&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;oauth_v1_request_token_lifetime_s&quot;/&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="oauth2_access_token_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_auth_code_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth2_refresh_token_lifetime_sec"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_access_token_lifetime_s"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_consumer_key_lifetime_m"/&gt;
+                    &lt;L7p:item stringValue="oauth_v1_request_token_lifetime_s"/&gt;
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
@@ -927,270 +924,9 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="585c3a3d-8fd7-4337-8d91-46846bfc4194"
-               id="123731968" version="0">
-        <l7:PolicyDetail folderId="123600896" guid="585c3a3d-8fd7-4337-8d91-46846bfc4194" id="123731968" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="2dc66d50-fa74-489e-97f8-d6b2f4a13c08" id="57477c668279c3c8d34da687b89a754f" version="2">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="2dc66d50-fa74-489e-97f8-d6b2f4a13c08" id="57477c668279c3c8d34da687b89a754f" version="2">
             <l7:Name>GenerateOAuthToken</l7:Name>
-            <l7:PolicyType>Include</l7:PolicyType>
-            <l7:Properties>
-                <l7:Property key="revision">
-                    <l7:LongValue>15</l7:LongValue>
-                </l7:Property>
-                <l7:Property key="soap">
-                    <l7:BooleanValue>false</l7:BooleanValue>
-                </l7:Property>
-            </l7:Properties>
-        </l7:PolicyDetail>
-        <l7:Resources>
-            <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Poilcy issues tokens and token secrets&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Input: token_type=urt|art|at|ck|ac|at_2|rft&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Output: genToken, genSecret, genExpiration&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue=&quot;Configurable values: lifetime for tokens&quot;/&gt;
-                    &lt;/L7p:CommentAssertion&gt;
-                    &lt;L7p:Include&gt;
-                    &lt;L7p:PolicyGuid stringValue=&quot;d1d995ab-c7c8-4354-b005-ec3deeedc3a5&quot;/&gt;
-                    &lt;/L7p:Include&gt;
-                    &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Operator operatorNull=&quot;null&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item regex=&quot;included&quot;&gt;
-                    &lt;L7p:Pattern stringValue=&quot;urt|art&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_request_token_lifetime_s}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;unauthorized/ authorized request token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;at&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;at&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_access_token_lifetime_s}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;access token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;ck&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;ck&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;0&quot;/&gt;
-                    &lt;L7p:Operator operator=&quot;GT&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
-                    &lt;L7p:Operator operator=&quot;GT&quot;/&gt;
-                    &lt;L7p:RightValue stringValue=&quot;0&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth_v1_consumer_key_lifetime_m}&quot;/&gt;
-                    &lt;L7p:DateOffsetField intValue=&quot;12&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;MA==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration.millis&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;client_key&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;ac&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;ac&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_auth_code_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;authorization_code&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;at_2&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;at_2&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_access_token_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;access token oauth 2.0&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue=&quot;${token_type}&quot;/&gt;
-                    &lt;L7p:Expression2 stringValue=&quot;rft&quot;/&gt;
-                    &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
-                    &lt;L7p:item binary=&quot;included&quot;&gt;
-                    &lt;L7p:RightValue stringValue=&quot;rft&quot;/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Predicates&gt;
-                    &lt;/L7p:ComparisonAssertion&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;&quot;/&gt;
-                    &lt;L7p:DataType variableDataType=&quot;dateTime&quot;/&gt;
-                    &lt;L7p:DateOffsetExpression stringValue=&quot;${oauth2_refresh_token_lifetime_sec}&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;expiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;refresh token oauth 2.0&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;L7p:assertionComment&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;Set the lifetime for the token&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:assertionComment&gt;
-                    &lt;/wsp:OneOrMore&gt;
-                    &lt;L7p:UUIDGenerator&gt;
-                    &lt;L7p:AssertionComment assertionComment=&quot;included&quot;&gt;
-                    &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
-                    &lt;L7p:entry&gt;
-                    &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
-                    &lt;L7p:value stringValue=&quot;Generate the token and the secret&quot;/&gt;
-                    &lt;/L7p:entry&gt;
-                    &lt;/L7p:Properties&gt;
-                    &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Quantity stringValue=&quot;2&quot;/&gt;
-                    &lt;L7p:TargetVariable stringValue=&quot;tokenSecret&quot;/&gt;
-                    &lt;/L7p:UUIDGenerator&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHt0b2tlblNlY3JldFswXX0=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genToken&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHt0b2tlblNlY3JldFsxXX0=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genSecret&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;JHtleHBpcmF0aW9uLm1pbGxpc30=&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;genExpiration&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:ExportVariables&gt;
-                    &lt;L7p:ExportedVars stringArrayValue=&quot;included&quot;&gt;
-                    &lt;L7p:item stringValue=&quot;genExpiration&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;genSecret&quot;/&gt;
-                    &lt;L7p:item stringValue=&quot;genToken&quot;/&gt;
-                    &lt;/L7p:ExportedVars&gt;
-                    &lt;/L7p:ExportVariables&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
-            </l7:ResourceSet>
-        </l7:Resources>
-    </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"
-               id="123961351" version="2">
-        <l7:PolicyDetail folderId="123600896" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3" id="123961351" version="2">
-            <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
@@ -1203,20 +939,279 @@
         </l7:PolicyDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Poilcy issues tokens and token secrets"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Input: token_type=urt|art|at|ck|ac|at_2|rft"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="urt=unauthorized request token, art=authorized request token, at=access token, ck=client_key"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="ac=authorization_code, at_2=access_token for oauth 2.0, rft=refresh_token"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Output: genToken, genSecret, genExpiration"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configurable values: lifetime for tokens"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:Include&gt;
+                    &lt;L7p:PolicyGuid stringValue="ffe30a9e-0d90-45cb-8419-d5c85c883642"/&gt;
+                    &lt;/L7p:Include&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item regex="included"&gt;
+                    &lt;L7p:Pattern stringValue="urt|art"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_request_token_lifetime_s}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="unauthorized/ authorized request token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="at"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="at"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_access_token_lifetime_s}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="access token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="ck"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="ck"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${oauth_v1_consumer_key_lifetime_m}"/&gt;
+                    &lt;L7p:Expression2 stringValue="0"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:RightValue stringValue="0"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth_v1_consumer_key_lifetime_m}"/&gt;
+                    &lt;L7p:DateOffsetField intValue="12"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MA=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration.seconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="client_key"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="ac"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="ac"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_auth_code_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="authorization_code"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="at_2"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="at_2"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_access_token_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="access token oauth 2.0"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${token_type}"/&gt;
+                    &lt;L7p:Expression2 stringValue="rft"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:RightValue stringValue="rft"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:DataType variableDataType="dateTime"/&gt;
+                    &lt;L7p:DateOffsetExpression stringValue="${oauth2_refresh_token_lifetime_sec}"/&gt;
+                    &lt;L7p:VariableToSet stringValue="expiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="refresh token oauth 2.0"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Set the lifetime for the token"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:UUIDGenerator&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Generate the token and the secret"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Quantity stringValue="2"/&gt;
+                    &lt;L7p:TargetVariable stringValue="tokenSecret"/&gt;
+                    &lt;/L7p:UUIDGenerator&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlblNlY3JldFswXX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="genToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0b2tlblNlY3JldFsxXX0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="genSecret"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_session_server&quot;/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtleHBpcmF0aW9uLnNlY29uZHN9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="genExpiration"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:ExportVariables&gt;
+                    &lt;L7p:ExportedVars stringArrayValue="included"&gt;
+                    &lt;L7p:item stringValue="genExpiration"/&gt;
+                    &lt;L7p:item stringValue="genSecret"/&gt;
+                    &lt;L7p:item stringValue="genToken"/&gt;
+                    &lt;/L7p:ExportedVars&gt;
+                    &lt;/L7p:ExportVariables&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
+            <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>2</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_tokenstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_clientstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_session_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:Policy&gt;

@@ -1,6 +1,6 @@
 package com.l7tech.console.panels.bundles;
 
-import com.l7tech.console.panels.bundles.BundleConflictComponent;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 
@@ -37,6 +37,7 @@ public class ConflictDisplayerDialog extends JDialog {
                 onCancel();
             }
         });
+        getRootPane().setDefaultButton(buttonCancel);
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -67,8 +68,25 @@ public class ConflictDisplayerDialog extends JDialog {
     }
 
     private void onOK() {
-        wasoked = true;
-        dispose();
+        DialogDisplayer.showSafeConfirmDialog(
+                this,
+                "<html><left><p>Be aware that continuing installation with detected conflicts may result in partial installation of components: (1) Components with</p>" +
+                        "<p>detected conflicts will NOT be installed. (2) References to a conflicted component will be replaced with references to a version of</p>" +
+                        "<p>the same component on the target Gateway, if one exists. These references may occur in service policies or policy fragments.</p></left></html>",
+                "Confirm Installation with Conflicts",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.CANCEL_OPTION) {
+                            return;
+                        }
+                        wasoked = true;
+                        dispose();
+                    }
+                }
+        );
     }
 
     private void onCancel() {

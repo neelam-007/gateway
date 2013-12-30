@@ -20,10 +20,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getEntityElements;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getPolicyDocumentFromResource;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getPolicyResourceElement;
+import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
+import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
+import static com.l7tech.server.policy.bundle.BundleResolver.*;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
 
 /**
@@ -44,13 +44,38 @@ public class BundleUtils {
      * @param callingClass Class whose classloader will be used to load resources.
      * @param bundleResourceBaseName the directory resource containing bundle folders e.g. /com/l7tech/server/policy/bundle/bundles/
      * @return list of bundle infos.
-     * @throws BundleResolver.InvalidBundleException
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      */
-    public static List<Pair<BundleInfo, String>> getBundleInfos(Class callingClass, String bundleResourceBaseName) throws BundleResolver.InvalidBundleException {
-        final List<Pair<BundleInfo, String>> bundleInfos = new ArrayList<Pair<BundleInfo, String>>();
+    @NotNull
+    public static List<Pair<BundleInfo, String>> getBundleInfos(@NotNull final Class callingClass, @NotNull final String bundleResourceBaseName) throws InvalidBundleException {
+        final List<Pair<BundleInfo, String>> bundleInfos = new ArrayList<>();
 
         try {
             final JarFile jarFile = getJarFileForResource(callingClass, bundleResourceBaseName);
+            bundleInfos.addAll(getBundleInfos(callingClass, bundleResourceBaseName, jarFile));
+        } catch (IOException e) {
+            throw new InvalidBundleException(e);
+        }
+
+        return bundleInfos;
+    }
+
+    /**
+     * Get all bundles available at the base resource path.
+     *
+     * Note at runtime resources will be loaded via Jar URL Connections however at test time they are loaded from files.
+     * This method is provided as a convenience to deal with both scenarios.
+     *
+     * @param callingClass Class whose classloader will be used to load resources.
+     * @param bundleResourceBaseName the directory resource containing bundle folders e.g. /com/l7tech/server/policy/bundle/bundles/
+     * @param jarFile the JAR file containing the bundle resources
+     * @return list of bundle infos.
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
+     */
+    @NotNull
+    public static List<Pair<BundleInfo, String>> getBundleInfos(@NotNull final Class callingClass, @NotNull final String bundleResourceBaseName, @Nullable final JarFile jarFile) throws InvalidBundleException {
+        final List<Pair<BundleInfo, String>> bundleInfos = new ArrayList<>();
+        try {
             if (jarFile != null) {
                 final List<JarEntry> allBundleEntries = findAllBundleEntries(jarFile, bundleResourceBaseName);
                 final List<Pair<BundleInfo, String>> bundleInfosFromJar = getBundleInfosFromJar(allBundleEntries, callingClass);
@@ -70,20 +95,20 @@ public class BundleUtils {
                                 try {
                                     parse = XmlUtil.parse(new ByteArrayInputStream(bytes));
                                 } catch (SAXException e) {
-                                    throw new BundleResolver.InvalidBundleException(e);
+                                    throw new InvalidBundleException(e);
                                 }
                                 final BundleInfo bundleInfo1 = getBundleInfo(parse);
                                 // regardless of how the resource was found, only record a correct resource path to the resource
-                                bundleInfos.add(new Pair<BundleInfo, String>(bundleInfo1, bundleResourceBaseName + "/" + bundleFolder.getName()));
+                                bundleInfos.add(new Pair<>(bundleInfo1, bundleResourceBaseName + "/" + bundleFolder.getName()));
                             }
                         }
                     }
                 } else {
-                    throw new BundleResolver.InvalidBundleException("Could not access file resources for bundle");
+                    throw new InvalidBundleException("Could not access file resources for bundle");
                 }
             }
         } catch (IOException e) {
-            throw new BundleResolver.InvalidBundleException(e);
+            throw new InvalidBundleException(e);
         }
 
         return bundleInfos;
@@ -94,12 +119,12 @@ public class BundleUtils {
      *
      * @param bundleInfoDoc document to extract values from
      * @return BundleInfo with values from the document
-     * @throws BundleResolver.InvalidBundleException if the document could not be processed
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException if the document could not be processed
      */
-    public static BundleInfo getBundleInfo(Document bundleInfoDoc) throws BundleResolver.InvalidBundleException {
+    public static BundleInfo getBundleInfo(Document bundleInfoDoc) throws InvalidBundleException {
         final String namespaceURI = bundleInfoDoc.getDocumentElement().getNamespaceURI();
         if (!NS_BUNDLE.equals(namespaceURI)) {
-            throw new BundleResolver.InvalidBundleException("Unsupported BundleInfo.xml version: " + namespaceURI);
+            throw new InvalidBundleException("Unsupported BundleInfo.xml version: " + namespaceURI);
         }
 
         final Element bundleIdEl;
@@ -111,17 +136,15 @@ public class BundleUtils {
             versionEl = XmlUtil.findExactlyOneChildElementByName(bundleInfoDoc.getDocumentElement(), NS_BUNDLE, "Version");
             nameEl = XmlUtil.findExactlyOneChildElementByName(bundleInfoDoc.getDocumentElement(), NS_BUNDLE, "Name");
             descEl = XmlUtil.findExactlyOneChildElementByName(bundleInfoDoc.getDocumentElement(), NS_BUNDLE, "Description");
-        } catch (TooManyChildElementsException e) {
-            throw new BundleResolver.InvalidBundleException(e);
-        } catch (MissingRequiredElementException e) {
-            throw new BundleResolver.InvalidBundleException(e);
+        } catch (TooManyChildElementsException | MissingRequiredElementException e) {
+            throw new InvalidBundleException(e);
         }
         final String bundleId = DomUtils.getTextValue(bundleIdEl, true);
         final String version = DomUtils.getTextValue(versionEl, true);
         final String bundleName = DomUtils.getTextValue(nameEl, true);
         final String bundleDesc = DomUtils.getTextValue(descEl, true);
         if (bundleId.isEmpty() || bundleName.isEmpty() || bundleDesc.isEmpty()) {
-            throw new BundleResolver.InvalidBundleException("Invalid bundle declaration. Id, Name and Description must all be non empty");
+            throw new InvalidBundleException("Invalid bundle declaration. Id, Name and Description must all be non empty");
         }
 
         return new BundleInfo(bundleId, version, bundleName, bundleDesc);
@@ -133,7 +156,7 @@ public class BundleUtils {
      * @param callingClass class whose class loader should be used.
      * @param resourceBaseName directory resource
      * @return JarFile if found
-     * @throws IOException if the JAR resource cannot be opened.
+     * @throws java.io.IOException if the JAR resource cannot be opened.
      */
     @Nullable
     public static JarFile getJarFileForResource(Class callingClass, String resourceBaseName) throws IOException {
@@ -162,10 +185,9 @@ public class BundleUtils {
      */
     @NotNull
     public static List<JarEntry> findAllBundleEntries(@NotNull final JarFile jarFile,
-                                                      @NotNull final String bundleResourceBaseName)
-            throws BundleResolver.InvalidBundleException {
+                                                      @NotNull final String bundleResourceBaseName) throws InvalidBundleException {
 
-        final List<JarEntry> allBundleEntries = new ArrayList<JarEntry>();
+        final List<JarEntry> allBundleEntries = new ArrayList<>();
         final Enumeration<JarEntry> entries = jarFile.entries();
 
         while (entries.hasMoreElements()) {
@@ -193,11 +215,11 @@ public class BundleUtils {
      * @param bundleJarDirectories directories which contain bundles
      * @param callingClass class loader to use
      * @return list of found Pair BundleInfo plus path of the resource folder.
-     * @throws BundleResolver.InvalidBundleException
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      */
     public static List<Pair<BundleInfo, String>> getBundleInfosFromJar(@NotNull final List<JarEntry> bundleJarDirectories, @NotNull final Class callingClass)
-            throws BundleResolver.InvalidBundleException {
-        final List<Pair<BundleInfo, String>> bundleInfos = new ArrayList<Pair<BundleInfo, String>>();
+            throws InvalidBundleException {
+        final List<Pair<BundleInfo, String>> bundleInfos = new ArrayList<>();
         for (JarEntry bundleDir : bundleJarDirectories) {
             final String resourceBase = "/" + bundleDir.getName();
             final String resourceName = resourceBase + "BundleInfo.xml";
@@ -206,20 +228,18 @@ public class BundleUtils {
             try {
                 bytes = IOUtils.slurpUrl(bundleInfoXml);
             } catch (IOException e) {
-                throw new BundleResolver.InvalidBundleException("Unable to read BundleInfo.xml from bundle " + resourceBase, e);
+                throw new InvalidBundleException("Unable to read BundleInfo.xml from bundle " + resourceBase, e);
             }
 
             final Document bundleInfoDoc;
             try {
                 bundleInfoDoc = XmlUtil.parse(new ByteArrayInputStream(bytes));
-            } catch (IOException e) {
-                throw new BundleResolver.InvalidBundleException("Unable to parse BundleInfo.xml from bundle " + resourceBase, e);
-            } catch (SAXException e) {
-                throw new BundleResolver.InvalidBundleException("Unable to parse BundleInfo.xml from bundle " + resourceBase, e);
+            } catch (IOException | SAXException e) {
+                throw new InvalidBundleException("Unable to parse BundleInfo.xml from bundle " + resourceBase, e);
             }
 
             final BundleInfo bundleInfo = BundleUtils.getBundleInfo(bundleInfoDoc);
-            bundleInfos.add(new Pair<BundleInfo, String>(bundleInfo, resourceBase));
+            bundleInfos.add(new Pair<>(bundleInfo, resourceBase));
         }
 
         return bundleInfos;
@@ -233,10 +253,7 @@ public class BundleUtils {
      * @param bundleResolver the resolver to use to find the bundle items to search within for references. It will look
      *                       for Policy.xml and Service.xml within the bundle.
      */
-    public static void findReferences(final BundleInfo bundleInfo, final BundleResolver bundleResolver)
-            throws BundleResolver.BundleResolverException,
-            BundleResolver.UnknownBundleException,
-            BundleResolver.InvalidBundleException {
+    public static void findReferences(final BundleInfo bundleInfo, final BundleResolver bundleResolver) throws BundleResolverException, UnknownBundleException, InvalidBundleException {
         final String id = bundleInfo.getId();
         final Document policyBundleItem = bundleResolver.getBundleItem(id, POLICY, true);
         if (policyBundleItem != null) {
@@ -273,10 +290,10 @@ public class BundleUtils {
      * @param entityType type for logging
      * @param identifier identifier for logging
      * @return set of found jdbc references
-     * @throws BundleResolver.InvalidBundleException if searching for references using xpath threw any exceptions
+     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException if searching for references using xpath threw any exceptions
      */
-    public static Set<String> searchForJdbcReferences(final Element policyResourceElement, final String entityType, final String identifier) throws BundleResolver.InvalidBundleException {
-        final Set<String> returnList = new HashSet<String>();
+    public static Set<String> searchForJdbcReferences(final Element policyResourceElement, final String entityType, final String identifier) throws InvalidBundleException {
+        final Set<String> returnList = new HashSet<>();
         if (policyResourceElement != null) {
             final Document layer7PolicyXml = getPolicyDocumentFromResource(policyResourceElement, entityType, identifier);
             final List<Element> jdbcReferences = findJdbcReferences(layer7PolicyXml.getDocumentElement());
@@ -285,10 +302,8 @@ public class BundleUtils {
                     final Element connNameElm = XmlUtil.findExactlyOneChildElementByName(jdbcReference, BundleUtils.L7_NS_POLICY, "ConnectionName");
                     final String connName = connNameElm.getAttribute("stringValue").trim();
                     returnList.add(connName);
-                } catch (TooManyChildElementsException e) {
-                    throw new BundleResolver.InvalidBundleException("Could not find jdbc references: " + ExceptionUtils.getMessage(e));
-                } catch (MissingRequiredElementException e) {
-                    throw new BundleResolver.InvalidBundleException("Could not find jdbc references: " + ExceptionUtils.getMessage(e));
+                } catch (TooManyChildElementsException | MissingRequiredElementException e) {
+                    throw new InvalidBundleException("Could not find jdbc references: " + ExceptionUtils.getMessage(e));
                 }
             }
         }

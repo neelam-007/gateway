@@ -9,7 +9,6 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
@@ -24,7 +23,7 @@ import java.util.logging.Logger;
 
 public class JmsAdminImpl implements JmsAdmin {
     private static final Logger logger = Logger.getLogger(JmsAdminImpl.class.getName());
-    private final static int CORE_SIZE = 5;
+    private final static int CORE_SIZE = 1;
     private final static int DEFAULT_MAX_SIZE = 25;
 
     private final JmsConnectionManager jmsConnectionManager;
@@ -382,7 +381,7 @@ public class JmsAdminImpl implements JmsAdmin {
     }
 
     @Override
-    public boolean isValidThreadPoolSize(String poolSize) {
+    public boolean isValidConsumerConnectionSize(String poolSize) {
         if (poolSize == null) {
             return false;
         } else {
@@ -436,11 +435,6 @@ public class JmsAdminImpl implements JmsAdmin {
                     "Couldn't close Message Producer '"+ExceptionUtils.getMessage(e)+"'.",
                     ExceptionUtils.getDebugException(e));
         }
-    }
-
-    @Override
-    public boolean isDedicatedThreadPoolEnabled() {
-        return ConfigFactory.getBooleanProperty("com.l7tech.server.transport.jms.dedicatedThreadPool.enabled", false);
     }
 
 }

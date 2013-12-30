@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,6 +88,9 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
     Goid save(@NotNull Class<ET> entityClass, ET entity) throws SaveException;
 
     <ET extends GenericEntity>
+    void save(@NotNull Goid id, @NotNull Class<ET> entityClass, ET entity) throws SaveException;
+
+    <ET extends GenericEntity>
     Integer getVersion(@NotNull Class<ET> entityClass, Goid goid) throws FindException;
 
     <ET extends GenericEntity>
@@ -111,4 +115,7 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
 
     <ET extends GenericEntity>
     ET findByHeader(@NotNull Class<ET> entityClass, EntityHeader header) throws FindException;
+
+    <ET extends GenericEntity>
+    List<ET> findPagedMatching(@NotNull Class<ET> entityClass, int offset, int count, @Nullable String sortProperty, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> matchProperties) throws FindException;
 }

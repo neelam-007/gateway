@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.Entity;
 
 /** @author alex */
-public class ServiceAliasManagerStub extends AliasManagerStub<PublishedServiceAlias, PublishedService, ServiceHeader> {
+public class ServiceAliasManagerStub extends AliasManagerStub<PublishedServiceAlias, PublishedService, ServiceHeader> implements ServiceAliasManager {
     public ServiceAliasManagerStub(PublishedServiceAlias... entitiesIn) {
         super(entitiesIn);
     }

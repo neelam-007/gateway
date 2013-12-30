@@ -1,33 +1,32 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.rest.RestAgent;
+import com.l7tech.gateway.rest.RestResponse;
+import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.util.Pair;
-import com.sun.ws.management.*;
-import com.sun.ws.management.transfer.InvalidRepresentationFault;
-import org.springframework.beans.factory.BeanFactory;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import javax.mail.MethodNotSupportedException;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
-import javax.xml.soap.*;
-import java.io.*;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.SecurityContext;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,14 +37,33 @@ import java.util.regex.Pattern;
  */
 public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargetableServerAssertion<RESTGatewayManagementAssertion> {
 
-    private GatewayManagementSupport support;
-    //- PUBLIC
+    @Inject
+    private StashManagerFactory stashManagerFactory;
+
+    private final RestAgent restAgent;
+    //This is package private so that it is available to Tests
+    ApplicationContext assertionContext;
 
     public ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
-                                                final BeanFactory context) throws PolicyAssertionException {
-        super(assertion);
-        support = GatewayManagementSupport.createInstance(assertion, context);
+                                                final ApplicationContext applicationContext) throws PolicyAssertionException {
+        this(assertion, applicationContext, "gatewayManagementContext.xml", true);
     }
+
+    protected ServerRESTGatewayManagementAssertion(final RESTGatewayManagementAssertion assertion,
+                                                   final ApplicationContext context,
+                                                   final String assertionContextResource,
+                                                   final boolean maskContextClassLoader) throws PolicyAssertionException {
+        super(assertion);
+        assertionContext = buildContext(context, assertionContextResource);
+        restAgent = assertionContext.getBean("restAgent", RestAgent.class);
+    }
+
+    private static ApplicationContext buildContext(final ApplicationContext context,
+                                                   final String assertionContextResource) {
+        return new ClassPathXmlApplicationContext(new String[]{assertionContextResource}, ServerRESTGatewayManagementAssertion.class, context);
+    }
+
+    protected ApplicationContext getAssertionContext(){return assertionContext;}
 
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
@@ -55,57 +73,64 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             throws IOException, PolicyAssertionException {
         final Message response = context.getResponse();
 
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(assertion.getClass().getClassLoader());
+            final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+            message.getHttpRequestKnob().isSecure();
 
-            final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-            final String remoteAddr = context.getRequest().getHttpRequestKnob().getRemoteAddress();
-            final String URI = getURI(context, message, assertion);
-            final Pair<String,String> resourceInputs  = getResourceInputs(URI);
-            final String resourceType = resourceInputs.left;
-            final String selectorValue = resourceInputs.right;
+            // get the uri
+            final URI uri = getURI(context, message, assertion);
+            final URI baseUri = getBaseURI(context, message, assertion);
 
             HttpMethod action = getAction(context, message, assertion);
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-            if (action == HttpMethod.GET) {
-                Pair<Document,List<ManagedObject>> managementResponse;
-                if (selectorValue == null) {
-                    managementResponse = support.getResourceList(resourceType, user, remoteAddr);
-                } else {
-                    managementResponse = support.getResource(resourceType, selectorValue, user, remoteAddr);
+            SecurityContext securityContext = new SecurityContext() {
+                @Override
+                public Principal getUserPrincipal() {
+                    return user;  //To change body of implemented methods use File | Settings | File Templates.
                 }
-                response.initialize(managementResponse.left);
-            } else if (action == HttpMethod.DELETE) {
-                support.deleteResource(resourceType, selectorValue, user, remoteAddr);
-            } else {
-                throw new MethodNotSupportedException();
-            }
 
+                @Override
+                public boolean isUserInRole(String role) {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public boolean isSecure() {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public String getAuthenticationScheme() {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+            };
+            RestResponse managementResponse = restAgent.handleRequest(baseUri, uri, action.getProtocolName(), message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE), message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext);
+            response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
+            response.getMimeKnob().getContentLength();
+            response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
+            for(String header : managementResponse.getHeaders().keySet()){
+                //Don't set the content-length header. See bug: SSG-7824
+                if(header.equals("Content-Length")) {
+                    continue;
+                }
+                for(Object value : managementResponse.getHeaders().get(header)){
+                    response.getHttpResponseKnob().addHeader(header, value.toString());
+                }
+            }
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
             return AssertionStatus.NONE;
         } catch (Exception e) {
             handleError(e);
-            return AssertionStatus.FAILED;
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
-    }
-
-    protected static Pair<String,String> getResourceInputs(String URI){
-        final int divider = URI.contains("/") ? URI.indexOf("/") : URI.length();
-        String resourceType = URI.substring(0, divider);
-        String selectorValue = URI.contains("/") ? URI.substring(divider+1) : null;
-
-        return new Pair<String, String>(resourceType,selectorValue);
+        return AssertionStatus.FAILED;
     }
 
     protected static HttpMethod getAction(final PolicyEnforcementContext context,
-                                   final Message message,
-                                   final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException{
-        HttpMethod method = null;
+                                          final Message message,
+                                          final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException {
+        HttpMethod method;
         try {
             String actionVar = (String) context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_ACTION);
             method = HttpMethod.valueOf(actionVar.toUpperCase());
@@ -115,103 +140,67 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         if (method == null) {
             throw new IllegalArgumentException();
         }
-
-        if(method.equals(HttpMethod.GET)||
-            method.equals(HttpMethod.DELETE)||
-            method.equals(HttpMethod.POST)){
-            return method;
-        }
-        throw new IllegalArgumentException();
-
+        return method;
     }
 
-    protected static String getURI(final PolicyEnforcementContext context,
-                            final Message message,
-                            final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException {
+    protected static URI getURI(final PolicyEnforcementContext context,
+                                   final Message message,
+                                   final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException, URISyntaxException {
 
-        String URI = null;
+        String uri = null;
         try {
-            URI = (String) context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI);
+            uri = (String) context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI);
         } catch (NoSuchVariableException e) {
-
             String requestURI = message.getHttpRequestKnob().getRequestUri();
             String baseURI = context.getService().getRoutingUri();
-            Pattern pattern =  Pattern.compile(baseURI.replace("*", "(.*)"));
+            Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
             Matcher matcher = pattern.matcher(requestURI);
-            if(matcher.matches())
-                URI = matcher.group(1);
+            if (matcher.matches())
+                uri = matcher.group(1);
+            else
+                throw new IllegalArgumentException("Could not calculate uri");
+            final String queryString = message.getHttpRequestKnob().getQueryString();
+            if (queryString != null) {
+                uri += "?" + queryString;
+            }
         }
-        if (URI == null) {
-            throw new IllegalArgumentException();
+        if (uri == null) {
+            throw new IllegalArgumentException("The uri cannot be null");
         }
-        return URI;
+        return new URI(uri);
     }
 
-    protected static Document getBodyDocument(final PolicyEnforcementContext context,
-                                       final Message message,
-                                       final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException {
+    protected static URI getBaseURI(final PolicyEnforcementContext context,
+                                final Message message,
+                                final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException, URISyntaxException {
 
-        Document requestDocument = null;
+        String uri = null;
         try {
-            String docString = (String) context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_BODY);
-            if (docString.isEmpty()) {
-                return null;
-            }
-            requestDocument = XmlUtil.parse(docString);
-            return requestDocument;
-
+            uri = (String) context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_BASE_URI);
         } catch (NoSuchVariableException e) {
-            // expected
-        } catch (SAXException e) {
-            throw new IllegalArgumentException();
-        }
-
-        try {
-            if( message.isEnableOriginalDocument() ){
-                InputStream stream = message.getMimeKnob().getEntireMessageBodyAsInputStream();
-                requestDocument = XmlUtil.parse(stream);
+            uri = message.getHttpRequestKnob().isSecure()?"https://":"http://";
+            uri += message.getTcpKnob().getLocalHost();
+            uri += ":" + message.getTcpKnob().getLocalPort();
+            String baseURI = context.getService().getRoutingUri();
+            if(baseURI.endsWith("*")) {
+                uri+=baseURI.substring(0,baseURI.length()-1);
+            } else {
+                throw new IllegalArgumentException("Could not calculate base uri. The service needs to resolve with a wild card (*)");
             }
-            return requestDocument;
-        } catch (SAXException e) {
-            throw new IllegalArgumentException();
-        } catch (IOException e) {
-            throw new IllegalArgumentException();
-        } catch (NoSuchPartException e) {
-            throw new IllegalArgumentException();
         }
+        if (uri == null) {
+            throw new IllegalArgumentException("The base uri cannot be null");
+        }
+        return new URI(uri);
     }
 
     private int handleError(Exception exception) {
         int errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        if (exception instanceof InvalidSelectorsFault) {  // todo invalid value = resource not found, insufficient selectors = invalid selectors
-            errorRseponse = HttpServletResponse.SC_NOT_FOUND;
-        } else if (exception instanceof InvalidRepresentationFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof AccessDeniedFault) {
-            errorRseponse = HttpServletResponse.SC_UNAUTHORIZED;
-        } else if (exception instanceof AlreadyExistsFault) {
-            errorRseponse = HttpServletResponse.SC_PRECONDITION_FAILED;
-        } else if (exception instanceof ConcurrencyFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof InternalErrorFault) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof JAXBException) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof SOAPException) {
-            errorRseponse = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        } else if (exception instanceof InvalidPropertiesFormatException) {
-            errorRseponse = HttpServletResponse.SC_BAD_REQUEST;
-        } else if (exception instanceof MethodNotSupportedException) {
+        if (exception instanceof UnsupportedOperationException) {
             errorRseponse = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
-        } else if (exception instanceof IllegalArgumentException) {
-            errorRseponse = HttpServletResponse.SC_BAD_REQUEST;
         }
 
         getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{exception.getMessage()});
         return errorRseponse;
     }
-
-    //- PRIVATE
-
-
 }

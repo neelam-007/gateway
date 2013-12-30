@@ -101,22 +101,10 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                             });
                         }
                     }
-                    
-                    // update name on top of editor if that policy is being edited
-                    final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
-                    JComponent jc = cws.getComponent();
-                    if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                        return;
-                    }
-                    PolicyEditorPanel pe = (PolicyEditorPanel)jc;
+
+                    // update the tab title of any specific policy editor, which could be currently opened or in idle.
                     try {
-                        final EntityWithPolicyNode pn = pe.getPolicyNode();
-                        // if currently edited policy was deleted
-                        if (Goid.equals(policyNode.getPolicy().getGoid(), pn.getPolicy().getGoid())) {
-                            // update name on top of editor
-                            pe.changeSubjectName(policyNode.getName());
-                            pe.updateHeadings();
-                        }
+                        policyNode.firePropertyChange(this, PolicyEditorPanel.TAB_TITLE_CHANGE_PROPERTY, null, policyNode.getPolicy().getName());
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "problem modifying policy editor title");
                     }

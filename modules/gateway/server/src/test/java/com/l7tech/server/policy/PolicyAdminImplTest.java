@@ -12,6 +12,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
@@ -22,8 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 
@@ -41,13 +41,17 @@ public class PolicyAdminImplTest {
     private EncapsulatedAssertionConfigManager encassConfigManager;
     @Mock
     private PolicyAssertionRbacChecker policyChecker;
+    @Mock
+    private IdentityProviderFactory identityProviderFactory;
 
     @Before
     public void setup() {
         policyAdmin = new PolicyAdminImpl(policyManager, policyAliasManager, null, policyVersionManager, null, null, null, null, null, null);
         ApplicationContexts.inject(policyAdmin, CollectionUtils.<String, Object>mapBuilder()
                 .put("policyChecker", policyChecker)
-                .put("encapsulatedAssertionConfigManager", encassConfigManager).unmodifiableMap(),
+                .put("encapsulatedAssertionConfigManager", encassConfigManager)
+                .put("identityProviderFactory", identityProviderFactory)
+                .unmodifiableMap(),
                 false);
     }
 
@@ -159,6 +163,14 @@ public class PolicyAdminImplTest {
 
         policyAdmin.savePolicy(toUpdate, true);
         verify(policyChecker, never()).checkPolicy(toUpdate);
+    }
+
+    @Test
+    public void savePolicyCreatesRoles() throws Exception {
+        final Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "<xml/>", false);
+        when(policyVersionManager.checkpointPolicy(policy, true, true)).thenReturn(new PolicyVersion());
+        policyAdmin.savePolicy(policy, true);
+        verify(policyManager).createRoles(policy);
     }
 
     private static final String allLicensedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

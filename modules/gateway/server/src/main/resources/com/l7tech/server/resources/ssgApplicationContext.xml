@@ -225,9 +225,7 @@
                 <constructor-arg index="2">
                     <map>
                         <entry key="Pooled">
-                            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
-                                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool"/>
-                            </bean>
+                            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
                         </entry>
                         <entry key="Simple">
                             <bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>
@@ -421,6 +419,8 @@
                                 <value>krb5Realm</value>
                                 <value>krb5KDC</value>
                                 <value>kerberos.krb5Config.overwrite</value>
+                                <value>kerberos.cache.size</value>
+                                <value>kerberos.cache.timeToLive</value>
                             </list>
                         </entry>
                         <entry key="pollingEmailListenerFactory">
@@ -618,6 +618,7 @@
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer"
           parent="hibernateBean">
         <property name="roleManager" ref="roleManager"/>
+        <property name="config" ref="serverConfig"/>
     </bean>
 
     <!--
@@ -1205,6 +1206,7 @@
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="serviceAliasManager"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!--service side service alias manager-->
@@ -1697,6 +1699,7 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
+                <ref bean="customKeyValueStoreManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1805,7 +1808,7 @@
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
-    <bean id="allModulesClassLoader" class="com.l7tech.server.policy.AllModulesClassLoader">
+    <bean id="allModulesClassLoader" class="com.l7tech.server.policy.module.AllModularAssertionClassLoader">
         <constructor-arg ref="assertionRegistry"/>
     </bean>
 
@@ -1994,6 +1997,7 @@
                 <constructor-arg value="com.l7tech.server.policy.PolicyCache"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="4" ref="serverConfig"/>
     </bean>
 
     <!--service side policy alias manager-->
@@ -2001,6 +2005,7 @@
 
     <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -2312,6 +2317,7 @@
     </bean>
 
     <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
@@ -2525,6 +2531,10 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE"/></key>
+                    <bean class="com.l7tech.server.search.processors.ServiceDependencyProcessor"/>
                 </entry>
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.FOLDER"/></key>

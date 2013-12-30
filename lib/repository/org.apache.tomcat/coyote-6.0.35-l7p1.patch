@@ -1,7 +1,8 @@
-diff -rupN tomcat-6.0.35-src.org/java/org/apache/catalina/connector/Connector.java tomcat-6.0.35-src/java/org/apache/catalina/connector/Connector.java
---- tomcat-6.0.35-src.org/java/org/apache/catalina/connector/Connector.java	2011-11-28 02:22:45.000000000 -0800
-+++ tomcat-6.0.35-src/java/org/apache/catalina/connector/Connector.java	2013-06-27 16:50:06.157278174 -0700
-@@ -126,6 +126,11 @@ public class Connector
+Index: java/org/apache/catalina/connector/Connector.java
+===================================================================
+--- java/org/apache/catalina/connector/Connector.java	(revision 1541661)
++++ java/org/apache/catalina/connector/Connector.java	(working copy)
+@@ -126,7 +126,12 @@
       */
      protected boolean xpoweredBy = false;
  
@@ -9,11 +10,12 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/catalina/connector/Connector.ja
 +    * Is trim the space between the ; and charset in content type header
 +    */
 +    protected boolean trimContentType = true;
-+
  
++
      /**
       * Descriptive information about this Connector implementation.
-@@ -895,6 +900,14 @@ public class Connector
+      */
+@@ -895,6 +900,14 @@
          setProperty("xpoweredBy", String.valueOf(xpoweredBy));
      }
  
@@ -28,10 +30,11 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/catalina/connector/Connector.ja
      /**
       * Enable the use of IP-based virtual hosting.
       *
-diff -rupN tomcat-6.0.35-src.org/java/org/apache/catalina/connector/CoyoteAdapter.java tomcat-6.0.35-src/java/org/apache/catalina/connector/CoyoteAdapter.java
---- tomcat-6.0.35-src.org/java/org/apache/catalina/connector/CoyoteAdapter.java	2011-11-28 02:22:45.000000000 -0800
-+++ tomcat-6.0.35-src/java/org/apache/catalina/connector/CoyoteAdapter.java	2013-06-27 17:33:07.689159077 -0700
-@@ -252,6 +252,8 @@ public class CoyoteAdapter implements Ad
+Index: java/org/apache/catalina/connector/CoyoteAdapter.java
+===================================================================
+--- java/org/apache/catalina/connector/CoyoteAdapter.java	(revision 1541661)
++++ java/org/apache/catalina/connector/CoyoteAdapter.java	(working copy)
+@@ -252,6 +252,8 @@
      	                org.apache.coyote.Response res)
          throws Exception {
  
@@ -40,10 +43,32 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/catalina/connector/CoyoteAdapte
          Request request = (Request) req.getNote(ADAPTER_NOTES);
          Response response = (Response) res.getNote(ADAPTER_NOTES);
  
-diff -rupN tomcat-6.0.35-src.org/java/org/apache/coyote/Response.java tomcat-6.0.35-src/java/org/apache/coyote/Response.java
---- tomcat-6.0.35-src.org/java/org/apache/coyote/Response.java	2011-11-28 02:22:45.000000000 -0800
-+++ tomcat-6.0.35-src/java/org/apache/coyote/Response.java	2013-06-27 17:34:56.725154047 -0700
-@@ -20,6 +20,7 @@ package org.apache.coyote;
+Index: java/org/apache/catalina/core/StandardContextValve.java
+===================================================================
+--- java/org/apache/catalina/core/StandardContextValve.java	(revision 1541661)
++++ java/org/apache/catalina/core/StandardContextValve.java	(working copy)
+@@ -114,16 +114,6 @@
+     public final void invoke(Request request, Response response)
+         throws IOException, ServletException {
+ 
+-        // Disallow any direct access to resources under WEB-INF or META-INF
+-        MessageBytes requestPathMB = request.getRequestPathMB();
+-        if ((requestPathMB.startsWithIgnoreCase("/META-INF/", 0))
+-            || (requestPathMB.equalsIgnoreCase("/META-INF"))
+-            || (requestPathMB.startsWithIgnoreCase("/WEB-INF/", 0))
+-            || (requestPathMB.equalsIgnoreCase("/WEB-INF"))) {
+-            notFound(response);
+-            return;
+-        }
+-
+         // Wait if we are reloading
+         boolean reloaded = false;
+         while (context.getPaused()) {
+Index: java/org/apache/coyote/Response.java
+===================================================================
+--- java/org/apache/coyote/Response.java	(revision 1541661)
++++ java/org/apache/coyote/Response.java	(working copy)
+@@ -20,6 +20,7 @@
  import java.io.IOException;
  import java.util.Locale;
  
@@ -51,15 +76,7 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/coyote/Response.java tomcat-6.0
  import org.apache.tomcat.util.buf.ByteChunk;
  import org.apache.tomcat.util.http.MimeHeaders;
  
-@@ -50,7 +51,6 @@ public final class Response {
-      */
-     private static Locale DEFAULT_LOCALE = Locale.getDefault();
- 
--
-     // ----------------------------------------------------- Instance Variables
- 
-     /**
-@@ -89,6 +89,9 @@ public final class Response {
+@@ -89,6 +90,9 @@
      protected boolean commited = false;
  
  
@@ -69,7 +86,7 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/coyote/Response.java tomcat-6.0
      /**
       * Action hook.
       */
-@@ -226,8 +229,15 @@ public final class Response {
+@@ -226,7 +230,14 @@
          this.commited = v;
      }
  
@@ -77,26 +94,20 @@ diff -rupN tomcat-6.0.35-src.org/java/org/apache/coyote/Response.java tomcat-6.0
 +        return connector;
 +    }
  
--    // -----------------Error State --------------------
 +    public void setConnector(Connector connector) {
 +        this.connector = connector;
 +    }
 +
-+// -----------------Error State --------------------
+     // -----------------Error State --------------------
  
  
-     /** 
-@@ -520,10 +530,14 @@ public final class Response {
- 
-         String ret = contentType;
- 
--        if (ret != null 
-+        if (ret != null
+@@ -523,7 +534,11 @@
+         if (ret != null 
              && characterEncoding != null
              && charsetSet) {
 -            ret = ret + ";charset=" + characterEncoding;
 +            if (connector != null && !connector.isTrimContentType()) {
-+                ret = ret + "; charset=" + characterEncoding;
++            ret = ret + "; charset=" + characterEncoding;
 +            } else {
 +                ret = ret + ";charset=" + characterEncoding;
 +            }

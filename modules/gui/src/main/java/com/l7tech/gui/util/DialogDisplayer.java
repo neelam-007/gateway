@@ -840,7 +840,7 @@ public class DialogDisplayer {
                                                        final JButton okButton,
                                                        final JButton cancelButton,
                                                        final OptionListener result) {
-        enableOkCheckBox.setText("To enable OK, check this box first.");
+        enableOkCheckBox.setText("To enable [OK], select this check box");
         okButton.setText("OK");
         cancelButton.setText("Cancel");
 

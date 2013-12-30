@@ -3,12 +3,12 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.OkCancelPanel;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.RbacUtilities;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gui.CheckBoxSelectableTableModel;
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.SelectableTableModel;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,26 +43,38 @@ public class RoleSelectionDialog extends JDialog {
     private static final int CHECK_BOX_WIDTH = 30;
     private static final String ROLES = "roles";
     private static final String ADD = "Add";
+    private static final String SELECT = "Select";
     private static final String UNAVAILABLE = "unavailable";
     private JPanel contentPanel;
     private OkCancelPanel okCancelPanel;
     private SelectableFilterableTablePanel tablePanel;
     private boolean confirmed;
-    private CheckBoxSelectableTableModel<Role> rolesModel;
+    private SelectableTableModel<Role> rolesModel;
     private Collection<Role> rolesToFilter;
+    private boolean allowMultiSelect;
 
-    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String identityName, @NotNull Collection<Role> rolesToFilter) {
-        super(owner, "Add Roles to " + identityName, DEFAULT_MODALITY_TYPE);
+    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String title, @NotNull Collection<Role> rolesToFilter) {
+        this(owner, title, rolesToFilter, true);
+    }
+
+    public RoleSelectionDialog(@NotNull final Window owner, @NotNull final String title, @NotNull Collection<Role> rolesToFilter, final boolean allowMultiSelect) {
+        super(owner, title, DEFAULT_MODALITY_TYPE);
         this.rolesToFilter = rolesToFilter;
+        this.allowMultiSelect = allowMultiSelect;
         setContentPane(contentPanel);
         initButtons();
         initTable();
+        enableDisableOk();
     }
 
     public boolean isConfirmed() {
         return confirmed;
     }
 
+    /**
+     * @return a list of selected roles or a list with a single role if multi-select is not supported.
+     *         These roles will not have permissions or attached entities.
+     */
     public java.util.List<Role> getSelectedRoles() {
         if (isConfirmed()) {
             return rolesModel.getSelected();
@@ -70,7 +83,11 @@ public class RoleSelectionDialog extends JDialog {
     }
 
     private void initButtons() {
-        okCancelPanel.setOkButtonText(ADD);
+        if (allowMultiSelect) {
+            okCancelPanel.setOkButtonText(ADD);
+        } else {
+            okCancelPanel.setOkButtonText(SELECT);
+        }
         okCancelPanel.getOkButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -84,7 +101,7 @@ public class RoleSelectionDialog extends JDialog {
     }
 
     private void initTable() {
-        rolesModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), CHECK_COL_INDEX,
+        rolesModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), allowMultiSelect, CHECK_COL_INDEX,
                 column(StringUtils.EMPTY, CHECK_BOX_WIDTH, CHECK_BOX_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, Role>() {
                     @Override
                     public Boolean call(final Role role) {
@@ -117,18 +134,90 @@ public class RoleSelectionDialog extends JDialog {
                 }));
         try {
             final ArrayList<Role> rows = new ArrayList<>();
-            final Collection<Role> allRoles = Registry.getDefault().getRbacAdmin().findAllRoles();
+            final Collection<EntityHeader> headers = Registry.getDefault().getRbacAdmin().findAllRoleHeaders();
             final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-            for (final Role role : allRoles) {
-                if (!rolesToFilter.contains(role) && securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role))) {
-                    rows.add(role);
+            for (final EntityHeader header : headers) {
+                if (header instanceof RoleEntityHeader) {
+                    final Role role = RbacUtilities.fromEntityHeader((RoleEntityHeader) header);
+                    if (!rolesToFilter.contains(role) && securityProvider.hasPermission(new AttemptedUpdate(EntityType.RBAC_ROLE, role))) {
+                        rows.add(role);
+                    }
                 }
             }
-            rolesModel.setSelectableObjects(rows);
+            rolesModel.setRows(rows);
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve roles: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            rolesModel.setSelectableObjects(Collections.<Role>emptyList());
+            rolesModel.setRows(Collections.<Role>emptyList());
         }
         tablePanel.configure(rolesModel, new int[]{NAME_COL_INDEX}, ROLES);
+        tablePanel.getSelectableTable().getColumnModel().getColumn(NAME_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+                Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (component instanceof JLabel) {
+                    final RoleLabel roleLabel = new RoleLabel(value.toString(), rolesModel.getRowObject(table.convertRowIndexToModel(row)));
+                    roleLabel.setOpaque(true);
+                    if (isSelected) {
+                        roleLabel.setBackground(table.getSelectionBackground());
+                        roleLabel.setForeground(table.getSelectionForeground());
+                    } else {
+                        roleLabel.setBackground(table.getBackground());
+                        roleLabel.setForeground(table.getForeground());
+                    }
+                    component = roleLabel;
+                }
+                return component;
+            }
+        });
+        if (!allowMultiSelect) {
+            tablePanel.getSelectableTable().getColumnModel().getColumn(CHECK_COL_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+                    final JRadioButton radio = new JRadioButton();
+                    radio.setSelected(isSelected);
+                    radio.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+                    radio.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+                    return radio;
+                }
+            });
+            rolesModel.addTableModelListener(new RunOnChangeListener(new Runnable() {
+                @Override
+                public void run() {
+                    enableDisableOk();
+                }
+            }));
+        }
+    }
+
+    private void enableDisableOk() {
+        if (!allowMultiSelect) {
+            okCancelPanel.getOkButton().setEnabled(rolesModel.getSelected().iterator().next() != null);
+        }
+    }
+
+    /**
+     * Custom JLabel for a Role which fetches the tool tip as needed.
+     */
+    private class RoleLabel extends JLabel {
+        private final Role role;
+
+        public RoleLabel(@NotNull final String label, @NotNull final Role role) {
+            super(label);
+            this.role = role;
+        }
+
+        @Override
+        public String getToolTipText() {
+            String toolTip = getText();
+            try {
+                final Role found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(role.getGoid());
+                if (found != null) {
+                    toolTip = Registry.getDefault().getEntityNameResolver().getNameForEntity(found, true);
+                }
+            } catch (final FindException | PermissionDeniedException e) {
+                logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            return toolTip;
+        }
     }
 }

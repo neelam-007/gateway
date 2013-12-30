@@ -214,9 +214,11 @@ public class SinkManagerImpl
 
     @Override
     public void createRoles(SinkConfiguration entity) throws SaveException {
-        for ( final Role role : createRolesForSink( entity ) ) {
-            logger.info("Creating new Role: " + role.getName());
-            roleManager.save(role);
+        if (serverConfig.getBooleanProperty(AUTO_CREATE_ROLE_PROPERTY, true)) {
+            for ( final Role role : createRolesForSink( entity ) ) {
+                logger.info("Creating new Role: " + role.getName());
+                roleManager.save(role);
+            }
         }
     }
 
@@ -458,6 +460,7 @@ public class SinkManagerImpl
     // - PACKAGE
 
     static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
+    static final String AUTO_CREATE_ROLE_PROPERTY = "rbac.autoRole.viewSink.autoCreate";
 
     //- PRIVATE
 
@@ -787,7 +790,7 @@ public class SinkManagerImpl
         // This check is required for SSG-7720
         if(logToConsole && handler == null){
             //if logging to the console is enforced and the root handle has not been set then create a new one.
-            handler = new ConsoleHandler();
+            handler = new ConsoleMessageSink.L7ConsoleHandler();
             //Add the Logs category here as well. Otherwise not much will be logged to the console
             configuration.setCategories(SinkConfiguration.CATEGORY_AUDITS + "," + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
         }

@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
@@ -119,4 +120,22 @@ public class RbacUtilities {
        }
        return out;
    }
+
+    /**
+     * Create a simplified Role from a given RoleEntityHeader.
+     *
+     * @param header the RoleEntityHeader to create a simplified Role from.
+     * @return a simplified Role created from the given RoleEntityHeader.
+     */
+    public static Role fromEntityHeader(@NotNull final RoleEntityHeader header) {
+        final Role role = new Role();
+        role.setGoid(header.getGoid());
+        role.setName(header.getName());
+        role.setDescription(header.getDescription());
+        role.setUserCreated(header.isUserCreated());
+        role.setVersion(header.getVersion());
+        role.setEntityGoid(header.getEntityGoid());
+        role.setEntityType(header.getEntityType());
+        return role;
+    }
 }

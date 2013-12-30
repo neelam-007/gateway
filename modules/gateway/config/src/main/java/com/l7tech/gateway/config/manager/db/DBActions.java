@@ -638,7 +638,7 @@ public class DBActions {
                 else {
                     try {
                         success = doDbUpgrade(config, schemaFilePath, currentVersion, dbVersion, ui);
-                        if (success) ui.showSuccess("The database was successfully upgraded\n");
+                        if (success && ui != null) ui.showSuccess("The database was successfully upgraded\n");
                     } catch (IOException e) {
                         String errorMsg = "There was an error while attempting to upgrade the database";
                         logger.severe(errorMsg);
@@ -954,6 +954,10 @@ public class DBActions {
                 ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
                 while (createTables.next()) {
                     String s = createTables.getString(2).replace("\n", "");
+                    // The below replacement is needed because mysql will return a default byte value as the actual byte string.
+                    // In the create table statement we need it to be a hex string.
+                    s = s.replace("DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0��������'", "DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF'");
+                    s = s.replace("binary(16) NOT NULL DEFAULT '0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", "binary(16) NOT NULL DEFAULT 0");
                     list.add(s);
                 }
             }

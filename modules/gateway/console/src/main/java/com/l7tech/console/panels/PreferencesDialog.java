@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.gui.MaxLengthDocument;
@@ -45,6 +46,7 @@ public class PreferencesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JButton helpButton;
+    private JTextField maxNumTabTextField;
 
     /** preferences instance */
     private Properties props;
@@ -61,7 +63,7 @@ public class PreferencesDialog extends JDialog {
         initResources();
         initComponents(isApplet);
         loadPreferences();
-        pack();
+        DialogDisplayer.pack(this);
     }
 
     /**
@@ -300,6 +302,24 @@ public class PreferencesDialog extends JDialog {
 
             getPreferences().setProperty(SsmPreferences.NUM_SSG_MAX_RIGHT_COMMENT, Integer.toString(maxRightComment));
 
+            final int numOfTabs;
+            try {
+                numOfTabs = Integer.parseInt(maxNumTabTextField.getText().trim());
+
+                // This number must be in a valid range [1, 100]
+                if (numOfTabs < 1 || numOfTabs > 100) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException e) {
+                DialogDisplayer.showMessageDialog(this,
+                    "The value of 'Maximum Policy Tabs' must be an integer between 1 and 100 inclusively.",
+                    "Bad Maximum Policy Tabs", JOptionPane.WARNING_MESSAGE, null);
+
+                return false;
+            }
+            getPreferences().setProperty(SsmPreferences.MAX_NUM_POLICY_TABS, String.valueOf(numOfTabs));
+
+
             return true;
         } catch (IOException e) {
             log.log(Level.SEVERE, "preferences", e);
@@ -377,6 +397,17 @@ public class PreferencesDialog extends JDialog {
             }
             maxRightCommentTextField.setText(Integer.toString(maxRightComment));
             previousMaxRight = maxRightComment;
+
+            String numOfTabsProp = getPreferences().getProperty(SsmPreferences.MAX_NUM_POLICY_TABS);
+            int numOfTabs = SsmPreferences.DEFAULT_MAX_NUM_POLICY_TABS;
+            try {
+                if (numOfTabsProp != null) {
+                    numOfTabs = Integer.parseInt(numOfTabsProp);
+                }
+            } catch (NumberFormatException e) {
+                // swallow; bad property value
+            }
+            maxNumTabTextField.setText(String.valueOf(numOfTabs));
 
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);

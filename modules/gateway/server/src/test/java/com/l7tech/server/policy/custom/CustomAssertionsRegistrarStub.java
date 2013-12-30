@@ -8,11 +8,9 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
+import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,7 +56,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @return the list of all assertions known to the runtime
      */
     @Override
-    public Collection getAssertions() {
+    public Collection<CustomAssertionHolder> getAssertions() {
         Set customAssertionDescriptors = CustomAssertions.getAllDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -69,7 +67,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      *         for a give n category
      */
     @Override
-    public Collection getAssertions(Category c) {
+    public Collection<CustomAssertionHolder> getAssertions(Category c) {
         final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
@@ -93,7 +91,9 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
                     return true;
                 } else if (CustomCredentialSource.class.isAssignableFrom(descriptor.getAssertion())) {
                     final CustomCredentialSource customAssertion = (CustomCredentialSource)descriptor.getAssertion().newInstance();
-                    return customAssertion.isCredentialSource();
+                    if (customAssertion.isCredentialSource()) {
+                        return true;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -141,7 +141,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         return CustomAssertions.getDescriptor(a);
     }
 
-    private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
+    private Collection<CustomAssertionHolder> asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection<CustomAssertionHolder> result = new ArrayList<>();
         for (Object customAssertionDescriptor : customAssertionDescriptors) {
             CustomAssertionHolder customAssertionHolder = asCustomAssertionHolder((CustomAssertionDescriptor) customAssertionDescriptor);
@@ -165,6 +165,10 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             customAssertionHolder.setPolicyNodeName(customAssertionDescriptor.getPolicyNodeName());
             customAssertionHolder.setIsUiAutoOpen(customAssertionDescriptor.getIsUiAutoOpen());
             customAssertionHolder.setModuleFileName(customAssertionDescriptor.getModuleFileName());
+            if (cas instanceof CustomFeatureSetName) {
+                CustomFeatureSetName customFeatureSetName = (CustomFeatureSetName) cas;
+                customAssertionHolder.setRegisteredCustomFeatureSetName(customFeatureSetName.getFeatureSetName());
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
         }

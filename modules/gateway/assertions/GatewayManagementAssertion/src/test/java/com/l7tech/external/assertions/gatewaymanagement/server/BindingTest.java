@@ -4,7 +4,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.NamespaceContextImpl;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -25,9 +24,16 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -50,25 +56,36 @@ public class BindingTest {
 
     @Test
     public void testResourceFactories() throws Exception {
-        final NodeList nodeList = findResourceFactoryClassAttributes();
+        final NodeList nodeList = findResourceFactoryRefAttributes();
         assertTrue( "Found factories", nodeList.getLength() > 0 );
 
         for ( int i=0; i<nodeList.getLength(); i++ ) {
-            Attr attribute = (Attr) nodeList.item( 0 );
-            String className = attribute.getValue();
-            Class<?> resourceFactoryClass = Class.forName(className);
+            Attr attribute = (Attr) nodeList.item( i );
+            String refId = attribute.getValue();
+            NodeList refClass = findResourceFactoryClassAttributes(refId);
+            assertEquals(refId, 1, refClass.getLength());
+            Class<?> resourceFactoryClass = Class.forName(((Attr)refClass.item(0)).getValue());
             ResourceFactory.ResourceType resourceType = resourceFactoryClass.getAnnotation( ResourceFactory.ResourceType.class );
             resourceType.type();
         }
     }
 
-    private static NodeList findResourceFactoryClassAttributes() throws IOException, SAXException, XPathExpressionException {
+    private static NodeList findResourceFactoryRefAttributes() throws IOException, SAXException, XPathExpressionException {
         final Document beansDoc = XmlUtil.parse(new ByteArrayInputStream( IOUtils.slurpUrl( BindingTest.class.getResource("gatewayManagementContext.xml") )));
 
         final XPathFactory xpathFactory = XPathFactory.newInstance();
         final XPath xpath = xpathFactory.newXPath();
         xpath.setNamespaceContext( new NamespaceContextImpl(XmlUtil.getNamespaceMap(beansDoc.getDocumentElement())) );
-        return (NodeList) xpath.evaluate("//spr:bean[@id='resourceFactoryRegistry']/spr:constructor-arg/spr:list/spr:bean/@class", beansDoc, XPathConstants.NODESET);
+        return (NodeList) xpath.evaluate("//spr:bean[@id='resourceFactoryRegistry']/spr:constructor-arg/spr:list/spr:ref/@local", beansDoc, XPathConstants.NODESET);
+    }
+
+    private static NodeList findResourceFactoryClassAttributes(String refId) throws IOException, SAXException, XPathExpressionException {
+        final Document beansDoc = XmlUtil.parse(new ByteArrayInputStream( IOUtils.slurpUrl( BindingTest.class.getResource("gatewayManagementContext.xml") )));
+
+        final XPathFactory xpathFactory = XPathFactory.newInstance();
+        final XPath xpath = xpathFactory.newXPath();
+        xpath.setNamespaceContext( new NamespaceContextImpl(XmlUtil.getNamespaceMap(beansDoc.getDocumentElement())) );
+        return (NodeList) xpath.evaluate("//spr:bean[@id='"+refId+"']/@class", beansDoc, XPathConstants.NODESET);
     }
 
     private static Map<String, String> generateSchemas() throws JAXBException, IOException {

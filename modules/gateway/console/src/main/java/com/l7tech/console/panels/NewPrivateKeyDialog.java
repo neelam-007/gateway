@@ -307,7 +307,8 @@ public class  NewPrivateKeyDialog extends JDialog {
         String alias = aliasField.getText();
         if (alias == null)
             return null;
-        alias = alias.trim().toLowerCase().replaceAll("[^a-zA-Z0-9\\.\\-_]", "");
+        //The following regular expression allows use of arbitrary unicode letters and numbers, while disallowing other categories (like marks, punctuation, separators). See: SSG-7834
+        alias = alias.trim().toLowerCase().replaceAll("[^\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nd}\\p{Nl}\\p{No}\\.\\-_]", "");
         return "CN=" + alias;
     }
 

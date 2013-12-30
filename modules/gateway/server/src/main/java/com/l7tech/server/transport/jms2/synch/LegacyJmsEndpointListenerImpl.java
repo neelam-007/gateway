@@ -1,7 +1,5 @@
 package com.l7tech.server.transport.jms2.synch;
 
-import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
@@ -37,50 +35,6 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
         // changed back to constructor init
         this._handler = new JmsRequestHandlerImpl(endpointConfig.getApplicationContext());
-    }
-
-    /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#handleMessage(javax.jms.Message)
-     */
-    @Override
-    protected void handleMessage( final Message jmsMessage ) throws JmsRuntimeException {
-        HybridDiagnosticContext.put(
-                GatewayDiagnosticContextKeys.JMS_LISTENER_ID,
-                getEndpointConfig().getEndpoint().getGoid().toString() );
-        try {
-            if ( !_endpointCfg.isTransactional() ) {
-
-                // if not transactional, then ACK the message to remove from queue
-                jmsMessage.acknowledge();
-            }
-
-            _handler.onMessage(getEndpointConfig(), getJmsBag(), getEndpointConfig().isTransactional(), getFailureProducer(), jmsMessage);
-
-        } catch (JMSException ex) {
-            throw new JmsRuntimeException(ex);
-
-        } catch (JmsConfigException ex) {
-            throw new JmsRuntimeException(ex);
-
-        } catch (NamingException ex) {
-            throw new JmsRuntimeException(ex);
-        } finally {
-            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.JMS_LISTENER_ID );
-        }
-    }
-
-    @Override
-    public void onMessage(Message message) {
-        try {
-            this.handleMessage(message);
-        } catch (JmsRuntimeException e) {
-            final JMSException jmsException = e.getCause() instanceof JMSException ? (JMSException) e.getCause() : null;
-            String detail = "";
-            if ( jmsException != null ) {
-                detail = ", due to " + JmsUtil.getJMSErrorMessage(jmsException);
-            }
-            _logger.log( Level.WARNING, "Error handling message: " + ExceptionUtils.getMessage( e ) + detail, ExceptionUtils.getDebugException( e ) );
-        }
     }
 
     MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {

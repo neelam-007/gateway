@@ -15,10 +15,12 @@ import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import org.hibernate.StaleObjectStateException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.wsdl.WSDLException;
@@ -47,15 +49,19 @@ public class ServiceManagerImp
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
-
     private final RoleManager roleManager;
 
     private final ServiceAliasManager serviceAliasManager;
 
+    private final Config config;
 
-    public ServiceManagerImp(RoleManager roleManager, ServiceAliasManager serviceAliasManager) {
+    static final String AUTO_CREATE_ROLE_PROPERTY = "rbac.autoRole.manageService.autoCreate";
+
+
+    public ServiceManagerImp(RoleManager roleManager, ServiceAliasManager serviceAliasManager, @NotNull final Config config) {
         this.roleManager = roleManager;
         this.serviceAliasManager = serviceAliasManager;
+        this.config = config;
     }
 
     @Override
@@ -220,7 +226,9 @@ public class ServiceManagerImp
 
     @Override
     public void createRoles( final PublishedService service ) throws SaveException {
-        addManageServiceRole(service);
+        if (config.getBooleanProperty(AUTO_CREATE_ROLE_PROPERTY, true)) {
+            addManageServiceRole(service);
+        }
     }
 
     @Override

@@ -1,0 +1,3 @@
+<project name="RadiusAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

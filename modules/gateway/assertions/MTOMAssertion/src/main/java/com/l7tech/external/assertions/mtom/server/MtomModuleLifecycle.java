@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Charsets;

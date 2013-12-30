@@ -59,6 +59,11 @@ public interface SsmPreferences {
     * */
     String NUM_SSG_MAX_RIGHT_COMMENT = "num.ssg.max.right.comment";
 
+    /*
+    * key for value for default maximum number of policy tabs opened in the policy editor workspace
+    * */
+    String MAX_NUM_POLICY_TABS = "maximum.number.policy.tabs";
+
     /**
      * toolbars property (icons, text, icons and text)
      */
@@ -101,6 +106,7 @@ public interface SsmPreferences {
     int MAX_LEFT_COMMENT_SIZE = 100;
     int DEFAULT_MAX_LEFT_COMMENT = 30;
     int DEFAULT_MAX_RIGHT_COMMENT = 100;
+    int DEFAULT_MAX_NUM_POLICY_TABS = 30;
 
     /**
      * Update preferences from given properties, optionally

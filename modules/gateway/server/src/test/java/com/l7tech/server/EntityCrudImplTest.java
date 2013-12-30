@@ -224,6 +224,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public void save(Goid id, Policy entity) throws SaveException {
+            policyEntityManager.save(id, entity);
+        }
+
+        @Override
         public Integer getVersion(Goid oid) throws FindException {
             return policyEntityManager.getVersion(oid);
         }
@@ -279,6 +284,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public List<Policy> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return policyEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
+        }
+
+        @Override
         public Policy findByPrimaryKey(Goid goid) throws FindException {
             return policyEntityManager.findByPrimaryKey(goid);
         }
@@ -309,6 +319,11 @@ public class EntityCrudImplTest {
         @Override
         public Goid save(SecurityZone entity) throws SaveException {
             return zoneEntityManager.save(entity);
+        }
+
+        @Override
+        public void save(Goid id, SecurityZone entity) throws SaveException {
+            zoneEntityManager.save(id, entity);
         }
 
         @Override
@@ -367,6 +382,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public List<SecurityZone> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return zoneEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
+        }
+
+        @Override
         public SecurityZone findByPrimaryKey(Goid goid) throws FindException {
             return zoneEntityManager.findByPrimaryKey(goid);
         }
@@ -397,6 +417,11 @@ public class EntityCrudImplTest {
         @Override
         public Goid save(PublishedService entity) throws SaveException {
             return serviceEntityManager.save(entity);
+        }
+
+        @Override
+        public void save(Goid id, PublishedService entity) throws SaveException {
+            serviceEntityManager.save(id, entity);
         }
 
         @Override
@@ -455,6 +480,11 @@ public class EntityCrudImplTest {
         }
 
         @Override
+        public List<PublishedService> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return serviceEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
+        }
+
+        @Override
         public PublishedService findByPrimaryKey(Goid goid) throws FindException {
             return serviceEntityManager.findByPrimaryKey(goid);
         }
@@ -485,6 +515,11 @@ public class EntityCrudImplTest {
         @Override
         public Goid save(JdbcConnection entity) throws SaveException {
             return jdbcConnectionEntityManager.save(entity);
+        }
+
+        @Override
+        public void save(Goid id, JdbcConnection entity) throws SaveException {
+            jdbcConnectionEntityManager.save(entity);
         }
 
         @Override
@@ -540,6 +575,11 @@ public class EntityCrudImplTest {
         @Override
         public JdbcConnection findByHeader(EntityHeader header) throws FindException {
             return jdbcConnectionEntityManager.findByHeader(header);
+        }
+
+        @Override
+        public List<JdbcConnection> findPagedMatching(int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+            return jdbcConnectionEntityManager.findPagedMatching(offset, count, sortProperty, ascending, matchProperties);
         }
 
         @Override

@@ -123,14 +123,18 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
         role:
         for ( Role role : roles ) {
             if ( role.getEntityType()==roleTargetEntityType && role.getEntityGoid() != null ) {
-                Set<Permission> permissions = role.getPermissions();
-                for ( Permission permission : permissions ) {
-                    if ( permission.getOperation()==OperationType.READ &&
-                         permission.getEntityType()==EntityType.FOLDER &&
-                         permission.getScope() != null &&
-                         permission.getScope().size()==1 &&
-                         permission.getScope().iterator().next() instanceof EntityFolderAncestryPredicate) {
-                        continue role;
+                // permissions are lazily loaded - must retrieve them
+                final Role found = roleManager.findByPrimaryKey(role.getGoid());
+                if (found != null) {
+                    Set<Permission> permissions = found.getPermissions();
+                    for ( Permission permission : permissions ) {
+                        if ( permission.getOperation()==OperationType.READ &&
+                             permission.getEntityType()==EntityType.FOLDER &&
+                             permission.getScope() != null &&
+                             permission.getScope().size()==1 &&
+                             permission.getScope().iterator().next() instanceof EntityFolderAncestryPredicate) {
+                            continue role;
+                        }
                     }
                 }
                 logger.info("Auto-creating missing folder traversal permission for role " + role.getName() + ".");

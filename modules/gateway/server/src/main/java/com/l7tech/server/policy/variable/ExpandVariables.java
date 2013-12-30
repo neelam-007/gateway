@@ -56,7 +56,7 @@ public final class ExpandVariables {
         return processSingleVariableAsDisplayableObject(expr, vars, audit, strict());
     }
 
-    private static boolean strict() {
+    static boolean strict() {
         return ConfigFactory.getBooleanProperty( ServerConfigParams.PARAM_TEMPLATE_STRICTMODE, false );
     }
 
@@ -148,7 +148,7 @@ public final class ExpandVariables {
         if (strict) throw new VariableNameSyntaxException(nonExistentVariable);
     }
 
-    static interface Selector<T> {
+    public static interface Selector<T> {
         static final Selection NOT_PRESENT = new Selection(null, null);
         static class Selection {
             private final Object value;
@@ -198,7 +198,8 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.DateTimeSelector",
         "com.l7tech.server.policy.variable.FeedbackSelector",
         "com.l7tech.server.policy.variable.ServiceSelector",
-        "com.l7tech.server.policy.variable.SiteMinderContextSelector"
+        "com.l7tech.server.policy.variable.SiteMinderContextSelector",
+        "com.l7tech.server.policy.variable.RadiusAuthenticationContextSelector"
     };
 
     private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{
@@ -270,7 +271,7 @@ public final class ExpandVariables {
     }
 
     @Nullable
-    private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
+    static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
         String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
             badVariable(syntax.remainingName, strict, audit);
@@ -347,10 +348,15 @@ public final class ExpandVariables {
         while (remainingName != null && remainingName.length() > 0) {
             // Try to find a Selector for values of this type
             Selector selector = null;
-            for ( Selector<?> sel : selectors ) {
-                if (sel.getContextObjectClass().isAssignableFrom( contextValue.getClass() )) {
-                    selector = sel;
-                    break;
+
+            if (contextValue instanceof Selector) {
+                selector = (Selector) contextValue;
+            } else {
+                for ( Selector<?> sel : selectors ) {
+                    if (sel.getContextObjectClass().isAssignableFrom( contextValue.getClass() )) {
+                        selector = sel;
+                        break;
+                    }
                 }
             }
 

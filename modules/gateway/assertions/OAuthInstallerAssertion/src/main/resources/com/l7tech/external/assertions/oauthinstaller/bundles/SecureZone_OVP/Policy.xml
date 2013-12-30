@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="1987200f-1887-4566-b0e7-1bff9558a361"
-               id="123731995" version="0">
-        <l7:PolicyDetail folderId="123600896" guid="1987200f-1887-4566-b0e7-1bff9558a361" id="123731995" version="0">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="683d721b-2a6f-4d44-b484-aae0e64989b6" id="57477c668279c3c8d34da687b89a7735" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="683d721b-2a6f-4d44-b484-aae0e64989b6" id="57477c668279c3c8d34da687b89a7735" version="1">
             <l7:Name>v2GenerateRequestMac</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>1</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -17,8 +16,7 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Generates request MAC using HMAC-SHA1 algorithm"/&gt;
@@ -286,17 +284,13 @@
                     &lt;L7p:Direction intValue="-1"/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="forXSL"/&gt;
                     &lt;L7p:ResourceInfo staticResourceInfo="included"&gt;
-                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0"
-                    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+                    &lt;L7p:Document stringValueReference="inline"&gt;&lt;![CDATA[&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
                     &lt;xsl:output method="text" omit-xml-declaration="yes"/&gt;
-
                     &lt;xsl:variable name="lowercase" select="'abcdefghijklmnopqrstuvwxyz'"/&gt;
                     &lt;xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'"/&gt;
-
                     &lt;xsl:template match="/hostname"&gt;
                     &lt;xsl:value-of select="translate(., $uppercase, $lowercase)"/&gt;
                     &lt;/xsl:template&gt;
-
                     &lt;/xsl:stylesheet&gt;]]&gt;&lt;/L7p:Document&gt;
                     &lt;/L7p:ResourceInfo&gt;
                     &lt;L7p:Target target="OTHER"/&gt;
@@ -368,8 +362,7 @@
                     &lt;L7p:VariableToSet stringValue="empty_line"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9DQoke2VtcHR5X2xpbmV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHt0aW1lc3RhbXBfc2VjfQ0KJHtub25jZX0NCiR7aHR0cF9tZXRob2R9DQoke3JlcXVlc3RfdXJpfQ0KJHtob3N0fQ0KJHtwb3J0fQ0KJHtleHR9DQoke2VtcHR5X2xpbmV9"/&gt;
                     &lt;L7p:VariableToSet stringValue="normalized_request"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:GenerateSecurityHash&gt;
@@ -389,51 +382,13 @@
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3"
-               id="123961351" version="2">
-        <l7:PolicyDetail folderId="123600896" guid="f0eb1f7b-392b-40a4-9f4f-46d00ffad3d3" id="123961351" version="2">
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a74a9" guid="e503f8c2-0466-478d-937d-87c5a5f19bee" id="57477c668279c3c8d34da687b89a7529" version="1">
             <l7:Name>OAuth Client Token Store Context Variables</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
                 <l7:Property key="revision">
-                    <l7:LongValue>3</l7:LongValue>
-                </l7:Property>
-                <l7:Property key="soap">
-                    <l7:BooleanValue>false</l7:BooleanValue>
-                </l7:Property>
-            </l7:Properties>
-        </l7:PolicyDetail>
-        <l7:Resources>
-            <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-                    &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
-                    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_tokenstore_server&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_clientstore_server&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue=&quot;aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==&quot;/&gt;
-                    &lt;L7p:VariableToSet stringValue=&quot;host_oauth_session_server&quot;/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
-            </l7:ResourceSet>
-        </l7:Resources>
-    </l7:Policy>
-    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd"
-               id="123732005" version="12">
-        <l7:PolicyDetail folderId="123600904" guid="950d7c13-dcd8-472f-a7ae-2f4d50b8bfdd" id="123732005" version="12">
-            <l7:Name>OAuth 2.0 Context Variables</l7:Name>
-            <l7:PolicyType>Include</l7:PolicyType>
-            <l7:Properties>
-                <l7:Property key="revision">
-                    <l7:LongValue>13</l7:LongValue>
+                    <l7:LongValue>2</l7:LongValue>
                 </l7:Property>
                 <l7:Property key="soap">
                     <l7:BooleanValue>false</l7:BooleanValue>
@@ -443,19 +398,59 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
-                    &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Policy Fragment: OAuth Context Variables"/&gt;
-                    &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_tokenstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_clientstore_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
+                    &lt;L7p:VariableToSet stringValue="host_oauth_session_server"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:Policy&gt;
+                </l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="dfdc6c16-7c02-4415-b0e1-b4a9de10316f" id="57477c668279c3c8d34da687b89a7721" version="12">
+        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a75a1" guid="dfdc6c16-7c02-4415-b0e1-b4a9de10316f" id="57477c668279c3c8d34da687b89a7721" version="12">
+            <l7:Name>OAuth 2.0 Context Variables</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>11</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="BEARER or MAC"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Expression stringValue="QkVBUkVS"/&gt;
+                    &lt;L7p:VariableToSet stringValue="oauth2_token_type"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_oauth_ovp_server"/&gt;
-                    &lt;/L7p:SetVariable&gt;
-                    &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression stringValue="QkVBUkVS"/&gt;
-                    &lt;L7p:VariableToSet stringValue="oauth2_token_type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw=="/&gt;

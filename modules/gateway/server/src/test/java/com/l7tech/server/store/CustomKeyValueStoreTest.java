@@ -1,68 +1,82 @@
 package com.l7tech.server.store;
 
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.CustomKeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CustomKeyValueStoreTest {
 
     private static final String PREFIX = "com.l7tech.server.store.prefix.";
-    private static final String KEY = PREFIX + "key";
-    private static final String VALUE =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-        "<java version=\"1.7.0_03\" class=\"java.beans.XMLDecoder\">\n" +
-        "<object class=\"com.l7tech.custom.salesforce.partner.v26.assertion.SalesForceConnection\">\n" +
-        "<void property=\"description\">\n" +
-        "<string>sfdc1</string>\n" +
-        "</void>\n" +
-        "<void property=\"passwordOid\">\n" +
-        "<long>9601024</long>\n" +
-        "</void>\n" +
-        "<void property=\"securityTokenOid\">\n" +
-        "<long>9601025</long>\n" +
-        "</void>\n" +
-        "<void property=\"username\">\n" +
-        "<string>user@salesforce.com</string>\n" +
-        "</void>\n" +
-        "</object>\n" +
+
+    private static final String EXISTING_KEY = PREFIX + "existing_key";
+    private static final String EXISTING_VALUE =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+        "<java version=\"1.7.0_03\" class=\"java.beans.XMLDecoder\">" +
+        "<object class=\"com.l7tech.custom.salesforce.partner.v26.assertion.SalesForceConnection\">" +
+        "<void property=\"description\">" +
+        "<string>sfdc1</string>" +
+        "</void>" +
+        "<void property=\"passwordOid\">" +
+        "<long>9601024</long>" +
+        "</void>" +
+        "<void property=\"securityTokenOid\">" +
+        "<long>9601025</long>" +
+        "</void>" +
+        "<void property=\"username\">" +
+        "<string>user@salesforce.com</string>" +
+        "</void>" +
+        "</object>" +
         "</java>";
 
-    private CustomKeyValueStore customKeyValue;
+    private static final String NEW_KEY = PREFIX + "new_key";
+    private static final String NEW_VALUE =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+        "<java version=\"1.7.0_03\" class=\"java.beans.XMLDecoder\">" +
+        "<object class=\"com.l7tech.custom.salesforce.partner.v26.assertion.SalesForceConnection\">" +
+        "<void property=\"description\">" +
+        "<string>sfdc2</string>" +
+        "</void>" +
+        "<void property=\"passwordOid\">" +
+        "<long>9601024</long>" +
+        "</void>" +
+        "<void property=\"securityTokenOid\">" +
+        "<long>9601025</long>" +
+        "</void>" +
+        "<void property=\"username\">" +
+        "<string>user@salesforce.com</string>" +
+        "</void>" +
+        "</object>" +
+        "</java>";
+
     private Collection<CustomKeyValueStore> customKeyValues;
 
     private KeyValueStoreServicesImpl keyValueStoreServices;
     private CustomKeyValueStoreImpl customKeyValueStore;
 
-    @Mock
-    private CustomKeyValueStoreManager manager;
-
     @Before
     public void setup() throws Exception {
-        keyValueStoreServices = new KeyValueStoreServicesImpl(manager);
-        customKeyValueStore = new CustomKeyValueStoreImpl(manager);
-
-        customKeyValue = new CustomKeyValueStore();
-        customKeyValue.setName(KEY);
-        customKeyValue.setValue(VALUE.getBytes("UTF-8"));
+        CustomKeyValueStore customKeyValue = new CustomKeyValueStore();
+        customKeyValue.setGoid(new Goid(0,1));
+        customKeyValue.setName(EXISTING_KEY);
+        customKeyValue.setValue(EXISTING_VALUE.getBytes("UTF-8"));
         customKeyValues = new ArrayList<>();
         customKeyValues.add(customKeyValue);
+
+        CustomKeyValueStoreManager manager = new CustomKeyValueStoreManagerStub(customKeyValue);
+        keyValueStoreServices = new KeyValueStoreServicesImpl(manager);
+        customKeyValueStore = new CustomKeyValueStoreImpl(manager);
     }
 
     @Test
@@ -81,7 +95,6 @@ public class CustomKeyValueStoreTest {
 
     @Test
     public void testFindByKeyPrefix() throws Exception {
-        when(manager.findByKeyPrefix(PREFIX)).thenReturn(customKeyValues);
         Map<String, byte[]> actual = customKeyValueStore.findAllWithKeyPrefix(PREFIX);
         assertNotNull(actual);
 
@@ -94,73 +107,100 @@ public class CustomKeyValueStoreTest {
 
     @Test
     public void testGet() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(customKeyValue);
-        byte[] actual = customKeyValueStore.get(KEY);
+        byte[] actual = customKeyValueStore.get(EXISTING_KEY);
         assertNotNull(actual);
-        assertTrue(Arrays.equals(VALUE.getBytes("UTF-8"), actual));
+        assertTrue(Arrays.equals(EXISTING_VALUE.getBytes("UTF-8"), actual));
     }
 
     @Test
     public void testGetNotFound() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(null);
-        byte[] actual = customKeyValueStore.get(KEY);
+        byte[] actual = customKeyValueStore.get(NEW_KEY);
         assertNull(actual);
     }
 
     @Test
     public void testContain() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(customKeyValue);
-        assertTrue(customKeyValueStore.contains(KEY));
+        assertTrue(customKeyValueStore.contains(EXISTING_KEY));
     }
 
     @Test
     public void testContainNotFound() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(null);
-        assertFalse(customKeyValueStore.contains(KEY));
+        assertFalse(customKeyValueStore.contains(NEW_KEY));
     }
 
     @Test
     public void testSave() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(null);
-        customKeyValueStore.save(KEY, VALUE.getBytes("UTF-8"));
-        // Nothing to check. Just make sure that method does not throw any exceptions.
+        assertFalse(customKeyValueStore.contains(NEW_KEY));
+        customKeyValueStore.save(NEW_KEY, NEW_KEY.getBytes("UTF-8"));
+        assertTrue(customKeyValueStore.contains(NEW_KEY));
     }
 
     @Test (expected = KeyValueStoreException.class)
     public void testSaveKeyAlreadyExist() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(customKeyValue);
-        customKeyValueStore.save(KEY, VALUE.getBytes("UTF-8"));
+        customKeyValueStore.save(EXISTING_KEY, EXISTING_VALUE.getBytes("UTF-8"));
     }
 
     @Test
     public void testUpdate() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(customKeyValue);
-        customKeyValueStore.update(KEY, VALUE.getBytes("UTF-8"));
-        // Nothing to check. Just make sure that method does not throw any exceptions.
+        customKeyValueStore.update(EXISTING_KEY, NEW_VALUE.getBytes("UTF-8"));
+        byte[] actual = customKeyValueStore.get(EXISTING_KEY);
+        assertNotNull(actual);
+        assertTrue(Arrays.equals(NEW_VALUE.getBytes("UTF-8"), actual));
     }
 
     @Test (expected = KeyValueStoreException.class)
     public void testUpdateKeyDoesNotExist() throws Exception {
-        when(manager.findByUniqueName(KEY)).thenReturn(null);
-        customKeyValueStore.update(KEY, VALUE.getBytes("UTF-8"));
+        customKeyValueStore.update(NEW_KEY, NEW_VALUE.getBytes("UTF-8"));
     }
 
     @Test
     public void testSaveOrUpdate() throws Exception {
         // Key does not exist
-        when(manager.findByUniqueName(KEY)).thenReturn(null);
-        customKeyValueStore.saveOrUpdate(KEY, VALUE.getBytes("UTF-8"));
+        assertFalse(customKeyValueStore.contains(NEW_KEY));
+        customKeyValueStore.saveOrUpdate(NEW_KEY, NEW_VALUE.getBytes("UTF-8"));
+        byte[] actual = customKeyValueStore.get(NEW_KEY);
+        assertNotNull(actual);
+        assertTrue(Arrays.equals(NEW_VALUE.getBytes("UTF-8"), actual));
 
         // key already exist
-        when(manager.findByUniqueName(KEY)).thenReturn(customKeyValue);
-        customKeyValueStore.saveOrUpdate(KEY, VALUE.getBytes("UTF-8"));
-
-        // Nothing to check. Just make sure that method does not throw any exceptions.
+        assertTrue(customKeyValueStore.contains(NEW_KEY));
+        customKeyValueStore.saveOrUpdate(NEW_KEY, EXISTING_VALUE.getBytes("UTF-8"));
+        actual = customKeyValueStore.get(NEW_KEY);
+        assertNotNull(actual);
+        assertTrue(Arrays.equals(EXISTING_VALUE.getBytes("UTF-8"), actual));
     }
 
     @Test
     public void testDelete() throws Exception {
-        customKeyValueStore.delete(KEY);
-        // Nothing to check. Just make sure that method does not throw any exceptions.
+        assertTrue(customKeyValueStore.contains(EXISTING_KEY));
+        customKeyValueStore.delete(EXISTING_KEY);
+        assertFalse(customKeyValueStore.contains(EXISTING_KEY));
+    }
+
+    @Test
+    public void testDeleteDoesNotExist() throws Exception {
+        assertFalse(customKeyValueStore.contains(NEW_KEY));
+        customKeyValueStore.delete(NEW_KEY);
+        assertFalse(customKeyValueStore.contains(NEW_KEY));
+    }
+
+    @Test
+    public void testKeyValueStoreChangeEventListener() throws Exception {
+        // Cannot fully test event notification mechanism because CustomKeyValueStoreManagerStub is
+        // used, and not the actual CustomKeyValueStoreManagerImpl in this unit test.
+        //
+        KeyValueStoreChangeEventListener listener = new KeyValueStoreChangeEventListenerImpl();
+        customKeyValueStore.addListener(PREFIX, listener);
+        customKeyValueStore.removeListener(PREFIX, listener);
+    }
+
+    private class KeyValueStoreChangeEventListenerImpl implements KeyValueStoreChangeEventListener {
+        public KeyValueStoreChangeEventListenerImpl() {
+        }
+
+        @Override
+        public void onEvent(List<Event> events) {
+            // Do something.
+        }
     }
 }

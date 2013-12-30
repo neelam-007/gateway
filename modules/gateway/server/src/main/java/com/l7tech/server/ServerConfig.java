@@ -8,10 +8,7 @@ import com.l7tech.util.CollectionUtils.MapBuilder;
 import com.l7tech.util.ConfigFactory.ConfigProviderSpi;
 import com.l7tech.util.ConfigFactory.DefaultConfig;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Option.optional;
 import com.l7tech.util.ValidationUtils.Validator;
-import static java.util.Arrays.asList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -20,7 +17,7 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -32,6 +29,10 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.optional;
+import static java.util.Arrays.asList;
+
 /**
  * Provides cached access to Gateway global configuration items, including (once the
  * database and cluster property manager have initialized) cluster properties.
@@ -39,6 +40,7 @@ import java.util.regex.PatternSyntaxException;
  * @author alex
  */
 public class ServerConfig extends DefaultConfig implements ClusterPropertyListener {
+    private final AtomicReference<Map<String, String>> namesFromClusterNames = new AtomicReference<>();
 
     //- PUBLIC
 
@@ -58,6 +60,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         for ( final PropertyRegistrationInfo info : registrationInfos ) {
             propLock.writeLock().lock();
             try {
+                invalidateCaches();
                 if (info.defaultValue != null) _properties.setProperty(info.name + SUFFIX_DEFAULT, info.defaultValue);
                 if (info.description != null) _properties.setProperty(info.name + SUFFIX_DESC, info.description);
                 if (info.clusterPropName != null) _properties.setProperty(info.name + SUFFIX_CLUSTER_KEY, info.clusterPropName);
@@ -88,6 +91,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
     public void setPropertyChangeListener(final PropertyChangeListener propertyChangeListener) {
         propLock.writeLock().lock();
         try {
+            invalidateCaches();
             if (this.propertyChangeListener != null) throw new IllegalStateException("propertyChangeListener already set!");
             this.propertyChangeListener = propertyChangeListener;
         } finally {
@@ -197,7 +201,19 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
     }
 
     public String getNameFromClusterName(String clusterPropertyName) {
-        return getServerConfigPropertyName(SUFFIX_CLUSTER_KEY, clusterPropertyName);
+        Map<String, String> reverseMap = namesFromClusterNames.get();
+
+        if (reverseMap == null) {
+            synchronized (namesFromClusterNames) {
+                reverseMap = namesFromClusterNames.get();
+                if (reverseMap == null) {
+                    reverseMap = getCurrentServerConfigPropertyNameMap(SUFFIX_CLUSTER_KEY);
+                    namesFromClusterNames.set(reverseMap);
+                }
+            }
+        }
+
+        return reverseMap.get(clusterPropertyName);
     }
 
     public String getPropertyDescription(String propertyName) {
@@ -236,6 +252,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
 
             propLock.writeLock().lock();
             try {
+                invalidateCaches();
                 _hostname = hostname;
             } finally {
                 propLock.writeLock().unlock();
@@ -381,6 +398,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         String oldValue;
         propLock.writeLock().lock();
         try {
+            invalidateCaches();
             oldValue = (String) _properties.setProperty(propName, value);
         } finally {
             propLock.writeLock().unlock();
@@ -421,6 +439,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         if (!isMutable(propName)) return false;
         propLock.writeLock().lock();
         try {
+            invalidateCaches();
             _properties.remove(propName);
         } finally {
             propLock.writeLock().unlock();
@@ -703,9 +722,13 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         }
     }
 
-    private String getServerConfigPropertyName(String suffix, String value) {
-        String name = null;
-        if(suffix!=null && value!=null) {
+    private void invalidateCaches() {
+        namesFromClusterNames.set(null);
+    }
+
+    private Map<String,String> getCurrentServerConfigPropertyNameMap(String suffix) {
+        Map<String,String> ret = new HashMap<>();
+        if(suffix!=null) {
             propLock.readLock().lock();
             try {
                 Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
@@ -715,16 +738,16 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
 
                     if (propKey == null || propVal == null) continue;
 
-                    if (propKey.endsWith(suffix) && propVal.equals(value)) {
-                        name = propKey.substring(0, propKey.length() - suffix.length());
-                        break;
+                    if (propKey.endsWith(suffix)) {
+                        String name = propKey.substring(0, propKey.length() - suffix.length());
+                        ret.put(propVal, name);
                     }
                 }
             } finally {
                 propLock.readLock().unlock();
             }
         }
-        return name;
+        return ret;
     }
 
     private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {

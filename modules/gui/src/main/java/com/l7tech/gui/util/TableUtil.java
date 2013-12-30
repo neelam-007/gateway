@@ -1,7 +1,6 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.gui.CheckBoxSelectableTableModel;
-import com.l7tech.gui.SelectableObject;
+import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.SimpleColumn;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.util.Functions;
@@ -252,7 +251,7 @@ public final class TableUtil {
     }
 
     /**
-     * Configure a table using the {@link CheckBoxSelectableTableModel} and the specified column descriptions, using a generic row backing type.
+     * Configure a table using the {@link com.l7tech.gui.SelectableTableModel} and the specified column descriptions, using a generic row backing type.
      *
      * This creates and assigns a new {@link SimpleTableModel}, and sets the column widths based on the column descriptors passed in.
      *
@@ -260,16 +259,16 @@ public final class TableUtil {
      * @param selectColIndex    the index of the column which contains the check box.
      * @param columns           one or more column descriptors.  Use {@link #column} to create one.
      * @param <RT>              the type of object which is selectable.
-     * @return                  the CheckBoxSelectableTableModel that was created and assigned.
+     * @return                  the SelectableTableModel that was created and assigned.
      */
-    public static <RT> CheckBoxSelectableTableModel<RT> configureSelectableTable(@NotNull final JTable table, final int selectColIndex, @NotNull final Col<RT>... columns) {
-        final CheckBoxSelectableTableModel<RT> model = new CheckBoxSelectableTableModel(selectColIndex);
-        final List<SimpleColumn<SelectableObject<RT>>> selectableColumns = new ArrayList<>();
+    public static <RT> SelectableTableModel<RT> configureSelectableTable(@NotNull final JTable table, final boolean allowMultipleSelect, final int selectColIndex, @NotNull final Col<RT>... columns) {
+        final SelectableTableModel<RT> model = new SelectableTableModel(allowMultipleSelect, selectColIndex);
+        final List<SimpleColumn<RT>> selectableColumns = new ArrayList<>();
         for (final Col<RT> column : columns) {
-            final Col<SelectableObject<RT>> col = new Col<>(column.getName(), column.minWidth, column.preferredWidth, column.maxWidth, new Functions.Unary<Object, SelectableObject<RT>>() {
+            final Col<RT> col = new Col<>(column.getName(), column.minWidth, column.preferredWidth, column.maxWidth, new Functions.Unary<Object, RT>() {
                 @Override
-                public Object call(final SelectableObject<RT> selectable) {
-                    return column.getValueGetter().call(selectable.getSelectable());
+                public Object call(final RT selectable) {
+                    return column.getValueGetter().call(selectable);
                 }
             });
             selectableColumns.add(col);
@@ -293,7 +292,11 @@ public final class TableUtil {
                 if (rowIndex >= 0) {
                     final int modelIndex = table.convertRowIndexToModel(rowIndex);
                     if (modelIndex >= 0) {
-                        model.toggle(modelIndex);
+                        if (allowMultipleSelect) {
+                            model.toggle(modelIndex);
+                        } else {
+                            model.select(modelIndex);
+                        }
                     }
                 }
             }

@@ -8,7 +8,10 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TextUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +37,15 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     private static final String ROLE_READ_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX_READ + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
+    static final String AUTO_CREATE_VIEW_ROLE_PROPERTY = "rbac.autoRole.viewFolder.autoCreate";
+    static final String AUTO_CREATE_MANAGE_ROLE_PROPERTY = "rbac.autoRole.manageFolder.autoCreate";
 
     private final RoleManager roleManager;
+    private final Config config;
 
-    public FolderManagerImpl( final RoleManager roleManager ) {
+    public FolderManagerImpl( final RoleManager roleManager, @NotNull final Config config) {
         this.roleManager = roleManager;
+        this.config = config;
     }
 
     @Override
@@ -166,8 +173,12 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
     @Override
     public void createRoles( final Folder folder ) throws SaveException {
-        addReadonlyFolderRole( folder );
-        addManageFolderRole( folder );
+        if (config.getBooleanProperty(AUTO_CREATE_VIEW_ROLE_PROPERTY, true)) {
+            addReadonlyFolderRole( folder );
+        }
+        if (config.getBooleanProperty(AUTO_CREATE_MANAGE_ROLE_PROPERTY, true)) {
+            addManageFolderRole( folder );
+        }
     }
 
     @Override

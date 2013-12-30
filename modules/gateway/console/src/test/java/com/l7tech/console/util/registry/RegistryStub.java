@@ -206,6 +206,10 @@ public class RegistryStub extends Registry {
                 return null;
             }
 
+            public Collection<EntityHeader> findAllRoleHeaders() throws FindException {
+                return null;
+            }
+
             @Override
             public Collection<Permission> findCurrentUserPermissions() throws FindException {
                 return Arrays.asList(
@@ -220,6 +224,11 @@ public class RegistryStub extends Registry {
             @Override
             public Collection<Role> findRolesForUser(User user) throws FindException {
                 return findAllRoles();
+            }
+
+            @Override
+            public Role findDefaultRoleForIdentityProvider(Goid identityProviderId) throws FindException {
+                return null;
             }
 
             @NotNull
@@ -286,6 +295,16 @@ public class RegistryStub extends Registry {
             @Override
             public Goid saveAssertionAccess(AssertionAccess assertionAccess) throws UpdateException {
                 throw new UpdateException("not impl in stub");
+            }
+
+            @Override
+            public EntityHeader findHeader(EntityType entityType, Serializable pk) throws FindException {
+                return null;
+            }
+
+            @Override
+            public Entity find(@NotNull EntityHeader header) throws FindException {
+                return null;
             }
         };
     }

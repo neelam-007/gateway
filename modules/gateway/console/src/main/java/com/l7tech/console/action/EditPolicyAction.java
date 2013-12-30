@@ -112,10 +112,6 @@ public class EditPolicyAction extends NodeAction {
             TopComponents windowManager = TopComponents.getInstance();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 
-            // clear work space here will prompt user to save or cancel the changes in the current policy first
-            // it makes sure the user will see the updated policy if the policy is saved
-            wpanel.clearWorkspace();
-
             if (policyVersion == null)
                 policyNode.clearCachedEntities();
             TopComponents topComponents = TopComponents.getInstance();
