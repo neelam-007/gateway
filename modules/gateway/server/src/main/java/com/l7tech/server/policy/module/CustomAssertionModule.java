@@ -8,6 +8,8 @@ import com.l7tech.util.ExceptionUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,10 +21,18 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
 
     private static final Logger logger = Logger.getLogger(CustomAssertionModule.class.getName());
 
-    // I'm not sure if there are supposed to be more than one assertions per module, the logic
+    /**
+     * I'm not sure whether there are supposed to be more than one assertions per module,
+     * or whether we are going to support multiple assertions per module,
+     * in any case the scanner will support it.
+     */
     private final Set<CustomAssertionDescriptor> descriptors;
-    public Set<CustomAssertionDescriptor> getDescriptors() {
-        return descriptors;
+
+    /**
+     * @return read-only collection of assertion descriptors
+     */
+    public Collection<CustomAssertionDescriptor> getDescriptors() {
+        return Collections.unmodifiableCollection(descriptors);
     }
 
     /**
@@ -56,8 +66,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
             // get the custom assertion class from the descriptor
             final Class assertionClass = descriptor.getAssertion();
 
-            // if the assertion is a legacy assertion we'll allow to load,
-            // otherwise check if we can load .
+            // if the assertion is a legacy assertion we'll disallow loading
             if (!CustomDynamicLoader.class.isAssignableFrom(assertionClass)) {
                 return false;
             } else {
@@ -131,5 +140,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
 
         // unload the assertion
         onAssertionUnload();
+
+        classLoader.close();
     }
 }

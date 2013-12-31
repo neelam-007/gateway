@@ -507,6 +507,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         }
     }
 
+    @Deprecated
     protected final String parseModuleFileName(@NotNull final String configFileUrlPath, @NotNull final String configFileName) {
         String moduleFileName = configFileUrlPath;
         String fileSeparator = File.separator;

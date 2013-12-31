@@ -11,6 +11,7 @@ import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -75,6 +76,7 @@ public class CustomAssertionsRegistrarImplTest {
         }
     }
 
+    @Ignore("Ignoring deprecated function")
     @Test
     public void parseModuleFileName() throws Exception {
         ExtensionInterfaceManager extensionInterfaceManager = mock(ExtensionInterfaceManager.class);
