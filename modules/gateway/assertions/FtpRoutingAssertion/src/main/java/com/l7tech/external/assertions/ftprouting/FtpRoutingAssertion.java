@@ -61,9 +61,9 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private boolean _verifyServerCert;
 
-    private String _ftpMethodOtherCommand;
+    private String ftpCommandVariable;
 
-    private boolean _otherCommand;
+    private boolean useCommandVariable;
 
     /** FTP server host name. Can contain context variables. */
     private String _hostName;
@@ -110,18 +110,20 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** FTP Command to use to upload or download the file*/
     private FtpCommand ftpCommand;
 
-    private String _arguments;
+    private String arguments;
 
     private MessageTargetableSupport _requestTarget = defaultRequestTarget();
 
     @NotNull
     private MessageTargetableSupport _responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
 
-    private String _responseByteLimit;
+    private String responseByteLimit;
 
-    private boolean failOnTransient = true;
+    public static final int FAIL_ON_TRANSIENT = 0;
+    public static final int FAIL_ON_PERMANENT = 1;
+    public static final int FAIL_ON_NO_REPLY = 2;
 
-    private boolean failOnPermanent = true;
+    private int failureMode = FAIL_ON_TRANSIENT;
 
     private MessageTargetableSupport defaultRequestTarget() {
         return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
@@ -264,7 +266,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return _requestTarget != null ? _requestTarget : defaultRequestTarget();
     }
 
-    public void set_requestTarget(MessageTargetableSupport _requestTarget) {
+    public void setRequestTarget(MessageTargetableSupport _requestTarget) {
         this._requestTarget = _requestTarget;
     }
 
@@ -286,11 +288,11 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     }
 
     public String getArguments() {
-        return _arguments;
+        return arguments;
     }
 
     public void setArguments(String arguments) {
-        this._arguments = arguments;
+        this.arguments = arguments;
     }
 
     @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SECURE_PASSWORD)
@@ -303,43 +305,35 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     }
 
     public boolean isCommandFromVariable() {
-        return _otherCommand;
+        return useCommandVariable;
     }
 
-    public void setCommandFromVariable(boolean otherCommand) {
-        this._otherCommand = otherCommand;
+    public void setCommandFromVariable(boolean useCommandVariable) {
+        this.useCommandVariable = useCommandVariable;
     }
 
     public String getOtherFtpCommand() {
-        return _ftpMethodOtherCommand;
+        return ftpCommandVariable;
     }
 
-    public void setFtpCommandVariable(@Nullable String ftpMethodOtherCommand) {
-        this._ftpMethodOtherCommand = ftpMethodOtherCommand;
+    public void setFtpCommandVariable(@Nullable String ftpCommandVariable) {
+        this.ftpCommandVariable = ftpCommandVariable;
     }
 
     public String getResponseByteLimit() {
-        return _responseByteLimit;
+        return responseByteLimit;
     }
 
     public void setResponseByteLimit(String responseByteLimit) {
-        this._responseByteLimit = responseByteLimit;
+        this.responseByteLimit = responseByteLimit;
     }
 
-    public boolean isFailOnPermanent() {
-        return failOnPermanent;
+    public int getFailureMode() {
+        return failureMode;
     }
 
-    public void setFailOnPermanent(boolean failOnPermanent) {
-        this.failOnPermanent = failOnPermanent;
-    }
-
-    public boolean isFailOnTransient() {
-        return failOnTransient;
-    }
-
-    public void setFailOnTransient(boolean failOnTransient) {
-        this.failOnTransient = failOnTransient;
+    public void setFailureMode(int failureMode) {
+        this.failureMode = failureMode;
     }
 
     @Override
@@ -454,7 +448,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         final List<String> expressions = new ArrayList<>();
 
         if (isCommandFromVariable()) {
-            expressions.add(Syntax.getVariableExpression(_ftpMethodOtherCommand));
+            expressions.add(Syntax.getVariableExpression(ftpCommandVariable));
         }
 
         if (_passwordUsesContextVariables) {
@@ -465,8 +459,8 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         expressions.add(_port);
         expressions.add(_directory);
         expressions.add(_userName);
-        expressions.add(_arguments);
-        expressions.add(_responseByteLimit);
+        expressions.add(arguments);
+        expressions.add(responseByteLimit);
 
 //        Syntax.getReferencedNames( expressions.toArray( new String[ expressions.size() ] ) );
 

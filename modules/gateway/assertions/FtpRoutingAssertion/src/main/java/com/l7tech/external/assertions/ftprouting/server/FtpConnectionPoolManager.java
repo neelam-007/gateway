@@ -320,8 +320,6 @@ public class FtpConnectionPoolManager extends ConnectionPoolManager {   //- PUBL
      * @return boolean true if constructed HostConfiguration matches the given Ftp connection configuration
      */
     private boolean buildHostConfiguration(final Ftp ftp , FtpClientConfig config) throws FtpException {
-
-        boolean isEqual = false;
         FtpClientConfig hostConfiguration = FtpClientConfigImpl.newFtpConfig(ftp.getHostname());
 
         String host = ftp.getHostname();
@@ -335,15 +333,11 @@ public class FtpConnectionPoolManager extends ConnectionPoolManager {   //- PUBL
         hostConfiguration.setPort(port);
         hostConfiguration.setDirectory(dir);
 
-        if (config.getHost().equals(hostConfiguration.getHost()) &&
-            config.getUser().equals(hostConfiguration.getUser()) &&
-            config.getPass().equals(hostConfiguration.getPass()) &&
-            config.getPort() == hostConfiguration.getPort() &&
-            config.getDirectory().equals(hostConfiguration.getDirectory())){
-            return true;
-        }
-
-        return isEqual;
+        return config.getHost().equals(hostConfiguration.getHost()) &&
+                config.getUser().equals(hostConfiguration.getUser()) &&
+                config.getPass().equals(hostConfiguration.getPass()) &&
+                config.getPort() == hostConfiguration.getPort() &&
+                config.getDirectory().equals(hostConfiguration.getDirectory());
     }
 
     private ThreadLocalInfo setInfo(final Object identity) throws FtpException {

@@ -244,7 +244,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if (isSSL) {
 
                 if (SyslogSslClientSupport.isInitialized()) {
-                    this.handler = new MinaSecureSyslogHandler(callback, getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
+                    this.handler = new MinaSecureSyslogHandler(callback, getCurrentSessionCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.connector = new NioSocketConnector();
                     MinaSecureSyslogHandler.class.cast(this.handler).setupConnectorForSSL(this.connector);
                 }
@@ -470,7 +470,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if (connector == null) {
                 if (SyslogSslClientSupport.isInitialized()) {
                     MinaSecureSyslogHandler sslHandler =
-                            new MinaSecureSyslogHandler(getCallback(), getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
+                            new MinaSecureSyslogHandler(getCallback(), getCurrentSessionCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.handler = sslHandler;
                     this.connector = new NioSocketConnector();
                     sslHandler.setupConnectorForSSL(this.connector);
@@ -723,7 +723,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
          *
          * @return the callback function to be passed into the SyslogHandler
          */
-        private Functions.Unary<Boolean, IoSession> getCurrentySessionCallback() {
+        private Functions.Unary<Boolean, IoSession> getCurrentSessionCallback() {
 
             return new Functions.Unary<Boolean, IoSession>() {
                 public Boolean call(final IoSession session) {

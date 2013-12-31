@@ -328,7 +328,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         // TODO: add more validators for various ftp commands e.g. require arguments for MKD or LIST?
-        // --- VALIDATION ---
+        // ----------------------------------
+        // ----------- VALIDATION -----------
+        // ----------------------------------
         inputValidator = new InputValidator(this, getResourceString("errorTitle"));
         connectionTestValidator = new InputValidator(this, getResourceString("errorTitle"));
 
@@ -357,31 +359,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         connectionTestValidator.constrainTextFieldToBeNonEmpty(getResourceString("timeoutLabel"),
                 timeoutTextField, null);
 
-        // the ftp command combo box must have a selection
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
-            @Override
-            public String getValidationError() {
-                if (commandComboBox.getSelectedItem() == null
-                        || commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
-                    return getResourceString("commandNullError");
-                }
-
-                return null;
-            }
-        });
-
-        // validate the command variable
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(commandComboBox) {
-            @Override
-            public String getValidationError() {
-                if (isCommandFromVariable() && (commandVariablePanel.getVariable().trim().isEmpty())) {
-                    return getResourceString("commandVariableNullError");
-                }
-
-                return null;
-            }
-        });
-
+        // validate command variable
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -389,25 +367,43 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        /**
-         * - either arguments or auto-generated file name must be specified, depending on ftp command
-         * - auto-filename checkbox invalid for non-upload commands
-         */
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (isCommandFromVariable() || isCommandUploadType((String) commandComboBox.getSelectedItem())) {
-                    if (!autoFilenameCheckBox.isSelected() && argumentsTextField.getText().trim().isEmpty()) {
-                        return getResourceString("filenameNullForUploadCommandError");
+                // the ftp command combo box must have a selection
+                if (commandComboBox.getSelectedItem() == null
+                        || commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
+                    return getResourceString("commandNullError");
+                }
+
+                // validate the command variable
+                if (isCommandFromVariable()) {
+                    if (commandVariablePanel.getVariable().trim().isEmpty()) {
+                        return getResourceString("commandVariableNullError");
+                    } else {
+                        return null;
+                    }
+                }
+
+                FtpCommand command = FtpCommand.valueOf((String) commandComboBox.getSelectedItem());
+
+                // certain commands require that an argument be specified, while others do not accept arguments
+                if (command.isArgumentRequired() && argumentsTextField.getText().trim().isEmpty()) {
+                    return getResourceString("argumentNullError");
+                }
+
+                if (!command.isArgumentAccepted() && !argumentsTextField.getText().trim().isEmpty()) {
+                    return getResourceString("argumentsNotSupportedError");
+                }
+
+                // auto-filename option may only be used with the STOR command or a
+                // command variable, and only to the mutual exclusion of the arguments field
+                if (FtpCommand.STOR == command) {
+                    if (autoFilenameCheckBox.isSelected() && !argumentsTextField.getText().trim().isEmpty()) {
+                        return getResourceString("autoFilenameAndArgumentsSpecifiedError");
                     }
                 } else if (autoFilenameCheckBox.isSelected()) {
                     return getResourceString("nonUploadAutoFilenameError");
-                }
-
-                if (isCommandRetrieve((String) commandComboBox.getSelectedItem())) {
-                    if(argumentsTextField.getText().trim().isEmpty()) {
-                        return getResourceString("retrNoArgumentError");
-                    }
                 }
 
                 return null;
@@ -648,15 +644,21 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             protocolComboBox.setSelectedItem(PROTOCOL_COMBO_ITEM_FTPS_IMPLICIT_LABEL);
         }
 
-        if (assertion.isFailOnPermanent()) {
-            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT);
-        } else if (assertion.isFailOnTransient()) {
-            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT);
-        } else {
-            assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_NO_RESPONSE);
+        // outcome handling for failures
+        switch (assertion.getFailureMode()) {
+            case FtpRoutingAssertion.FAIL_ON_NO_REPLY:
+                assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_NO_RESPONSE);
+                break;
+            case FtpRoutingAssertion.FAIL_ON_PERMANENT:
+                assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT);
+                break;
+            case FtpRoutingAssertion.FAIL_ON_TRANSIENT:
+            default:
+                assertionOutcomeComboBox.setSelectedItem(OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT);
+                break;
         }
 
-        // server settings
+        // server connection settings
         verifyServerCertCheckBox.setSelected(assertion.isVerifyServerCert());
         hostNameTextField.setText(assertion.getHostName());
         portNumberTextField.setText(assertion.getPort());
@@ -672,19 +674,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 enableOrDisableCommandSettingsComponents();
             }
         } else {
-            commandComboBox.setSelectedItem(assertion.getFtpCommand());
+            commandComboBox.setSelectedItem(assertion.getFtpCommand().toString());
         }
 
         // message source
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
 
         populateRequestSourceComboBox(assertion);
-
-        /*
-        messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false)); // TODO jwilliams: check this...
-        final MessageTargetableSupport responseTarget = new MessageTargetableSupport(assertion.getResponseTarget());
-        messageTargetComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
-         */
 
         // message target
         messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
@@ -788,16 +784,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void fillAssertionOutcomeHandlingData(final FtpRoutingAssertion assertion) {
-         // assertion outcome handling
+        // assertion outcome handling
         if (OUTCOME_COMBO_ITEM_FAIL_ON_PERMANENT.equals(assertionOutcomeComboBox.getSelectedItem())) {
-            assertion.setFailOnPermanent(true);
-            assertion.setFailOnTransient(true);
+            assertion.setFailureMode(FtpRoutingAssertion.FAIL_ON_PERMANENT);
         } else if (OUTCOME_COMBO_ITEM_FAIL_ON_TRANSIENT.equals(assertionOutcomeComboBox.getSelectedItem())) {
-            assertion.setFailOnPermanent(false);
-            assertion.setFailOnTransient(true);
+            assertion.setFailureMode(FtpRoutingAssertion.FAIL_ON_TRANSIENT);
         } else {
-            assertion.setFailOnPermanent(false);
-            assertion.setFailOnTransient(false);
+            assertion.setFailureMode(FtpRoutingAssertion.FAIL_ON_NO_REPLY);
         }
     }
 
@@ -814,7 +807,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         // message source
-        assertion.set_requestTarget((MessageTargetableSupport) messageSourceComboBox.getSelectedItem());
+        assertion.setRequestTarget((MessageTargetableSupport) messageSourceComboBox.getSelectedItem());
 
         // message target
         final MessageTargetableSupport responseTarget =
@@ -902,9 +895,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         try {
             final FtpRoutingAssertion a = new FtpRoutingAssertion();
 
+            // set directory - other command settings are irrelevant
+            a.setDirectory(directoryTextField.getText());
+
+            // fill connection and credentials details - ignore the irrelevant outcome handling setting
             fillAssertionConnectionData(a);
-            fillAssertionOutcomeHandlingData(a);
-            fillAssertionCommandData(a);
             fillAssertionCredentialsData(a);
 
             if (ftpConfigurationUsesVariables(a)) {
@@ -1057,15 +1052,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private boolean isCommandUploadType(String commandString) {
+        if (null == commandString || commandString.isEmpty()) {
+            return false;
+        }
+
         FtpCommand command = FtpCommand.valueOf(commandString);
 
         return command == STOR || command == APPE || command == STOU;
-    }
-
-    private boolean isCommandRetrieve(String commandString) {
-        FtpCommand command = FtpCommand.valueOf(commandString);
-
-        return command == RETR;
     }
 
     /**
@@ -1077,7 +1070,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private static String getResourceString(String key) {
         final String value = resources.getString(key);
 
-        if(value.endsWith(COMPONENT_LABEL_SUFFIX)) {
+        if (value.endsWith(COMPONENT_LABEL_SUFFIX)) {
             return value.substring(0, value.lastIndexOf(COMPONENT_LABEL_SUFFIX));
         }
 
@@ -1095,7 +1088,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         @Override
         public void propertyChange(PropertyChangeEvent e) {
-            if(!checkBox.isEnabled()) {
+            if (!checkBox.isEnabled()) {
                 // remove ItemListener temporarily to avoid duplicate handling of Combo Box disabling
                 checkBox.removeItemListener(this);
                 checkBox.setSelected(false);

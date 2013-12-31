@@ -8,37 +8,48 @@ package com.l7tech.common.ftp;
 public enum FtpCommand {
 
     /* Upload commands */
-    APPE("Append"),
-    STOR("Store"),
-    STOU("Store unique"),
+    APPE("Append", true, true),
+    STOR("Store", true, true),
+    STOU("Store unique", true, false),
 
     /* Download commands */
-    RETR("Retrieve"),
+    RETR("Retrieve", true, true),
 
     /* List commands */
-    LIST("List"),
-    MLSD("Machine list directory"),
-    NLST("Name list"),
+    LIST("List", true, false),
+    MLSD("Machine list directory", true, false),
+    NLST("Name list", true, false),
 
     /* Simple commands */
-    CDUP("Change to parent directory"),
-    CWD("Change working directory"),
-    DELE("Delete"),
-    MDTM("Modification time"),
-    MLST("Machine list"),
-    MKD("Make directory"),
-    NOOP("No operation"),
-    PWD("Print working directory"),
-    RMD("Remove directory"),
-    SIZE("Size of file");
+    CDUP("Change to parent directory", false,false),
+    CWD("Change working directory", true, true),
+    DELE("Delete", true, true),
+    MDTM("Modification time", true, true),
+    MLST("Machine list", true, false),
+    MKD("Make directory", true, true),
+    NOOP("No operation", false, false),
+    PWD("Print working directory", false, false),
+    RMD("Remove directory", true, true),
+    SIZE("Size of file", true, true);
 
     private final String description;
+    private final boolean argumentAccepted;
+    private final boolean argumentRequired;
     
-    FtpCommand(String description) {
-         this.description = description;
+    FtpCommand(String description, boolean argumentAccepted, boolean argumentRequired) {
+        this.description = description;
+        this.argumentAccepted = argumentAccepted;
+        this.argumentRequired = argumentRequired;
     }
     
     public String getDescription() {
         return description;
+    }
+    public boolean isArgumentAccepted() {
+        return argumentAccepted;
+    }
+
+    public boolean isArgumentRequired() {
+        return argumentRequired;
     }
 }

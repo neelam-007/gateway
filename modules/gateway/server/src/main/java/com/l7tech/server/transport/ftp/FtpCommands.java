@@ -2,7 +2,6 @@ package com.l7tech.server.transport.ftp;
 
 import java.io.IOException;
 
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import org.apache.ftpserver.command.AbstractCommand;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.impl.FtpIoSession;

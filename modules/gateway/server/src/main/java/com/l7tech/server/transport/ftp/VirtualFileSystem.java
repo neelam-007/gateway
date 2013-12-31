@@ -22,8 +22,6 @@ class VirtualFileSystem implements FileSystemView {
      */
     private String currentPath;
 
-    private String changedDirectory;
-
     @Override
     public boolean changeWorkingDirectory(String dir) throws FtpException {
         boolean changed = false;                                      
@@ -53,45 +51,6 @@ class VirtualFileSystem implements FileSystemView {
 
     public FtpFile getWorkingDirectory() throws FtpException {
         return buildDirectoryFileObject(buildCurrentPath());
-    }
-
-    public String getChangedDirectory() throws FtpException {
-        if (this.changedDirectory == null || this.changedDirectory.isEmpty()) {
-            return "/";
-        } else if (!this.changedDirectory.startsWith("/")) {
-            return  "/" +  this.changedDirectory;
-        } else {
-            return this.changedDirectory;
-        }
-    }
-
-    public void setChangedDirectory(String changedDirectory) throws FtpException {
-        if (changedDirectory.endsWith("/") && !changedDirectory.equals("/")){
-            this.changedDirectory = changedDirectory.substring(0, changedDirectory.lastIndexOf("/"));
-        } else {
-            this.changedDirectory = changedDirectory;
-        }
-    }
-
-    public String getParentDirectory() {
-        if (this.changedDirectory != null )
-            return this.changedDirectory.contains("/") ? this.changedDirectory.substring(0, this.changedDirectory.lastIndexOf("/")) : "/";
-        else
-            return "/";
-    }
-
-    public void setCombinedChangedDirectory (String changedDirectory) throws FtpException {
-        if (this.changedDirectory == null){
-            this.changedDirectory = changedDirectory;
-        } else {
-            if (this.changedDirectory.equals("/")) {
-                this.changedDirectory = "/" + changedDirectory;
-            } else if (changedDirectory.startsWith("/") || this.changedDirectory.endsWith("/")){
-                this.changedDirectory = this.changedDirectory + changedDirectory;
-            } else {
-                this.changedDirectory = this.changedDirectory + "/" + changedDirectory;
-            }
-        }
     }
 
     @Override

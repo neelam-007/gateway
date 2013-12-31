@@ -190,7 +190,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             switch (ftpCommand) {
                 case APPE:
-                case STOU:
+                case STOU: // TODO jwilliams: handle parameters (arguments) properly - refer to RFC, maybe change "AUTO" filename source to "Use request id for filename"?
                 case STOR:
                     final InputStream messageBodyStream;
 

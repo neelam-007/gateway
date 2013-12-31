@@ -31,7 +31,7 @@ public class SsgFtpServerContext implements FtpServerContext {
     private final FtpStatistics statistics = new DefaultFtpStatistics();
     private final CommandFactory commandFactory = new FtpCommandFactory();
     private final FtpletContainer ftpletContainer = new DefaultFtpletContainer();
-    private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager(); // TODO jwilliams: VirtualFileSystemManager needs rewriting
+    private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager();
     private final MessageResource messageResource = new MessageResourceFactory().createMessageResource();
 
     private final Map<String, Listener> listeners = new HashMap<>();
