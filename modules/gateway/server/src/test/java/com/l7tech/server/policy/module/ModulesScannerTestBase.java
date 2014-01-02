@@ -1,9 +1,11 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
 import junit.framework.Assert;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -16,6 +18,14 @@ import java.util.*;
  * Holds shared and utility methods implementation.
  */
 public class ModulesScannerTestBase {
+
+    /**
+     * Declare conditional ignore rule.<br/>
+     * Combine with {@link com.l7tech.test.conditional.ConditionalIgnore ConditionalIgnore} annotation.
+     * Add the annotation next to each unit-test method that should be conditionally ignored.
+     */
+    @Rule
+    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
     // variable holding all temporary folder which are created by the unit-test,
     // so that they can be gracefully deleted @AfterClass

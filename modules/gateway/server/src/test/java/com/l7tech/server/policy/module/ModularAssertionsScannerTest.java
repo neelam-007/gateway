@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.module;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
 import junit.framework.Assert;
@@ -789,6 +791,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * therefore this test is not valid on Windows platform, it will fail and should be ignored.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testModuleReplace() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -860,6 +863,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * therefore this test is not valid on Windows platform, it will fail and should be ignored.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testReplaceModuleWithDuplicateClassFromClassLoader() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -931,6 +935,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * therefore this test is not valid on Windows platform, it will fail and should be ignored.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testReplaceModuleWithDuplicateClass() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -1004,6 +1009,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * On Windows platform run {@link #testUnloadModulesWorkaround()} unit test instead.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testUnloadModules() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -1339,6 +1345,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * On Windows platform run {@link #testModulesWithLoadAndUnloadListenersWorkaround()} unit test instead.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testModulesWithLoadAndUnloadListeners() throws Exception {
         final int numOfModules = 2;
         final Set<Pair<String, String>> loadListenerMethodsCalled = stubLoadListeners(numOfModules);
@@ -1516,6 +1523,7 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
      * On Windows platform run {@link #testModulesWithLoadListenersThrowExceptionWorkaround()} unit test instead.
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testModulesWithLoadListenersThrowException() throws Exception {
         final int numOfModules = 4;
         final Set<Pair<String, String>> loadListenerMethodsCalled = stubLoadListeners(numOfModules);

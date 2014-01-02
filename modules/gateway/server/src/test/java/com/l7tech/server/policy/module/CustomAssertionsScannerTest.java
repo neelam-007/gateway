@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
 import junit.framework.Assert;
@@ -606,6 +608,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
      * @see #testUnloadingModulesWorkaround()
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testUnloadingModules() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -951,6 +954,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
      * @see #testScanFailOnUnloadModulesWorkaround()
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testScanFailOnUnloadModules() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
@@ -1160,6 +1164,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
      * @see #testDualModulesWorkaround()
      */
     @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
     public void testDualModules() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
