@@ -1,9 +1,6 @@
 package com.l7tech.gateway.api;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import java.util.List;
 
 /**
@@ -12,11 +9,11 @@ import java.util.List;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "references")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "EntityReferencesType", propOrder = {"links", "references"})
 public class References {
 
-    @XmlElement(name = "reference")
     private List<Reference> references = null;
+    private List<Link> links;
 
     References() {
     }
@@ -25,11 +22,21 @@ public class References {
         this.references = references;
     }
 
+    @XmlElement(name = "reference")
     public List<Reference> getReferences() {
         return references;
     }
 
     public void setReferences(List<Reference> references) {
         this.references = references;
+    }
+
+    @XmlElement(name = "link")
+    public List<Link> getLinks() {
+        return links;
+    }
+
+    public void setLinks(List<Link> links) {
+        this.links = links;
     }
 }

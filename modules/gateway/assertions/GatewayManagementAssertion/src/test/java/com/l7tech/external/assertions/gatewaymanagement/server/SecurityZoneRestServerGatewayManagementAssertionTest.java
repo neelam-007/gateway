@@ -172,9 +172,9 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
 
         // check entity
-        Assert.assertEquals(securityZoneManager.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(securityZoneManager.findAll().size(), reference.getResource().getReferences().size());
     }
 }

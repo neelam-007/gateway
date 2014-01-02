@@ -27,7 +27,6 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
-import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Functions;
@@ -35,7 +34,10 @@ import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.Nullable;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -48,12 +50,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 /**
  * Test the GatewayManagementAssertion for EmailListenerMO entity.
@@ -185,8 +182,9 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
     protected String getFirstReferencedGoid(Response response) throws IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        List<Link> links = reference.getLinks();
 
-        for(Link link : reference.getLinks()){
+        for(Link link : links){
             if("self".equals(link.getRel())){
                 return link.getUri().substring(link.getUri().lastIndexOf('/') + 1);
             }

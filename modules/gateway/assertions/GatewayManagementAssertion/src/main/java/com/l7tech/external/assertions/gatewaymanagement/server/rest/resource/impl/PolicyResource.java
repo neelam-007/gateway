@@ -6,8 +6,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Dep
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.container.ResourceContext;
@@ -21,6 +21,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(PolicyResource.POLICIES_URI)
+@Singleton
 public class PolicyResource extends DependentRestEntityResource<PolicyMO, PolicyRestResourceFactory> {
 
     protected static final String POLICIES_URI = "policies";
@@ -35,12 +36,8 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     }
 
     @Override
-    protected Reference toReference(PolicyMO resource) {
+    protected Reference<PolicyMO> toReference(PolicyMO resource) {
         return toReference(resource.getId(), resource.getPolicyDetail().getName());
-    }
-
-    public EntityType getEntityType() {
-        return EntityType.POLICY;
     }
 
     /**

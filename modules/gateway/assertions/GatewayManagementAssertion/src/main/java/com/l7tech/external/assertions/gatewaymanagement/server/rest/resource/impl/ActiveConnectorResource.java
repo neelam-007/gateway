@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,6 +15,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(ActiveConnectorResource.activeConnectors_URI)
+@Singleton
 public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorMO, ActiveConnectorRestResourceFactory> {
 
     protected static final String activeConnectors_URI = "activeConnectors";
@@ -25,12 +26,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SSG_ACTIVE_CONNECTOR;
-    }
-
     @Override
-    protected Reference toReference(ActiveConnectorMO resource) {
+    protected Reference<ActiveConnectorMO> toReference(ActiveConnectorMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

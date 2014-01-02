@@ -5,10 +5,12 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Re
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -31,6 +33,12 @@ public class FolderRestResourceFactory extends WsmanBaseResourceFactory<FolderMO
                         .put("parentFolder.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("folder.id", RestResourceFactoryUtils.goidConvert))
                         .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
                         .map());
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType(){
+        return EntityType.FOLDER;
     }
 
     @Override

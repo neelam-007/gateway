@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.ListenPortMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,6 +15,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(ListenPortResource.listenPort_URI)
+@Singleton
 public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenPortRestResourceFactory> {
 
     protected static final String listenPort_URI = "listenPorts";
@@ -25,12 +26,8 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SSG_CONNECTOR;
-    }
-
     @Override
-    protected Reference toReference(ListenPortMO resource) {
+    protected Reference<ListenPortMO> toReference(ListenPortMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

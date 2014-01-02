@@ -4,20 +4,29 @@ import javax.xml.bind.annotation.*;
 import java.util.List;
 
 @XmlRootElement(name = "Bundle")
-@XmlType(name = "Bundle", propOrder = {"managedObjects"})
+@XmlType(name = "Bundle", propOrder = {"references", "mappings"})
 public class Bundle {
-    private List<Resource> managedObjects;
+    private References references;
+    private List<Mapping> mappings;
 
-    Bundle() {
+    Bundle(){}
+
+    @XmlElement(name = "references", required = true)
+    public References getReferences() {
+        return references;
     }
 
-    @XmlElementWrapper(name = "Resources", required = false)
-    @XmlElement(name = "Resource", required = false)
-    public List<Resource> getManagedObjects() {
-        return managedObjects;
+    public void setReferences(References references) {
+        this.references = references;
     }
 
-    public void setManagedObjects(List<Resource> managedObjects) {
-        this.managedObjects = managedObjects;
+    @XmlElementWrapper(name = "mappings")
+    @XmlElement(name = "mapping")
+    public List<Mapping> getMappings() {
+        return mappings;
+    }
+
+    public void setMappings(List<Mapping> mappings) {
+        this.mappings = mappings;
     }
 }

@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.ServiceAliasMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,6 +15,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(ServiceAliasResource.publishedServiceAlias_URI)
+@Singleton
 public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, ServiceAliasRestResourceFactory> {
 
     protected static final String publishedServiceAlias_URI = "serviceAliases";
@@ -25,12 +26,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SERVICE_ALIAS;
-    }
-
     @Override
-    protected Reference toReference(ServiceAliasMO resource) {
+    protected Reference<ServiceAliasMO> toReference(ServiceAliasMO resource) {
         return toReference(resource.getId(), resource.getServiceReference().getId());
     }
 }

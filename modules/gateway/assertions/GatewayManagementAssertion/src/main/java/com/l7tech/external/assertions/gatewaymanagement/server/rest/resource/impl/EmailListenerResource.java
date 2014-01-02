@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,6 +15,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(EmailListenerResource.emailListener_URI)
+@Singleton
 public class EmailListenerResource extends RestEntityResource<EmailListenerMO, EmailListenerRestResourceFactory> {
 
     protected static final String emailListener_URI = "emailListeners";
@@ -25,12 +26,8 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.EMAIL_LISTENER;
-    }
-
     @Override
-    protected Reference toReference(EmailListenerMO resource) {
+    protected Reference<EmailListenerMO> toReference(EmailListenerMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

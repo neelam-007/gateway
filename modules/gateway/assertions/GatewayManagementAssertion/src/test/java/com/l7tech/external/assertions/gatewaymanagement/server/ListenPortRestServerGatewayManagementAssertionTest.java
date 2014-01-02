@@ -161,9 +161,9 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
 
         // check entity
-        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), reference.getResource().getReferences().size());
     }
 }

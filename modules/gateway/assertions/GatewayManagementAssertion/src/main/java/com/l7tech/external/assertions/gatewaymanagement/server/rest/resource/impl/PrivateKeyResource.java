@@ -5,13 +5,13 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
-import com.l7tech.gateway.api.PrivateKeyRestExport;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
 
+import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -26,6 +26,7 @@ import java.util.List;
  */
 @Provider
 @Path(PrivateKeyResource.privateKey_URI)
+@Singleton
 public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationContext>, ReadingResource, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource, TemplatingResource {
 
     /**
@@ -43,19 +44,18 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
         this.factory = factory;
     }
 
-    public EntityType getEntityType() {
-        return EntityType.SSG_KEY_ENTRY;
-    }
-
-    protected Reference toReference(PrivateKeyMO resource) {
-        return new ReferenceBuilder(resource.getAlias(), resource.getId(), getEntityType().name())
+    protected Reference<PrivateKeyMO> toReference(PrivateKeyMO resource) {
+        return new ReferenceBuilder<PrivateKeyMO>(resource.getAlias(), resource.getId(), factory.getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), resource.getId())))
                 .build();
     }
 
     @Override
-    public Response getResourceTemplate() {
-        return Response.ok(factory.getResourceTemplate()).build();
+    public Reference<PrivateKeyMO> getResourceTemplate() {
+        PrivateKeyMO resource = factory.getResourceTemplate();
+        Reference<PrivateKeyMO> reference = ManagedObjectFactory.createReference();
+        reference.setResource(resource);
+        return reference;
     }
 
     @Override
@@ -72,7 +72,7 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
     }
 
     @Override
-    public References listResources(int offset, int count, String sort, String order) {
+    public Reference<References> listResources(int offset, int count, String sort, String order) {
         final String sortKey = factory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
@@ -85,13 +85,15 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
             }
         });
 
-        return ManagedObjectFactory.createReferences(references);
+        return new ReferenceBuilder<References>(EntityType.SSG_KEY_ENTRY + " list", "List").setContent(ManagedObjectFactory.createReferences(references))
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .build();
     }
 
     @Override
-    public Reference getResource(String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Reference<PrivateKeyMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         PrivateKeyMO resource = factory.getResource(id);
-        return new ReferenceBuilder(toReference(resource))
+        return new ReferenceBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
@@ -131,5 +133,4 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
         PrivateKeyMO resource = factory.setSpecialPurpose(id,purpose);
         return Response.ok().entity(toReference(resource)).build();
     }
-
 }

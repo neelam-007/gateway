@@ -223,8 +223,9 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
         JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
 
-        Assert.assertEquals(2, references.getReferences().size());
+        // check entity
+        Assert.assertEquals(2, reference.getResource().getReferences().size());
     }
 }

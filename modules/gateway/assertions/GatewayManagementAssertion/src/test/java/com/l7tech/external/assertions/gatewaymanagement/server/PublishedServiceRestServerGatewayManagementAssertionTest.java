@@ -82,7 +82,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
-        DependencyAnalysisMO dependencyResultsMO = MarshallingUtils.unmarshal(DependencyAnalysisMO.class, source);
+        Reference<DependencyAnalysisMO> dependencyResultsMO = MarshallingUtils.unmarshal(Reference.class, source);
 
         dependencyResultsMO.toString();
     }

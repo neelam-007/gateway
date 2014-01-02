@@ -3,7 +3,6 @@ package com.l7tech.gateway.api;
 import com.l7tech.util.NonObfuscatable;
 
 import javax.xml.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,17 +12,17 @@ import java.util.List;
  */
 @XmlRootElement(name = "Reference")
 @XmlType(name = "EntityReferenceType", propOrder = {"title", "id", "type", "links", "resourceList"})
-public class Reference {
+public class Reference<R> {
     private String id;
     private String type;
     private String title;
     private List<Link> links;
-    private Object resource;
+    private R resource;
 
     Reference() {
     }
 
-    @XmlElement(name = "id", required = true)
+    @XmlElement(name = "id")
     public String getId() {
         return id;
     }
@@ -83,29 +82,29 @@ public class Reference {
             @XmlElementRef(type = StoredPasswordMO.class),
             @XmlElementRef(type = SecurityZoneMO.class),
             @XmlElementRef(type = ServiceAliasMO.class),
+            @XmlElementRef(type = References.class),
+            @XmlElementRef(type = DependencyAnalysisMO.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "resource", required = false)
     //This needs to be NonObfuscatable in order to avoid jaxb issues
     @NonObfuscatable
-    private List<Object> getResourceList() {
+    private Object[] getResourceList() {
         if (resource == null) {
             return null;
         }
-        ArrayList<Object> list = new ArrayList<>(1);
-        list.add(resource);
-        return list;
+        return new Object[]{resource};
     }
 
-    private void setResourceList(List<Object> content) {
-        this.resource = content != null && !content.isEmpty() ? content.get(0) : null;
+    private void setResourceList(Object[] content) {
+        this.resource = content != null && content.length>0 ? (R)content[0] : null;
     }
 
-    public Object getResource() {
+    public R getResource() {
         return resource;
     }
 
-    public void setResource(Object resource) {
+    public void setResource(R resource) {
         this.resource = resource;
     }
 }

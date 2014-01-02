@@ -641,6 +641,7 @@ public class ManagedObjectFactory {
                 DependencyMO.class,
                 Reference.class,
                 References.class,
+                Mapping.class,
                 Link.class,
                 PolicyVersionMO.class
         };
@@ -654,8 +655,8 @@ public class ManagedObjectFactory {
         return new DependencyMO();
     }
 
-    public static Reference createReference() {
-        return new Reference();
+    public static <R>Reference<R> createReference() {
+        return new Reference<R>();
     }
 
     public static References createReferences() {
@@ -664,6 +665,10 @@ public class ManagedObjectFactory {
 
     public static References createReferences(List<Reference> references) {
         return new References(references);
+    }
+
+    public static Mapping createMapping() {
+        return new Mapping();
     }
 
     public static Link createLink(){

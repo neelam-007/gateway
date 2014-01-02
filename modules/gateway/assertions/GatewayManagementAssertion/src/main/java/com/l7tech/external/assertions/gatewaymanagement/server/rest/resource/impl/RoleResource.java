@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.RbacRoleMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.container.ResourceContext;
@@ -20,6 +20,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(RoleResource.ROLES_URI)
+@Singleton
 public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourceFactory> {
 
     protected static final String ROLES_URI = "roles";
@@ -33,17 +34,13 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourc
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.RBAC_ROLE;
-    }
-
     @Path("{id}/assignments")
     public RoleAssignmentsResource assignment(@PathParam("id") String id){
         return resourceContext.initResource(new RoleAssignmentsResource(id));
     }
 
     @Override
-    protected Reference toReference(RbacRoleMO resource) {
+    protected Reference<RbacRoleMO> toReference(RbacRoleMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

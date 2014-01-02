@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,6 +15,7 @@ import javax.ws.rs.ext.Provider;
  */
 @Provider
 @Path(PolicyAliasResource.policyAlias_URI)
+@Singleton
 public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, PolicyAliasRestResourceFactory> {
 
     protected static final String policyAlias_URI = "policyAliases";
@@ -25,12 +26,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.POLICY_ALIAS;
-    }
-
     @Override
-    protected Reference toReference(PolicyAliasMO resource) {
+    protected Reference<PolicyAliasMO> toReference(PolicyAliasMO resource) {
         return toReference(resource.getId(), resource.getPolicyReference().getId());
     }
 }

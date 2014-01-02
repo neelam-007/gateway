@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Resources;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -52,17 +53,28 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     public abstract void setFactory(F factory);
 
     /**
+     * This will return the factory that is used by this rest entity resource.
+     *
+     * @return The factory that is used by this rest entity
+     */
+    public F getFactory() {
+        return factory;
+    }
+
+    /**
      * Returns the entity type of the resource
      *
      * @return The resource entity type
      */
     @NotNull
-    public abstract EntityType getEntityType();
+    public EntityType getEntityType() {
+        return factory.getEntityType();
+    }
 
     @Override
-    public References listResources(final int offset, final int count, final String sort, final String order) {
+    public Reference<References> listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
-        if(sort != null && sortKey == null) {
+        if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
@@ -72,25 +84,27 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
                 return toReference(resource);
             }
         });
-        return ManagedObjectFactory.createReferences(references);
+        return new ReferenceBuilder<References>(getEntityType() + " list", "List").setContent(ManagedObjectFactory.createReferences(references))
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .build();
     }
 
-    protected abstract Reference toReference(R resource);
+    protected abstract Reference<R> toReference(R resource);
 
-    public Reference toReference(EntityHeader entityHeader) {
+    public Reference<R> toReference(EntityHeader entityHeader) {
         return toReference(entityHeader.getStrId(), entityHeader.getName());
     }
 
-    protected Reference toReference(String id, String title){
-        return new ReferenceBuilder(title, id, getEntityType().name())
+    protected Reference<R> toReference(String id, String title) {
+        return new ReferenceBuilder<R>(title, id, getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id)))
                 .build();
     }
 
     @Override
-    public Reference getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Reference<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        return new ReferenceBuilder(toReference(resource))
+        return new ReferenceBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
@@ -98,9 +112,11 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     }
 
     @Override
-    public Response getResourceTemplate() {
+    public Reference<R> getResourceTemplate() {
         R resource = factory.getResourceTemplate();
-        return Response.ok(resource).build();
+        Reference<R> reference = ManagedObjectFactory.createReference();
+        reference.<R>setResource(resource);
+        return reference;
     }
 
     @Override
@@ -116,10 +132,10 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
         R existingResource;
         try {
             existingResource = factory.getResource(id);
-        } catch (ResourceFactory.ResourceNotFoundException e){
+        } catch (ResourceFactory.ResourceNotFoundException e) {
             existingResource = null;
         }
-        if(existingResource != null){
+        if (existingResource != null) {
             factory.updateResource(id, resource);
             return Response.ok().entity(toReference(resource)).build();
         } else {

@@ -3,7 +3,7 @@ package com.l7tech.server.search;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.processors.ServiceDependencyProcessor;
+import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 
 import java.util.List;
@@ -80,4 +80,8 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, String> searchOptions) throws FindException;
+
+    public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult);
+
+    public List<DependentObject> buildFlatDependencyList(List<DependencySearchResults> dependencySearchResults);
 }

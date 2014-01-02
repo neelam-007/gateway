@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -127,5 +129,15 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     @Override
     public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
         return filters;
+    }
+
+    @Override
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setType(getEntityType().toString());
+        mapping.setAction(defaultAction);
+        mapping.setSrcId(resource.getId());
+        mapping.setReferencePath("//l7:reference[l7:id='"+resource.getId()+"']");
+        return mapping;
     }
 }

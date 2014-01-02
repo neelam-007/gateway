@@ -9,8 +9,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
 
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +32,9 @@ public class DependencyResource {
     @SpringBean
     private RestResourceLocator restResourceLocator;
 
+    @Context
+    private UriInfo uriInfo;
+
     private EntityHeader entityHeader;
 
     public DependencyResource() {
@@ -40,13 +46,16 @@ public class DependencyResource {
     }
 
     @GET
-    public DependencyAnalysisMO get() throws FindException {
+    public Reference get() throws FindException {
         if(entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
         final HashMap<String, String> searchOptions = new HashMap<>(DependencyAnalyzer.DefaultSearchOptions);
         searchOptions.put("returnAssertionsAsDependencies", "false");
-        return toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, searchOptions));
+        return new ReferenceBuilder<DependencyAnalysisMO>(entityHeader.toString() + " dependencies", "Dependency")
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, searchOptions)))
+                .build();
     }
 
     //TODO: move entity transformation work to a transformer class

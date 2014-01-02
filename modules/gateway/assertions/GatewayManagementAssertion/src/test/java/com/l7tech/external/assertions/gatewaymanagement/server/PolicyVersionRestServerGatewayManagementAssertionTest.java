@@ -123,8 +123,9 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
         JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
 
-        Assert.assertEquals(1, references.getReferences().size());
+        // check entity
+        Assert.assertEquals(1, reference.getResource().getReferences().size());
     }
 }

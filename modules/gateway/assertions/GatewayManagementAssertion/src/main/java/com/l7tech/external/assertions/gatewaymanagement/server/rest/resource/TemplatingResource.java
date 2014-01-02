@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
+import com.l7tech.gateway.api.Reference;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
 
 /**
  * The template resource interface. All resources that allow retrieving a template should implement this in order to
@@ -18,5 +19,5 @@ public interface TemplatingResource {
      */
     @GET
     @Path("template")
-    public Response getResourceTemplate();
+    public Reference getResourceTemplate();
 }

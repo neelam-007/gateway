@@ -153,9 +153,9 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
 
         // check entity
-        Assert.assertEquals(genericEntityManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(genericEntityManagerStub.findAll().size(), reference.getResource().getReferences().size());
     }
 }

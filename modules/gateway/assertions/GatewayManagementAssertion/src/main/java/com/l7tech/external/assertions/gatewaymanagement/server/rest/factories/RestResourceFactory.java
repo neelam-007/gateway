@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -99,4 +101,22 @@ public interface RestResourceFactory<R> {
      *
      */
     public void deleteResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException;
+
+    /**
+     * This will return the default mapping for the entity.
+     *
+     * @param resource      The resource to create the mapping for
+     * @param defaultAction The default action given
+     * @param defaultMapBy  The default map by given
+     * @return The mapping for the resource
+     */
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy);
+
+    /**
+     * Returns the entity type of the resource
+     *
+     * @return The resource entity type
+     */
+    @NotNull
+    public abstract EntityType getEntityType();
 }

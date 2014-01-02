@@ -8,9 +8,11 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PrivateKeyCreationContext;
 import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.api.impl.*;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -75,5 +77,11 @@ public class PrivateKeyRestResourceFactory extends WsmanBaseResourceFactory<Priv
         ctx.setSpecialPurposes(purpose);
         ctx.setId(id);
         return factory.setSpecialPurposes(CollectionUtils.<String, String>mapBuilder().put("id", id).map(),ctx);
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.SSG_KEY_ENTRY;
     }
 }
