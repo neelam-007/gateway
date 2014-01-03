@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Map;
 
 /**
- * Created by vkazakov on 12/18/13.
+ * This is the mapping object. It is used to describe the mapping used for import and export.
  */
 public class Mapping {
     private String type;
@@ -20,7 +20,7 @@ public class Mapping {
     private Action action;
     private ActionTaken actionTaken;
     private ErrorType errorType;
-    private Map<String, String> properties;
+    private Map<String, Object> properties;
 
     public static enum Action {
         NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore;
@@ -119,11 +119,11 @@ public class Mapping {
 
     @XmlElement(name = "Properties")
     @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
-    public Map<String, String> getProperties() {
+    public Map<String,Object> getProperties() {
         return properties;
     }
 
-    public void setProperties(Map<String, String> properties) {
+    public void setProperties(Map<String,Object> properties) {
         this.properties = properties;
     }
 }

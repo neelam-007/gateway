@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,9 +56,9 @@ public class RestHandler {
      * @throws PrivilegedActionException
      * @throws RequestProcessingException
      */
-    public ContainerResponse handle(@NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream) throws PrivilegedActionException, RequestProcessingException {
+    public ContainerResponse handle(@NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, @Nullable final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
         // Build the Jersey Container Request
-        final ContainerRequest request = new ContainerRequest(baseUri, URI.create(baseUri.toString() + uri.toString()), httpMethod, securityContext, new MapPropertiesDelegate());
+        final ContainerRequest request = new ContainerRequest(baseUri, URI.create(baseUri.toString() + uri.toString()), httpMethod, securityContext, properties == null ? new MapPropertiesDelegate() : new MapPropertiesDelegate(properties));
         //Set the content type header.
         if (contentType != null) {
             request.header(HttpHeaders.CONTENT_TYPE, contentType);

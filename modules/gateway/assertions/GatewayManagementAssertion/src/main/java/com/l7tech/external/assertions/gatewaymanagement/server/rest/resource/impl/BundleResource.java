@@ -15,7 +15,9 @@ import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.glassfish.jersey.process.internal.RequestScoped;
+import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -25,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This resource is used to export and import bundles for migration.
@@ -42,6 +45,9 @@ public class BundleResource {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private ContainerRequest containerRequest;
 
     @QueryParam("defaultAction") @DefaultValue("NewOrExisting")
     private Mapping.Action defaultAction;
@@ -121,7 +127,7 @@ public class BundleResource {
                 RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
                 Reference resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
                 references.add(resource);
-                mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy));
+                mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy, buildProperties()));
             }
         }
 
@@ -131,8 +137,12 @@ public class BundleResource {
         return bundle;
     }
 
-    private Reference getReference(DependentEntity dependent) throws ResourceFactory.ResourceNotFoundException, IOException {
-        RestEntityResource resource = restResourceLocator.findByEntityType(dependent.getDependencyType().getEntityType());
-        return resource.getResource(dependent.getEntityHeader().getStrId());
+    private Map<String, Object> buildProperties() {
+        return Functions.toMap(containerRequest.getPropertyNames(), new Functions.Unary<Pair<String, Object>, String>() {
+            @Override
+            public Pair<String, Object> call(String s) {
+                return new Pair<>(s, containerRequest.getProperty(s));
+            }
+        });
     }
 }

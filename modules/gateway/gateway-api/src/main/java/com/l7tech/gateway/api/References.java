@@ -8,12 +8,11 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-@XmlRootElement(name = "references")
-@XmlType(name = "EntityReferencesType", propOrder = {"links", "references"})
+@XmlRootElement(name = "List")
+@XmlType(name = "EntityReferencesType", propOrder = {"references"})
 public class References {
 
     private List<Reference> references = null;
-    private List<Link> links;
 
     References() {
     }
@@ -22,21 +21,12 @@ public class References {
         this.references = references;
     }
 
-    @XmlElement(name = "reference")
+    @XmlElement(name = "Item")
     public List<Reference> getReferences() {
         return references;
     }
 
     public void setReferences(List<Reference> references) {
         this.references = references;
-    }
-
-    @XmlElement(name = "link")
-    public List<Link> getLinks() {
-        return links;
-    }
-
-    public void setLinks(List<Link> links) {
-        this.links = links;
     }
 }

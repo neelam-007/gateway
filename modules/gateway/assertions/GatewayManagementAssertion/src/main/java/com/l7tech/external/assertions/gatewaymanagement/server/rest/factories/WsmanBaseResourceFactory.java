@@ -132,12 +132,15 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy, @Nullable Map<String, Object> otherProperties) {
         Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setType(getEntityType().toString());
         mapping.setAction(defaultAction);
         mapping.setSrcId(resource.getId());
-        mapping.setReferencePath("//l7:reference[l7:id='"+resource.getId()+"']");
+        mapping.setReferencePath("//l7:reference[l7:id='" + resource.getId() + "']");
+        if (!"id".equals(defaultMapBy)) {
+            mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("MapBy", defaultMapBy).map());
+        }
         return mapping;
     }
 }

@@ -11,7 +11,7 @@ public class Bundle {
 
     Bundle(){}
 
-    @XmlElement(name = "references", required = true)
+    @XmlElement(name = "References", required = true)
     public References getReferences() {
         return references;
     }
@@ -20,8 +20,8 @@ public class Bundle {
         this.references = references;
     }
 
-    @XmlElementWrapper(name = "mappings")
-    @XmlElement(name = "mapping")
+    @XmlElementWrapper(name = "Mappings")
+    @XmlElement(name = "Mapping")
     public List<Mapping> getMappings() {
         return mappings;
     }

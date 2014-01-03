@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-@XmlRootElement(name = "Reference")
+@XmlRootElement(name = "Item")
 @XmlType(name = "EntityReferenceType", propOrder = {"title", "id", "type", "links", "resourceList"})
 public class Reference<R> {
     private String id;
@@ -22,7 +22,7 @@ public class Reference<R> {
     Reference() {
     }
 
-    @XmlElement(name = "id")
+    @XmlElement(name = "Id")
     public String getId() {
         return id;
     }
@@ -31,7 +31,7 @@ public class Reference<R> {
         this.id = id;
     }
 
-    @XmlElement(name = "type", required = true)
+    @XmlElement(name = "Type", required = true)
     public String getType() {
         return type;
     }
@@ -40,7 +40,7 @@ public class Reference<R> {
         this.type = type;
     }
 
-    @XmlElement(name = "title", required = true)
+    @XmlElement(name = "Title", required = true)
     public String getTitle() {
         return title;
     }
@@ -49,7 +49,7 @@ public class Reference<R> {
         this.title = title;
     }
 
-    @XmlElement(name = "link")
+    @XmlElement(name = "Link")
     public List<Link> getLinks() {
         return links;
     }
@@ -86,7 +86,7 @@ public class Reference<R> {
             @XmlElementRef(type = DependencyAnalysisMO.class)
     })
     @XmlAnyElement(lax = true)
-    @XmlElementWrapper(name = "resource", required = false)
+    @XmlElementWrapper(name = "Resource", required = false)
     //This needs to be NonObfuscatable in order to avoid jaxb issues
     @NonObfuscatable
     private Object[] getResourceList() {

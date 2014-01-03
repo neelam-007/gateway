@@ -105,12 +105,13 @@ public interface RestResourceFactory<R> {
     /**
      * This will return the default mapping for the entity.
      *
-     * @param resource      The resource to create the mapping for
-     * @param defaultAction The default action given
-     * @param defaultMapBy  The default map by given
+     * @param resource        The resource to create the mapping for
+     * @param defaultAction   The default action given
+     * @param defaultMapBy    The default map by given
+     * @param otherProperties These are other properties that may be used to build proper mappings
      * @return The mapping for the resource
      */
-    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy);
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy, @Nullable Map<String, Object> otherProperties);
 
     /**
      * Returns the entity type of the resource

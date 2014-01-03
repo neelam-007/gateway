@@ -3,17 +3,17 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.ServiceDetail;
-import com.l7tech.gateway.api.ServiceMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Map;
 
 /**
  * This was created: 11/18/13 as 4:30 PM
@@ -60,5 +60,19 @@ public class ServiceRestResourceFactory extends WsmanBaseResourceFactory<Service
 
         serviceMO.setServiceDetail(serviceDetail);
         return serviceMO;
+    }
+
+    @Override
+    public Mapping buildMapping(@NotNull ServiceMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy, @Nullable Map<String, Object> otherProperties) {
+        if (otherProperties != null && otherProperties.get("ServiceId") != null && otherProperties.get("ServiceId").equals(resource.getId())) {
+            Mapping mapping = ManagedObjectFactory.createMapping();
+            mapping.setType(getEntityType().toString());
+            mapping.setAction(Mapping.Action.Ignore);
+            mapping.setSrcId(resource.getId());
+            mapping.setReferencePath("//l7:reference[l7:id='" + resource.getId() + "']");
+            return mapping;
+        } else {
+            return super.buildMapping(resource, defaultAction, defaultMapBy, otherProperties);
+        }
     }
 }

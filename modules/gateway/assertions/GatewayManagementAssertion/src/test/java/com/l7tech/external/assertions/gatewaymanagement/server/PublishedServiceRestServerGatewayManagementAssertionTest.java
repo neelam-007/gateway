@@ -112,7 +112,6 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Response response = processRequest(basePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertTrue(response.toString().indexOf("l7:Reference") > 0);
 
         PublishedService createdEntity = serviceManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -134,7 +133,6 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Response response = processRequest(basePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertTrue(response.toString().indexOf("l7:Reference") > 0);
         Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
 
         // check entity
