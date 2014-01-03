@@ -60,6 +60,7 @@ public class Reference<R> {
 
     @XmlElementRefs({
             @XmlElementRef(type = ActiveConnectorMO.class),
+            @XmlElementRef(type = AssertionSecurityZoneMO.class),
             @XmlElementRef(type = TrustedCertificateMO.class),
             @XmlElementRef(type = ClusterPropertyMO.class),
             @XmlElementRef(type = CustomKeyValueStoreMO.class),

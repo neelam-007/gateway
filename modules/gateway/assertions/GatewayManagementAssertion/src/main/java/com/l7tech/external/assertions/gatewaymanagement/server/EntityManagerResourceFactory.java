@@ -387,7 +387,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param entities The entities to filter.
      * @return The filtered collection.
      */
-    private List<E> filterEntities(final List<E> entities) {
+    protected List<E> filterEntities(final List<E> entities) {
         return Functions.grep(entities, new Functions.Unary<Boolean, E>() {
             @Override
             public Boolean call(E e) {
