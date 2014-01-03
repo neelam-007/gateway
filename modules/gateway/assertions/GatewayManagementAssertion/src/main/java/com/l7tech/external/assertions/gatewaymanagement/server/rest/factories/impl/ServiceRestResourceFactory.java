@@ -69,7 +69,7 @@ public class ServiceRestResourceFactory extends WsmanBaseResourceFactory<Service
             mapping.setType(getEntityType().toString());
             mapping.setAction(Mapping.Action.Ignore);
             mapping.setSrcId(resource.getId());
-            mapping.setReferencePath("//l7:reference[l7:id='" + resource.getId() + "']");
+            mapping.setReferencePath(getReferencePath(resource.getId()));
             return mapping;
         } else {
             return super.buildMapping(resource, defaultAction, defaultMapBy, otherProperties);
