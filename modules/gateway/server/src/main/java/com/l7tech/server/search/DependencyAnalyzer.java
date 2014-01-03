@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentObject;
-import com.l7tech.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -27,19 +26,7 @@ public interface DependencyAnalyzer {
 
     public static final String ReturnServicePoliciesAsDependencies = "returnServicePoliciesAsDependencies";
 
-    /**
-     * The default search options:
-     * <pre><table>
-     *     <tr><td><b>Option</b></td><td><b>Value</b></td></tr>
-     *     <tr><td>searchDepth</td><td>-1</td></tr>
-     *     <tr><td>returnAssertionsAsDependencies</td><td>true</td></tr>
-     * </table></pre>
-     */
-    public static final Map<String, String> DefaultSearchOptions = CollectionUtils.MapBuilder.<String, String>builder()
-            .put(SearchDepthOptionKey, "-1")
-            .put(ReturnAssertionsAsDependenciesOptionKey, "true")
-            .put(ReturnServicePoliciesAsDependencies, "false")
-            .unmodifiableMap();
+    public static final String IgnoreSearchOptionKey = "Ignore";
 
     /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling getDependencies(entity,
@@ -61,7 +48,7 @@ public interface DependencyAnalyzer {
      * @return The dependency search results.
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
-    public DependencySearchResults getDependencies(EntityHeader entity, Map<String, String> searchOptions) throws FindException;
+    public DependencySearchResults getDependencies(EntityHeader entity, Map<String, Object> searchOptions) throws FindException;
 
     /**
      * Returns the list of dependencies for the given entities. This is the same as calling
@@ -79,7 +66,7 @@ public interface DependencyAnalyzer {
      * @return The list of dependency search results.
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
-    public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, String> searchOptions) throws FindException;
+    public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, Object> searchOptions) throws FindException;
 
     public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult);
 

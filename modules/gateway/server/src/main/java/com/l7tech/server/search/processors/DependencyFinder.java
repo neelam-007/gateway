@@ -8,9 +8,11 @@ import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -23,7 +25,7 @@ import java.util.*;
  */
 public class DependencyFinder {
     private HashSet<Dependency> dependenciesFound;
-    private Map<String, String> searchOptions;
+    private Map<String, Object> searchOptions;
     private int searchDepth;
     private DependencyProcessorStore processorStore;
 
@@ -34,7 +36,7 @@ public class DependencyFinder {
      * @param processorStore The dependency processor store to retrieve the processors for different types of
      *                       dependencies.
      */
-    public DependencyFinder(Map<String, String> searchOptions, DependencyProcessorStore processorStore) {
+    public DependencyFinder(Map<String, Object> searchOptions, DependencyProcessorStore processorStore) {
         this.searchOptions = searchOptions;
         this.processorStore = processorStore;
         dependenciesFound = new HashSet<>();
@@ -50,15 +52,17 @@ public class DependencyFinder {
      */
     public synchronized List<DependencySearchResults> process(List<Entity> entities) throws FindException {
         //get the search depth from the options
-        int originalSearchDepth = getIntegerOption(DependencyAnalyzer.SearchDepthOptionKey);
+        int originalSearchDepth = getOption(DependencyAnalyzer.SearchDepthOptionKey, Integer.class, -1);
         ArrayList<DependencySearchResults> results = new ArrayList<>(entities.size());
         for (Entity entity : entities) {
             //increment the search depth by 1 (this is done because the first thing the getDependencies does is decrement it by 1
             searchDepth = originalSearchDepth + 1;
             //retrieve the dependency object for the entity
             Dependency dependency = getDependency(entity);
-            //create the dependencySearchResults object
-            results.add(new DependencySearchResults(dependency.getDependent(), dependency.getDependencies(), searchOptions));
+            if(dependency != null) {
+                //create the dependencySearchResults object
+                results.add(new DependencySearchResults(dependency.getDependent(), dependency.getDependencies(), searchOptions));
+            }
         }
         return results;
     }
@@ -69,7 +73,7 @@ public class DependencyFinder {
      * @param dependent The object to search dependencies for.
      * @return The dependency object representing this object given.
      */
-    @NotNull
+    @Nullable
     protected Dependency getDependency(Object dependent) throws FindException {
         searchDepth--;
         //Checks if the dependencies for this dependent has already been found.
@@ -80,6 +84,11 @@ public class DependencyFinder {
         //Creates a dependency for this object.
         final Dependency dependency = new Dependency(createDependentObject(dependent));
 
+        List ignoreIds = getOption(DependencyAnalyzer.IgnoreSearchOptionKey, List.class, (List)Collections.emptyList());
+        if(dependency.getDependent() instanceof DependentEntity && ignoreIds.contains(((DependentEntity) dependency.getDependent()).getEntityHeader().getStrId())){
+            return null;
+        }
+
         // Adds the dependency to the dependencies found set. This needs to be done before calling the
         // getDependencies() method in order to handle the cyclical case
         dependenciesFound.add(dependency);
@@ -89,6 +98,26 @@ public class DependencyFinder {
         return dependency;
     }
 
+    /**
+     * Retrieve an option from the search options, verifying it is the correct type and casting to it.
+     *
+     * @param optionKey    The option to retrieve
+     * @param type         The type of the option
+     * @param <C>          This is the Type of the value that will be returned
+     * @param <T>          This is the class type of the vlaue
+     * @return The option value cast to the correct type. This will be the default value if no such option is set.
+     * @throws IllegalArgumentException This is thrown if the option value is the wrong type.
+     */
+    @NotNull
+    protected <C, T extends Class<C>> C getOption(final String optionKey, @NotNull final T type, @NotNull C defaultValue) {
+        final Object value = searchOptions.get(optionKey);
+        if (value != null && type.isAssignableFrom(value.getClass())) {
+            return type.cast(value);
+        } else if (value == null) {
+            return defaultValue;
+        }
+        throw new IllegalArgumentException("Search option value for option '" + optionKey + "' was not a valid type. Expected: " + type + " Given: " + value.getClass());
+    }
 
     /**
      * Returns the list of dependencies for the given object.
@@ -160,40 +189,6 @@ public class DependencyFinder {
     }
 
     /**
-     * Returns an integer value from the search options for the given key. If the option is not set or the value cannot
-     * be converted to an integer {@link IllegalArgumentException} is thrown
-     *
-     * @param optionKey The key to use to look up the value
-     * @return The integer value
-     */
-    protected int getIntegerOption(String optionKey) {
-        String optionValue = searchOptions.get(optionKey);
-        if (optionValue == null)
-            throw new IllegalArgumentException("Search option value for option '" + optionKey + "' was null.");
-        final int value;
-        try {
-            value = Integer.parseInt(optionValue);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Search option value for option '" + optionKey + "' was not a valid integer. Value: " + optionValue, e);
-        }
-        return value;
-    }
-
-    /**
-     * Returns a boolean value from the search options for the given key. If the option is not set {@link
-     * IllegalArgumentException} is thrown
-     *
-     * @param optionKey The key to use to look up the value
-     * @return The boolean value
-     */
-    protected boolean getBooleanOption(String optionKey) {
-        String optionValue = searchOptions.get(optionKey);
-        if (optionValue == null)
-            throw new IllegalArgumentException("Search option value for option '" + optionKey + "' was null.");
-        return Boolean.parseBoolean(optionValue);
-    }
-
-    /**
      * Returns a dependency type given an object. If a specific type could not be found DependencyType.GENERIC is
      * returned.
      *
@@ -238,7 +233,8 @@ public class DependencyFinder {
                     //Making sure an entity does not depend on itself
                     if (!object.equals(entity)) {
                         final Dependency dependency = finder.getDependency(entity);
-                        dependencies.add(dependency);
+                        if(dependency != null)
+                            dependencies.add(dependency);
                     }
                 }
             }

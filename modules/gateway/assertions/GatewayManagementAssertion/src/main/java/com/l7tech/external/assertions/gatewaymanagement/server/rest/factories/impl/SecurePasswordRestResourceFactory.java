@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.Map;
 
 /**
  * The secure password rest resources factory
@@ -60,9 +59,9 @@ public class SecurePasswordRestResourceFactory extends WsmanBaseResourceFactory<
     }
 
     @Override
-    public Mapping buildMapping(@NotNull StoredPasswordMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy, @Nullable Map<String, Object> otherProperties) {
+    public Mapping buildMapping(@NotNull StoredPasswordMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
         //The default mapping action for stored passwords is to always map.
-        Mapping mapping = super.buildMapping(resource, Mapping.Action.NewOrExisting, "id", otherProperties);
+        Mapping mapping = super.buildMapping(resource, Mapping.Action.NewOrExisting, "id");
         CollectionUtils.MapBuilder<String, Object> propertiesBuilder = CollectionUtils.MapBuilder.<String, Object>builder().put("FailOnNew", true);
         if (!"id".equals(defaultMapBy)) {
             propertiesBuilder.put("MapBy", defaultMapBy);

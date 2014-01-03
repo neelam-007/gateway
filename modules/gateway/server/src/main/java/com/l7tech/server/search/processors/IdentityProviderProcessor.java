@@ -37,7 +37,9 @@ public class IdentityProviderProcessor extends GenericDependencyProcessor<Identi
             if (Boolean.parseBoolean(ntlmProperties.get("enabled"))) {
                 String passwordGOID = ntlmProperties.get("service.passwordOid");
                 SecurePassword securePassword = securePasswordManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, passwordGOID));
-                dependencies.add(finder.getDependency(securePassword));
+                Dependency dependency = finder.getDependency(securePassword);
+                if(dependency != null)
+                    dependencies.add(dependency);
             }
         }
 

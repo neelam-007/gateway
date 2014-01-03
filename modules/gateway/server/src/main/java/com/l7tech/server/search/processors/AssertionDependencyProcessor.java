@@ -54,7 +54,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 final Entity entity = loadEntity(header);
                 if (entity != null) {
                     Dependency dependency = finder.getDependency(entity);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -65,7 +65,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
                 if (property != null) {
                     Dependency dependency = finder.getDependency(property);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -80,7 +80,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
                 if (resourceEntry != null) {
                     Dependency dependency = finder.getDependency(resourceEntry);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -93,7 +93,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 final Entity keyEntry = loadEntity(new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias()));
                 if (keyEntry != null) {
                     Dependency dependency = finder.getDependency(keyEntry);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -104,7 +104,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
 
     @Override
     public DependentObject createDependentObject(Assertion assertion) {
-        final AssertionNodeNameFactory assertionNodeNameFactory = (AssertionNodeNameFactory) assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        final AssertionNodeNameFactory assertionNodeNameFactory = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         //noinspection unchecked
         return new DependentAssertion((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertionNodeNameFactory != null ? assertionNodeNameFactory.getAssertionName(assertion, true) : null);
     }

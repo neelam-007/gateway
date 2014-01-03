@@ -18,7 +18,7 @@ import java.util.Map;
 @XmlRootElement(name = "DependencyAnalysis")
 @XmlType(propOrder = {"options", "searchObjectReference", "dependencies"})
 public class DependencyAnalysisMO {
-    private Map<String,String> options;
+    private Map<String,Object> options;
     private Reference searchObjectReference;
     private List<DependencyMO> dependencies;
 
@@ -26,11 +26,11 @@ public class DependencyAnalysisMO {
 
     @XmlElement(name = "Options")
     @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
-    public Map<String, String> getOptions() {
+    public Map<String, Object> getOptions() {
         return options;
     }
 
-    public void setOptions(Map<String, String> options) {
+    public void setOptions(Map<String, Object> options) {
         this.options = options;
     }
 

@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.Map;
 
 /**
  *
@@ -82,9 +81,9 @@ public class IdentityProviderRestResourceFactory extends WsmanBaseResourceFactor
     }
 
     @Override
-    public Mapping buildMapping(@NotNull IdentityProviderMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy, @Nullable Map<String, Object> otherProperties) {
+    public Mapping buildMapping(@NotNull IdentityProviderMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
         //The default mapping action for identity providers is to always map.
-        Mapping mapping = super.buildMapping(resource, Mapping.Action.NewOrExisting, "id", otherProperties);
+        Mapping mapping = super.buildMapping(resource, Mapping.Action.NewOrExisting, "id");
         mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("FailOnNew", true).map());
         return mapping;
     }

@@ -12,10 +12,7 @@ import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.search.processors.DependencyFinder;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,14 +38,14 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @Override
     public DependencySearchResults getDependencies(EntityHeader entityHeader) throws FindException {
-        return getDependencies(entityHeader, DefaultSearchOptions);
+        return getDependencies(entityHeader, Collections.<String,Object>emptyMap());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public DependencySearchResults getDependencies(EntityHeader entityHeader, Map<String, String> searchOptions) throws FindException {
+    public DependencySearchResults getDependencies(EntityHeader entityHeader, Map<String, Object> searchOptions) throws FindException {
         List<DependencySearchResults> results = getDependencies(Arrays.asList(entityHeader), searchOptions);
         return results.get(0);
     }
@@ -58,14 +55,14 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @Override
     public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders) throws FindException {
-        return getDependencies(entityHeaders, DefaultSearchOptions);
+        return getDependencies(entityHeaders, Collections.<String,Object>emptyMap());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, String> searchOptions) throws FindException {
+    public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, Object> searchOptions) throws FindException {
         logger.log(Level.FINE, "Finding dependencies for {0}", entityHeaders);
         ArrayList<Entity> entities = new ArrayList<>(entityHeaders.size());
         for (EntityHeader entityHeader : entityHeaders) {

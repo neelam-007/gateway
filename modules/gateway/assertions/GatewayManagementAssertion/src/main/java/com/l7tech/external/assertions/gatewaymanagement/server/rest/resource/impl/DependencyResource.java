@@ -8,15 +8,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
+import com.l7tech.util.CollectionUtils;
 
-import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -50,11 +49,9 @@ public class DependencyResource {
         if(entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-        final HashMap<String, String> searchOptions = new HashMap<>(DependencyAnalyzer.DefaultSearchOptions);
-        searchOptions.put("returnAssertionsAsDependencies", "false");
         return new ReferenceBuilder<DependencyAnalysisMO>(entityHeader.toString() + " dependencies", "Dependency")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, searchOptions)))
+                .setContent(toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String,Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
                 .build();
     }
 

@@ -20,11 +20,11 @@ public class ServiceDependencyProcessor extends GenericDependencyProcessor<Publi
     @NotNull
     public List<Dependency> findDependencies(PublishedService object, DependencyFinder finder) throws FindException {
         List<Dependency> dependencies;
-        if (!finder.getBooleanOption(DependencyAnalyzer.ReturnServicePoliciesAsDependencies)) {
+        if (!finder.getOption(DependencyAnalyzer.ReturnServicePoliciesAsDependencies, Boolean.class, false)) {
             List<Dependency> dependenciesFound = super.findDependencies(object, finder);
             dependencies = new ArrayList<>();
             for (Dependency dependency : dependenciesFound) {
-                if (com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType())) {
+                if (com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType()) && dependency.getDependencies() != null) {
                     for (Dependency policyDependency : dependency.getDependencies()) {
                         dependencies.add(policyDependency);
                     }

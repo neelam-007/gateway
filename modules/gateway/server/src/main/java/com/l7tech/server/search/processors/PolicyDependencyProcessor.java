@@ -43,13 +43,16 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();
 
-        boolean assertionsAsDependencies = processor.getBooleanOption(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey);
+        boolean assertionsAsDependencies = processor.getOption(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, Boolean.class, true);
 
         //iterate for each assertion.
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
             if (assertionsAsDependencies) {
-                dependencies.add(processor.getDependency(currentAssertion));
+                Dependency dependency = processor.getDependency(currentAssertion);
+                if(dependency != null) {
+                    dependencies.add(dependency);
+                }
             } else {
                 //for all the dependencies in the assertion if the dependency is not already found add it to the list of dependencies.
                 Functions.forall(processor.getDependencies(currentAssertion), new Functions.Unary<Boolean, Dependency>() {
@@ -66,7 +69,7 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         SecurityZone securityZone = policy.getSecurityZone();
         if (securityZone != null) {
             final Dependency securityZoneDependency = processor.getDependency(securityZone);
-            if (!dependencies.contains(securityZoneDependency))
+            if (securityZoneDependency != null && !dependencies.contains(securityZoneDependency))
                 dependencies.add(securityZoneDependency);
         }
 

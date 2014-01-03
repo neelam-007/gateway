@@ -15,7 +15,6 @@ import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ContainerRequest;
 
@@ -24,10 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This resource is used to export and import bundles for migration.
@@ -109,7 +105,7 @@ public class BundleResource {
     }
 
     private Bundle createBundle(boolean includeRequestFolder, Mapping.Action defaultAction, String defaultMapBy, EntityHeader... headers) throws ResourceFactory.ResourceNotFoundException, IOException, FindException {
-        List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers));
+        List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
         List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
 
         ArrayList<Reference> references = new ArrayList<>();
@@ -127,7 +123,8 @@ public class BundleResource {
                 RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
                 Reference resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
                 references.add(resource);
-                mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy, buildProperties()));
+                //noinspection unchecked
+                mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy));
             }
         }
 
@@ -135,14 +132,5 @@ public class BundleResource {
         bundle.setReferences(ManagedObjectFactory.createReferences(references));
         bundle.setMappings(mappings);
         return bundle;
-    }
-
-    private Map<String, Object> buildProperties() {
-        return Functions.toMap(containerRequest.getPropertyNames(), new Functions.Unary<Pair<String, Object>, String>() {
-            @Override
-            public Pair<String, Object> call(String s) {
-                return new Pair<>(s, containerRequest.getProperty(s));
-            }
-        });
     }
 }
