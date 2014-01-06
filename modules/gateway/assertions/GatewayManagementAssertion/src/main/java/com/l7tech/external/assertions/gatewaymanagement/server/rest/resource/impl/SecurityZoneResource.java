@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The security zone resource
  */
 @Provider
-@Path(SecurityZoneResource.securityZone_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + SecurityZoneResource.securityZone_URI)
 @Singleton
 public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, SecurityZoneRestResourceFactory> {
 

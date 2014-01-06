@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.EncapsulatedAssertionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
@@ -15,7 +16,7 @@ import javax.ws.rs.ext.Provider;
  *
  */
 @Provider
-@Path(EncapsulatedAssertionResource.ENCAPSULATED_ASSERTION_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + EncapsulatedAssertionResource.ENCAPSULATED_ASSERTION_URI)
 @Singleton
 public class EncapsulatedAssertionResource extends DependentRestEntityResource<EncapsulatedAssertionMO, EncapsulatedAssertionRestResourceFactory> {
 

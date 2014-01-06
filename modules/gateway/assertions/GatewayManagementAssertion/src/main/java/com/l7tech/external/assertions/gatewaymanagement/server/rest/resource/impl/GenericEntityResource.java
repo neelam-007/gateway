@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The generic entity resource
  */
 @Provider
-@Path(GenericEntityResource.genericEntity_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + GenericEntityResource.genericEntity_URI)
 @Singleton
 public class GenericEntityResource extends RestEntityResource<GenericEntityMO, GenericEntityRestResourceFactory> {
 

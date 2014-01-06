@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The trusted certificate resource
  */
 @Provider
-@Path(CertificateResource.trustedCertificate_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + CertificateResource.trustedCertificate_URI)
 @Singleton
 public class CertificateResource extends RestEntityResource<TrustedCertificateMO, CertificateRestResourceFactory> {
 

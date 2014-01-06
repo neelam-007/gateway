@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.*;
@@ -9,6 +11,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -20,7 +23,6 @@ import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.*;
@@ -29,15 +31,20 @@ import java.util.*;
  * This resource is used to export and import bundles for migration.
  * Do not make this a @Provider the will make allow @queryParam on fields. This will be added to the rest application using the application context. See /com/l7tech/external/assertions/gatewaymanagement/server/gatewayManagementContext.xml:restAgent
  */
-@Path("bundle")
+@Path(BundleResource.Version_URI + "bundle")
 @RequestScoped
 public class BundleResource {
+
+    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     @SpringBean
     private DependencyAnalyzer dependencyAnalyzer;
 
     @SpringBean
     private RestResourceLocator restResourceLocator;
+
+    @SpringBean
+    private BundleImporter bundleImporter;
 
     @Context
     private UriInfo uriInfo;
@@ -51,6 +58,8 @@ public class BundleResource {
     private String defaultMapBy;
     @QueryParam("includeRequestFolder") @DefaultValue("false")
     private boolean includeRequestFolder;
+    @QueryParam("exportGatewayRestManagementService") @DefaultValue("false")
+    private boolean exportGatewayRestManagementService;
 
     public BundleResource() {
     }
@@ -99,13 +108,18 @@ public class BundleResource {
         return reference;
     }
 
-    @POST
-    public Response importBundle() {
-        return Response.ok().build();
+    @PUT
+    public Reference<Mappings> importBundle(Bundle bundle) {
+        Reference<Mappings> reference = ManagedObjectFactory.createReference();
+        reference.setResource(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Folder.ROOT_FOLDER_ID.toString(), Collections.<String, Object>emptyMap())));
+        reference.setType("BUNDLE MAPPINGS");
+        reference.setTitle("Bundle mappings");
+        reference.setLinks(CollectionUtils.<Link>list(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString())));
+        return reference;
     }
 
     private Bundle createBundle(boolean includeRequestFolder, Mapping.Action defaultAction, String defaultMapBy, EntityHeader... headers) throws ResourceFactory.ResourceNotFoundException, IOException, FindException {
-        List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
+        List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
         List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
 
         ArrayList<Reference> references = new ArrayList<>();
@@ -122,6 +136,7 @@ public class BundleResource {
                 }
                 RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
                 Reference resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
+                filterLinks(resource);
                 references.add(resource);
                 //noinspection unchecked
                 mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy));
@@ -132,5 +147,16 @@ public class BundleResource {
         bundle.setReferences(ManagedObjectFactory.createReferences(references));
         bundle.setMappings(mappings);
         return bundle;
+    }
+
+    //TODO: is there a better way to do this?
+    private void filterLinks(Reference reference) {
+        Iterator<Link> links = reference.getLinks().iterator();
+        while(links.hasNext()){
+            Link link = links.next();
+            if(!"self".equals(link.getRel())){
+                links.remove();
+            }
+        }
     }
 }

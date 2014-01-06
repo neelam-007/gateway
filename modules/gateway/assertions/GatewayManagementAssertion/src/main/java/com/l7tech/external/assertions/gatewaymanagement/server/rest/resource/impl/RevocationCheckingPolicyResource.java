@@ -27,7 +27,7 @@ import java.util.List;
  * The active connector resource
  */
 @Provider
-@Path(RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
 @Singleton
 public class RevocationCheckingPolicyResource implements ReadingResource, ListingResource {
 

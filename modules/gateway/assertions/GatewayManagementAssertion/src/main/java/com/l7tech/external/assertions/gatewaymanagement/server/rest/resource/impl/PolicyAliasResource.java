@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The policy alias resource
  */
 @Provider
-@Path(PolicyAliasResource.policyAlias_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + PolicyAliasResource.policyAlias_URI)
 @Singleton
 public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, PolicyAliasRestResourceFactory> {
 

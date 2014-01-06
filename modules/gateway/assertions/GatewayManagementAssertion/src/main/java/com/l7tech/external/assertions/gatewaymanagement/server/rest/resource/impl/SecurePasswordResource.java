@@ -16,7 +16,7 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(SecurePasswordResource.securePassword_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + SecurePasswordResource.securePassword_URI)
 @Singleton
 public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO, SecurePasswordRestResourceFactory> {
 

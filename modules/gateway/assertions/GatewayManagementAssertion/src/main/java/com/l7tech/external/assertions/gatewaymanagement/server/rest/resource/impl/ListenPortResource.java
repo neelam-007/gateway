@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The listen port resource
  */
 @Provider
-@Path(ListenPortResource.listenPort_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + ListenPortResource.listenPort_URI)
 @Singleton
 public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenPortRestResourceFactory> {
 

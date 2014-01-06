@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The custom key value store resource
  */
 @Provider
-@Path(CustomKeyValueStoreResource.customKeyValue_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + CustomKeyValueStoreResource.customKeyValue_URI)
 @Singleton
 public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyValueStoreMO, CustomKeyValueStoreRestResourceFactory> {
 

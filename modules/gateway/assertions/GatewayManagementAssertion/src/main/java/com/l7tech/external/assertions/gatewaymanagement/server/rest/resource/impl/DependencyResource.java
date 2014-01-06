@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.*;
@@ -22,8 +23,10 @@ import java.util.List;
  * This is a provider for dependencies. It finds the dependencies of entities that can have dependencies.
  */
 @Provider
-@Path("dependencies")
+@Path(DependencyResource.Version_URI + "dependencies")
 public class DependencyResource {
+
+    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     @SpringBean
     private DependencyAnalyzer dependencyAnalyzer;

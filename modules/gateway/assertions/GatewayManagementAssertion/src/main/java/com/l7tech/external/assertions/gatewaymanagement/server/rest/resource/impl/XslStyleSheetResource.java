@@ -20,7 +20,7 @@ import java.io.OutputStream;
  * @author Victor Kazakov
  */
 @Provider
-@Path("{path:.*}" + XslStyleSheetResource.StyleSheetBasePath)
+@Path(XslStyleSheetResource.StyleSheetBasePath)
 @Singleton
 public class XslStyleSheetResource {
     public static final String StyleSheetBasePath = "stylesheets";

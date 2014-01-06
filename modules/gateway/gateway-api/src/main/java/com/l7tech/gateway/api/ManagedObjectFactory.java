@@ -671,6 +671,18 @@ public class ManagedObjectFactory {
         return new Mapping();
     }
 
+    public static Mapping createMapping(Mapping mapping) {
+        return new Mapping(mapping);
+    }
+
+    public static Mappings createMappings() {
+        return new Mappings();
+    }
+
+    public static Mappings createMappings(List<Mapping> mappings) {
+        return new Mappings(mappings);
+    }
+
     public static Link createLink(){
         return new Link();
     }

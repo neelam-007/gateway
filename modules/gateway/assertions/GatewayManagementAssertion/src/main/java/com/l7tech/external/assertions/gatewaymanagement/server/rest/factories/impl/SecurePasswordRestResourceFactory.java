@@ -4,14 +4,12 @@ import com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordRes
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -56,17 +54,5 @@ public class SecurePasswordRestResourceFactory extends WsmanBaseResourceFactory<
                 .put("type", "Password")
                 .map());
         return storedPasswordMO;
-    }
-
-    @Override
-    public Mapping buildMapping(@NotNull StoredPasswordMO resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
-        //The default mapping action for stored passwords is to always map.
-        Mapping mapping = super.buildMapping(resource, Mapping.Action.NewOrExisting, "id");
-        CollectionUtils.MapBuilder<String, Object> propertiesBuilder = CollectionUtils.MapBuilder.<String, Object>builder().put("FailOnNew", true);
-        if (!"id".equals(defaultMapBy)) {
-            propertiesBuilder.put("MapBy", defaultMapBy);
-        }
-        mapping.setProperties(propertiesBuilder.map());
-        return mapping;
     }
 }

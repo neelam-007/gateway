@@ -86,7 +86,8 @@ public class Reference<R> {
             @XmlElementRef(type = SecurityZoneMO.class),
             @XmlElementRef(type = ServiceAliasMO.class),
             @XmlElementRef(type = References.class),
-            @XmlElementRef(type = DependencyAnalysisMO.class)
+            @XmlElementRef(type = DependencyAnalysisMO.class),
+            @XmlElementRef(type = Mappings.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "Resource", required = false)

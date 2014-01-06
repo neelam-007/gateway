@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
@@ -16,7 +17,7 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(PublishedServiceResource.SERVICES_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + PublishedServiceResource.SERVICES_URI)
 @Singleton
 public class PublishedServiceResource extends DependentRestEntityResource<ServiceMO, ServiceRestResourceFactory> {
 

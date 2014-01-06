@@ -38,6 +38,8 @@ import java.util.regex.Pattern;
  */
 public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargetableServerAssertion<RESTGatewayManagementAssertion> {
 
+    public static final String Version1_0_URI = "1.0/";
+
     @Inject
     private StashManagerFactory stashManagerFactory;
 

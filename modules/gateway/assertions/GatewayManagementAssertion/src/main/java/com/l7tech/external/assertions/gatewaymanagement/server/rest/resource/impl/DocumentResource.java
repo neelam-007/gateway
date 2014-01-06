@@ -16,7 +16,7 @@ import javax.ws.rs.ext.Provider;
  * The resource document resource
  */
 @Provider
-@Path(DocumentResource.document_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + DocumentResource.document_URI)
 @Singleton
 public class DocumentResource extends RestEntityResource<ResourceDocumentMO, DocumentRestResourceFactory> {
 

@@ -140,7 +140,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         }
         httpServletRequest.setRemoteAddr("127.0.0.1");
         httpServletRequest.setServerName("127.0.0.1");
-        httpServletRequest.setRequestURI("/restman/" + uri);
+        httpServletRequest.setRequestURI("/restman/1.0/" + uri);
         httpServletRequest.setQueryString(queryString);
         httpServletRequest.setContent(body.getBytes("UTF-8"));
 

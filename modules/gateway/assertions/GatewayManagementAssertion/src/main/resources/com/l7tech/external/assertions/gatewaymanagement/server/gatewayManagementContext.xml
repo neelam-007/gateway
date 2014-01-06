@@ -281,4 +281,5 @@
     </bean>
 
     <bean id="restResourceLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocatorImpl" />
+    <bean id="bundleImporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter" />
 </beans>

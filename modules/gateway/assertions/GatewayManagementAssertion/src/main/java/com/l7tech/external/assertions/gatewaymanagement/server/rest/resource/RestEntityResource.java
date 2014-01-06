@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -12,7 +13,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Resources;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -34,6 +34,8 @@ import java.util.List;
  * @author Victor Kazakov
  */
 public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource, UpdatingResource<R>, DeletingResource, ListingResource, TemplatingResource {
+    public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
+
     /**
      * This is the rest resource factory method used to perform the crud operations on the entity.
      */

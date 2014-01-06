@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The active connector resource
  */
 @Provider
-@Path(SiteMinderConfigurationResource.siteMinderConfigurations_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + SiteMinderConfigurationResource.siteMinderConfigurations_URI)
 @Singleton
 public class SiteMinderConfigurationResource extends RestEntityResource<SiteMinderConfigurationMO, SiteMinderConfigurationRestResourceFactory> {
 

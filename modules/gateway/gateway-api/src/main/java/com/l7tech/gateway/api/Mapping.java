@@ -4,12 +4,17 @@ import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * This is the mapping object. It is used to describe the mapping used for import and export.
  */
+@XmlRootElement(name = "Mapping")
+@XmlType(name = "MappingType", propOrder = {"properties"})
 public class Mapping {
     private String type;
     private String srcId;
@@ -35,6 +40,21 @@ public class Mapping {
     }
 
     Mapping(){}
+
+    Mapping(Mapping mapping) {
+        this.type = mapping.getType();
+        this.srcId = mapping.getSrcId();
+        this.referencePath = mapping.getReferencePath();
+        this.srcUri = mapping.getSrcUri();
+        this.targetUri = mapping.getTargetUri();
+        this.targetId = mapping.getTargetId();
+        this.action = mapping.getAction();
+        this.actionTaken = mapping.getActionTaken();
+        this.errorType = mapping.getErrorType();
+        if(mapping.getProperties() != null) {
+            this.properties = new HashMap<>(mapping.getProperties());
+        }
+    }
 
     @XmlAttribute(name = "type")
     public String getType() {

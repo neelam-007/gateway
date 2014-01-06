@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.AssertionSecurityZoneRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.gateway.api.*;
@@ -22,9 +23,10 @@ import java.util.List;
  * The active connector resource
  */
 @Provider
-@Path(AssertionSecurityZoneResource.activeConnectors_URI)
+@Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
 public class AssertionSecurityZoneResource implements  TemplatingResource {
 
+    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
     protected static final String activeConnectors_URI = "assertionSecurityZones";
     protected AssertionSecurityZoneRestResourceFactory factory;
     @Context
@@ -39,8 +41,8 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
         return EntityType.ASSERTION_ACCESS;
     }
 
-    protected Reference toReference(AssertionSecurityZoneMO resource) {
-        return new ReferenceBuilder(resource.getName(), resource.getId(), getEntityType().name())
+    protected Reference<AssertionSecurityZoneMO> toReference(AssertionSecurityZoneMO resource) {
+        return new ReferenceBuilder<AssertionSecurityZoneMO>(resource.getName(), resource.getId(), getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), resource.getName())))
                 .build();
     }
@@ -75,9 +77,9 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
      */
     @GET
     @Path("{name}")
-    public Reference getResource(@PathParam("name")String name) throws ResourceFactory.ResourceNotFoundException {
+    public Reference<AssertionSecurityZoneMO> getResource(@PathParam("name")String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
-        return new ReferenceBuilder(toReference(resource))
+        return new ReferenceBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))

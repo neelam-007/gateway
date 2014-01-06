@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The Http Configuration resource
  */
 @Provider
-@Path(HttpConfigurationResource.httpConfiguration_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + HttpConfigurationResource.httpConfiguration_URI)
 @Singleton
 public class HttpConfigurationResource extends RestEntityResource<HttpConfigurationMO, HttpConfigurationRestResourceFactory> {
 

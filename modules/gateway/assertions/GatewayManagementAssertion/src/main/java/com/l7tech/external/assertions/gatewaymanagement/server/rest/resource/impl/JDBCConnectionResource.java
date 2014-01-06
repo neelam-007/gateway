@@ -16,7 +16,7 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(JDBCConnectionResource.jdbcConnections_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + JDBCConnectionResource.jdbcConnections_URI)
 @Singleton
 public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO, JDBCConnectionRestResourceFactory> {
 

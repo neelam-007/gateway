@@ -15,7 +15,7 @@ import javax.ws.rs.ext.Provider;
  *
  */
 @Provider
-@Path(IdentityProviderResource.jdbcConnections_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + IdentityProviderResource.jdbcConnections_URI)
 @Singleton
 public class IdentityProviderResource extends RestEntityResource<IdentityProviderMO, IdentityProviderRestResourceFactory> {
 

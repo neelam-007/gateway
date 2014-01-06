@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The service alias resource
  */
 @Provider
-@Path(ServiceAliasResource.publishedServiceAlias_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + ServiceAliasResource.publishedServiceAlias_URI)
 @Singleton
 public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, ServiceAliasRestResourceFactory> {
 

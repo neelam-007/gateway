@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The email listener resource
  */
 @Provider
-@Path(EmailListenerResource.emailListener_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + EmailListenerResource.emailListener_URI)
 @Singleton
 public class EmailListenerResource extends RestEntityResource<EmailListenerMO, EmailListenerRestResourceFactory> {
 

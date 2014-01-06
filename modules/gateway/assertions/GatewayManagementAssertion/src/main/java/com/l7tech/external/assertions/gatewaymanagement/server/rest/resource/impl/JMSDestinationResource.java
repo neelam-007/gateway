@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The jms destination resource
  */
 @Provider
-@Path(JMSDestinationResource.jmsDestination_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + JMSDestinationResource.jmsDestination_URI)
 @Singleton
 public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO, JMSDestinationRestResourceFactory> {
 

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PrivateKeyRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.gateway.api.*;
@@ -25,9 +26,11 @@ import java.util.List;
  * The private key resource
  */
 @Provider
-@Path(PrivateKeyResource.privateKey_URI)
+@Path(PrivateKeyResource.Version_URI + PrivateKeyResource.privateKey_URI)
 @Singleton
 public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationContext>, ReadingResource, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource, TemplatingResource {
+
+    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     /**
      * This is the rest resource factory method used to perform the crud operations on the entity.

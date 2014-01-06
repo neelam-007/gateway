@@ -14,7 +14,7 @@ import javax.ws.rs.ext.Provider;
  * The active connector resource
  */
 @Provider
-@Path(ActiveConnectorResource.activeConnectors_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + ActiveConnectorResource.activeConnectors_URI)
 @Singleton
 public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorMO, ActiveConnectorRestResourceFactory> {
 

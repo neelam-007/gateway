@@ -19,7 +19,7 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(RoleResource.ROLES_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + RoleResource.ROLES_URI)
 @Singleton
 public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourceFactory> {
 
