@@ -37,6 +37,8 @@
         <constructor-arg index="1"><null/></constructor-arg>
     </bean>
 
+    <bean id="revocationCheckPolicyManager" class="com.l7tech.server.identity.cert.TestRevocationCheckPolicyManager"/>
+
     <bean id="gatewayExternalReferenceFinder" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
         <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
         <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
@@ -52,7 +54,7 @@
         <constructor-arg index="11" ref="trustedCertManager"/>
         <constructor-arg index="12" ref="ssgActiveConnectorManager"/>
         <constructor-arg index="13" ref="policyExporterImporterManager"/>
-        <constructor-arg index="14"><bean class="com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub" /></constructor-arg>
+        <constructor-arg index="14" ref="siteMinderConfigurationManager"/>
         <constructor-arg index="15" ref="genericEntityManager" />
         <constructor-arg index="16" ref="httpConfigurationManager" />
         <constructor-arg index="17" ref="roleManager" />
@@ -193,6 +195,10 @@
         <constructor-arg index="3" ref="ssgConnectorManager"/>
         <constructor-arg index="4" ref="securityZoneManager"/>
     </bean>
+    <bean id="revocationCheckingPolicyResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.RevocationCheckingPolicyResourceFactory" parent="entityResourceFactoryParent">
+        <constructor-arg index="3" ref="revocationCheckPolicyManager"/>
+        <constructor-arg index="4" ref="securityZoneManager"/>
+    </bean>
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>
@@ -221,6 +227,7 @@
                 <ref local="policyAliasResourceFactory" />
                 <ref local="emailListenerResourceFactory" />
                 <ref local="serviceAliasResourceFactory" />
+                <ref local="revocationCheckingPolicyResourceFactory" />
             </list>
         </constructor-arg>
     </bean>
