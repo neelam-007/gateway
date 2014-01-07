@@ -71,6 +71,7 @@ public class Reference<R> {
             @XmlElementRef(type = GenericEntityMO.class),
             @XmlElementRef(type = HttpConfigurationMO.class),
             @XmlElementRef(type = IdentityProviderMO.class),
+            @XmlElementRef(type = InterfaceTagMO.class),
             @XmlElementRef(type = JDBCConnectionMO.class),
             @XmlElementRef(type = JMSDestinationMO.class),
             @XmlElementRef(type = ListenPortMO.class),

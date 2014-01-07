@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.l7tech.gateway.api.InterfaceTagMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -12,6 +15,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
+import com.sun.istack.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -82,6 +86,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     @Override
     InterfaceTagMO internalAsResource( @NotNull final InterfaceTag interfaceTag ) {
         final InterfaceTagMO resource = ManagedObjectFactory.createInterfaceTag();
+        resource.setId( getIdentifier(interfaceTag));
         resource.setName( interfaceTag.getName() );
         resource.setAddressPatterns( new ArrayList<String>(interfaceTag.getIpPatterns()) );
         return resource;
@@ -118,6 +123,42 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     void updateInternal( @NotNull final InterfaceTag oldInternal,
                          @NotNull final InterfaceTag newInternal ) {
         oldInternal.setIpPatterns( newInternal.getIpPatterns() );
+    }
+
+    @Override
+    protected List<InterfaceTag> filterAndSortEntities(List<InterfaceTag> entities, final String sortKey, final Boolean ascending,final Map<String, List<Object>> filtersMap) {
+
+        entities = Lists.newArrayList(Iterables.filter(entities, new Predicate<InterfaceTag>() {
+            @Override
+            public boolean apply(@Nullable InterfaceTag interfaceTag) {
+                boolean match = true;
+                if (filtersMap.containsKey("name")) {
+                    match = filtersMap.get("name").contains(interfaceTag.getName());
+                }
+                if (match && filtersMap.containsKey("id")) {
+                    match = match && filtersMap.get("id").contains(nameAsIdentifier(interfaceTag.getName()));
+                }
+                return match;
+            }
+        }));
+
+        Collections.sort(entities,new Comparator<InterfaceTag>() {
+            @Override
+            public int compare(InterfaceTag o1, InterfaceTag o2) {
+                if(sortKey == null)
+                    return 0;
+
+                if(sortKey.equals("name")){
+                    return ascending ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
+                }
+                if(sortKey.equals("id")){
+                    return ascending ? nameAsIdentifier(o1.getName()).compareTo(nameAsIdentifier(o2.getName())) :
+                                       nameAsIdentifier(o2.getName()).compareTo(nameAsIdentifier(o1.getName()));
+                }
+                return 0;
+            }
+        });
+        return entities;
     }
 
     //- PRIVATE
