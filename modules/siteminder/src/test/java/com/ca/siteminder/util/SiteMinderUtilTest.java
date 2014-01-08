@@ -9,17 +9,23 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 import netegrity.siteminder.javaagent.Attribute;
+import netegrity.siteminder.javaagent.UserCredentials;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.security.cert.X509Certificate;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SiteMinderUtilTest {
 
     public static final String HOST_NAME = new String(HexUtils.decodeBase64("0Y7RgNCwLdGC0LXRgdGC"), Charsets.UTF8);
@@ -104,5 +110,28 @@ public class SiteMinderUtilTest {
             }
         }
 
+    }
+
+    @Test
+    @BugId("SSG-7530")
+    public void testHandleCertificates() throws Exception {
+       final byte[] certBytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+        X509Certificate mockCertificate = mock(X509Certificate.class);
+        when(mockCertificate.getEncoded()).thenReturn(certBytes);
+        UserCredentials userCreds = new UserCredentials();
+        assertTrue(SiteMinderUtil.handleCertificate(mockCertificate, userCreds));
+        assertEquals(certBytes, userCreds.certBinary);
+    }
+
+    @Test
+    @BugId("SSG-7530")
+    public void testHandleCertificate_certNotPresent() throws Exception {
+        assertFalse(SiteMinderUtil.handleCertificate(null, new UserCredentials()));
+    }
+
+    @Test
+    @BugId("SSG-7530")
+    public void testHandleCertificate_userCredentialsIsNull() throws Exception {
+        assertFalse(SiteMinderUtil.handleCertificate(mock(X509Certificate.class), null));
     }
 }
