@@ -28,8 +28,10 @@ public class ConditionalIgnoreRule implements TestRule {
     @Override
     public Statement apply(final Statement statement, final Description description) {
         Statement result = statement;
-        // does this method have ConditionalIgnore annotation ?
-        final ConditionalIgnore annotation = description.getAnnotation(ConditionalIgnore.class);
+        // does this method or class have ConditionalIgnore annotation. If both do prefer the method annotation
+        final ConditionalIgnore methodAnnotation = description.getAnnotation(ConditionalIgnore.class);
+        final ConditionalIgnore classAnnotation = description.getTestClass().getAnnotation(ConditionalIgnore.class);
+        final ConditionalIgnore annotation = methodAnnotation != null ? methodAnnotation : classAnnotation;
         if (annotation != null) {
             // if it does, extract the specified condition i.e. IgnoreCondition instance.
             final IgnoreCondition condition = newCondition(annotation);
