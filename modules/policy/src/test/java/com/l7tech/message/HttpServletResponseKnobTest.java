@@ -19,6 +19,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -104,12 +105,11 @@ public class HttpServletResponseKnobTest {
     public void beginResponse() throws Exception {
         final HttpServletResponseKnob knob = new HttpServletResponseKnob(mockServletResponse);
         knob.setStatus(200);
-        knob.addCookie(new HttpCookie("http://localhost:8080", "/", "choc=chip"));
         headers.add(new Pair<String, Object>("foo", "bar"));
         headers.add(new Pair<String, Object>("foo", "bar2"));
         headers.add(new Pair<String, Object>("date", new Long(1234)));
 
-        knob.beginResponse(headers);
+        knob.beginResponse(headers, Collections.singletonList(new HttpCookie("http://localhost:8080", "/", "choc=chip")));
 
         assertEquals(200, mockServletResponse.getStatus());
         assertEquals(2, mockServletResponse.getHeaderNames().size());

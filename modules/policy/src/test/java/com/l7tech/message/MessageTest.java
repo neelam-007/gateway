@@ -1,6 +1,5 @@
 package com.l7tech.message;
 
-import com.l7tech.common.io.XmlUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,16 +14,35 @@ public class MessageTest {
     }
 
     @Test
-    public void getHeadersKnobBeforeInitialize() {
-        assertNull(message.getHeadersKnob());
+    public void attachHeadersKnob() {
+        message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
+        assertTrue(message.getHeadersKnob().getHeaders().isEmpty());
+        assertEquals(message.getHeadersKnob(), message.getKnob(HeadersKnob.class));
+    }
+
+    @Test
+    public void getHeadersKnob() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        assertNotNull(headersKnob);
+        assertTrue(headersKnob.getHeaders().isEmpty());
+        assertEquals(headersKnob, message.getKnob(HeadersKnob.class));
+    }
+
+    @Test
+    public void getHttpCookiesKnob() {
+        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
+        assertNotNull(cookiesKnob);
+        assertTrue(cookiesKnob.getCookies().isEmpty());
+        assertEquals(cookiesKnob, message.getKnob(HttpCookiesKnob.class));
+    }
+
+    @Test
+    public void findHeadersKnobNotAttached() {
         assertNull(message.getKnob(HeadersKnob.class));
     }
 
     @Test
-    public void getHeadersKnobAfterInitialize() {
-        message.initialize(XmlUtil.createEmptyDocument());
-        assertNotNull(message.getHeadersKnob());
-        assertTrue(message.getHeadersKnob().getHeaders().isEmpty());
-        assertEquals(message.getHeadersKnob(), message.getKnob(HeadersKnob.class));
+    public void findHttpCookiesKnobNotAttached() {
+        assertNull(message.getKnob(HttpCookiesKnob.class));
     }
 }

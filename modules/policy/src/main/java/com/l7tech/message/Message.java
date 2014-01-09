@@ -42,7 +42,6 @@ public final class Message implements Closeable {
     private MessageFacet rootFacet;
 
     private Map<MessageRole, Message> relatedMessages = new HashMap<MessageRole, Message>();
-    private HeadersKnob headersKnob = new HeadersKnobSupport();
 
     // Quick lookup knob cache
     private HttpRequestKnob httpRequestKnob;
@@ -56,6 +55,8 @@ public final class Message implements Closeable {
     private SecurityKnob securityKnob;
     private JsonKnob jsonKnob;
     private boolean initialized;
+    private HeadersKnob headersKnob;
+    private HttpCookiesKnob cookiesKnob;
 
     /**
      * Returns the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
@@ -703,11 +704,35 @@ public final class Message implements Closeable {
     }
 
     /**
-     * @return the HeadersKnob attached to this message or null if the message has not been initialized or is closed.
+     * @return the HeadersKnob attached to this message, creating one if necessary.
      */
-    @Nullable
+    @NotNull
     public HeadersKnob getHeadersKnob() {
-        return getKnob(HeadersKnob.class);
+        HeadersKnob headersKnob = getKnob(HeadersKnob.class);
+        if (headersKnob == null) {
+            rootFacet = new KnobHolderFacet(this, rootFacet, new HeadersKnobSupport(), false, HeadersKnob.class);
+            headersKnob = getKnob(HeadersKnob.class);
+            if (headersKnob == null) {
+                throw new IllegalStateException("Could not create HeadersKnob");
+            }
+        }
+        return headersKnob;
+    }
+
+    /**
+     * @return the HttpCookiesKnob attached to this message, creating one if necessary.
+     */
+    @NotNull
+    public HttpCookiesKnob getHttpCookiesKnob() {
+        HttpCookiesKnob cookiesKnob = getKnob(HttpCookiesKnob.class);
+        if (cookiesKnob == null) {
+            rootFacet = new KnobHolderFacet(this, rootFacet, new HttpCookiesKnobImpl(), false, HttpCookiesKnob.class);
+            cookiesKnob = getKnob(HttpCookiesKnob.class);
+            if (cookiesKnob == null) {
+                throw new IllegalStateException("Could not create HttpCookiesKnob");
+            }
+        }
+        return cookiesKnob;
     }
 
     public void notifyMessage(Message message, MessageRole role) {
@@ -832,7 +857,10 @@ public final class Message implements Closeable {
         if (c == JsonKnob.class)
             return jsonKnob != null ? (T)jsonKnob : (T)(jsonKnob = (JsonKnob)findKnob(c));
         if (c == HeadersKnob.class)
-            return (T)headersKnob;
+            return headersKnob != null ? (T)headersKnob : (T)(headersKnob = (HeadersKnob)findKnob(c));
+        if (c == HttpCookiesKnob.class) {
+            return cookiesKnob != null ? (T)cookiesKnob : (T)(cookiesKnob = (HttpCookiesKnob)findKnob(c));
+        }
 
         return (T)findKnob(c);
     }

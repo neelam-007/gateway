@@ -700,12 +700,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     //this Message has already been initialized, close it so it can be reused
                     routedResponseDestination.close();
                 }
-                routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                    @Override
-                    public void addCookie(HttpCookie cookie) {
-                        // TODO what to do with the cookie?
-                    }
-                });
+                routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});
             }
 
             AssertionStatus assertionStatus = readResponse(context, routedResponse, routedResponseDestination, maxBytes);

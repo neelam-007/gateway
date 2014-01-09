@@ -1,9 +1,11 @@
 package com.l7tech.server;
 
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -18,9 +20,9 @@ import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -140,7 +142,7 @@ public class SoapMessageProcessingServletTest {
     }
 
     @Test
-    public void responseHeadersAddedToResponseKnob() throws Exception {
+    public void contextResponseHeadersAddedToResponse() throws Exception {
         request.setContent("test".getBytes());
         doAnswer(new Answer() {
             @Override
@@ -155,6 +157,54 @@ public class SoapMessageProcessingServletTest {
         final List<Object> headerValues = response.getHeaders("foo");
         assertEquals(1, headerValues.size());
         assertEquals("bar", headerValues.get(0));
+    }
+
+    @Test
+    public void requestCookiesAddedToContext() throws Exception {
+        request.setCookies(new Cookie("1", "a"), new Cookie("2", "b"));
+        request.setContent("test".getBytes());
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getRequest().getHttpCookiesKnob();
+                final Set<HttpCookie> cookies = cookiesKnob.getCookies();
+                final Map<String, String> cookiesMap = new HashMap<>();
+                for (final HttpCookie cookie : cookies) {
+                    cookiesMap.put(cookie.getCookieName(), cookie.getCookieValue());
+                }
+                assertEquals(2, cookiesMap.size());
+                assertEquals("a", cookiesMap.get("1"));
+                assertEquals("b", cookiesMap.get("2"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+    }
+
+    @Test
+    public void contextResponseCookiesAddedToResponse() throws Exception {
+        request.setContent("test".getBytes());
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, false, "test"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        final Map<String, String> cookiesMap = new HashMap<>();
+        for (final Cookie cookie : response.getCookies()) {
+            cookiesMap.put(cookie.getName(), cookie.getValue());
+        }
+        assertEquals(2, cookiesMap.size());
+        assertEquals("a", cookiesMap.get("1"));
+        assertEquals("b", cookiesMap.get("2"));
     }
 
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {

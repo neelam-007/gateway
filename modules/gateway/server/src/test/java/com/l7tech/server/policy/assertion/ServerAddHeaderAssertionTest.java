@@ -169,9 +169,6 @@ public class ServerAddHeaderAssertionTest {
         mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), mess);
 
-        HeadersKnob existingKnob = mess.getKnob(HeadersKnob.class);
-        assertNotNull(existingKnob);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
 
         final HeadersKnob headersKnob = mess.getHeadersKnob();
@@ -440,11 +437,6 @@ public class ServerAddHeaderAssertionTest {
     public void nullHeaderName() throws Exception {
         ass.setHeaderName(null);
         serverAssertion.checkRequest(pec);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void messageNotInitialized() throws Exception {
-        serverAssertion.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()));
     }
 
     @Test

@@ -66,7 +66,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean isRequestPolicyViolated = false;
     private boolean isRequestClaimingWrongPolicyVersion = false;
     private PublishedService service;
-    private Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
     private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
     private final Map<String,Object> variables = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
     private PolicyContextCache cache;
@@ -291,30 +290,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public PolicyContextCache getCache() {
         return cache;
-    }
-
-    @Override
-    public Set<HttpCookie> getCookies() {
-        return Collections.unmodifiableSet(cookies);
-    }
-
-    @Override
-    public void addCookie(HttpCookie cookie) {
-        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
-        for (HttpCookie currentCookie : cookies) {
-            if (ObjectUtils.equals(currentCookie.getCookieName(), cookie.getCookieName()) &&
-                    ObjectUtils.equals(currentCookie.getDomain(), cookie.getDomain()) &&
-                    ObjectUtils.equals(currentCookie.getPath(), cookie.getPath())) {
-                toRemove.add(currentCookie);
-            }
-        }
-        cookies.removeAll(toRemove);
-        cookies.add(cookie);
-    }
-
-    @Override
-    public void deleteCookie(HttpCookie cookie) {
-        cookies.remove(cookie);
     }
 
     @Override

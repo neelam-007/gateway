@@ -257,12 +257,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
                     } else {
                         bridgeResponse = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
-                        bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                            @Override
-                            public void addCookie(HttpCookie cookie) {
-                                // TODO what to do with the cookie?
-                            }
-                        });
+                        bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});
                     }
 
                     // enforce xml size limit
@@ -644,7 +639,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 Set cookies = Collections.EMPTY_SET;
                 if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                     cookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
-                    cookies = context.getCookies();
+                    cookies = bridgeRequest.getHttpCookiesKnob().getCookies();
                 }
                 //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
@@ -657,7 +652,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                     //add or replace cookies
                     for (HttpCookie cookie : cookies) {
-                        context.addCookie(cookie);
+                        bridgeResponse.getHttpCookiesKnob().addCookie(cookie);
                     }
                 }
             }
@@ -838,7 +833,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
 
                                 //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
+                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getRequest().getHttpCookiesKnob().getCookies())));
 
                                 return doGetResponse(false);
                             }

@@ -18,7 +18,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.server.audit.Auditor;
@@ -49,9 +48,7 @@ import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -201,11 +198,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
-            if (request.getHeadersKnob() != null) {
-                ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
-            } else {
-                logger.log(Level.WARNING, "HeadersKnob is missing from request.");
-            }
+            ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
 
             final Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {
@@ -246,12 +239,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             // Send response headers
-            propagateCookies(context, reqKnob, respKnob);
+            final Set<HttpCookie> cookies = getCookiesToPropagate(context, reqKnob);
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
-            if (responseHeaders == null) {
-                logger.log(Level.WARNING, "Unable to load headers on response because HeadersKnob is null.");
-            }
-            respKnob.beginResponse(responseHeaders != null ? responseHeaders.getHeaders() : Collections.<Pair<String, Object>>emptyList());
+            respKnob.beginResponse(responseHeaders.getHeaders(), cookies);
 
             int routeStat = respKnob.getStatus();
             if (routeStat < 1) {
@@ -457,31 +447,32 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void initCookies(Cookie[] cookies, PolicyEnforcementContext context) {
         if(cookies!=null) {
+            final Message request = context.getRequest();
             for (Cookie cookie : cookies) {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.log(Level.FINE, "Adding request cookie to context; name='" + cookie.getName() + "'.");
                 }
-                context.addCookie(CookieUtils.fromServletCookie(cookie, false));
+                request.getHttpCookiesKnob().addCookie(CookieUtils.fromServletCookie(cookie, false));
             }
         }
     }
 
-    private void propagateCookies(PolicyEnforcementContext context, HttpRequestKnob reqKnob, HttpResponseKnob resKnob) {
-        Set<HttpCookie> cookies = context.getCookies();
-        for (HttpCookie cookie : cookies) {
-            if (cookie.isNew()) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
-                }
-                URI url = URI.create(reqKnob.getRequestUrl());
-                //SSG-6881 Determine to overwrite the path using the SSG request path or the original path.
-                if (cookie.isOverwritePath()) {
-                    resKnob.addCookie(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
-                } else {
-                    resKnob.addCookie(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), null));
-                }
+    private Set<HttpCookie> getCookiesToPropagate(PolicyEnforcementContext context, HttpRequestKnob reqKnob) {
+        final Set<HttpCookie> cookies = new HashSet<>();
+        Set<HttpCookie> knobCookies = context.getResponse().getHttpCookiesKnob().getCookies();
+        for (HttpCookie cookie : knobCookies) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
+            }
+            URI url = URI.create(reqKnob.getRequestUrl());
+            //SSG-6881 Determine to overwrite the path using the SSG request path or the original path.
+            if (cookie.isOverwritePath()) {
+                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
+            } else {
+                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), null));
             }
         }
+        return cookies;
     }
 
     private String makePolicyUrl(HttpServletRequest hreq, Goid goid) {

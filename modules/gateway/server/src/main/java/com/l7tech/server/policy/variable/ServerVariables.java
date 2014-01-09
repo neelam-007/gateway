@@ -639,22 +639,24 @@ public class ServerVariables {
                     new Getter() {
                         @Override
                         public Object get(String name, PolicyEnforcementContext context) {
-                            if (context.getCookies() == null || context.getCookies().size() == 0) {
+                            final Set<HttpCookie> cookies = context.getResponse().getHttpCookiesKnob().getCookies();
+                            if (cookies == null || cookies.size() == 0) {
                                 return true;
                             } else {
                                 //return the first one from the cookie list.
-                                return context.getCookies().iterator().next().isOverwritePath();
+                                return cookies.iterator().next().isOverwritePath();
                             }
                         }
                     },
                     new Setter() {
                         @Override
                         public void set(String name, Object value, PolicyEnforcementContext context) {
-                            if (context.getCookies() == null || context.getCookies().isEmpty()) {
+                            final Set<HttpCookie> cookies = context.getResponse().getHttpCookiesKnob().getCookies();
+                            if (cookies == null || cookies.isEmpty()) {
                                 return;
                             } else {
                                 boolean val = Boolean.parseBoolean(value.toString());
-                                Iterator<HttpCookie> i = context.getCookies().iterator();
+                                Iterator<HttpCookie> i = cookies.iterator();
                                 while (i.hasNext()) {
                                     i.next().setOverwritePath(val);
                                 }

@@ -164,10 +164,6 @@ public class ServerHttpNegotiateTest {
 
     private static class Response extends AbstractHttpResponseKnob {
 
-        @Override
-        public void addCookie(HttpCookie cookie) {
-        }
-
         public List<Pair<String,Integer>> getChallengesToSend() {
             Collections.reverse(challengesToSend);
             return challengesToSend;

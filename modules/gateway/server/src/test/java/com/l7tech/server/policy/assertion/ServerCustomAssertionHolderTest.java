@@ -461,8 +461,8 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
 
         // build the context
         final PolicyEnforcementContext context = makeContext(request, response);
-        context.addCookie(testHttpCookies[0]);
-        context.addCookie(testHttpCookies[1]);
+        request.getHttpCookiesKnob().addCookie(testHttpCookies[0]);
+        request.getHttpCookiesKnob().addCookie(testHttpCookies[1]);
 
         return context;
     }
@@ -471,7 +471,7 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
      * Do the actual test for updatedCookies and customAssertionsCookiesToOmit context-map
      */
     private void doTestUpdateAndDeletedCookies(final PolicyEnforcementContext context) {
-        Object[] cookies = context.getCookies().toArray();
+        Object[] cookies = context.getRequest().getHttpCookiesKnob().getCookies().toArray();
 
         final int totalNumCookies = testHttpCookies.length + newCookies.length - deleteCookieNames.length;
         assertSame(4, totalNumCookies);
@@ -481,11 +481,6 @@ public class ServerCustomAssertionHolderTest extends CustomAssertionsPolicyTestB
         compareCookie(cookies[1], CookieUtils.fromServletCookie(newCookies[1], false));
         compareCookie(cookies[2], CookieUtils.fromServletCookie(newCookies[2], false));
         compareCookie(cookies[3], CookieUtils.fromServletCookie(newCookies[3], false));
-
-        final HeadersKnob requestHeadersKnob = context.getRequest().getHeadersKnob();
-        final String[] cookieValues = requestHeadersKnob.getHeaderValues("Cookie");
-        assertEquals(1, cookieValues.length);
-        assertEquals(testHttpCookies[0].getCookieName() + "=" + testHttpCookies[0].getCookieValue(), cookieValues[0]);
     }
 
     /**

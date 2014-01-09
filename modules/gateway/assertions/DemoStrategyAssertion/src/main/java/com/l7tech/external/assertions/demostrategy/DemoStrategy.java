@@ -71,7 +71,7 @@ public class DemoStrategy<ST> extends AbstractFailoverStrategy<ST> implements Co
     public void reportContent(Object content, Feedback feedback) {
         PolicyEnforcementContext pec = (PolicyEnforcementContext) content;
         logger.info("HTTP Status:" + pec.getResponse().getHttpResponseKnob().getStatus());
-        Set<HttpCookie> cookies  = pec.getCookies();
+        Set<HttpCookie> cookies  = pec.getResponse().getHttpCookiesKnob().getCookies();
         if (cookies != null) {
             for (Iterator<HttpCookie> iterator = cookies.iterator(); iterator.hasNext(); ) {
                 HttpCookie next =  iterator.next();

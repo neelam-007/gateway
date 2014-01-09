@@ -357,7 +357,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
              */
             @Override
             public void addCookie(Cookie cookie) {
-                pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
+                pec.getResponse().getHttpCookiesKnob().addCookie(CookieUtils.fromServletCookie(cookie, true));
             }
 
             /**
@@ -540,7 +540,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             context = defaultContextMap;
 
             // add context cookies
-            Vector newCookies = toServletCookies(pec.getCookies());
+            Vector newCookies = toServletCookies(pec.getRequest().getHttpCookiesKnob().getCookies());
             context.put("updatedCookies", newCookies);
             context.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
 
@@ -623,38 +623,27 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         if (cookieNames == null || cookieNames.length == 0 || pec == null || pec.getRequest() == null) return;
 
         final Message message = pec.getRequest();
-        final HeadersKnob headersKnob = message.getKnob(HeadersKnob.class);
-        final HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
+        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
 
-        if (hrk != null && headersKnob != null && !headersKnob.containsHeader("Cookie")) {
+        HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
+        if (hrk != null && cookiesKnob.getCookies().isEmpty()) {
             String[] oldValues = hrk.getHeaderValues("Cookie");
             for (String oldValue : oldValues) {
-                headersKnob.addHeader("Cookie", oldValue);
+                cookiesKnob.addCookie(new HttpCookie(oldValue));
             }
         }
 
         for (String cookieName: cookieNames) {
-            // Remove the cookies with the same cookie name from OutboundHeaders
-            if (headersKnob != null && headersKnob.containsHeader("Cookie")) {
-                String[] values = headersKnob.getHeaderValues("Cookie");
-
-                for (String value: values) {
-                    if (cookieName.equals(new HttpCookie(".", "/", value).getCookieName())) {
-                        headersKnob.removeHeader("Cookie", value);
-                    }
-                }
-            }
-
-            // Also remove the cookies with the same cookie name from pec context
+            // Remove the cookies with the same cookie name
             List<HttpCookie> toDelete = new ArrayList<>();
-            Set<HttpCookie> contextCookies = pec.getCookies();
+            Set<HttpCookie> contextCookies = cookiesKnob.getCookies();
             for (HttpCookie cookie: contextCookies) {
                 if (cookie.getCookieName().equals(cookieName)) {
                     toDelete.add(cookie);
                 }
             }
             for (HttpCookie cookie: toDelete) {
-                pec.deleteCookie(cookie);
+                cookiesKnob.deleteCookie(cookie);
             }
         }// for
     }
@@ -705,7 +694,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 final Cookie cookie = (Cookie) cooky;
                 if ( !originals.contains( cookie ) ) {
                     // doesn't really matter if this has already been added
-                    policyContext.addCookie( CookieUtils.fromServletCookie( cookie, true ) );
+                    policyContext.getRequest().getHttpCookiesKnob().addCookie(CookieUtils.fromServletCookie(cookie, true));
                 }
             }
         }
@@ -755,7 +744,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             this.contextMap = defaultContextMap;
 
             // add context cookies
-            Vector newCookies = toServletCookies(policyContext.getCookies());
+            Vector newCookies = toServletCookies(policyContext.getRequest().getHttpCookiesKnob().getCookies());
             contextMap.put("updatedCookies", newCookies);
             contextMap.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
 

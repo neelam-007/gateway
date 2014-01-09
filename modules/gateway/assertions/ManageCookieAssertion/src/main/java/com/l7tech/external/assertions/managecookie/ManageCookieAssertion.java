@@ -85,7 +85,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"routing"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/cookie.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(

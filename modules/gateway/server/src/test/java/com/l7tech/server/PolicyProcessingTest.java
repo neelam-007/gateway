@@ -510,7 +510,7 @@ public class PolicyProcessingTest {
         Result result = processMessage("/httproutecookie", requestMessage1, 0);
 
         assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        assertTrue("Outbound response cookie missing", newCookieExists(result.context.getCookies(),"cookie", "outvalue"));
+        assertTrue("Outbound response cookie missing", cookieExists(result.context.getResponse().getHttpCookiesKnob().getCookies(),"cookie", "outvalue"));
 
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
@@ -518,7 +518,7 @@ public class PolicyProcessingTest {
         Result result2 = processMessage("/httproutenocookie", requestMessage1, 0);
 
         assertFalse( "Outbound request cookie present", headerExists( mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue" ) );
-        assertFalse( "Outbound response cookie present", newCookieExists( result2.context.getCookies(), "cookie", "outvalue" ) );
+        assertFalse( "Outbound response cookie present", cookieExists( result2.context.getResponse().getHttpCookiesKnob().getCookies(), "cookie", "outvalue" ) );
     }
 
     /**
@@ -1609,7 +1609,7 @@ public class PolicyProcessingTest {
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             //TODO cleanup cookie init?
-            context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
+            request.getHttpCookiesKnob().addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
 
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());
@@ -1877,13 +1877,12 @@ public class PolicyProcessingTest {
     /**
      * Check that there is a new cookie with the given name / value
      */
-    private static boolean newCookieExists(Set<HttpCookie> cookies, String name, String value) {
+    private static boolean cookieExists(Set<HttpCookie> cookies, String name, String value) {
         boolean exists = false;
 
         if (cookies != null) {
             for (HttpCookie cookie : cookies) {
-                if (cookie.isNew() &&
-                    name.equals(cookie.getCookieName()) &&
+                if (name.equals(cookie.getCookieName()) &&
                     (value == null || value.equals(cookie.getCookieValue()))) {
                     exists = true;
                     break;

@@ -11,10 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -34,12 +31,11 @@ public class NettyHttpResponseKnobTest {
         response = new DefaultHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.PROCESSING);
         knob = new NettyHttpResponseKnob(response);
         knob.setStatus(200);
-        knob.addCookie(new HttpCookie("http://localhost:8080", "/", "choc=chip"));
         headers.add(new Pair<String, Object>("foo", "bar"));
         headers.add(new Pair<String, Object>("foo", "bar2"));
         headers.add(new Pair<String, Object>("date", new GregorianCalendar(2013, 11, 13, 0, 0, 0).getTimeInMillis()));
 
-        knob.beginResponse(headers);
+        knob.beginResponse(headers, Collections.singletonList(new HttpCookie("http://localhost:8080", "/", "choc=chip")));
 
         assertEquals(HttpResponseStatus.OK, response.getStatus());
         assertEquals(3, response.getHeaderNames().size());

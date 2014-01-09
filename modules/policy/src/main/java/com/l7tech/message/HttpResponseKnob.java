@@ -12,11 +12,6 @@ import com.l7tech.common.http.HttpCookie;
  * Information about a response to be sent via HTTP.
  */
 public interface HttpResponseKnob extends MessageKnob {
-    /**
-     * Adds the specified {@link HttpCookie} to the response
-     * @param cookie the {@link HttpCookie} to be added. Must not be null.
-     */
-    void addCookie(HttpCookie cookie);
 
     /**
      * Add a WWW-Authenticate: challenge value to this response.  The actual challenge will not be sent unless

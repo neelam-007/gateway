@@ -22,7 +22,6 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.SET_COOKIE;
  */
 public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
     private final HttpResponse httpResponse;
-    private final List<Cookie> cookiesToSend = new ArrayList<Cookie>();
 
 
     public NettyHttpResponseKnob(HttpResponse httpResponse) {
@@ -30,24 +29,21 @@ public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
         statusToSet = HttpResponseStatus.OK.getCode();
     }
 
-    @Override
-    public void addCookie(HttpCookie cookie) {
-        cookiesToSend.add(CookieUtils.toServletCookie(cookie));
-    }
-
     /**
      * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
-     * @deprecated use {@link #beginResponse(java.util.Collection)}.
+     * @deprecated use {@link #beginResponse(java.util.Collection, java.util.Collection)}.
      */
     @Deprecated
     public void beginResponse() {
-        beginResponse(Collections.<Pair<String, Object>>emptyList());
+        beginResponse(Collections.<Pair<String, Object>>emptyList(), Collections.<HttpCookie>emptyList());
     }
 
     /**
      * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @param headersToSend the collection of headers to send with the response.
+     * @param cookiesToSend the collection of HttpCookies to send with the response.
      */
-    public void beginResponse(@NotNull final Collection<Pair<String, Object>> headersToSend) {
+    public void beginResponse(@NotNull final Collection<Pair<String, Object>> headersToSend, @NotNull final Collection<HttpCookie> cookiesToSend) {
         httpResponse.setStatus(HttpResponseStatus.valueOf(statusToSet));
 
         for ( final Pair<String, Object> pair : headersToSend ) {
@@ -60,11 +56,11 @@ public class NettyHttpResponseKnob extends AbstractHttpResponseKnob {
         }
 
         CookieEncoder cookieEncoder = new CookieEncoder(true);
-        for ( final Cookie cookie : cookiesToSend ) {
-            org.jboss.netty.handler.codec.http.Cookie c = new DefaultCookie(cookie.getName(), cookie.getValue());
+        for ( final HttpCookie cookie : cookiesToSend ) {
+            org.jboss.netty.handler.codec.http.Cookie c = new DefaultCookie(cookie.getCookieName(), cookie.getCookieValue());
             c.setDomain(cookie.getDomain());
             c.setComment(cookie.getComment());
-            c.setSecure(cookie.getSecure());
+            c.setSecure(cookie.isSecure());
             c.setMaxAge(cookie.getMaxAge());
             c.setPath(cookie.getPath());
             c.setVersion(cookie.getVersion());

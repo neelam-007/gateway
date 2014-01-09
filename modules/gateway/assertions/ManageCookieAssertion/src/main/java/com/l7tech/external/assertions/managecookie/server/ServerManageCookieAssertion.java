@@ -3,11 +3,14 @@ package com.l7tech.external.assertions.managecookie.server;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.managecookie.ManageCookieAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpCookiesKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Either;
 import org.apache.commons.lang.ObjectUtils;
@@ -28,7 +31,7 @@ import static com.l7tech.external.assertions.managecookie.ManageCookieAssertion.
  *
  * @see com.l7tech.external.assertions.managecookie.ManageCookieAssertion
  */
-public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7tech.external.assertions.managecookie.ManageCookieAssertion> {
+public class ServerManageCookieAssertion extends AbstractMessageTargetableServerAssertion<ManageCookieAssertion> {
     private final String[] variablesUsed;
 
     public ServerManageCookieAssertion(final com.l7tech.external.assertions.managecookie.ManageCookieAssertion assertion) throws PolicyAssertionException {
@@ -36,28 +39,30 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    @Override
+    protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message, final String messageDescription, final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         validateRequiredFields(assertion.getOperation());
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         switch (assertion.getOperation()) {
             case ADD:
-                return doAdd(context, variableMap);
+                return doAdd(message, variableMap);
             case REMOVE:
-                return doRemove(context, variableMap);
+                return doRemove(message, variableMap);
             case UPDATE:
-                return doUpdate(context, variableMap);
+                return doUpdate(message, variableMap);
             default:
                 throw new PolicyAssertionException(assertion, "Unsupported operation: " + assertion.getOperation());
         }
     }
 
-    private AssertionStatus doUpdate(final PolicyEnforcementContext context, final Map<String, Object> variableMap) {
+    private AssertionStatus doUpdate(final Message message, final Map<String, Object> variableMap) {
         AssertionStatus status = AssertionStatus.NONE;
         final Either<Map<String, CookieCriteria>, String> result = expandCriteria(variableMap);
         if (result.isLeft()) {
             final List<HttpCookie> matchedCookies = new ArrayList<>();
             final List<HttpCookie> replacementCookies = new ArrayList<>();
-            for (final HttpCookie cookie : context.getCookies()) {
+            final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
+            for (final HttpCookie cookie : cookiesKnob.getCookies()) {
                 if (matchAllCriteria(cookie, result.left())) {
                     matchedCookies.add(cookie);
                     final HttpCookie replacement = createCookie(cookie, variableMap);
@@ -74,11 +79,11 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
                 logAndAudit(AssertionMessages.COOKIES_NOT_MATCHED, result.left().toString());
             } else if (status == AssertionStatus.NONE) {
                 for (final HttpCookie matchedCookie : matchedCookies) {
-                    context.deleteCookie(matchedCookie);
+                    cookiesKnob.deleteCookie(matchedCookie);
                     logAndAudit(AssertionMessages.COOKIE_REMOVED, matchedCookie.getCookieName(), matchedCookie.getCookieValue());
                 }
                 for (final HttpCookie replacementCookie : replacementCookies) {
-                    context.addCookie(replacementCookie);
+                    cookiesKnob.addCookie(replacementCookie);
                     logAndAudit(AssertionMessages.COOKIE_ADDED, replacementCookie.getCookieName(), replacementCookie.getCookieValue());
                 }
             }
@@ -89,11 +94,11 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
         return status;
     }
 
-    private AssertionStatus doRemove(final PolicyEnforcementContext context, final Map<String, Object> variableMap) {
+    private AssertionStatus doRemove(final Message message, final Map<String, Object> variableMap) {
         AssertionStatus status = AssertionStatus.NONE;
         final Either<Map<String, CookieCriteria>, String> result = expandCriteria(variableMap);
         if (result.isLeft()) {
-            if (!removeCookies(context, result.left())) {
+            if (!removeCookies(message, result.left())) {
                 logAndAudit(AssertionMessages.COOKIES_NOT_MATCHED, result.left().toString());
             }
         } else {
@@ -103,18 +108,19 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
         return status;
     }
 
-    private AssertionStatus doAdd(final PolicyEnforcementContext context, final Map<String, Object> variableMap) throws PolicyAssertionException {
+    private AssertionStatus doAdd(final Message message, final Map<String, Object> variableMap) throws PolicyAssertionException {
         AssertionStatus status = AssertionStatus.NONE;
         final HttpCookie cookie = createCookie(variableMap);
+        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
         if (cookie != null) {
-            for (final HttpCookie existingCookie : context.getCookies()) {
+            for (final HttpCookie existingCookie : cookiesKnob.getCookies()) {
                 if (cookie.getCookieName().equals(existingCookie.getCookieName()) && ObjectUtils.equals(cookie.getDomain(), existingCookie.getDomain()) && ObjectUtils.equals(cookie.getPath(), existingCookie.getPath())) {
                     logAndAudit(AssertionMessages.COOKIE_ALREADY_EXISTS, cookie.getCookieName(), cookie.getDomain(), cookie.getPath());
                     status = AssertionStatus.FALSIFIED;
                 }
             }
             if (status == AssertionStatus.NONE) {
-                context.addCookie(cookie);
+                cookiesKnob.addCookie(cookie);
                 logAndAudit(AssertionMessages.COOKIE_ADDED, cookie.getCookieName(), cookie.getCookieValue());
             }
         } else {
@@ -155,7 +161,7 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
                     final Integer maxAgeInt = StringUtils.isBlank(maxAge) ? -1 : Integer.valueOf(maxAge);
                     cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
                             StringUtils.isBlank(domain) ? null : domain, maxAgeInt, Boolean.parseBoolean(secure),
-                            StringUtils.isBlank(comment) ? null : comment, assertion.getTarget() == TargetMessageType.RESPONSE);
+                            StringUtils.isBlank(comment) ? null : comment);
                 } catch (final NumberFormatException e) {
                     logAndAudit(AssertionMessages.INVALID_COOKIE_MAX_AGE, maxAge);
                 }
@@ -199,10 +205,6 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
     }
 
     private void validateRequiredFields(final ManageCookieAssertion.Operation operation) throws PolicyAssertionException {
-        if (assertion.getTarget() == TargetMessageType.OTHER) {
-            // for now we do not support TargetMessageType.OTHER until we move cookies to be stored on the message instead of the PEC.
-            throw new PolicyAssertionException(assertion, "Unsupported target: " + assertion.getOtherTargetMessageVariable());
-        }
         if (operation == ManageCookieAssertion.Operation.ADD) {
             final Map<String, ManageCookieAssertion.CookieAttribute> cookieAttributes = assertion.getCookieAttributes();
             if (!cookieAttributes.containsKey(ManageCookieAssertion.NAME)) {
@@ -228,22 +230,21 @@ public class ServerManageCookieAssertion extends AbstractServerAssertion<com.l7t
     /**
      * Remove cookies which match the given cookie criteria from the context.
      *
-     * @param context          the PolicyEnforcementContext which contains cookies to remove.
+     * @param message          the message which contains cookies to remove.
      * @param expandedCriteria the cookie attribute criteria which should already have any referenced context variables expanded.
      * @return true if at least one cookie was removed.
      */
-    private boolean removeCookies(final PolicyEnforcementContext context, final Map<String, CookieCriteria> expandedCriteria) {
+    private boolean removeCookies(final Message message, final Map<String, CookieCriteria> expandedCriteria) {
         boolean atLeastOneRemoved = false;
         final List<HttpCookie> cookiesToRemove = new ArrayList<>();
-        for (final HttpCookie cookie : context.getCookies()) {
-            if (matchAllCriteria(cookie, expandedCriteria) &&
-                    (assertion.getTarget() == TargetMessageType.REQUEST && !cookie.isNew() ||
-                            assertion.getTarget() == TargetMessageType.RESPONSE && cookie.isNew())) {
+        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
+        for (final HttpCookie cookie : cookiesKnob.getCookies()) {
+            if (matchAllCriteria(cookie, expandedCriteria)) {
                 cookiesToRemove.add(cookie);
             }
         }
         for (final HttpCookie cookie : cookiesToRemove) {
-            context.deleteCookie(cookie);
+            cookiesKnob.deleteCookie(cookie);
             atLeastOneRemoved = true;
             logAndAudit(AssertionMessages.COOKIE_REMOVED, cookie.getCookieName(), cookie.getCookieValue());
         }
