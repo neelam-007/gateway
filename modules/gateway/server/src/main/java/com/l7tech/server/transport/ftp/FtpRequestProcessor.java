@@ -364,7 +364,6 @@ public class FtpRequestProcessor {
 
     private void processListCommand(final FtpIoSession ftpSession, final FtpServerContext ftpServerContext,
                                     final FtpRequest ftpRequest, final FtpCommand command) throws FtpException {
-        logger.log(Level.INFO, "HANDLING LIST: " + ftpRequest.getCommand() + " " + ftpRequest.getArgument());
         // reset state variables
         ftpSession.resetState();
 
@@ -802,8 +801,8 @@ public class FtpRequestProcessor {
             }
 
             @Override
-            public FtpCommand getCommand() {
-                return command;
+            public String getCommand() {
+                return command.toString();
             }
 
             @Override

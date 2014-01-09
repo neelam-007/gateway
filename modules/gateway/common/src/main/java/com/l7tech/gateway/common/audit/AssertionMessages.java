@@ -559,11 +559,13 @@ public class AssertionMessages extends Messages {
     public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
     public static final M FTP_ROUTING_NO_COMMAND = m(6055, Level.WARNING, "No FTP command specified");
     public static final M FTP_ROUTING_UNSUPPORTED_COMMAND = m(6056, Level.WARNING, "FTP command ''{0}'' is not supported");
-    public static final M FTP_ROUTING_SUCCESS_TRANSIENT_FAILURE = m(6057, Level.INFO, "FTP routing attempt returned transient negative completion reply code for command ''{0}'': {1}");
-    public static final M FTP_ROUTING_SUCCESS_PERMANENT_FAILURE = m(6058, Level.INFO, "FTP routing attempt returned permanent negative completion reply code for command ''{0}'': {1}");
-    public static final M FTP_ROUTING_FAILED_TRANSIENT_REPLY = m(6059, Level.WARNING, "FTP routing failed; transient negative completion reply code returned for command ''{0}'': {1}");
-    public static final M FTP_ROUTING_FAILED_PERMANENT_REPLY = m(6060, Level.WARNING, "FTP routing failed; permanent negative completion reply code returned for command ''{0}'': {1}");
-    public static final M FTP_ROUTING_SUCCEEDED = m(6061, Level.FINE, "FTP routing succeeded");
+    public static final M FTP_ROUTING_SUCCEEDED_TRANSIENT_FAILURE = m(6057, Level.INFO, "FTP routing succeeded; transient negative completion reply code returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_SUCCEEDED_PERMANENT_FAILURE = m(6058, Level.INFO, "FTP routing succeeded; permanent negative completion reply code returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_FAILED_TRANSIENT_FAILURE = m(6059, Level.WARNING, "FTP routing failed; transient negative completion reply code returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_FAILED_PERMANENT_FAILURE = m(6060, Level.WARNING, "FTP routing failed; permanent negative completion reply code returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_FAILED_NO_REPLY = m(6061, Level.WARNING, "FTP routing failed; no reply returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_FAILED_INVALID_REPLY = m(6062, Level.WARNING, "FTP routing failed; invalid or unsupported reply code returned for command ''{0}'': {1}");
+    public static final M FTP_ROUTING_SUCCEEDED = m(6063, Level.FINE, "FTP routing succeeded");
 
     // ServerRequestWssSaml
     @Deprecated

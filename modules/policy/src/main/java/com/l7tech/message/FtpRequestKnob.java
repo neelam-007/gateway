@@ -16,7 +16,7 @@ public interface FtpRequestKnob extends TcpKnob, UriKnob {
      *
      * @return the FTP command
      */
-    FtpCommand getCommand();
+    String getCommand();
 
     /**
      * The argument string for the command.

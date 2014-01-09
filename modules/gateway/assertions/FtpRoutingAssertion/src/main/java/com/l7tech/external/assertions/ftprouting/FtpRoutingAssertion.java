@@ -119,8 +119,13 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private String responseByteLimit;
 
+    /* Fail if a command receives a transient or permanent negative completion reply code, or no reply */
     public static final int FAIL_ON_TRANSIENT = 0;
+
+    /* Fail if a command receives a permanent negative completion reply code, or no reply */
     public static final int FAIL_ON_PERMANENT = 1;
+
+    /* Fail if a command does not receive a reply */
     public static final int FAIL_ON_NO_REPLY = 2;
 
     private int failureMode = FAIL_ON_TRANSIENT;
@@ -312,7 +317,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this.useCommandVariable = useCommandVariable;
     }
 
-    public String getOtherFtpCommand() {
+    public String getFtpCommandVariable() {
         return ftpCommandVariable;
     }
 
@@ -348,7 +353,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public boolean initializesResponse() {
-        return false;
+        return true;
     }
 
     @Override

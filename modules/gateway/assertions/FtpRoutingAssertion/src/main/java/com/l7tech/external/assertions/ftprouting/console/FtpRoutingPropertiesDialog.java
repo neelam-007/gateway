@@ -121,7 +121,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private ByteLimitPanel responseLimitPanel;
     private TargetVariablePanel commandVariablePanel;
-    private TargetVariablePanel targetVariablePanel;
+    private TargetVariablePanel targetVariablePanel; // TODO jwilliams: use TargetMessagePanel
 
     private char echoChar;
     private InputValidator inputValidator, connectionTestValidator;
@@ -400,7 +400,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 // command variable, and only to the mutual exclusion of the arguments field
                 if (FtpCommand.STOR == command) {
                     if (autoFilenameCheckBox.isSelected() && !argumentsTextField.getText().trim().isEmpty()) {
-                        return getResourceString("autoFilenameAndArgumentsSpecifiedError");
+                        return getResourceString("bothAutoFilenameAndArgumentsSpecifiedError");
                     }
                 } else if (autoFilenameCheckBox.isSelected()) {
                     return getResourceString("nonUploadAutoFilenameError");
@@ -665,17 +665,21 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
 
         // ftp command
+        commandVariablePanel.setAssertion(assertion, getPreviousAssertion());
+
         if (assertion.getFtpCommand() == null) {
             if (assertion.isCommandFromVariable()) {
                 commandComboBox.setSelectedIndex(COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX);
-                commandVariablePanel.setVariable(assertion.getOtherFtpCommand());
+                commandVariablePanel.setVariable(assertion.getFtpCommandVariable());
             } else {
                 commandComboBox.setSelectedIndex(OPTION_COMPONENT_NULL_SELECTION_INDEX);
-                enableOrDisableCommandSettingsComponents();
             }
         } else {
             commandComboBox.setSelectedItem(assertion.getFtpCommand().toString());
         }
+
+        // enable/disable components
+        enableOrDisableCommandSettingsComponents();
 
         // message source
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
@@ -688,13 +692,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         messageTargetComboBox.setSelectedItem(responseTarget);
 
         // message target variable
+        targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
+
         if (responseTarget.getTarget() == TargetMessageType.OTHER) {
             targetVariablePanel.setVariable(responseTarget.getOtherTargetMessageVariable());
         } else {
             targetVariablePanel.setVariable(StringUtils.EMPTY);
         }
-
-        targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
 
         // directory
         directoryTextField.setText(assertion.getDirectory());

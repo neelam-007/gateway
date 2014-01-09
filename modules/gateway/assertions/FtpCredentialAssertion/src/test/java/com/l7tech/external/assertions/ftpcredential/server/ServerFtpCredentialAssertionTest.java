@@ -46,7 +46,7 @@ public class ServerFtpCredentialAssertionTest {
                 }
 
                 @Override
-                public FtpCommand getCommand() {
+                public String getCommand() {
                     return null;
                 }
 

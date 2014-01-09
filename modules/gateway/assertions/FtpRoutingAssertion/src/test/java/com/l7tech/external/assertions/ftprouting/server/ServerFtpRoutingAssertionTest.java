@@ -532,7 +532,7 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public FtpCommand getCommand() {
+                    public String getCommand() {
                         return null;
                     }
 
@@ -646,7 +646,7 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public FtpCommand getCommand() {
+                    public String getCommand() {
                         return null;
                     }
 
