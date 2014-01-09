@@ -67,7 +67,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -86,7 +86,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         createObject.setId(null);
         createObject.setValue("New value");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(clusterPropertyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(clusterPropertyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         ClusterProperty createdEntity = mockClusterPropertyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -102,7 +102,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         createObject.setValue("New user");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(clusterPropertyBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(clusterPropertyBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Cluster property goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -119,7 +119,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         createObject.setName("license");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(clusterPropertyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(clusterPropertyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -129,14 +129,14 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         ClusterPropertyMO entityGot = (ClusterPropertyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setValue("Updated user");
-        Response response = processRequest(clusterPropertyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(clusterPropertyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Cluster property goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -151,7 +151,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -161,7 +161,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(clusterPropertyBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(clusterPropertyBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

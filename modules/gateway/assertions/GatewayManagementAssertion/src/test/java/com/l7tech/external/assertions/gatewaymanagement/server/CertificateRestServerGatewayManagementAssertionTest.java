@@ -67,7 +67,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -85,7 +85,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setId(null);
         createObject.setName("New Cert");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         TrustedCert createdEntity = trustedCertManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -100,7 +100,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setName("New Cert");
         createObject.getCertificateData().setEncoded("bad".getBytes());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -114,7 +114,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setId(null);
         createObject.setName("New Cert");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created certificate goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -126,14 +126,14 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         TrustedCertificateMO entityGot = (TrustedCertificateMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(certBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(certBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Certificate goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -148,7 +148,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(certBasePath + cert.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(certBasePath + cert.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -158,7 +158,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(certBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(certBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

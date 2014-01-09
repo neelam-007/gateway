@@ -75,7 +75,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -92,7 +92,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         createObject.setId(null);
         createObject.setSecret("Test secret1");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(siteMinderConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(siteMinderConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         SiteMinderConfiguration createdConnector = siteMinderConfigurationManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -108,7 +108,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         createObject.setSecret("Test secret1");
         createObject.setPasswordId("Bad id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(siteMinderConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(siteMinderConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -123,7 +123,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         createObject.setName("New siteminder config");
         createObject.setSecret("Test secret1");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(siteMinderConfigurationBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(siteMinderConfigurationBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.log(Level.INFO, response.toString());
 
         assertEquals("Created siteminder config goid:", goid.toString(), getFirstReferencedGoid(response));
@@ -137,14 +137,14 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         SiteMinderConfigurationMO entityGot = (SiteMinderConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(siteMinderConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(siteMinderConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created siteminder config goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -160,7 +160,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -170,7 +170,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(siteMinderConfigurationBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(siteMinderConfigurationBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());

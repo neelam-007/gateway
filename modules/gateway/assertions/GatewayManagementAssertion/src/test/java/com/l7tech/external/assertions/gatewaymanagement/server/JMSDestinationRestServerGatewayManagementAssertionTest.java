@@ -100,7 +100,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -120,7 +120,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         createObject.getJmsDestinationDetail().setName("New jms name");
         createObject.getJmsConnection().setId(null);
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(jmsDestinationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(jmsDestinationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         JmsEndpoint createdEntity = jmsEndpointManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -138,7 +138,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         createObject.getJmsConnection().setId(null);
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(jmsDestinationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(jmsDestinationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created JMS Destination goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -150,14 +150,14 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         JMSDestinationMO entityGot = (JMSDestinationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getJmsDestinationDetail().setName("Updated New jms");
-        Response response = processRequest(jmsDestinationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(jmsDestinationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created JMS Destination goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -172,7 +172,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -183,7 +183,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(jmsDestinationBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

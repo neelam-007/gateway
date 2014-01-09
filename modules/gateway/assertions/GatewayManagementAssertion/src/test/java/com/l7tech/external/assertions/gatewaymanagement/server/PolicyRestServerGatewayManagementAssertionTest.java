@@ -99,7 +99,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void getPolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -112,7 +112,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void getPolicyNotExistsTest() throws Exception {
-        Response response = processRequest(policyBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(404, response.getStatus());
@@ -149,7 +149,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         String policyMOString = writeMOToString(policyMO);
 
-        Response response = processRequest(policyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
+        RestResponse response = processRequest(policyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
         Policy policySaved = policyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
@@ -190,7 +190,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         String policyMOString = writeMOToString(policyMO);
 
-        Response response = processRequest(policyBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
+        RestResponse response = processRequest(policyBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
         Policy policySaved = policyManager.findByPrimaryKey(id);
@@ -204,7 +204,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void deletePolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy2.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(policyBasePath + policy2.getId(), HttpMethod.DELETE, null, "");
         logger.info(response.toString());
 
         Assert.assertNull(policyManager.findByPrimaryKey(policy2.getGoid()));
@@ -212,7 +212,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void updatePolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy2.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy2.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -231,7 +231,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void listPolicies() throws Exception {
-        Response response = processRequest(policyBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );

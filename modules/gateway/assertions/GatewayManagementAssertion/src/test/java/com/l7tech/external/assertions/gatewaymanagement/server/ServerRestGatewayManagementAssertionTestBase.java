@@ -29,7 +29,6 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -117,11 +116,11 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         return provider;
     }
 
-    protected Response processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         return processRequest(uri, null, method, contentType, body);
     }
 
-    protected Response processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body.getBytes("utf-8"));
@@ -173,13 +172,13 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             for (String header : response.getHttpResponseKnob().getHeaderNames()) {
                 headers.put(header, response.getHttpResponseKnob().getHeaderValues(header));
             }
-            return new Response(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
+            return new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
         } finally {
             ResourceUtils.closeQuietly(context);
         }
     }
 
-    protected String getFirstReferencedGoid(Response response) throws IOException {
+    protected String getFirstReferencedGoid(RestResponse response) throws IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
         List<Link> links = reference.getLinks();
@@ -194,49 +193,6 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     @After
     public void after() throws Exception {
-    }
-
-    protected class Response {
-        private String body;
-        private int status;
-        private Map<String, String[]> headers;
-        private AssertionStatus assertionStatus;
-
-        private Response(AssertionStatus assertionStatus, String body, int status, Map<String, String[]> headers) {
-            this.assertionStatus = assertionStatus;
-            this.body = body;
-            this.status = status;
-            this.headers = headers;
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public String toString() {
-            return "Status: " + status + " headers: " + printHeaders(headers) + " Body:\n" + body;
-        }
-
-        private String printHeaders(Map<String, String[]> headers) {
-            return new StringBuilder(Functions.reduce(headers.entrySet(), "{", new Functions.Binary<String, String, Map.Entry<String, String[]>>() {
-                @Override
-                public String call(String s, Map.Entry<String, String[]> header) {
-                    return s + header.getKey() + "=" + Arrays.asList(header.getValue()).toString() + ", ";
-                }
-            })) + "}";
-        }
-
-        public AssertionStatus getAssertionStatus() {
-            return assertionStatus;
-        }
-
-        public Map<String, String[]> getHeaders() {
-            return headers;
-        }
     }
 
     public static class TestStashManagerFactory implements StashManagerFactory {

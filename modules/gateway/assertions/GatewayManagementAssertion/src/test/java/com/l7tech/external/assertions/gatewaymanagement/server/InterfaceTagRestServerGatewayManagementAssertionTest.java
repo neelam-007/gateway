@@ -88,7 +88,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -106,7 +106,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         createObject.setId(null);
         createObject.setName("New_interface_tag");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
         assertEquals("Interface Tag id:", nameAsIdentifier(createObject.getName()), getFirstReferencedGoid(response));
 
@@ -123,7 +123,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         createObject.setId(null);
         createObject.setName("New_interface_tag");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
         assertEquals("Interface Tag id:", nameAsIdentifier(createObject.getName()), getFirstReferencedGoid(response));
 
@@ -141,7 +141,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         createObject.setName("New_interface_tag");
         createObject.setAddressPatterns(CollectionUtils.list("not a id"));
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(interfaceTagBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
@@ -156,7 +156,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         createObject.setId(null);
         createObject.setName("New_interface_tag");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(interfaceTagBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(interfaceTagBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         Assert.assertEquals(HttpStatus.SC_NOT_FOUND, response.getStatus());
@@ -166,14 +166,14 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setAddressPatterns(CollectionUtils.list("5.5.5.5/55"));
-        Response response = processRequest(interfaceTagBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(interfaceTagBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
@@ -190,14 +190,14 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
     public void updateNameFailTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot+"_mod");
-        Response response = processRequest(interfaceTagBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(interfaceTagBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
         logger.info(response.toString());
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
@@ -207,7 +207,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -220,7 +220,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(interfaceTagBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(interfaceTagBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());

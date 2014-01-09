@@ -93,7 +93,7 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void getPolicyVersionTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -108,7 +108,7 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void updatePolicyVersionCommentTest() throws Exception {
         final String newPolicyComment = "Policy Version Comment Updated";
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId() + "/comment", HttpMethod.PUT, null, newPolicyComment);
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId() + "/comment", HttpMethod.PUT, null, newPolicyComment);
         logger.info(response.toString());
 
         PolicyVersion policyVersionSaved = policyVersionManager.findByPrimaryKey(policyVersion.getGoid());
@@ -117,7 +117,7 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void listPolicyVersions() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );

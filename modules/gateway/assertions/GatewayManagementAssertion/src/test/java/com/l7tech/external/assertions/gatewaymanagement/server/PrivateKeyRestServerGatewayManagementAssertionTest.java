@@ -15,7 +15,6 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.util.CollectionUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
-import org.springframework.context.ApplicationContext;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -79,7 +78,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         PrivateKeyMO result = getMO(response);
@@ -90,7 +89,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
 
     @Test
     public void setSpecialPurposeTest() throws Exception {
-        Response response = processRequest(privateKeyBasePath + "/specialPurpose?id="+ssgKeyEntry.getId()+"&purpose=AUDIT_VIEWER", HttpMethod.PUT, null, "");
+        RestResponse response = processRequest(privateKeyBasePath + "/specialPurpose?id="+ssgKeyEntry.getId()+"&purpose=AUDIT_VIEWER", HttpMethod.PUT, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -104,7 +103,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
     }
 
 
-    private PrivateKeyMO getMO(Response response) throws JAXBException, IOException {
+    private PrivateKeyMO getMO(RestResponse response) throws JAXBException, IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
         return (PrivateKeyMO) reference.getResource();
@@ -122,7 +121,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         logger.info(responseGet.toString());
         PrivateKeyMO entityGot = getMO( responseGet);
@@ -130,7 +129,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
         // update
         X509Certificate[] certs = new X509Certificate[]{TestDocuments.getWssInteropBobCert()};
         entityGot.setCertificateChain(CollectionUtils.list(ManagedObjectFactory.createCertificateData(TestDocuments.getWssInteropBobCert())));
-        Response response = processRequest(privateKeyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),moToString(entityGot) );
+        RestResponse response = processRequest(privateKeyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),moToString(entityGot) );
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
@@ -148,7 +147,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(privateKeyBasePath + ssgKeyEntry.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -158,7 +157,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(privateKeyBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(privateKeyBasePath, HttpMethod.GET, null, "");
 
         logger.info(response.toString());
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());

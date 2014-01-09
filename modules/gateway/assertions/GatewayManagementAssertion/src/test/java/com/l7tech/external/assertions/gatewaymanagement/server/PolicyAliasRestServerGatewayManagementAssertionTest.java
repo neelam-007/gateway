@@ -130,7 +130,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -149,7 +149,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setFolderId(folder2.getId());
         createObject.getPolicyReference().setId(policy2.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         PolicyAlias createdEntity = policyAliasManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -167,7 +167,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.getPolicyReference().setId(policy2.getId());
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Policy Alias goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -185,7 +185,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setFolderId(folder1.getId());
         createObject.getPolicyReference().setId(policy1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -199,7 +199,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setFolderId(rootFolder.getId());
         createObject.getPolicyReference().setId(policy1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -213,7 +213,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setFolderId(folder1.getId());
         createObject.getPolicyReference().setId("Bad policy id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -227,7 +227,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setFolderId("Bad Folder id");
         createObject.getPolicyReference().setId(policy1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -237,14 +237,14 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
     public void updateEntityChangeBackingPolicyTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
-        Response response = processRequest(policyAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(policyAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -254,14 +254,14 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setFolderId(folder2.getId());
-        Response response = processRequest(policyAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(policyAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Updated Policy Alias goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -276,7 +276,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -286,7 +286,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(policyAliasBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyAliasBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

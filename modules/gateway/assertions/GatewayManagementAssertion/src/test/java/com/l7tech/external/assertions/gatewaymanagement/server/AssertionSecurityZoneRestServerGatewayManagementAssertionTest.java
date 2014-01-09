@@ -88,7 +88,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getName(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getName(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -107,7 +107,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         createObject.setName("Assertion2");
         createObject.setSecurityZoneId(securityZone.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(assertionSecurityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(assertionSecurityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
     }
 
@@ -119,7 +119,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         createObject.setName("Assertion2");
         createObject.setSecurityZoneId(securityZone.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
@@ -137,7 +137,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         createObject.setName(assertionSecurityZone.getName());
         createObject.setSecurityZoneId(null);
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         AssertionAccess createdConnector = assertionSecurityZoneManager.findByUniqueName(getFirstReferencedGoid(response));
@@ -155,7 +155,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         createObject.setName(assertionSecurityZone.getName());
         createObject.setSecurityZoneId("not a id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
@@ -170,7 +170,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 //        createObject.setId(null);
 //        createObject.setName("New active connector");
 //        Document request = ManagedObjectFactory.write(createObject);
-//        Response response = processRequest(assertionSecurityZoneBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+//        RestResponse response = processRequest(assertionSecurityZoneBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 //        logger.log(Level.INFO, response.toString());
 //
 //        assertEquals("Created active connector goid:", goid.toString(), getFirstReferencedGoid(response));
@@ -185,14 +185,14 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 //    public void updateEntityTest() throws Exception {
 //
 //        // get
-//        Response responseGet = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getId(), HttpMethod.GET, null, "");
+//        RestResponse responseGet = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getId(), HttpMethod.GET, null, "");
 //        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
 //        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
 //        AssertionSecurityZoneMO entityGot = (AssertionSecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 //
 //        // update
 //        entityGot.setName(entityGot.getName() + "_mod");
-//        Response response = processRequest(assertionSecurityZoneBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+//        RestResponse response = processRequest(assertionSecurityZoneBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 //
 //        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 //        assertEquals("Created active connector goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -209,7 +209,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getName(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getName(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
@@ -218,7 +218,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(assertionSecurityZoneBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(assertionSecurityZoneBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());

@@ -31,7 +31,7 @@ public class WADLRestServerGatewayManagementAssertionTest extends ServerRestGate
     @Test
     @Ignore
     public void getServiceDependenciesTest() throws Exception {
-        Response response = processRequest("application.wadl", HttpMethod.GET, null, "");
+        RestResponse response = processRequest("application.wadl", HttpMethod.GET, null, "");
         logger.info(response.toString());
     }
 }

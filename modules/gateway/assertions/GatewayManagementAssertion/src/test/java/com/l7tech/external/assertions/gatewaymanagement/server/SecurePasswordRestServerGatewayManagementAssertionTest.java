@@ -64,7 +64,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -83,7 +83,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         createObject.setName("New name");
         createObject.setPassword(securePasswordManagerStub.encryptPassword("password".toCharArray()));
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(securePasswordBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(securePasswordBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         logger.log(Level.INFO, response.getBody());
 
@@ -102,7 +102,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         createObject.setPassword(securePasswordManagerStub.encryptPassword("password".toCharArray()));
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(securePasswordBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(securePasswordBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Secure Password goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -114,14 +114,14 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         StoredPasswordMO entityGot = (StoredPasswordMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("Updated name");
-        Response response = processRequest(securePasswordBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(securePasswordBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created secure password goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -136,7 +136,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -146,7 +146,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(securePasswordBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(securePasswordBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

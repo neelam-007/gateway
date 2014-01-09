@@ -71,7 +71,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -89,7 +89,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         createObject.setId(null);
         createObject.setName("New generic Entity");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(genericEntityBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(genericEntityBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         GenericEntity createdEntity = genericEntityManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -105,7 +105,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         createObject.setName("New generic Entity");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(genericEntityBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(genericEntityBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Generic Entity goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -117,14 +117,14 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         GenericEntityMO entityGot = (GenericEntityMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("New Generic Entity");
-        Response response = processRequest(genericEntityBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(genericEntityBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Generic Entity goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -139,7 +139,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -149,7 +149,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(genericEntityBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(genericEntityBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

@@ -64,7 +64,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -83,7 +83,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setId(null);
         createObject.setKey("New custom key value");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         CustomKeyValueStore createdEntity = customKeyValueStoreManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -100,7 +100,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setKey("New custom key value");
         createObject.setStoreName("Bad store");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -114,7 +114,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setId(null);
         createObject.setKey("New custom key value");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Custom Key Value goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -127,14 +127,14 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         CustomKeyValueStoreMO entityGot = (CustomKeyValueStoreMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setKey(entityGot.getKey() + "_mod");
-        Response response = processRequest(customKeyValStoreBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(customKeyValStoreBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Custom Key Value goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -151,7 +151,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -161,7 +161,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

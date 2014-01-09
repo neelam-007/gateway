@@ -80,7 +80,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -98,7 +98,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         createObject.setId(null);
         createObject.setUsername("New user");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(httpConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(httpConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         HttpConfiguration createdEntity = httpConfigurationManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -114,7 +114,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         createObject.setUsername("New user");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Http configuration goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -126,14 +126,14 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setUsername("Updated user");
-        Response response = processRequest(httpConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(httpConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Http configuration goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -148,7 +148,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -158,7 +158,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(httpConfigurationBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

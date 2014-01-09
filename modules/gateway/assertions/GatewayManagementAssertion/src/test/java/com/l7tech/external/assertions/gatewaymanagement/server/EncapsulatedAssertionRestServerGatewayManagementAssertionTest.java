@@ -127,7 +127,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -148,7 +148,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         createObject.setName("New encass name");
         createObject.getPolicyReference().setId(policy2.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         EncapsulatedAssertionConfig createdEntity = encassManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -166,7 +166,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         createObject.getPolicyReference().setId(policy2.getId());
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(encassBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(encassBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Encapsulated Assertion goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -184,7 +184,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         createObject.setName("New encass name");
         createObject.getPolicyReference().setId("bad id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -198,7 +198,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         createObject.setName("New encass name");
         createObject.getPolicyReference().setId(new Goid(6363, 63463).toString());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(encassBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -208,14 +208,14 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
     public void updateEntityChangeBackingPolicyTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
-        Response response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -225,14 +225,14 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
     public void updateEntityChangeGuidTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setGuid("Updated GUID");
-        Response response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -242,14 +242,14 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName("Update Encass Name");
-        Response response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(encassBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Updated Encapsulated Assertion goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -264,7 +264,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -274,7 +274,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(encassBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(encassBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

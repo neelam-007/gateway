@@ -97,6 +97,11 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
         for (String name : newEntity.getPropertyNames()) {
             oldEntity.setProperty(name, newEntity.getProperty(name));
         }
+        for (String name : oldEntity.getPropertyNames()) {
+            if(!newEntity.getPropertyNames().contains(name)){
+                oldEntity.setProperty(name, null);
+            }
+        }
         oldEntity.setSecurityZone(newEntity.getSecurityZone());
     }
 }

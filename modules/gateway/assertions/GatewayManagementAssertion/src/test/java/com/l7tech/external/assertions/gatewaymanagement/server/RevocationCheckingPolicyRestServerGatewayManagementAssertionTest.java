@@ -21,7 +21,6 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -70,7 +69,7 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -87,7 +86,7 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         createObject.setId(null);
         createObject.setName("New rev checking policy");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(revocationCheckPolicyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(revocationCheckPolicyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
     }
 
@@ -96,28 +95,28 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
         RevocationCheckingPolicyMO entityGot = (RevocationCheckingPolicyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(revocationCheckPolicyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(revocationCheckPolicyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
     }
 
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
     }
 
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(revocationCheckPolicyBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(revocationCheckPolicyBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
