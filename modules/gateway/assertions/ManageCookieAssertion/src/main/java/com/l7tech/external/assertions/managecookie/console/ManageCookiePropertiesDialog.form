@@ -147,7 +147,7 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Regular Expression"/>
+              <text value="regular expression"/>
               <toolTipText value="Check to evaluate the cookie name as a regular expression"/>
             </properties>
           </component>
@@ -156,7 +156,7 @@
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Regular Expression"/>
+              <text value="regular expression"/>
               <toolTipText value="Check to evaluate the cookie domain as a regular expression"/>
             </properties>
           </component>
@@ -165,7 +165,7 @@
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Regular Expression"/>
+              <text value="regular expression"/>
               <toolTipText value="Check to evaluate the cookie path as a regular expression"/>
             </properties>
           </component>
@@ -195,6 +195,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie name"/>
             </properties>
           </component>
         </children>
@@ -221,6 +222,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie value"/>
             </properties>
           </component>
         </children>
@@ -247,6 +249,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie version"/>
             </properties>
           </component>
         </children>
@@ -273,6 +276,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie domain"/>
             </properties>
           </component>
         </children>
@@ -299,6 +303,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie path"/>
             </properties>
           </component>
         </children>
@@ -325,6 +330,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie max age"/>
             </properties>
           </component>
         </children>
@@ -351,6 +357,7 @@
             </constraints>
             <properties>
               <text value="original value"/>
+              <toolTipText value="Check to keep the original cookie comment"/>
             </properties>
           </component>
         </children>

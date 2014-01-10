@@ -218,7 +218,7 @@ public class ImportExportUtilitiesTest {
      */
     @Test(expected = IOException.class)
     public void testVerifyCanWriteFile_CantWrite() throws IOException {
-        File f = new File("/root/testfilesdoesnotexist.txt");
+        File f = new File("/gobbitygooky/testfilesdoesnotexist.txt");
         ImportExportUtilities.verifyCanWriteFile(f.getAbsolutePath());
     }
 
