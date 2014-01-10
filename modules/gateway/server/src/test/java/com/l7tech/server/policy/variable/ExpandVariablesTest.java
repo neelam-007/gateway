@@ -1138,10 +1138,6 @@ public class ExpandVariablesTest {
             {
                 setStatus(123);
             }
-            @Override
-            public void addCookie(HttpCookie cookie) {
-                throw new UnsupportedOperationException();
-            }
         });
         return foo;
     }

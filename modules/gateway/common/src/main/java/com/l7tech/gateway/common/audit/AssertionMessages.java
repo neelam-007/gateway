@@ -685,7 +685,7 @@ public class AssertionMessages extends Messages {
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
-    
+
     // Map Value
     public static final Messages.M MAP_VALUE_PATTERN_NOT_MATCHED = m(7025, Level.FINE, "Pattern not matched: {0}");
     public static final Messages.M MAP_VALUE_NO_PATTERNS_MATCHED = m(7026, Level.INFO, "No patterns were matched");
@@ -1235,6 +1235,21 @@ public class AssertionMessages extends Messages {
     public static final M RADIUS_AUTH_NO_CREDENTIAL = m(10201, Level.INFO, "No credentials found!");
     public static final M RADIUS_AUTH_AUTHENTICATION_FAILED = m(10202, Level.FINE, "Authentication Against Radius Server failed for credentials: {0}");
 
+    // Manage Header Assertion
+    public static final M HEADER_ADDED = m(10350, Level.FINE, "Added header with name {0} and value {1}");
+    public static final M HEADER_REMOVED_BY_NAME = m(10351, Level.FINE, "Removed header with name {0}");
+    public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10352, Level.FINE, "Removed header with name {0} and value {1}");
+    public static final M EMPTY_HEADER_NAME = m(10353, Level.WARNING, "Header name is empty");
+
+    // Add or Remove Cookie Assertion
+    public static final M INVALID_COOKIE_MAX_AGE = m(10400, Level.WARNING, "Cookie max age is invalid: {0}");
+    public static final M EMPTY_COOKIE_NAME = m(10401, Level.WARNING, "Cookie name is null or empty");
+    public static final M COOKIES_NOT_MATCHED = m(10402, Level.FINE, "No cookies matched {0}");
+    public static final M COOKIE_ALREADY_EXISTS = m(10403, Level.WARNING, "A cookie with name {0}, domain {1} and path {2} already exists");
+    public static final M COOKIE_ADDED = m(10404, Level.FINE, "Added cookie with name {0} and value {1}");
+    public static final M COOKIE_REMOVED = m(10405, Level.FINE, "Removed cookie with name {0} and value {1}");
+    public static final M INVALID_COOKIE_VERSION = m(10406, Level.WARNING, "Cookie version is invalid: {0}");
+    public static final M EMPTY_COOKIE_ATTRIBUTE = m(10407, Level.WARNING, "Cookie {0} is null or empty");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

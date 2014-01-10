@@ -81,6 +81,7 @@
         <dependency name="ManipulateMultiValuedVariableAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SiteMinderAssertion" rev="latest.integration" conf="module"/>
         <dependency name="RadiusAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="ManageCookieAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

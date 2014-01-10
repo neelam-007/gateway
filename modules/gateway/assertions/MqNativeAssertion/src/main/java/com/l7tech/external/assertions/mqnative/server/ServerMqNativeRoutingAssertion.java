@@ -383,7 +383,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 //Customize Message
                 MQMessage responseMessage = new MQMessage();
                 responseMessage = new PassThroughDecorator(responseMessage, new MqMessageProxy(mqResponseMessage),
-                        gatewayResponseMessage.getKnob(OutboundHeadersKnob.class), assertion, context, getAudit());
+                        gatewayResponseMessage.getKnob(HeadersKnob.class), assertion, context, getAudit());
                 ((MqMessageDecorator) responseMessage).setRequest(false);
                 responseMessage = new DescriptorDecorator((MqMessageDecorator)responseMessage);
                 responseMessage = new PropertyDecorator((MqMessageDecorator)responseMessage);
@@ -694,7 +694,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         // Decorate the message
         mqRequestMessage = new PassThroughDecorator(mqRequestMessage,
                 (MqMessageProxy) mqNativeRequestKnob.getMessage(),
-                gatewayRequestMessage.getKnob(OutboundHeadersKnob.class), assertion, context, getAudit());
+                gatewayRequestMessage.getKnob(HeadersKnob.class), assertion, context, getAudit());
         ((MqMessageDecorator) mqRequestMessage).setRequest(true);
         mqRequestMessage = new DescriptorDecorator((MqMessageDecorator)mqRequestMessage);
         mqRequestMessage = new PropertyDecorator((MqMessageDecorator)mqRequestMessage);

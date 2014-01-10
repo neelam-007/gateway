@@ -735,12 +735,7 @@ public class MessageProcessor {
                 interceptor.onBackEndReply(context);
 
             if (response.getKnob(HttpResponseKnob.class) == null) {
-                response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                    public void addCookie(HttpCookie cookie) {
-                        // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
-                        throw new UnsupportedOperationException();
-                    }
-                });
+                response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});
             }
 
             // Replace any cookies in the response, only if not passing through cookies (Bug #3006)

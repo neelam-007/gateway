@@ -5,7 +5,7 @@ import com.l7tech.message.*;
 /**
  * An implementation of MessageKnob for MQ
  */
-public interface MqNativeKnob extends HasSoapAction, HasServiceId, OutboundHeadersKnob {
+public interface MqNativeKnob extends HasSoapAction, HasServiceId, HasHeaders {
 
     /**
      * Retrieve the Message

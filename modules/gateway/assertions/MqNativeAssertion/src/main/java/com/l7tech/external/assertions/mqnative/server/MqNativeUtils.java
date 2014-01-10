@@ -7,12 +7,10 @@ import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.internal.Header;
-import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.message.OutboundHeaderSupport;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -202,7 +200,6 @@ public class MqNativeUtils {
             private static final String HEADER_VALUES = "alladditionalheadervalues";
             private static final String PROPERTY_NAMES = "propertynames";
             private static final String PROPERTY_VALUES = "allpropertyvalues";
-            protected final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();
             private MqMessageProxy proxy = mqMessageProxy;
 
             @Override
@@ -213,59 +210,10 @@ public class MqNativeUtils {
             @Override
             public void reset(Object message) {
                 proxy = (MqMessageProxy) message;
-                headerSupport.clearHeaders();
-            }
-
-            @Override
-            public void setDateHeader(String name, long date) {
-            }
-
-            @Override
-            public void addDateHeader(String name, long date) {
-            }
-
-            @Override
-            public void setHeader(String name, String value) {
-                headerSupport.setHeader(name, value);
-            }
-
-            @Override
-            public void addHeader(String name, String value) {
-                //Not allow duplicate
-                setHeader(name, value);
-            }
-
-            @Override
-            public boolean containsHeader(String name) {
-                return headerSupport.containsHeader(name);
-            }
-
-            @Override
-            public void removeHeader(String name) {
-                headerSupport.removeHeader(name);
-            }
-
-            @Override
-            public void removeHeader(String name, Object value) {
-                headerSupport.removeHeader(name, value);
-            }
-
-            @Override
-            public void clearHeaders() {
-                headerSupport.clearHeaders();
-            }
-
-            @Override
-            public void writeHeaders(GenericHttpRequestParams target) {
-                headerSupport.writeHeaders(target);
             }
 
             @Override
             public String[] getHeaderValues(String name) {
-                String[] value = headerSupport.getHeaderValues(name);
-                if (value!= null && value.length > 0){
-                    return value;
-                }
                 if (name.startsWith(DESCRIPTOR_PREFIX)) {
                     String attr = name.substring(DESCRIPTOR_PREFIX.length());
                     Object result = proxy.getMessageDescriptor(attr);
@@ -304,7 +252,7 @@ public class MqNativeUtils {
 
             @Override
             public String[] getHeaderNames() {
-                return headerSupport.getHeaderNames();
+                return getHeaderValues(HEADER_NAMES);
             }
 
             @Override

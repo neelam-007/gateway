@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jsonschema.server;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
@@ -523,15 +524,15 @@ public class ServerJSONSchemaAssertionTest {
                                                 ContentTypeHeader contentType,
                                                 String addLinkHeader) throws IOException {
 
-        Message request = new Message();
-        Message response = new Message();
+        Message request = new Message(XmlUtil.createEmptyDocument());
+        Message response = new Message(XmlUtil.createEmptyDocument());
 
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         if(addLinkHeader != null && useRequest){
-            hrequest.addHeader("Link", addLinkHeader);
+            request.getHeadersKnob().addHeader("Link", addLinkHeader);
         }
 
         PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
@@ -547,7 +548,7 @@ public class ServerJSONSchemaAssertionTest {
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
         if(addLinkHeader  != null && !useRequest){
-            response.getHttpResponseKnob().addHeader("Link", addLinkHeader);
+            response.getHeadersKnob().addHeader("Link", addLinkHeader);
         }
 
         return policyEnforcementContext;

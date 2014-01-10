@@ -182,13 +182,15 @@ public class CookieUtils {
                 calcPath = cookiePath;
             }
 
-            int trim = calcPath.lastIndexOf('/');
-            if(trim>0) {
-                calcPath = calcPath.substring(0, trim);
+            if (calcPath != null) {
+                int trim = calcPath.lastIndexOf('/');
+                if(trim>0) {
+                    calcPath = calcPath.substring(0, trim);
+                }
             }
 
-            if((cookieDomain!=null && !domain.endsWith(cookieDomain))
-            || (cookiePath!=null && !calcPath.startsWith(cookiePath))){
+            if((cookieDomain!=null && domain != null && !domain.endsWith(cookieDomain))
+            || (cookiePath!=null && calcPath != null && !calcPath.startsWith(cookiePath))){
                 result = new HttpCookie(cookie, domain, calcPath);
             }
         }

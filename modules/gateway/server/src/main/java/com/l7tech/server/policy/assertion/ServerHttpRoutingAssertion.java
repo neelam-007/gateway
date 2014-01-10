@@ -530,7 +530,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(
-                    requestMessage.getKnob( HttpOutboundRequestKnob.class ),
                     requestMessage,
                     routedRequestParams,
                     context,
@@ -701,12 +700,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     //this Message has already been initialized, close it so it can be reused
                     routedResponseDestination.close();
                 }
-                routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                    @Override
-                    public void addCookie(HttpCookie cookie) {
-                        // TODO what to do with the cookie?
-                    }
-                });
+                routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});
             }
 
             AssertionStatus assertionStatus = readResponse(context, routedResponse, routedResponseDestination, maxBytes);
@@ -743,15 +737,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (assertionStatus == AssertionStatus.NONE && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
-                HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
-                                                                 httpResponseKnob,
-                                                                 getAudit(),
-                                                                 assertion.getResponseHeaderRules(),
-                                                                 routedResponseDestinationIsContextVariable,
-                                                                 context,
-                                                                 routedRequestParams,
-                                                                 vars,
-                                                                 varNames);
+                final HeadersKnob responseHeadersKnob = routedResponseDestination.getHeadersKnob();
+                if (responseHeadersKnob != null) {
+                    HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
+                                                                     responseHeadersKnob,
+                                                                     getAudit(),
+                                                                     assertion.getResponseHeaderRules(),
+                                                                     routedResponseDestinationIsContextVariable,
+                                                                     context,
+                                                                     routedRequestParams,
+                                                                     vars,
+                                                                     varNames);
+                } else {
+                    logger.log(Level.WARNING, "Unable to forward response headers because headers knob is null.");
+                }
             }
             if (assertion.isPassthroughHttpAuthentication()) {
                 boolean passed = false;

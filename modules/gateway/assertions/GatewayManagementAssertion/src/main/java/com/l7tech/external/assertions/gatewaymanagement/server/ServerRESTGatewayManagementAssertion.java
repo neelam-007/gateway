@@ -120,7 +120,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     continue;
                 }
                 for(Object value : managementResponse.getHeaders().get(header)){
-                    response.getHttpResponseKnob().addHeader(header, value.toString());
+                    response.getHeadersKnob().addHeader(header, value.toString());
                 }
             }
 

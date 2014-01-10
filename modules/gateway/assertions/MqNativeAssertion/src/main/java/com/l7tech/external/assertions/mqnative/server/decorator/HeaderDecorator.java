@@ -11,7 +11,7 @@ import com.l7tech.external.assertions.mqnative.server.MqNativeConfigException;
 import com.l7tech.external.assertions.mqnative.server.header.MqNativeHeaderHandler;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.message.OutboundHeadersKnob;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.apache.commons.lang.StringUtils;
 
@@ -27,8 +27,8 @@ public class HeaderDecorator extends MqMessageDecorator {
     private static final String PREFIX = MQ_PREFIX + ".additionalheader.";
     private static final String MD_FORMAT = MQ_PREFIX + ".md.format";
 
-    public HeaderDecorator(MQMessage mqMessage, MqMessageProxy source, OutboundHeadersKnob outboundHeadersKnob, MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
-        super(mqMessage, source, outboundHeadersKnob, assertion, context, audit);
+    public HeaderDecorator(MQMessage mqMessage, MqMessageProxy source, HeadersKnob headersKnob, MqNativeRoutingAssertion assertion, PolicyEnforcementContext context, Audit audit) throws MQException, IOException, MQDataException {
+        super(mqMessage, source, headersKnob, assertion, context, audit);
     }
 
     public HeaderDecorator(MqMessageDecorator decorator) {

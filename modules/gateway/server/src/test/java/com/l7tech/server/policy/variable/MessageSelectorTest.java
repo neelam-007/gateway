@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -12,10 +11,9 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.HttpRequestKnobStub;
-import com.l7tech.message.JmsKnobStub;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.management.config.monitoring.Header;
@@ -34,7 +32,10 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class MessageSelectorTest {
 
@@ -47,7 +48,7 @@ public class MessageSelectorTest {
     private DefaultSyntaxErrorHandler handler;
 
     private String messageWithBinaryMimePart =
-                    "UFVUIC9wdXR0ZXIgSFRUUC8xLjENCkFjY2VwdC1FbmNvZGluZzogZ3ppcCxkZWZsYXRlDQpDb250\n" +
+            "UFVUIC9wdXR0ZXIgSFRUUC8xLjENCkFjY2VwdC1FbmNvZGluZzogZ3ppcCxkZWZsYXRlDQpDb250\n" +
                     "ZW50LVR5cGU6IG11bHRpcGFydC9mb3JtLWRhdGE7IGJvdW5kYXJ5PSItLS0tPV9QYXJ0XzBfMjg3\n" +
                     "NzQ1NDU5LjEzNDU3NjYxNDMzMzEiDQpNSU1FLVZlcnNpb246IDEuMA0KVXNlci1BZ2VudDogSmFr\n" +
                     "YXJ0YSBDb21tb25zLUh0dHBDbGllbnQvMy4xDQpIb3N0OiBsb2NhbGhvc3Q6ODA4MA0KQ29udGVu\n" +
@@ -74,7 +75,7 @@ public class MessageSelectorTest {
                     "NTQ1OS4xMzQ1NzY2MTQzMzMxLS0NCg==";
 
     private static String base64EncodedMimePart =
-                    "MIIDBjCCAe6gAwIBAgIIQl0Hp2IqR3UwDQYJKoZIhvcNAQEMBQAwITEQMA4GA1UE" +
+            "MIIDBjCCAe6gAwIBAgIIQl0Hp2IqR3UwDQYJKoZIhvcNAQEMBQAwITEQMA4GA1UE" +
                     "ERMHYWJjZGVmZzENMAsGA1UEAxMEZnJlZDAeFw0xMjA0MDUyMTE0MzNaFw0xNzA0" +
                     "MDQyMTE0MzNaMCExEDAOBgNVBBETB2FiY2RlZmcxDTALBgNVBAMTBGZyZWQwggEi" +
                     "MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC31yR7nzP+dQhAmokMF3cn3AVD" +
@@ -99,7 +100,7 @@ public class MessageSelectorTest {
         headers.put("h1", "h1value");
         headers.put("h2", "h2value");
         headers.put("h3", "h3value");
-        jmsKnob = new JmsKnobStub(new Goid(0,1234L), false, null);
+        jmsKnob = new JmsKnobStub(new Goid(0, 1234L), false, null);
         jmsKnob.setHeaders(headers);
         message = new Message();
         message.attachJmsKnob(jmsKnob);
@@ -116,13 +117,13 @@ public class MessageSelectorTest {
 
         Audit audit = mock(Audit.class);
 
-        Map<String,Object> vars = new HashMap<String,Object>();
-        vars.put("request",message);
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("request", message);
 
-        PartInfo part = (PartInfo) ExpandVariables.processSingleVariableAsObject("${request.parts.2}",vars,audit);
+        PartInfo part = (PartInfo) ExpandVariables.processSingleVariableAsObject("${request.parts.2}", vars, audit);
         InputStream is = part.getInputStream(false);
         byte partBytes[] = part.getBytesIfAlreadyAvailable();
-        assertTrue( HexUtils.encodeBase64(partBytes,true).equals(base64EncodedMimePart) );
+        assertTrue(HexUtils.encodeBase64(partBytes, true).equals(base64EncodedMimePart));
     }
 
     @Test
@@ -188,15 +189,15 @@ public class MessageSelectorTest {
     public void testMultiValue() {
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
         AuthenticationContext ac = c.getAuthenticationContext(message);
-        User user1 = new UserBean(new Goid(0,123), "Tester1");
-        User user2 = new UserBean(new Goid(0,123), "Tester2");
-        AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
-        AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
+        User user1 = new UserBean(new Goid(0, 123), "Tester1");
+        User user2 = new UserBean(new Goid(0, 123), "Tester2");
+        AuthenticationResult ar1 = new AuthenticationResult(user1, new OpaqueSecurityToken());
+        AuthenticationResult ar2 = new AuthenticationResult(user2, new OpaqueSecurityToken());
         ac.addAuthenticationResult(ar1);
         ac.addAuthenticationResult(ar2);
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "authenticatedusers", handler, false);
-        assertEquals(user2.getName(), ((String[])selection.getSelectedValue())[1]);
-        assertEquals(ac.getAllAuthenticationResults().size(), ((String[])selection.getSelectedValue()).length);
+        assertEquals(user2.getName(), ((String[]) selection.getSelectedValue())[1]);
+        assertEquals(ac.getAllAuthenticationResults().size(), ((String[]) selection.getSelectedValue()).length);
 
         Map<String, Object> vars = new HashMap<String, Object>() {{
             put("request", message);
@@ -235,15 +236,15 @@ public class MessageSelectorTest {
     public void testMultiValueLength() {
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, message);
         AuthenticationContext ac = c.getAuthenticationContext(message);
-        User user1 = new UserBean(new Goid(0,123), "Tester1");
-        User user2 = new UserBean(new Goid(0,123), "Tester2");
-        AuthenticationResult ar1 = new AuthenticationResult( user1, new OpaqueSecurityToken());
-        AuthenticationResult ar2 = new AuthenticationResult( user2, new OpaqueSecurityToken());
+        User user1 = new UserBean(new Goid(0, 123), "Tester1");
+        User user2 = new UserBean(new Goid(0, 123), "Tester2");
+        AuthenticationResult ar1 = new AuthenticationResult(user1, new OpaqueSecurityToken());
+        AuthenticationResult ar2 = new AuthenticationResult(user2, new OpaqueSecurityToken());
         ac.addAuthenticationResult(ar1);
         ac.addAuthenticationResult(ar2);
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "authenticatedusers", handler, false);
-        assertEquals(user2.getName(), ((String[])selection.getSelectedValue())[1]);
-        assertEquals(ac.getAllAuthenticationResults().size(), ((String[])selection.getSelectedValue()).length);
+        assertEquals(user2.getName(), ((String[]) selection.getSelectedValue())[1]);
+        assertEquals(ac.getAllAuthenticationResults().size(), ((String[]) selection.getSelectedValue()).length);
 
         Map<String, Object> vars = new HashMap<String, Object>() {{
             put("request", message);
@@ -344,4 +345,205 @@ public class MessageSelectorTest {
         assertEquals("true", ExpandVariables.process("${request.buffer.allowed}", vars, audit));
     }
 
+    @Test
+    public void selectHeaderFromHeadersKnob() {
+        message.getHeadersKnob().addHeader("test", "value");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("value", selectedValue);
+    }
+
+    @Test
+    public void selectHeaderFromRequestKnobBeforeHeadersKnob() {
+        message.attachHttpRequestKnob(new HttpRequestKnobStub(Collections.<HttpHeader>singletonList(new GenericHttpHeader("test", "requestKnobValue"))));
+        message.getHeadersKnob().addHeader("test", "headersKnobValue");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("requestKnobValue", selectedValue);
+    }
+
+    @Test
+    public void selectHeaderFromHeadersKnobBeforeInboundResponseKnob() {
+        final HttpInboundResponseFacet facet = new HttpInboundResponseFacet();
+        facet.setHeaderSource(new HttpHeadersHaver() {
+            @Override
+            public HttpHeaders getHeaders() {
+                return new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader("test", "onInboundResponseKnob")});
+            }
+        });
+        message.attachKnob(HttpInboundResponseKnob.class, facet);
+        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("onHeadersKnob", selectedValue);
+    }
+
+    @Test
+    public void chainedSelectorFirstSelectorReturnsNonNull() {
+        final ExpandVariables.Selector.Selection selection = new ExpandVariables.Selector.Selection("value");
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(selection);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertEquals(selection, chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2, never()).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorFirstSelectorReturnsNull() {
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+        final ExpandVariables.Selector.Selection selection = new ExpandVariables.Selector.Selection("value");
+        when(selector2.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(selection);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertEquals(selection, chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorNoSelection() {
+        final MessageSelector.MessageAttributeSelector selector1 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector1.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+        final MessageSelector.MessageAttributeSelector selector2 = mock(MessageSelector.MessageAttributeSelector.class);
+        when(selector2.select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean())).thenReturn(null);
+
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList(selector1, selector2));
+        assertNull(chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+        verify(selector1).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+        verify(selector2).select(any(Message.class), anyString(), any(Syntax.SyntaxErrorHandler.class), anyBoolean());
+    }
+
+    @Test
+    public void chainedSelectorNullDelegate() {
+        final MessageSelector.ChainedSelector chain = new MessageSelector.ChainedSelector(Arrays.asList((MessageSelector.MessageAttributeSelector) null));
+        assertNull(chain.select(message, "foo", new DefaultSyntaxErrorHandler(new TestAudit()), true));
+    }
+
+    @Test
+    public void selectAllCookies() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(2, cookies.size());
+        assertTrue(cookies.contains("1=a; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+        assertTrue(cookies.contains("2=b; Version=0"));
+    }
+
+    @Test
+    public void selectCookiesNullCookiesKnob() {
+        assertNull(message.getKnob(HttpCookiesKnob.class));
+        assertNull(selector.select(null, message, "http.cookies", handler, false));
+        assertNull(selector.select(null, message, "http.cookienames", handler, false));
+        assertNull(selector.select(null, message, "http.cookies.test", handler, false));
+    }
+
+    @Test
+    public void selectAllCookieNames() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookienames", handler, false);
+        final List<String> cookieNames = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(3, cookieNames.size());
+        assertTrue(cookieNames.contains("1"));
+        assertTrue(cookieNames.contains("2"));
+    }
+
+    @Test
+    public void selectCookieByName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.1", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertTrue(cookies.contains("1=a; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+    }
+
+    @Test
+    public void selectMultipleCookiesByName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.2", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(2, cookies.size());
+        assertTrue(cookies.contains("2=b; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+        assertTrue(cookies.contains("2=c; Version=1; Domain=diffdomain; Path=/diffpath; Comment=test; Max-Age=60; Secure"));
+    }
+
+    @Test
+    public void selectCookieByNameNone() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        assertNull(selector.select(null, message, "http.cookies.x", handler, false));
+    }
+
+    @Test
+    public void selectCookieByEmptyName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        assertNull(selector.select(null, message, "http.cookies.", handler, false));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void selectCookieByNameNoneStrict() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        try {
+            selector.select(null, message, "http.cookies.x", handler, true);
+            fail("Expected IllegalArgumentException");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.cookies.x", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectCookieValueByName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.1", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertTrue(cookies.contains("a"));
+    }
+
+    @Test
+    public void selectMultipleCookieValuesByName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.2", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(2, cookies.size());
+        assertTrue(cookies.contains("b"));
+        assertTrue(cookies.contains("c"));
+    }
+
+    @Test
+    public void selectCookieValueByNameNone() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        assertNull(selector.select(null, message, "http.cookievalues.x", handler, false));
+    }
+
+    @Test
+    public void selectCookieValueByEmptyName() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        assertNull(selector.select(null, message, "http.cookievalues.", handler, false));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void selectCookieValueByNameNoneStrict() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        try {
+            selector.select(null, message, "http.cookievalues.x", handler, true);
+            fail("Expected IllegalArgumentException");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.cookievalues.x", e.getMessage());
+            throw e;
+        }
+    }
 }

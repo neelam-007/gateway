@@ -216,7 +216,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
         boolean haveCookies = false;
 
         if(!authCookieSet.isEmpty()) {
-            Set availableCookieNames = toNames(context.getCookies());
+            Set availableCookieNames = toNames(context.getRequest().getHttpCookiesKnob().getCookies());
             haveCookies = availableCookieNames.containsAll(authCookieSet);
         }
 
@@ -234,7 +234,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
             Set<HttpCookie> cookies = FederationPassiveClient.postFederationToken(httpClient, params, samlAssertion, contextUrl, false);
 
             for  (HttpCookie cookie : cookies ) {
-                context.addCookie(cookie);
+                context.getRequest().getHttpCookiesKnob().addCookie(cookie);
                 ensureKnown(cookie);
             }
         }

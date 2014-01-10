@@ -234,21 +234,6 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public Set<HttpCookie> getCookies() {
-        return delegate.getCookies();
-    }
-
-    @Override
-    public void addCookie( final HttpCookie cookie ) {
-        delegate.addCookie( cookie );
-    }
-
-    @Override
-    public void deleteCookie(HttpCookie cookie) {
-        delegate.deleteCookie(cookie);
-    }
-
-    @Override
     public ArrayList<String> getIncrementedCounters() {
         return delegate.getIncrementedCounters();
     }

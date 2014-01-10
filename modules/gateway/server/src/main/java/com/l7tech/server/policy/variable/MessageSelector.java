@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.common.io.XmlUtil;
@@ -23,6 +24,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.xml.MessageNotSoapException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -58,6 +60,10 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String BUFFER_ALLOWED = "buffer.allowed";
     private static final String COMMAND_TYPE_NAME = "command.type";
     private static final String COMMAND_PARAMETER_PREFIX = "command.parameter.";
+    private static final String HTTP_COOKIES = "http.cookies";
+    private static final String HTTP_COOKIENAMES = "http.cookienames";
+    private static final String HTTP_COOKIES_PREFIX = "http.cookies.";
+    private static final String HTTP_COOKIEVALUES_PREFIX = "http.cookievalues.";
 
     static enum BufferStatus {
         UNINITIALIZED("uninitialized"),
@@ -136,7 +142,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
 
     private static final List<Class<? extends HasHeaders>> httpHeaderHaverKnobClasses =
-            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpOutboundRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class);
+            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HeadersKnob.class, HttpInboundResponseKnob.class);
 
     private static final List<Class<? extends HasHeaders>> jmsHeaderHaverKnobClasses = Arrays.<Class<? extends HasHeaders>>asList(JmsKnob.class);
 
@@ -238,6 +244,8 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = commandParameterSelector;
         } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
             selector = commandTypeSelector;
+        } else if (lname.equals(HTTP_COOKIES) || lname.equals(HTTP_COOKIENAMES) || lname.startsWith(HTTP_COOKIES_PREFIX) || lname.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
+            selector = cookiesSelector;
         } else if (selectorMap.get(prefix) != null) {
             selector = selectorMap.get(prefix);
         } else {
@@ -730,6 +738,26 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true, httpHeaderHaverKnobClasses);
     private static final HeaderSelector jmsHeaderSelector = new HeaderSelector(JMS_HEADER_PREFIX, false, jmsHeaderHaverKnobClasses);
 
+    public static class ChainedSelector implements MessageAttributeSelector {
+        private Collection<MessageAttributeSelector> delegates;
+        public ChainedSelector(@NotNull final Collection<MessageAttributeSelector> delegates) {
+            this.delegates = delegates;
+        }
+
+        @Override
+        public Selection select(final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
+            for (final MessageAttributeSelector delegate : delegates) {
+                if (delegate != null) {
+                    final Selection selection = delegate.select(context, name, handler, strict);
+                    if (selection != null) {
+                        return selection;
+                    }
+                }
+            }
+            return null;
+        }
+    }
+
     public static class HeaderSelector implements MessageAttributeSelector {
         final String prefix;
         final boolean multi;
@@ -834,6 +862,99 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             } catch (MessageNotSoapException e) {
                 handler.handleBadVariable("Unable to obtain SOAP info for message", e);
                 return null;
+            }
+        }
+    }
+
+    private static final CookiesSelector cookiesSelector = new CookiesSelector();
+
+    /**
+     * MessageAttributeSelector specific for selecting http cookies.
+     */
+    private static class CookiesSelector implements MessageAttributeSelector {
+        private static final String DOMAIN = "Domain";
+        private static final String PATH = "Path";
+        private static final String COMMENT = "Comment";
+        private static final String VERSION = "Version";
+        private static final String MAX_AGE = "Max-Age";
+        private static final String SECURE = "Secure";
+        private static final String ATTRIBUTE_DELIMITER = "; ";
+        private static final String EQUALS = "=";
+        private static final int UNSPECIFIED_MAX_AGE = -1;
+
+        @Override
+        public Selection select(final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
+            Selection selection = null;
+            final String prefixedName = getPrefixedName(name);
+            final HttpCookiesKnob cookiesKnob = context.getKnob(HttpCookiesKnob.class);
+            if (cookiesKnob != null) {
+                final List<String> cookies = new ArrayList<>();
+                for (final HttpCookie cookie : cookiesKnob.getCookies()) {
+                    String cookieStr = null;
+                    if (name.equals(HTTP_COOKIES)) {
+                        // all attributes
+                        cookieStr = getCookieString(cookie);
+                    } else if (name.equals(HTTP_COOKIENAMES)) {
+                        // only names
+                        cookieStr = cookie.getCookieName();
+                    } else if (name.startsWith(HTTP_COOKIES_PREFIX)) {
+                        if (cookie.getCookieName().equals(prefixedName)) {
+                            // all cookie attributes
+                            cookieStr = getCookieString(cookie);
+                        }
+                    } else if (name.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
+                        if (cookie.getCookieName().equals(prefixedName)) {
+                            // only value
+                            cookieStr = cookie.getCookieValue();
+                        }
+                    }
+                    if (StringUtils.isNotBlank(cookieStr)) {
+                        cookies.add(cookieStr);
+                    }
+                }
+                if (!cookies.isEmpty()) {
+                    selection = new Selection(cookies.toArray(new String[cookies.size()]));
+                }
+            }
+            if (selection == null && prefixedName != null) {
+                // could not find any cookies matching the prefixed name
+                final String msg = handler.handleBadVariable(name);
+                if (strict) {
+                    throw new IllegalArgumentException(msg);
+                }
+            }
+            return selection;
+        }
+
+        private String getPrefixedName (final String selectionName) {
+            String prefixedName = null;
+            if (selectionName.startsWith(HTTP_COOKIES_PREFIX)) {
+                prefixedName = selectionName.substring(HTTP_COOKIES_PREFIX.length());
+            } else if (selectionName.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
+                prefixedName = selectionName.substring(HTTP_COOKIEVALUES_PREFIX.length());
+            }
+            return prefixedName;
+        }
+
+        private String getCookieString(final HttpCookie cookie) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(cookie.getCookieName()).append(EQUALS).append(HttpCookie.quoteIfNeeded(cookie.getCookieValue()));
+            sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
+            appendIfNotBlank(sb, DOMAIN, cookie.getDomain());
+            appendIfNotBlank(sb, PATH, cookie.getPath());
+            appendIfNotBlank(sb, COMMENT, cookie.getComment());
+            if (cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
+                sb.append(ATTRIBUTE_DELIMITER).append(MAX_AGE).append(EQUALS).append(cookie.getMaxAge());
+            }
+            if (cookie.isSecure()) {
+                sb.append(ATTRIBUTE_DELIMITER).append(SECURE);
+            }
+            return sb.toString();
+        }
+
+        private void appendIfNotBlank(final StringBuilder stringBuilder, final String attributeName, final String attributeValue) {
+            if (StringUtils.isNotBlank(attributeValue)) {
+                stringBuilder.append(ATTRIBUTE_DELIMITER).append(attributeName).append(EQUALS).append(attributeValue);
             }
         }
     }

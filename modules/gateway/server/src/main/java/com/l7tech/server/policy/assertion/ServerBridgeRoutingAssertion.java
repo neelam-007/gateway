@@ -257,12 +257,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
                     } else {
                         bridgeResponse = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
-                        bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                            @Override
-                            public void addCookie(HttpCookie cookie) {
-                                // TODO what to do with the cookie?
-                            }
-                        });
+                        bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {});
                     }
 
                     // enforce xml size limit
@@ -307,7 +302,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     inboundResponseKnob.setHeaderSource(hh);
                     HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
-                        HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, getAudit(), hh,
+                        HttpForwardingRuleEnforcer.handleResponseHeaders(bridgeResponse.getHeadersKnob(), getAudit(), hh,
                                                                          assertion.getResponseHeaderRules(), vars,
                                                                          varNames, context);
 
@@ -644,7 +639,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 Set cookies = Collections.EMPTY_SET;
                 if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                     cookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
-                    cookies = context.getCookies();
+                    cookies = bridgeRequest.getHttpCookiesKnob().getCookies();
                 }
                 //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
@@ -657,7 +652,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                     //add or replace cookies
                     for (HttpCookie cookie : cookies) {
-                        context.addCookie(cookie);
+                        bridgeResponse.getHttpCookiesKnob().addCookie(cookie);
                     }
                 }
             }
@@ -736,7 +731,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         private final Message bridgeRequest;
         private final RoutingResultListener rrl;
         private final HeaderHolder hh;
-        private final HasOutboundHeaders oh;
 
         private BRASimpleHttpClient(final GenericHttpClient client,
                                     final PolicyEnforcementContext context,
@@ -749,13 +743,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             this.bridgeRequest = bridgeRequest;
             this.rrl = rrl;
             this.hh = hh;
-            this.oh = bridgeRequest.getKnob(HttpOutboundRequestKnob.class);
         }
 
         @Override
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
-            HttpForwardingRuleEnforcer.handleRequestHeaders(oh, bridgeRequest, params, context, assertion.getRequestHeaderRules(),
+            HttpForwardingRuleEnforcer.handleRequestHeaders(bridgeRequest, params, context, assertion.getRequestHeaderRules(),
                                                             getAudit(), null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {
@@ -840,7 +833,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
 
                                 //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
+                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getRequest().getHttpCookiesKnob().getCookies())));
 
                                 return doGetResponse(false);
                             }

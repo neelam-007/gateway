@@ -169,8 +169,8 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
             String responseBody = bout.toString("UTF-8");
             HashMap<String, String[]> headers = new HashMap<>();
-            for (String header : response.getHttpResponseKnob().getHeaderNames()) {
-                headers.put(header, response.getHttpResponseKnob().getHeaderValues(header));
+            for (String header : response.getHeadersKnob().getHeaderNames()) {
+                headers.put(header, response.getHeadersKnob().getHeaderValues(header));
             }
             return new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
         } finally {

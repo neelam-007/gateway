@@ -34,6 +34,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
@@ -65,7 +66,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean isRequestPolicyViolated = false;
     private boolean isRequestClaimingWrongPolicyVersion = false;
     private PublishedService service;
-    private Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
     private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
     private final Map<String,Object> variables = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
     private PolicyContextCache cache;
@@ -290,34 +290,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public PolicyContextCache getCache() {
         return cache;
-    }
-
-    @Override
-    public Set<HttpCookie> getCookies() {
-        return Collections.unmodifiableSet(cookies);
-    }
-
-    @Override
-    public void addCookie(HttpCookie cookie) {
-        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
-        for (HttpCookie currentCookie : cookies) {
-            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
-                toRemove.add(currentCookie);
-            }
-        }
-        cookies.removeAll(toRemove);
-        cookies.add(cookie);
-    }
-
-    @Override
-    public void deleteCookie(HttpCookie cookie) {
-        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
-        for (HttpCookie currentCookie : cookies) {
-            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
-                toRemove.add(currentCookie);
-            }
-        }
-        cookies.removeAll(toRemove);
     }
 
     @Override

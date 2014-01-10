@@ -215,12 +215,7 @@ public abstract class BaseInstaller {
         };
         request.attachKnob(HttpRequestKnob.class, requestKnob);
 
-        HttpResponseKnob responseKnob = new AbstractHttpResponseKnob() {
-            @Override
-            public void addCookie(HttpCookie cookie) {
-
-            }
-        };
+        HttpResponseKnob responseKnob = new AbstractHttpResponseKnob() {};
 
         final Message response = new Message();
         response.attachKnob(HttpResponseKnob.class, responseKnob);
