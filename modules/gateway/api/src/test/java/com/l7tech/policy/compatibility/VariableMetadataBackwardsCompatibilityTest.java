@@ -1,9 +1,7 @@
 package com.l7tech.policy.compatibility;
 
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -19,15 +17,5 @@ public class VariableMetadataBackwardsCompatibilityTest extends BaseBackwardsCom
     @Test
     public void testVariableMetadata() throws Exception {
         Assert.assertNotNull(base64ToObject(serialBase64Encoded).getCustomData());
-    }
-
-    /**
-     * The following unit-test generated the {@link #serialBase64Encoded} value.
-     */
-    @Ignore
-    @Test
-    public void generateInitialSerialisation() throws Exception {
-        final VariableMetadata testVariableMetadata = new VariableMetadata("foo", true, true, "FOO", true, DataType.MESSAGE, "bar");
-        System.out.println(objectToBase64(createAssertion(testVariableMetadata)));
     }
 }

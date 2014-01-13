@@ -2,7 +2,6 @@ package com.l7tech.policy.compatibility;
 
 import com.l7tech.policy.assertion.ext.CustomAssertionPrincipal;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -18,15 +17,5 @@ public class CustomAssertionPrincipalBackwardsCompatibilityTest extends BaseBack
     @Test
     public void testCustomAssertionPrincipal() throws Exception {
         Assert.assertNotNull(base64ToObject(serialBase64Encoded).getCustomData());
-    }
-
-    /**
-     * The following unit-test generated the {@link #serialBase64Encoded} value.
-     */
-    @Ignore
-    @Test
-    public void generateInitialSerialisation() throws Exception {
-        final CustomAssertionPrincipal testCustomAssertionPrincipal = new CustomAssertionPrincipal("foo");
-        System.out.println(objectToBase64(createAssertion(testCustomAssertionPrincipal)));
     }
 }

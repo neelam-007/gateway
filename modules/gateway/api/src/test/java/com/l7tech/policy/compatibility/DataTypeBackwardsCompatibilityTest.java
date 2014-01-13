@@ -2,7 +2,6 @@ package com.l7tech.policy.compatibility;
 
 import com.l7tech.policy.variable.DataType;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -18,15 +17,5 @@ public class DataTypeBackwardsCompatibilityTest extends BaseBackwardsCompatibili
     @Test
     public void testDataType() throws Exception {
         Assert.assertNotNull(base64ToObject(serialBase64Encoded).getCustomData());
-    }
-
-    /**
-     * The following unit-test generated the {@link #serialBase64Encoded} value.
-     */
-    @Ignore
-    @Test
-    public void generateInitialSerialisation() throws Exception {
-        final DataType testDataType = DataType.CERTIFICATE;
-        System.out.println(objectToBase64(createAssertion(testDataType)));
     }
 }

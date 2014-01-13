@@ -2,7 +2,6 @@ package com.l7tech.policy.compatibility;
 
 import com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -18,16 +17,5 @@ public class CustomMessageTargetableSupportBackwardsCompatibilityTest extends Ba
     @Test
     public void testCustomMessageTargetableSupport() throws Exception {
         Assert.assertNotNull(base64ToObject(serialBase64Encoded).getCustomData());
-    }
-
-    /**
-     * The following unit-test generated the {@link #serialBase64Encoded} value.
-     */
-    @Ignore
-    @Test
-    public void generateInitialSerialisation() throws Exception {
-        final CustomMessageTargetableSupport testCustomMessageTargetableSupport = new CustomMessageTargetableSupport("foo", true);
-        testCustomMessageTargetableSupport.setSourceUsedByGateway(false);
-        System.out.println(objectToBase64(createAssertion(testCustomMessageTargetableSupport)));
     }
 }
