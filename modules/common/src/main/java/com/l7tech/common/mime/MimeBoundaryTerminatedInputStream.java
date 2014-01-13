@@ -164,7 +164,7 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
                 }
 
                 // Did not find a match.  Unread block, convert matchbytes to drainbytes, and recurse to drain.
-                in.unread(b, off, len);
+                in.unread(b, off, got);
                 boundDrainBytes = boundMatchBytes;
                 boundDrainOff = 0;
                 boundMatchBytes = 0;
@@ -179,7 +179,7 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
             }
 
             // Match ruled out at that position.  Unread block, convert matchbytes to drainbytes, and recurse to drain.
-            in.unread(b, off, len);
+            in.unread(b, off, got);
             boundDrainBytes = boundMatchBytes;
             boundDrainOff = 0;
             boundMatchBytes = 0;
