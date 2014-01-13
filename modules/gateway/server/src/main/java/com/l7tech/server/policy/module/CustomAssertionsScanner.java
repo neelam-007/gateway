@@ -34,6 +34,15 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     // flag indicating SSG shutdown, actually it's when the bean is destroyed.
     private boolean isShuttingDown = false;
 
+    // Acts as a cache for all modules (module names) being loaded since SSG startup.
+    // Note that this is ever-growing list, therefore potentially it can consume a lot of memory,
+    // though in order to become noticeable on memory imprint, hundreds of thousands perhaps millions of
+    // different modules need to be loaded at some point.
+    // This is highly unlikely to happen (at this point we do not have that many different modules),
+    // but in case it becomes an issue then, the set below should be redesign to use RAM as well as own file,
+    // similar to HybridStashManager.
+    private final Set<String> loadedModulesCache = new HashSet<>();
+
     /**
      * Indicates whether this is the initial scan or not (<code>true</code> by default).<br/>
      * Custom assertions, not implementing {@link com.l7tech.policy.assertion.ext.CustomDynamicLoader CustomDynamicLoader} interface,
@@ -469,8 +478,8 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
 
             // all assertions are going to be loaded during initial scan, so if this is not the initial load then
             // check if we can load this module i.e. if all assertions inside the module are implementing CustomDynamicLoader interface.
-            if (!isInitialScan && !module.isCustomDynamicLoader()) {
-                logger.warning("Module \"" + file.getName() + "\" doesn't support dynamic loading. The module will be loaded on next SSG start.");
+            if (!isInitialScan && !module.isCustomDynamicLoader() && loadedModulesCache.contains(module.getName())) {
+                logger.warning("Module \"" + module.getName() + "\" doesn't support dynamic loading and it was already loaded once. This version of the module will be loaded on next SSG start.");
                 // skip it
                 retValue.setLoadedModule(null);
                 return retValue;
@@ -481,6 +490,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
 
             // insert our new or modified module
             insertModule(module);
+
+            // mark module as loaded, add it to the loaded modules cache
+            loadedModulesCache.add(module.getName());
 
             // set the return variable accordingly, to indicate which module was loaded.
             retValue.setLoadedModule(module);

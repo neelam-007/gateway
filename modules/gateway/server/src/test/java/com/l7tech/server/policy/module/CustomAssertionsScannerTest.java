@@ -218,10 +218,6 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
         // create custom assertions scanner
         assertionsScanner = Mockito.spy(new CustomAssertionsScanner(modulesConfig, customAssertionCallbacks));
-
-        // forcing it to true, since on systems with one second resolution of File.lastModified method
-        // (like linux, OSX etc.), quick folder modifications will not be detected.
-        //Mockito.doReturn(true).when(assertionsScanner).isScanNeeded(Mockito.<File>any(), Mockito.anyLong());
     }
 
     @After
@@ -342,11 +338,11 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
         // verify result
-        Assert.assertFalse("no valid modules, so no chnages", changesMade);
+        Assert.assertFalse("no valid modules, so no changes", changesMade);
 
         // There are total of five jars with broken descriptors, 4 of them have a custom_assertion.properties file,
         // (two with missing CustomAssertion and/or ServiceInvocation classes, and two of them doesn't implement
-        // CustomAssertion and/or ServiceInvocation interfaces), so they will be not be loaded (new logic), they'll be skipped
+        // CustomAssertion and/or ServiceInvocation interfaces), so they will not be loaded (new logic), they'll be skipped
         // one doesn't have custom_assertion.properties file, so it will not be loaded (legacy logic), it will be skipped as well
         verifyAssertionScanner(5, 0, 0, 0, 0, 5, 0);
 
@@ -463,8 +459,308 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         verifyAssertionScanner(1, 0, 0, 0, 0, 1, 0);
     }
 
+    /**
+     * This test is not valid on Windows platform and should be ignored.<br/>
+     * Due to the mandatory file locking, modules cannot be deleted from disk.
+     * <p/>
+     * On Windows platform run {@link #testLoadingNonDynamicModulesOnlyOnceWorkaround()} unit test instead.
+     *
+     * @see #testLoadingNonDynamicModulesOnlyOnceWorkaround()
+     */
     @Test
-    public void testLoadingNonDynamicModules() throws Exception {
+    @ConditionalIgnore(condition = RunsOnWindows.class)
+    public void testLoadingNonDynamicModulesOnlyOnce() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // copy couple of non-dynamic lifecycle-listener modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy couple of non-dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // copy a new non-dynamic module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicCustomAssertionTest3.jar"
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // copy the non-dynamic module once again
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("non-dynamic module was not loaded again", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+    }
+
+    @Test
+    public void testLoadingNonDynamicModulesOnlyOnceWorkaround() throws Exception {
+        // enable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(DISABLED_MODULES_SUFFIX);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // copy couple of non-dynamic lifecycle-listener modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        // do initial scan
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy couple of non-dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // copy a new non-dynamic module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module (by disabling it)
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                nonDynamicModulesEmptyDir,
+                                "com.l7tech.NonDynamicCustomAssertionTest3.jar",
+                                "com.l7tech.NonDynamicCustomAssertionTest3.jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // enable the non-dynamic module once again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicCustomAssertionTest3.jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("non-dynamic module was not loaded again", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+    }
+
+    @Test
+    public void testLoadingNonDynamicModulesOnlyOnceWorkaroundNotEnabled() throws Exception {
+        // disable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(null);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // copy couple of non-dynamic lifecycle-listener modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy couple of non-dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // copy a new non-dynamic module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module (by disabling it)
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                nonDynamicModulesEmptyDir,
+                                "com.l7tech.NonDynamicCustomAssertionTest3.jar",
+                                "com.l7tech.NonDynamicCustomAssertionTest3.jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("workaround is disabled therefore there shouldn't be any changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // enable the non-dynamic module once again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicCustomAssertionTest3.jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes after removing disabled file", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+    }
+
+    @Test
+    public void testLoadingNonDynamicModulesOnlyOnceOnEmptyModulesDir() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
@@ -472,9 +768,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
         // do initial scan on an empty folder
         boolean changesMade = assertionsScanner.scanModules();
-        // verify that no module was loaded
         Assert.assertFalse("did not found module changes, since folder is empty", changesMade);
-
         verifyLoadedModules(0, 0);
 
         final int numOfFilesToCopy = 3;
@@ -485,31 +779,35 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
                         new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
                 }
         );
-
-        // do another scan
         changesMade = assertionsScanner.scanModules();
-        // verify that no module was loaded (even though new files are added)
-        Assert.assertFalse("Even though new files are added in the modules folder, all of them are nun-dynamic therefore will not be loaded", changesMade);
-
-        verifyAssertionScanner(numOfFilesToCopy, 0, 0, 0, 0, numOfFilesToCopy, 1);
+        Assert.assertTrue("changes found, loaded only once", changesMade);
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
 
         // do another scan, without any changes to make sure no methods are called
         changesMade = assertionsScanner.scanModules();
-        // verify that no module was loaded (even though new files are added)
-        Assert.assertFalse("still no changes", changesMade);
-
-        verifyAssertionScanner(numOfFilesToCopy, 0, 0, 0, 0, numOfFilesToCopy, 1);
+        Assert.assertFalse("no changes", changesMade);
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
     }
 
+    /**
+     *
+     * This test is not valid on Windows platform and should be ignored.<br/>
+     * Due to the mandatory file locking, modules cannot be deleted from disk.
+     * <p/>
+     * On Windows platform run {@link #testLoadingNonDynamicLifeListenerModulesOnlyOnceWorkaround()} unit test instead.
+     *
+     * @see #testLoadingNonDynamicLifeListenerModulesOnlyOnceWorkaround()
+     */
     @Test
-    public void testLoadingNonDynamicLifeListenerModules() throws Exception {
+    @ConditionalIgnore(condition = RunsOnWindows.class)
+    public void testLoadingNonDynamicLifeListenerModulesOnlyOnce() throws Exception {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
         Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
 
-        // initially copy few non-dynamic modules
-        final int numOfFilesToCopy = 3;
+        // initially copy couple non-dynamic modules
+        final int numOfFilesToCopy = 2;
         copy_all_files(
                 modTmpFolder,
                 numOfFilesToCopy,
@@ -517,15 +815,13 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
                         new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
                 }
         );
-
-        // do initial scan
         boolean changesMade = assertionsScanner.scanModules();
         Assert.assertTrue("there should be modules scanned", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
 
-        // verify initial scan (all initial modules should be loaded)
-        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
-
-        // copy additional non-dynamic-life-listener modules
+        // copy couple of non-dynamic-life-listener modules
         copy_all_files(
                 modTmpFolder,
                 numOfFilesToCopy,
@@ -533,22 +829,295 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
                         new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
                 }
         );
-
-        // do another scan
         changesMade = assertionsScanner.scanModules();
-        // verify that no module was loaded (even though new files are added)
-        Assert.assertFalse("Even though new modules are added in the modules folder, all of them are nun-dynamic therefore will not be loaded", changesMade);
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
 
-        // verify initial scan (all initial modules should be loaded)
-        verifyAssertionScanner(2 * numOfFilesToCopy, 0, numOfFilesToCopy, 0, 0, numOfFilesToCopy, 1);
+        // copy a new non-dynamic-life-listener module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar"
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // copy the non-dynamic-life-listener module once again
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("non-dynamic-life-listener module was not loaded again", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
 
         // do another scan, without any changes to make sure no methods are called
         changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+    }
 
-        // verify that no module was loaded (even though new files are added)
+    @Test
+    public void testLoadingNonDynamicLifeListenerModulesOnlyOnceWorkaround() throws Exception {
+        // enable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(DISABLED_MODULES_SUFFIX);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // copy couple of non-dynamic lifecycle-listener modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        // do initial scan
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy couple of non-dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // copy a new non-dynamic module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module (by disabling it)
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                nonDynamicLifeListenerModulesEmptyDir,
+                                "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar",
+                                "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // enable the non-dynamic module once again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("non-dynamic module was not loaded again", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                1,
+                1
+        );
+    }
+
+    @Test
+    public void testLoadingNonDynamicLifeListenerModulesOnlyOnceWorkaroundNotEnabled() throws Exception {
+        // disable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(null);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // copy couple of non-dynamic lifecycle-listener modules
+        final int numOfFilesToCopy = 2;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy couple of non-dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("modules are loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // copy a new non-dynamic module
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module was loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += 1, expectedNumberOfLoadedMods += 1);
+
+        // unload newly added module (by disabling it)
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                nonDynamicLifeListenerModulesEmptyDir,
+                                "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar",
+                                "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("workaround is disabled therefore there shouldn't be any changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // enable the non-dynamic module once again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest3.jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes after removing disabled file", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("still no changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+    }
+
+    @Test
+    public void testLoadingNonDynamicLifeListenerModulesOnlyOnceOnEmptyModulesDir() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // do initial scan on an empty folder
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("did not found module changes, since folder is empty", changesMade);
+        verifyLoadedModules(0, 0);
+
+        final int numOfFilesToCopy = 3;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicLifeListenerModulesEmptyDir, "com.l7tech.NonDynamicLifecycleListenerCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("changes found, loaded only once", changesMade);
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
         Assert.assertFalse("no changes", changesMade);
-
-        verifyAssertionScanner(2 * numOfFilesToCopy, 0, numOfFilesToCopy, 0, 0, numOfFilesToCopy, 1);
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
     }
 
     @Test
@@ -575,7 +1144,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // verify initial scan (all initial modules should be loaded)
         verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
 
-        // copy additional non-dynamic-life-listener modules
+        // copy additional dynamic modules
         copy_all_files(
                 modTmpFolder,
                 numOfFilesToCopy,
@@ -597,6 +1166,270 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         Assert.assertFalse("no changes", changesMade);
 
         verifyLoadedModules(2 * numOfFilesToCopy, 2 * numOfFilesToCopy);
+    }
+
+    /**
+     *
+     * This test is not valid on Windows platform and should be ignored.<br/>
+     * Due to the mandatory file locking, modules cannot be deleted from disk.
+     * <p/>
+     * On Windows platform run {@link #testLoadingDynamicModulesOnlyOnceWorkaround()} unit test instead.
+     *
+     * @see #testLoadingDynamicModulesOnlyOnceWorkaround()
+     */
+    @Test
+    @ConditionalIgnore(condition = RunsOnWindows.class)
+    public void testLoadingDynamicModulesOnlyOnce() throws Exception {
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few non-dynamic modules
+        final int numOfFilesToCopy = 3;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules scanned", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy additional dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // delete the last one
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar"
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // copy the last one again
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module loaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods += 1,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+    }
+
+    @Test
+    public void testLoadingDynamicModulesOnlyOnceWorkaround() throws Exception {
+        // enable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(DISABLED_MODULES_SUFFIX);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few non-dynamic modules
+        final int numOfFilesToCopy = 3;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules scanned", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy additional dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // disable the last one
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                dynamicModulesEmptyDir,
+                                "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar",
+                                "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module unloaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // enable the last one again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("module loaded", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls += 1,
+                1,
+                expectedNumberOfLoadedMods += 1,
+                1,
+                0,
+                0,
+                1
+        );
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes", changesMade);
+        verifyAssertionScanner(
+                expectedOnModuleLoadCalls,
+                1,
+                expectedNumberOfLoadedMods,
+                1,
+                0,
+                0,
+                1
+        );
+    }
+
+    @Test
+    public void testLoadingDynamicModulesOnlyOnceWorkaroundNotEnabled() throws Exception {
+        // disable workaround
+        Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(null);
+
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few non-dynamic modules
+        final int numOfFilesToCopy = 3;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+        boolean changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules scanned", changesMade);
+        int expectedOnModuleLoadCalls = numOfFilesToCopy;
+        int expectedNumberOfLoadedMods = numOfFilesToCopy;
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // copy additional dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertTrue("there should be modules loaded", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls += numOfFilesToCopy, expectedNumberOfLoadedMods += numOfFilesToCopy);
+
+        // disable the last one
+        copy_all_files(
+                modTmpFolder,
+                1,
+                new CopyData[]{
+                        new CopyData(
+                                dynamicModulesEmptyDir,
+                                "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar",
+                                "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar" + DISABLED_MODULES_SUFFIX
+                        )
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("workaround disabled, no module changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // enable the last one again
+        delete_all_files(
+                modTmpFolder,
+                1,
+                new String[]{
+                        "com.l7tech.DynamicCustomAssertionsTest" + String.valueOf(numOfFilesToCopy) + ".jar" + DISABLED_MODULES_SUFFIX
+                }
+        );
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("workaround disabled, no module changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
+
+        // do another scan, without any changes to make sure no methods are called
+        changesMade = assertionsScanner.scanModules();
+        Assert.assertFalse("no changes", changesMade);
+        verifyLoadedModules(expectedOnModuleLoadCalls, expectedNumberOfLoadedMods);
     }
 
     /**
@@ -1085,7 +1918,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testScanFailOnUnloadModulesWorkaroundNotEnabled() throws Exception {
-        // enable workaround
+        // disable workaround
         Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(null);
 
         // create a temporary modules folder for this test
@@ -1279,7 +2112,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testDualModulesWorkaroundNotEnabled() throws Exception {
-        // enable workaround
+        // disable workaround
         Mockito.when(modulesConfig.getDisabledSuffix()).thenReturn(null);
 
         // create a temporary modules folder for this test
