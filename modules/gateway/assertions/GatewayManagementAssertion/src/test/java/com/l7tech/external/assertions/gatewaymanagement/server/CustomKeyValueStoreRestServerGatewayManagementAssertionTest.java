@@ -68,8 +68,8 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        CustomKeyValueStoreMO result = (CustomKeyValueStoreMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        CustomKeyValueStoreMO result = (CustomKeyValueStoreMO) item.getContent();
 
         assertEquals("Custom Key Value identifier:", customKeyValStore.getId(), result.getId());
         assertEquals("Custom Key Value key:", customKeyValStore.getName(), result.getKey());
@@ -130,7 +130,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         RestResponse responseGet = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        CustomKeyValueStoreMO entityGot = (CustomKeyValueStoreMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        CustomKeyValueStoreMO entityGot = (CustomKeyValueStoreMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setKey(entityGot.getKey() + "_mod");
@@ -165,9 +165,9 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<CustomKeyValueStoreMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, reference.getResource().getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

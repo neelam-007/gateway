@@ -68,8 +68,8 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        StoredPasswordMO result = (StoredPasswordMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        StoredPasswordMO result = (StoredPasswordMO) item.getContent();
 
         assertEquals("Secure Password identifier:", securePassword.getId(), result.getId());
         assertEquals("Secure Password Name:", securePassword.getName(), result.getName());
@@ -117,7 +117,7 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         RestResponse responseGet = processRequest(securePasswordBasePath + securePassword.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        StoredPasswordMO entityGot = (StoredPasswordMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        StoredPasswordMO entityGot = (StoredPasswordMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Updated name");
@@ -150,9 +150,9 @@ public class SecurePasswordRestServerGatewayManagementAssertionTest extends Serv
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<StoredPasswordMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(securePasswordManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(securePasswordManagerStub.findAll().size(), item.getContent().size());
     }
 }

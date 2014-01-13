@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.DocumentRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.rest.SpringBean;
@@ -29,12 +29,12 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     @Override
-    protected Reference<ResourceDocumentMO> toReference(ResourceDocumentMO resource) {
+    protected Item<ResourceDocumentMO> toReference(ResourceDocumentMO resource) {
         return toReference(resource.getId(), resource.getResource().getSourceUrl());
     }
 
     @Override
-    public Reference<ResourceDocumentMO> toReference(EntityHeader entityHeader) {
+    public Item<ResourceDocumentMO> toReference(EntityHeader entityHeader) {
         if (entityHeader instanceof ResourceEntryHeader) {
             return toReference(((ResourceEntryHeader) entityHeader).getUri(), entityHeader.getStrId());
         } else {

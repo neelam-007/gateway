@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.HttpConfigurationRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     }
 
     @Override
-    protected Reference<HttpConfigurationMO> toReference(HttpConfigurationMO resource) {
+    protected Item<HttpConfigurationMO> toReference(HttpConfigurationMO resource) {
         return toReference(resource.getId(), resource.getHost());
     }
 }

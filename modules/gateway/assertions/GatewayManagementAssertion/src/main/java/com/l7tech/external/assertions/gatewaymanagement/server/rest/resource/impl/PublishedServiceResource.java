@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
 
@@ -30,7 +30,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     @Override
-    protected Reference<ServiceMO> toReference(ServiceMO resource) {
+    protected Item<ServiceMO> toReference(ServiceMO resource) {
         return toReference(resource.getId(), resource.getServiceDetail().getName());
     }
 }

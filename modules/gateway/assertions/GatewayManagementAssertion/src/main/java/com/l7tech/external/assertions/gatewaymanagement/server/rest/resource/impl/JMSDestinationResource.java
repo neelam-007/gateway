@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.JMSDestinationRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.JMSDestinationMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
     }
 
     @Override
-    protected Reference<JMSDestinationMO> toReference(JMSDestinationMO resource) {
+    protected Item<JMSDestinationMO> toReference(JMSDestinationMO resource) {
         return toReference(resource.getId(), resource.getJmsDestinationDetail().getName());
     }
 }

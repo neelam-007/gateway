@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.JMSDestinationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -104,8 +101,8 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        JMSDestinationMO result = (JMSDestinationMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        JMSDestinationMO result = (JMSDestinationMO) item.getContent();
 
         assertEquals("JMS Destination identifier:", jmsEndpoint.getId(), result.getId());
         assertEquals("JMS Destination name:", jmsEndpoint.getName(), result.getJmsDestinationDetail().getName());
@@ -153,7 +150,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         RestResponse responseGet = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        JMSDestinationMO entityGot = (JMSDestinationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        JMSDestinationMO entityGot = (JMSDestinationMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getJmsDestinationDetail().setName("Updated New jms");
@@ -187,9 +184,9 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<JMSDestinationMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(jmsEndpointManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(jmsEndpointManagerStub.findAll().size(), item.getContent().size());
     }
 }

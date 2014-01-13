@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceAliasRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ServiceAliasMO;
 import com.l7tech.gateway.rest.SpringBean;
 
@@ -27,7 +27,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     @Override
-    protected Reference<ServiceAliasMO> toReference(ServiceAliasMO resource) {
+    protected Item<ServiceAliasMO> toReference(ServiceAliasMO resource) {
         return toReference(resource.getId(), resource.getServiceReference().getId());
     }
 }

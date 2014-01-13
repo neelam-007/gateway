@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -131,8 +128,8 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        EncapsulatedAssertionMO result = (EncapsulatedAssertionMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        EncapsulatedAssertionMO result = (EncapsulatedAssertionMO) item.getContent();
 
         assertEquals("Encapsulated Assertion identifier:", encassConfig.getId(), result.getId());
         assertEquals("Encapsulated Assertion name:", encassConfig.getName(), result.getName());
@@ -211,7 +208,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
@@ -228,7 +225,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setGuid("Updated GUID");
@@ -245,7 +242,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         RestResponse responseGet = processRequest(encassBasePath + encassConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        EncapsulatedAssertionMO entityGot = (EncapsulatedAssertionMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Update Encass Name");
@@ -278,9 +275,9 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<EncapsulatedAssertionMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(encassManager.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(encassManager.findAll().size(), item.getContent().size());
     }
 }

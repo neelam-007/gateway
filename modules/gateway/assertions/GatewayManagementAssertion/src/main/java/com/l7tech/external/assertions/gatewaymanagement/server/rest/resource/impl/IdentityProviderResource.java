@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.IdentityProviderRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.IdentityProviderMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -28,7 +28,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     }
 
     @Override
-    protected Reference<IdentityProviderMO> toReference(IdentityProviderMO resource) {
+    protected Item<IdentityProviderMO> toReference(IdentityProviderMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

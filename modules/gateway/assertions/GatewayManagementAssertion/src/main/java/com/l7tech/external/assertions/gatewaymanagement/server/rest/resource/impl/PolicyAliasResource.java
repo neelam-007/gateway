@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAliasRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.PolicyAliasMO;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     }
 
     @Override
-    protected Reference<PolicyAliasMO> toReference(PolicyAliasMO resource) {
+    protected Item<PolicyAliasMO> toReference(PolicyAliasMO resource) {
         return toReference(resource.getId(), resource.getPolicyReference().getId());
     }
 }

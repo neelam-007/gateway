@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.CustomKeyValueStoreRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.CustomKeyValueStoreMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     }
 
     @Override
-    protected Reference<CustomKeyValueStoreMO> toReference(CustomKeyValueStoreMO resource) {
+    protected Item<CustomKeyValueStoreMO> toReference(CustomKeyValueStoreMO resource) {
         return toReference(resource.getId(), resource.getStoreName());
     }
 }

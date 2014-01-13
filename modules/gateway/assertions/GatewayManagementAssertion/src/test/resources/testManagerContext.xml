@@ -113,6 +113,49 @@
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
+    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
+        <constructor-arg value="internalIdentityProvider"/>
+    </bean>
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"
+          scope="prototype">
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
+        <property name="userManager" ref="internalUserManager"/>
+        <property name="groupManager" ref="internalGroupManager"/>
+        <property name="passwordHasher" ref="passwordHasher"/>
+    </bean>
+
+    <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
+        <constructor-arg ref="clientCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+    </bean>
+
+    <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="revocationCheckPolicyManager"/>
+        <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="serverConfig"/>
+        <!-- These make use of the certificate validation processor so cannot be constructor args -->
+        <property name="crlCache" ref="crlCache"/>
+        <property name="ocspCache" ref="ocspCache"/>
+    </bean>
+
+    <bean id="crlCache" class="com.l7tech.server.security.cert.CrlCacheImpl">
+        <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="CRL Refresh"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="ocspCache" class="com.l7tech.server.security.cert.OCSPCache">
+        <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="serviceAliasManager"/>

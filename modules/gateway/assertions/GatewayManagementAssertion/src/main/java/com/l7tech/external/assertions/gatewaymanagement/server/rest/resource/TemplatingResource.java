@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -11,7 +11,7 @@ import javax.ws.rs.Path;
  *
  * @author Victor Kazakov
  */
-public interface TemplatingResource {
+public interface TemplatingResource<R> {
     /**
      * This will return a template, example entity that can be used as a base to creating a new entity.
      *
@@ -19,5 +19,5 @@ public interface TemplatingResource {
      */
     @GET
     @Path("template")
-    public Reference getResourceTemplate();
+    public Item<R> getResourceTemplate();
 }

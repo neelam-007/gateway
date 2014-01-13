@@ -8,12 +8,9 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
-import org.glassfish.jersey.message.XmlHeader;
 
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.*;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
@@ -24,7 +21,7 @@ import java.util.List;
  */
 @Provider
 @Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
-public class AssertionSecurityZoneResource implements  TemplatingResource {
+public class AssertionSecurityZoneResource implements UpdatingResource<AssertionSecurityZoneMO>, ReadingResource<AssertionSecurityZoneMO>, ListingResource<AssertionSecurityZoneMO>, TemplatingResource<AssertionSecurityZoneMO> {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
     protected static final String activeConnectors_URI = "assertionSecurityZones";
@@ -41,30 +38,29 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
         return EntityType.ASSERTION_ACCESS;
     }
 
-    protected Reference<AssertionSecurityZoneMO> toReference(AssertionSecurityZoneMO resource) {
-        return new ReferenceBuilder<AssertionSecurityZoneMO>(resource.getName(), resource.getId(), getEntityType().name())
+    protected Item<AssertionSecurityZoneMO> toReference(AssertionSecurityZoneMO resource) {
+        return new ItemBuilder<AssertionSecurityZoneMO>(resource.getName(), resource.getId(), getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), resource.getName())))
                 .build();
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_XML)
-        //This xml header allows the list to be explorable when viewed in a browser
-        //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public References listResources(@QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order)
+    @Override
+    public ItemsList<AssertionSecurityZoneMO> listResources(final int offset, final int count, final String sort, final String order)
     {
         final String sortKey = factory.getSortKey(sort);
         if(sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(factory.listResources(sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, AssertionSecurityZoneMO>() {
+        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
             @Override
-            public Reference call(AssertionSecurityZoneMO resource) {
+            public Item<AssertionSecurityZoneMO> call(AssertionSecurityZoneMO resource) {
                 return toReference(resource);
             }
         });
-        return ManagedObjectFactory.createReferences(references);
+        return new ItemsListBuilder<AssertionSecurityZoneMO>(EntityType.ASSERTION_ACCESS + " list", "List").setContent(items)
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .build();
     }
 
     /**
@@ -75,11 +71,10 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
      * @throws ResourceFactory.ResourceNotFoundException
      *
      */
-    @GET
-    @Path("{name}")
-    public Reference<AssertionSecurityZoneMO> getResource(@PathParam("name")String name) throws ResourceFactory.ResourceNotFoundException {
+    @Override
+    public Item<AssertionSecurityZoneMO> getResource(String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
-        return new ReferenceBuilder<>(toReference(resource))
+        return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
@@ -87,11 +82,12 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
     }
 
     @Override
-    public Reference getResourceTemplate() {
+    public Item<AssertionSecurityZoneMO> getResourceTemplate() {
         AssertionSecurityZoneMO resource = factory.getResourceTemplate();
-        Reference<AssertionSecurityZoneMO> reference = ManagedObjectFactory.createReference();
-        reference.setResource(resource);
-        return reference;
+        return new ItemBuilder<AssertionSecurityZoneMO>(getEntityType() + " Template", getEntityType().toString())
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(resource)
+                .build();
 
     }
     /**
@@ -105,10 +101,8 @@ public class AssertionSecurityZoneResource implements  TemplatingResource {
      * @throws ResourceFactory.InvalidResourceException
      *
      */
-    @PUT
-    @Path("{name}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    @Override
+    public Response updateResource(AssertionSecurityZoneMO resource, String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
         return Response.ok().entity(toReference(updatedResource)).build();
     }

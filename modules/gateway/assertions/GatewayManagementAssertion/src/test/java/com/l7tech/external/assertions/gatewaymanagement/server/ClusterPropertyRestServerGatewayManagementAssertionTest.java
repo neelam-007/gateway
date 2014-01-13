@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ClusterPropertyMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.EntityHeader;
@@ -71,8 +68,8 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ClusterPropertyMO result = (ClusterPropertyMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ClusterPropertyMO result = (ClusterPropertyMO) item.getContent();
 
         assertEquals("Cluster property identifier:", clusterProperty.getId(), result.getId());
         assertEquals("Cluster property name:", clusterProperty.getName(), result.getName());
@@ -132,7 +129,7 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         RestResponse responseGet = processRequest(clusterPropertyBasePath + clusterProperty.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ClusterPropertyMO entityGot = (ClusterPropertyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ClusterPropertyMO entityGot = (ClusterPropertyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setValue("Updated user");
@@ -165,9 +162,9 @@ public class ClusterPropertyRestServerGatewayManagementAssertionTest extends Ser
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<ClusterPropertyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(mockClusterPropertyManager.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(mockClusterPropertyManager.findAll().size(), item.getContent().size());
     }
 }

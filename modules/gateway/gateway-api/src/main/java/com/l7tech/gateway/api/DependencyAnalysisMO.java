@@ -16,10 +16,10 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "DependencyAnalysis")
-@XmlType(propOrder = {"options", "searchObjectReference", "dependencies"})
+@XmlType(propOrder = {"options", "searchObjectItem", "dependencies"})
 public class DependencyAnalysisMO {
     private Map<String,Object> options;
-    private Reference searchObjectReference;
+    private Item searchObjectItem;
     private List<DependencyMO> dependencies;
 
     DependencyAnalysisMO(){}
@@ -35,12 +35,12 @@ public class DependencyAnalysisMO {
     }
 
     @XmlElement(name = "Reference", required = true)
-    public Reference getSearchObjectReference() {
-        return searchObjectReference;
+    public Item getSearchObjectItem() {
+        return searchObjectItem;
     }
 
-    public void setSearchObjectReference(Reference searchObjectReference) {
-        this.searchObjectReference = searchObjectReference;
+    public void setSearchObjectItem(Item searchObjectItem) {
+        this.searchObjectItem = searchObjectItem;
     }
 
     @XmlElement(name = "Dependency")

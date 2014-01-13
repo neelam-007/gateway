@@ -67,8 +67,8 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        RbacRoleMO roleReturned = (RbacRoleMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        RbacRoleMO roleReturned = (RbacRoleMO) item.getContent();
 
         Assert.assertEquals(role.getId(), roleReturned.getId());
         Assert.assertEquals(role.getName(), roleReturned.getName());
@@ -152,7 +152,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         roleReturned.setDescription("My Custom Role Updated");
 
@@ -172,7 +172,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         roleReturned.setDescription("My Custom Role Updated");
 
@@ -222,10 +222,9 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<RbacRoleAssignmentMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(2, reference.getResource().getReferences().size());
+        Assert.assertEquals(2, item.getContent().size());
     }
 }

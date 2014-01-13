@@ -4,7 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.InterfaceTagRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.InterfaceTagMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -29,7 +29,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     }
 
     @Override
-    protected Reference<InterfaceTagMO> toReference(InterfaceTagMO resource) {
+    protected Item<InterfaceTagMO> toReference(InterfaceTagMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 

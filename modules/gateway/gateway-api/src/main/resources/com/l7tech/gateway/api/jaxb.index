@@ -43,8 +43,8 @@ SiteMinderConfigurationMO
 AssertionSecurityZoneMO
 DependencyAnalysisMO
 DependencyMO
-Reference
-References
+Item
+ItemsList
 Bundle
 Link
 PolicyVersionMO

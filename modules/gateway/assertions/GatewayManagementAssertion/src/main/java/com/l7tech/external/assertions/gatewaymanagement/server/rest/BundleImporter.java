@@ -5,9 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -17,9 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by vkazakov on 1/3/14.
- */
 public class BundleImporter {
 
     @Inject
@@ -37,25 +33,25 @@ public class BundleImporter {
             }
         });
 
-        for (Reference reference : bundle.getReferences().getReferences()) {
-            Mapping mapping = mappings.get(reference.getId());
+        for (Item item : bundle.getReferences()) {
+            Mapping mapping = mappings.get(item.getId());
             if (mapping == null) {
-                throw new IllegalArgumentException("Cannot find mapping for " + reference.getType() + " id: " + reference.getId());
+                throw new IllegalArgumentException("Cannot find mapping for " + item.getType() + " id: " + item.getId());
             }
 
             RestEntityResource restEntityResource = restResourceLocator.findByEntityType(EntityType.valueOf(mapping.getType()));
 
             switch (mapping.getAction()) {
                 case NewOrExisting:
-                    Reference existingResourceReference = locateResource(mapping, restEntityResource);
-                    if(existingResourceReference != null){
+                    Item existingResourceItem = locateResource(mapping, restEntityResource);
+                    if(existingResourceItem != null){
                         mapping.setActionTaken(Mapping.ActionTaken.UsedExisting);
-                        mapping.setTargetId(existingResourceReference.getId());
+                        mapping.setTargetId(existingResourceItem.getId());
                     } else {
                         boolean success = false;
                         try {
                             //noinspection unchecked
-                            restEntityResource.updateResource(reference.getResource(), reference.getId());
+                            restEntityResource.updateResource(item.getContent(), item.getId());
                             success = true;
                         } catch (ResourceFactory.ResourceNotFoundException e) {
                             mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
@@ -64,7 +60,7 @@ public class BundleImporter {
                         }
                         if(success){
                             mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
-                            mapping.setTargetId(reference.getId());
+                            mapping.setTargetId(item.getId());
                         }
                     }
                     break;
@@ -82,7 +78,7 @@ public class BundleImporter {
         return mappingsRtn;
     }
 
-    private Reference locateResource(Mapping mapping, RestEntityResource restEntityResource) {
+    private Item locateResource(Mapping mapping, RestEntityResource restEntityResource) {
         try {
             return restEntityResource.getResource(mapping.getSrcId());
         } catch (ResourceFactory.ResourceNotFoundException e) {

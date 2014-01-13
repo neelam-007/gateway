@@ -4,8 +4,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.PolicyMO;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -37,7 +37,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     }
 
     @Override
-    protected Reference<PolicyMO> toReference(PolicyMO resource) {
+    protected Item<PolicyMO> toReference(PolicyMO resource) {
         return toReference(resource.getId(), resource.getPolicyDetail().getName());
     }
 

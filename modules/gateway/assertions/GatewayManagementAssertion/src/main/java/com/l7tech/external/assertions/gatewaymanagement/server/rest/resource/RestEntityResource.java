@@ -4,10 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.ReferenceBuilder;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
@@ -33,7 +30,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource, UpdatingResource<R>, DeletingResource, ListingResource, TemplatingResource {
+public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource<R>, UpdatingResource<R>, DeletingResource, ListingResource<R>, TemplatingResource<R> {
     public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     /**
@@ -74,39 +71,39 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     }
 
     @Override
-    public Reference<References> listResources(final int offset, final int count, final String sort, final String order) {
+    public ItemsList<R> listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, R>() {
+        List<Item<R>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<R>, R>() {
             @Override
-            public Reference call(R resource) {
+            public Item<R> call(R resource) {
                 return toReference(resource);
             }
         });
-        return new ReferenceBuilder<References>(getEntityType() + " list", "List").setContent(ManagedObjectFactory.createReferences(references))
+        return new ItemsListBuilder<R>(getEntityType() + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
 
-    protected abstract Reference<R> toReference(R resource);
+    protected abstract Item<R> toReference(R resource);
 
-    public Reference<R> toReference(EntityHeader entityHeader) {
+    public Item<R> toReference(EntityHeader entityHeader) {
         return toReference(entityHeader.getStrId(), entityHeader.getName());
     }
 
-    protected Reference<R> toReference(String id, String title) {
-        return new ReferenceBuilder<R>(title, id, getEntityType().name())
+    protected Item<R> toReference(String id, String title) {
+        return new ItemBuilder<R>(title, id, getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id)))
                 .build();
     }
 
     @Override
-    public Reference<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Item<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        return new ReferenceBuilder<>(toReference(resource))
+        return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
@@ -114,11 +111,12 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     }
 
     @Override
-    public Reference<R> getResourceTemplate() {
+    public Item<R> getResourceTemplate() {
         R resource = factory.getResourceTemplate();
-        Reference<R> reference = ManagedObjectFactory.createReference();
-        reference.<R>setResource(resource);
-        return reference;
+        return new ItemBuilder<R>(getEntityType() + " Template", getEntityType().toString())
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(resource)
+                .build();
     }
 
     @Override

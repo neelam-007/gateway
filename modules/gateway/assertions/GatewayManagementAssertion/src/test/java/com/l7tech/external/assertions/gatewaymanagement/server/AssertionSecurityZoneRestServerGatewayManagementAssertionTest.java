@@ -3,9 +3,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.AssertionSecurityZoneMO;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -92,11 +92,11 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Assertion Security Zone identifier:", assertionSecurityZone.getId(), reference.getId());
-        assertEquals("Assertion Security Zone name:", assertionSecurityZone.getName(), ((AssertionSecurityZoneMO) reference.getResource()).getName());
-        assertEquals("Assertion Security Zone security zone id:", securityZone.getId(), ((AssertionSecurityZoneMO) reference.getResource()).getSecurityZoneId());
+        assertEquals("Assertion Security Zone identifier:", assertionSecurityZone.getId(), item.getId());
+        assertEquals("Assertion Security Zone name:", assertionSecurityZone.getName(), ((AssertionSecurityZoneMO) item.getContent()).getName());
+        assertEquals("Assertion Security Zone security zone id:", securityZone.getId(), ((AssertionSecurityZoneMO) item.getContent()).getSecurityZoneId());
     }
 
     @Test
@@ -188,7 +188,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 //        RestResponse responseGet = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getId(), HttpMethod.GET, null, "");
 //        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
 //        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-//        AssertionSecurityZoneMO entityGot = (AssertionSecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+//        AssertionSecurityZoneMO entityGot = (AssertionSecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getContent();
 //
 //        // update
 //        entityGot.setName(entityGot.getName() + "_mod");
@@ -224,10 +224,10 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References reference = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<AssertionSecurityZoneMO> reference = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(2, reference.getReferences().size());
+        Assert.assertEquals(2, reference.getContent().size());
         Assert.assertEquals(1, assertionSecurityZoneManager.findAll().size());
     }
 }

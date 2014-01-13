@@ -28,7 +28,7 @@ import java.util.List;
 @Provider
 @Path(PrivateKeyResource.Version_URI + PrivateKeyResource.privateKey_URI)
 @Singleton
-public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationContext>, ReadingResource, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource, TemplatingResource {
+public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationContext>, ReadingResource<PrivateKeyMO>, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource<PrivateKeyMO>, TemplatingResource<PrivateKeyMO> {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
@@ -47,18 +47,19 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
         this.factory = factory;
     }
 
-    protected Reference<PrivateKeyMO> toReference(PrivateKeyMO resource) {
-        return new ReferenceBuilder<PrivateKeyMO>(resource.getAlias(), resource.getId(), factory.getEntityType().name())
+    protected Item<PrivateKeyMO> toReference(PrivateKeyMO resource) {
+        return new ItemBuilder<PrivateKeyMO>(resource.getAlias(), resource.getId(), factory.getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), resource.getId())))
                 .build();
     }
 
     @Override
-    public Reference<PrivateKeyMO> getResourceTemplate() {
+    public Item<PrivateKeyMO> getResourceTemplate() {
         PrivateKeyMO resource = factory.getResourceTemplate();
-        Reference<PrivateKeyMO> reference = ManagedObjectFactory.createReference();
-        reference.setResource(resource);
-        return reference;
+        return new ItemBuilder<PrivateKeyMO>(factory.getEntityType() + " Template", factory.getEntityType().toString())
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(resource)
+                .build();
     }
 
     @Override
@@ -75,28 +76,28 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
     }
 
     @Override
-    public Reference<References> listResources(int offset, int count, String sort, String order) {
+    public ItemsList<PrivateKeyMO> listResources(int offset, int count, String sort, String order) {
         final String sortKey = factory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, PrivateKeyMO>() {
+        List<Item<PrivateKeyMO>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<PrivateKeyMO>, PrivateKeyMO>() {
             @Override
-            public Reference call(PrivateKeyMO resource) {
+            public Item<PrivateKeyMO> call(PrivateKeyMO resource) {
                 return toReference(resource);
             }
         });
 
-        return new ReferenceBuilder<References>(EntityType.SSG_KEY_ENTRY + " list", "List").setContent(ManagedObjectFactory.createReferences(references))
+        return new ItemsListBuilder<PrivateKeyMO>(EntityType.SSG_KEY_ENTRY + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
 
     @Override
-    public Reference<PrivateKeyMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<PrivateKeyMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         PrivateKeyMO resource = factory.getResource(id);
-        return new ReferenceBuilder<>(toReference(resource))
+        return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))

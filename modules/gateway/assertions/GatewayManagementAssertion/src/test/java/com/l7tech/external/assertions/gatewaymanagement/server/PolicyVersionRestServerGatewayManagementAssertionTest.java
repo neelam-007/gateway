@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.PolicyVersionMO;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
@@ -16,7 +16,6 @@ import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import org.junit.*;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -97,8 +96,8 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        PolicyVersionMO policyVersionReturned = (PolicyVersionMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        PolicyVersionMO policyVersionReturned = (PolicyVersionMO) item.getContent();
 
         Assert.assertEquals(policyVersion.getId(), policyVersionReturned.getId());
         Assert.assertEquals(policyVersion.getName(), policyVersionReturned.getComment());
@@ -122,10 +121,9 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<PolicyVersionMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, reference.getResource().getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

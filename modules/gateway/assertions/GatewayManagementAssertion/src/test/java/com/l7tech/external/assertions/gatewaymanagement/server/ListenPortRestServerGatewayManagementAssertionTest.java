@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ListenPortMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
@@ -75,8 +72,8 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ListenPortMO result = (ListenPortMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ListenPortMO result = (ListenPortMO) item.getContent();
 
         assertEquals("Listen Port identifier:", ssgConnector.getId(), result.getId());
         assertEquals("Listen Port name:", ssgConnector.getName(), result.getName());
@@ -121,7 +118,7 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         logger.info(responseGet.toString());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ListenPortMO entityGot = (ListenPortMO)MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ListenPortMO entityGot = (ListenPortMO)MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Updated New listen port");
@@ -154,9 +151,9 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<ListenPortMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), item.getContent().size());
     }
 }

@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.ItemsList;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -18,7 +17,7 @@ import javax.ws.rs.core.MediaType;
  *
  * @author Victor Kazakov
  */
-public interface ListingResource {
+public interface ListingResource<R> {
     /**
      * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
      * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
@@ -46,5 +45,5 @@ public interface ListingResource {
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    Reference<References> listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
+    ItemsList<R> listResources(@QueryParam("offset") @DefaultValue("0") @Min(0) final int offset, @QueryParam("count") @DefaultValue("100") @Min(1) @Max(500) final int count, @QueryParam("sort") final String sort, @QueryParam("order") @DefaultValue("asc") @Pattern(regexp = "asc|desc") final String order);
 }

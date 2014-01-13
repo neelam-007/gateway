@@ -93,20 +93,20 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
         String prop = clusterPropManager.getProperty("keyStore.auditViewer.alias");
 
-        assertEquals("Private Key identifier:", ssgKeyEntry.getId(), reference.getId());
-        assertEquals("Private Key alias:", ssgKeyEntry.getAlias(), reference.getTitle());
+        assertEquals("Private Key identifier:", ssgKeyEntry.getId(), item.getId());
+        assertEquals("Private Key alias:", ssgKeyEntry.getAlias(), item.getName());
         assertEquals("Special purpose id:", ssgKeyEntry.getId(), prop);
     }
 
 
     private PrivateKeyMO getMO(RestResponse response) throws JAXBException, IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        return (PrivateKeyMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        return (PrivateKeyMO) item.getContent();
     }
 
     private String moToString(PrivateKeyMO mo) throws JAXBException, IOException {
@@ -163,9 +163,9 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<PrivateKeyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(keyFinder.getAliases().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(keyFinder.getAliases().size(), item.getContent().size());
     }
 }

@@ -65,14 +65,14 @@ public class BundleResource {
     }
 
     @GET
-    public Reference exportBundle() throws FindException, ResourceFactory.ResourceNotFoundException, IOException {
+    public Item exportBundle() throws FindException, ResourceFactory.ResourceNotFoundException, IOException {
         //TODO: need a way to export the entire gateway as a bundle
-        return ManagedObjectFactory.<Bundle>createReference();
+        return new ItemBuilder<Bundle>("Bundle", "BUNDLE").build();
     }
 
     @GET
     @Path("{resourceType}/{id}")
-    public Reference<Bundle> exportBundle(@PathParam("resourceType") String resourceType, @PathParam("id") String id) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<Bundle> exportBundle(@PathParam("resourceType") String resourceType, @PathParam("id") String id) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
         final EntityType entityType;
         switch (resourceType) {
             case "folder":
@@ -89,40 +89,37 @@ public class BundleResource {
         }
 
         EntityHeader header = new EntityHeader(Goid.parseGoid(id), entityType, null, null);
-        Reference<Bundle> reference = ManagedObjectFactory.createReference();
-        reference.setResource(createBundle(includeRequestFolder, defaultAction, defaultMapBy, header));
-        reference.setType("BUNDLE");
-        reference.setTitle("Bundle for " + resourceType + " " + id);
-        reference.setLinks(CollectionUtils.<Link>list(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString())));
-        return reference;
+        return new ItemBuilder<Bundle>("Bundle for " + resourceType + " " + id, "BUNDLE")
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(createBundle(includeRequestFolder, defaultAction, defaultMapBy, header))
+                .build();
     }
 
     @POST
-    public Reference<Bundle> exportBundle(References references) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
-        List<EntityHeader> headers = new ArrayList<>(references.getReferences().size());
-        for (Reference reference : references.getReferences()) {
-            headers.add(new EntityHeader(reference.getId(), EntityType.valueOf(reference.getType()), null, null));
+    public Item<Bundle> exportBundle(List<Item> references) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+        List<EntityHeader> headers = new ArrayList<>(references.size());
+        for (Item item : references) {
+            headers.add(new EntityHeader(item.getId(), EntityType.valueOf(item.getType()), null, null));
         }
-        Reference<Bundle> reference = ManagedObjectFactory.createReference();
-        reference.setResource(createBundle(includeRequestFolder, defaultAction, defaultMapBy, headers.toArray(new EntityHeader[headers.size()])));
-        return reference;
+        return new ItemBuilder<Bundle>("Bundle", "BUNDLE")
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(createBundle(includeRequestFolder, defaultAction, defaultMapBy, headers.toArray(new EntityHeader[headers.size()])))
+                .build();
     }
 
     @PUT
-    public Reference<Mappings> importBundle(Bundle bundle) {
-        Reference<Mappings> reference = ManagedObjectFactory.createReference();
-        reference.setResource(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Folder.ROOT_FOLDER_ID.toString(), Collections.<String, Object>emptyMap())));
-        reference.setType("BUNDLE MAPPINGS");
-        reference.setTitle("Bundle mappings");
-        reference.setLinks(CollectionUtils.<Link>list(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString())));
-        return reference;
+    public Item<Mappings> importBundle(Bundle bundle) {
+        return new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Folder.ROOT_FOLDER_ID.toString(), Collections.<String, Object>emptyMap())))
+                .build();
     }
 
     private Bundle createBundle(boolean includeRequestFolder, Mapping.Action defaultAction, String defaultMapBy, EntityHeader... headers) throws ResourceFactory.ResourceNotFoundException, IOException, FindException {
         List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
         List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
 
-        ArrayList<Reference> references = new ArrayList<>();
+        ArrayList<Item> items = new ArrayList<>();
         ArrayList<Mapping> mappings = new ArrayList<>();
         for (final DependentObject dependentObject : dependentObjects) {
             if (dependentObject instanceof DependentEntity) {
@@ -135,23 +132,23 @@ public class BundleResource {
                     continue;
                 }
                 RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
-                Reference resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
+                Item resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
                 filterLinks(resource);
-                references.add(resource);
+                items.add(resource);
                 //noinspection unchecked
-                mappings.add(restResource.getFactory().buildMapping(resource.getResource(), defaultAction, defaultMapBy));
+                mappings.add(restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy));
             }
         }
 
         Bundle bundle = ManagedObjectFactory.createBundle();
-        bundle.setReferences(ManagedObjectFactory.createReferences(references));
+        bundle.setReferences(items);
         bundle.setMappings(mappings);
         return bundle;
     }
 
     //TODO: is there a better way to do this?
-    private void filterLinks(Reference reference) {
-        Iterator<Link> links = reference.getLinks().iterator();
+    private void filterLinks(Item item) {
+        Iterator<Link> links = item.getLinks().iterator();
         while(links.hasNext()){
             Link link = links.next();
             if(!"self".equals(link.getRel())){

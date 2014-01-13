@@ -639,8 +639,8 @@ public class ManagedObjectFactory {
                 RbacRolePredicateMO.class,
                 DependencyAnalysisMO.class,
                 DependencyMO.class,
-                Reference.class,
-                References.class,
+                Item.class,
+                ItemsList.class,
                 Mapping.class,
                 Link.class,
                 PolicyVersionMO.class
@@ -655,18 +655,6 @@ public class ManagedObjectFactory {
         return new DependencyMO();
     }
 
-    public static <R>Reference<R> createReference() {
-        return new Reference<R>();
-    }
-
-    public static References createReferences() {
-        return new References();
-    }
-
-    public static References createReferences(List<Reference> references) {
-        return new References(references);
-    }
-
     public static Mapping createMapping() {
         return new Mapping();
     }
@@ -675,16 +663,8 @@ public class ManagedObjectFactory {
         return new Mapping(mapping);
     }
 
-    public static Mappings createMappings() {
-        return new Mappings();
-    }
-
     public static Mappings createMappings(List<Mapping> mappings) {
         return new Mappings(mappings);
-    }
-
-    public static Link createLink(){
-        return new Link();
     }
 
     public static Link createLink(String rel, String uri){

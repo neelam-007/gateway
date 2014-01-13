@@ -8,7 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -180,8 +180,8 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     protected String getFirstReferencedGoid(RestResponse response) throws IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        List<Link> links = reference.getLinks();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        List<Link> links = item.getLinks();
 
         for(Link link : links){
             if("self".equals(link.getRel())){

@@ -4,7 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -29,7 +29,7 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
     }
 
     @Override
-    protected Reference<EncapsulatedAssertionMO> toReference(EncapsulatedAssertionMO resource) {
+    protected Item<EncapsulatedAssertionMO> toReference(EncapsulatedAssertionMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

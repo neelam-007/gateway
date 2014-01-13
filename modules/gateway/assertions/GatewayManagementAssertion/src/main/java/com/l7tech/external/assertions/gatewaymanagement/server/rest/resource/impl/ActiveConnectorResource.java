@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ActiveConnectorRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.ActiveConnectorMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     @Override
-    protected Reference<ActiveConnectorMO> toReference(ActiveConnectorMO resource) {
+    protected Item<ActiveConnectorMO> toReference(ActiveConnectorMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

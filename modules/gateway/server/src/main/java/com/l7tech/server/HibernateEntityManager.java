@@ -337,7 +337,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     criteria.setFetchSize( count );
                     criteria.setMaxResults( count );
 
-                    return (List<ET>)criteria.list();
+                    final List<ET> list = (List<ET>) criteria.list();
+                    for (final ET et : list) {
+                        initializeLazilyLoaded(et);
+                    }
+                    return list;
                 }
             });
         } catch (Exception e) {

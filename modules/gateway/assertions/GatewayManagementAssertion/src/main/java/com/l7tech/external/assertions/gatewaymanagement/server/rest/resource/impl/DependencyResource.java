@@ -48,11 +48,11 @@ public class DependencyResource {
     }
 
     @GET
-    public Reference get() throws FindException {
+    public Item get() throws FindException {
         if(entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-        return new ReferenceBuilder<DependencyAnalysisMO>(entityHeader.toString() + " dependencies", "Dependency")
+        return new ItemBuilder<DependencyAnalysisMO>(entityHeader.toString() + " dependencies", "Dependency")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .setContent(toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String,Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
                 .build();
@@ -62,7 +62,7 @@ public class DependencyResource {
     private DependencyAnalysisMO toManagedObject(DependencySearchResults dependencySearchResults) {
         DependencyAnalysisMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyResultsMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
-        dependencyAnalysisMO.setSearchObjectReference(toReference(dependencySearchResults.getDependent()));
+        dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
         dependencyAnalysisMO.setDependencies(toManagedObject(dependencySearchResults.getDependencies()));
         return dependencyAnalysisMO;
     }
@@ -82,9 +82,9 @@ public class DependencyResource {
         return dependencyMO;
     }
 
-    private Reference toReference(DependentObject dependent) {
+    private Item toReference(DependentObject dependent) {
         if (dependent instanceof DependentAssertion) {
-            return new ReferenceBuilder(dependent.getName(), null, "Assertion").build();
+            return new ItemBuilder<>(dependent.getName(), null, "Assertion").build();
         } else if (dependent instanceof DependentEntity) {
             return buildReferenceFromEntityHeader(((DependentEntity) dependent).getEntityHeader());
         } else {
@@ -92,7 +92,7 @@ public class DependencyResource {
         }
     }
 
-    private Reference buildReferenceFromEntityHeader(EntityHeader entityHeader) {
+    private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
         RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
         if(restEntityResource != null) {
             return restEntityResource.toReference(entityHeader);

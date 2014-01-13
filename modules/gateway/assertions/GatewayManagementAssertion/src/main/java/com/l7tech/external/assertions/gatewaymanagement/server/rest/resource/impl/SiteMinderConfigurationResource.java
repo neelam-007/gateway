@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SiteMinderConfigurationRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.SiteMinderConfigurationMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -27,7 +27,7 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     @Override
-    protected Reference<SiteMinderConfigurationMO> toReference(SiteMinderConfigurationMO resource) {
+    protected Item<SiteMinderConfigurationMO> toReference(SiteMinderConfigurationMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

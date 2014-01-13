@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.SiteMinderConfigurationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
@@ -79,10 +76,10 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Siteminder Configuration identifier:", siteMinderConfiguration.getId(), reference.getId());
-        assertEquals("Siteminder Configuration name:", siteMinderConfiguration.getName(), ((SiteMinderConfigurationMO) reference.getResource()).getName());
+        assertEquals("Siteminder Configuration identifier:", siteMinderConfiguration.getId(), item.getId());
+        assertEquals("Siteminder Configuration name:", siteMinderConfiguration.getName(), ((SiteMinderConfigurationMO) item.getContent()).getName());
     }
 
     @Test
@@ -140,7 +137,7 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         RestResponse responseGet = processRequest(siteMinderConfigurationBasePath + siteMinderConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        SiteMinderConfigurationMO entityGot = (SiteMinderConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        SiteMinderConfigurationMO entityGot = (SiteMinderConfigurationMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
@@ -176,9 +173,9 @@ public class SiteMinderConfigurationRestServerGatewayManagementAssertionTest ext
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<SiteMinderConfigurationMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, reference.getResource().getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

@@ -247,7 +247,7 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
     }
 
     @Override
-    public Map<String, List<String>> getListQueryAndExpectedResults() {
+    public Map<String, List<String>> getListQueryAndExpectedResults() throws FindException {
         return CollectionUtils.MapBuilder.<String, List<String>>builder()
                 .put("", Functions.map(activeConnectors, new Functions.Unary<String, SsgActiveConnector>() {
                     @Override

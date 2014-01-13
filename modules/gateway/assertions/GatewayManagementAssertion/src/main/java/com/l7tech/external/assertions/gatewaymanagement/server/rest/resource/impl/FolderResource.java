@@ -4,7 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.FolderMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -30,7 +30,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     @Override
-    protected Reference<FolderMO> toReference(FolderMO resource) {
+    protected Item<FolderMO> toReference(FolderMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

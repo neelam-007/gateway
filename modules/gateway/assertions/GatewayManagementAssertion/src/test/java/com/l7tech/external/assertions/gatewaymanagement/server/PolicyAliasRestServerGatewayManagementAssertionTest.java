@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.PolicyAliasMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.AliasHeader;
 import com.l7tech.objectmodel.EntityHeader;
@@ -134,8 +131,8 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        PolicyAliasMO result = (PolicyAliasMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        PolicyAliasMO result = (PolicyAliasMO) item.getContent();
 
         assertEquals("Policy Alias identifier:", policyAlias.getId(), result.getId());
         assertEquals("Policy Alias ref policy id:", policyAlias.getEntityGoid().toString(), result.getPolicyReference().getId());
@@ -240,7 +237,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         RestResponse responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getPolicyReference().setId(policy2.getId());
@@ -257,7 +254,7 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         RestResponse responseGet = processRequest(policyAliasBasePath + policyAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        PolicyAliasMO entityGot = (PolicyAliasMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setFolderId(folder2.getId());
@@ -290,9 +287,9 @@ public class PolicyAliasRestServerGatewayManagementAssertionTest extends ServerR
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<PolicyAliasMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(policyAliasManager.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(policyAliasManager.findAll().size(), item.getContent().size());
     }
 }

@@ -73,10 +73,10 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Rev Check policy identifier:", revocationCheckPolicy.getId(), reference.getId());
-        assertEquals("Rev Check policy name:", revocationCheckPolicy.getName(), ((RevocationCheckingPolicyMO) reference.getResource()).getName());
+        assertEquals("Rev Check policy identifier:", revocationCheckPolicy.getId(), item.getId());
+        assertEquals("Rev Check policy name:", revocationCheckPolicy.getName(), ((RevocationCheckingPolicyMO) item.getContent()).getName());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         RestResponse responseGet = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        RevocationCheckingPolicyMO entityGot = (RevocationCheckingPolicyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        RevocationCheckingPolicyMO entityGot = (RevocationCheckingPolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
@@ -122,9 +122,9 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<RevocationCheckingPolicyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, reference.getResource().getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

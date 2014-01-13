@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.EmailListenerMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
@@ -77,8 +74,8 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        EmailListenerMO result = (EmailListenerMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        EmailListenerMO result = (EmailListenerMO) item.getContent();
 
         assertEquals("Email listener identifier:", emailListener.getId(), result.getId());
         assertEquals("Email listener name:", emailListener.getName(), result.getName());
@@ -122,7 +119,7 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         RestResponse responseGet = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EmailListenerMO entityGot = (EmailListenerMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        EmailListenerMO entityGot = (EmailListenerMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Updated New Email Listener");
@@ -155,9 +152,9 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<EmailListenerMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(emailListenerManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(emailListenerManagerStub.findAll().size(), item.getContent().size());
     }
 }

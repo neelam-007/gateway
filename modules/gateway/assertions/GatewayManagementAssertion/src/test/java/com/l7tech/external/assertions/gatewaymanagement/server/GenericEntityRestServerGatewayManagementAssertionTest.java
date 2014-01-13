@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.GenericEntityMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -75,8 +72,8 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        GenericEntityMO result = (GenericEntityMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        GenericEntityMO result = (GenericEntityMO) item.getContent();
 
         assertEquals("Generic Entity identifier:", genericEntity.getId(), result.getId());
         assertEquals("Generic Entity name:", genericEntity.getName(), result.getName());
@@ -120,7 +117,7 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         RestResponse responseGet = processRequest(genericEntityBasePath + genericEntity.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        GenericEntityMO entityGot = (GenericEntityMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        GenericEntityMO entityGot = (GenericEntityMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("New Generic Entity");
@@ -153,9 +150,9 @@ public class GenericEntityRestServerGatewayManagementAssertionTest extends Serve
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<GenericEntityMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(genericEntityManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(genericEntityManagerStub.findAll().size(), item.getContent().size());
     }
 }

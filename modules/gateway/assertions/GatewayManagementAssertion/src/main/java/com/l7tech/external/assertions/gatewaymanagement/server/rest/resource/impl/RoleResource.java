@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.RbacRoleMO;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.rest.SpringBean;
 
 import javax.inject.Singleton;
@@ -40,7 +40,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourc
     }
 
     @Override
-    protected Reference<RbacRoleMO> toReference(RbacRoleMO resource) {
+    protected Item<RbacRoleMO> toReference(RbacRoleMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

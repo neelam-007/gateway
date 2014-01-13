@@ -14,18 +14,18 @@ import java.util.List;
 @XmlRootElement(name = "Dependency")
 @XmlType(propOrder = {"dependentObject", "dependencies"})
 public class DependencyMO {
-    private Reference dependentObjectReference;
+    private Item dependentObjectItem;
     private List<DependencyMO> dependencies;
 
     DependencyMO(){}
 
     @XmlElement(name = "Reference", required = true)
-    public Reference getDependentObject() {
-        return dependentObjectReference;
+    public Item getDependentObject() {
+        return dependentObjectItem;
     }
 
-    public void setDependentObject(Reference dependentObjectReference) {
-        this.dependentObjectReference = dependentObjectReference;
+    public void setDependentObject(Item dependentObjectItem) {
+        this.dependentObjectItem = dependentObjectItem;
     }
 
     @XmlElement(name = "Dependency")

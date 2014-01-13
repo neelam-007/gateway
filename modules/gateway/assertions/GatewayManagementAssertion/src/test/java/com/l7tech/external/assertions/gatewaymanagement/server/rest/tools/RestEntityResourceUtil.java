@@ -122,5 +122,5 @@ public interface RestEntityResourceUtil<E extends PersistentEntity, M extends Ma
      *
      * @return A list of search queries and a list of the expected results of executing the search query
      */
-    public Map<String, List<String>> getListQueryAndExpectedResults();
+    public Map<String, List<String>> getListQueryAndExpectedResults() throws FindException;
 }

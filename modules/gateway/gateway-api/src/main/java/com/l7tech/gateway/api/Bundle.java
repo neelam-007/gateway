@@ -6,17 +6,18 @@ import java.util.List;
 @XmlRootElement(name = "Bundle")
 @XmlType(name = "Bundle", propOrder = {"references", "mappings"})
 public class Bundle {
-    private References references;
+    private List<Item> references;
     private List<Mapping> mappings;
 
     Bundle(){}
 
-    @XmlElement(name = "References", required = true)
-    public References getReferences() {
+    @XmlElementWrapper(name = "References")
+    @XmlElement(name = "Item", required = true)
+    public List<Item> getReferences() {
         return references;
     }
 
-    public void setReferences(References references) {
+    public void setReferences(List<Item> references) {
         this.references = references;
     }
 

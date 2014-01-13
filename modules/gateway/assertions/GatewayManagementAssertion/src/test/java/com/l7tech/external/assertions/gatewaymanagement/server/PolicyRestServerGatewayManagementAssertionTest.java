@@ -103,8 +103,8 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        PolicyMO policyReturned = (PolicyMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        PolicyMO policyReturned = (PolicyMO) item.getContent();
 
         Assert.assertEquals(policy1.getId(), policyReturned.getId());
         Assert.assertEquals(policy1.getName(), policyReturned.getPolicyDetail().getName());
@@ -216,7 +216,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         policyReturned.getPolicyDetail().setName("Policy Updated");
 
@@ -236,10 +236,9 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<PolicyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(2, reference.getResource().getReferences().size());
+        Assert.assertEquals(2, item.getContent().size());
     }
 }

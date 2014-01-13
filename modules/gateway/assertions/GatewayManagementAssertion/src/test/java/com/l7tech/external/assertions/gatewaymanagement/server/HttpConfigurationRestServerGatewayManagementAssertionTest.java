@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -84,8 +81,8 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        HttpConfigurationMO result = (HttpConfigurationMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        HttpConfigurationMO result = (HttpConfigurationMO) item.getContent();
 
         assertEquals("Http configuration identifier:", httpConfiguration.getId(), result.getId());
         assertEquals("Http configuration username:", httpConfiguration.getUsername(), result.getUsername());
@@ -129,7 +126,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         RestResponse responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setUsername("Updated user");
@@ -162,9 +159,9 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<HttpConfigurationMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(httpConfigurationManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(httpConfigurationManagerStub.findAll().size(), item.getContent().size());
     }
 }

@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.InterfaceTagMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.InterfaceTag;
@@ -92,11 +89,11 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Interface Tag identifier:",  nameAsIdentifier(interfaceTag.getName()), reference.getId());
-        assertEquals("Interface Tag name:", interfaceTag.getName(), ((InterfaceTagMO) reference.getResource()).getName());
-        assertTrue("Interface Tag ip address:", interfaceTag.getIpPatterns().containsAll(((InterfaceTagMO) reference.getResource()).getAddressPatterns()));
+        assertEquals("Interface Tag identifier:",  nameAsIdentifier(interfaceTag.getName()), item.getId());
+        assertEquals("Interface Tag name:", interfaceTag.getName(), ((InterfaceTagMO) item.getContent()).getName());
+        assertTrue("Interface Tag ip address:", interfaceTag.getIpPatterns().containsAll(((InterfaceTagMO) item.getContent()).getAddressPatterns()));
     }
 
     @Test
@@ -169,7 +166,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         RestResponse responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setAddressPatterns(CollectionUtils.list("5.5.5.5/55"));
@@ -193,7 +190,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         RestResponse responseGet = processRequest(interfaceTagBasePath + nameAsIdentifier(interfaceTag.getName()), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        InterfaceTagMO entityGot = (InterfaceTagMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot+"_mod");
@@ -226,9 +223,9 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<InterfaceTagMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, reference.getResource().getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

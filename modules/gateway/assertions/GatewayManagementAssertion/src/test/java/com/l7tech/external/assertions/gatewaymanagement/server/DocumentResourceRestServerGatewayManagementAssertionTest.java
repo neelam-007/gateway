@@ -76,8 +76,8 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ResourceDocumentMO result = (ResourceDocumentMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ResourceDocumentMO result = (ResourceDocumentMO) item.getContent();
 
         assertEquals("Document resource identifier:", resource.getId(), result.getId());
         assertEquals("Document resource source url:", resource.getUri(), result.getResource().getSourceUrl());
@@ -205,7 +205,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         RestResponse responseGet = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ResourceDocumentMO entityGot = (ResourceDocumentMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ResourceDocumentMO entityGot = (ResourceDocumentMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getProperties().put("description", "new description");
@@ -239,9 +239,9 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<ResourceDocumentMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(resourceEntryManagerStub.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(resourceEntryManagerStub.findAll().size(), item.getContent().size());
     }
 }

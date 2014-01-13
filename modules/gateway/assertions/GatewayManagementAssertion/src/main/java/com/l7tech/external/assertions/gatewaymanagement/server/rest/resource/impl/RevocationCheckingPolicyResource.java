@@ -8,16 +8,10 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 
 import javax.inject.Singleton;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
@@ -29,7 +23,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
 @Singleton
-public class RevocationCheckingPolicyResource implements ReadingResource, ListingResource {
+public class RevocationCheckingPolicyResource implements ReadingResource<RevocationCheckingPolicyMO>, ListingResource<RevocationCheckingPolicyMO> {
 
     protected static final String revocationCheckingPolicies_URI = "revocationCheckingPolicies";
     private RevocationCheckingPolicyRestResourceFactory factory;
@@ -41,34 +35,34 @@ public class RevocationCheckingPolicyResource implements ReadingResource, Listin
         this.factory = factory;
     }
 
-    protected Reference<RevocationCheckingPolicyMO> toReference(RevocationCheckingPolicyMO resource) {
-        return new ReferenceBuilder<RevocationCheckingPolicyMO>(resource.getName(), resource.getId(), factory.getEntityType().name())
+    protected Item<RevocationCheckingPolicyMO> toReference(RevocationCheckingPolicyMO resource) {
+        return new ItemBuilder<RevocationCheckingPolicyMO>(resource.getName(), resource.getId(), factory.getEntityType().name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(),  resource.getId())))
                 .build();
     }
 
     @Override
-    public Reference<References> listResources(final int offset, final int count, final String sort, final String order) {
+    public ItemsList<RevocationCheckingPolicyMO> listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, RevocationCheckingPolicyMO>() {
+        List<Item<RevocationCheckingPolicyMO>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<RevocationCheckingPolicyMO>, RevocationCheckingPolicyMO>() {
             @Override
-            public Reference call(RevocationCheckingPolicyMO resource) {
+            public Item<RevocationCheckingPolicyMO> call(RevocationCheckingPolicyMO resource) {
                 return toReference(resource);
             }
         });
-        return new ReferenceBuilder<References>(factory.getEntityType() + " list", "List").setContent(ManagedObjectFactory.createReferences(references))
+        return new ItemsListBuilder<RevocationCheckingPolicyMO>(factory.getEntityType() + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
 
     @Override
-    public Reference<RevocationCheckingPolicyMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Item<RevocationCheckingPolicyMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         RevocationCheckingPolicyMO resource = factory.getResource(id);
-        return new ReferenceBuilder<>(toReference(resource))
+        return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))

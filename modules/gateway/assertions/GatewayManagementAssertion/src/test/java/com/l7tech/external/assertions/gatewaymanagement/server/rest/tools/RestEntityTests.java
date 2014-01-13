@@ -33,27 +33,27 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
 
         for (String entityId : entitiesExpected) {
             RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + entityId, HttpMethod.GET, null, "");
-            logger.log(Level.FINE, response.toString());
+            logger.log(Level.INFO, response.toString());
 
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
             Assert.assertEquals("Expected successful response", 200, response.getStatus());
             Assert.assertNotNull("Expected not null response body", response.getBody());
 
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-            Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+            Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Id's don't match", entityId, reference.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), reference.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(entityId), reference.getTitle());
+            Assert.assertEquals("Id's don't match", entityId, item.getId());
+            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(entityId), item.getName());
 
-            Assert.assertTrue("Need at least one link", reference.getLinks() != null && reference.getLinks().size() > 0);
-            Link self = findLink("self", reference.getLinks());
+            Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+            Link self = findLink("self", item.getLinks());
             Assert.assertNotNull("self link must be present", self);
             Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + entityId, self.getUri());
 
-            verifyLinks(entityId, reference.getLinks());
+            verifyLinks(entityId, item.getLinks());
 
-            verifyEntity(entityId, (M) reference.getResource());
+            verifyEntity(entityId, (M) item.getContent());
         }
     }
 
@@ -96,21 +96,21 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Assert.assertNotNull("Expected not null response body", response.getBody());
 
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-            Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+            Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Type is incorrect", getType().toString(), reference.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(reference.getId()), reference.getTitle());
+            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(item.getId()), item.getName());
 
-            Assert.assertTrue("Need at least one link", reference.getLinks() != null && reference.getLinks().size() > 0);
-            Link self = findLink("self", reference.getLinks());
+            Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+            Link self = findLink("self", item.getLinks());
             Assert.assertNotNull("self link must be present", self);
-            Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + reference.getId(), self.getUri());
+            Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + item.getId(), self.getUri());
 
-            verifyLinks(reference.getId(), reference.getLinks());
+            verifyLinks(item.getId(), item.getLinks());
 
-            Assert.assertNull(reference.getResource());
-            mo.setId(reference.getId());
-            verifyEntity(reference.getId(), mo);
+            Assert.assertNull(item.getContent());
+            mo.setId(item.getId());
+            verifyEntity(item.getId(), mo);
         }
     }
 
@@ -141,20 +141,20 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Assert.assertNotNull("Expected not null response body", response.getBody());
 
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-            Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+            Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Id's don't match", mo.getId(), reference.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), reference.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), reference.getTitle());
+            Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
+            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
 
-            Assert.assertTrue("Need at least one link", reference.getLinks() != null && reference.getLinks().size() > 0);
-            Link self = findLink("self", reference.getLinks());
+            Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+            Link self = findLink("self", item.getLinks());
             Assert.assertNotNull("self link must be present", self);
             Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + mo.getId(), self.getUri());
 
-            verifyLinks(mo.getId(), reference.getLinks());
+            verifyLinks(mo.getId(), item.getLinks());
 
-            Assert.assertNull(reference.getResource());
+            Assert.assertNull(item.getContent());
             verifyEntity(mo.getId(), mo);
         }
     }
@@ -172,20 +172,20 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Assert.assertNotNull("Expected not null response body", response.getBody());
 
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-            Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+            Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Id's don't match", mo.getId(), reference.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), reference.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), reference.getTitle());
+            Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
+            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
 
-            Assert.assertTrue("Need at least one link", reference.getLinks() != null && reference.getLinks().size() > 0);
-            Link self = findLink("self", reference.getLinks());
+            Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+            Link self = findLink("self", item.getLinks());
             Assert.assertNotNull("self link must be present", self);
             Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + mo.getId(), self.getUri());
 
-            verifyLinks(mo.getId(), reference.getLinks());
+            verifyLinks(mo.getId(), item.getLinks());
 
-            Assert.assertNull(reference.getResource());
+            Assert.assertNull(item.getContent());
             verifyEntity(mo.getId(), mo);
         }
     }
@@ -269,7 +269,20 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "offset=500", HttpMethod.GET, null, "");
                 testList("offset=500", response, Collections.<String>emptyList());
 
+                List<String> orderedList = new ArrayList<>(expectedIds);
+                Collections.sort(orderedList);
+
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc", HttpMethod.GET, null, "");
+                testList("sort=id&order=asc", response, orderedList);
+
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1", HttpMethod.GET, null, "");
+                testList("sort=id&order=asc&count=1", response, orderedList.subList(0, 1));
+
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1&offset=1", HttpMethod.GET, null, "");
+                testList("sort=id&order=asc&count=1&offset=1", response, orderedList.subList(1, 2));
+
                 List<String> reverseList = new ArrayList<>(expectedIds);
+                Collections.sort(reverseList);
                 Collections.reverse(reverseList);
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc", HttpMethod.GET, null, "");
@@ -298,34 +311,55 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         }
     }
 
+    @Test
+    public void testGetTemplate() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/template", HttpMethod.GET, null, "");
+        logger.log(Level.FINE, response.toString());
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 200, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+
+        Assert.assertNull("Id for template should be null", item.getId());
+        Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+        Assert.assertEquals("Type is incorrect", getType().toString() + " Template", item.getName());
+
+        Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+        Link self = findLink("self", item.getLinks());
+        Assert.assertNotNull("self link must be present", self);
+        Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/template", self.getUri());
+
+        Assert.assertNotNull("template must not be null", item.getContent());
+    }
+
     protected void testList(String query, RestResponse response, List<String> expectedIds) throws java.io.IOException {
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Expected successful response", 200, response.getStatus());
         Assert.assertNotNull("Error for search Query: " + query + "Message: " + "Expected not null response body", response.getBody());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<M> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
-        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", "List", reference.getType());
-        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType().toString() + " list", reference.getTitle());
+        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", "List", item.getType());
+        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType().toString() + " list", item.getName());
 
-        Assert.assertTrue("Error for search Query: " + query + "Message: " + "Need at least one link", reference.getLinks() != null && reference.getLinks().size() > 0);
-        Link self = findLink("self", reference.getLinks());
+        Assert.assertTrue("Error for search Query: " + query + "Message: " + "Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+        Link self = findLink("self", item.getLinks());
         Assert.assertNotNull("Error for search Query: " + query + "Message: " + "self link must be present", self);
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "?" + query, self.getUri());
 
-        Assert.assertNotNull("Error for search Query: " + query, reference.getResource());
-        Assert.assertTrue("Error for search Query: " + query, reference.getResource() instanceof References);
-
-        References references = (References) reference.getResource();
+        List<Item<M>> references = item.getContent();
 
         if (expectedIds.isEmpty()) {
-            Assert.assertNull("Error for search Query: " + query, references.getReferences());
+            Assert.assertNull("Error for search Query: " + query, references);
         } else {
-            Assert.assertNotNull("Error for search Query: " + query, references.getReferences());
-            Assert.assertEquals("Error for search Query: " + query, expectedIds.size(), references.getReferences().size());
+            Assert.assertNotNull("Error for search Query: " + query, references);
+            Assert.assertEquals("Error for search Query: " + query, expectedIds.size(), references.size());
             for (int i = 0; i < expectedIds.size(); i++) {
-                Reference<M> entity = references.getReferences().get(i);
+                Item<M> entity = references.get(i);
 
                 Assert.assertEquals("Error for search Query: " + query + "Message: " + "Returned entities are either incorrect or in the wrong order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), entity.getId());
             }

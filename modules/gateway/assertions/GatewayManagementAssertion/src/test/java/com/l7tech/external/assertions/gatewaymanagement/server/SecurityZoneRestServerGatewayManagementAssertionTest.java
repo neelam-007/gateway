@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.SecurityZoneMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -72,8 +69,8 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        SecurityZoneMO result = (SecurityZoneMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        SecurityZoneMO result = (SecurityZoneMO) item.getContent();
 
         assertEquals("Security Zone identifier:", securityZone.getId(), result.getId());
         assertEquals("Security Zone name:", securityZone.getName(), result.getName());
@@ -139,7 +136,7 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         RestResponse responseGet = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        SecurityZoneMO entityGot = (SecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        SecurityZoneMO entityGot = (SecurityZoneMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("New Name");
@@ -172,9 +169,9 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference<References> reference = MarshallingUtils.unmarshal(Reference.class, source);
+        ItemsList<SecurityZoneMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(securityZoneManager.findAll().size(), reference.getResource().getReferences().size());
+        Assert.assertEquals(securityZoneManager.findAll().size(), item.getContent().size());
     }
 }

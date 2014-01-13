@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.CertificateRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.rest.SpringBean;
 
@@ -27,7 +27,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     }
 
     @Override
-    protected Reference<TrustedCertificateMO> toReference(TrustedCertificateMO resource) {
+    protected Item<TrustedCertificateMO> toReference(TrustedCertificateMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }
