@@ -21,5 +21,5 @@ public interface FtpResponseKnob extends MessageKnob {
      *
      * @return the reply data, or null if there was no data or no response or the value has not been set
      */
-    String getReplyData(); // TODO jwilliams: make available from context variable messages too
+    String getReplyText();
 }

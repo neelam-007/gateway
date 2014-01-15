@@ -8,6 +8,7 @@ import java.net.PasswordAuthentication;
  * Information about a request that arrived over FTP.
  *
  * @author Steve Jones
+ * @author Jamie Williams - jamie.williams2@ca.com
  */
 public interface FtpRequestKnob extends TcpKnob, UriKnob {
 

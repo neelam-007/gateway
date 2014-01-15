@@ -11,10 +11,7 @@ public class SsgFtpletFactory {
     @Autowired
     private FtpServerManager ftpServerManager;
 
-    public SsgFtplet create(SsgConnector connector) {
-        return new SsgFtplet(
-                ftpServerManager,
-                connector.getGoid(),
-                connector.getProperty("service"));
+    public SsgFtplet create() {
+        return new SsgFtplet(ftpServerManager);
     }
 }

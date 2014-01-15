@@ -28,7 +28,7 @@ public class SsgFtpServerFactory {
     private static final String DEFAULT_FTPLET_NAME = "default";
 
 //    private static final String CP_FTP_TIMEOUT_POLL_INTERVAL = "ftp.connection.timeout_poll_interval";  // TODO jwilliams: document removal - poll interval not settable any more because handled by MINA
-//    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: no analogue in new library? finish investigation
+//    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: no analogue in new library?
 
     // TODO jwilliams: doesn't make sense - these cluster properties shouldn't apply to every ftp/s connector the same
     private static final String CP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
@@ -50,11 +50,6 @@ public class SsgFtpServerFactory {
     private ClusterPropertyManager clusterPropertyManager;
 
     public FtpServer create(SsgConnector connector) throws ListenerException {
-
-        for (final String propertyName : connector.getPropertyNames()) { // TODO jwilliams: make sure all properties handled properly
-            System.out.println("PROPERTY: " + propertyName + "   -   " + connector.getProperty(propertyName));
-        }
-
         return new DefaultFtpServer(createServerContext(connector));
     }
 
@@ -66,7 +61,7 @@ public class SsgFtpServerFactory {
 
         context.addListener(listener.isImplicitSsl() ? SECURE_LISTENER_NAME : DEFAULT_LISTENER_NAME, listener);
 
-        context.addFtplet(DEFAULT_FTPLET_NAME, createFtplet(connector));
+        context.addFtplet(DEFAULT_FTPLET_NAME, createFtplet());
 
         return context;
     }
@@ -179,19 +174,11 @@ public class SsgFtpServerFactory {
         factory.setActiveEnabled(false); // SSG default - active data connections are unsupported
 
         int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");
-        int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count"); // TODO jwilliams: this is preserved incorrect old behaviour - must be fixed
+        int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count"); // TODO jwilliams: this old behaviour is incorrect (range + 1) - must be fixed
 
         factory.setPassivePorts(portStart + "-" + portEnd);
         factory.setImplicitSsl(null != sslConfiguration);
         factory.setSslConfiguration(sslConfiguration);
-
-        // TODO jwilliams: review these
-//        factory.setActiveIpCheck(false); // old properties file default, but seems unnecessary
-//        factory.setActiveLocalAddress(); // unused
-//        factory.setActiveLocalPort(); // unused
-//        factory.setPassiveAddress(); // unused
-//        factory.setPassiveExternalAddress(); // unused
-//        factory.setIdleTime(/* ??? */); // doesn't seem to be set
 
         return factory.createDataConnectionConfiguration();
     }
@@ -205,8 +192,8 @@ public class SsgFtpServerFactory {
         return ftpSslFactory.create(connector);
     }
 
-    private Ftplet createFtplet(SsgConnector connector) throws ListenerException {
-        return ssgFtpletFactory.create(connector);
+    private Ftplet createFtplet() throws ListenerException {
+        return ssgFtpletFactory.create();
     }
 
     private int toInt(String str, String name) throws ListenerException {

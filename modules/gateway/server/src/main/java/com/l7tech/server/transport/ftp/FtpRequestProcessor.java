@@ -155,89 +155,91 @@ public class FtpRequestProcessor {
 
         reply150FileStatusOk(ftpSession, ftpServerContext, ftpRequest);
 
-        // open a data connection
-        DataConnection dataConnection;
-
         try {
-            dataConnection = ftpSession.getDataConnection().openConnection();
-        } catch (Exception e) {
-            handleOpenConnectionFailure(ftpSession, ftpServerContext, ftpRequest, e);
-            return;
-        }
+            // open a data connection
+            DataConnection dataConnection;
 
-        // upload from client
-        InputStream requestInputStream;
+            try {
+                dataConnection = ftpSession.getDataConnection().openConnection();
+            } catch (Exception e) {
+                ftpSession.resetState();
+                handleOpenConnectionFailure(ftpSession, ftpServerContext, ftpRequest, e);
+                return;
+            }
 
-        try {
-            requestInputStream = openDataConnectionInputStream(ftpSession.getFtpletSession(),
-                    dataConnection, ftpRequest.getArgument());
-        } catch (Exception e) {
-            handleDataTransferFailure(ftpSession, ftpServerContext, ftpRequest, e);
-            return;
-        }
+            // upload from client
+            InputStream requestInputStream;
 
-        // create request message
-        Message request;
+            try {
+                requestInputStream = transferDataFromClient(ftpSession.getFtpletSession(),
+                        dataConnection, ftpRequest.getArgument());
+            } catch (Exception e) {
+                handleDataTransferFailure(ftpSession, ftpServerContext, ftpRequest, e);
+                return;
+            }
 
-        try {
-            request = createRequestMessage(ftpSession, ftpRequest, command, requestInputStream);
-        } catch (IOException e) {
-            handleCreateRequestMessageFailure(ftpSession, command, e);
-            return;
-        }
+            // create request message
+            Message request;
 
-        // create PEC
-        final PolicyEnforcementContext context = createPolicyEnforcementContext(request);
+            try {
+                request = createRequestMessage(ftpSession, ftpRequest, command, requestInputStream);
+            } catch (IOException e) {
+                handleCreateRequestMessageFailure(ftpSession, command, e);
+                return;
+            }
 
-        try {
-            // process request message
-            AssertionStatus status = submitRequestMessage(context);
+            // create PEC
+            final PolicyEnforcementContext context = createPolicyEnforcementContext(request);
 
-            if (status == AssertionStatus.NONE) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "FTP " + command + " message processing completed");
+            try {
+                // process request message
+                AssertionStatus status = submitRequestMessage(context);
+
+                if (status == AssertionStatus.NONE) {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE, "FTP " + command + " message processing completed");
+                    }
+                } else {
+                    handleMessageProcessingFailure(ftpSession, command, status);
+                    return;
                 }
-            } else {
-                handleMessageProcessingFailure(ftpSession, command, status);
-                return;
-            }
 
-            // get response message
-            Message response = context.getResponse();
+                // get response message
+                Message response = context.getResponse();
 
-            if (response.getKnob(MimeKnob.class) == null || !response.isInitialized()) {
-                logger.log(Level.WARNING, "Error processing FTP request: Response is not initialized");
-                reply550ProcessingError(ftpSession, command);
-                return;
-            }
+                if (response.getKnob(MimeKnob.class) == null || !response.isInitialized()) {
+                    logger.log(Level.WARNING, "Error processing FTP request: Response is not initialized");
+                    reply550ProcessingError(ftpSession, command);
+                    return;
+                }
 
-            // return reply code and data
-            FtpResponseKnob ftpResponseKnob = response.getKnob(FtpResponseKnob.class);
+                // return reply code and data
+                FtpResponseKnob ftpResponseKnob = response.getKnob(FtpResponseKnob.class);
 
-            if (null == ftpResponseKnob) {
-                logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
-                // TODO jwilliams: handle error, logging - a null knob may indicate a real problem
-                return;
-            }
+                if (null == ftpResponseKnob) {
+                    logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
+                    reply550ProcessingError(ftpSession, command);
+                    return;
+                }
 
-            if (FtpReply.REPLY_226_CLOSING_DATA_CONNECTION != ftpResponseKnob.getReplyCode()) {
-                ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(),
-                        ftpResponseKnob.getReplyData()));
-            } else {
-                // write closing connection message
-                reply226ClosingConnection(ftpSession, ftpServerContext, ftpRequest);
+                if (FtpReply.REPLY_226_CLOSING_DATA_CONNECTION != ftpResponseKnob.getReplyCode()) {
+                    ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(),
+                            ftpResponseKnob.getReplyText()));
+                } else {
+                    // write closing connection message
+                    reply226ClosingConnection(ftpSession, ftpServerContext, ftpRequest);
+                }
+            } finally {
+                ResourceUtils.closeQuietly(context);
             }
         } finally {
-            ftpSession.resetState();
-            ftpSession.getDataConnection().closeDataConnection();
-
-            ResourceUtils.closeQuietly(context);
+            resetStateAndCloseConnection(ftpSession);
         }
     }
 
     private void processDownload(final FtpIoSession ftpSession, final FtpServerContext ftpServerContext,
                                  final FtpRequest ftpRequest, final FtpCommand command) throws FtpException {
-        // argument not null or empty check // TODO jwilliams: check for unimplemented checks
+        // argument not null or empty check // TODO jwilliams: check for unimplemented validation/replies
         if (null == ftpRequest.getArgument() || ftpRequest.getArgument().trim().isEmpty()) {
             ftpSession.write(LocalizedFtpReply.translate(ftpSession, ftpRequest, ftpServerContext,
                     FtpReply.REPLY_501_SYNTAX_ERROR_IN_PARAMETERS_OR_ARGUMENTS, ftpRequest.getCommand(), null));
@@ -294,15 +296,11 @@ public class FtpRequestProcessor {
                 System.out.println("SERIOUS PROBLEM - Download FtpResponseKnob null!");
 
                 logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
-                // TODO jwilliams: handle error, logging - a null knob may indicate a real problem
-                //                reply550ProcessingError(ftpSession, command);
-//                return;
+                reply550ProcessingError(ftpSession, command);
                 return;
             }
 
-
-            // TODO jwilliams: evaluate response knob, if not default (== okay for streaming response), check for failure codes
-
+            // TODO jwilliams: evaluate response knob, if reply code not 150 then check for failure codes
 
             // get response input stream, destroying it as it's read
             try {
@@ -338,8 +336,7 @@ public class FtpRequestProcessor {
             // write closing connection message
             reply226ClosingConnection(ftpSession, ftpServerContext, ftpRequest);
         } finally {
-            ftpSession.resetState();
-            ftpSession.getDataConnection().closeDataConnection();
+            resetStateAndCloseConnection(ftpSession);
 
             ResourceUtils.closeQuietly(responseStream);
             ResourceUtils.closeQuietly(context);
@@ -427,16 +424,15 @@ public class FtpRequestProcessor {
 
             if (null == ftpResponseKnob) {
                 logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
-                // TODO jwilliams: handle error, logging - a null knob indicates a real problem
-//                reply550ProcessingError(ftpSession, command);
-//                return;
+                reply550ProcessingError(ftpSession, command);
+                return;
             }
 
-            // TODO jwilliams: use reply to determine course of action if code >= 400 - reply data itself is irrelevant for list-type commands
+            // TODO jwilliams: use reply code to determine course of action
 
-            if (ftpResponseKnob.getReplyCode() >= 400) { // problem encountered: interpret, report, and don't initiate download // TODO jwilliams: maybe check for !(specific success code)?
-                logger.log(Level.WARNING, "ERROR REPLY CODE RETURNED! " + ftpResponseKnob.getReplyCode());
-                ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(), ftpResponseKnob.getReplyData()));
+            if (ftpResponseKnob.getReplyCode() >= 400) { // problem encountered: interpret, report, and don't initiate download // TODO jwilliams: check for !(specific success code)
+                logger.log(Level.WARNING, "Negative completion reply code returned: " + ftpResponseKnob.getReplyCode());
+                ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(), ftpResponseKnob.getReplyText()));
                 return;
             }
 
@@ -462,9 +458,18 @@ public class FtpRequestProcessor {
             // write closing connection message
             reply226ClosingConnection(ftpSession, ftpServerContext, ftpRequest);
         } finally {
-            ftpSession.getDataConnection().closeDataConnection();
+            resetStateAndCloseConnection(ftpSession);
+
             ResourceUtils.closeQuietly(context);
         }
+    }
+
+    private void resetStateAndCloseConnection(FtpIoSession ftpSession) {
+        // reset state variables
+        ftpSession.resetState();
+
+        // and abort any data connection
+        ftpSession.getDataConnection().closeDataConnection();
     }
 
     private void processDirectoryNavigation(final FtpIoSession ftpSession, final FtpServerContext ftpServerContext,
@@ -517,12 +522,11 @@ public class FtpRequestProcessor {
             // a null knob indicates a real problem for a directory nav command
             if (null == ftpResponseKnob) {
                 logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
-                // TODO jwilliams: handle error, logging - a null knob indicates a real problem for a directory nav command
                 reply550ProcessingError(ftpSession, command);
                 return;
             }
 
-            // TODO jwilliams: check for specific return code
+            // TODO jwilliams: check for specific 2xx return code
             if (ftpResponseKnob.getReplyCode() < 400) { // if not an error
                 success = true;
             }
@@ -545,7 +549,7 @@ public class FtpRequestProcessor {
             ftpSession.write(LocalizedFtpReply.translate(ftpSession, ftpRequest, ftpServerContext,
                     FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, ftpRequest.getCommand(),
                     fileSystemView.getWorkingDirectory().getAbsolutePath()));
-        } else { // TODO jwilliams: report returned error, or generic error?
+        } else { // TODO jwilliams: report actual returned error
             ftpSession.write(LocalizedFtpReply.translate(ftpSession, ftpRequest, ftpServerContext,
                     FtpReply.REPLY_550_REQUESTED_ACTION_NOT_TAKEN, ftpRequest.getCommand(), null));
         }
@@ -601,11 +605,11 @@ public class FtpRequestProcessor {
 
             if (null == ftpResponseKnob) {
                 logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
-                // TODO jwilliams: handle error, logging - a null knob may indicate a real problem
+                reply550ProcessingError(ftpSession, command);
                 return;
             }
 
-            ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(), ftpResponseKnob.getReplyData()));
+            ftpSession.write(new DefaultFtpReply(ftpResponseKnob.getReplyCode(), ftpResponseKnob.getReplyText()));
         } finally {
             ResourceUtils.closeQuietly(context);
         }
@@ -682,9 +686,8 @@ public class FtpRequestProcessor {
             logger.log(Level.INFO, "Request referred to an outdated version of policy.");
             faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
         } catch (Throwable t) {
-            logger.log(Level.WARNING, "PROCESS MESSAGE PROCESSOR: Exception while processing FTP message: " +   // TODO jwilliams: handle in more detail?
+            logger.log(Level.WARNING, "Exception while processing FTP message: " +
                     ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
-            t.printStackTrace();
             faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
         }
 
@@ -709,7 +712,7 @@ public class FtpRequestProcessor {
         ContentTypeHeader cType =
                 overriddenContentType != null
                         ? overriddenContentType
-                        : ContentTypeHeader.OCTET_STREAM_DEFAULT; // TODO jwilliams: shouldn't have an overridden content type option?
+                        : ContentTypeHeader.OCTET_STREAM_DEFAULT; // TODO jwilliams: shouldn't have an overridden content type option
 
         Message request = new Message();
 
@@ -727,8 +730,10 @@ public class FtpRequestProcessor {
                 secure,
                 user));
 
-        if (!Goid.isDefault(hardwiredServiceGoid)) { // TODO jwilliams: check this is working - either need to spit bics or accommodate no hardwired service (i.e. pre-icefish behaviour)
+        if (!Goid.isDefault(hardwiredServiceGoid)) {
             request.attachKnob(HasServiceId.class, new HasServiceIdImpl(hardwiredServiceGoid));
+        } else {
+            // TODO jwilliams: either need to spit bics or accommodate no hardwired service (i.e. pre-icefish behaviour)
         }
 
         return request;
@@ -862,10 +867,10 @@ public class FtpRequestProcessor {
     }
 
     /*
-     * Convert OutputStream to InputStream.
+     * Begin transferring data from the client and return an InputStream for the data.
      */
-    private InputStream openDataConnectionInputStream(final FtpSession ftpSession, final DataConnection dataConnection,
-                                                      final String argument) throws IOException {
+    private InputStream transferDataFromClient(final FtpSession ftpSession, final DataConnection dataConnection,
+                                               final String argument) throws IOException {
         final PipedInputStream pis = new PipedInputStream();
 
         final CountDownLatch startedSignal = new CountDownLatch(1);
@@ -890,6 +895,7 @@ public class FtpRequestProcessor {
                     logger.log(Level.WARNING, "Data transfer error.", ExceptionUtils.getDebugException(e));
                 } finally {
                     ResourceUtils.closeQuietly(pos);
+                    ResourceUtils.closeQuietly(pis);
                     startedSignal.countDown();
                 }
             }
@@ -915,11 +921,7 @@ public class FtpRequestProcessor {
                                       final DataConnection dataConnection,
                                       final InputStream is) throws IOException {
         try {
-            logger.log(Level.FINE, "Starting data transfer to client");
-
             dataConnection.transferToClient(ftpSession, is);
-
-            logger.log(Level.FINE, "Completed data transfer to client");
         } finally {
             ResourceUtils.closeQuietly(is);
         }

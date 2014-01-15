@@ -65,7 +65,6 @@ class VirtualFileObject implements FtpFile {
 
     @Override
     public boolean setLastModified(long date) {
-//        this.date = date; // TODO jwilliams: should we set this? either make date mutable, or ignore set requests
         return true;
     }
 

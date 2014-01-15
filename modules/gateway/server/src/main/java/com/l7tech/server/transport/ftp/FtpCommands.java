@@ -37,7 +37,7 @@ public class FtpCommands {
                      *
                      *   \n AUTH SSL\n AUTH TLS
                      */
-                    return "211-Extensions supported\n SIZE\n MDTM\n REST STREAM\n LANG en\n MLST Size;Modify;Type;Perm\n MODE Z\n UTF8\n EPRT\n EPSV\n PASV\n TVFS\n211 End\r\n"; // TODO jwilliams: needs review/updating?
+                    return "211-Extensions supported\n SIZE\n MDTM\n REST STREAM\n LANG en\n MLST Size;Modify;Type;Perm\n MODE Z\n UTF8\n EPRT\n EPSV\n PASV\n TVFS\n211 End\r\n"; // TODO jwilliams: needs to be updated
                 }
 
                 public String toString() {

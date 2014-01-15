@@ -115,6 +115,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String JMS_HEADERNAMES = "jms.headernames";
     private static final String JMS_ALLHEADERVALUES = "jms.allheadervalues";
 
+    private static final String FTP_REPLY_CODE = "ftp.replycode";
+    private static final String FTP_REPLY_TEXT = "ftp.replytext";
+
     private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
         put(TCP_REMOTE_ADDRESS, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
         put(TCP_REMOTE_IP, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
@@ -238,7 +241,11 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = commandParameterSelector;
         } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
             selector = commandTypeSelector;
-        } else if (selectorMap.get(prefix) != null) {
+        } else if (lname.startsWith(FTP_REPLY_CODE)) {
+            selector = ftpReplyCodeSelector;
+        } else if (lname.startsWith(FTP_REPLY_TEXT)) {
+            selector = ftpReplyTextSelector;
+        }else if (selectorMap.get(prefix) != null) {
             selector = selectorMap.get(prefix);
         } else {
             final Functions.Unary<Object,TcpKnob> tcpFieldGetter = TCP_FIELDS.get(lname);
@@ -264,6 +271,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         return new String[]{
                 "http",
                 "jms",
+
                 "command",
                 "mainpart",
                 "parts",
@@ -345,6 +353,36 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                 return null;
             }
             return new Selection(commandKnob.getParameter(paramName));
+        }
+    };
+
+    private static final MessageAttributeSelector ftpReplyCodeSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            FtpResponseKnob ftpResponseKnob = context.getKnob(FtpResponseKnob.class);
+
+            if (ftpResponseKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
+            return new Selection(ftpResponseKnob.getReplyCode());
+        }
+    };
+
+    private static final MessageAttributeSelector ftpReplyTextSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            FtpResponseKnob ftpResponseKnob = context.getKnob(FtpResponseKnob.class);
+
+            if (ftpResponseKnob == null) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
+            return new Selection(ftpResponseKnob.getReplyText());
         }
     };
 

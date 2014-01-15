@@ -118,7 +118,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final FtpClientWrapper ftpClient;
 
         // get ftp(s) client
-        // TODO jwilliams: this might be implemented in a factory once the new connection pool is added
+        // TODO jwilliams: implement in factory once the new connection pool is added
         try {
             ftpClient = getFtpClient(identity, usernamePasswordPair.left,
                     usernamePasswordPair.right, variableExpander, assertion.getSecurity());
@@ -133,7 +133,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             switch (ftpCommand) {
                 case APPE:
-                case STOU: // TODO jwilliams: handle parameters (arguments) properly - refer to RFC, maybe change "AUTO" filename source to "Use request id for filename"?
+                case STOU:
                 case STOR:
                     final InputStream messageBodyStream;
 
@@ -284,7 +284,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             try {
                 value = context.getVariable(assertion.getFtpCommandVariable());
             } catch (NoSuchVariableException e) {
-                logAndAudit(NO_SUCH_VARIABLE, assertion.getFtpCommandVariable());
+                logAndAudit(NO_SUCH_VARIABLE_WARNING, assertion.getFtpCommandVariable());
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
             }
 
@@ -352,12 +352,18 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         String arguments = null;
 
         if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            // Cannot use STOU because // TODO jwilliams: Should make that decision in the routing - not the inbound handling - to be less tightly coupled.
+            // Cannot use STOU because
             // {@link com.jscape.inet.ftp.Ftp.uploadUnique(InputStream, String)}
             // sends a parameter as filename seed, which causes IIS to respond
             // with "500 'STOU seed': Invalid number of parameters".
             // This was reported (2007-05-07) to JSCAPE, who said they will add
             // a method to control STOU parameter.
+
+            /**
+             * That IIS behaviour is RFC compliant. Taking a parameter for a filename seed is extended,
+             * non-standard functionality. We should do our best to accommodate it while maintaining
+             * our own standards compliance.
+             */
             arguments = context.getRequestId().toString();
         } else if (assertion.getFileNameSource() == FtpFileNameSource.ARGUMENT) {
             arguments = variableExpander.expandVariables(assertion.getArguments());
@@ -386,8 +392,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final FtpReplyListener replyListener = new FtpReplyListener() {
             @Override
             public void upload(final FtpUploadEvent ftpUploadEvent) {
-                logger.log(Level.INFO, "--FTP UPLOAD EVENT: " + ftpUploadEvent.getFilename() + " uploaded in " + ftpUploadEvent.getTime() / 1000f + " seconds");
-
+                System.out.println("UPLOADED: " + ftpUploadEvent.toString());
                 setSize(ftpUploadEvent.getSize());
             }
         };
@@ -403,16 +408,18 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     ftp.upload(is, filename, true);
                     break;
                 case STOU:
-                    ftp.uploadUnique(is, filename);
+
+
                     break;
-                default:
-                    ftp.upload(is, filename);
             }
         } catch (FtpException e) {
             throw new FtpRoutingException("Failed to process upload to '" + filename +
                     "': " + e.getMessage(), e, replyListener.getFtpReply());
         } finally {
             ftp.removeFtpListener(replyListener);
+
+            // return the client to the pool // TODO jwilliams: implement with new connection pool
+//            pool.returnObject(ftpClient.getKey(), ftpClient);
         }
 
         // check that the upload did not send fewer bytes than expected
@@ -477,8 +484,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     // call countdown in case it hasn't been called already
                     startSignal.countDown();
 
-                    // return the client to the pool // TODO jwilliams: implement with connection pool
-//                        sshSessionPool.returnObject(session.getKey(), session);
+                    // return the client to the pool // TODO jwilliams: implement with new connection pool
+//                    pool.returnObject(ftpClient.getKey(), ftpClient);
                 }
             }
         });
@@ -523,7 +530,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
             switch (ftpCommand) {
                 case DELE:
-                    ftpClient.deleteFile(arguments); // TODO jwilliams: look at recursive option - defined in arguments? refer to RFC & Apache FTP Server implementation
+                    ftpClient.deleteFile(arguments);
                     break;
                 case MKD:
                     ftpClient.makeDir(arguments);
@@ -559,7 +566,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 case LIST:
                     Enumeration dirListingEnum;
 
-                    if (arguments.isEmpty()) {
+                    if (null == arguments || arguments.isEmpty()) {
                         dirListingEnum = ftpClient.getDirListing();
                     } else {
                         dirListingEnum = ftpClient.getDirListing(arguments);
@@ -568,7 +575,13 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     is = new ByteArrayInputStream(createRawListing(dirListingEnum).getBytes());
                     break;
                 case NLST:
-                    Enumeration fileNames = ftpClient.getNameListing(); // TODO jwilliams: handle arguments case
+                    Enumeration fileNames;
+
+                    if (null == arguments || arguments.isEmpty()) {
+                        fileNames = ftpClient.getNameListing();
+                    } else {
+                        fileNames = ftpClient.getNameListing(arguments);
+                    }
 
                     StringBuilder sb = new StringBuilder();
 
@@ -595,6 +608,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             throw new FtpRoutingException(e.getMessage(), e, replyListener.getFtpReply());
         } finally {
             ftpClient.removeFtpListener(replyListener);
+
+            // return the client to the pool // TODO jwilliams: implement with new connection pool
+//            pool.returnObject(ftpClient.getKey(), ftpClient);
         }
     }
 
@@ -615,8 +631,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 ContentTypeHeader.OCTET_STREAM_DEFAULT, dataStream, getResponseByteLimit(context));
 
         response.attachFtpResponseKnob(buildFtpResponseKnob(ftpResult));
-        // TODO jwilliams: set ftp reply details to 'ftpreply.code' and 'ftpreply.detail' context variables if there's a failure
-        // TODO jwilliams: response knob should be hidden to user, or remove response knob?
 
         return response;
     }
@@ -769,8 +783,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
-            public String getReplyData() {
-                return ftpReply.getReplyData();
+            public String getReplyText() {
+                return ftpReply.getReplyText();
             }
         };
     }
@@ -900,6 +914,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
+            public Enumeration getNameListing(String filter) throws FtpException {
+                return ftps.getNameListing(filter);
+            }
+
+            @Override
             public long getFilesize(String remoteFile) throws FtpException {
                 return ftps.getFilesize(remoteFile);
             }
@@ -1001,6 +1020,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             @Override
             public Enumeration getNameListing() throws FtpException {
                 return ftp.getNameListing();
+            }
+
+            @Override
+            public Enumeration getNameListing(String filter) throws FtpException {
+                return ftp.getNameListing(filter);
             }
 
             @Override
@@ -1110,6 +1134,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
          */
         public Enumeration getNameListing() throws FtpException;
 
+        public Enumeration getNameListing(String filter) throws FtpException;
+
         /**
          * SIZE
          */
@@ -1136,7 +1162,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         ReentrantLock lock = new ReentrantLock();
 
         private int lastReplyCode;
-        private String lastReplyData;
+        private String lastReplyText;
         private String lastCommand;
 
         public FtpReplyListener() {
@@ -1155,7 +1181,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             lock.lock();
 
             try {
-                return new FtpReply(lastReplyCode, lastReplyData, lastCommand);
+                return new FtpReply(lastReplyCode, lastReplyText, lastCommand);
             } finally {
                 lock.unlock();
             }
@@ -1167,14 +1193,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         @Override
         public void commandSent(FtpCommandEvent ftpCommandEvent) {
-            System.out.println(ftpCommandEvent.getCommand()); // TODO jwilliams: remove
-
             lock.lock();
 
             try {
                 lastCommand = ftpCommandEvent.getCommand();
                 lastReplyCode = 0;
-                lastReplyData = null;
+                lastReplyText = null;
             } finally {
                 lock.unlock();
             }
@@ -1186,10 +1210,10 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
             try {
                 lastReplyCode = Integer.parseInt(ftpResponseEvent.getResponse().substring(0, 3));
-                lastReplyData = ftpResponseEvent.getResponse().substring(3);
+                lastReplyText = ftpResponseEvent.getResponse().substring(3);
             } catch (StringIndexOutOfBoundsException | NumberFormatException e) {
                 lastReplyCode = 0; // should never happen
-                lastReplyData = null;
+                lastReplyText = null;
             } finally {
                 lock.unlock();
             }
@@ -1294,23 +1318,23 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     private static class FtpReply {
         private final int replyCode;
-        private final String replyData;
+        private final String replyText;
         private final String lastCommand;
 
         private InputStream dataStream;
 
-        public FtpReply(int replyCode, String replyData, String lastCommand) {
+        public FtpReply(int replyCode, String replyText, String lastCommand) {
             this.lastCommand = lastCommand;
             this.replyCode = replyCode;
-            this.replyData = replyData;
+            this.replyText = replyText;
         }
 
         public int getReplyCode() {
             return replyCode;
         }
 
-        public String getReplyData() {
-            return replyData;
+        public String getReplyText() {
+            return replyText;
         }
 
         public String getLastCommand() {
@@ -1347,7 +1371,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         @Override
         public String toString() {
-            return lastCommand + ": " + replyCode + " " + replyData;
+            return lastCommand + ": " + replyCode + " " + replyText;
         }
     }
 }

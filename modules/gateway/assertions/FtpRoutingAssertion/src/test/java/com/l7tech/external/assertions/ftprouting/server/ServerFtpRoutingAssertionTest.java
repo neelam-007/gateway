@@ -18,6 +18,7 @@ import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.*;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.usermanager.impl.BaseUser;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test coverage of FTP Routing Assertion
@@ -169,10 +171,16 @@ public class ServerFtpRoutingAssertionTest {
         final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
 
         // run server assertion
-        AssertionStatus status = serverAssertion.checkRequest(context);
+        AssertionStatus status = null;
 
-        assertEquals(AssertionStatus.FAILED, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_UNSUPPORTED_COMMAND));
+        try {
+            serverAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            status = e.getAssertionStatus();
+        }
+
+        assertEquals(AssertionStatus.SERVER_ERROR, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_SUCH_VARIABLE_WARNING));
         assertFalse(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
         assertNull(context.getResponse().getKnob(FtpResponseKnob.class));
     }
@@ -199,7 +207,13 @@ public class ServerFtpRoutingAssertionTest {
         final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
 
         // run server assertion
-        AssertionStatus status = serverAssertion.checkRequest(context);
+        AssertionStatus status = null;
+
+        try {
+            serverAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            status = e.getAssertionStatus();
+        }
 
         assertEquals(AssertionStatus.FAILED, status);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_NO_COMMAND));
@@ -279,7 +293,7 @@ public class ServerFtpRoutingAssertionTest {
 
         assertEquals(testFile.getContent(), responseContent);
 
-        validateFtpResponseKnob(context, 0, null);
+        validateFtpResponseKnob(context, 150, null);
     }
 
     @Test
@@ -317,7 +331,7 @@ public class ServerFtpRoutingAssertionTest {
 
         assertEquals(testFile.getContent(), responseContent);
 
-        validateFtpResponseKnob(context, 0, null);
+        validateFtpResponseKnob(context, 150, null);
     }
 
     @Test
@@ -396,10 +410,10 @@ public class ServerFtpRoutingAssertionTest {
         assertNotNull(ftpResponseKnob);
         assertEquals(code, ftpResponseKnob.getReplyCode());
 
-        if (null == ftpResponseKnob.getReplyData()) {   // null is valid and indicates the reply is unset
-            assertEquals(data, ftpResponseKnob.getReplyData());
+        if (null == ftpResponseKnob.getReplyText()) {   // null is valid and indicates the reply is unset
+            assertEquals(data, ftpResponseKnob.getReplyText());
         } else {
-            assertEquals(data, ftpResponseKnob.getReplyData().trim());
+            assertEquals(data, ftpResponseKnob.getReplyText().trim());
         }
     }
 

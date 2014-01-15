@@ -116,7 +116,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JRadioButton storedPasswordRadioButton;
     private JRadioButton passwordExpressionRadioButton;
     private JLabel plainTextPasswordWarningLabel;
-    private JCheckBox autoFilenameCheckBox;
+    private JCheckBox autoFilenameCheckBox; // TODO jwilliams: change label to "Use request id for filename" to be clearer?
     private JLabel userNameLabel;
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private ByteLimitPanel responseLimitPanel;
@@ -465,7 +465,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        // only plaintext passwords can be used in the connection test // TODO jwilliams: confirm this
+        // only plaintext passwords can be used in the connection test // TODO jwilliams: check this
         connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(passwordExpressionRadioButton) {
             @Override
             public String getValidationError() {
@@ -498,18 +498,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         inputValidator.addRule(clientCertRule);
         connectionTestValidator.addRule(clientCertRule);
-
-        // STOU command cannot use auto-generated file name // TODO jwilliams: confirm this - need to test & thoroughly document STOU
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(autoFilenameCheckBox) {
-            @Override
-            public String getValidationError() {
-                if (autoFilenameCheckBox.isSelected() && (commandComboBox.getSelectedItem()).equals(FtpCommand.STOU)) {
-                    return MessageFormat.format(getResourceString("stouAutoFilenameError"), getDefaultPortNumber());
-                }
-
-                return null;
-            }
-        });
 
         // validate response limit panel settings
         inputValidator.addRule(new InputValidator.ValidationRule() {

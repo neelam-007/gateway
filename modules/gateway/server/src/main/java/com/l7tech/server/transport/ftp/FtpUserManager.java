@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Steve Jones
  */
-class FtpUserManager implements UserManager { // TODO jwilliams: find where UserManager is actually being used
+class FtpUserManager implements UserManager {
     private static final Logger logger = Logger.getLogger(FtpUserManager.class.getName());
 
     private static final String USER_ANONYMOUS = "anonymous";
@@ -49,13 +49,6 @@ class FtpUserManager implements UserManager { // TODO jwilliams: find where User
      */
     public User authenticate(Authentication authentication) throws AuthenticationFailedException {
         User user;
-
-        // TODO jwilliams: move licensing check to Ftplet.onLogin?
-//        if (!ftpServerManager.isLicensed()) {
-//            logger.log(Level.INFO, "Failing authentication, FTP server not licensed.");
-//
-//            throw new AuthenticationFailedException("Authentication failed (FTP server not licensed).");
-//        }
 
         // check input
         if (authentication instanceof AnonymousAuthentication) {

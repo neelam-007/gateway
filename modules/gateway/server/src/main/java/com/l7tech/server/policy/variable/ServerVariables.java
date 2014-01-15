@@ -280,18 +280,18 @@ public class ServerVariables {
                     return frk == null ? null : String.valueOf(frk.isSecure());
                 }
             }),
-            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replyCode", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replycode", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpResponseKnob frk = context.getResponse().getKnob(FtpResponseKnob.class);
                     return frk == null ? null : String.valueOf(frk.getReplyCode());
                 }
             }),
-            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replyData", new Getter() {
+            new Variable(BuiltinVariables.PREFIX_RESPONSE_FTP + ".replytext", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     FtpResponseKnob frk = context.getResponse().getKnob(FtpResponseKnob.class);
-                    return frk == null ? null : String.valueOf(frk.getReplyData());
+                    return frk == null ? null : String.valueOf(frk.getReplyText());
                 }
             }),
             new Variable("request.ssh.path", new Getter() {

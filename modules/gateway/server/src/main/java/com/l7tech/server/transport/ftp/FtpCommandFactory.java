@@ -43,7 +43,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("MODE", new MODE());
         commandMap.put("NLST", new ProxyFtpCommand(NLST));
         commandMap.put("NOOP", new NOOP());
-        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation // TODO jwilliams: implement OPTS & OPTS_MLST (affects MLST response); OPTS_UTF8 can keep the library implementation
+        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation // TODO jwilliams: implement OPTS - OPTS_MLST should not be supported; OPTS_UTF8 can keep the library implementation
         commandMap.put("PASS", new PASS());
         commandMap.put("PASV", new PASV());
         commandMap.put("PBSZ", new PBSZ()); // RFC 2228 Security Extensions
@@ -52,10 +52,10 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("PWD",  new ProxyFtpCommand(PWD));
         commandMap.put("QUIT", new QUIT());
         commandMap.put("REIN", new REIN());
-        commandMap.put("REST", new REST()); // RFC 3659 Extensions to FTP
+        commandMap.put("REST", new NotSupportedCommand()); // RFC 3659 Extensions to FTP
         commandMap.put("RETR", new ProxyFtpCommand(RETR));
         commandMap.put("RMD",  new ProxyFtpCommand(RMD));
-        commandMap.put("RNFR", new NotSupportedCommand()); // reply "not supported" // TODO jwilliams: check NotSupportedCommands work
+        commandMap.put("RNFR", new NotSupportedCommand()); // reply "not supported"
         commandMap.put("RNTO", new NotSupportedCommand()); // reply "not supported"
         commandMap.put("SITE", new NotSupportedCommand()); // reply "not supported"
         commandMap.put("SIZE", new ProxyFtpCommand(SIZE)); // RFC 3659 Extensions to FTP
