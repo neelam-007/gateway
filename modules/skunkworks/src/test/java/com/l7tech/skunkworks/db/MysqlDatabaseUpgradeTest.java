@@ -3,12 +3,12 @@ package com.l7tech.skunkworks.db;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.test.BugId;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.ConditionalIgnoreRule;
+import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.db.DbCompareTestUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -23,9 +23,13 @@ import java.util.logging.Logger;
  *
  * @author Victor Kazakov
  */
+@ConditionalIgnore(condition = RunOnNightly.class)
 @RunWith(MockitoJUnitRunner.class)
 public class MysqlDatabaseUpgradeTest {
     private static final Logger logger = Logger.getLogger(MysqlDatabaseUpgradeTest.class.getName());
+
+    @Rule
+    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
     private String HOST_NAME = DBCredentials.MYSQL_HOST;
     private int PORT = DBCredentials.MYSQL_PORT;

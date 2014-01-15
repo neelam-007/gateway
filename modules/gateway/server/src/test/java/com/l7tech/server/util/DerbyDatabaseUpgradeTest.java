@@ -1,10 +1,14 @@
 package com.l7tech.server.util;
 
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.ConditionalIgnoreRule;
+import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.DbUpgradeUtil;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.db.DbCompareTestUtils;
 import org.apache.derby.jdbc.EmbeddedDataSource40;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -23,8 +27,13 @@ import java.sql.SQLException;
  *
  * @author Victor Kazakov
  */
+@ConditionalIgnore(condition = RunOnNightly.class)
 @RunWith(MockitoJUnitRunner.class)
 public class DerbyDatabaseUpgradeTest {
+
+    @Rule
+    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
     private static final String DB_FOLDER = "_dbtest";
     private static final String NEW_DATABASE_NAME = DB_FOLDER + "/ssg_new_db_test";
     private static final String UPGRADED_DATABASE_NAME = DB_FOLDER + "/ssg_upgraded_db_test";
