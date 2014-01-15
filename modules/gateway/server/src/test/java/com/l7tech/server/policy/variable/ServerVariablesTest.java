@@ -1103,12 +1103,10 @@ public class ServerVariablesTest {
     @Test
     public void testResponseCookieOverwritePath() throws Exception {
         final PolicyEnforcementContext context = context();
-        context.getResponse().getHttpCookiesKnob().addCookie(new HttpCookie("name", "valuea", 1, "/some", ".domain.com"));
-        context.setVariable("response.cookie.overwritePath", false);
-        Iterator<HttpCookie> i = context.getResponse().getHttpCookiesKnob().getCookies().iterator();
-        while (i.hasNext()) {
-            assertEquals(false, i.next().isOverwritePath());
-        }
+        // default is true
+        assertTrue(context.isOverwriteResponseCookieAttributes());
+        context.setVariable("response.cookie.overwriteAttributes", false);
+        assertFalse(context.isOverwriteResponseCookieAttributes());
     }
 
 

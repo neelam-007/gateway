@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -34,7 +33,6 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
@@ -83,6 +81,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean responseWss11;
     private boolean malformedRequest;
     private boolean policyExecutionAttempted;
+    private boolean overwriteResponseCookieAttributes = true;
     private String savedRequestL7aMessageId;
     private Deque<Integer> assertionOrdinalPath = null; // null by default, rather than an empty LinkedList, so we don't pay for it unless at least one Include is used
     private AssertionTraceListener traceListener = null;
@@ -705,6 +704,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Nullable
     public AuditContext getAuditContext() {
         return auditContext;
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookieAttributes() {
+        return overwriteResponseCookieAttributes;
+    }
+
+    @Override
+    public void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes) {
+        this.overwriteResponseCookieAttributes = overwriteResponseCookieAttributes;
     }
 
     /** @return true if the MessageProcessor got as far as calling checkRequest() for this context. */

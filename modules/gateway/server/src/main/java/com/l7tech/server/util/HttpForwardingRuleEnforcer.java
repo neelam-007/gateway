@@ -400,7 +400,13 @@ public class HttpForwardingRuleEnforcer {
             for (String setCookieValue : setCookieValues) {
                 try {
                     final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                    cookiesKnob.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+                    if (context.isOverwriteResponseCookieAttributes()) {
+                        // possibly overwrite cookie domain and path
+                        cookiesKnob.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+                    } else {
+                        // always use original cookie domain and path
+                        cookiesKnob.addCookie(new HttpCookie(setCookieValue));
+                    }
                 } catch (final HttpCookie.IllegalFormatException e) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
                 }

@@ -194,6 +194,27 @@ public class CookieTest {
     }
 
     @Test
+    public void ensureValidForDomainAndPathNullTargetDomain() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), null, "/gatewayPath");
+        assertEquals("originalDomain", cookie.getDomain());
+        assertEquals("/gatewayPath", cookie.getPath());
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullTargetPath() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), "gatewayDomain", null);
+        assertEquals("gatewayDomain", cookie.getDomain());
+        assertEquals("/originalPath", cookie.getPath());
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullTargetDomainAndPath() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), null, null);
+        assertEquals("originalDomain", cookie.getDomain());
+        assertEquals("/originalPath", cookie.getPath());
+    }
+
+    @Test
     public void testQuoting() {
         HttpCookie cookie1 = new HttpCookie("name", "value with spaces", 1, "/some", ".domain.com");
         String header1 = cookie1.getV0CookieHeaderPart();

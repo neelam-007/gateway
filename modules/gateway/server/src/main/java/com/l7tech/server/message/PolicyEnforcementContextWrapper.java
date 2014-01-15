@@ -1,6 +1,5 @@
 package com.l7tech.server.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -516,6 +515,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void close() {
         delegate.close();
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookieAttributes() {
+        return delegate.isOverwriteResponseCookieAttributes();
+    }
+
+    @Override
+    public void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes) {
+        delegate.setOverwriteResponseCookieAttributes(overwriteResponseCookieAttributes);
     }
 
     //- PROTECTED

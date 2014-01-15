@@ -466,10 +466,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
             URI url = URI.create(reqKnob.getRequestUrl());
             //SSG-6881 Determine to overwrite the path using the SSG request path or the original path.
-            if (cookie.isOverwritePath()) {
+            if (context.isOverwriteResponseCookieAttributes()) {
                 cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
             } else {
-                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), null));
+                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, null, null));
             }
         }
         return cookies;
