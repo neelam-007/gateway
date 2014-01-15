@@ -96,8 +96,17 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
 
     protected Item<R> toReference(String id, String title) {
         return new ItemBuilder<R>(title, id, getEntityType().name())
-                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id)))
+                .addLink(ManagedObjectFactory.createLink("self", getUrl(id)))
                 .build();
+    }
+
+    /**
+     * Returns the Url of this resource with the given id
+     * @param id The id of the resource. Leave it blank to get the resource listing url
+     * @return The url of the resource
+     */
+    public String getUrl(String id) {
+        return RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id);
     }
 
     @Override
@@ -105,7 +114,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
         R resource = factory.getResource(id);
         return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
-                .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
+                .addLink(ManagedObjectFactory.createLink("template", getUrl("template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
                 .build();
     }

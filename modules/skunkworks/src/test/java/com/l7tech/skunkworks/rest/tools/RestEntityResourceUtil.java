@@ -1,6 +1,5 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.tools;
+package com.l7tech.skunkworks.rest.tools;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.RestResponse;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityType;
@@ -8,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.Functions;
 
+import java.security.cert.CertificateEncodingException;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +21,7 @@ public interface RestEntityResourceUtil<E extends PersistentEntity, M extends Ma
      *
      * @return The entity ids that can be retrieved using the rest api
      */
-    public List<String> getRetrievableEntityIDs();
+    public List<String> getRetrievableEntityIDs() throws FindException;
 
     /**
      * This returns a list of managed objects that can be created using the api. The id's must be set on these.
@@ -115,7 +115,7 @@ public interface RestEntityResourceUtil<E extends PersistentEntity, M extends Ma
      * @param id            The entity
      * @param managedObject The managed object
      */
-    public void verifyEntity(String id, M managedObject) throws FindException;
+    public void verifyEntity(String id, M managedObject) throws Exception;
 
     /**
      * This returns a list of search queries and a list of the expected results of executing the search query

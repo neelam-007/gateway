@@ -38,6 +38,15 @@ public class TestLicenseManager implements AssertionLicense, UpdatableLicenseMan
             "    <licensee name=\"Layer 7 Development\"/>\n" +
             "</license>";
 
+    public TestLicenseManager() {
+    }
+
+    public TestLicenseManager(final Set<String> disabledFeatures) {
+        for (String feature : disabledFeatures) {
+            disableFeature(feature);
+        }
+    }
+
     public boolean isAssertionEnabled( Assertion assertion ) {
         return true;
     }

@@ -1,13 +1,13 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest;
+package com.l7tech.skunkworks.rest;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.RestResponse;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.tools.RestEntityTests;
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
+import com.l7tech.skunkworks.rest.tools.RestEntityTests;
+import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.CollectionUtils;

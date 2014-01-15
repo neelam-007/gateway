@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server;
+package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.util.Functions;

@@ -136,7 +136,9 @@ public class BundleResource {
                 filterLinks(resource);
                 items.add(resource);
                 //noinspection unchecked
-                mappings.add(restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy));
+                Mapping mapping = restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy);
+                mapping.setSrcUri(restResource.getUrl(resource.getId()));
+                mappings.add(mapping);
             }
         }
 

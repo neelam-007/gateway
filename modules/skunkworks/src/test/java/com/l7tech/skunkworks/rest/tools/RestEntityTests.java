@@ -1,8 +1,7 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.tools;
+package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.gatewaymanagement.server.RestResponse;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.Goid;

@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest.tools;
+package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;

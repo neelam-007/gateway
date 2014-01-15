@@ -16,6 +16,7 @@
         <dependency name="layer7-common" rev="latest.integration" conf="core->default,test"/>
         <dependency name="layer7-gui" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gateway-api" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-server" rev="latest.integration" conf="core->default,test"/>
         <dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-config" rev="latest.integration" conf="core"/>
@@ -25,6 +26,7 @@
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
         <dependency name="layer7-ems" rev="latest.integration" conf="core"/>
         <dependency name="JdbcQueryAssertion" rev="latest.integration" conf="core"/>
+        <dependency name="GatewayManagementAssertion" rev="latest.integration" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="com.sun.japex" name="japex" rev="1.1" force="true" conf="core"/>
@@ -48,7 +50,6 @@
             <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>
 
-        <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
     </dependencies>

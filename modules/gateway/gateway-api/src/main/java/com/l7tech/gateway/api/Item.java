@@ -47,7 +47,8 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = ServiceAliasMO.class),
             @XmlElementRef(type = DependencyAnalysisMO.class),
             @XmlElementRef(type = Mappings.class),
-            @XmlElementRef(type = ItemsList.class)
+            @XmlElementRef(type = ItemsList.class),
+            @XmlElementRef(type = Bundle.class)
     })
     @XmlAnyElement(lax = true)
     @XmlElementWrapper(name = "Resource", required = false)

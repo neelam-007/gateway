@@ -47,6 +47,7 @@ public class BundleImporter {
                     if(existingResourceItem != null){
                         mapping.setActionTaken(Mapping.ActionTaken.UsedExisting);
                         mapping.setTargetId(existingResourceItem.getId());
+                        mapping.setTargetUri(restEntityResource.getUrl(existingResourceItem.getId()));
                     } else {
                         boolean success = false;
                         try {
@@ -61,6 +62,7 @@ public class BundleImporter {
                         if(success){
                             mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
                             mapping.setTargetId(item.getId());
+                            mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
                         }
                     }
                     break;
