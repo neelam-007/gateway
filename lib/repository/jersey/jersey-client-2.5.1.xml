@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="jersey"
 		module="jersey-client"
-		revision="2.3.1"
+		revision="2.5.1"
 		status="release"
-		publication="20090911102516"
+		publication="20131218102516"
 		default="true"
 	/>
 	<configurations>
