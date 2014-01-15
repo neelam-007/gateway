@@ -392,7 +392,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final FtpReplyListener replyListener = new FtpReplyListener() {
             @Override
             public void upload(final FtpUploadEvent ftpUploadEvent) {
-                System.out.println("UPLOADED: " + ftpUploadEvent.toString());
                 setSize(ftpUploadEvent.getSize());
             }
         };

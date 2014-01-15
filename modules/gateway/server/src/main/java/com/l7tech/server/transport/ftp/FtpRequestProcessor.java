@@ -293,8 +293,6 @@ public class FtpRequestProcessor {
             FtpResponseKnob ftpResponseKnob = response.getKnob(FtpResponseKnob.class);
 
             if (null == ftpResponseKnob) {
-                System.out.println("SERIOUS PROBLEM - Download FtpResponseKnob null!");
-
                 logger.log(Level.WARNING, "Error processing FTP request: FtpResponseKnob was not found");
                 reply550ProcessingError(ftpSession, command);
                 return;
