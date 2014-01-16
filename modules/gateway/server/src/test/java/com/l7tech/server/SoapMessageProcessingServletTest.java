@@ -243,6 +243,30 @@ public class SoapMessageProcessingServletTest {
         assertEquals("b", cookiesMap.get("2"));
     }
 
+    @Test
+    public void contextResponseInvalidSetCookieHeaderAddedToResponse() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null));
+                context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "invalidSetCookieHeaderValue");
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        final Cookie[] cookies = response.getCookies();
+        assertEquals(1, cookies.length);
+        assertEquals("foo", cookies[0].getName());
+        assertEquals("bar", cookies[0].getValue());
+        assertEquals("invalidSetCookieHeaderValue", response.getHeader("Set-Cookie"));
+    }
+
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
         @Override
         SsgConnector getConnector(final HttpServletRequest request) {

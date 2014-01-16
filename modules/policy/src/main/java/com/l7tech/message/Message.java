@@ -726,7 +726,7 @@ public final class Message implements Closeable {
     public HttpCookiesKnob getHttpCookiesKnob() {
         HttpCookiesKnob cookiesKnob = getKnob(HttpCookiesKnob.class);
         if (cookiesKnob == null) {
-            rootFacet = new KnobHolderFacet(this, rootFacet, new HttpCookiesKnobImpl(), false, HttpCookiesKnob.class);
+            rootFacet = new KnobHolderFacet(this, rootFacet, new HttpCookiesKnobImpl(getHeadersKnob()), false, HttpCookiesKnob.class);
             cookiesKnob = getKnob(HttpCookiesKnob.class);
             if (cookiesKnob == null) {
                 throw new IllegalStateException("Could not create HttpCookiesKnob");

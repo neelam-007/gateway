@@ -69,6 +69,7 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
 
         final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                new SetVariableAssertion("response.cookie.overwriteAttributes", "false"),
                 createEchoHeadersHardcodedResponseAssertion(),
                 createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", "foo=bar; Domain=original; Path=/original"))));
         final Map<String, String> setCookieParams = new HashMap<>();

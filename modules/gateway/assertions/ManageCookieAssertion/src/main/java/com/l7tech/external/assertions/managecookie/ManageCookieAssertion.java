@@ -84,6 +84,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
+        meta.put(AssertionMetadata.DESCRIPTION, "Add, update or remove cookie(s) to/from a message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"routing"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/cookie.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

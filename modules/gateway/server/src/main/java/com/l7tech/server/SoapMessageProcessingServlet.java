@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeaderUtil;
 import com.l7tech.common.io.XmlUtil;
@@ -241,7 +242,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // Send response headers
             final Set<HttpCookie> cookies = getCookiesToPropagate(context, reqKnob);
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
-            respKnob.beginResponse(responseHeaders.getHeaders(), cookies);
+            respKnob.beginResponse(getNonSetCookieHeaders(responseHeaders), cookies);
 
             int routeStat = respKnob.getStatus();
             if (routeStat < 1) {
@@ -380,6 +381,26 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             context.close();
         }
+    }
+
+    /**
+     * @return a collection of headers that are not valid set-cookie headers.
+     */
+    private Collection<Pair<String, Object>> getNonSetCookieHeaders(final HeadersKnob headersKnob) {
+        final List<Pair<String, Object>> nonSetCookieHeaders = new ArrayList<>();
+        for (final Pair<String, Object> header : headersKnob.getHeaders()) {
+            if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
+                nonSetCookieHeaders.add(header);
+            } else if (header.getValue() instanceof String) {
+                try {
+                    new HttpCookie((String)header.getValue());
+                } catch (final HttpCookie.IllegalFormatException e) {
+                    // it's an invalid set-cookie header, so treat it as a regular header.
+                    nonSetCookieHeaders.add(header);
+                }
+            }
+        }
+        return nonSetCookieHeaders;
     }
 
     /**

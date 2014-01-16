@@ -53,6 +53,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JCheckBox originalPath;
     private JCheckBox originalMaxAge;
     private JCheckBox originalComment;
+    private JPanel setAttributesPanel;
     private InputValidator validators;
 
     public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
