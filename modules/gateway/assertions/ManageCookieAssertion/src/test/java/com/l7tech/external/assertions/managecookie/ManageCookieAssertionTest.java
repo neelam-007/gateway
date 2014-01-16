@@ -45,6 +45,14 @@ public class ManageCookieAssertionTest {
     }
 
     @Test
+    public void getAssertionNameAddOrReplace() {
+        assertion.setOperation(ManageCookieAssertion.Operation.ADD_OR_REPLACE);
+        assertion.getCookieAttributes().put(NAME, new ManageCookieAssertion.CookieAttribute(NAME, "foo", false));
+        assertion.getCookieAttributes().put(VALUE, new ManageCookieAssertion.CookieAttribute(VALUE, "bar", false));
+        assertEquals("Request: Add or Replace Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
+    }
+
+    @Test
     public void getAssertionNameResponse() {
         assertion.setTarget(TargetMessageType.RESPONSE);
         assertion.getCookieAttributes().put(NAME, new ManageCookieAssertion.CookieAttribute(NAME, "foo", false));

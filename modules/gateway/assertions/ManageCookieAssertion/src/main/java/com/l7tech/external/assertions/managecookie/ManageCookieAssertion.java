@@ -24,7 +24,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
     public static final String SECURE = "secure";
 
     public static enum Operation {
-        ADD("Add"), REMOVE("Remove"), UPDATE("Update");
+        ADD("Add"), REMOVE("Remove"), UPDATE("Update"), ADD_OR_REPLACE("Add or Replace");
 
         private Operation(@NotNull final String name) {
             this.name = name;
@@ -84,7 +84,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
-        meta.put(AssertionMetadata.DESCRIPTION, "Add, update or remove cookie(s) to/from a message.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Add, replace, update or remove cookie(s) to/from a message.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"routing"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/cookie.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
@@ -110,9 +110,9 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
                 final StringBuilder sb = new StringBuilder();
                 sb.append(assertion.getOperation().getName());
                 sb.append(" Cookie");
-                if (assertion.getOperation() == Operation.ADD && assertion.getCookieAttributes().containsKey(NAME)) {
+                if (assertion.getCookieAttributes().containsKey(NAME) && (assertion.getOperation() == Operation.ADD || assertion.getOperation() == Operation.ADD_OR_REPLACE)) {
                     sb.append(" " + assertion.getCookieAttributes().get(NAME).getValue());
-                    if (assertion.getCookieAttributes().containsKey(VALUE)) {
+                    if (assertion.getOperation() == Operation.ADD && assertion.getCookieAttributes().containsKey(VALUE)) {
                         sb.append("=");
                         sb.append(assertion.getCookieAttributes().get(VALUE).getValue());
                     }

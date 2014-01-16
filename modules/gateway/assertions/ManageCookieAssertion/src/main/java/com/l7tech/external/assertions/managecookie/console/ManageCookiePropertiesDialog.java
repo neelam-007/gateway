@@ -81,18 +81,18 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalMaxAge.setSelected(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).isUseOriginalValue() : false);
         originalVersion.setSelected(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).isUseOriginalValue() : false);
         final Map<String, CookieCriteria> criteria = assertion.getCookieCriteria();
-        if (criteria.containsKey(ManageCookieAssertion.NAME)) {
-            final CookieCriteria nameCriteria = criteria.get(ManageCookieAssertion.NAME);
+        if (criteria.containsKey(NAME)) {
+            final CookieCriteria nameCriteria = criteria.get(NAME);
             nameMatchTextField.setText(nameCriteria.getValue());
             nameRegexCheckBox.setSelected(nameCriteria.isRegex());
         }
-        if (criteria.containsKey(ManageCookieAssertion.DOMAIN)) {
-            final CookieCriteria domainCriteria = criteria.get(ManageCookieAssertion.DOMAIN);
+        if (criteria.containsKey(DOMAIN)) {
+            final CookieCriteria domainCriteria = criteria.get(DOMAIN);
             domainMatchTextField.setText(domainCriteria.getValue());
             domainRegexCheckBox.setSelected(domainCriteria.isRegex());
         }
-        if (criteria.containsKey(ManageCookieAssertion.PATH)) {
-            final CookieCriteria pathCriteria = criteria.get(ManageCookieAssertion.PATH);
+        if (criteria.containsKey(PATH)) {
+            final CookieCriteria pathCriteria = criteria.get(PATH);
             pathMatchTextField.setText(pathCriteria.getValue());
             pathRegexCheckBox.setSelected(pathCriteria.isRegex());
         }
@@ -105,7 +105,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         if (error != null) {
             throw new ValidationException(error);
         }
-        assertion.setOperation((ManageCookieAssertion.Operation) operationComboBox.getSelectedItem());
+        assertion.setOperation((Operation) operationComboBox.getSelectedItem());
         assertion.getCookieAttributes().clear();
         setAttributeIfUseOriginalOrNotBlank(assertion, NAME, nameTextField, originalName);
         setAttributeIfUseOriginalOrNotBlank(assertion, VALUE, valueTextField, originalValue);
@@ -143,11 +143,11 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     protected void initComponents() {
         super.initComponents();
         operationComboBox.setModel(new DefaultComboBoxModel
-                (new ManageCookieAssertion.Operation[]{ManageCookieAssertion.Operation.ADD, ManageCookieAssertion.Operation.REMOVE, ManageCookieAssertion.Operation.UPDATE}));
+                (new Operation[]{ADD, ADD_OR_REPLACE, REMOVE, UPDATE}));
         operationComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                return super.getListCellRendererComponent(list, value instanceof ManageCookieAssertion.Operation ? ((ManageCookieAssertion.Operation) value).getName() : value, index, isSelected, cellHasFocus);
+                return super.getListCellRendererComponent(list, value instanceof Operation ? ((Operation) value).getName() : value, index, isSelected, cellHasFocus);
             }
         });
         operationComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
@@ -179,6 +179,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         validators.ensureComboBoxSelection("operation", operationComboBox);
         final Operation op = (Operation) operationComboBox.getSelectedItem();
         switch (op) {
+            case ADD_OR_REPLACE:
             case ADD:
                 validators.constrainTextFieldToBeNonEmpty("name", nameTextField, null);
                 validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "version", versionTextField, false));
@@ -215,30 +216,32 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalVersion.setEnabled(op == UPDATE);
 
         nameLabel.setEnabled(op != REMOVE);
-        nameTextField.setEnabled(op == ADD || (op == UPDATE && !originalName.isSelected()));
+        final boolean addOrAddOrReplace = op == ADD || op == ADD_OR_REPLACE;
+        nameTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalName.isSelected()));
         valueLabel.setEnabled(op != REMOVE);
-        valueTextField.setEnabled(op == ADD || (op == UPDATE && !originalValue.isSelected()));
+        valueTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalValue.isSelected()));
         domainLabel.setEnabled(op != REMOVE);
-        domainTextField.setEnabled(op == ADD || (op == UPDATE && !originalDomain.isSelected()));
+        domainTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalDomain.isSelected()));
         pathLabel.setEnabled(op != REMOVE);
-        pathTextField.setEnabled(op == ADD || (op == UPDATE && !originalPath.isSelected()));
+        pathTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalPath.isSelected()));
         maxAgeLabel.setEnabled(op != REMOVE);
-        maxAgeTextField.setEnabled(op == ADD || (op == UPDATE && !originalMaxAge.isSelected()));
+        maxAgeTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalMaxAge.isSelected()));
         commentLabel.setEnabled(op != REMOVE);
-        commentTextField.setEnabled(op == ADD || (op == UPDATE && !originalComment.isSelected()));
+        commentTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalComment.isSelected()));
         versionLabel.setEnabled(op != REMOVE);
-        versionTextField.setEnabled(op == ADD || (op == UPDATE && !originalVersion.isSelected()));
+        versionTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalVersion.isSelected()));
         secureCheckBox.setEnabled(op != REMOVE);
 
-        matchPanel.setEnabled(op != ADD);
-        nameMatchLabel.setEnabled(op != ADD);
-        nameMatchTextField.setEnabled(op != ADD);
-        nameRegexCheckBox.setEnabled(op != ADD);
-        domainMatchLabel.setEnabled(op != ADD);
-        domainMatchTextField.setEnabled(op != ADD);
-        domainRegexCheckBox.setEnabled(op != ADD);
-        pathMatchLabel.setEnabled(op != ADD);
-        pathMatchTextField.setEnabled(op != ADD);
-        pathRegexCheckBox.setEnabled(op != ADD);
+        final boolean updateOrRemove = op == UPDATE || op == REMOVE;
+        matchPanel.setEnabled(updateOrRemove);
+        nameMatchLabel.setEnabled(updateOrRemove);
+        nameMatchTextField.setEnabled(updateOrRemove);
+        nameRegexCheckBox.setEnabled(updateOrRemove);
+        domainMatchLabel.setEnabled(updateOrRemove);
+        domainMatchTextField.setEnabled(updateOrRemove);
+        domainRegexCheckBox.setEnabled(updateOrRemove);
+        pathMatchLabel.setEnabled(updateOrRemove);
+        pathMatchTextField.setEnabled(updateOrRemove);
+        pathRegexCheckBox.setEnabled(updateOrRemove);
     }
 }
