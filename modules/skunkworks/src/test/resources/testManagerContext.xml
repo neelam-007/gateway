@@ -113,6 +113,54 @@
         <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
+    <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="entityVersionCheckerTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="EntityVersionChecker"/>
+    </bean>
+
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
+        <property name="applicationEventProxy" ref="applicationEventProxy"/>
+        <property name="entityManagers">
+            <list>
+                <ref bean="resourceEntryManager"/>
+                <ref bean="securePasswordManager"/>
+                <ref bean="clusterPropertyManager"/>
+                <ref bean="keystoreFileManager"/>
+                <ref bean="uddiRegistryManager"/>
+                <ref bean="uddiPublishStatusManager"/>
+                <ref bean="uddiServiceControlManager"/>
+                <ref bean="uddiProxiedServiceInfoManager"/>
+                <ref bean="jdbcConnectionManager"/>
+                <ref bean="genericEntityManager"/>
+                <ref bean="ssgConnectorManager"/>
+                <ref bean="ssgFirewallRuleManager"/>
+                <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="jmsConnectionManager"/>
+                <ref bean="roleManager"/>
+                <ref bean="passwordPolicyManger"/>
+                <ref bean="sinkManager"/>
+                <ref bean="resolutionConfigurationManager"/>
+                <ref bean="messageContextMappingKeyManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="revocationCheckPolicyManager"/>
+                <ref bean="jmsEndpointManager"/>
+                <ref bean="httpConfigurationManager"/>
+                <ref bean="policyManager"/>
+                <ref bean="serviceManager"/>
+                <ref bean="policyVersionManager"/>
+                <ref bean="folderManager"/>
+                <ref bean="ssgActiveConnectorManager"/>
+                <ref bean="siteMinderConfigurationManager"/>
+                <ref bean="licenseDocumentManager"/>
+                <ref bean="identityProviderConfigManager"/>
+                <ref bean="customKeyValueStoreManager"/>
+            </list>
+        </property>
+        <property name="timer" ref="entityVersionCheckerTimer"/>
+    </bean>
+
     <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
         <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
         <constructor-arg value="internalIdentityProvider"/>

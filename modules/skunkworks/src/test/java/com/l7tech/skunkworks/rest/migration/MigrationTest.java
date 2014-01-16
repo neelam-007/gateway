@@ -4,25 +4,21 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.skunkworks.rest.tools.JVMDatabaseBasedRestManagementEnvironment;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.CollectionUtils;
+import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,35 +26,12 @@ import java.util.logging.Logger;
  * This will test migration using the rest api from one gateway to another.
  */
 @ConditionalIgnore(condition = RunOnNightly.class)
-public class MigrationTest {
+public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(MigrationTest.class.getName());
 
-    private static JVMDatabaseBasedRestManagementEnvironment sourceEnvironment;
-    private static JVMDatabaseBasedRestManagementEnvironment targetEnvironment;
-    private Item policyItem;
-    private Item securePasswordItem;
-    private Item jdbcConnectionItem;
-
-    @Rule
-    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
-
-    @BeforeClass
-    public static void beforeClass() throws IOException, IllegalAccessException, InstantiationException {
-        if (!RunOnNightly.class.newInstance().isSatisfied()) {
-            sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("srcgateway");
-            targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("trggateway");
-        }
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        if (sourceEnvironment != null) {
-            sourceEnvironment.close();
-        }
-        if(targetEnvironment != null){
-            targetEnvironment.close();
-        }
-    }
+    private Item<PolicyMO> policyItem;
+    private Item<StoredPasswordMO> securePasswordItem;
+    private Item<JDBCConnectionMO> jdbcConnectionItem;
 
     @Before
     public void before() throws Exception {
@@ -70,11 +43,12 @@ public class MigrationTest {
                 .put("usageFromVariable", true)
                 .put("type", "Password")
                 .map());
-        RestResponse response = sourceEnvironment.processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+        RestResponse response = getSourceEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
 
         assertOkCreatedResponse(response);
 
         securePasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        securePasswordItem.setContent(storedPasswordMO);
 
         //create jdbc connection;
         JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
@@ -86,12 +60,13 @@ public class MigrationTest {
                 .put("password", "${secpass.MyPassword.plaintext}")
                 .put("user", "jdbcUserName")
                 .map());
-        response = sourceEnvironment.processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+        response = getSourceEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
 
         assertOkCreatedResponse(response);
 
         jdbcConnectionItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        jdbcConnectionItem.setContent(jdbcConnectionMO);
 
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
@@ -120,87 +95,178 @@ public class MigrationTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n");
 
-        response = sourceEnvironment.processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
 
         assertOkCreatedResponse(response);
 
         policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-    }
-
-    private void assertOkCreatedResponse(RestResponse response) {
-        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(201, response.getStatus());
-        Assert.assertNotNull(response.getBody());
-    }
-
-    private void assertOkResponse(RestResponse response) {
-        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(200, response.getStatus());
+        policyItem.setContent(policyMO);
     }
 
     @After
     public void after() throws Exception {
-        RestResponse response = sourceEnvironment.processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
         assertOKDeleteResponse(response);
 
-        response = sourceEnvironment.processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
+        response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
         assertOKDeleteResponse(response);
 
-        response = sourceEnvironment.processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
+        response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
         assertOKDeleteResponse(response);
-    }
-
-    private void assertOKDeleteResponse(RestResponse response) {
-        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(204, response.getStatus());
     }
 
     @Test
-    public void test() throws Exception {
-        RestResponse response = sourceEnvironment.processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+    public void testImportNew() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        for (Item reference : bundleItem.getContent().getReferences()) {
-            if (securePasswordItem.getId().equals(reference.getId())) {
-                ((StoredPasswordMO) reference.getContent()).setPassword("password");
-                break;
-            }
-        }
 
-        response = targetEnvironment.processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        Assert.assertEquals("The bundle should have 3 items. A policy, jdbcConnection and secure password", 3, bundleItem.getContent().getReferences().size());
+
+        //change the secure password MO to contain a password.
+        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
-        logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        cleanup(mappings);
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+        Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+        Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
+        Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        cleanupAll(mappings);
     }
 
-    private void cleanup(Item<Mappings> mappings) throws Exception {
-        List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
-        Collections.reverse(reverseMappingsList);
-        for (Mapping mapping : reverseMappingsList) {
-            if (Mapping.ActionTaken.CreatedNew.equals(mapping.getActionTaken())) {
-                Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
-                String uri = getUri(mapping.getTargetUri());
-                RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
-                assertOKDeleteResponse(response);
-            }
-        }
+    @Test
+    public void testMapToExistingPasswordSameGoid() throws Exception {
+        //create the password on the target
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName(securePasswordItem.getContent().getName());
+        storedPasswordMO.setPassword("password");
+        storedPasswordMO.setProperties(securePasswordItem.getContent().getProperties());
+        storedPasswordMO.setId(securePasswordItem.getId());
+        RestResponse response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+        assertOkCreatedResponse(response);
+
+        //get the bundle
+        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 items. A policy, jdbcConnection and secure password", 3, bundleItem.getContent().getReferences().size());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
+        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+        Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+        Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
+        Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        cleanupAll(mappings);
     }
 
-    private String getUri(String uri) {
-        return uri==null?null:uri.substring(uri.indexOf("/restman/1.0/") + 13);
-    }
+    @Test
+    public void testMapToExistingPasswordDifferentGoid() throws Exception {
+        //create the password on the target
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName(securePasswordItem.getContent().getName());
+        storedPasswordMO.setPassword("password");
+        storedPasswordMO.setProperties(securePasswordItem.getContent().getProperties());
+        RestResponse response = getTargetEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+        assertOkCreatedResponse(response);
+        Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        storedPasswordMO.setId(passwordCreated.getId());
 
-    private String objectToString(Object object) throws IOException {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        final StreamResult result = new StreamResult(bout);
-        MarshallingUtils.marshal(object, result, false);
-        return bout.toString();
+        //get the bundle
+        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 items. A policy, jdbcConnection and secure password", 3, bundleItem.getContent().getReferences().size());
+
+        //update the bundle mapping to map the password to the existing one
+        bundleItem.getContent().getMappings().get(0).setTargetId(storedPasswordMO.getId());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
+        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(storedPasswordMO.getId(), passwordMapping.getTargetId());
+
+        Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+        Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
+        Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        cleanupAll(mappings);
     }
 }

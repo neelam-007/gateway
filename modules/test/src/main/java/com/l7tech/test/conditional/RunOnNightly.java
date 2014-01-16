@@ -7,6 +7,10 @@ package com.l7tech.test.conditional;
 public class RunOnNightly implements IgnoreCondition {
     @Override
     public boolean isSatisfied() {
-        return System.getProperty("nightly") == null && !(System.getProperty("sun.java.command") != null && System.getProperty("sun.java.command").contains("com.intellij.rt.execution.junit.JUnitStarter"));
+        return !RunOnNightly.isNightly();
+    }
+
+    public static boolean isNightly() {
+        return !(System.getProperty("nightly") == null && !(System.getProperty("sun.java.command") != null && System.getProperty("sun.java.command").contains("com.intellij.rt.execution.junit.JUnitStarter")));
     }
 }

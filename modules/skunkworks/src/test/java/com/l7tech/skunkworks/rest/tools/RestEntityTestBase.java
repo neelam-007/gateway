@@ -16,7 +16,7 @@ public abstract class RestEntityTestBase {
     @BeforeClass
     public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
         //need to only start this on a nightly build
-        if(!RunOnNightly.class.newInstance().isSatisfied() && databaseBasedRestManagementEnvironment == null){
+        if(RunOnNightly.isNightly() && databaseBasedRestManagementEnvironment == null){
             databaseBasedRestManagementEnvironment = new DatabaseBasedRestManagementEnvironment();
         }
     }

@@ -44,7 +44,7 @@ public class BundleImporter {
             switch (mapping.getAction()) {
                 case NewOrExisting:
                     Item existingResourceItem = locateResource(mapping, restEntityResource);
-                    if(existingResourceItem != null){
+                    if (existingResourceItem != null) {
                         mapping.setActionTaken(Mapping.ActionTaken.UsedExisting);
                         mapping.setTargetId(existingResourceItem.getId());
                         mapping.setTargetUri(restEntityResource.getUrl(existingResourceItem.getId()));
@@ -59,7 +59,7 @@ public class BundleImporter {
                         } catch (ResourceFactory.InvalidResourceException e) {
                             mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
                         }
-                        if(success){
+                        if (success) {
                             mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
                             mapping.setTargetId(item.getId());
                             mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
@@ -82,7 +82,7 @@ public class BundleImporter {
 
     private Item locateResource(Mapping mapping, RestEntityResource restEntityResource) {
         try {
-            return restEntityResource.getResource(mapping.getSrcId());
+            return restEntityResource.getResource(mapping.getTargetId() != null ? mapping.getTargetId() : mapping.getSrcId());
         } catch (ResourceFactory.ResourceNotFoundException e) {
             return null;
         }

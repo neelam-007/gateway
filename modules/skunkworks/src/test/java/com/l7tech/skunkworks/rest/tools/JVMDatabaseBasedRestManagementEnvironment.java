@@ -121,7 +121,9 @@ public class JVMDatabaseBasedRestManagementEnvironment {
                 return Byte.parseByte(s.trim());
             }
         });
-        return (RestResponse) SerializationUtils.deserialize(ArrayUtils.toPrimitive(bytes.toArray(new Byte[bytes.size()])));
+        RestResponse response = (RestResponse) SerializationUtils.deserialize(ArrayUtils.toPrimitive(bytes.toArray(new Byte[bytes.size()])));
+        logger.log(Level.INFO, response.toString());
+        return response;
     }
 
     /**

@@ -2,8 +2,10 @@ package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
+import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpRequestKnob;
@@ -11,6 +13,7 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.token.http.HttpBasicToken;
@@ -61,6 +64,12 @@ public class DatabaseBasedRestManagementEnvironment {
                 "/com/l7tech/server/resources/dataAccessContext.xml");
         restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext);
         applicationContext.getAutowireCapableBeanFactory().autowireBean(restManagementAssertion);
+
+        AssertionRegistry assertionRegistry = applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
+        //need to register these modular assertions manually because they are not automatically registered since they are also available in the class path and clash with the modass
+        assertionRegistry.registerAssertion(JdbcQueryAssertion.class);
+        assertionRegistry.registerAssertion(GatewayManagementAssertion.class);
+        assertionRegistry.registerAssertion(RESTGatewayManagementAssertion.class);
     }
 
     /**
@@ -89,7 +98,6 @@ public class DatabaseBasedRestManagementEnvironment {
                 String contentType = sc.nextLine();
                 contentType = "null".equals(contentType) ? null : contentType;
                 String body = sc.nextLine();
-                logger.log(Level.INFO, body);
                 try {
                     RestResponse restResponse = databaseBasedRestManagementEnvironment.processRequest(uri, queryString, method, contentType, body);
                     byte[] bytes = SerializationUtils.serialize(restResponse);
