@@ -122,10 +122,10 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private ClientBootstrap intializeClient(final PolicyEnforcementContext context) {
         final ClientBootstrap client = new ClientBootstrap(socketFactory);
 
-        client.setPipelineFactory(new IcapClientChannelPipeline());
+        client.setPipelineFactory(new IcapClientChannelPipeline(getTimeoutValue(context, assertion.getReadTimeout())));
         client.setOption("soLinger", 0);
         client.setOption("connectTimeoutMillis", getTimeoutValue(context, assertion.getConnectionTimeout()));
-        client.setOption("readTimeoutMillis", getTimeoutValue(context, assertion.getReadTimeout()));
+        client.setOption("readTimeoutMillis", getTimeoutValue(context, assertion.getResponseReadTimeout()));
         return client;
     }
 
@@ -319,7 +319,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     return AssertionStatus.FAILED;
                 }
                 finally {
-                    if(channelInfo.getChannel().isOpen()){
+                    if(channelInfo != null && channelInfo.getChannel().isOpen()){
                         synchronized (channelPool) {
                             BlockingQueue<ChannelInfo> channels = channelPool.get(channelInfo.getHostAndPort());
                             if (channels == null) {

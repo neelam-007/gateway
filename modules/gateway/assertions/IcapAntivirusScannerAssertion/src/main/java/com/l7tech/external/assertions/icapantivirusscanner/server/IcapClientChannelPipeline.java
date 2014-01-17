@@ -21,7 +21,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class IcapClientChannelPipeline implements ChannelPipelineFactory {
 
+    private final long timeout;
     private static final int DEFAULT_BUFFER_SIZE = 204800;
+
+    public IcapClientChannelPipeline(long timeout) {
+        this.timeout = timeout;
+    }
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
@@ -30,7 +35,7 @@ public class IcapClientChannelPipeline implements ChannelPipelineFactory {
         pipeline.addLast("chunkSeparator", new IcapChunkSeparator(DEFAULT_BUFFER_SIZE));
         pipeline.addLast("decoder", new IcapResponseDecoder());
         pipeline.addLast("chunkAggregator", new IcapChunkAggregator(DEFAULT_BUFFER_SIZE));
-        pipeline.addLast("handler", new IcapResponseHandler());
+        pipeline.addLast("handler", new IcapResponseHandler(timeout));
         return pipeline;
     }
 

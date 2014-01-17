@@ -104,6 +104,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
     private String connectionTimeout = "30";
 
+    private String responseReadTimeout = "30";
+
     private String variablePrefix = VARIABLE_PREFIX;
 
     /**
@@ -288,6 +290,14 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         this.connectionTimeout = connectionTimeout;
     }
 
+    public String getResponseReadTimeout() {
+        return responseReadTimeout;
+    }
+
+    public void setResponseReadTimeout(String responseReadTimeout) {
+        this.responseReadTimeout = responseReadTimeout;
+    }
+
     /**
      * @return the context variable prefix
      */
@@ -311,6 +321,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         copy.setMaxMimeDepth(maxMimeDepth);
         copy.setReadTimeout(readTimeout);
         copy.setConnectionTimeout(connectionTimeout);
+        copy.setResponseReadTimeout(responseReadTimeout);
         copy.setVariablePrefix(variablePrefix);
         copy.setParameters(parameters);
         return copy;
@@ -379,7 +390,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
     @Override
     protected MessageTargetableAssertion.VariablesUsed doGetVariablesUsed() {
-        VariablesUsed vars = super.doGetVariablesUsed().withExpressions(connectionTimeout, readTimeout);
+        VariablesUsed vars = super.doGetVariablesUsed().withExpressions(connectionTimeout, readTimeout, responseReadTimeout);
         for(String server : icapServers){
             Matcher matcher = ICAP_URI.matcher(server);
             if(matcher.matches()){

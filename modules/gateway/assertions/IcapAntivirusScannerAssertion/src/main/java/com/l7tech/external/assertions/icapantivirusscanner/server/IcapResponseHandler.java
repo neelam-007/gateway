@@ -4,6 +4,7 @@ import ch.mimo.netty.handler.codec.icap.*;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.TimeUnit;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.timeout.IdleState;
@@ -26,9 +27,15 @@ import java.util.logging.Logger;
  */
 public final class IcapResponseHandler extends AbstractIcapResponseHandler {
 
+    private final long timeout;
+
     private static final Logger LOGGER = Logger.getLogger(IcapResponseHandler.class.getName());
 
     private final BlockingQueue<IcapResponse> responseQueue = new LinkedBlockingQueue<IcapResponse>(10);
+
+    public IcapResponseHandler(long timeout) {
+        this.timeout = timeout;
+    }
 
     @Override
     public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) {
@@ -63,7 +70,7 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
         boolean interrupted;
         for(;;){
             try {
-                return responseQueue.take();
+                return responseQueue.poll(timeout, java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 interrupted = true;
                 break;
