@@ -1,6 +1,5 @@
 package com.l7tech.server.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
@@ -147,7 +146,7 @@ public interface PolicyEnforcementContext extends Closeable {
     /**
      * Set the metadata for the service policy for this context.
      *
-     * @param policyMetadata
+     * @param policyMetadata service policies metatdata
      * @see #setService(PublishedService)
      */
     void setServicePolicyMetadata( PolicyMetadata policyMetadata );
@@ -438,6 +437,8 @@ public interface PolicyEnforcementContext extends Closeable {
     int popAssertionOrdinal() throws NoSuchElementException;
 
     void setTraceListener(AssertionTraceListener traceListener);
+
+    boolean hasTraceListener();
 
     boolean isRequestWasCompressed();
 

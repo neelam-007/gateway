@@ -59,6 +59,9 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     /** The default icon to use for an encapsulated assertion that doesn't specify a different one. */
     public static final String DEFAULT_ICON_RESOURCE_FILENAME = "star16.gif";
 
+    /** Flag to indicate if debug tracing is allowed into the encapsulated assertion backing policy. */
+    public static final String PROP_ALLOW_TRACING = "allowTracing";
+
     private String guid;
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
@@ -107,7 +110,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     /**
      * Sets the policy and the policyOid property.
      */
-    public void setPolicy(Policy policy) {
+    public void setPolicy(@Nullable Policy policy) {
         checkLocked();
         this.policy = policy;
         if (policy != null && policy.getGuid() != null) {
@@ -141,7 +144,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
         return argumentDescriptors;
     }
 
-    public void setArgumentDescriptors(Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors) {
+    public void setArgumentDescriptors(@Nullable Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors) {
         checkLocked();
         this.argumentDescriptors = argumentDescriptors;
     }
@@ -178,6 +181,17 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     }
 
     /**
+     * Convenience method to get a property as boolean.
+     *
+     * @param propertyName the name of the property to get
+     * @return boolean represented by the requested property value
+     */
+    @Transient
+    public boolean getBooleanProperty(@NotNull final String propertyName) {
+        return Boolean.parseBoolean(getProperty(propertyName));
+    }
+
+    /**
      * Set an arbitrary property for this encapsulated assertion.
      *
      * @param key name of property.  Required.
@@ -186,6 +200,17 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     public void putProperty(@NotNull String key, @NotNull String value) {
         checkLocked();
         properties.put(key, value);
+    }
+
+    /**
+     * Convenience method to set a boolean property.
+     *
+     * @param propertyName name of property.  Required.
+     * @param propertyValue value of property
+     */
+    @Transient
+    public void putBooleanProperty(@NotNull String propertyName, boolean propertyValue) {
+        putProperty(propertyName, Boolean.toString(propertyValue));
     }
 
     /**
@@ -344,9 +369,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
 
         EncapsulatedAssertionConfig that = (EncapsulatedAssertionConfig) o;
 
-        if (guid != null ? !guid.equals(that.guid) : that.guid != null) return false;
-
-        return true;
+        return !(guid != null ? !guid.equals(that.guid) : that.guid != null);
     }
 
     @Override

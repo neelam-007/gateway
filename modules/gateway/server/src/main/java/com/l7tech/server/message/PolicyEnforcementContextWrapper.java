@@ -266,8 +266,8 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
 
     @Override
     public Map<String, Object> getVariableMap(String[] names, Audit auditor) {
-        final Map<String,Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
-        final List<String> variableNames = new ArrayList<String>();
+        final Map<String,Object> vars = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        final List<String> variableNames = new ArrayList<>();
 
         for (String name : names) {
             if ( isBuiltinVariable(name) ) {
@@ -460,6 +460,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void setTraceListener(AssertionTraceListener traceListener) {
         delegate.setTraceListener(traceListener);
+    }
+
+    @Override
+    public boolean hasTraceListener() {
+        return delegate.hasTraceListener();
     }
 
     @Override

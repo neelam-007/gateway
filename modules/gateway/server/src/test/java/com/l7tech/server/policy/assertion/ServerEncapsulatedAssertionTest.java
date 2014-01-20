@@ -15,7 +15,9 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.message.AssertionTraceListener;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -25,6 +27,7 @@ import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
@@ -38,6 +41,7 @@ import org.springframework.context.event.ContextStartedEvent;
 
 import java.util.*;
 
+import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.PROP_ALLOW_TRACING;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -62,12 +66,14 @@ public class ServerEncapsulatedAssertionTest {
     private PolicyCache policyCache;
     @Mock
     private ServerPolicyHandle handle;
+    @Mock
+    private Config utilConfig;
 
     @Before
     public void setup() throws Exception {
         testAudit = new TestAudit();
-        inParams = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
-        outParams = new HashSet<EncapsulatedAssertionResultDescriptor>();
+        inParams = new HashSet<>();
+        outParams = new HashSet<>();
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "testPolicy", "xml", false);
         policy.setGoid(POLICY_ID);
         config = new EncapsulatedAssertionConfig();
@@ -284,7 +290,7 @@ public class ServerEncapsulatedAssertionTest {
         outParams.add(outputParam("out", DataType.STRING));
         outParams.add(outputParam("out2", DataType.STRING));
 
-        final Set<String> declaredOutputs = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        final Set<String> declaredOutputs = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
             @Override
             public void call(PolicyEnforcementContext policyEnforcementContext) {
@@ -301,7 +307,7 @@ public class ServerEncapsulatedAssertionTest {
     public void checkNoOutputsDeclaredViaHasOutputVariablesIfConfigHasNoOutputs() throws Exception {
         outParams.clear();
 
-        final Set<String> declaredOutputs = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        final Set<String> declaredOutputs = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         mockHandle(Collections.<String, Object>emptyMap(), Collections.<String, String>emptyMap(), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
             @Override
             public void call(PolicyEnforcementContext policyEnforcementContext) {
@@ -320,6 +326,33 @@ public class ServerEncapsulatedAssertionTest {
         when(policyCache.getServerPolicy(new Goid(0,5555L))).thenReturn(null);
         assertEquals(AssertionStatus.SERVER_ERROR, serverAssertion.checkRequest(context));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.ENCASS_INVALID_BACKING_POLICY));
+    }
+
+    @Test
+    @BugId("FR-706")
+    public void enableTracingIntoBackingPolicy() throws Exception {
+        // policy tracing enabled in parent context
+        AssertionTraceListener traceListener = mock(AssertionTraceListener.class);
+        context.setTraceListener(traceListener);
+        context.pushAssertionOrdinal(1);
+        context.pushAssertionOrdinal(2);
+        context.pushAssertionOrdinal(3);
+
+        PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
+        // internal trace policy
+        String tracePolicyGuid = "1234567890";
+        when(utilConfig.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID)).thenReturn(tracePolicyGuid);
+        ServerPolicyHandle traceHandle = mock(ServerPolicyHandle.class);
+        when(policyCache.getServerPolicy(tracePolicyGuid)).thenReturn(traceHandle);
+
+        // tracing must also be enabled in encapsulated assertion config
+        config.putBooleanProperty(PROP_ALLOW_TRACING, true);
+
+        serverAssertion.enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));
+
+        assertTrue(childContext.hasTraceListener());
+        assertEquals(context.getAssertionOrdinalPath(), childContext.getAssertionOrdinalPath());
     }
 
     private void checkContextVariableNotSet(final String varName) {
@@ -388,6 +421,7 @@ public class ServerEncapsulatedAssertionTest {
                         .put("auditFactory", testAudit.factory())
                         .put("encapsulatedAssertionConfigManager", configManager)
                         .put("applicationEventProxy", applicationEventProxy)
-                        .put("policyCache", policyCache).map());
+                        .put("policyCache", policyCache)
+                        .put("config", utilConfig).map());
     }
 }

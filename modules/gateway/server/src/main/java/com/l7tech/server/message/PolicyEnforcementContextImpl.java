@@ -54,8 +54,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private long assertionLatencyNanos = 0;
     private long endTime;
     private final RequestId requestId;
-    private ArrayList<String> incrementedCounters = new ArrayList<String>();
-    private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<ServerAssertion, ServerAssertion>();
+    private ArrayList<String> incrementedCounters = new ArrayList<>();
+    private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<>();
     private boolean replyExpected;
     private Level auditLevel;
     private boolean auditSaveRequest;
@@ -64,8 +64,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean isRequestPolicyViolated = false;
     private boolean isRequestClaimingWrongPolicyVersion = false;
     private PublishedService service;
-    private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
-    private final Map<String,Object> variables = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+    private Set<AssertionStatus> seenAssertionStatus = new HashSet<>();
+    private final Map<String,Object> variables = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private PolicyContextCache cache;
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
     private boolean operationAttempted = false;
@@ -76,7 +76,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private long routingEndTime;
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
-    private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
+    private List<MessageContextMapping> mappings = new ArrayList<>(5);
     private boolean requestWasCompressed;
     private boolean responseWss11;
     private boolean malformedRequest;
@@ -386,12 +386,12 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
             }
         }
 
-        return new Pair<String, Object>(outName, value);
+        return new Pair<>(outName, value);
     }
 
     @Override
     public Map<String, Object> getVariableMap(String[] names, Audit auditor) {
-        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Object> vars = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (String name : names) {
             try {
                 final Pair<String, Object> tuple = getVariableWithNameLookup(name);
@@ -530,7 +530,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         this.faultlevel = faultlevel;
     }
 
-    private final Map<ServerAssertion, AssertionStatus> assertionStatuses = new LinkedHashMap<ServerAssertion, AssertionStatus>();
+    private final Map<ServerAssertion, AssertionStatus> assertionStatuses = new LinkedHashMap<>();
     @SuppressWarnings({ "CollectionDeclaredAsConcreteClass" })
     private LinkedList<AssertionResult> assertionResultList;
     private ServerAssertion currentAssertion; // the assertion currently being evaluated
@@ -559,7 +559,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public List<AssertionResult> getAssertionResults() {
         if (assertionResultList == null) {
-            assertionResultList = new LinkedList<AssertionResult>();
+            assertionResultList = new LinkedList<>();
             for (Map.Entry<ServerAssertion, AssertionStatus> entry : assertionStatuses.entrySet()) {
                 ServerAssertion serverAssertion = entry.getKey();
                 AssertionStatus status = entry.getValue();
@@ -572,7 +572,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     @Override
     public Collection<Integer> getAssertionNumber() {
-        final List<Integer> number = new ArrayList<Integer>( getAssertionOrdinalPath() );
+        final List<Integer> number = new ArrayList<>( getAssertionOrdinalPath() );
         final ServerAssertion sass = currentAssertion;
         final Assertion ass = sass == null ? null : sass.getAssertion();
         if ( ass != null ) {
@@ -744,13 +744,13 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     @Override
     public Collection<Integer> getAssertionOrdinalPath() {
-        return assertionOrdinalPath == null ? Collections.<Integer>emptyList() : new ArrayList<Integer>(assertionOrdinalPath);
+        return assertionOrdinalPath == null ? Collections.<Integer>emptyList() : new ArrayList<>(assertionOrdinalPath);
     }
 
     @Override
     public void pushAssertionOrdinal(int ordinal) {
         if (assertionOrdinalPath == null)
-            assertionOrdinalPath = new LinkedList<Integer>();
+            assertionOrdinalPath = new LinkedList<>();
         assertionOrdinalPath.addLast(ordinal);
         currentAssertion = null;
     }
@@ -765,6 +765,11 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setTraceListener(AssertionTraceListener traceListener) {
         this.traceListener = traceListener;
+    }
+
+    @Override
+    public boolean hasTraceListener() {
+        return traceListener != null;
     }
 
     @Override
