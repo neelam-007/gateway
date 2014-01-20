@@ -116,7 +116,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         logger.info(response.toString());
 
         Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", response.getBody());
+        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", getErrorMessage(response));
     }
 
     @Test

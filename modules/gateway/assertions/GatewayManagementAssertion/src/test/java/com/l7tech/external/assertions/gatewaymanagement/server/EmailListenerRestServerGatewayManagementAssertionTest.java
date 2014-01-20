@@ -10,11 +10,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.transport.email.EmailListenerManagerStub;
+import org.apache.cxf.helpers.XMLUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -93,6 +96,40 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         EmailListener createdEntity = emailListenerManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
         assertEquals("Email listener name:", createObject.getName(), createdEntity.getName());
+    }
+
+    @Test
+    public void createEntityTestInvalidPortValueFail() throws Exception {
+
+        final String emailListener =
+                "<l7:EmailListener version=\"1\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:Name>Copy of fake</l7:Name>\n" +
+                "    <l7:Active>false</l7:Active>\n" +
+                "    <l7:Hostname>saee</l7:Hostname>\n" +
+                "    <l7:Port>143dd</l7:Port>\n" +
+                "    <l7:ServerType>IMAP</l7:ServerType>\n" +
+                "    <l7:UseSsl>false</l7:UseSsl>\n" +
+                "    <l7:DeleteOnReceive>false</l7:DeleteOnReceive>\n" +
+                "    <l7:Username>dsag</l7:Username>\n" +
+                "    <l7:Folder>adsawegaweg</l7:Folder>\n" +
+                "    <l7:PollInterval>60</l7:PollInterval>\n" +
+                "    <l7:Properties>\n" +
+                "        <l7:Property key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">\n" +
+                "            <l7:StringValue>false</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "    </l7:Properties>\n" +
+                "</l7:EmailListener>";
+        Document request = XMLUtils.parse(emailListener);
+        RestResponse response = processRequest(emailListenerBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+
+        logger.info(response.toString());
+        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("143dd"));
+        Assert.assertEquals("BadRequest",error.getType());
     }
 
     @Test

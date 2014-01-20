@@ -80,7 +80,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", response.getBody());
+        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", getErrorMessage(response));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         Assert.assertEquals(403, response.getStatus());
-        Assert.assertEquals("Cannot save entity with ID in reserved Range. ID: "+id, response.getBody());
+        Assert.assertEquals("Cannot save entity with ID in reserved Range. ID: "+id, getErrorMessage(response));
     }
 
     @Test
@@ -182,7 +182,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         Assert.assertEquals(403, response.getStatus());
-        Assert.assertEquals("Cannot update gateway managed role.", response.getBody());
+        Assert.assertEquals("Cannot update gateway managed role.", getErrorMessage(response));
     }
 
     @Test

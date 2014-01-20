@@ -109,7 +109,13 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         RestResponse response = processRequest(activeConnectorBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
-        Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
+        logger.info(response.toString());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("INVALID_VALUES"));
+        Assert.assertEquals("InvalidResource",error.getType());
     }
 
     @Test

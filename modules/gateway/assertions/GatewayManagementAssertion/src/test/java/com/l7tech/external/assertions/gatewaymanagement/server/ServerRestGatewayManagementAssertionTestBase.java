@@ -5,10 +5,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
-import com.l7tech.gateway.api.Link;
-import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -189,6 +186,16 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             }
         }
         return null;
+    }
+
+    protected static String getErrorMessage(RestResponse response)  {
+        try{
+            final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+            ErrorResponse errorResponse = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+            return errorResponse.getDetail();
+        }catch(IOException e){
+            return null;
+        }
     }
 
     @After

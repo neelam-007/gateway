@@ -679,6 +679,10 @@ public class ManagedObjectFactory {
         return new Bundle();
     }
 
+    public static ErrorResponse createErrorResponse(){
+        return new ErrorResponse();
+    }
+
     /**
      * General purpose exception for factory errors.
      */

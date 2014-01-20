@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.AssertionSecurityZoneMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -108,7 +105,15 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         createObject.setSecurityZoneId(securityZone.getId());
         Document request = ManagedObjectFactory.write(createObject);
         RestResponse response = processRequest(assertionSecurityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        logger.info(response.toString());
+
         Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("Method Not Allowed"));
+        Assert.assertEquals("NotAllowed",error.getType());
     }
 
     @Test
@@ -158,53 +163,12 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         RestResponse response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
-        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
-        Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("INVALID_VALUES"));
+        Assert.assertEquals("InvalidResource",error.getType());
     }
-
-//    @Test
-//    public void createEntityWithIDTest() throws Exception {
-//
-//        Goid goid = new Goid(12345678L, 5678);
-//        AssertionSecurityZoneMO createObject = assertionSecurityZoneResourceFactory.asResource(assertionSecurityZone);
-//        createObject.setId(null);
-//        createObject.setName("New active connector");
-//        Document request = ManagedObjectFactory.write(createObject);
-//        RestResponse response = processRequest(assertionSecurityZoneBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
-//        logger.log(Level.INFO, response.toString());
-//
-//        assertEquals("Created active connector goid:", goid.toString(), getFirstReferencedGoid(response));
-//
-//        SsgAssertionSecurityZone createdConnector = assertionSecurityZoneManager.findByPrimaryKey(goid);
-//        assertEquals("Assertion Security Zone name:", createdConnector.getName(), createObject.getName());
-//        assertEquals("Assertion Security Zone type:", createdConnector.getType(), createObject.getType());
-//        assertEquals("Assertion Security Zone hardwired id:", createdConnector.getHardwiredServiceGoid().toString(), createObject.getHardwiredId());
-//    }
-
-//    @Test
-//    public void updateEntityTest() throws Exception {
-//
-//        // get
-//        RestResponse responseGet = processRequest(assertionSecurityZoneBasePath + assertionSecurityZone.getId(), HttpMethod.GET, null, "");
-//        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
-//        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-//        AssertionSecurityZoneMO entityGot = (AssertionSecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getContent();
-//
-//        // update
-//        entityGot.setName(entityGot.getName() + "_mod");
-//        RestResponse response = processRequest(assertionSecurityZoneBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
-//
-//        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-//        assertEquals("Created active connector goid:", entityGot.getId(), getFirstReferencedGoid(response));
-//
-//        // check entity
-//        SsgAssertionSecurityZone updatedConnector = assertionSecurityZoneManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
-//
-//        assertEquals("Assertion Security Zone id:", updatedConnector.getId(), assertionSecurityZone.getId());
-//        assertEquals("Assertion Security Zone name:", updatedConnector.getName(), entityGot.getName());
-//        assertEquals("Assertion Security Zone type:", updatedConnector.getType(), entityGot.getType());
-//        assertEquals("Assertion Security Zone hardwired id:", updatedConnector.getHardwiredServiceGoid().toString(), entityGot.getHardwiredId());
-//    }
 
     @Test
     public void deleteEntityTest() throws Exception {
