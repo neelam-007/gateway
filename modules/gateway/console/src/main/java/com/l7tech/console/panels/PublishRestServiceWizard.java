@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,9 +32,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -88,7 +92,14 @@ public class PublishRestServiceWizard extends Wizard {
         Regex regexAssertion = new Regex();
         regexAssertion.setRegexName("Remove Gateway URL from ${request.http.path}");
         regexAssertion.setCaseInsensitive(true);
-        String gatewayUrl = normalizeUrl(serviceInfo.getGatewayUrl());
+        String gatewayUrl = serviceInfo.getGatewayUrl();
+        try {
+            //url encode the string. This is needed to handle urls with non standard characters. SSG-7898
+            gatewayUrl = URLEncoder.encode(gatewayUrl, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            logger.log(Level.WARNING, "Could not encode gateway url: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        gatewayUrl = normalizeUrl(gatewayUrl);
         if(gatewayUrl.endsWith("/")) gatewayUrl = gatewayUrl.substring(0, gatewayUrl.length() - 1);
         regexAssertion.setRegex(Pattern.quote(gatewayUrl) + "(.*)");
         regexAssertion.setAutoTarget(false);
