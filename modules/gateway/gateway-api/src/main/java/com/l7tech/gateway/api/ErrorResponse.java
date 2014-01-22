@@ -26,6 +26,7 @@ public class ErrorResponse {
 
     public void setDetail(String message) {
         this.detail = message;
+        this.timestamp = new Date();
     }
 
     @XmlElement(name = "Link", required = true)

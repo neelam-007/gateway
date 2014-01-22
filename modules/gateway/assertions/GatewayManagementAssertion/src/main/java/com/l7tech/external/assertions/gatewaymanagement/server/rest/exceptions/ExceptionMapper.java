@@ -2,26 +2,19 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
-import com.l7tech.gateway.rest.RestResponse;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import org.jboss.cache.marshall.MarshallingException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.Providers;
-import javax.xml.bind.UnmarshalException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,19 +63,19 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
         } else if ( e instanceof ResourceFactory.ResourceAccessException ) {
             if ( ExceptionUtils.causedBy(e, DuplicateObjectException.class) ) {
                 final DuplicateObjectException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateObjectException.class );
-                errorResponse.setType(cause.getClass().getCanonicalName().replace("Exception",""));
+                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
                 status = Response.Status.FORBIDDEN;
             } else if ( ExceptionUtils.causedBy( e, StaleUpdateException.class) ) {
                 final StaleUpdateException cause = ExceptionUtils.getCauseIfCausedBy( e, StaleUpdateException.class );
-                errorResponse.setType(cause.getClass().getCanonicalName().replace("Exception",""));
+                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
                 status = Response.Status.FORBIDDEN;
             } else if ( ExceptionUtils.causedBy( e, PolicyDeletionForbiddenException.class) ) {
                 final PolicyDeletionForbiddenException cause = ExceptionUtils.getCauseIfCausedBy( e, PolicyDeletionForbiddenException.class );
-                errorResponse.setType(cause.getClass().getCanonicalName().replace("Exception",""));
+                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
                 status = Response.Status.FORBIDDEN;
             } else if ( ExceptionUtils.causedBy( e, DataIntegrityViolationException.class) ) {
                 final DataIntegrityViolationException cause = ExceptionUtils.getCauseIfCausedBy( e, DataIntegrityViolationException.class );
-                errorResponse.setType(cause.getClass().getCanonicalName().replace("Exception",""));
+                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
                 logger.log( Level.INFO, "Resource deletion forbidden (in use), '"+ExceptionUtils.getMessage(cause)+"'", ExceptionUtils.getDebugException(e) );
                 status = Response.Status.FORBIDDEN;
             } else if( ExceptionUtils.causedBy(e, SAXException.class))  {
