@@ -45,11 +45,10 @@
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
+                    &lt;/wsp:Policy&gt;</l7:Resource>
             </l7:ResourceSet>
         </l7:Resources>
-    </l7:Policy>
+    </l7:Policy>    
     <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="6b741ac7-9dae-44c8-8cb3-ada888acf173"
                id="57477c668279c3c8d34da687b89a7c2f" version="1">
         <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7a89" guid="6b741ac7-9dae-44c8-8cb3-ada888acf173"
@@ -233,13 +232,12 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:All&gt;
                     &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
+                    &lt;/wsp:Policy&gt;</l7:Resource>
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>
     <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="f11f919b-6cf0-4aaa-94ed-dac5173e419a" id="57477c668279c3c8d34da687b89a7c42" version="5">
-        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7bc9" guid="f11f919b-6cf0-4aaa-94ed-dac5173e419a" id="57477c668279c3c8d34da687b89a7c42" version="5">
+        <l7:PolicyDetail folderId="7864d3f60d281f929722cacc8c104176" guid="f11f919b-6cf0-4aaa-94ed-dac5173e419a" id="57477c668279c3c8d34da687b89a7c42" version="5">
             <l7:Name>getClientSignature</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>
             <l7:Properties>
@@ -260,7 +258,8 @@
                     &lt;L7p:Comment stringValue="Generates the HMAC-SHA1 signature for the test client"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Input: consumer_key_secret, http_method, url, oauth_consumer_key, oauth_callback, oauth_token, oauth_verifier"/&gt;
+                    &lt;L7p:Comment stringValue="Input: consumer_key_secret, http_method, url, oauth_consumer_key,
+                    oauth_callback, oauth_token, oauth_verifier"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="http_method = GET | POST"/&gt;
@@ -344,7 +343,8 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Detail stringValue="SignatureBaseString: ${oauth.sigBaseString}, secret_for_signature:                     '${consumer_key_secret}&amp;amp;${token_secret}', ssg_signature: ${signature}"/&gt;
+                    &lt;L7p:Detail stringValue="SignatureBaseString: ${oauth.sigBaseString}, secret_for_signature:
+                    '${consumer_key_secret}&amp;amp;${token_secret}', ssg_signature: ${signature}"/&gt;
                     &lt;L7p:Enabled booleanValue="false"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
@@ -364,8 +364,7 @@
                     &lt;/L7p:ExportedVars&gt;
                     &lt;/L7p:ExportVariables&gt;
                     &lt;/wsp:All&gt;
-                    &lt;/wsp:Policy&gt;
-                </l7:Resource>
+                    &lt;/wsp:Policy&gt;</l7:Resource>
             </l7:ResourceSet>
         </l7:Resources>
     </l7:Policy>

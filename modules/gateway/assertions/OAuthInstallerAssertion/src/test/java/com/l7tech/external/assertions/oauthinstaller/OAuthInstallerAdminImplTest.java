@@ -648,7 +648,7 @@ public class OAuthInstallerAdminImplTest {
         // validate contents of policy
         final Element policyElm = clientStorePolicyDoc.getDocumentElement();
         // System.out.println(XmlUtil.nodeToFormattedString(policyElm));
-        validatePortalIntegrationComments(policyElm, 6, 1, 2, 3);
+        validatePortalIntegrationComments(policyElm, 7, 1, 3, 3);
     }
 
     /**

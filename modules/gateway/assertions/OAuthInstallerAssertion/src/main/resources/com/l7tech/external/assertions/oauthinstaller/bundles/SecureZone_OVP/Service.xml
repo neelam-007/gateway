@@ -2,7 +2,7 @@
 <enumeration>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a8103"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a8103" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a8103" version="2">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -43,6 +43,44 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="Gets called when clients request an access_token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="In order to get a better performance during token requests "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="a local cache is used in order to support that requirement."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Police lines as of line 22 are caching client lookup results."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Since client configurations will hardly change these values can likely be cached for some time."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="---------------------------------------------"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configure the cache name and the accepted cache life time here:"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows up to one hundred client configurations to be cached for the operation 'getAll')"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows configurations for up to 100000 byte)"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW5SZXF1ZXN0Q2FjaGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenRequestCacheName"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NDU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenRequestCacheLifetimeInSeconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion&gt;
                     &lt;L7p:RequireClientAuthentication booleanValue="true"/&gt;
                     &lt;/L7p:SslAssertion&gt;
@@ -79,6 +117,28 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="request.http.parameter.client_key"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenRequestCacheName}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${tokenRequestCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="clientValues"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9rZXl9"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="msg"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
@@ -86,12 +146,10 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"/&gt;
                     &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="msg"/&gt;
                     &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
-                    &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:Name stringValue="client_key"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Rules&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
                     &lt;/L7p:RequestParamRules&gt;
                     &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"/&gt;
@@ -99,6 +157,19 @@
                     &lt;L7p:ResponseMsgDest stringValue="clientValues"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenRequestCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${tokenRequestCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="clientValues"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:VariablePrefix stringValue="xpathSecret"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="clientValues"/&gt;
@@ -220,9 +291,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: given client_secret is wrong
-                    or client_id has expired or it is disabled, given secret: ${request.http.parameter.secret}, status:
-                    ${token_status}, expiration: ${token_expiration}, time_now: ${now.seconds}"/&gt;
+                    &lt;L7p:Detail stringValue="error: invalid_request, error_description: given client_secret is wrong                     or client_id has expired or it is disabled, given secret: ${request.http.parameter.secret}, status:                     ${token_status}, expiration: ${token_expiration}, time_now: ${now.seconds}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:FalseAssertion/&gt;
@@ -290,6 +359,26 @@
                     &lt;L7p:XpathVersion xpathVersion="XPATH_1_0"/&gt;
                     &lt;/L7p:XpathExpression&gt;
                     &lt;/L7p:ResponseXpathAssertion&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorCacheContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenRequestCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="5"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="errorCacheContent"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;L7p:FalseAssertion/&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -299,8 +388,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KICAgPHR5cGU+PCFbQ0RBVEFbJHt4cGF0aFR5cGUucmVzdWx0fV1dPjwvdHlwZT4KICAgPGNsaWVudF9uYW1lPjwhW0NEQVRBWyR7eHBhdGhOYW1lLnJlc3VsdH1dXT48L2NsaWVudF9uYW1lPgogICA8c2NvcGU+PCFbQ0RBVEFbJHt4cGF0aFNjb3BlLnJlc3VsdH1dXT48L3Njb3BlPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KICAgPHR5cGU+PCFbQ0RBVEFbJHt4cGF0aFR5cGUucmVzdWx0fV1dPjwvdHlwZT4KICAgPGNsaWVudF9uYW1lPjwhW0NEQVRBWyR7eHBhdGhOYW1lLnJlc3VsdH1dXT48L2NsaWVudF9uYW1lPgogICA8c2NvcGU+PCFbQ0RBVEFbJHt4cGF0aFNjb3BlLnJlc3VsdH1dXT48L3Njb3BlPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -311,7 +399,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a8046"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a8046" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a8046" version="2">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -346,6 +434,44 @@
                     &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="In order to get a better performance during token requests "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="a local cache is used in order to support that requirement."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Police lines as of line 27 are caching client lookup results."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Since client configurations will hardly change these values can likely be cached for some time."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="---------------------------------------------"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configure the cache name and the accepted cache life time here:"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows up to one hundred client configurations to be cached for the operation 'getAll')"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows configurations for up to 100000 byte)"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="YXV0aG9yaXplQ2FjaGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="authorizeCacheName"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NjA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="authorizeCacheLifetimeInSeconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion&gt;
                     &lt;L7p:RequireClientAuthentication booleanValue="true"/&gt;
                     &lt;/L7p:SslAssertion&gt;
@@ -381,7 +507,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
-                    &lt;L7p:Expression1 stringValue="${request.http.parameter.client_key}"/&gt;
+                    &lt;L7p:Expression1 stringValue="${client_key}"/&gt;
                     &lt;L7p:Expression2 stringValue=""/&gt;
                     &lt;L7p:Negate booleanValue="true"/&gt;
                     &lt;L7p:Operator operator="EMPTY"/&gt;
@@ -396,6 +522,28 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="========== Get client registration information =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${authorizeCacheName}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${authorizeCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="clientKeyValues"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9rZXl9"/&gt;
+                    &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="msg"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_clientstore_server}/oauth/clientstore/getAll"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
@@ -403,12 +551,10 @@
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"/&gt;
                     &lt;/L7p:RequestHeaderRules&gt;
+                    &lt;L7p:RequestMsgSrc stringValue="msg"/&gt;
                     &lt;L7p:RequestParamRules httpPassthroughRuleSet="included"&gt;
-                    &lt;L7p:Rules httpPassthroughRules="included"&gt;
-                    &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:Name stringValue="client_key"/&gt;
-                    &lt;/L7p:item&gt;
-                    &lt;/L7p:Rules&gt;
+                    &lt;L7p:ForwardAll booleanValue="true"/&gt;
+                    &lt;L7p:Rules httpPassthroughRules="included"/&gt;
                     &lt;/L7p:RequestParamRules&gt;
                     &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet="included"&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"/&gt;
@@ -416,6 +562,17 @@
                     &lt;L7p:ResponseMsgDest stringValue="clientKeyValues"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${authorizeCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${authorizeCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="clientKeyValues"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:VariablePrefix stringValue="xpathType"/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="clientKeyValues"/&gt;
@@ -530,6 +687,27 @@
                     &lt;L7p:Detail stringValue="Given client_id is invalid: ${client_key}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorCacheContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${client_key}"/&gt;
+                    &lt;L7p:CacheId stringValue="${authorizeCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="5"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="errorCacheContent"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -539,8 +717,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CjxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0Pgo8ZXJyb3I+SW52YWxpZCBjbGllbnRfaWQ8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CjxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0Pgo8ZXJyb3I+SW52YWxpZCBjbGllbnRfaWQ8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -673,8 +850,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+R2l2ZW4gY2xpZW50X2lkIGlzIERJU0FCTEVEIG9yIEVYUElSRUQ8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+R2l2ZW4gY2xpZW50X2lkIGlzIERJU0FCTEVEIG9yIEVYUElSRUQ8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -714,8 +890,7 @@
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="If scope parameter is missing in the request, return the default scope.
-                    The default scope in from client registration"/&gt;
+                    &lt;L7p:value stringValue="If scope parameter is missing in the request, return the default scope.                     The default scope in from client registration"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
@@ -780,8 +955,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="Confidential clients utilizing implicit grant_type must have registered
-                    redirect_uri"/&gt;
+                    &lt;L7p:Comment stringValue="Confidential clients utilizing implicit grant_type must have registered                     redirect_uri"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:Expression1 stringValue="${xpathType.result}"/&gt;
@@ -853,8 +1027,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+SW52YWxpZCByZWRpcmVjdF91cmk8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+SW52YWxpZCByZWRpcmVjdF91cmk8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -872,8 +1045,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed in, then it must match redirect_uri
-                    entered during client registration."/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed in, then it must match redirect_uri                     entered during client registration."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -966,8 +1138,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is not passed in, then use redirect_uri
-                    entered during client registration."/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is not passed in, then use redirect_uri                     entered during client registration."/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -1074,8 +1245,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed and none was registered use the one
-                    passed in"/&gt;
+                    &lt;L7p:Comment stringValue="If redirect_uri parameter is passed and none was registered use the one                     passed in"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -1134,8 +1304,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:AuditDetailAssertion&gt;
-                    &lt;L7p:Detail stringValue="Mismatching redirect uri. Given: ${request.http.parameter.callback},
-                    registered: ${xpathCallback.result}"/&gt;
+                    &lt;L7p:Detail stringValue="Mismatching redirect uri. Given: ${request.http.parameter.callback},                     registered: ${xpathCallback.result}"/&gt;
                     &lt;L7p:Level stringValue="WARNING"/&gt;
                     &lt;/L7p:AuditDetailAssertion&gt;
                     &lt;L7p:HardcodedResponse&gt;
@@ -1147,8 +1316,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+TWlzbWF0Y2hpbmcgcmVkaXJlY3QgdXJpLiBHaXZlbjogJyR7cmVkaXJlY3RfdXJpfSc8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+aW52YWxpZDwvcmVzdWx0PgogICA8ZXJyb3I+TWlzbWF0Y2hpbmcgcmVkaXJlY3QgdXJpLiBHaXZlbjogJyR7cmVkaXJlY3RfdXJpfSc8L2Vycm9yPgo8L3ZhbGlkYXRpb24+"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -1172,8 +1340,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KICAgPGNsaWVudE5hbWU+PCFbQ0RBVEFbJHt4cGF0aE5hbWUucmVzdWx0fV1dPjwvY2xpZW50TmFtZT4KICAgPHJlZGlyZWN0X3VyaT48IVtDREFUQVske3JlZGlyZWN0X3VyaX1dXT48L3JlZGlyZWN0X3VyaT4KICAgPHNjb3BlPjwhW0NEQVRBWyR7c2NvcGV9XV0+PC9zY29wZT4KICAgPHJlc3BvbnNlX3R5cGU+PCFbQ0RBVEFbJHtyZXNwb25zZV90eXBlfV1dPjwvcmVzcG9uc2VfdHlwZT4KPC92YWxpZGF0aW9uPg=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="PHZhbGlkYXRpb24geG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLW92cCI+CiAgIDxyZXN1bHQ+dmFsaWQ8L3Jlc3VsdD4KICAgPGNsaWVudE5hbWU+PCFbQ0RBVEFbJHt4cGF0aE5hbWUucmVzdWx0fV1dPjwvY2xpZW50TmFtZT4KICAgPHJlZGlyZWN0X3VyaT48IVtDREFUQVske3JlZGlyZWN0X3VyaX1dXT48L3JlZGlyZWN0X3VyaT4KICAgPHNjb3BlPjwhW0NEQVRBWyR7c2NvcGV9XV0+PC9zY29wZT4KICAgPHJlc3BvbnNlX3R5cGU+PCFbQ0RBVEFbJHtyZXNwb25zZV90eXBlfV1dPjwvcmVzcG9uc2VfdHlwZT4KPC92YWxpZGF0aW9uPg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -1184,7 +1351,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a8142"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a8142" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a8142" version="2">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2224,7 +2391,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a8181"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a8181" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a8181" version="2">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2484,7 +2651,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a8085"
                 version="10">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a8085"
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a8085"
                           version="10">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
@@ -3341,7 +3508,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a81c0"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a81c0" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a81c0" version="2">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -3658,7 +3825,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a80c4"
                 version="6">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a8005" id="57477c668279c3c8d34da687b89a80c4" version="6">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c1046b3" id="57477c668279c3c8d34da687b89a80c4" version="6">
             <l7:Name>oauth/validation</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>

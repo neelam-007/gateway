@@ -2,7 +2,7 @@
 <enumeration>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7812"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7812" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7812" version="2">
             <l7:Name>resource owner password credentials</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -38,8 +38,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource
-                    owner password credentials grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the resource                     owner password credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
@@ -171,12 +170,23 @@
                     &lt;L7p:VariableToSet stringValue="access_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT1yZWZyZXNoX3Rva2VuJnJlZnJlc2hfdG9rZW49JHtydFsxXX0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT1yZWZyZXNoX3Rva2VuJnJlZnJlc2hfdG9rZW49JHtydFsxXX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -200,8 +210,7 @@
                     &lt;L7p:ForwardAll booleanValue="true"/&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue
-                    stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
                     &lt;L7p:Name stringValue="client_id"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -237,8 +246,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmVmcmVzaGVkLg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmVmcmVzaGVkLg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -382,13 +390,42 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="request.http.parameter.login"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="login"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="request.http.parameter.password"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="password"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_scope"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="scope"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT1wYXNzd29yZCZ1c2VybmFtZT0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIubG9naW59JnBhc3N3b3JkPSR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5wYXNzd29yZH0mc2NvcGU9JHtvYXV0aDJfc2NvcGV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT1wYXNzd29yZCZ1c2VybmFtZT0ke2xvZ2lufSZzY29wZT0ke3Njb3BlfSZwYXNzd29yZD0ke3Bhc3N3b3JkfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -415,8 +452,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkLg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkLg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -433,8 +469,7 @@
                     &lt;L7p:TargetVariable stringValue="tokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -458,8 +493,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -561,8 +595,7 @@
                     &lt;L7p:TrueAssertion/&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCQk8SUZSQU1FIGlkPW15aWZyYW1lIHNyYz0iIiBzdHlsZT0nZGlzcGxheTpub25lJyBmcmFtZWJvcmRlcj0iMCIgc2Nyb2xsaW5nPSJhdXRvIj4KCQk8L0lGUkFNRT4KICAgICAgICAgICAgICAgIDxkaXYgaWQ9ImNvbnRlbnRfbGFuZGluZ19wYWdlIj4gICAgICAgICAgICAgIAoJCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJCTxkaXYgY2xhc3M9ImNvbnRhaW5lciI+CgkJCQk8ZGl2IGNsYXNzPSJ0aXRsZS1ib3giPgoJCQkJPGgxPk9BdXRoVjJDbGllbnQ8L2gxPgoJCQkJPGJyIC8+CgkJCQk8aDM+T0F1dGggdmVyc2lvbjogJHtvYXV0aDJfdmVyc2lvbn08L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+R3JhbnQgdHlwZTogUmVzb3VyY2Ugb3duZXIgcGFzc3dvcmQgY3JlZGVudGlhbHM8L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQkJCTxiciAvPgoJCQkJJHtjbGVhclNlc3Npb25Gb3JtfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxwPjxwcmU+CiR7Y3VycmVudF90b2tlbn0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJPC9kaXY+CgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJICAgIAk8L2Rpdj4KCiAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJCgkJCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCQkJPGJyIC8+CgoJCQkJCgkJCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSIgbWV0aG9kPSJQT1NUIj4KICAgCQkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJhY3Rpb24iCiAgICAgICAgICAgICAgICAgICAgCQkJCXZhbHVlPSJoYW5kc2hha2UiLz4KCQkJCQlMb2dpbjogJm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7IDxpbnB1dCB0eXBlPSJ0ZXh0IiBuYW1lPSJsb2dpbiIvPjxici8+PGJyLz4KCQkJCQlQYXNzd29yZDogPGlucHV0IHR5cGU9InBhc3N3b3JkIiBuYW1lPSJwYXNzd29yZCIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJJbml0aWF0ZSIvPgoJCQkJPC9mb3JtPgoKCQkJCTxiciAvPjxiciAvPjxiciAvPgoKCQkJCTxoMz5SZWZyZXNoIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQkJCTxiciAvPgoKCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0icmVmcmVzaCIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJSZWZyZXNoIi8+CgkJCQk8L2Zvcm0+CgoJCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgkJCQkKCQkJCTxoMz5DYWxsIEFQSSBVc2luZyBDdXJyZW50IEFjY2VzcyBUb2tlbjwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iY2FsbGFwaSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJDYWxsIEFQSSIvPgoJCQkJPC9mb3JtPgoJCQkJPGJyIC8+CgkJCQk8cD48cHJlPgoke2FwaW91dHB1dH0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJCgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkgICAgCTwvZGl2PgoKCgkJPC9kaXY+CjwvZGl2PgoKJHtodG1sVGVtcGxhdGVCb3R0b219"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCQk8SUZSQU1FIGlkPW15aWZyYW1lIHNyYz0iIiBzdHlsZT0nZGlzcGxheTpub25lJyBmcmFtZWJvcmRlcj0iMCIgc2Nyb2xsaW5nPSJhdXRvIj4KCQk8L0lGUkFNRT4KICAgICAgICAgICAgICAgIDxkaXYgaWQ9ImNvbnRlbnRfbGFuZGluZ19wYWdlIj4gICAgICAgICAgICAgIAoJCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJCTxkaXYgY2xhc3M9ImNvbnRhaW5lciI+CgkJCQk8ZGl2IGNsYXNzPSJ0aXRsZS1ib3giPgoJCQkJPGgxPk9BdXRoVjJDbGllbnQ8L2gxPgoJCQkJPGJyIC8+CgkJCQk8aDM+T0F1dGggdmVyc2lvbjogJHtvYXV0aDJfdmVyc2lvbn08L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+R3JhbnQgdHlwZTogUmVzb3VyY2Ugb3duZXIgcGFzc3dvcmQgY3JlZGVudGlhbHM8L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQkJCTxiciAvPgoJCQkJJHtjbGVhclNlc3Npb25Gb3JtfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxwPjxwcmU+CiR7Y3VycmVudF90b2tlbn0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJPC9kaXY+CgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJICAgIAk8L2Rpdj4KCiAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJCgkJCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCQkJPGJyIC8+CgoJCQkJCgkJCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSIgbWV0aG9kPSJQT1NUIj4KICAgCQkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJhY3Rpb24iCiAgICAgICAgICAgICAgICAgICAgCQkJCXZhbHVlPSJoYW5kc2hha2UiLz4KCQkJCQlMb2dpbjogJm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7IDxpbnB1dCB0eXBlPSJ0ZXh0IiBuYW1lPSJsb2dpbiIvPjxici8+PGJyLz4KCQkJCQlQYXNzd29yZDogPGlucHV0IHR5cGU9InBhc3N3b3JkIiBuYW1lPSJwYXNzd29yZCIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJJbml0aWF0ZSIvPgoJCQkJPC9mb3JtPgoKCQkJCTxiciAvPjxiciAvPjxiciAvPgoKCQkJCTxoMz5SZWZyZXNoIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQkJCTxiciAvPgoKCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0icmVmcmVzaCIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJSZWZyZXNoIi8+CgkJCQk8L2Zvcm0+CgoJCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgkJCQkKCQkJCTxoMz5DYWxsIEFQSSBVc2luZyBDdXJyZW50IEFjY2VzcyBUb2tlbjwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iY2FsbGFwaSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJDYWxsIEFQSSIvPgoJCQkJPC9mb3JtPgoJCQkJPGJyIC8+CgkJCQk8cD48cHJlPgoke2FwaW91dHB1dH0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJCgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkgICAgCTwvZGl2PgoKCgkJPC9kaXY+CjwvZGl2PgoKJHtodG1sVGVtcGxhdGVCb3R0b219"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -573,7 +606,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a79cb"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a79cb" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a79cb" version="2">
             <l7:Name>SAML</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -605,12 +638,10 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy" version="1">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the saml
-                    grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the saml                     grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
@@ -807,8 +838,7 @@
                     &lt;L7p:VariableToSet stringValue="current_saml"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -886,8 +916,7 @@
                     &lt;L7p:TargetVariable stringValue="samlTokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHtzYW1sVG9rZW5TZXNzaW9uSWRbMF19JnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHtzYW1sVG9rZW5TZXNzaW9uSWRbMF19JnZhbHVlPSR7c2Vzc2lvblZhbHVlfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSaml"/&gt;
@@ -911,8 +940,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -1024,12 +1052,23 @@
                     &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT0ke2VuY29kZWRncmFudHR5cGV9JmFzc2VydGlvbj0ke2VuY29kZWRfc2FtbH0mc2NvcGU9JHtvYXV0aDJfc2NvcGV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT0ke2VuY29kZWRncmFudHR5cGV9JmFzc2VydGlvbj0ke2VuY29kZWRfc2FtbH0mc2NvcGU9JHtvYXV0aDJfc2NvcGV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -1053,8 +1092,7 @@
                     &lt;L7p:ForwardAll booleanValue="true"/&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue
-                    stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
                     &lt;L7p:Name stringValue="client_id"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -1090,13 +1128,11 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXF1ZXN0LnRjcC5yZW1vdGVJUH0hJHtvYXV0aDJfY2xpZW50X2lkfSFzYW1s"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnRjcC5yZW1vdGVJUH0hJHtvYXV0aDJfY2xpZW50X2lkfSFzYW1s"/&gt;
                     &lt;L7p:VariableToSet stringValue="cacheKey"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkIHZpYSBoYW5kc2hha2Uu"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkIHZpYSBoYW5kc2hha2Uu"/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -1113,8 +1149,7 @@
                     &lt;L7p:TargetVariable stringValue="tokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -1138,8 +1173,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -1387,8 +1421,7 @@
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="Add line break and escape &amp;amp;lt; character in SAML assertion for
-                    HTML display"/&gt;
+                    &lt;L7p:value stringValue="Add line break and escape &amp;amp;lt; character in SAML assertion for                     HTML display"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
@@ -1400,8 +1433,7 @@
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtjdXJyZW50X3NhbWxfc3VtbWFyeS5tYWlucGFydH0NCjxiciAvPg0KPGEgaHJlZj0iamF2YXNjcmlwdDp1bmhpZGUoJ3NhbWxfYXNzZXJ0aW9uJykiPlZpZXcgU0FNTCBBc3NlcnRpb248L2E+DQoJCQk8L3A+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCI+DQogZnVuY3Rpb24gdW5oaWRlKGRpdklEKSB7DQogdmFyIGl0ZW0gPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChkaXZJRCk7DQogaWYgKGl0ZW0pIHsNCiBpdGVtLmNsYXNzTmFtZT0oaXRlbS5jbGFzc05hbWU9PSdoaWRkZW4nKT8ndW5oaWRkZW4nOidoaWRkZW4nOw0KIH0NCiB9DQogPC9zY3JpcHQ+DQoJCQk8cCBpZD0ic2FtbF9hc3NlcnRpb24iIGNsYXNzPSJoaWRkZW4iPg0KJHtjdXJyZW50X3NhbWx9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtjdXJyZW50X3NhbWxfc3VtbWFyeS5tYWlucGFydH0NCjxiciAvPg0KPGEgaHJlZj0iamF2YXNjcmlwdDp1bmhpZGUoJ3NhbWxfYXNzZXJ0aW9uJykiPlZpZXcgU0FNTCBBc3NlcnRpb248L2E+DQoJCQk8L3A+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCI+DQogZnVuY3Rpb24gdW5oaWRlKGRpdklEKSB7DQogdmFyIGl0ZW0gPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChkaXZJRCk7DQogaWYgKGl0ZW0pIHsNCiBpdGVtLmNsYXNzTmFtZT0oaXRlbS5jbGFzc05hbWU9PSdoaWRkZW4nKT8ndW5oaWRkZW4nOidoaWRkZW4nOw0KIH0NCiB9DQogPC9zY3JpcHQ+DQoJCQk8cCBpZD0ic2FtbF9hc3NlcnRpb24iIGNsYXNzPSJoaWRkZW4iPg0KJHtjdXJyZW50X3NhbWx9"/&gt;
                     &lt;L7p:VariableToSet stringValue="current_saml"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:All&gt;
@@ -1415,8 +1447,7 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="host_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -1424,8 +1455,7 @@
                     &lt;L7p:VariableToSet stringValue="saml_token_server"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCTxJRlJBTUUgaWQ9bXlpZnJhbWUgc3JjPSIiIHN0eWxlPSdkaXNwbGF5Om5vbmUnIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9ImF1dG8iPgoJPC9JRlJBTUU+Cgk8ZGl2IGlkPSJjb250ZW50X2xhbmRpbmdfcGFnZSI+ICAgICAgICAgICAgICAKCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJPGRpdiBjbGFzcz0idGl0bGUtYm94Ij4KCQkJPGgxPk9BdXRoVjJDbGllbnQ8L2gxPgoJCQk8YnIgLz4KCQkJPGgzPk9BdXRoIHZlcnNpb246ICR7b2F1dGgyX3ZlcnNpb259PC9oMz4KCQkJPGJyIC8+CgkJCTxoMz5HcmFudCB0eXBlOiBTQU1MICgke3NhbWxfZ3JhbnRfdHlwZX0pPC9oMz4KCQkJPGJyIC8+CiAgICAgICAgICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQkJPGgzPkN1cnJlbnQgQWNjZXNzIFRva2VuOjwvaDM+CgkJCTxiciAvPgoJCQk8cD48cHJlPgoke2N1cnJlbnRfdG9rZW59CgkJCTwvcHJlPgoJCQk8L3A+CgkJCTwvZGl2PgoJCQk8L2Rpdj4KCQkJCTxjYXB0aW9uPjxoND48Yj48L2I+PC9oND48aHI+PHA+PC9wPjwvY2FwdGlvbj4KCQkJPC9kaXY+CgoJCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJPGJyIC8+CgkJCTxoMz5Jbml0aWF0ZSBuZXcgU0FNTCBoYW5kc2hha2U8L2gzPgoJCQk8YnIgLz4KCgkJCTxmb3JtIGFjdGlvbj0iJHtzYW1sX3Rva2VuX3NlcnZlcn0iPgoJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0icmVkaXJlY3RfdXJpIgoJCQkJCQkJICB2YWx1ZT0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ii8+CgkJCQk8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iSW5pdGlhdGUiLz4JCQkKCQkJPC9mb3JtPgoJCQk8YnIgLz4KCQkJPHA+CiR7Y3VycmVudF9zYW1sfQoKCQkJPC9wPgoKCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgoJCQkKCQkJPGgzPkluaXRpYXRlIG5ldyBPQXV0aCBoYW5kc2hha2U8L2gzPgoJCQk8YnIgLz4KCgkJCTxmb3JtIGFjdGlvbj0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ij4KCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9ImFjdGlvbiIKCQkJCQkJCSAgdmFsdWU9ImhhbmRzaGFrZSIvPgoJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkluaXRpYXRlIi8+CgkJCTwvZm9ybT4KCgkJCTxiciAvPjxiciAvPjxiciAvPgoKCQkJPGgzPkNhbGwgQVBJIFVzaW5nIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQkJPGJyIC8+CgoJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CgkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJhY3Rpb24iCgkJCQkJCQkgIHZhbHVlPSJjYWxsYXBpIi8+CgkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIKCQkJCQkJCSAgdmFsdWU9InN0YXRlX3Rlc3QiLz4KCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkNhbGwgQVBJIi8+CgkJCTwvZm9ybT4KCQkJPGJyIC8+CgkJCTxwPjxwcmU+CiR7YXBpb3V0cHV0fQoJCQk8L3ByZT4KCQkJPC9wPgoJCQkKCQkJPC9kaXY+CgkJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJPC9kaXY+Cgk8L2Rpdj4KPC9kaXY+CiR7aHRtbFRlbXBsYXRlQm90dG9tfQ=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCTxJRlJBTUUgaWQ9bXlpZnJhbWUgc3JjPSIiIHN0eWxlPSdkaXNwbGF5Om5vbmUnIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9ImF1dG8iPgoJPC9JRlJBTUU+Cgk8ZGl2IGlkPSJjb250ZW50X2xhbmRpbmdfcGFnZSI+ICAgICAgICAgICAgICAKCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJPGRpdiBjbGFzcz0idGl0bGUtYm94Ij4KCQkJPGgxPk9BdXRoVjJDbGllbnQ8L2gxPgoJCQk8YnIgLz4KCQkJPGgzPk9BdXRoIHZlcnNpb246ICR7b2F1dGgyX3ZlcnNpb259PC9oMz4KCQkJPGJyIC8+CgkJCTxoMz5HcmFudCB0eXBlOiBTQU1MICgke3NhbWxfZ3JhbnRfdHlwZX0pPC9oMz4KCQkJPGJyIC8+CiAgICAgICAgICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQkJPGgzPkN1cnJlbnQgQWNjZXNzIFRva2VuOjwvaDM+CgkJCTxiciAvPgoJCQk8cD48cHJlPgoke2N1cnJlbnRfdG9rZW59CgkJCTwvcHJlPgoJCQk8L3A+CgkJCTwvZGl2PgoJCQk8L2Rpdj4KCQkJCTxjYXB0aW9uPjxoND48Yj48L2I+PC9oND48aHI+PHA+PC9wPjwvY2FwdGlvbj4KCQkJPC9kaXY+CgoJCQk8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJPGJyIC8+CgkJCTxoMz5Jbml0aWF0ZSBuZXcgU0FNTCBoYW5kc2hha2U8L2gzPgoJCQk8YnIgLz4KCgkJCTxmb3JtIGFjdGlvbj0iJHtzYW1sX3Rva2VuX3NlcnZlcn0iPgoJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0icmVkaXJlY3RfdXJpIgoJCQkJCQkJICB2YWx1ZT0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ii8+CgkJCQk8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iSW5pdGlhdGUiLz4JCQkKCQkJPC9mb3JtPgoJCQk8YnIgLz4KCQkJPHA+CiR7Y3VycmVudF9zYW1sfQoKCQkJPC9wPgoKCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgoJCQkKCQkJPGgzPkluaXRpYXRlIG5ldyBPQXV0aCBoYW5kc2hha2U8L2gzPgoJCQk8YnIgLz4KCgkJCTxmb3JtIGFjdGlvbj0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ij4KCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9ImFjdGlvbiIKCQkJCQkJCSAgdmFsdWU9ImhhbmRzaGFrZSIvPgoJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkluaXRpYXRlIi8+CgkJCTwvZm9ybT4KCgkJCTxiciAvPjxiciAvPjxiciAvPgoKCQkJPGgzPkNhbGwgQVBJIFVzaW5nIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQkJPGJyIC8+CgoJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CgkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJhY3Rpb24iCgkJCQkJCQkgIHZhbHVlPSJjYWxsYXBpIi8+CgkJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIKCQkJCQkJCSAgdmFsdWU9InN0YXRlX3Rlc3QiLz4KCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkNhbGwgQVBJIi8+CgkJCTwvZm9ybT4KCQkJPGJyIC8+CgkJCTxwPjxwcmU+CiR7YXBpb3V0cHV0fQoJCQk8L3ByZT4KCQkJPC9wPgoJCQkKCQkJPC9kaXY+CgkJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJPC9kaXY+Cgk8L2Rpdj4KPC9kaXY+CiR7aHRtbFRlbXBsYXRlQm90dG9tfQ=="/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -1612,7 +1642,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7794"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7794" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7794" version="2">
             <l7:Name>implicit</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2156,7 +2186,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7890"
                 version="6">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7890" version="6">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7890" version="6">
             <l7:Name>authorization code</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2192,8 +2222,7 @@
                     xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the
-                    authorization code grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the                     authorization code grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2227,8 +2256,7 @@
                     &lt;L7p:Target target="OTHER"/&gt;
                     &lt;/L7p:Regex&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9"/&gt;
                     &lt;L7p:VariableToSet stringValue="redirectUri"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2343,12 +2371,23 @@
                     &lt;L7p:VariableToSet stringValue="refresh_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT1yZWZyZXNoX3Rva2VuJnJlZnJlc2hfdG9rZW49JHtyZWZyZXNoX3Rva2VufSZzY29wZT0ke29hdXRoMl9zY29wZX0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT1yZWZyZXNoX3Rva2VuJnJlZnJlc2hfdG9rZW49JHtyZWZyZXNoX3Rva2VufSZzY29wZT0ke29hdXRoMl9zY29wZX0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -2372,8 +2411,7 @@
                     &lt;L7p:ForwardAll booleanValue="true"/&gt;
                     &lt;L7p:Rules httpPassthroughRules="included"&gt;
                     &lt;L7p:item httpPassthroughRule="included"&gt;
-                    &lt;L7p:CustomizeValue
-                    stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
+                    &lt;L7p:CustomizeValue stringValue="3MVG94DzwlYDSHS6GTCNPxF87RQ8HrxbojWk89by7fE_H4ch8TsfZcaIFz.jdne83WCVPiD_xA93_Y8j4iomk"/&gt;
                     &lt;L7p:Name stringValue="client_id"/&gt;
                     &lt;L7p:UsesCustomizedValue booleanValue="true"/&gt;
                     &lt;/L7p:item&gt;
@@ -2409,8 +2447,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmVmcmVzaGVkLg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmVmcmVzaGVkLg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2538,9 +2575,20 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT1hdXRob3JpemF0aW9uX2NvZGUmY29kZT0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuY29kZX0mcmVkaXJlY3RfdXJpPSR7cmVkaXJlY3RVcml9JmNsaWVudF9pZD0ke29hdXRoMl9jbGllbnRfaWR9JmNsaWVudF9zZWNyZXQ9JHtvYXV0aDJfY2xpZW50X3NlY3JldH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT1hdXRob3JpemF0aW9uX2NvZGUmY29kZT0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuY29kZX0mcmVkaXJlY3RfdXJpPSR7cmVkaXJlY3RVcml9JmNsaWVudF9pZD0ke29hdXRoMl9jbGllbnRfaWR9JmNsaWVudF9zZWNyZXQ9JHtvYXV0aDJfY2xpZW50X3NlY3JldH0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
@@ -2576,8 +2624,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkIGJ5IGNsaWVudCB2aWEgYSBjYWxsYmFjayB0byB0aGUgDQphdXRob3JpemF0aW9uIHNlcnZlciBiYXNlZCBvbiB0aGUgYXV0aG9yaXphdGlvbiBjb2RlIHZhbHVlIA0KcmV0dXJuZWQgKCR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5jb2RlfSkgb24gdGhlIHJlZGlyZWN0aW9uDQpiYWNrIGZyb20gdGhlIGF1dGhvcml6YXRpb24gc2VydmVyLg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkIGJ5IGNsaWVudCB2aWEgYSBjYWxsYmFjayB0byB0aGUgDQphdXRob3JpemF0aW9uIHNlcnZlciBiYXNlZCBvbiB0aGUgYXV0aG9yaXphdGlvbiBjb2RlIHZhbHVlIA0KcmV0dXJuZWQgKCR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5jb2RlfSkgb24gdGhlIHJlZGlyZWN0aW9uDQpiYWNrIGZyb20gdGhlIGF1dGhvcml6YXRpb24gc2VydmVyLg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -2594,8 +2641,7 @@
                     &lt;L7p:TargetVariable stringValue="tokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -2619,8 +2665,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -2788,8 +2833,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="QW4gZXJyb3IgaGFzIG9jY3VycmVkOiAke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuZXJyb3J9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="QW4gZXJyb3IgaGFzIG9jY3VycmVkOiAke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuZXJyb3J9"/&gt;
                     &lt;L7p:VariableToSet stringValue="errorMessage"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -2803,13 +2847,11 @@
                     &lt;/wsp:All&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiIiwNCiAgInRva2VuX3R5cGUiOiIiLA0KICAiZXhwaXJlc19pbiI6LA0KICAicmVmcmVzaF90b2tlbiI6IiIsDQogICJzY29wZSI6IiINCn0NCg0KJHtlcnJvck1lc3NhZ2V9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiIiwNCiAgInRva2VuX3R5cGUiOiIiLA0KICAiZXhwaXJlc19pbiI6LA0KICAicmVmcmVzaF90b2tlbiI6IiIsDQogICJzY29wZSI6IiINCn0NCg0KJHtlcnJvck1lc3NhZ2V9"/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiIiwNCiAgInRva2VuX3R5cGUiOiIiLA0KICAiZXhwaXJlc19pbiI6LA0KICAicmVmcmVzaF90b2tlbiI6IiIsDQogICJzY29wZSI6IiINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiIiwNCiAgInRva2VuX3R5cGUiOiIiLA0KICAiZXhwaXJlc19pbiI6LA0KICAicmVmcmVzaF90b2tlbiI6IiIsDQogICJzY29wZSI6IiINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="sessionValue"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:EncodeDecode&gt;
@@ -2822,8 +2864,7 @@
                     &lt;L7p:TargetVariable stringValue="tokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZH0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZH0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -2847,8 +2888,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -2869,8 +2909,7 @@
                     &lt;L7p:TrueAssertion/&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCgk8SUZSQU1FIGlkPW15aWZyYW1lIHNyYz0iIiBzdHlsZT0nZGlzcGxheTpub25lJyBmcmFtZWJvcmRlcj0iMCIgc2Nyb2xsaW5nPSJhdXRvIj4KCTwvSUZSQU1FPgoJCTxkaXYgaWQ9ImNvbnRlbnRfbGFuZGluZ19wYWdlIj4gICAgICAgICAgICAgIAoJCTxkaXYgY2xhc3M9InZpZXcgdmlldy1wcm9kdWN0czMgdmlldy1pZC1wcm9kdWN0czMgdmlldy1kaXNwbGF5LWlkLXBhZ2VfMSB2aWV3LWRvbS1pZC0xIj4JCQoJCTxkaXYgY2xhc3M9ImNvbnRhaW5lciI+CgkJPGRpdiBjbGFzcz0idGl0bGUtYm94Ij4KCQk8aDE+T0F1dGhWMkNsaWVudDwvaDE+CgkJPGJyIC8+CgkJPGgzPk9BdXRoIHZlcnNpb246ICR7b2F1dGgyX3ZlcnNpb259PC9oMz4KCQk8YnIgLz4KCQk8aDM+R3JhbnQgdHlwZTogQXV0aG9yaXphdGlvbiBjb2RlPC9oMz4KCQk8YnIgLz4KCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQk8YnIgLz4KICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQk8cD48cHJlPgoke2N1cnJlbnRfdG9rZW59CgkJPC9wcmU+CgkJPC9wPgoJCTwvZGl2PgoJCTwvZGl2PgoJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJPC9kaXY+CgoJCSA8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCTxiciAvPgoKCQkKCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJPGJyIC8+CgoJCTxmb3JtIGFjdGlvbj0iJHthdXRoU2VydmVyfSI+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InJlc3BvbnNlX3R5cGUiCgkJCQkJCQl2YWx1ZT0iY29kZSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJjbGllbnRfaWQiCgkJCQkJCQl2YWx1ZT0iJHtvYXV0aDJfY2xpZW50X2lkfSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJyZWRpcmVjdF91cmkiCgkJCQkJCQl2YWx1ZT0iJHtyZWRpcmVjdFVyaX0iLz4KCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ic2NvcGUiCgkJCQkJCQl2YWx1ZT0iJHtvYXV0aDJfc2NvcGV9Ii8+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgoJCQkJCQkJdmFsdWU9InN0YXRlX3Rlc3QiLz4KCgkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJJbml0aWF0ZSIvPgkJCQoJCTwvZm9ybT4KCgkJPGJyIC8+PGJyIC8+PGJyIC8+CgoJCTxoMz5SZWZyZXNoIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQk8YnIgLz4KCgoJCTxmb3JtIGFjdGlvbj0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ij4KCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgoJCQkJCQkgIHZhbHVlPSJyZWZyZXNoIi8+CgkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJSZWZyZXNoIi8+CgkJPC9mb3JtPgoKCQk8YnIgLz48YnIgLz48YnIgLz4KCQkKCQk8aDM+Q2FsbCBBUEkgVXNpbmcgQ3VycmVudCBBY2Nlc3MgVG9rZW48L2gzPgoJCTxiciAvPgoKCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9ImFjdGlvbiIKCQkJCQkJICB2YWx1ZT0iY2FsbGFwaSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIKCQkJCQkJICB2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQlUYXJnZXQ6IDxpbnB1dCB0eXBlPSJ0ZXh0IiBuYW1lPSJ0YXJnZXQiIHNpemU9ODAgdmFsdWU9IiR7YXBpY2FsbHRhcmdldH0iLz4KCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkNhbGwgQVBJIi8+CgkJPC9mb3JtPgoJCTxiciAvPgoJCTxwPjxwcmU+CiR7YXBpb3V0cHV0fQoJCTwvcHJlPgoJCTwvcD4KCQkKCQk8L2Rpdj4KCQkJPGNhcHRpb24+PGg0PjxiPjwvYj48L2g0Pjxocj48cD48L3A+PC9jYXB0aW9uPgoJCTwvZGl2PgoKCTwvZGl2Pgo8L2Rpdj4KCiR7aHRtbFRlbXBsYXRlQm90dG9tfQ=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtodG1sVGVtcGxhdGVUb3B9Cgo8ZGl2IGlkPSJjb250ZW50Ij4KCgk8SUZSQU1FIGlkPW15aWZyYW1lIHNyYz0iIiBzdHlsZT0nZGlzcGxheTpub25lJyBmcmFtZWJvcmRlcj0iMCIgc2Nyb2xsaW5nPSJhdXRvIj4KCTwvSUZSQU1FPgoJCTxkaXYgaWQ9ImNvbnRlbnRfbGFuZGluZ19wYWdlIj4gICAgICAgICAgICAgIAoJCTxkaXYgY2xhc3M9InZpZXcgdmlldy1wcm9kdWN0czMgdmlldy1pZC1wcm9kdWN0czMgdmlldy1kaXNwbGF5LWlkLXBhZ2VfMSB2aWV3LWRvbS1pZC0xIj4JCQoJCTxkaXYgY2xhc3M9ImNvbnRhaW5lciI+CgkJPGRpdiBjbGFzcz0idGl0bGUtYm94Ij4KCQk8aDE+T0F1dGhWMkNsaWVudDwvaDE+CgkJPGJyIC8+CgkJPGgzPk9BdXRoIHZlcnNpb246ICR7b2F1dGgyX3ZlcnNpb259PC9oMz4KCQk8YnIgLz4KCQk8aDM+R3JhbnQgdHlwZTogQXV0aG9yaXphdGlvbiBjb2RlPC9oMz4KCQk8YnIgLz4KCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQk8YnIgLz4KICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQk8cD48cHJlPgoke2N1cnJlbnRfdG9rZW59CgkJPC9wcmU+CgkJPC9wPgoJCTwvZGl2PgoJCTwvZGl2PgoJCQk8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJPC9kaXY+CgoJCSA8ZGl2IGNsYXNzPSJ2aWV3IHZpZXctcHJvZHVjdHMzIHZpZXctaWQtcHJvZHVjdHMzIHZpZXctZGlzcGxheS1pZC1wYWdlXzEgdmlldy1kb20taWQtMSI+CQkKCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCTxiciAvPgoKCQkKCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJPGJyIC8+CgoJCTxmb3JtIGFjdGlvbj0iJHthdXRoU2VydmVyfSI+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InJlc3BvbnNlX3R5cGUiCgkJCQkJCQl2YWx1ZT0iY29kZSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJjbGllbnRfaWQiCgkJCQkJCQl2YWx1ZT0iJHtvYXV0aDJfY2xpZW50X2lkfSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJyZWRpcmVjdF91cmkiCgkJCQkJCQl2YWx1ZT0iJHtyZWRpcmVjdFVyaX0iLz4KCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0ic2NvcGUiCgkJCQkJCQl2YWx1ZT0iJHtvYXV0aDJfc2NvcGV9Ii8+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgoJCQkJCQkJdmFsdWU9InN0YXRlX3Rlc3QiLz4KCgkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJJbml0aWF0ZSIvPgkJCQoJCTwvZm9ybT4KCgkJPGJyIC8+PGJyIC8+PGJyIC8+CgoJCTxoMz5SZWZyZXNoIEN1cnJlbnQgQWNjZXNzIFRva2VuPC9oMz4KCQk8YnIgLz4KCgoJCTxmb3JtIGFjdGlvbj0iJHtyZXF1ZXN0LnVybC5wcm90b2NvbH06Ly8ke3JlcXVlc3QudXJsLmhvc3R9OiR7cmVxdWVzdC51cmwucG9ydH0ke3JlcXVlc3QudXJsLnBhdGh9Ij4KCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgoJCQkJCQkgIHZhbHVlPSJyZWZyZXNoIi8+CgkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJSZWZyZXNoIi8+CgkJPC9mb3JtPgoKCQk8YnIgLz48YnIgLz48YnIgLz4KCQkKCQk8aDM+Q2FsbCBBUEkgVXNpbmcgQ3VycmVudCBBY2Nlc3MgVG9rZW48L2gzPgoJCTxiciAvPgoKCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CgkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9ImFjdGlvbiIKCQkJCQkJICB2YWx1ZT0iY2FsbGFwaSIvPgoJCQk8aW5wdXQgdHlwZT0iaGlkZGVuIiBuYW1lPSJzdGF0ZSIKCQkJCQkJICB2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQlUYXJnZXQ6IDxpbnB1dCB0eXBlPSJ0ZXh0IiBuYW1lPSJ0YXJnZXQiIHNpemU9ODAgdmFsdWU9IiR7YXBpY2FsbHRhcmdldH0iLz4KCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkNhbGwgQVBJIi8+CgkJPC9mb3JtPgoJCTxiciAvPgoJCTxwPjxwcmU+CiR7YXBpb3V0cHV0fQoJCTwvcHJlPgoJCTwvcD4KCQkKCQk8L2Rpdj4KCQkJPGNhcHRpb24+PGg0PjxiPjwvYj48L2g0Pjxocj48cD48L3A+PC9jYXB0aW9uPgoJCTwvZGl2PgoKCTwvZGl2Pgo8L2Rpdj4KCiR7aHRtbFRlbXBsYXRlQm90dG9tfQ=="/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -2881,7 +2920,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7a0a"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7a0a" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7a0a" version="2">
             <l7:Name>client credentials</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2913,12 +2952,10 @@
         <l7:Resources>
             <l7:ResourceSet tag="policy">
                 <l7:Resource type="policy" version="1">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
-                    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client
-                    credentials grant type"/&gt;
+                    &lt;L7p:Comment stringValue="This is a test client for an OAuth 2 implementation using the client                     credentials grant type"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
@@ -3103,12 +3140,23 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Z3JhbnRfdHlwZT1jbGllbnRfY3JlZGVudGlhbHMmc2NvcGU9JHtvYXV0aDJfc2NvcGV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Z3JhbnRfdHlwZT1jbGllbnRfY3JlZGVudGlhbHMmc2NvcGU9JHtvYXV0aDJfc2NvcGV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="postMsg"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="oauth2_client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:CurrentSecurityHeaderHandling intValue="3"/&gt;
                     &lt;L7p:FailOnErrorStatus booleanValue="false"/&gt;
@@ -3142,8 +3190,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkLg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXNwb25zZS5tYWlucGFydH0NCg0KVGhlIGFjY2VzcyB0b2tlbiB3YXMgcmV0cmlldmVkLg=="/&gt;
                     &lt;L7p:VariableToSet stringValue="current_token"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
@@ -3160,8 +3207,7 @@
                     &lt;L7p:TargetVariable stringValue="tokenSessionId"/&gt;
                     &lt;/L7p:UUIDGenerator&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2FjaGVLZXk9JHt0b2tlblNlc3Npb25JZFswXX0mdmFsdWU9JHtzZXNzaW9uVmFsdWV9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeSession"/&gt;
@@ -3185,8 +3231,7 @@
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PGZvcm0gYWN0aW9uPSIiPg0KPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIiB2YWx1ZT0iY2xlYXJTZXNzaW9uIi8+DQo8aW5wdXQgdHlwZT0ic3VibWl0IiB2YWx1ZT0iQ2xlYXIgU2Vzc2lvbiIvPgkJCQ0KPC9mb3JtPg0KPGJyIC8+"/&gt;
                     &lt;L7p:VariableToSet stringValue="clearSessionForm"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:AddHeader&gt;
@@ -3288,8 +3333,7 @@
                     &lt;L7p:TrueAssertion/&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:HardcodedResponse&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtodG1sVGVtcGxhdGVUb3B9CjxkaXYgaWQ9ImNvbnRlbnQiPgoJCTxJRlJBTUUgaWQ9bXlpZnJhbWUgc3JjPSIiIHN0eWxlPSdkaXNwbGF5Om5vbmUnIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9ImF1dG8iPgoJCTwvSUZSQU1FPgogICAgICAgICAgICAgICAgPGRpdiBpZD0iY29udGVudF9sYW5kaW5nX3BhZ2UiPiAgICAgICAgICAgICAgCgkJCTxkaXYgY2xhc3M9InZpZXcgdmlldy1wcm9kdWN0czMgdmlldy1pZC1wcm9kdWN0czMgdmlldy1kaXNwbGF5LWlkLXBhZ2VfMSB2aWV3LWRvbS1pZC0xIj4JCQoJCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJCTxkaXYgY2xhc3M9InRpdGxlLWJveCI+CgkJCQk8aDE+T0F1dGhWMkNsaWVudDwvaDE+CgkJCQk8YnIgLz4KCQkJCTxoMz5PQXV0aCB2ZXJzaW9uOiAke29hdXRoMl92ZXJzaW9ufTwvaDM+CgkJCQk8YnIgLz4KCQkJCTxoMz5HcmFudCB0eXBlOiBDbGllbnQgY3JlZGVudGlhbHM8L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQkJCTxiciAvPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQkJCTxwPjxwcmU+CiR7Y3VycmVudF90b2tlbn0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJPC9kaXY+CgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJICAgIAk8L2Rpdj4KCiAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJCgkJCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCQkJPGJyIC8+CgoJCQkJCgkJCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iaGFuZHNoYWtlIi8+CgkJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkluaXRpYXRlIi8+CgkJCQk8L2Zvcm0+CgoJCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgkJCQkKCQkJCTxoMz5DYWxsIEFQSSBVc2luZyBDdXJyZW50IEFjY2VzcyBUb2tlbjwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iY2FsbGFwaSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJDYWxsIEFQSSIvPgoJCQkJPC9mb3JtPgoJCQkJPGJyIC8+CgkJCQk8cD48cHJlPgoke2FwaW91dHB1dH0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJCgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkgICAgCTwvZGl2PgoKCgkJPC9kaXY+CjwvZGl2PgoKJHtodG1sVGVtcGxhdGVCb3R0b219"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtodG1sVGVtcGxhdGVUb3B9CjxkaXYgaWQ9ImNvbnRlbnQiPgoJCTxJRlJBTUUgaWQ9bXlpZnJhbWUgc3JjPSIiIHN0eWxlPSdkaXNwbGF5Om5vbmUnIGZyYW1lYm9yZGVyPSIwIiBzY3JvbGxpbmc9ImF1dG8iPgoJCTwvSUZSQU1FPgogICAgICAgICAgICAgICAgPGRpdiBpZD0iY29udGVudF9sYW5kaW5nX3BhZ2UiPiAgICAgICAgICAgICAgCgkJCTxkaXYgY2xhc3M9InZpZXcgdmlldy1wcm9kdWN0czMgdmlldy1pZC1wcm9kdWN0czMgdmlldy1kaXNwbGF5LWlkLXBhZ2VfMSB2aWV3LWRvbS1pZC0xIj4JCQoJCQkJPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KCQkJCTxkaXYgY2xhc3M9InRpdGxlLWJveCI+CgkJCQk8aDE+T0F1dGhWMkNsaWVudDwvaDE+CgkJCQk8YnIgLz4KCQkJCTxoMz5PQXV0aCB2ZXJzaW9uOiAke29hdXRoMl92ZXJzaW9ufTwvaDM+CgkJCQk8YnIgLz4KCQkJCTxoMz5HcmFudCB0eXBlOiBDbGllbnQgY3JlZGVudGlhbHM8L2gzPgoJCQkJPGJyIC8+CgkJCQk8aDM+Q3VycmVudCBBY2Nlc3MgVG9rZW46PC9oMz4KCQkJCTxiciAvPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICR7Y2xlYXJTZXNzaW9uRm9ybX0KCQkJCTxwPjxwcmU+CiR7Y3VycmVudF90b2tlbn0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJPC9kaXY+CgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkJICAgIAk8L2Rpdj4KCiAgICAgICAgICAgICAgICAgPGRpdiBjbGFzcz0idmlldyB2aWV3LXByb2R1Y3RzMyB2aWV3LWlkLXByb2R1Y3RzMyB2aWV3LWRpc3BsYXktaWQtcGFnZV8xIHZpZXctZG9tLWlkLTEiPgkJCgkJCQk8ZGl2IGNsYXNzPSJjb250YWluZXIiPgoJCQkJPGJyIC8+CgoJCQkJCgkJCQk8aDM+SW5pdGlhdGUgbmV3IE9BdXRoIGhhbmRzaGFrZTwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iaGFuZHNoYWtlIi8+CgkJCQkJPGlucHV0IHR5cGU9InN1Ym1pdCIgdmFsdWU9IkluaXRpYXRlIi8+CgkJCQk8L2Zvcm0+CgoJCQkJPGJyIC8+PGJyIC8+PGJyIC8+CgkJCQkKCQkJCTxoMz5DYWxsIEFQSSBVc2luZyBDdXJyZW50IEFjY2VzcyBUb2tlbjwvaDM+CgkJCQk8YnIgLz4KCgkJCQk8Zm9ybSBhY3Rpb249IiR7cmVxdWVzdC51cmwucHJvdG9jb2x9Oi8vJHtyZXF1ZXN0LnVybC5ob3N0fToke3JlcXVlc3QudXJsLnBvcnR9JHtyZXF1ZXN0LnVybC5wYXRofSI+CiAgIAkJCQkJPGlucHV0IHR5cGU9ImhpZGRlbiIgbmFtZT0iYWN0aW9uIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0iY2FsbGFwaSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJoaWRkZW4iIG5hbWU9InN0YXRlIgogICAgICAgICAgICAgICAgICAgIAkJCQl2YWx1ZT0ic3RhdGVfdGVzdCIvPgoJCQkJCVRhcmdldDogPGlucHV0IHR5cGU9InRleHQiIG5hbWU9InRhcmdldCIgc2l6ZT04MCB2YWx1ZT0iJHthcGljYWxsdGFyZ2V0fSIvPgoJCQkJCTxpbnB1dCB0eXBlPSJzdWJtaXQiIHZhbHVlPSJDYWxsIEFQSSIvPgoJCQkJPC9mb3JtPgoJCQkJPGJyIC8+CgkJCQk8cD48cHJlPgoke2FwaW91dHB1dH0KCQkJCTwvcHJlPgoJCQkJPC9wPgoJCQkJCgkJCQk8L2Rpdj4KCQkJICAgICAgICA8Y2FwdGlvbj48aDQ+PGI+PC9iPjwvaDQ+PGhyPjxwPjwvcD48L2NhcHRpb24+CgkgICAgCTwvZGl2PgoKCgkJPC9kaXY+CjwvZGl2PgoKJHtodG1sVGVtcGxhdGVCb3R0b219"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/html; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
                     &lt;/wsp:All&gt;
@@ -3415,6 +3459,44 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="This policy issues an access token"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="In order to get a better performance during token requests "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="a local cache is used in order to support that requirement."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Police lines as of line 22 are caching client lookup results."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Since client configurations will hardly change these values can likely be cached for some time."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="---------------------------------------------"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configure the cache name and the accepted cache life time here:"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows up to one hundred client configurations to be cached for the operation 'getAll')"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows configurations for up to 100000 byte)"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW5FbmRwb2ludENhY2hl"/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenEndpointCacheName"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MzA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="tokenEndpointCacheLifetimeInSeconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SslAssertion/&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -3461,8 +3543,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiJHtyZXF1ZXN0Lmh0dHAubWV0aG9kfSBub3QgcGVybWl0dGVkIgp9Cg=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiJHtyZXF1ZXN0Lmh0dHAubWV0aG9kfSBub3QgcGVybWl0dGVkIgp9Cg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="401"/&gt;
@@ -3491,8 +3572,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5ncmFudF90eXBlfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5zY29wZXxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMuY29kZXxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMucmVkaXJlY3RfdXJpfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5jbGllbnRfaWR8QEB9IyMke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXJzLmNsaWVudF9zZWNyZXR8QEB9IyMke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXJzLnVzZXJuYW1lfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5wYXNzd29yZHxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMuYXNzZXJ0aW9ufEBAfQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5ncmFudF90eXBlfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5zY29wZXxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMuY29kZXxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMucmVkaXJlY3RfdXJpfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5jbGllbnRfaWR8QEB9IyMke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXJzLmNsaWVudF9zZWNyZXR8QEB9IyMke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXJzLnVzZXJuYW1lfEBAfSMjJHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVycy5wYXNzd29yZHxAQH0jIyR7cmVxdWVzdC5odHRwLnBhcmFtZXRlcnMuYXNzZXJ0aW9ufEBAfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="requestParams"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:Regex&gt;
@@ -3522,8 +3602,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiRHVwbGljYXRlIHBhcmFtZXRlcnMiCn0="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiRHVwbGljYXRlIHBhcmFtZXRlcnMiCn0="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -3617,8 +3696,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiTWlzc2luZyBncmFudF90eXBlIgp9"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiTWlzc2luZyBncmFudF90eXBlIgp9"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -3728,6 +3806,18 @@
                     &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0LnBhc3N3b3JkfQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="client_secret"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_DECODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
                     &lt;L7p:Expression1 stringValue="${client_id}"/&gt;
@@ -3889,8 +3979,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfY2xpZW50IiwKICAiZXJyb3JfZGVzY3JpcHRpb24iOiJGYWlsZWQgdG8gZ2V0IGNsaWVudCBjcmVkZW50aWFscyIKfQ=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfY2xpZW50IiwKICAiZXJyb3JfZGVzY3JpcHRpb24iOiJGYWlsZWQgdG8gZ2V0IGNsaWVudCBjcmVkZW50aWFscyIKfQ=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="401"/&gt;
@@ -3921,16 +4010,54 @@
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="========== Get client registration information =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_id"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_id"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_secret"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="client_secret"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:GenerateSecurityHash&gt;
+                    &lt;L7p:Algorithm stringValue="SHA-1"/&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Only sha1, but good enough for this use case"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="CacheKey"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:Base64Data stringValue="JHtjbGllbnRfaWR9JHtjbGllbnRfc2VjcmV0fQ=="/&gt;
+                    &lt;L7p:LineBreak lineBreak="CR-LF"/&gt;
+                    &lt;L7p:TargetOutputVariable stringValue="cacheKey"/&gt;
+                    &lt;/L7p:GenerateSecurityHash&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenEndpointCacheName}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${tokenEndpointCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="validationResult"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7Y2xpZW50X3NlY3JldH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7Y2xpZW50X3NlY3JldH0="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="validateRequest"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl
-                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/tokenrequest"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/tokenrequest"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -3947,6 +4074,17 @@
                     &lt;L7p:ResponseMsgDest stringValue="validationResult"/&gt;
                     &lt;L7p:SamlAssertionVersion intValue="2"/&gt;
                     &lt;/L7p:HttpRoutingAssertion&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenEndpointCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${tokenEndpointCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="validationResult"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:ResponseXpathAssertion&gt;
                     &lt;L7p:VariablePrefix stringValue=""/&gt;
                     &lt;L7p:XmlMsgSrc stringValue="validationResult"/&gt;
@@ -4073,6 +4211,20 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="errorCacheContent"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${tokenEndpointCacheName}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="5"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="errorCacheContent"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
                     &lt;L7p:HardcodedResponse&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
@@ -4082,8 +4234,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfY2xpZW50IiwKICAiZXJyb3JfZGVzY3JpcHRpb24iOiJDbGllbnQgYXV0aGVudGljYXRpb24gZmFpbGVkIgp9"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfY2xpZW50IiwKICAiZXJyb3JfZGVzY3JpcHRpb24iOiJDbGllbnQgYXV0aGVudGljYXRpb24gZmFpbGVkIgp9"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="401"/&gt;
@@ -4171,8 +4322,7 @@
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="If scope parameter is missing in the request, return the default scope.
-                    The default scope in from client registration"/&gt;
+                    &lt;L7p:value stringValue="If scope parameter is missing in the request, return the default scope.                     The default scope in from client registration"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
@@ -4285,8 +4435,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiTWlzc2luZyBhdXRob3JpemF0aW9uIGNvZGUiCn0="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfcmVxdWVzdCIsCiAgImVycm9yX2Rlc2NyaXB0aW9uIjoiTWlzc2luZyBhdXRob3JpemF0aW9uIGNvZGUiCn0="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -4325,15 +4474,13 @@
                     &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9pZH0mdG9rZW49JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmNvZGV9JmNhbGxiYWNrPSR7Y2FsbGJhY2t9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="Y2xpZW50X2tleT0ke2NsaWVudF9pZH0mdG9rZW49JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmNvZGV9JmNhbGxiYWNrPSR7Y2FsbGJhY2t9"/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="toValidation"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl
-                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/granttype"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/granttype"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -4454,8 +4601,7 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Delete the authorization code. The authorization code should
-                    be consumed at most once. =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Delete the authorization code. The authorization code should                     be consumed at most once. =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="dGVtcF90b2tlbj0ke3JlcXVlc3QuaHR0cC5wYXJhbWV0ZXIuY29kZX0="/&gt;
@@ -4503,13 +4649,11 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4523,13 +4667,11 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4591,8 +4733,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6Ik11c3QgYmUgY29uZmlkZW50aWFsIGNsaWVudCIKfQ=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6Ik11c3QgYmUgY29uZmlkZW50aWFsIGNsaWVudCIKfQ=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -4638,13 +4779,11 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iDQp9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iDQp9"/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4658,13 +4797,11 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9JnNlY3JldD0ke21hY19zZWNyZXR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9JnNlY3JldD0ke21hY19zZWNyZXR9"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iLA0KICAibWFjX2tleSI6IiR7bWFjX3NlY3JldH0iLA0KICAibWFjX2FsZ29yaXRobSI6ImhtYWMtc2hhLTEiDQp9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iLA0KICAibWFjX2tleSI6IiR7bWFjX3NlY3JldH0iLA0KICAibWFjX2FsZ29yaXRobSI6ImhtYWMtc2hhLTEiDQp9"/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4751,8 +4888,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6IlJlc291cmNlIE93bmVyIGF1dGhlbnRpY2F0aW9uIGZhaWxlZCIKfQ=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6IlJlc291cmNlIE93bmVyIGF1dGhlbnRpY2F0aW9uIGZhaWxlZCIKfQ=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -4798,13 +4934,11 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4818,13 +4952,11 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -4893,13 +5025,11 @@
                     &lt;L7p:TransformType transformType="BASE64_DECODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="========== Validate the trusted issuer by adding a FIP here
-                    =========="/&gt;
+                    &lt;L7p:Comment stringValue="========== Validate the trusted issuer by adding a FIP here                     =========="/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;L7p:ValidateNonSoapSamlToken&gt;
-                    &lt;L7p:AudienceRestriction
-                    stringValue="${request.url.protocol}://${request.url.host}:${request.url.port}${request.http.uri}"/&gt;
+                    &lt;L7p:AudienceRestriction stringValue="${request.url.protocol}://${request.url.host}:${request.url.port}${request.http.uri}"/&gt;
                     &lt;L7p:AuthenticationStatement samlAuthenticationInfo="included"&gt;
                     &lt;L7p:AuthenticationMethods stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="urn:ietf:rfc:1510"/&gt;
@@ -4936,8 +5066,7 @@
                     &lt;L7p:NameQualifier stringValue=""/&gt;
                     &lt;L7p:OtherTargetMessageVariable stringValue="bearerToken"/&gt;
                     &lt;L7p:SubjectConfirmationDataCheckValidity booleanValue="false"/&gt;
-                    &lt;L7p:SubjectConfirmationDataRecipient
-                    stringValue="${request.url.protocol}://${request.url.host}:${request.url.port}${request.http.uri}"/&gt;
+                    &lt;L7p:SubjectConfirmationDataRecipient stringValue="${request.url.protocol}://${request.url.host}:${request.url.port}${request.http.uri}"/&gt;
                     &lt;L7p:SubjectConfirmations stringArrayValue="included"&gt;
                     &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:bearer"/&gt;
                     &lt;/L7p:SubjectConfirmations&gt;
@@ -4953,8 +5082,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6IkFzc2VydGlvbiB2YWxpZGF0aW9uIGZhaWxlZCIKfQo="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="ewogICJlcnJvciI6ImludmFsaWRfZ3JhbnQiLAogICJlcnJvcl9kZXNjcmlwdGlvbiI6IkFzc2VydGlvbiB2YWxpZGF0aW9uIGZhaWxlZCIKfQo="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="application/json; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="401"/&gt;
@@ -5004,13 +5132,11 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iDQp9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iDQp9"/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -5024,13 +5150,11 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9JnNlY3JldD0ke21hY19zZWNyZXR9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnNjb3BlPSR7c2NvcGV9JnJlc291cmNlX293bmVyPSR7b3duZXJ9JmNsaWVudF9rZXk9JHtjbGllbnRfaWR9JnNlY3JldD0ke21hY19zZWNyZXR9"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iLA0KICAibWFjX2tleSI6IiR7bWFjX3NlY3JldH0iLA0KICAibWFjX2FsZ29yaXRobSI6ImhtYWMtc2hhLTEiDQp9"/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInNjb3BlIjoiJHtzY29wZX0iLA0KICAibWFjX2tleSI6IiR7bWFjX3NlY3JldH0iLA0KICAibWFjX2FsZ29yaXRobSI6ImhtYWMtc2hhLTEiDQp9"/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -5073,8 +5197,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="c2NvcGU9JHtzY29wZX0mcnRva2VuPSR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5yZWZyZXNoX3Rva2VufSZjbGllbnRfa2V5PSR7Y2xpZW50X2lkfQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="c2NvcGU9JHtzY29wZX0mcnRva2VuPSR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5yZWZyZXNoX3Rva2VufSZjbGllbnRfa2V5PSR7Y2xpZW50X2lkfQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="toValidation"/&gt;
@@ -5082,8 +5205,7 @@
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl
-                    stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/refreshtoken"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_ovp_server}/oauth/validation/validate/v2/refreshtoken"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
@@ -5216,13 +5338,11 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6IkJlYXJlciIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -5236,13 +5356,11 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="dG9rZW49JHthdF90b2tlbn0mZXhwaXJhdGlvbj0ke2F0X2V4cGlyYXRpb259JnJ0b2tlbj0ke3J0b2tlbn0mcmV4cGlyYXRpb249JHtyZXhwaXJhdGlvbn0mc2NvcGU9JHtzY29wZX0mcmVzb3VyY2Vfb3duZXI9JHtvd25lcn0mY2xpZW50X2tleT0ke2NsaWVudF9pZH0mc2VjcmV0PSR7bWFjX3NlY3JldH0="/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
+                    &lt;L7p:Base64Expression stringValue="ew0KICAiYWNjZXNzX3Rva2VuIjoiJHthdF90b2tlbn0iLA0KICAidG9rZW5fdHlwZSI6Im1hYyIsDQogICJleHBpcmVzX2luIjoke29hdXRoMl9hY2Nlc3NfdG9rZW5fbGlmZXRpbWVfc2VjfSwNCiAgInJlZnJlc2hfdG9rZW4iOiIke3J0b2tlbn0iLA0KICAic2NvcGUiOiIke3Njb3BlfSIsDQogICJtYWNfa2V5IjoiJHttYWNfc2VjcmV0fSIsDQogICJtYWNfYWxnb3JpdGhtIjoiaG1hYy1zaGEtMSINCn0="/&gt;
                     &lt;L7p:VariableToSet stringValue="clientResponse"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:assertionComment&gt;
@@ -5264,8 +5382,7 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="cnRva2VuPSR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5yZWZyZXNoX3Rva2VufQ=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="cnRva2VuPSR7cmVxdWVzdC5odHRwLnBhcmFtZXRlci5yZWZyZXNoX3Rva2VufQ=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="deleteRtoken"/&gt;
@@ -5323,8 +5440,7 @@
                     &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
                     &lt;/L7p:EncodeDecode&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="JHtzdG9yZVRva2VufSZjbGllbnRfbmFtZT0ke2NsaWVudF9uYW1lfSZzdGF0dXM9RU5BQkxFRA=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtzdG9yZVRva2VufSZjbGllbnRfbmFtZT0ke2NsaWVudF9uYW1lfSZzdGF0dXM9RU5BQkxFRA=="/&gt;
                     &lt;L7p:ContentType stringValue="application/x-www-form-urlencoded"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="storeToken"/&gt;
@@ -5386,7 +5502,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a77d3"
                 version="2">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a77d3" version="2">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a77d3" version="2">
             <l7:Name>REST STS</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
