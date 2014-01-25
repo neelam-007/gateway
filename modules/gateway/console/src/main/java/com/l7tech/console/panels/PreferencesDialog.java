@@ -47,12 +47,15 @@ public class PreferencesDialog extends JDialog {
     private JButton cancelButton;
     private JButton helpButton;
     private JTextField maxNumTabTextField;
+    private JRadioButton wrapTabsRadioButton;
+    private JRadioButton scrollTabsRadioButton;
 
     /** preferences instance */
     private Properties props;
     private int previousMaxLeft;
     private int previousMaxRight;
     private boolean commentSizeChanged;
+    private int previousTabLayout;
 
 
     /**
@@ -312,13 +315,21 @@ public class PreferencesDialog extends JDialog {
                 }
             } catch (NumberFormatException e) {
                 DialogDisplayer.showMessageDialog(this,
-                    "The value of 'Maximum Policy Tabs' must be an integer between 1 and 100 inclusively.",
+                    "The value of 'Maximum Policy Tabs' must be an integer between 1 and 100 inclusive.",
                     "Bad Maximum Policy Tabs", JOptionPane.WARNING_MESSAGE, null);
 
                 return false;
             }
             getPreferences().setProperty(SsmPreferences.MAX_NUM_POLICY_TABS, String.valueOf(numOfTabs));
 
+            if (!wrapTabsRadioButton.isSelected() && !scrollTabsRadioButton.isSelected()) {
+                DialogDisplayer.showMessageDialog(this,
+                    "The option of 'Policy Tabs Layout' is not chosen.",
+                    "Miss Policy Tabs Layout", JOptionPane.WARNING_MESSAGE, null);
+
+                return false;
+            }
+            getPreferences().setProperty(SsmPreferences.POLICY_TABS_LAYOUT, String.valueOf(wrapTabsRadioButton.isSelected()? 0 : 1));
 
             return true;
         } catch (IOException e) {
@@ -354,6 +365,24 @@ public class PreferencesDialog extends JDialog {
             }
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error saving Preferences", e);
+        }
+
+        final int currentTabLayout = wrapTabsRadioButton.isSelected()? 0 : 1;
+        if (previousTabLayout != currentTabLayout) {
+            final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+            final JTabbedPane tabbedPane = cw.getTabbedPane();
+            final JComponent selectedComponent = cw.getComponent();
+
+            tabbedPane.setTabLayoutPolicy(currentTabLayout);
+
+            // Reset the selection to let the selected component be visible in the policy editor
+            tabbedPane.setSelectedIndex(-1);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    tabbedPane.setSelectedComponent(selectedComponent);
+                }
+            });
         }
     }
 
@@ -398,6 +427,7 @@ public class PreferencesDialog extends JDialog {
             maxRightCommentTextField.setText(Integer.toString(maxRightComment));
             previousMaxRight = maxRightComment;
 
+            // Load Maximum Policy Tabs
             String numOfTabsProp = getPreferences().getProperty(SsmPreferences.MAX_NUM_POLICY_TABS);
             int numOfTabs = SsmPreferences.DEFAULT_MAX_NUM_POLICY_TABS;
             try {
@@ -408,6 +438,25 @@ public class PreferencesDialog extends JDialog {
                 // swallow; bad property value
             }
             maxNumTabTextField.setText(String.valueOf(numOfTabs));
+
+            // Load Policy Tabs Layout Option
+            String optionProp = getPreferences().getProperty(SsmPreferences.POLICY_TABS_LAYOUT);
+            int option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+            try {
+                if (optionProp != null) {
+                    option = Integer.parseInt(optionProp);
+                }
+                // The tab layout option must be either 0 or 1, since WRAP_TAB_LAYOUT = 0 and SCROLL_TAB_LAYOUT = 1.
+                if (option != 0 && option != 1) {
+                    option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+                }
+            } catch (NumberFormatException e) {
+                // swallow; bad property value
+            }
+            previousTabLayout = option;
+
+            wrapTabsRadioButton.setSelected(option == 0);
+            scrollTabsRadioButton.setSelected(option == 1);
 
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);

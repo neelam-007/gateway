@@ -191,7 +191,21 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
             rootNode.removeAlias(oldServiceGoid, node);
         }
 
-        // Remove all tabs related to the deleted entity node.
-        creg.getCurrentWorkspace().removeTabsRelatedToPolicyNode(entityNode);
+        // Delete policy tab settings from all policy tab properties, The entity node is used to retrieve the policy GOID.
+        // So any policy tabs whose policy version has the policy GOID would be candidates.
+        if (this instanceof DeletePolicyAction || this instanceof DeleteServiceAction) {
+            try {
+                final Goid policyGoid = entityNode.getPolicy().getGoid();
+                creg.getCurrentWorkspace().deletePolicyTabSettingsByPolicyGoid(policyGoid);
+            } catch (FindException e) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "Cannot find the policy, '" + entityNode.getName() + "'.",
+                    "Delete Policy Tab Settings Error", JOptionPane.WARNING_MESSAGE, null);
+                return;
+            }
+        }
+
+        // Close all tabs related to the deleted entity node.
+        creg.getCurrentWorkspace().closeTabsRelatedToPolicyNode(entityNode);
     }
 }

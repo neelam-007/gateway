@@ -180,7 +180,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageKerberosAction manageKerberosAction = null;
     private ManageRolesAction manageRolesAction = null;
     private ManageResolutionConfigurationAction manageServiceResolutionAction = null;
-    private HomeAction homeAction = new HomeAction();
+    private HomeAction homeAction;
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
     private NewBindOnlyLdapProviderAction newBindOnlyLdapProviderAction;
@@ -1267,6 +1267,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return connectAction;
     }
 
+    private HomeAction getHomeAction() {
+        if (homeAction == null) {
+            homeAction = new HomeAction();
+        }
+
+        return homeAction;
+    }
+
     /**
      * Enable or disable the connection button in the tool bar and the connection menu item in the main menu.
      *
@@ -1762,7 +1770,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             getServiceUDDISettingsMenuItem().setEnabled(connected);
             getDeleteServiceMenuItem().setEnabled(connected);
         }
-        homeAction.setEnabled(connected);
+        getHomeAction().setEnabled(connected);
     }
 
 
@@ -1789,7 +1797,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JPanel
      */
-    private JPanel getMainSplitPaneRight() {
+    public JPanel getMainSplitPaneRight() {
         if (mainSplitPaneRight != null)
             return mainSplitPaneRight;
 
@@ -2598,7 +2606,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         tbadd(toolBarPane, getConnectAction());
         tbadd(toolBarPane, getDisconnectAction());
         tbadd(toolBarPane, getRefreshAction());
-        tbadd(toolBarPane, homeAction);
+        tbadd(toolBarPane, getHomeAction());
 
         if (isApplet()) {
             // Ensure that clipboard actions get initialized properly, even though we won't display this menu
@@ -3969,7 +3977,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     try {
                         initializeWorkspace();
                         toggleConnectedMenus(true);
-                        homeAction.actionPerformed(null);
+                        getHomeAction().actionPerformed(null);
                         MainWindow.this.
                                 setInactivitiyTimeout(timeout);
                         MainWindow.this.fireConnected();

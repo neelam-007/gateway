@@ -64,6 +64,11 @@ public interface SsmPreferences {
     * */
     String MAX_NUM_POLICY_TABS = "maximum.number.policy.tabs";
 
+    /*
+    * key for value for policy tabs arrangement option in the policy editor editor workspace
+    * */
+    String POLICY_TABS_LAYOUT = "policy.tabs.layout";
+
     /**
      * toolbars property (icons, text, icons and text)
      */
@@ -107,6 +112,7 @@ public interface SsmPreferences {
     int DEFAULT_MAX_LEFT_COMMENT = 30;
     int DEFAULT_MAX_RIGHT_COMMENT = 100;
     int DEFAULT_MAX_NUM_POLICY_TABS = 30;
+    int DEFAULT_POLICY_TABS_LAYOUT = 0; // WRAP_TAB_LAYOUT = 0; SCROLL_TAB_LAYOUT = 1
 
     /**
      * Update preferences from given properties, optionally

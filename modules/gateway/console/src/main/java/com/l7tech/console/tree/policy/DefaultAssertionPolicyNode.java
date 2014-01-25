@@ -69,9 +69,14 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
      * @return the updated displayText, which may have had a comment added to the start or end
      */
     public static String addCommentToDisplayText(Assertion assertion, String displayText){
-        final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-        final String showState = preferences.getString(PolicyEditorPanel.SHOW_COMMENTS);
-        final boolean shown = Boolean.parseBoolean(showState);
+        final PolicyTree policyTree = (PolicyTree) TopComponents.getInstance().getPolicyTree();
+        final PolicyEditorPanel pep = policyTree.getPolicyEditorPanel();
+        if (pep == null) {
+            return displayText;
+        }
+
+        final boolean shown = Boolean.parseBoolean(pep.getTabSettingFromPolicyTabProperty(
+            PolicyEditorPanel.POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, PolicyEditorPanel.SHOW_COMMENTS, "false"));
         if(!shown) return displayText;
 
         Assertion.Comment comment = assertion.getAssertionComment();
