@@ -131,6 +131,7 @@ public class BundleResource {
                 })) {
                     continue;
                 }
+                // todo add handling for groups,users
                 RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
                 Item resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
                 filterLinks(resource);

@@ -1,15 +1,19 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -96,6 +100,22 @@ public class DependencyResource {
         RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
         if(restEntityResource != null) {
             return restEntityResource.toReference(entityHeader);
+        }
+        // handle special cases, user, groups
+        try {
+            if(entityHeader instanceof IdentityHeader){
+                restEntityResource = restResourceLocator.findByEntityType(EntityType.ID_PROVIDER_CONFIG);
+                assert restEntityResource instanceof IdentityProviderResource;
+                if(entityHeader.getType().equals(EntityType.USER)){
+                    UserResource userResource = ((IdentityProviderResource) restEntityResource).users(((IdentityHeader) entityHeader).getProviderGoid().toString());
+                    return userResource.toReference((IdentityHeader)entityHeader);
+                }if(entityHeader.getType().equals(EntityType.GROUP)){
+                    GroupResource groupResource = ((IdentityProviderResource) restEntityResource).groups(((IdentityHeader) entityHeader).getProviderGoid().toString());
+                    return groupResource.toReference((IdentityHeader)entityHeader);
+                }
+            }
+        } catch (ResourceFactory.ResourceNotFoundException e) {
+            throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType(), ExceptionUtils.getDebugException(e));
         }
         throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType());
     }

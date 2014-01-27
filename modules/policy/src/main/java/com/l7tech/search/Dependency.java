@@ -57,7 +57,9 @@ public @interface Dependency {
         SECURITY_ZONE(EntityType.SECURITY_ZONE),
         ENCAPSULATED_ASSERTION(EntityType.ENCAPSULATED_ASSERTION),
         POLICY_ALIAS(EntityType.POLICY_ALIAS),
-        SERVICE_ALIAS(EntityType.SERVICE_ALIAS);
+        SERVICE_ALIAS(EntityType.SERVICE_ALIAS),
+        USER(EntityType.USER),
+        GROUP(EntityType.GROUP);
 
         private EntityType entityType;
 

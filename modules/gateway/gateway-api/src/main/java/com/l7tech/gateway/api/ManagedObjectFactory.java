@@ -533,7 +533,23 @@ public class ManagedObjectFactory {
         return new PrivateKeyRestExport();
     }
 
+    /**
+     * Create a new UserMO instance.
+     *
+     * @return The new instance
+     */
+    public static UserMO createUserMO() {
+        return new UserMO();
+    }
 
+    /**
+     * Create a new GroupMO instance.
+     *
+     * @return The new instance
+     */
+    public static GroupMO createGroupMO() {
+        return new GroupMO();
+    }
 
     /**
      * Read a managed object from the given data.
