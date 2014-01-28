@@ -17,13 +17,14 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.message.AssertionTraceListener;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
+import com.l7tech.server.trace.TracePolicyEnforcementContext;
+import com.l7tech.server.trace.TracePolicyEvaluator;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
@@ -331,28 +332,115 @@ public class ServerEncapsulatedAssertionTest {
     @Test
     @BugId("FR-706")
     public void enableTracingIntoBackingPolicy() throws Exception {
+        // internal trace policy
+        String tracePolicyGuid = "1234567890";
+        when(utilConfig.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID)).thenReturn(tracePolicyGuid);
+
+        // internal trace policy - parent context trace handle
+        ServerPolicyHandle traceHandle = mock(ServerPolicyHandle.class);
+        final ObjectWrapper<TracePolicyEnforcementContext> traceContextReference = new ObjectWrapper<>();
+        when(traceHandle.checkRequest(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final Object[] args = invocationOnMock.getArguments();
+                traceContextReference.set((TracePolicyEnforcementContext) args[0]);
+                return AssertionStatus.NONE;
+            }
+        });
+
+        // internal trace policy - child context trace handle
+        ServerPolicyHandle childTraceHandle = mock(ServerPolicyHandle.class);
+        final ObjectWrapper<TracePolicyEnforcementContext> childTraceContextReference = new ObjectWrapper<>();
+        when(policyCache.getServerPolicy(tracePolicyGuid)).thenReturn(childTraceHandle);
+        when(childTraceHandle.checkRequest(any(PolicyEnforcementContext.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final Object[] args = invocationOnMock.getArguments();
+                childTraceContextReference.set((TracePolicyEnforcementContext) args[0]);
+                return AssertionStatus.NONE;
+            }
+        });
+
         // policy tracing enabled in parent context
-        AssertionTraceListener traceListener = mock(AssertionTraceListener.class);
-        context.setTraceListener(traceListener);
+        context.setTraceListener(TracePolicyEvaluator.createAndAttachToContext(context, traceHandle));
         context.pushAssertionOrdinal(1);
         context.pushAssertionOrdinal(2);
         context.pushAssertionOrdinal(3);
 
-        PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
-
-        // internal trace policy
-        String tracePolicyGuid = "1234567890";
-        when(utilConfig.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID)).thenReturn(tracePolicyGuid);
-        ServerPolicyHandle traceHandle = mock(ServerPolicyHandle.class);
-        when(policyCache.getServerPolicy(tracePolicyGuid)).thenReturn(traceHandle);
-
         // tracing must also be enabled in encapsulated assertion config
         config.putBooleanProperty(PROP_ALLOW_TRACING, true);
 
-        serverAssertion.enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));
+        // context variables common in both parent and child
+        final String in = "in";
+        final String inVal = "testInput";
+        final String out = "out";
+        final String outVal = "testOutput";
+        context.setVariable(in, inVal);
+        inParams.add(inputParam(in, DataType.STRING));
+        outParams.add(outputParam(out, DataType.STRING));
+
+        // parent or child specific context variables
+        final String parentOnly = "parentOnly";
+        final String parentOnlyVal = "parentOnlyVal";
+        context.setVariable(parentOnly, parentOnlyVal);
+        final String childOnly = "childOnly";
+        final String childOnlyVal = "childOnlyVal";
+
+        // mock execution of backing policy, save reference to child context
+        final ObjectWrapper<PolicyEnforcementContext> childContextReference = new ObjectWrapper<>();
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.singletonMap(out, outVal), AssertionStatus.NONE, new Functions.UnaryVoid<PolicyEnforcementContext>() {
+            @Override
+            public void call(PolicyEnforcementContext childContext) {
+                // verify ordinal path before context.popAssertionOrdinal() in finally block of ServerEncapsulatedAssertion.checkRequest(...)
+                assertEquals(context.getAssertionOrdinalPath(), childContext.getAssertionOrdinalPath());
+
+                // set child only context variable
+                childContext.setVariable(childOnly, childOnlyVal);
+
+                // save a reference to child context for more tests
+                childContextReference.set(childContext);
+            }
+        });
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        // trace executed in assertionFinished(...), which is called after normal Gateway execution (e.g. ServerConcurrentAllAssertion, ServerPolicy, ServerCompositeAssertion)
+        PolicyEnforcementContext childContext = childContextReference.get();
+        childContext.assertionFinished(serverAssertion, AssertionStatus.NONE);
+        context.assertionFinished(serverAssertion, AssertionStatus.NONE);
 
         assertTrue(childContext.hasTraceListener());
-        assertEquals(context.getAssertionOrdinalPath(), childContext.getAssertionOrdinalPath());
+
+        TracePolicyEnforcementContext traceContext = traceContextReference.get();
+        TracePolicyEnforcementContext childTraceContext = childTraceContextReference.get();
+
+        assertTrue(traceContext != childTraceContext);
+
+        // verify context variable visibility for parent and child
+        assertEquals(traceContext.getOriginalContextVariable(in), childTraceContext.getOriginalContextVariable(in));
+        try {
+            assertFalse(traceContext.getOriginalContextVariable(parentOnly).equals(childTraceContext.getOriginalContextVariable(parentOnly)));
+        } catch (NoSuchVariableException e) {
+            // expected do nothing
+        }
+        try {
+            assertFalse(traceContext.getOriginalContextVariable(childOnly).equals(childTraceContext.getOriginalContextVariable(childOnly)));
+        } catch (NoSuchVariableException e) {
+            // expected do nothing
+        }
+        assertEquals(traceContext.getOriginalContextVariable(out), childTraceContext.getOriginalContextVariable(out));
+    }
+
+    private class ObjectWrapper<T> {
+        T object;
+
+        public T get() {
+            return object;
+        }
+
+        public void set(T object) {
+            this.object = object;
+        }
     }
 
     private void checkContextVariableNotSet(final String varName) {
