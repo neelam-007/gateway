@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
@@ -9,6 +10,8 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.imp.*;
 import com.l7tech.test.BugId;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.GoidUpgradeMapperTestUtil;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -262,6 +265,25 @@ public class EntityHeaderUtilsTest {
         assertEquals(GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,"123"), LDAPIdHeader.getProviderGoid());
         assertEquals("cn=asdf", LDAPIdHeader.getStrId());
 
+    }
+
+    @BugId("EM-994")
+    @Test
+    public void clusterPropertyExternalHeaderTest() {
+        ClusterProperty cp = new ClusterProperty("MyProperty", "MyValue");
+        cp.setGoid(new Goid(123, 456));
+
+        EntityHeader cpHeader = EntityHeaderUtils.fromEntity(cp);
+
+        ExternalEntityHeader cpExternalHeader = EntityHeaderUtils.toExternal(cpHeader);
+
+        EntityHeader cpRecreatedHeader = EntityHeaderUtils.fromExternal(cpExternalHeader);
+
+        Assert.assertEquals(cpHeader.getName(), cpRecreatedHeader.getName());
+        Assert.assertEquals(cpHeader.getGoid(), cpRecreatedHeader.getGoid());
+        Assert.assertEquals(cpHeader.getDescription(), cpRecreatedHeader.getDescription());
+        Assert.assertEquals(cpHeader.getType(), cpRecreatedHeader.getType());
+        Assert.assertEquals(cpHeader.getVersion(), cpRecreatedHeader.getVersion());
     }
 
     private EncapsulatedAssertionConfig createEncapsulatedAssertionConfig(final Goid goid, final String guid, final String name, final Integer version, final SecurityZone zone) {

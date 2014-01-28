@@ -300,6 +300,7 @@ public final class EntityHeaderUtils {
                 break;
 
             case ENCAPSULATED_ASSERTION:
+            case CLUSTER_PROPERTY:
                 header = new GuidEntityHeader(eh.getStrId(), eh.getType(), eh.getName(), eh.getDescription(), eh.getVersion());
                 ((GuidEntityHeader) header).setGuid(eh.getStrId());
                 break;
