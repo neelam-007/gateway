@@ -1,6 +1,6 @@
 <l7:Bundle xmlns:l7="http://ns.l7tech.com/2012/09/policy-bundle" >
     <l7:Id>f69c7d15-4999-4761-ab26-d29d58c0dd57</l7:Id>
-    <l7:Version>2.1</l7:Version>
+    <l7:Version>2.1.1</l7:Version>
     <l7:Name>Secure Zone OVP</l7:Name>
     <l7:Description>OVP - OAuth Validation Point</l7:Description>
 </l7:Bundle>
