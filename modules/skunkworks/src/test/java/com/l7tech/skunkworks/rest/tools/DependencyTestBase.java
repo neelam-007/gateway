@@ -30,16 +30,16 @@ public abstract class DependencyTestBase {
     @Rule
     public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
-    private static JVMDatabaseBasedRestManagementEnvironment environment;
+    private static DatabaseBasedRestManagementEnvironment environment;
 
-    public static JVMDatabaseBasedRestManagementEnvironment getEnvironment() {
+    public static DatabaseBasedRestManagementEnvironment getEnvironment() {
         return environment;
     }
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         if (RunOnNightly.isNightly()) {
-            environment = new JVMDatabaseBasedRestManagementEnvironment("gateway");
+            environment = new DatabaseBasedRestManagementEnvironment();
         }
     }
     @Before

@@ -1,24 +1,23 @@
 package com.l7tech.skunkworks.rest;
 
-import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
-import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.xml.transform.stream.StreamSource;
-import java.io.StringReader;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -30,72 +29,54 @@ import static junit.framework.Assert.assertEquals;
 public class DependencyJdbcConnectionTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyJdbcConnectionTest.class.getName());
 
-    private Item<JDBCConnectionMO> jdbcConnectionItem;
-    private Item<JDBCConnectionMO> jdbcConnectionPasswordItem;
-    private Item<StoredPasswordMO> securePasswordItem;
-    private Item<SecurityZoneMO> securityZoneItem;
+    private final SecurePassword securePassword =  new SecurePassword();
+    private final JdbcConnection jdbcConnection =  new JdbcConnection();
+    private final JdbcConnection jdbcConnectionPassword =  new JdbcConnection();
+    private final SecurityZone securityZone =  new SecurityZone();
+    private SecurePasswordManager securePasswordManager;
+    private SecurityZoneManager securityZoneManager;
+    private JdbcConnectionManager jdbcConnectionManager;
 
     @Before
     public void before() throws Exception {
         super.before();
 
+        securePasswordManager = getEnvironment().getApplicationContext().getBean("ssgActiveConnectorManager", SecurePasswordManager.class);
+        securityZoneManager = getEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
+        jdbcConnectionManager = getEnvironment().getApplicationContext().getBean("jdbcConnectionManager", JdbcConnectionManager.class);
+
+
         //create security zone
-        SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
-        securityZoneMO.setName("Test security zone");
-        securityZoneMO.setPermittedEntityTypes(CollectionUtils.list(EntityType.ANY.toString()));
-        securityZoneMO.setDescription("stuff");
-        RestResponse response = getEnvironment().processRequest("securityZones", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(securityZoneMO)));
-        assertOkCreatedResponse(response);
-        securityZoneItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        securityZoneItem.setContent(securityZoneMO);
+        securityZone.setName("Test security zone");
+        securityZone.setPermittedEntityTypes(CollectionUtils.set(EntityType.ANY));
+        securityZone.setDescription("stuff");
+        securityZoneManager.save(securityZone);
 
         //create secure password
-        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
-        storedPasswordMO.setName("MyPassword");
-        storedPasswordMO.setPassword("password");
-        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("usageFromVariable", true)
-                .put("type", "Password")
-                .map());
-        response = getEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
-        assertOkCreatedResponse(response);
-        securePasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        securePasswordItem.setContent(storedPasswordMO);
+        securePassword.setName("MyPassword");
+        securePassword.setEncodedPassword("password");
+        securePassword.setUsageFromVariable(true);
+        securePassword.setType(SecurePassword.SecurePasswordType.PASSWORD);
+        securePasswordManager.save(securePassword);
 
         // create jdbc connection in security zone
-        JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
-        jdbcConnectionMO.setName("Test Connection");
-        jdbcConnectionMO.setEnabled(false);
-        jdbcConnectionMO.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
-        jdbcConnectionMO.setJdbcUrl("bad url");
-        jdbcConnectionMO.setConnectionProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("password", "password")
-                .put("user", "jdbcUserName")
-                .map());
-        jdbcConnectionMO.setSecurityZoneId(securityZoneItem.getId());
-        response = getEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
-        assertOkCreatedResponse(response);
-        jdbcConnectionItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        jdbcConnectionItem.setContent(jdbcConnectionMO);
+        jdbcConnection.setName("Test Connection");
+        jdbcConnection.setEnabled(false);
+        jdbcConnection.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
+        jdbcConnection.setJdbcUrl("bad url");
+        jdbcConnection.setPassword("password");
+        jdbcConnection.setUserName("jdbcUserName");
+        jdbcConnection.setSecurityZone(securityZone);
+        jdbcConnectionManager.save(jdbcConnection);
 
         // create jdbc connection with secure password
-        JDBCConnectionMO jdbcConnectionPasswordMO = ManagedObjectFactory.createJDBCConnection();
-        jdbcConnectionPasswordMO.setName("Test Connection Password");
-        jdbcConnectionPasswordMO.setEnabled(false);
-        jdbcConnectionPasswordMO.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
-        jdbcConnectionPasswordMO.setJdbcUrl("bad url");
-        jdbcConnectionPasswordMO.setConnectionProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("password", "${secpass.MyPassword.plaintext}")
-                .put("user", "jdbcUserName")
-                .map());
-        response = getEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionPasswordMO)));
-
-        assertOkCreatedResponse(response);
-
-        jdbcConnectionPasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        jdbcConnectionPasswordItem.setContent(jdbcConnectionPasswordMO);
+        jdbcConnectionPassword.setName("Test Connection Password");
+        jdbcConnectionPassword.setEnabled(false);
+        jdbcConnectionPassword.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
+        jdbcConnectionPassword.setJdbcUrl("bad url");
+        jdbcConnectionPassword.setPassword("${secpass.MyPassword.plaintext}");
+        jdbcConnectionPassword.setUserName("jdbcUserName");
+        jdbcConnectionManager.save(jdbcConnectionPassword);
 
 
     }
@@ -108,18 +89,11 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
     @After
     public void after() throws Exception {
         super.after();
+        securityZoneManager.delete(securityZone);
+        securePasswordManager.delete(securePassword);
+        jdbcConnectionManager.delete(jdbcConnection);
+        jdbcConnectionManager.delete(jdbcConnectionPassword);
 
-        RestResponse response = getEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
-
-        response = getEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
-
-        response = getEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
-
-        response = getEnvironment().processRequest("jdbcConnections/" + jdbcConnectionPasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
     }
 
     @Test
@@ -130,7 +104,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:JdbcQuery>\n" +
-                "        <L7p:ConnectionName stringValue=\""+jdbcConnectionItem.getName()+"\"/>\n" +
+                "        <L7p:ConnectionName stringValue=\""+jdbcConnection.getName()+"\"/>\n" +
                 "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
                 "            <L7p:SqlQuery stringValue=\"select * from blah\"/>\n" +
                 "        </L7p:JdbcQuery>\n" +
@@ -143,13 +117,13 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
             public void call(DependencyAnalysisMO dependencyAnalysisMO) {
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jdbcConnectionItem);
+                verifyItem(dep.getDependentObject(),jdbcConnection);
 
                 // verify security zone dependency
                 assertEquals(1,dep.getDependencies().size());
                 DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securityZoneItem.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securityZoneItem.getName(), passwordDep.getDependentObject().getName());
+                assertEquals(securityZone.getId(), passwordDep.getDependentObject().getId());
+                assertEquals(securityZone.getName(), passwordDep.getDependentObject().getName());
                 assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getDependentObject().getType());
             }
         });
@@ -162,7 +136,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                         "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                         "    <wsp:All wsp:Usage=\"Required\">\n" +
                         "        <L7p:JdbcQuery>\n" +
-                        "        <L7p:ConnectionName stringValue=\""+jdbcConnectionPasswordItem.getName()+"\"/>\n" +
+                        "        <L7p:ConnectionName stringValue=\""+jdbcConnection.getName()+"\"/>\n" +
                         "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
                         "            <L7p:SqlQuery stringValue=\"select * from blah\"/>\n" +
                         "        </L7p:JdbcQuery>\n" +
@@ -176,19 +150,19 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jdbcConnectionPasswordItem);
+                verifyItem(dep.getDependentObject(),jdbcConnection);
 
                 // verify password dependency
                 assertEquals(1,dep.getDependencies().size());
                 DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePasswordItem.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePasswordItem.getName(), passwordDep.getDependentObject().getName());
+                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
+                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
                 assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
             }
         });
     }
 
-    protected void verifyItem(Item item, Item<JDBCConnectionMO> jdbcConnectionItem){
+    protected void verifyItem(Item item, JdbcConnection jdbcConnectionItem){
         assertEquals(jdbcConnectionItem.getId(), item.getId());
         assertEquals(jdbcConnectionItem.getName(), item.getName());
         assertEquals(EntityType.JDBC_CONNECTION.toString(), item.getType());

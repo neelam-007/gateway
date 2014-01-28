@@ -475,7 +475,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
 
    @Transient
    public Map<String, String> getNtlmAuthenticationProviderProperties() {
-       TreeMap<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
+       Map<String, String> props = getProperty(NTLM_AUTHENTICATION_PROVIDER_PROPERTIES);
        if(props != null){
            return props;
        }

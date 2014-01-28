@@ -81,7 +81,7 @@ public class GroupResource implements ListingResource<GroupMO>, ReadingResource<
     }
 
     public Item toReference(IdentityHeader entityHeader) {
-        return new ItemBuilder<UserMO>(entityHeader.getName(), entityHeader.getStrId(), EntityType.USER.name())
+        return new ItemBuilder<UserMO>(entityHeader.getName(), entityHeader.getStrId(), EntityType.GROUP.name())
                 .addLink(ManagedObjectFactory.createLink("self",  getGroupUri(entityHeader.getName()).toString()))
                 .build();
     }

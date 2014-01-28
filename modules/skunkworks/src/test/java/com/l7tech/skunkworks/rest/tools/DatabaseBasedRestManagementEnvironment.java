@@ -171,7 +171,9 @@ public class DatabaseBasedRestManagementEnvironment {
             for (String header : response.getHeadersKnob().getHeaderNames()) {
                 headers.put(header, response.getHeadersKnob().getHeaderValues(header));
             }
-            return new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
+            RestResponse restResponse = new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
+            logger.log(Level.INFO, restResponse.toString());
+            return restResponse;
         } finally {
             ResourceUtils.closeQuietly(context);
         }
