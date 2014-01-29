@@ -136,9 +136,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   chage -m 1 -M 60 ssgconfig
 
   echo "GEN000580, GEN000600, GEN000620 GEN000640, CCE-26615-5"
+  sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
   for FILE_TO_EDIT in `echo "/etc/pam.d/system-auth-ac /etc/pam.d/system-auth"`; do
-	sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
-	sed -i -e 's/\(password\s*requisite\s*.*pam_cracklib.so\)\(\s.*\)/\1 retry=3 difok=4 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' "$FILE_TO_EDIT"
+	sed -i -e 's/\(password\s*requisite\s*.*pam_cracklib.so\)\(\s.*\)/\1 retry=3 difok=4 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2 enforce_for_root/' "$FILE_TO_EDIT"
   done
 
   echo "GEN000800 CCE-26741-9 CCE-26303-8"
@@ -238,6 +238,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   chmod 700 /etc/cron.monthly/* 2> /dev/null
   chmod 700 /etc/cron.weekly/* 2> /dev/null
 
+  echo "restrict permissions for files in /etc/cron.d"
+  chmod 600 /etc/cron.d/* 2> /dev/null
+  
   echo "GEN003320"
   touch /etc/at.allow
   chmod 600 /etc/at.allow
@@ -263,6 +266,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
   echo "GEN005360"
   chgrp sys /etc/snmp/snmpd.conf
+  
+  echo "GEN005320"
+  chmod 600 /etc/snmp/snmpd.conf
 
   echo "GEN005400"
   chmod 640 /etc/rsyslog.conf
