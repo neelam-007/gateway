@@ -40,6 +40,9 @@ import java.util.logging.Logger;
 
 /**
  * This will bring up an entire database backed rest management assertion environment.
+ * In order to run any tests locally that use this Class you must first run
+ * ./build.sh clean dev -Dproject.module.excludes=""
+ * in order to populate the modules dir.
  */
 public class DatabaseBasedRestManagementEnvironment {
     private static final Logger logger = Logger.getLogger(DatabaseBasedRestManagementEnvironment.class.getName());
@@ -56,7 +59,7 @@ public class DatabaseBasedRestManagementEnvironment {
         SyspropUtil.setProperty("com.l7tech.server.logDirectory", this.getClass().getResource("/gateway/logs").getPath());
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
-        SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "build/modules");
+        SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "modules/skunkworks/build/modules");
 
         applicationContext = new ClassPathXmlApplicationContext(
                 "/com/l7tech/server/resources/testEmbeddedDbContext.xml",

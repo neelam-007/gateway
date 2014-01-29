@@ -1,4 +1,4 @@
-<project name="layer7-skunkworks" default="compile">
+<project name="layer7-skunkworks" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
     <!-- dummy main so that the classpath is built -->
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
@@ -7,7 +7,7 @@
 
     <import file="../../etc/build/build-common.xml"/>
 
-    <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool, package.signer"/>
+    <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool, package.signer, populate-modules-dir"/>
 
     <!--
       Package the RandomXmlGenerator
@@ -158,4 +158,13 @@
             </manifest>
         </jar>
     </target>
+
+    <target name="populate-modules-dir">
+        <ivy:resolve file="${src.root}/modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client,module-optional" log="quiet" checkIfChanged="false"/>
+
+        <delete dir="${build.dir}/modules"/>
+        <mkdir dir="${build.dir}/modules"/>
+        <ivy:retrieve conf="module,module-client" pattern="${build.dir}/modules/[artifact]-[revision].[ext]"/>
+    </target>
+
 </project>
