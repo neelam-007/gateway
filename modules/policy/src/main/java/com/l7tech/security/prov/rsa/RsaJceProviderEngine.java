@@ -3,13 +3,13 @@ package com.l7tech.security.prov.rsa;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +21,7 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final String PROP_FIPS = "com.l7tech.security.fips.enabled";
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
     private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
+    private static final String PROP_CRYPTOJ_DEFAULT_RANDOM_ALG = "com.rsa.crypto.default.random";
 
     private static final boolean FIPS = ConfigFactory.getBooleanProperty( PROP_FIPS, false );
 
@@ -31,13 +32,17 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final Provider TLS10_PROVIDER;
     private static final Provider TLS12_PROVIDER;
 
-    private static final String defaultSecureRandom;
-
     // A GCM IV full of zero bytes, for sanity checking IVs
     private static final byte[] ZERO_IV = new byte[12];
 
     static {
         try {
+            String randomAlg = SyspropUtil.getProperty( PROP_CRYPTOJ_DEFAULT_RANDOM_ALG );
+            if ( randomAlg == null ) {
+                // If no other default is selected, make sure the default is not Dual EC DRBG
+                SyspropUtil.setProperty( PROP_CRYPTOJ_DEFAULT_RANDOM_ALG, "FIPS186PRNG" );
+            }
+
             final boolean permafips = ConfigFactory.getBooleanProperty( PROP_PERMAFIPS, false );
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
@@ -49,7 +54,6 @@ public class RsaJceProviderEngine extends JceProvider {
                     logger.severe("RSA library failed to initialize in FIPS 140 mode");
                     throw new RuntimeException("RSA JCE Provider is supposed to be in FIPS mode but is not");
                 }
-                defaultSecureRandom = "FIPS186PRNG"; // Use faster but still-FIPS-certified PRNG for things like TLS
 
             } else {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
@@ -58,7 +62,6 @@ public class RsaJceProviderEngine extends JceProvider {
                     cryptoj.setMode(cryptoj.NON_FIPS140_MODE);
                 PROVIDER = cryptoj.provider;
                 Security.addProvider(PROVIDER);
-                defaultSecureRandom = null;
             }
             logger.info("RSA Crypto-J version: " + String.valueOf(cryptoj.getVersion()));
             PKCS12_PROVIDER = findPkcs12Provider(cryptoj.provider.getClass().getClassLoader());
@@ -130,7 +133,7 @@ public class RsaJceProviderEngine extends JceProvider {
         }
 
         // Prefer SunJSSE as TLS 1.0 provider since it currently has cleaner TrustManager behavior
-        Provider prov = findSunJsseProvider(cryptojClassLoader);
+        Provider prov = findSunJsseProvider( cryptojClassLoader );
         if (prov != null) {
             logger.fine("Using SunJSSE as TLS 1.0 provider");
             return prov;
@@ -207,16 +210,6 @@ public class RsaJceProviderEngine extends JceProvider {
     @Override
     public Provider getBlockCipherProvider() {
         return PROVIDER;
-    }
-
-    @Override
-    public SecureRandom newSecureRandom() {
-        try {
-            return defaultSecureRandom == null ? super.newSecureRandom() : SecureRandom.getInstance(defaultSecureRandom);
-        } catch (NoSuchAlgorithmException e) {
-            logger.log(Level.WARNING, "Unable to initialize preferred SecureRandom implementation of " + defaultSecureRandom + "; will use system default instead: " + ExceptionUtils.getMessage(e), e);
-            return super.newSecureRandom();
-        }
     }
 
     @Override

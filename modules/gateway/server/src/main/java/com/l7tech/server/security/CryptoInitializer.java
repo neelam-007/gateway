@@ -12,6 +12,7 @@ import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.security.SecureRandom;
 import java.util.logging.Logger;
 
 /**
@@ -50,6 +51,14 @@ public class CryptoInitializer implements ApplicationListener {
                 logger.severe(msg);
                 throw new IllegalStateException(msg);
             }
+
+            // Double check random number generator is not Dual EC DRBG
+            if ( SyspropUtil.getBoolean( "com.l7tech.security.rng.blacklist.ecdrbg", true ) && new SecureRandom().getAlgorithm().toUpperCase().trim().contains( "ECDRBG" ) ) {
+                final String msg = "FATAL: Default SecureRandom algorithm appears to be Dual EC DRBG, which is not permitted.  Set system property com.l7tech.security.rng.blacklist.ecdrbg=false to override";
+                logger.severe( msg );
+                throw new RuntimeException( msg );
+            }
+
             WssProcessorAlgorithmFactory.clearAlgorithmPools();
         } else if (applicationEvent instanceof Initialized) {
             WssProcessorAlgorithmFactory.clearAlgorithmPools();
