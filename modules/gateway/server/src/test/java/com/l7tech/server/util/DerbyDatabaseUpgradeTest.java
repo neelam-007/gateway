@@ -2,7 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.DbUpgradeUtil;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.db.DbCompareTestUtils;
@@ -27,7 +27,7 @@ import java.sql.SQLException;
  *
  * @author Victor Kazakov
  */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 @RunWith(MockitoJUnitRunner.class)
 public class DerbyDatabaseUpgradeTest {
 

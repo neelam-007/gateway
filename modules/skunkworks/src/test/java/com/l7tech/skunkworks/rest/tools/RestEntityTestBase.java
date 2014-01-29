@@ -2,7 +2,7 @@ package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
@@ -16,7 +16,7 @@ public abstract class RestEntityTestBase {
     @BeforeClass
     public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
         //need to only start this on a nightly build
-        if(RunOnNightly.isNightly() && databaseBasedRestManagementEnvironment == null){
+        if(!IgnoreOnDaily.isDaily() && databaseBasedRestManagementEnvironment == null){
             databaseBasedRestManagementEnvironment = new DatabaseBasedRestManagementEnvironment();
         }
     }

@@ -9,7 +9,7 @@ import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
@@ -19,7 +19,7 @@ import org.junit.Before;
 import java.net.URLEncoder;
 import java.util.*;
 
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgActiveConnector, ActiveConnectorMO> {
     private SsgActiveConnectorManager ssgActiveConnectorManager;
     private List<SsgActiveConnector> activeConnectors = new ArrayList<>();

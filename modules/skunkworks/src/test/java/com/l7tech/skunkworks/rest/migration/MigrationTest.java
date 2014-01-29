@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 /**
  * This will test migration using the rest api from one gateway to another.
  */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(MigrationTest.class.getName());
 

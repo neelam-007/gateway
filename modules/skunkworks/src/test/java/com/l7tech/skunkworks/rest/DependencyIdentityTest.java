@@ -15,7 +15,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.junit.*;
@@ -28,7 +28,7 @@ import static junit.framework.Assert.assertNotNull;
 /**
 *
 */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyIdentityTest extends DependencyTestBase {
     private static final Logger logger = Logger.getLogger(DependencyIdentityTest.class.getName());
 
@@ -295,7 +295,6 @@ public class DependencyIdentityTest extends DependencyTestBase {
     }
 
     @Test
-    @Ignore
     public void identityAttributesAssertionTest() throws Exception {
 
         final String assXml =
@@ -351,7 +350,6 @@ public class DependencyIdentityTest extends DependencyTestBase {
     }
 
     @Test
-    @Ignore
     public void ldapQueryAssertionTest() throws Exception {
 
         final String assXml =
@@ -400,7 +398,6 @@ public class DependencyIdentityTest extends DependencyTestBase {
         });
     }
 
-    @Ignore
     @Test
     public void requireNTLMAuthCredsAssertionTest() throws Exception {
 

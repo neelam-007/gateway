@@ -7,8 +7,6 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.test.conditional.ConditionalIgnoreRule;
-import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;

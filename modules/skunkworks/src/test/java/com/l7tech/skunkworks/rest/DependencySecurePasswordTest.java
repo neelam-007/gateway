@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.Functions;
 import org.junit.*;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNull;
 /**
 *
 */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencySecurePasswordTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencySecurePasswordTest.class.getName());
 
@@ -84,7 +84,6 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @Test
-    @Ignore
     public void ftpRoutingAssertionTest() throws Exception {
 
         final String assXml =
@@ -233,7 +232,6 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @Test
-    @Ignore
     public void sshRoutingAssertionTest() throws Exception {
 
         final String assXml =

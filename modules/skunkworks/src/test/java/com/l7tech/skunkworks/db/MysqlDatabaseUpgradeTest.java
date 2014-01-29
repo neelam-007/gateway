@@ -5,7 +5,7 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.db.DbCompareTestUtils;
 import org.junit.*;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  *
  * @author Victor Kazakov
  */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 @RunWith(MockitoJUnitRunner.class)
 public class MysqlDatabaseUpgradeTest {
     private static final Logger logger = Logger.getLogger(MysqlDatabaseUpgradeTest.class.getName());

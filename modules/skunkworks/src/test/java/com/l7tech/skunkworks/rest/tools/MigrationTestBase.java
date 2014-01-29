@@ -7,7 +7,7 @@ import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamResult;
@@ -26,7 +26,7 @@ public abstract class MigrationTestBase {
 
     @BeforeClass
     public static void beforeClass() throws IOException, IllegalAccessException, InstantiationException {
-        if (RunOnNightly.isNightly()) {
+        if (!IgnoreOnDaily.isDaily()) {
             sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("srcgateway");
             targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("trggateway");
         }

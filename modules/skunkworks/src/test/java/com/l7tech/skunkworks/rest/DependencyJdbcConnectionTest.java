@@ -11,7 +11,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
-import com.l7tech.test.conditional.RunOnNightly;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.junit.After;
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 /**
 *
 */
-@ConditionalIgnore(condition = RunOnNightly.class)
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyJdbcConnectionTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyJdbcConnectionTest.class.getName());
 
