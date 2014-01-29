@@ -28,6 +28,10 @@ public interface DependencyAnalyzer {
 
     public static final String IgnoreSearchOptionKey = "Ignore";
 
+    public static final String FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey = "findSecurePasswordDependencyFromContextVariablePlaintext";
+
+    public static final String FindSecurePasswordDependencyFromContextVariableDescriptionOptionKey = "findSecurePasswordDependencyFromContextVariableDescription";
+
     /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling getDependencies(entity,
      * DefaultSearchOptions)

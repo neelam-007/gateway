@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -21,6 +22,7 @@ import org.junit.Test;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
 *
@@ -41,9 +43,9 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
     public void before() throws Exception {
         super.before();
 
-        securePasswordManager = getEnvironment().getApplicationContext().getBean("ssgActiveConnectorManager", SecurePasswordManager.class);
-        securityZoneManager = getEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
-        jdbcConnectionManager = getEnvironment().getApplicationContext().getBean("jdbcConnectionManager", JdbcConnectionManager.class);
+        securePasswordManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
+        securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
+        jdbcConnectionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("jdbcConnectionManager", JdbcConnectionManager.class);
 
 
         //create security zone
@@ -82,7 +84,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
         DependencyTestBase.beforeClass();
     }
 
@@ -111,10 +113,12 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),jdbcConnection);
@@ -136,21 +140,23 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                         "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                         "    <wsp:All wsp:Usage=\"Required\">\n" +
                         "        <L7p:JdbcQuery>\n" +
-                        "        <L7p:ConnectionName stringValue=\""+jdbcConnection.getName()+"\"/>\n" +
+                        "        <L7p:ConnectionName stringValue=\""+jdbcConnectionPassword.getName()+"\"/>\n" +
                         "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
                         "            <L7p:SqlQuery stringValue=\"select * from blah\"/>\n" +
                         "        </L7p:JdbcQuery>\n" +
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+                
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jdbcConnection);
+                verifyItem(dep.getDependentObject(),jdbcConnectionPassword);
 
                 // verify password dependency
                 assertEquals(1,dep.getDependencies().size());

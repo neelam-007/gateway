@@ -24,24 +24,9 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertNotNull;
 
 @Ignore
-public abstract class DependencyTestBase {
+public abstract class DependencyTestBase extends RestEntityTestBase{
     private static final Logger logger = Logger.getLogger(DependencyTestBase.class.getName());
 
-    @Rule
-    public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
-
-    private static DatabaseBasedRestManagementEnvironment environment;
-
-    public static DatabaseBasedRestManagementEnvironment getEnvironment() {
-        return environment;
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        if (RunOnNightly.isNightly()) {
-            environment = new DatabaseBasedRestManagementEnvironment();
-        }
-    }
     @Before
     public void before() throws Exception {
 
@@ -71,7 +56,7 @@ public abstract class DependencyTestBase {
         Assert.assertEquals(204, response.getStatus());
     }
 
-    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<DependencyAnalysisMO> verify) throws Exception{
+    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyAnalysisMO>> verify) throws Exception{
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -90,24 +75,23 @@ public abstract class DependencyTestBase {
         resource.setType("policy");
         resource.setContent(policyXml);
 
-        RestResponse response = getEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
         assertOkCreatedResponse(response);
         Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //  get dependency
-        RestResponse depResponse = getEnvironment().processRequest("policies/" + policyItem.getId() + "/dependencies", HttpMethod.GET, null, "");
+        RestResponse depResponse = getDatabaseBasedRestManagementEnvironment().processRequest("policies/" + policyItem.getId() + "/dependencies", HttpMethod.GET, null, "");
         assertOkResponse(depResponse);
 
         // cleanup
-        response = getEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+        response = getDatabaseBasedRestManagementEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
         assertOKDeleteResponse(response);
 
         //  verify
         final StreamSource source = new StreamSource(new StringReader(depResponse.getBody()));
         Item<DependencyAnalysisMO> item = MarshallingUtils.unmarshal(Item.class, source);
-        assertNotNull(item.getContent().getDependencies());
-        verify.call(item.getContent());
+        verify.call(item);
 
     }
 

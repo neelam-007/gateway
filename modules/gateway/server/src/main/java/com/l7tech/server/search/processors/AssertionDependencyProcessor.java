@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
+import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
@@ -39,7 +40,8 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     @Inject
     private SecurePasswordManager securePasswordManager;
 
-    public static final Pattern SECPASS_PATTERN = Pattern.compile("secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext");
+    private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
+    private static final Pattern SECPASS_DESCRIPTION_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.description");
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -70,21 +72,39 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
             }
         }
         //If the assertion implements UsesVariables then all cluster properties or secure passwords used be the assertion as considered to be dependencies.
+        Boolean doSecPasswordPlaintext = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey, Boolean.class, true);
+        Boolean doSecPasswordDesc = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariableDescriptionOptionKey, Boolean.class, true);
+
         if (assertion instanceof UsesVariables) {
             for (String variable : ((UsesVariables) assertion).getVariablesUsed()) {
                 ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
                 if (property != null) {
                     Dependency dependency = finder.getDependency(property);
-                    if (dependency != null && !dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency)){
                         dependencies.add(dependency);
-                }else if(variable.startsWith(BuiltinVariables.PREFIX_SECURE_PASSWORD)){
-                    // is a secure password
-                    String alias = variable.substring(BuiltinVariables.PREFIX_SECURE_PASSWORD.length(),variable.indexOf(".",BuiltinVariables.PREFIX_SECURE_PASSWORD.length()));
+                    }
+                }else if(doSecPasswordPlaintext){
+                    // try get secure password reference
+                    Matcher matcher = SECPASS_PLAINTEXT_PATTERN.matcher(variable);
+                    if (matcher.matches()) {
+                        String alias = matcher.group(1);
+                        final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
+                        if (securePassword != null) {
+                            Dependency dependency = finder.getDependency(securePassword);
+                            if (dependency != null && !dependencies.contains(securePassword)){
+                                dependencies.add(dependency);
+                            }
+                        }
+                    }
+                }else if (doSecPasswordDesc){
+                    Matcher descMatcher = SECPASS_DESCRIPTION_PATTERN.matcher(variable);
+                    String alias = descMatcher.group(1);
                     final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
                     if (securePassword != null) {
                         Dependency dependency = finder.getDependency(securePassword);
-                        if (dependency != null && !dependencies.contains(securePassword))
+                        if (dependency != null && !dependencies.contains(securePassword)){
                             dependencies.add(dependency);
+                        }
                     }
                 }
             }

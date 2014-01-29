@@ -3,19 +3,19 @@ package com.l7tech.skunkworks.rest;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunOnNightly;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
 *
@@ -31,7 +31,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     public void before() throws Exception {
         super.before();
 
-        securePasswordManager = getEnvironment().getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
+        securePasswordManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
 
         //create secure password
         securePassword.setName("MyPassword");
@@ -42,7 +42,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
         DependencyTestBase.beforeClass();
     }
 
@@ -69,10 +69,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -82,6 +84,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @Test
+    @Ignore
     public void ftpRoutingAssertionTest() throws Exception {
 
         final String assXml =
@@ -106,10 +109,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -158,10 +163,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -212,10 +219,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -224,6 +233,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @Test
+    @Ignore
     public void sshRoutingAssertionTest() throws Exception {
 
         final String assXml =
@@ -244,10 +254,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -277,10 +289,12 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -301,10 +315,13 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
 
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
@@ -326,13 +343,10 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<DependencyAnalysisMO>(){
-
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
             @Override
-            public void call(DependencyAnalysisMO dependencyAnalysisMO) {
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNull(dependencyItem.getContent().getDependencies());
             }
         });
     }
