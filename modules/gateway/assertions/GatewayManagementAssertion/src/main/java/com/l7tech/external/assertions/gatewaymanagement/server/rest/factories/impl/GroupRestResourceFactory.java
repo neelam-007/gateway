@@ -44,7 +44,15 @@ public class GroupRestResourceFactory {
 
     public List<GroupMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
-            EntityHeaderSet<IdentityHeader> groups = retrieveGroupManager(providerId).findAllHeaders();
+            GroupManager groupManager = retrieveGroupManager(providerId);
+            EntityHeaderSet<IdentityHeader> groups = new EntityHeaderSet<IdentityHeader>();
+            if(filters.containsKey("name")){
+                for(Object name: filters.get("name")){
+                    groups.addAll(groupManager.search(name.toString()));
+                }
+            }else{
+                groups.addAll(groupManager.findAllHeaders());
+            }
             return Functions.map(groups, new Functions.Unary<GroupMO, IdentityHeader>() {
                 @Override
                 public GroupMO call(IdentityHeader idHeader) {

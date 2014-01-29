@@ -31,9 +31,9 @@ public class UserRestResourceFactory {
 
 
     private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
-            .put("logon", "logon").map();
+            .put("login", "login").map();
     private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-            .put("logon", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("logon", RestResourceFactoryUtils.stringConvert))
+            .put("login", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("login", RestResourceFactoryUtils.stringConvert))
             .map();
 
     public String getSortKey(String sort) {
@@ -46,7 +46,15 @@ public class UserRestResourceFactory {
 
     public List<UserMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
-            EntityHeaderSet<IdentityHeader> users = retrieveUserManager(providerId).findAllHeaders();
+            UserManager userManager  = retrieveUserManager(providerId);
+            EntityHeaderSet<IdentityHeader> users = new EntityHeaderSet<IdentityHeader>();
+            if(filters.containsKey("login")){
+                for(Object login: filters.get("login")){
+                    users.add(userManager.userToHeader(userManager.findByLogin(login.toString())));
+                }
+            }else{
+                users.addAll(userManager.findAllHeaders());
+            }
             return Functions.map(users, new Functions.Unary<UserMO, IdentityHeader>() {
                 @Override
                 public UserMO call(IdentityHeader userHeader) {
