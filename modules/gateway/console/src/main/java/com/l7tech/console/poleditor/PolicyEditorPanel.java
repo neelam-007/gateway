@@ -1562,11 +1562,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
 
             if (!initialValidate) {
-                enableButtonSave();
-
-                // If the policy tree node is changed, it means the policy is changed.
-                // Update the tab title by adding an asterisk if unsaved changes occur.
-                PolicyEditorPanel.this.updateHeadings();
+                updatePolicyEditorPanel();
 
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
@@ -1590,17 +1586,28 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         @Override
         public void treeNodesInserted(final TreeModelEvent e) {
-            enableButtonSave();
+            updatePolicyEditorPanel();
         }
 
         @Override
         public void treeNodesRemoved(TreeModelEvent e) {
-            enableButtonSave();
+            updatePolicyEditorPanel();
         }
 
         @Override
         public void treeStructureChanged(TreeModelEvent e) {
+            updatePolicyEditorPanel();
+        }
+
+        /**
+         * Update the policy editor panel such as enabling save buttons and updating tab titles.
+         */
+        private void updatePolicyEditorPanel() {
             enableButtonSave();
+
+            // If the policy tree node is changed, it means the policy is changed.
+            // Update the tab title by adding an asterisk if unsaved changes occur.
+            PolicyEditorPanel.this.updateHeadings();
         }
 
         private void enableButtonSave() {
@@ -1613,6 +1620,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
                 "You do not have permission to update this service/policy. In order to keep your changes, you may export it.", null);
             }
+
+            // If the policy tree node is changed, it means the policy is changed.
+            // Update the tab title by adding an asterisk if unsaved changes occur.
+            PolicyEditorPanel.this.updateHeadings();
         }
     };
 
