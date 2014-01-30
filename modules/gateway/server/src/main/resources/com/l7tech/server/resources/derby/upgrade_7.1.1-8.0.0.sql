@@ -66,6 +66,8 @@ CREATE TABLE siteminder_configuration_property (
   primary key (siteminder_configuration_goid,name)
 );
 
+
+
 alter table rbac_role add column entity_goid CHAR(16) FOR BIT DATA;
 
 -- create new RBAC role for Manage SiteMinder Configuration --

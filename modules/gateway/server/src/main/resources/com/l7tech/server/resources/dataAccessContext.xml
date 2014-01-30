@@ -93,6 +93,7 @@
                 <value>com.l7tech.gateway.common.transport.SsgConnector</value>
                 <value>com.l7tech.gateway.common.transport.jms.JmsConnection</value>
                 <value>com.l7tech.gateway.common.transport.jms.JmsEndpoint</value>
+                <value>com.l7tech.gateway.common.transport.jms.JmsEndpointMessagePropertyRule</value>
 
                 <!-- Identity Provider Entities -->
                 <value>com.l7tech.identity.IdentityProviderConfig</value>

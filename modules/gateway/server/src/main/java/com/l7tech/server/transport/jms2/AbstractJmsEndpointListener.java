@@ -39,7 +39,7 @@ import java.util.logging.Logger;
 public abstract class AbstractJmsEndpointListener implements JmsEndpointListener {
 
     private final Logger _logger;
-    protected static final int DEFAULT_RECEIVER = 25;
+    protected static final int DEFAULT_RECEIVER = 1;
 
     protected static final String PROPERTY_ERROR_SLEEP = "ioJmsErrorSleep";
     protected static final String PROPERTY_MAX_SIZE = "ioJmsMessageMaxBytes";

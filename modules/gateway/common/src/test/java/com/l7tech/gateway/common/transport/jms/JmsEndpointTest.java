@@ -4,6 +4,9 @@ import com.l7tech.objectmodel.SecurityZone;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.junit.Assert.*;
 
 public class JmsEndpointTest {
@@ -38,5 +41,17 @@ public class JmsEndpointTest {
         endpoint.setSecurityZone(zone);
         final JmsEndpoint copy = new JmsEndpoint(endpoint, false);
         assertEquals(zone, copy.getSecurityZone());
+    }
+
+    @Test
+    public void testJmsEndpointMessagePropertyRule() throws Exception {
+        JmsEndpointMessagePropertyRule jmsPropRule = new JmsEndpointMessagePropertyRule();
+        jmsPropRule.setRuleName("name");
+        jmsPropRule.setPassThru(false);
+        jmsPropRule.setCustomPattern("value");
+        Set<JmsEndpointMessagePropertyRule> ruleSet = new HashSet<>();
+        ruleSet.add(jmsPropRule);
+        endpoint.setJmsEndpointMessagePropertyRules(ruleSet);
+        assertTrue(endpoint.getJmsEndpointMessagePropertyRules().contains(jmsPropRule));
     }
 }

@@ -10,8 +10,11 @@ import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpand
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -22,6 +25,9 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
@@ -49,6 +55,9 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
     private boolean useMessageIdForCorrelation;
     private boolean template;
     private long requestMaxSize = -1;
+    private boolean passthroughMessageRules = true;
+
+    private Set<JmsEndpointMessagePropertyRule> jmsEndpointMessagePropertyRules = new LinkedHashSet<>();
 
     public JmsEndpoint(){
     }
@@ -79,6 +88,8 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         setUseMessageIdForCorrelation(other.isUseMessageIdForCorrelation());
         setRequestMaxSize(other.getRequestMaxSize());
         setSecurityZone(other.getSecurityZone());
+        setPassthroughMessageRules(other.isPassthroughMessageRules());
+        setJmsEndpointMessagePropertyRules(other.getJmsEndpointMessagePropertyRules());
     }
 
     /**
@@ -185,7 +196,6 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         this.queue = queue;
     }
 
-
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
     @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=128)
@@ -193,6 +203,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
     public String getDestinationName() {
         return _destinationName;
     }
+
 
     public void setDestinationName(String name) {
         checkLocked();
@@ -253,7 +264,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
     public JmsOutboundMessageType getOutboundMessageType() {
         return outboundMessageType;
     }
-                               
+
     public void setOutboundMessageType(JmsOutboundMessageType outboundMessageType) {
         checkLocked();
         if (outboundMessageType == null) outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
@@ -302,6 +313,28 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         return requestMaxSize;
     }
 
+    @Column(name = "is_passthrough_message_rules")
+    public boolean isPassthroughMessageRules() {
+        return passthroughMessageRules;
+    }
+
+    public void setPassthroughMessageRules(boolean passthroughMessageRules) {
+        checkLocked();
+        this.passthroughMessageRules = passthroughMessageRules;
+    }
+
+    @Fetch(FetchMode.SUBSELECT)
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="jmsEndpoint", orphanRemoval=true)
+    @Migration(dependency = false)
+    public Set<JmsEndpointMessagePropertyRule> getJmsEndpointMessagePropertyRules() {
+        return jmsEndpointMessagePropertyRules;
+    }
+
+    public void setJmsEndpointMessagePropertyRules(Set<JmsEndpointMessagePropertyRule> jmsEndpointMessagePropertyRules) {
+        checkLocked();
+        this.jmsEndpointMessagePropertyRules = jmsEndpointMessagePropertyRules;
+    }
+
     public void setRequestMaxSize(long requestMaxSize) {
         checkLocked();
         this.requestMaxSize = requestMaxSize;
@@ -312,8 +345,5 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         return "<JmsEndpoint connectionGoid=\"" + _connectionGoid + "\" name=\"" + _name + "\"/>";
     }
 
-    /**
-     * Standard validation group with additional constraints for non-templates.
-     */
     public interface StandardValidationGroup {}
 }

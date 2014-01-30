@@ -209,6 +209,14 @@ public class ManagedObjectFactory {
         return new JMSDestinationDetail();
     }
 
+    public static JMSDestinationDetail.JmsEndpointMessagePropertyRuleList createJmsEndpointMessagePropertyRuleList() {
+        return new JMSDestinationDetail.JmsEndpointMessagePropertyRuleList();
+    }
+
+    public static JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport createJmsEndpointMessagePropertyRule() {
+        return new JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport();
+    }
+
     /**
      * Create a new JMSDestinationMO instance.
      *

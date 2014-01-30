@@ -480,8 +480,21 @@ CREATE TABLE jms_endpoint(
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   request_max_size bigint NOT NULL default -1,
   security_zone_goid binary(16),
+  is_passthrough_message_rules tinyint NOT NULL default '0',
   primary key(goid),
   CONSTRAINT jms_endpoint_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS jms_endpoint_message_rule;
+CREATE TABLE jms_endpoint_message_rule(
+  goid binary(16) NOT NULL,
+  version int NOT NULL,
+  jms_endpoint_goid binary(16) NOT NULL,
+  rule_name varchar(256) NOT NULL,
+  is_passthrough bit NOT NULL,
+  custom_pattern varchar(4096),
+  FOREIGN KEY (jms_endpoint_goid) REFERENCES jms_endpoint (goid) ON DELETE CASCADE,
+  PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS revocation_check_policy;

@@ -1,8 +1,14 @@
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.util.ConfigFactory;
@@ -628,6 +634,52 @@ public class JmsUtil {
         }
         headers.put(JMS_REDELIVERED, String.valueOf(jmsMessage.getJMSRedelivered()));
         return headers;
+    }
+
+    public static void enforceJmsMessagePropertyRuleSet( final PolicyEnforcementContext context,
+                                                   final JmsMessagePropertyRuleSet ruleSet,
+                                                   final Map<String, Object> src,
+                                                   final Map<String, Object> dst,
+                                                   final Audit audit) {
+        if (ruleSet.isPassThruAll()) {
+            for (String name : src.keySet()) {
+                if (!name.startsWith("JMS_") && !name.startsWith("JMSX")) {
+                    dst.put(name, src.get(name));
+                }
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Propagating all JMS message properties with pass through.");
+            }
+        } else {
+            // For efficiency, obtain all context variables used in the rule set once.
+            final StringBuilder sb = new StringBuilder();
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                if (! rule.isPassThru()) {
+                    sb.append(rule.getCustomPattern());
+                }
+            }
+            final String[] variablesUsed = Syntax.getReferencedNames(sb.toString());
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, audit);
+
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                final String name = rule.getName();
+                if (rule.isPassThru()) {
+                    if (src.containsKey(name) && !name.startsWith("JMS_") && !name.startsWith("JMSX")) {
+                        dst.put(name, src.get(name));
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Propagating a JMS message property with pass through. (name=" + name + ", value=" + src.get(name) + ")");
+                        }
+                    }
+                } else {
+                    final String pattern = rule.getCustomPattern();
+                    final String value = ExpandVariables.process(pattern, vars, audit);
+                    dst.put(name, value);
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Propagating a JMS message property with custom pattern (name=" + name + ", pattern=" + pattern + ", value=" + value + ")");
+                    }
+                }
+            }
+        }
     }
 
     private static String expandPassword( final String passwordExpression ) throws JmsConfigException {
