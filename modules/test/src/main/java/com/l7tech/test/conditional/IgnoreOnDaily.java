@@ -11,6 +11,7 @@ public class IgnoreOnDaily implements IgnoreCondition {
     }
 
     public static boolean isDaily() {
-        return System.getProperty("daily") != null;
+        String buildType = System.getProperty("build.type");
+        return buildType != null && "daily".equalsIgnoreCase(buildType);
     }
 }

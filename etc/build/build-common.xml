@@ -527,9 +527,9 @@
             <syspropertyset>
               <propertyref prefix="com.l7tech"/>
               <propertyref name="module.skip.forms"/>
-              <!-- This property is used to specify if these tests are nightly or not.
-              In the nightly build add the nightly system property. Example: "-Dnightly" -->
-              <propertyref name="nightly"/>
+              <!-- This property is used to specify the build type. For example nightly or daily
+              Example: -Dbuild.type="nightly" -->
+              <propertyref name="build.type"/>
             </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">
