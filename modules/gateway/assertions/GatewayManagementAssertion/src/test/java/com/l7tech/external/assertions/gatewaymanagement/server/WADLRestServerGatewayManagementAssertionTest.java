@@ -30,6 +30,9 @@ public class WADLRestServerGatewayManagementAssertionTest extends ServerRestGate
         Assert.assertEquals(404, response.getStatus());
     }
 
+    /**
+     * Note that this test will not run from idea. It should run on the build machine.
+     */
     @Test
     public void getRestWadlTest() throws Exception {
         RestResponse response = processRequest("rest.wadl", HttpMethod.GET, null, "");

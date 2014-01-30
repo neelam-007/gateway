@@ -21,6 +21,9 @@ public class WadlResourceTest extends RestEntityTestBase {
         org.junit.Assert.assertEquals(404, response.getStatus());
     }
 
+    /**
+     * Note that this test will not run from idea. It should run on the build machine.
+     */
     @Test
     public void getWadlTest() throws Exception {
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("/rest.wadl", HttpMethod.GET, null, "");
