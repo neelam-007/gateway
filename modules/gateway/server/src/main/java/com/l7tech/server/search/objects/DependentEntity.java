@@ -37,7 +37,7 @@ public class DependentEntity extends DependentObject {
             case TRUSTED_CERT: return Dependency.DependencyType.TRUSTED_CERT;
             case CLUSTER_PROPERTY: return Dependency.DependencyType.CLUSTER_PROPERTY;
             case ID_PROVIDER_CONFIG: return Dependency.DependencyType.ID_PROVIDER_CONFIG;
-            case JMS_CONNECTION: return Dependency.DependencyType.JMS_CONNECTION;
+            case JMS_ENDPOINT: return Dependency.DependencyType.JMS_ENDPOINT;
             case SSG_KEYSTORE: return Dependency.DependencyType.SSG_KEYSTORE;
             case SSG_ACTIVE_CONNECTOR: return Dependency.DependencyType.SSG_ACTIVE_CONNECTOR;
             case SSG_KEY_ENTRY: return Dependency.DependencyType.SSG_PRIVATE_KEY;
@@ -50,6 +50,7 @@ public class DependentEntity extends DependentObject {
             case SERVICE_ALIAS: return Dependency.DependencyType.SERVICE_ALIAS;
             case GROUP: return Dependency.DependencyType.GROUP;
             case USER: return Dependency.DependencyType.USER;
+            case RESOURCE_ENTRY: return Dependency.DependencyType.RESOURCE_ENTRY;
         }
         throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
     }

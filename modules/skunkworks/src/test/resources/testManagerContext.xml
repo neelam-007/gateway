@@ -381,6 +381,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_CONNECTOR"/></key>
                     <bean class="com.l7tech.server.search.processors.SsgConnectorDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JMS_ENDPOINT"/></key>
+                    <bean class="com.l7tech.server.search.processors.JmsEndpointDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>

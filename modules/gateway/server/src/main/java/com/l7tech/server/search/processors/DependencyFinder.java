@@ -131,6 +131,10 @@ public class DependencyFinder {
             return Collections.emptyList();
         }
 
+        if (dependent == null) {
+            return Collections.emptyList();
+        }
+
         //find the dependency processor to use.
         DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(dependent));
         //using the dependency processor find the dependencies and return the results.

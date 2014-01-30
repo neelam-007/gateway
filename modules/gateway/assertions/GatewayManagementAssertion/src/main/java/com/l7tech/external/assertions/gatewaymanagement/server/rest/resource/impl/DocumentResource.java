@@ -36,7 +36,7 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     @Override
     public Item<ResourceDocumentMO> toReference(EntityHeader entityHeader) {
         if (entityHeader instanceof ResourceEntryHeader) {
-            return toReference(((ResourceEntryHeader) entityHeader).getUri(), entityHeader.getStrId());
+            return toReference(entityHeader.getStrId(),((ResourceEntryHeader) entityHeader).getUri());
         } else {
             return super.toReference(entityHeader);
         }

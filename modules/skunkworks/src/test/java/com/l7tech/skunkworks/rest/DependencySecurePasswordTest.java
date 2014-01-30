@@ -3,11 +3,14 @@ package com.l7tech.skunkworks.rest;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.junit.*;
 
@@ -25,13 +28,17 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencySecurePasswordTest.class.getName());
 
     private final SecurePassword securePassword =  new SecurePassword();
+    private final SecurePassword securePasswordZoned =  new SecurePassword();
+    private final SecurityZone securityZone =  new SecurityZone();
     private SecurePasswordManager securePasswordManager;
+    private SecurityZoneManager securityZoneManager;
 
     @Before
     public void before() throws Exception {
         super.before();
 
         securePasswordManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
+        securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
 
         //create secure password
         securePassword.setName("MyPassword");
@@ -39,6 +46,21 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
         securePassword.setUsageFromVariable(true);
         securePassword.setType(SecurePassword.SecurePasswordType.PASSWORD);
         securePasswordManager.save(securePassword);
+
+
+        //create security zone
+        securityZone.setName("Test security zone");
+        securityZone.setPermittedEntityTypes(CollectionUtils.set(EntityType.ANY));
+        securityZone.setDescription("stuff");
+        securityZoneManager.save(securityZone);
+
+        //create secure password
+        securePasswordZoned.setName("MyPasswordZoned");
+        securePasswordZoned.setEncodedPassword("password");
+        securePasswordZoned.setUsageFromVariable(true);
+        securePasswordZoned.setType(SecurePassword.SecurePasswordType.PASSWORD);
+        securePasswordZoned.setSecurityZone(securityZone);
+        securePasswordManager.save(securePasswordZoned);
     }
 
     @BeforeClass
@@ -50,6 +72,8 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     public void after() throws Exception {
         super.after();
         securePasswordManager.delete(securePassword);
+        securePasswordManager.delete(securePasswordZoned);
+        securityZoneManager.delete(securityZone);
     }
 
     @Test
@@ -78,6 +102,44 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),securePassword);
+
+            }
+        });
+    }
+
+    @Test
+    public void addSecurityTokenAssertionZonedPasswordTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AddWssSecurityToken>\n" +
+                        "            <L7p:IncludePassword booleanValue=\"true\"/>\n" +
+                        "            <L7p:Password stringValue=\"${secpass.MyPasswordZoned.plaintext}\"/>\n" +
+                        "            <L7p:Target target=\"REQUEST\"/>\n" +
+                        "            <L7p:UseLastGatheredCredentials booleanValue=\"false\"/>\n" +
+                        "            <L7p:Username stringValue=\"asdg\"/>" +
+                        "        </L7p:AddWssSecurityToken>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+
+            @Override
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep.getDependentObject(),securePasswordZoned);
+
+                // verify security zone dependency
+                assertEquals(1,dep.getDependencies().size());
+                DependencyMO passwordDep  = dep.getDependencies().get(0);
+                assertEquals(securityZone.getId(), passwordDep.getDependentObject().getId());
+                assertEquals(securityZone.getName(), passwordDep.getDependentObject().getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getDependentObject().getType());
 
             }
         });
@@ -134,6 +196,60 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "            <L7p:ProxyPassword stringValue=\"${secpass.MyPassword.plaintext}\"/>\n" +
                         "            <L7p:ProxyPort intValue=\"374\"/>\n" +
                         "            <L7p:ProxyUsername stringValue=\"user\"/>\n" +
+                        "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:RequestHeaderRules>\n" +
+                        "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                        "            </L7p:RequestParamRules>\n" +
+                        "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+                        "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+                        "                    </L7p:item>\n" +
+                        "                </L7p:Rules>\n" +
+                        "            </L7p:ResponseHeaderRules>\n" +
+                        "            <L7p:SamlAssertionVersion intValue=\"2\"/>\n" +
+                        "        </L7p:HttpRoutingAssertion>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+
+            @Override
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep.getDependentObject(),securePassword);
+            }
+        });
+    }
+
+    @Test
+    public void httpRoutingAssertionKerberosPasswordTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:HttpRoutingAssertion>\n" +
+                        "            <L7p:KrbConfiguredAccount stringValue=\"dude\"/>\n" +
+                        "            <L7p:KrbConfiguredPassword stringValue=\"${secpass.MyPassword.plaintext}\"/>\n" +
+                        "            <L7p:ProtectedServiceUrl stringValue=\"http://blah\"/>\n" +
+                        "            <L7p:ProxyPassword stringValueNull=\"null\"/>\n" +
+                        "            <L7p:ProxyUsername stringValueNull=\"null\"/>\n" +
                         "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
                         "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
                         "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
@@ -345,6 +461,99 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             @Override
             public void call(Item<DependencyAnalysisMO> dependencyItem) {
                 assertNull(dependencyItem.getContent().getDependencies());
+            }
+        });
+    }
+
+    @Test
+    public void kerberosAuthenticationAssertionTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:KerberosAuthentication>\n" +
+                "            <L7p:KrbConfiguredAccount stringValue=\"aweg\"/>\n" +
+                "            <L7p:KrbSecurePasswordReference goidValue=\""+ securePassword.getId()+"\"/>\n" +
+                "            <L7p:KrbUseGatewayKeytab booleanValue=\"true\"/>\n" +
+                "            <L7p:LastAuthenticatedUser booleanValue=\"true\"/>\n" +
+                "            <L7p:Realm stringValue=\"hfd.com\"/>\n" +
+                "            <L7p:S4U2Self booleanValue=\"true\"/>\n" +
+                "            <L7p:ServicePrincipalName stringValue=\"http/service@DOMAIN.COM\"/>\n" +
+                "            <L7p:UserRealm stringValue=\"\"/>\n" +
+                "        </L7p:KerberosAuthentication>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+
+            @Override
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep.getDependentObject(),securePassword);
+            }
+        });
+    }
+
+    @Test
+    public void wssDigestAssertionTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:WssDigest>\n" +
+                "            <L7p:RequiredPassword stringValue=\"${secpass.MyPassword.plaintext}\"/>\n" +
+                "            <L7p:RequiredUsername stringValue=\"asdf\"/>\n" +
+                "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                "        </L7p:WssDigest>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+
+            @Override
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep.getDependentObject(),securePassword);
+            }
+        });
+    }
+
+    @Test
+    public void addWssSecurityTokenAssertionTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AddWssSecurityToken>\n" +
+                "            <L7p:IncludePassword booleanValue=\"true\"/>\n" +
+                "            <L7p:Password stringValue=\"${secpass.MyPassword.plaintext}\"/>\n" +
+                "            <L7p:UseLastGatheredCredentials booleanValue=\"false\"/>\n" +
+                "            <L7p:Username stringValue=\"asdf\"/>\n" +
+                "        </L7p:AddWssSecurityToken>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+
+            @Override
+            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep.getDependentObject(),securePassword);
             }
         });
     }

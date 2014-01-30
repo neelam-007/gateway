@@ -159,7 +159,6 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
     }
 
     @Column(name="connection_goid", nullable=false)
-    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.JMS_CONNECTION)
     @Type(type = "com.l7tech.server.util.GoidType")
     public Goid getConnectionGoid() {
         return _connectionGoid;
