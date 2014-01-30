@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.gatewaymanagement.server.rest;
+package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import org.glassfish.jersey.server.wadl.config.WadlGeneratorConfig;
 import org.glassfish.jersey.server.wadl.config.WadlGeneratorDescription;
@@ -14,7 +14,7 @@ public class L7WadlGeneratorConfig extends WadlGeneratorConfig {
     @Override
     public List<WadlGeneratorDescription> configure() {
         return generator(WadlGeneratorResourceDocSupport.class)
-                .prop("resourceDocStream", L7WadlGeneratorConfig.this.getClass().getResourceAsStream("/resourcedoc.xml"))
+                .prop("resourceDocStream", L7WadlGeneratorConfig.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/resourcedoc.xml"))
                 .descriptions();
     }
 }

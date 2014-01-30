@@ -265,12 +265,12 @@
                 <value>javax.ws.rs.ext.Provider</value>
             </list>
         </property>
-        <!-- This adds the wsdl configurator so that the java docs get added to the generated wsdl-->
+        <!-- This makes it so that the default jersey wadl generator does not get initialized.-->
         <property name="resourceConfigProperties">
             <map>
-                <entry key="#{T(org.glassfish.jersey.server.ServerProperties).WADL_GENERATOR_CONFIG}">
-                    <value type="java.lang.Class">com.l7tech.external.assertions.gatewaymanagement.server.rest.L7WadlGeneratorConfig</value>
-                </entry>
+                <entry key="#{T(org.glassfish.jersey.server.ServerProperties).WADL_FEATURE_DISABLE}">
+                <value type="java.lang.Boolean">true</value>
+            </entry>
             </map>
         </property>
         <property name="additionalResourceClasses">

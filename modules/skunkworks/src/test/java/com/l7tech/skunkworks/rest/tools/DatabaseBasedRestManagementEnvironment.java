@@ -115,7 +115,7 @@ public class DatabaseBasedRestManagementEnvironment {
         System.exit(1);
     }
 
-    protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    public RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         return processRequest(uri, null, method, contentType, body);
     }
 

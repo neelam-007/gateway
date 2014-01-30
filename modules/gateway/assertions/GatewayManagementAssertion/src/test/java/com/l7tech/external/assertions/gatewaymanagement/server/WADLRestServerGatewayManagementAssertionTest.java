@@ -5,11 +5,6 @@ import org.junit.*;
 
 import java.util.logging.Logger;
 
-/**
- * This was created: 10/23/13 as 4:47 PM
- *
- * @author Victor Kazakov
- */
 public class WADLRestServerGatewayManagementAssertionTest extends ServerRestGatewayManagementAssertionTestBase {
     private static final Logger logger = Logger.getLogger(WADLRestServerGatewayManagementAssertionTest.class.getName());
 
@@ -29,9 +24,16 @@ public class WADLRestServerGatewayManagementAssertionTest extends ServerRestGate
     }
 
     @Test
-    @Ignore
-    public void getServiceDependenciesTest() throws Exception {
+    public void getDefaultWadlTest() throws Exception {
         RestResponse response = processRequest("application.wadl", HttpMethod.GET, null, "");
         logger.info(response.toString());
+        Assert.assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void getRestWadlTest() throws Exception {
+        RestResponse response = processRequest("rest.wadl", HttpMethod.GET, null, "");
+        logger.info(response.toString());
+        Assert.assertEquals(200, response.getStatus());
     }
 }

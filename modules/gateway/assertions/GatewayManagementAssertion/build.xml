@@ -9,14 +9,11 @@
     <!--
       Override compile-main-resources and add dependency on WSDL generation
     -->
-    <target name="compile-main-resources" depends="common.compile-main-resources, generate-wsdl, generate-javadoc"/>
+    <target name="compile-main-resources" depends="common.compile-main-resources, compile-tools, generate-wsdl, generate-javadoc, generate-wadl"/>
 
-    <target name="generate-wsdl" depends="compile-main-java">
-        <echo>Generating WSDL for Gateway Management service</echo>
+    <target name="compile-tools" depends="compile-main-java">
+        <echo>Compiling tools for Gateway Management service</echo>
 
-        <property name="gatewaymanagementassertion.servicetemplate" value="${classes.main.dir}/com/l7tech/external/assertions/gatewaymanagement/server/serviceTemplate"/>
-        <mkdir dir="${gatewaymanagementassertion.servicetemplate}"/>
-        <mkdir dir="${basedir}/build/etc/wsdl"/>
         <mkdir dir="${basedir}/build/tools"/>
 
         <!-- Classpath -->
@@ -24,30 +21,34 @@
                      checkIfChanged="false"
                      log="quiet"
                      conf="compile"/>
-        <ivy:cachepath pathid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
-        <path id="gatewaymanagementassertion.generate.wsdl.path">
+        <ivy:cachepath pathid="gatewaymanagementassertion.tools.path.libs"/>
+        <path id="gatewaymanagementassertion.tools.path">
             <pathelement location="${classes.main.dir}"/>
             <pathelement location="${basedir}/build/tools"/>
-            <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+            <path refid="gatewaymanagementassertion.tools.path.libs"/>
             <path refid="extras.path.id"/>
         </path>
 
-        <pathconvert property="gatewaymanagementassertion.generate.wsdl.path.text" targetos="unix" pathsep="${line.separator}"
-                     refid="gatewaymanagementassertion.generate.wsdl.path"/>
-        <echo level="debug">Resolved test path:${line.separator}${gatewaymanagementassertion.generate.wsdl.path.text}</echo>
-
-        <!-- Compile / run WSDL Generator -->
+        <!-- Compile tools -->
         <javac debug="on"
                verbose="no"
-               source="1.6"
-               target="1.6"
+               source="${module.compile.source}"
+               target="${module.compile.target}"
                srcdir="${basedir}/tools"
                destdir="${basedir}/build/tools"
                 >
-            <classpath refid="gatewaymanagementassertion.generate.wsdl.path"/>
+            <classpath refid="gatewaymanagementassertion.tools.path"/>
         </javac>
+    </target>
 
-        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true">
+    <target name="generate-wsdl" depends="compile-tools,compile-main-java">
+        <echo>Generating WSDL for Gateway Management service</echo>
+
+        <property name="gatewaymanagementassertion.servicetemplate" value="${classes.main.dir}/com/l7tech/external/assertions/gatewaymanagement/server/serviceTemplate"/>
+        <mkdir dir="${gatewaymanagementassertion.servicetemplate}"/>
+        <mkdir dir="${basedir}/build/etc/wsdl"/>
+
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.tools.path" failonerror="true">
             <arg value="${basedir}/build/etc/wsdl"/>
         </java>
 
@@ -66,16 +67,19 @@
     </target>
 
     <!-- This target generates the javadoc xml file that is used by Jersey to add java docs to the Jersey WADL -->
-    <target name="generate-javadoc" depends="compile-main-java">
+    <target name="generate-javadoc" depends="compile-tools">
+        <echo>Generating Javadoc for REST Gateway Management service</echo>
+
+        <property name="gatewayrestmanagementassertion.wadlFolder" value="${classes.main.dir}/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource"/>
+        <mkdir dir="${gatewayrestmanagementassertion.wadlFolder}"/>
+
         <property name="gatewaymanagementassertion.javadoc.build.dir" value="${basedir}/build/etc/javadoc"/>
         <mkdir dir="${gatewaymanagementassertion.javadoc.build.dir}"/>
-        <property name="gatewaymanagementassertion.javadoc.dest.dir" value="${classes.main.dir}"/>
         <path id="javadoc.src.path">
             <pathelement location="${src.main.java.dir}"/>
         </path>
-        <ivy:cachepath pathid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
         <path id="javadoc.class.path">
-            <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+            <path refid="gatewaymanagementassertion.tools.path.libs"/>
         </path>
         <!-- Create the java doc -->
         <javadoc sourcepathref="javadoc.src.path"
@@ -92,9 +96,25 @@
         </javadoc>
 
         <!-- Move the javadoc to the classes directory so it get properly aar'd up -->
-        <copy todir="${gatewaymanagementassertion.javadoc.dest.dir}">
+        <copy todir="${gatewayrestmanagementassertion.wadlFolder}">
             <fileset dir="${gatewaymanagementassertion.javadoc.build.dir}">
                 <include name="*.xml"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- This target generates the javadoc xml file that is used by Jersey to add java docs to the Jersey WADL -->
+    <target name="generate-wadl" depends="generate-javadoc">
+        <echo>Generating WADL for Gateway Management service</echo>
+
+        <mkdir dir="${basedir}/build/etc/wadl"/>
+
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WadlGenerator" classpathref="gatewaymanagementassertion.tools.path" failonerror="true">
+            <arg value="${basedir}/build/etc/wadl"/>
+        </java>
+        <copy todir="${gatewayrestmanagementassertion.wadlFolder}">
+            <fileset dir="${basedir}/build/etc/wadl">
+                <include name="*.wadl"/>
             </fileset>
         </copy>
     </target>
