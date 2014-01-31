@@ -453,7 +453,7 @@ public class WorkSpacePanel extends JPanel {
         // Set the previous selected panel to be selected
         if (selectedComponent instanceof HomePagePanel) {
             tabbedPane.setSelectedIndex(0);
-        } else {
+        } else if (selectedComponent instanceof PolicyEditorPanel) {
             tabbedPane.setSelectedComponent(selectedComponent);
         }
 
@@ -815,7 +815,7 @@ public class WorkSpacePanel extends JPanel {
      * The mouse listener class handles  policy tab actions (Close Tab, Close Others, Close All, Close Unmodified, and
      * Reopen Closed Tab) triggered by mouse click on a policy tab.
      */
-    public class MouseTabListener extends PopUpMouseListener {
+    public class MouseTabListener extends MouseAdapter {
         private JTabbedPane tabPane;
 
         MouseTabListener (JTabbedPane tabbedPane) {
@@ -823,12 +823,16 @@ public class WorkSpacePanel extends JPanel {
         }
 
         @Override
-        public void mouseClicked(MouseEvent e) {
-            popUpMenuHandler(e);
+        public void mousePressed(MouseEvent e) {
+            mouseActionHandler(e);
         }
 
         @Override
-        public void popUpMenuHandler(MouseEvent e) {
+        public void mouseReleased(MouseEvent e) {
+            mouseActionHandler(e);
+        }
+
+        private void mouseActionHandler(MouseEvent e) {
             final int index = tabPane.getUI().tabForCoordinate(tabPane, e.getX(), e.getY());
             if (index != -1) {
                 // Handel Mouse Left Click
