@@ -22,7 +22,7 @@ public class BundleImporter {
     private RestResourceLocator restResourceLocator;
 
     @NotNull
-    public List<Mapping> importBundle(@NotNull Bundle bundle, @NotNull String importFolderID, @NotNull Map<String, Object> options) {
+    public List<Mapping> importBundle(@NotNull Bundle bundle, @NotNull Map<String, Object> options) {
         final List<Mapping> mappingsRtn = new ArrayList<>(bundle.getMappings().size());
         Map<String, Mapping> mappings = Functions.toMap(bundle.getMappings(), new Functions.Unary<Pair<String, Mapping>, Mapping>() {
             @Override
@@ -49,21 +49,7 @@ public class BundleImporter {
                         mapping.setTargetId(existingResourceItem.getId());
                         mapping.setTargetUri(restEntityResource.getUrl(existingResourceItem.getId()));
                     } else {
-                        boolean success = false;
-                        try {
-                            //noinspection unchecked
-                            restEntityResource.updateResource(item.getContent(), item.getId());
-                            success = true;
-                        } catch (ResourceFactory.ResourceNotFoundException e) {
-                            mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
-                        } catch (ResourceFactory.InvalidResourceException e) {
-                            mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
-                        }
-                        if (success) {
-                            mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
-                            mapping.setTargetId(item.getId());
-                            mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
-                        }
+                        createResourse(item, mapping, restEntityResource);
                     }
                     break;
                 case NewOrUpdate:
@@ -78,6 +64,27 @@ public class BundleImporter {
         }
 
         return mappingsRtn;
+    }
+
+    protected void createResourse(Item item, Mapping mapping, RestEntityResource restEntityResource) {
+        boolean success = false;
+        try {
+            //noinspection unchecked
+            restEntityResource.updateResource(item.getContent(), item.getId());
+            success = true;
+        } catch (ResourceFactory.ResourceNotFoundException e) {
+            mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
+        } catch (ResourceFactory.InvalidResourceException e) {
+            mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
+        }
+        if (success) {
+            mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
+            mapping.setTargetId(item.getId());
+            mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
+
+            //apply mappings
+
+        }
     }
 
     private Item locateResource(Mapping mapping, RestEntityResource restEntityResource) {

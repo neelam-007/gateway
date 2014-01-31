@@ -64,7 +64,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         Assert.assertEquals(204, response.getStatus());
     }
 
-    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyAnalysisMO>> verify) throws Exception{
+    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyTreeMO>> verify) throws Exception{
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -99,7 +99,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
 
         //  verify
         final StreamSource source = new StreamSource(new StringReader(depResponse.getBody()));
-        Item<DependencyAnalysisMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        Item<DependencyTreeMO> item = MarshallingUtils.unmarshal(Item.class, source);
         verify.call(item);
 
     }

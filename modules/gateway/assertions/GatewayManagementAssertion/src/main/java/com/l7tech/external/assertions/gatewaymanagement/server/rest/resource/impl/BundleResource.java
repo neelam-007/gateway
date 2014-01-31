@@ -11,8 +11,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.server.search.objects.DependentObject;
@@ -111,7 +111,7 @@ public class BundleResource {
     public Item<Mappings> importBundle(Bundle bundle) {
         return new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Folder.ROOT_FOLDER_ID.toString(), Collections.<String, Object>emptyMap())))
+                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Collections.<String, Object>emptyMap())))
                 .build();
     }
 
@@ -139,6 +139,8 @@ public class BundleResource {
                 //noinspection unchecked
                 Mapping mapping = restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy);
                 mapping.setSrcUri(restResource.getUrl(resource.getId()));
+                //TODO: is there a better way to get these dependencies?
+                mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
                 mappings.add(mapping);
             }
         }
@@ -147,6 +149,41 @@ public class BundleResource {
         bundle.setReferences(items);
         bundle.setMappings(mappings);
         return bundle;
+    }
+
+    private List<String> findDependencies(DependentObject dependentObject, List<DependencySearchResults> dependencySearchResults) {
+        final List<String> dependentIds = new ArrayList<>();
+        for(DependencySearchResults dependencySearchResult : dependencySearchResults){
+            List<String> dependencies = findDependencies(dependentObject, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies());
+            for(String dependency : dependencies) {
+                if(!dependentIds.contains(dependency)){
+                    dependentIds.add(dependency);
+                }
+            }
+        }
+        return dependentIds;
+    }
+
+    private List<String> findDependencies(DependentObject dependentObject, DependentObject current, List<Dependency> dependencies) {
+        if(dependentObject.equals(current)){
+            List<String> dependencyIds = new ArrayList<>();
+            for(Dependency dependency : dependencies) {
+                if(dependency.getDependent() instanceof DependentEntity){
+                    dependencyIds.add(((DependentEntity) dependency.getDependent()).getEntityHeader().getStrId());
+                } else {
+                    dependencyIds.addAll(findDependencies(dependency.getDependent(), dependency.getDependent(), dependency.getDependencies()));
+                }
+            }
+            return dependencyIds;
+        } else {
+            for(Dependency dependency : dependencies) {
+                List<String> dependencyIds = findDependencies(dependentObject, dependency.getDependent(), dependency.getDependencies());
+                if(dependencyIds != null){
+                    return dependencyIds;
+                }
+            }
+        }
+        return null;
     }
 
     //TODO: is there a better way to do this?

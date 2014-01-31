@@ -653,7 +653,8 @@ public class ManagedObjectFactory {
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
                 RbacRolePredicateMO.class,
-                DependencyAnalysisMO.class,
+                DependencyTreeMO.class,
+                DependencyListMO.class,
                 DependencyMO.class,
                 Item.class,
                 ItemsList.class,
@@ -663,8 +664,12 @@ public class ManagedObjectFactory {
         };
     }
 
-    public static DependencyAnalysisMO createDependencyResultsMO() {
-        return new DependencyAnalysisMO();
+    public static DependencyTreeMO createDependencyTreeMO() {
+        return new DependencyTreeMO();
+    }
+
+    public static DependencyListMO createDependencyListMO() {
+        return new DependencyListMO();
     }
 
     public static DependencyMO createDependencyMO() {

@@ -14,9 +14,12 @@ import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
@@ -43,6 +46,10 @@ public class DependencyResource {
 
     private EntityHeader entityHeader;
 
+    public static enum ReturnType {
+        List, Tree
+    }
+
     public DependencyResource() {
         //TODO: need a way to specify all gateway dependencies.
     }
@@ -52,22 +59,45 @@ public class DependencyResource {
     }
 
     @GET
-    public Item get() throws FindException {
-        if(entityHeader == null) {
+    public Item get(@QueryParam("returnType") @DefaultValue("Tree") ReturnType returnType) throws FindException {
+        if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-        return new ItemBuilder<DependencyAnalysisMO>(entityHeader.toString() + " dependencies", "Dependency")
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String,Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
-                .build();
+        switch (returnType) {
+            case Tree:
+                return new ItemBuilder<DependencyTreeMO>(entityHeader.toString() + " dependencies", "Dependency")
+                        .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                        .setContent(toDependencyTreeObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
+                        .build();
+            case List:
+                return new ItemBuilder<DependencyListMO>(entityHeader.toString() + " dependencies", "Dependency")
+                        .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                        .setContent(toDependencyListObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
+                        .build();
+            default:
+                throw new IllegalArgumentException("Unknown return type: " + returnType);
+        }
     }
 
     //TODO: move entity transformation work to a transformer class
-    private DependencyAnalysisMO toManagedObject(DependencySearchResults dependencySearchResults) {
-        DependencyAnalysisMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyResultsMO();
+    public DependencyTreeMO toDependencyTreeObject(DependencySearchResults dependencySearchResults) {
+        DependencyTreeMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyTreeMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
         dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
         dependencyAnalysisMO.setDependencies(toManagedObject(dependencySearchResults.getDependencies()));
+        return dependencyAnalysisMO;
+    }
+
+    public DependencyListMO toDependencyListObject(DependencySearchResults dependencySearchResults) {
+        DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
+        dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
+        dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
+        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults), new Functions.Unary<Item, DependentObject>() {
+            @Override
+            public Item call(DependentObject dependentObject) {
+                return toReference(dependentObject);
+            }
+        }));
         return dependencyAnalysisMO;
     }
 
@@ -98,20 +128,21 @@ public class DependencyResource {
 
     private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
         RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
-        if(restEntityResource != null) {
+        if (restEntityResource != null) {
             return restEntityResource.toReference(entityHeader);
         }
         // handle special cases, user, groups
         try {
-            if(entityHeader instanceof IdentityHeader){
+            if (entityHeader instanceof IdentityHeader) {
                 restEntityResource = restResourceLocator.findByEntityType(EntityType.ID_PROVIDER_CONFIG);
                 assert restEntityResource instanceof IdentityProviderResource;
-                if(entityHeader.getType().equals(EntityType.USER)){
+                if (entityHeader.getType().equals(EntityType.USER)) {
                     UserResource userResource = ((IdentityProviderResource) restEntityResource).users(((IdentityHeader) entityHeader).getProviderGoid().toString());
-                    return userResource.toReference((IdentityHeader)entityHeader);
-                }if(entityHeader.getType().equals(EntityType.GROUP)){
+                    return userResource.toReference((IdentityHeader) entityHeader);
+                }
+                if (entityHeader.getType().equals(EntityType.GROUP)) {
                     GroupResource groupResource = ((IdentityProviderResource) restEntityResource).groups(((IdentityHeader) entityHeader).getProviderGoid().toString());
-                    return groupResource.toReference((IdentityHeader)entityHeader);
+                    return groupResource.toReference((IdentityHeader) entityHeader);
                 }
             }
         } catch (ResourceFactory.ResourceNotFoundException e) {

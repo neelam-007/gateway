@@ -41,7 +41,8 @@ CustomKeyValueStoreMO
 SecurityZoneMO
 SiteMinderConfigurationMO
 AssertionSecurityZoneMO
-DependencyAnalysisMO
+DependencyTreeMO
+DependencyListMO
 DependencyMO
 Item
 ItemsList

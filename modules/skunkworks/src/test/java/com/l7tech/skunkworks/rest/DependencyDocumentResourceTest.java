@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest;
 
-import com.l7tech.gateway.api.DependencyAnalysisMO;
 import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.api.DependencyTreeMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -91,12 +91,12 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyAnalysisMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
 
             @Override
-            public void call(Item<DependencyAnalysisMO> dependencyItem) {
+            public void call(Item<DependencyTreeMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyAnalysisMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep.getDependentObject(),resourceEntry);

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.IdListToStringTypeAdapter;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -8,6 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,6 +28,7 @@ public class Mapping {
     private ActionTaken actionTaken;
     private ErrorType errorType;
     private Map<String, Object> properties;
+    private List<String> dependencies;
 
     public static enum Action {
         NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore;
@@ -145,5 +148,15 @@ public class Mapping {
 
     public void setProperties(Map<String,Object> properties) {
         this.properties = properties;
+    }
+
+    @XmlAttribute(name = "dependencies")
+    @XmlJavaTypeAdapter(IdListToStringTypeAdapter.class)
+    public List<String> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<String> dependencies) {
+        this.dependencies = dependencies;
     }
 }

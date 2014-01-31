@@ -4,25 +4,16 @@ import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
 import java.util.Map;
 
-/**
- * This was created: 11/4/13 as 3:20 PM
- *
- * @author Victor Kazakov
- */
-@XmlRootElement(name = "DependencyAnalysis")
-@XmlType(propOrder = {"options", "searchObjectItem", "dependencies"})
-public class DependencyAnalysisMO {
+@XmlTransient
+public abstract class DependencyResults<D> {
     private Map<String,Object> options;
     private Item searchObjectItem;
-    private List<DependencyMO> dependencies;
-
-    DependencyAnalysisMO(){}
+    private List<D> dependencies;
 
     @XmlElement(name = "Options")
     @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
@@ -45,11 +36,11 @@ public class DependencyAnalysisMO {
 
     @XmlElement(name = "Dependency")
     @XmlElementWrapper(name = "Dependencies")
-    public List<DependencyMO> getDependencies() {
+    public List<D> getDependencies() {
         return dependencies;
     }
 
-    public void setDependencies(List<DependencyMO> dependencies) {
+    public void setDependencies(List<D> dependencies) {
         this.dependencies = dependencies;
     }
 }
