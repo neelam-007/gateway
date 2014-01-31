@@ -252,7 +252,7 @@ public class HttpCookie {
         this.fullValue = null;
         this.path = path;
         this.domain = domain;
-        this.explicitDomain = true;
+        this.explicitDomain = domain != null;
 
         this.id = buildId();
     }

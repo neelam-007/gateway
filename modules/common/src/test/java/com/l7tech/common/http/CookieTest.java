@@ -477,6 +477,16 @@ public class CookieTest {
         assertEquals("foo", cookie.getCookieName());
         assertEquals("bar", cookie.getCookieValue());
     }
+
+    @Test
+    public void copyCookieWithNullDomainAndPath() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test");
+        final HttpCookie copy = new HttpCookie(cookie, null, null);
+        assertNull(copy.getDomain());
+        assertNull(copy.getPath());
+        assertFalse(copy.isDomainExplicit());
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());

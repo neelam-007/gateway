@@ -289,9 +289,15 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
         if (attributeName.equals(ManageCookieAssertion.NAME)) {
             match = regex ? Pattern.compile(attributeValue).matcher(cookie.getCookieName()).matches() : cookie.getCookieName().equals(attributeValue);
         } else if (attributeName.equals(ManageCookieAssertion.DOMAIN)) {
-            match = regex ? Pattern.compile(attributeValue).matcher(cookie.getDomain()).matches() : cookie.getDomain().equals(attributeValue);
+            final String cookieDomain = cookie.getDomain();
+            if (cookieDomain != null) {
+                match = regex ? Pattern.compile(attributeValue).matcher(cookieDomain).matches() : cookieDomain.equals(attributeValue);
+            }
         } else if (attributeName.equals(ManageCookieAssertion.PATH)) {
-            match = regex ? Pattern.compile(attributeValue).matcher(cookie.getPath()).matches() : cookie.getPath().equals(attributeValue);
+            final String cookiePath = cookie.getPath();
+            if (cookiePath != null) {
+                match = regex ? Pattern.compile(attributeValue).matcher(cookiePath).matches() : cookiePath.equals(attributeValue);
+            }
         }
         return match;
     }

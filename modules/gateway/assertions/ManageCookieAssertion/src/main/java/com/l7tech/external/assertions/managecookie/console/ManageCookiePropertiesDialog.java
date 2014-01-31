@@ -54,6 +54,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JCheckBox originalMaxAge;
     private JCheckBox originalComment;
     private JPanel setAttributesPanel;
+    private JCheckBox originalSecure;
     private InputValidator validators;
 
     public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
@@ -80,6 +81,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalComment.setSelected(cookieAttributes.containsKey(COMMENT) ? cookieAttributes.get(COMMENT).isUseOriginalValue() : false);
         originalMaxAge.setSelected(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).isUseOriginalValue() : false);
         originalVersion.setSelected(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).isUseOriginalValue() : false);
+        originalSecure.setSelected(cookieAttributes.containsKey(SECURE) ? cookieAttributes.get(SECURE).isUseOriginalValue() : false);
         final Map<String, CookieCriteria> criteria = assertion.getCookieCriteria();
         if (criteria.containsKey(NAME)) {
             final CookieCriteria nameCriteria = criteria.get(NAME);
@@ -114,7 +116,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         setAttributeIfUseOriginalOrNotBlank(assertion, MAX_AGE, maxAgeTextField, originalMaxAge);
         setAttributeIfUseOriginalOrNotBlank(assertion, VERSION, versionTextField, originalVersion);
         setAttributeIfUseOriginalOrNotBlank(assertion, COMMENT, commentTextField, originalComment);
-        assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, String.valueOf(secureCheckBox.isSelected()), false));
+        setAttributeIfUseOriginalOrNotBlank(assertion, SECURE, String.valueOf(secureCheckBox.isSelected()), originalSecure);
         assertion.getCookieCriteria().clear();
         setCriteriaIfNotBlank(assertion, NAME, nameMatchTextField, nameRegexCheckBox);
         setCriteriaIfNotBlank(assertion, DOMAIN, domainMatchTextField, domainRegexCheckBox);
@@ -122,10 +124,14 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         return assertion;
     }
 
-    private void setAttributeIfUseOriginalOrNotBlank(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox originalCheckBox) {
-        if (originalCheckBox.isSelected() || StringUtils.isNotBlank(attributeTextField.getText())) {
-            assertion.getCookieAttributes().put(attributeName, new CookieAttribute(attributeName, attributeTextField.getText().trim(), originalCheckBox.isSelected()));
+    private void setAttributeIfUseOriginalOrNotBlank(final ManageCookieAssertion assertion, final String attributeName, final String attributeValue, final JCheckBox originalCheckBox) {
+        if (originalCheckBox.isSelected() || StringUtils.isNotBlank(attributeValue)) {
+            assertion.getCookieAttributes().put(attributeName, new CookieAttribute(attributeName, attributeValue.trim(), originalCheckBox.isSelected()));
         }
+    }
+
+    private void setAttributeIfUseOriginalOrNotBlank(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox originalCheckBox) {
+        setAttributeIfUseOriginalOrNotBlank(assertion, attributeName, attributeTextField.getText(), originalCheckBox);
     }
 
     private void setCriteriaIfNotBlank(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox regexCheckBox) {
@@ -170,6 +176,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalVersion.addActionListener(listener);
         originalMaxAge.addActionListener(listener);
         originalComment.addActionListener(listener);
+        originalSecure.addActionListener(listener);
         validators = new InputValidator(this, getTitle());
         buildValidationRules();
     }
@@ -214,6 +221,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalMaxAge.setEnabled(op == UPDATE);
         originalComment.setEnabled(op == UPDATE);
         originalVersion.setEnabled(op == UPDATE);
+        originalSecure.setEnabled(op == UPDATE);
 
         nameLabel.setEnabled(op != REMOVE);
         final boolean addOrAddOrReplace = op == ADD || op == ADD_OR_REPLACE;
@@ -230,7 +238,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         commentTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalComment.isSelected()));
         versionLabel.setEnabled(op != REMOVE);
         versionTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalVersion.isSelected()));
-        secureCheckBox.setEnabled(op != REMOVE);
+        secureCheckBox.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalSecure.isSelected()));
 
         final boolean updateOrRemove = op == UPDATE || op == REMOVE;
         matchPanel.setEnabled(updateOrRemove);
