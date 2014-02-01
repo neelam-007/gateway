@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
+
 /**
  * The assertion dependencyProcessor finds the dependencies that an assertions has.
  *
@@ -77,12 +80,19 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
 
         if (assertion instanceof UsesVariables) {
             for (String variable : ((UsesVariables) assertion).getVariablesUsed()) {
-                ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
-                if (property != null) {
-                    Dependency dependency = finder.getDependency(property);
-                    if (dependency != null && !dependencies.contains(dependency)){
-                        dependencies.add(dependency);
-                    }
+                if (variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
+                        variable.length() > PREFIX_CLUSTER_PROPERTY.length() &&
+                        !variable.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
+                    String cpName = variable.substring(PREFIX_CLUSTER_PROPERTY.length()+1);
+
+                    // try to get cluster property reference
+                    ClusterProperty property = clusterPropertyManager.findByUniqueName(cpName);
+                    if (property != null) {
+                        Dependency dependency = finder.getDependency(property);
+                        if (dependency != null && !dependencies.contains(dependency)){
+                            dependencies.add(dependency);
+                        }
+                }
                 }else if(doSecPasswordPlaintext){
                     // try get secure password reference
                     Matcher matcher = SECPASS_PLAINTEXT_PATTERN.matcher(variable);

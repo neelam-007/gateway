@@ -5,6 +5,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ServiceAliasMO;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.AliasHeader;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -29,5 +31,14 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     @Override
     protected Item<ServiceAliasMO> toReference(ServiceAliasMO resource) {
         return toReference(resource.getId(), resource.getServiceReference().getId());
+    }
+
+    @Override
+    public Item<ServiceAliasMO> toReference(EntityHeader entityHeader) {
+        if (entityHeader instanceof AliasHeader) {
+            return toReference(entityHeader.getStrId(),((AliasHeader) entityHeader).getAliasedEntityId().toString());
+        } else {
+            return super.toReference(entityHeader);
+        }
     }
 }

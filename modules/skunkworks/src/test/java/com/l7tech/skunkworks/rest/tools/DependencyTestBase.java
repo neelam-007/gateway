@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,11 +30,16 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
     private static final Logger logger = Logger.getLogger(DependencyTestBase.class.getName());
 
     protected PolicyManager policyManager;
+    protected FolderManager folderManager;
+    protected Folder rootFolder;
     protected List<Goid> policyGoids = new ArrayList<Goid>();
 
     @Before
     public void before() throws Exception {
         policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
+        folderManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("folderManager", FolderManager.class);
+
+        rootFolder = folderManager.findRootFolder();
     }
 
     @AfterClass
@@ -102,6 +108,18 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         Item<DependencyTreeMO> item = MarshallingUtils.unmarshal(Item.class, source);
         verify.call(item);
 
+    }
+
+    protected void TestDependency(String resourceURI, String id, Functions.UnaryVoid<Item<DependencyTreeMO>> verify) throws Exception{
+
+         //  get dependency
+        RestResponse depResponse = getDatabaseBasedRestManagementEnvironment().processRequest( resourceURI + id + "/dependencies", HttpMethod.GET, null, "");
+        assertOkResponse(depResponse);
+
+        //  verify
+        final StreamSource source = new StreamSource(new StringReader(depResponse.getBody()));
+        Item<DependencyTreeMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        verify.call(item);
     }
 
     protected DependencyMO getDependency(List<DependencyMO> dependencies, final EntityType type){
