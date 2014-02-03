@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.policy.assertion.ext.ServiceFinder;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.Config;
@@ -98,6 +99,9 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Mock
     private ScannerCallbacks.CustomAssertion customAssertionCallbacks;
+
+    @Mock
+    private ServiceFinder serviceFinder;
 
     private CustomAssertionModulesConfig modulesConfig;
     private CustomAssertionsScanner assertionsScanner;
@@ -212,6 +216,9 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         Mockito.when(configMock.getProperty("custom.assertions.temp")).thenReturn(modTmpWorkFolder.getAbsolutePath());
         Mockito.when(configMock.getBooleanProperty(Mockito.eq("custom.assertions.rescan.enabled"), Mockito.anyBoolean())).thenReturn(true);
         Mockito.when(configMock.getLongProperty(Mockito.eq("custom.assertions.rescan.millis"), Mockito.anyLong())).thenReturn(1000L);
+
+        // mock getServiceFinder
+        Mockito.when(customAssertionCallbacks.getServiceFinder()).thenReturn(serviceFinder);
 
         // create custom assertions modules config
         modulesConfig = Mockito.spy(new CustomAssertionModulesConfig(configMock));
@@ -1775,7 +1782,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     /**
      * Even though we are unloading custom assertion modules which throw RuntimeException during unloading
-     * (i.e. {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onUnload() onUnload}), the module <b>will</b>
+     * (i.e. {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onUnload(com.l7tech.policy.assertion.ext.ServiceFinder) onUnload}), the module <b>will</b>
      * be unloaded, since it's file was probably deleted (which would cause SSG and SSM to be out-of-sync)
      * <p/>
      * Expected behavior is; all modules will be unloaded regardless of the exception.

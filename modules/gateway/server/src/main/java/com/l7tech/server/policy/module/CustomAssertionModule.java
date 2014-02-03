@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomDynamicLoader;
 import com.l7tech.policy.assertion.ext.CustomLifecycleListener;
 import com.l7tech.policy.assertion.ext.CustomLoaderException;
+import com.l7tech.policy.assertion.ext.ServiceFinder;
 import com.l7tech.util.ExceptionUtils;
 
 import java.io.Closeable;
@@ -29,6 +30,12 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
     private final Set<CustomAssertionDescriptor> descriptors;
 
     /**
+     * Custom Assertion {@link ServiceFinder} for locating Layer 7 API Services.<br/>
+     * For available services see the Layer 7 API documentation.
+     */
+    private final ServiceFinder serviceFinder;
+
+    /**
      * @return read-only collection of assertion descriptors
      */
     public Collection<CustomAssertionDescriptor> getDescriptors() {
@@ -43,13 +50,22 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
      * @param jarFileSha1     the module content SHA-1 checksum.
      * @param classLoader     the module class loader.
      * @param descriptors     a set of descriptors associated with this module.
+     * @param serviceFinder   the service finder for locating Layer 7 API Services available for assertions.
      */
     public CustomAssertionModule(final String moduleName,
                                  final long modifiedTime,
                                  final String jarFileSha1,
-                                 final CustomAssertionClassLoader classLoader, Set<CustomAssertionDescriptor> descriptors) {
+                                 final CustomAssertionClassLoader classLoader,
+                                 final Set<CustomAssertionDescriptor> descriptors,
+                                 final ServiceFinder serviceFinder) {
         super(moduleName, modifiedTime, jarFileSha1, classLoader);
+
         this.descriptors = descriptors;
+
+        if (serviceFinder == null) {
+            throw new IllegalArgumentException("serviceFinder cannot be null");
+        }
+        this.serviceFinder = serviceFinder;
     }
 
     /**
@@ -79,7 +95,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
 
     /**
      * Notify all assertions that it's module is about to be loaded.<br/>
-     * Will try to execute {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onLoad()} method.<br/>
+     * Will try to execute {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onLoad(com.l7tech.policy.assertion.ext.ServiceFinder)} method.<br/>
      *
      * @throws CustomLoaderException if an error happens during loading process
      * @see CustomLifecycleListener
@@ -95,7 +111,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
                 // try to execute onLoad method
                 try {
                     final CustomLifecycleListener assertion = (CustomLifecycleListener)assertionClass.newInstance();
-                    assertion.onLoad();
+                    assertion.onLoad(serviceFinder);
                 } catch (InstantiationException e) {
                     logger.log(Level.SEVERE, "Custom assertion module \"" + getName() + "\": exception while instantiating class " + assertionClass.getName() + " of module load: " + ExceptionUtils.getMessage(e), e);
                 } catch (IllegalAccessException e) {
@@ -107,7 +123,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
 
     /**
      * Notify all assertions that it's module is about to be unloaded.<br/>
-     * Will try to execute {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onUnload()} method.<br/>
+     * Will try to execute {@link com.l7tech.policy.assertion.ext.CustomLifecycleListener#onUnload(com.l7tech.policy.assertion.ext.ServiceFinder)} method.<br/>
      *
      * @see CustomLifecycleListener
      */
@@ -121,7 +137,7 @@ public class CustomAssertionModule extends BaseAssertionModule<CustomAssertionCl
             if (CustomLifecycleListener.class.isAssignableFrom(assertionClass)) {
                 try {
                     final CustomLifecycleListener assertion = (CustomLifecycleListener)assertionClass.newInstance();
-                    assertion.onUnload();
+                    assertion.onUnload(serviceFinder);
                 } catch (InstantiationException e) {
                     logger.log(Level.SEVERE, "Custom assertion module \"" + getName() + "\": exception while instantiating class " + assertionClass.getName() + " of module unload: " + ExceptionUtils.getMessage(e), e);
                 } catch (IllegalAccessException e) {

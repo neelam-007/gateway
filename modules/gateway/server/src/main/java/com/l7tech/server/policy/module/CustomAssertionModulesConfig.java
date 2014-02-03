@@ -81,14 +81,7 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
 
     @Override
     public String getDisabledSuffix() {
-        ////////////////////////////////////////////////////////////////////////////////
-        // uncomment to enable module unload workaround on Windows platform
-        //return ".disabled"; // enable the workaround
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // TODO: for convenience maybe read from system.properties file e.g. System.getProperty("com.l7tech.server.hotswap.win.workaround.custom.suffix");
         return System.getProperty("com.l7tech.server.hotswap.win.workaround.custom.suffix");
-        //return null; // null to disable the workaround (disabled for production)
     }
 
     public String getCustomAssertionPropertyFileName() {

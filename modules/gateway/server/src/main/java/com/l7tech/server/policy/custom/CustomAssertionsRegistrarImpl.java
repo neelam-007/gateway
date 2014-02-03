@@ -10,11 +10,13 @@ import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
+import com.l7tech.server.policy.SecurePasswordServicesImpl;
+import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.module.*;
-import com.l7tech.server.store.KeyValueStoreServicesImpl;
-import com.l7tech.server.policy.*;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.server.policy.module.AllCustomAssertionClassLoader;
+import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +26,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -359,6 +365,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             }
 
             @Override
+            public ServiceFinder getServiceFinder() {
+                return CustomAssertionsRegistrarImpl.this.getServiceFinderInstance();
+            }
+
+            @Override
             public void publishEvent(@NotNull final ApplicationEvent event) {
                 CustomAssertionsRegistrarImpl.this.publishEvent(event);
             }
@@ -490,15 +501,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
      */
     protected final void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         if (CustomExtensionInterfaceBinding.getServiceFinder() == null) {
-            // Set ServiceFinder in CustomExtensionInterfaceBinding.
-            // The service finder is a static variable. All SSM will use the same instance of service
-            // finder in the SSG. Ensure that the services added to the service finder is thread-safe.
-            // SecurePasswordServicesImpl only does thread-safe read operations.
-            //
-            ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
-            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
-            serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl(customKeyValueStoreManager));
-            CustomExtensionInterfaceBinding.setServiceFinder(serviceFinder);
+            CustomExtensionInterfaceBinding.setServiceFinder(getServiceFinderInstance());
         }
 
         if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
@@ -539,5 +542,29 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     @Override
     public void destroy() throws Exception {
         assertionsScanner.destroy();
+    }
+
+    // singleton custom assertions service finder implementation
+    private ServiceFinderImpl serviceFinder = null;
+
+    /**
+     * Obtain a singleton instance of the custom assertions {@link ServiceFinder}.
+     */
+    private ServiceFinderImpl getServiceFinderInstance() {
+        if (securePasswordManager == null) throw new IllegalStateException("securePasswordManager is not initialized");
+        if (customKeyValueStoreManager == null) throw new IllegalStateException("customKeyValueStoreManager is not initialized");
+
+        if (serviceFinder == null) {
+            // Set ServiceFinder used in CustomExtensionInterfaceBinding and CustomExternalReferenceResolver.
+            // The service finder is a singleton, all SSM will use the same instance of service finder in the SSG.
+            // Ensure that the services added to the service finder is thread-safe.
+            // SecurePasswordServicesImpl only does thread-safe read operations.
+            // TODO: verify that CustomKeyValueStoreManager does only thread-safe operations.
+
+            serviceFinder = new ServiceFinderImpl();
+            serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
+            serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl(customKeyValueStoreManager));
+        }
+        return serviceFinder;
     }
 }

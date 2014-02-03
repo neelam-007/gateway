@@ -474,7 +474,14 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                 }
 
             // create a new module.
-            final CustomAssertionModule module = new CustomAssertionModule(file.getName(), lastModified, sha1, classLoader, descriptors);
+            final CustomAssertionModule module = new CustomAssertionModule(
+                    file.getName(),
+                    lastModified,
+                    sha1,
+                    classLoader,
+                    descriptors,
+                    callbacks.getServiceFinder()
+            );
 
             // all assertions are going to be loaded during initial scan, so if this is not the initial load then
             // check if we can load this module i.e. if all assertions inside the module are implementing CustomDynamicLoader interface.
