@@ -5,6 +5,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SerializationUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -96,7 +97,7 @@ public class JVMDatabaseBasedRestManagementEnvironment {
         return (System.getProperty("sun.java.command") != null && System.getProperty("sun.java.command").contains("com.intellij.rt.execution.junit.JUnitStarter"));
     }
 
-    public RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    public RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, @NotNull String body) throws Exception {
         return processRequest(uri, null, method, contentType, body);
     }
 

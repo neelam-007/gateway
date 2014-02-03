@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 
@@ -85,6 +86,11 @@ public class TestResourceFactory implements ResourceFactory<Object> {
     @Override
     public List<Object> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
         return null;
+    }
+
+    @Override
+    public boolean resourceExists(Map<String, String> stringStringMap) {
+        throw new NotImplementedException();
     }
 
     @ResourceFactory.ResourceMethod(name="Create")

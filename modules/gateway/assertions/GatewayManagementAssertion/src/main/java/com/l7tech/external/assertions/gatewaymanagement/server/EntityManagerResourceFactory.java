@@ -183,6 +183,20 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     @Override
+    public boolean resourceExists(final Map<String,String> selectorMap) {
+        return transactional(new TransactionalCallback<Boolean>() {
+            @Override
+            public Boolean execute() throws ObjectModelException {
+                try {
+                    return selectEntity(selectorMap) != null;
+                } catch (ResourceNotFoundException e) {
+                    return false;
+                }
+            }
+        }, true);
+    }
+
+    @Override
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         checkReadOnly();
 

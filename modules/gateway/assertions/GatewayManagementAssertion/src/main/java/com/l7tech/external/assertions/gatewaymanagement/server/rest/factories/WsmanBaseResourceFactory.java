@@ -77,6 +77,11 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         return factory.getResource(buildSelectorMap(id));
     }
 
+    public boolean resourceExists(@NotNull String id) {
+        return factory.resourceExists(buildSelectorMap(id));
+    }
+
+
     @Override
     public List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
         return factory.getResources(offset, count, sort, ascending, filters);

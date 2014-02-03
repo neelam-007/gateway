@@ -60,6 +60,15 @@ public interface RestResourceFactory<R> {
     public R getResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException;
 
     /**
+     * This will return true if the resource with the given id exists. returns false otherwise.
+     *
+     * @param id The id of the resource to find
+     * @return true it the resource exists.
+     *
+     */
+    public boolean resourceExists(@NotNull String id);
+
+    /**
      * Returns a list of resources. The list starts at the given offset and contains a maximum of count elements. It
      * can optionally be sorted by the given sort key in either ascending or descending order. The filters given are
      * used to restrict the returned resources to only those entities that match the filters.

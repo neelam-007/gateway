@@ -70,10 +70,12 @@ public abstract class MigrationTestBase {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
         for (Mapping mapping : reverseMappingsList) {
-            Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
-            String uri = getUri(mapping.getTargetUri());
-            RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
-            assertOKDeleteResponse(response);
+            if(mapping.getErrorType() == null){
+                Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
+                String uri = getUri(mapping.getTargetUri());
+                RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
+                assertOKDeleteResponse(response);
+            }
         }
     }
 

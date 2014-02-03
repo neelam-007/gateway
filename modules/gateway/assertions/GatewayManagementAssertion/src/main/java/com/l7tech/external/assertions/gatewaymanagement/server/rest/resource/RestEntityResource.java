@@ -138,13 +138,8 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
 
     @Override
     public Response updateResource(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        R existingResource;
-        try {
-            existingResource = factory.getResource(id);
-        } catch (ResourceFactory.ResourceNotFoundException e) {
-            existingResource = null;
-        }
-        if (existingResource != null) {
+        boolean resourceExists = factory.resourceExists(id);
+        if (resourceExists) {
             factory.updateResource(id, resource);
             return Response.ok().entity(toReference(resource)).build();
         } else {

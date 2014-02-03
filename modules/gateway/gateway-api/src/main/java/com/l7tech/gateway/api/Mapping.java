@@ -3,10 +3,7 @@ package com.l7tech.gateway.api;
 import com.l7tech.gateway.api.impl.IdListToStringTypeAdapter;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.HashMap;
 import java.util.List;
@@ -158,5 +155,9 @@ public class Mapping {
 
     public void setDependencies(List<String> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    public <T> T getProperty(String key) {
+        return properties != null ? (T) properties.get(key) : null;
     }
 }
