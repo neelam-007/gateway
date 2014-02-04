@@ -108,10 +108,10 @@ public class BundleResource {
     }
 
     @PUT
-    public Item<Mappings> importBundle(Bundle bundle) {
+    public Item<Mappings> importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) {
         return new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, Collections.<String, Object>emptyMap())))
+                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, test)))
                 .build();
     }
 

@@ -34,7 +34,7 @@ public class BundleImporter {
     private static final String FailOnExisting = "FailOnExisting";
 
     @NotNull
-    public List<Mapping> importBundle(@NotNull final Bundle bundle, @NotNull Map<String, Object> options) {
+    public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test) {
         final List<Mapping> mappingsRtn = new ArrayList<>(bundle.getMappings().size());
         final Map<String, Mapping> mappings = Functions.toMap(bundle.getMappings(), new Functions.Unary<Pair<String, Mapping>, Mapping>() {
             @Override
@@ -95,6 +95,9 @@ public class BundleImporter {
                         default:
                             throw new IllegalStateException("Unknown mapping action: " + mapping.getAction());
                     }
+                }
+                if(test){
+                    transactionStatus.setRollbackOnly();
                 }
                 return null;
             }

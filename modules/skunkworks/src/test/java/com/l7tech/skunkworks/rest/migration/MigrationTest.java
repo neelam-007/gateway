@@ -19,6 +19,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
     private Item<PolicyMO> policyItem;
     private Item<StoredPasswordMO> securePasswordItem;
     private Item<JDBCConnectionMO> jdbcConnectionItem;
+    private Item<Mappings> mappingsToClean;
 
     @Before
     public void before() throws Exception {
@@ -106,14 +108,17 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
 
     @After
     public void after() throws Exception {
+        if(mappingsToClean!= null)
+            cleanupAll(mappingsToClean);
+
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
+        assertOkDeleteResponse(response);
 
         response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
+        assertOkDeleteResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOKDeleteResponse(response);
+        assertOkDeleteResponse(response);
     }
 
     @Test
@@ -135,6 +140,7 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         assertOkResponse(response);
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
 
         //verify the mappings
         Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
@@ -159,7 +165,8 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        cleanupAll(mappings);
+        validate(mappings);
+
     }
 
     @Test
@@ -187,6 +194,7 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         assertOkResponse(response);
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
 
         //verify the mappings
         Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
@@ -211,7 +219,7 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        cleanupAll(mappings);
+        validate(mappings);
     }
 
     @Test
@@ -243,6 +251,7 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         assertOkResponse(response);
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
 
         //verify the mappings
         Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
@@ -267,6 +276,6 @@ public class MigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTes
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        cleanupAll(mappings);
+        validate(mappings);
     }
 }

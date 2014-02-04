@@ -61,7 +61,7 @@ public abstract class MigrationTestBase {
         Assert.assertEquals(200, response.getStatus());
     }
 
-    protected void assertOKDeleteResponse(RestResponse response) {
+    protected void assertOkDeleteResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(204, response.getStatus());
     }
@@ -74,7 +74,19 @@ public abstract class MigrationTestBase {
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");
-                assertOKDeleteResponse(response);
+                assertOkDeleteResponse(response);
+            }
+        }
+    }
+
+
+    protected void validate(Item<Mappings> mappings) throws Exception {
+        for (Mapping mapping : mappings.getContent().getMappings()) {
+            if(mapping.getErrorType() == null){
+                Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
+                String uri = getUri(mapping.getTargetUri());
+                RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
+                assertOkResponse(response);
             }
         }
     }
