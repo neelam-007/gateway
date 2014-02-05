@@ -46,6 +46,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
     private JLabel passwordLabel;
     private JLabel realmLabel;
     private JTextField userRealmTextField;
+    private JLabel userRealmLabel;
     private final InputValidator inputValidator;
 
     public KerberosAuthenticationDialog(final Frame owner, final KerberosAuthenticationAssertion assertion){
@@ -122,6 +123,7 @@ public class KerberosAuthenticationDialog extends AssertionPropertiesOkCancelSup
         authenticatedUserTextField.setEnabled(specifyUserRadioButton.isSelected() && protocolTransitionRadioButton.isSelected());
         authenticatedUserPanel.setEnabled(protocolTransitionRadioButton.isSelected());
         userRealmTextField.setEnabled(protocolTransitionRadioButton.isSelected());
+        userRealmLabel.setEnabled(protocolTransitionRadioButton.isSelected());
 
     }
 

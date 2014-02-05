@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.PolicyVersionMO;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
@@ -16,7 +16,6 @@ import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import org.junit.*;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -93,12 +92,12 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void getPolicyVersionTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        PolicyVersionMO policyVersionReturned = (PolicyVersionMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        PolicyVersionMO policyVersionReturned = (PolicyVersionMO) item.getContent();
 
         Assert.assertEquals(policyVersion.getId(), policyVersionReturned.getId());
         Assert.assertEquals(policyVersion.getName(), policyVersionReturned.getComment());
@@ -108,7 +107,7 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void updatePolicyVersionCommentTest() throws Exception {
         final String newPolicyComment = "Policy Version Comment Updated";
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId() + "/comment", HttpMethod.PUT, null, newPolicyComment);
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId() + "/comment", HttpMethod.PUT, null, newPolicyComment);
         logger.info(response.toString());
 
         PolicyVersion policyVersionSaved = policyVersionManager.findByPrimaryKey(policyVersion.getGoid());
@@ -117,14 +116,14 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void listPolicyVersions() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        ItemsList<PolicyVersionMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
-        Assert.assertEquals(1, references.getReferences().size());
+        // check entity
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

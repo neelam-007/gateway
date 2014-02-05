@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
@@ -91,6 +93,32 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             }
         }, true ) );
     }
+
+    @Override
+    public List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
+        try{
+            final ClusterProperty property = getClusterPropertyForRead();
+            List<RI> entities = new ArrayList<>(parseProperty( property ));
+
+            entities = filterAndSortEntities(entities,sort,ascending,filters);
+            entities = entities.subList(offset,Math.min(entities.size(), offset+count));
+
+            return Functions.map(entities, new Functions.UnaryThrows<R, RI, ObjectModelException>() {
+                @Override
+                public R call(RI e) throws ObjectModelException {
+                    return internalAsResource(e);
+                }
+            });
+        } catch (ObjectModelException e) {
+            handleObjectModelException(e);
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceAccessException(ExceptionUtils.getMessage(e), e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    protected abstract List<RI> filterAndSortEntities(List<RI> entities, String sort, Boolean ascending, Map<String,List<Object>> filters);
 
     @Override
     public final R putResource( final Map<String, String> selectorMap,

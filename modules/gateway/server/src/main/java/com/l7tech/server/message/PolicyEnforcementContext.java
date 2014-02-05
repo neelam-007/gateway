@@ -1,6 +1,5 @@
 package com.l7tech.server.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
@@ -147,7 +146,7 @@ public interface PolicyEnforcementContext extends Closeable {
     /**
      * Set the metadata for the service policy for this context.
      *
-     * @param policyMetadata
+     * @param policyMetadata service policies metatdata
      * @see #setService(PublishedService)
      */
     void setServicePolicyMetadata( PolicyMetadata policyMetadata );
@@ -175,12 +174,6 @@ public interface PolicyEnforcementContext extends Closeable {
     PolicyContextCache getCache();
 
     void setCache(PolicyContextCache cache);
-
-    Set<HttpCookie> getCookies();
-
-    void addCookie(HttpCookie cookie);
-
-    void deleteCookie(HttpCookie cookie);
 
     ArrayList<String> getIncrementedCounters();
 
@@ -445,6 +438,8 @@ public interface PolicyEnforcementContext extends Closeable {
 
     void setTraceListener(AssertionTraceListener traceListener);
 
+    boolean hasTraceListener();
+
     boolean isRequestWasCompressed();
 
     void setRequestWasCompressed(boolean requestWasCompressed);
@@ -505,6 +500,18 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     @Override
     void close();
+
+    /**
+     * @return true if response cookies should have their domain and path overwritten with the gateway domain and path
+     * respectively or false if the response cookies should retain their original domain and path (ie. for a reverse-proxy).
+     */
+    boolean isOverwriteResponseCookieAttributes();
+
+    /**
+     * @param overwriteResponseCookieAttributes set to true if response cookies should have their domain and path overwritten
+     *                                         with the gateway domain and service path respectively.
+     */
+    void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes);
 
     final static class AssertionResult {
         private final Assertion assertion;

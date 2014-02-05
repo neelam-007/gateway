@@ -393,7 +393,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
 
             MqMessageProxy mqMessage = new MqMessageProxy(mqRequestMessage);
-            gatewayRequestMessage.attachKnob(buildMqNativeKnob(soapActionValue, mqMessage), true, MqNativeKnob.class, OutboundHeadersKnob.class);
+            gatewayRequestMessage.attachKnob(buildMqNativeKnob(soapActionValue, mqMessage), true, MqNativeKnob.class);
 
             final Goid hardwiredServiceGoid = connector.getHardwiredServiceGoid();
             if ( hardwiredServiceGoid != null ) {
@@ -405,7 +405,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
 
             Message gatewayResponseMessage = new Message();
-            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class, OutboundHeadersKnob.class );
+            gatewayResponseMessage.attachKnob(buildMqNativeKnob(new MqMessageProxy(new MQMessage())), true, MqNativeKnob.class);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(gatewayRequestMessage, gatewayResponseMessage, replyExpected);
 
             boolean stealthMode = false;
@@ -489,7 +489,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 MqNativeKnob mqNativeKnob = gatewayResponseMessage.getKnob(MqNativeKnob.class);
                 MQMessage mqResponseMessage = new MQMessage();
                 mqResponseMessage = new PassThroughDecorator(mqResponseMessage, (MqMessageProxy) mqNativeKnob.getMessage(),
-                        gatewayResponseMessage.getKnob(OutboundHeadersKnob.class), null, context, getAudit());
+                        gatewayResponseMessage.getKnob(HeadersKnob.class), null, context, getAudit());
                 mqResponseMessage = new DescriptorDecorator((MqMessageDecorator)mqResponseMessage);
                 mqResponseMessage = new PropertyDecorator((MqMessageDecorator)mqResponseMessage);
                 mqResponseMessage = new HeaderDecorator((MqMessageDecorator)mqResponseMessage);

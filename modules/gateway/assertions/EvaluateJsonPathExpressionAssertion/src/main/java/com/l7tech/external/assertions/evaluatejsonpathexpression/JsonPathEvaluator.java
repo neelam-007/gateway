@@ -32,13 +32,13 @@ public enum JsonPathEvaluator implements Evaluator {
             
             try{
                 Object res = path.read(source, expression);
-                if((res instanceof String) || (res instanceof JSONObject) ){
-                    results.add(res.toString());
-                }
-                else if(res instanceof JSONArray){
+                if(res instanceof JSONArray){
                     for(Object o : (JSONArray)res){
                         results.add(o.toString());
                     }
+                }
+                else {
+                    results.add(res.toString());
                 }
             }            
             catch (RuntimeException e){

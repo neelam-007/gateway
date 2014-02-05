@@ -158,12 +158,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
     private HttpResponseKnob getHttpResponseKnob(final Message response) {
         HttpResponseKnob hrk = response.getKnob(HttpResponseKnob.class);
         if (hrk == null) {
-            hrk = new AbstractHttpResponseKnob() {
-                @Override
-                public void addCookie(HttpCookie cookie) {
-                    // This was probably not an HTTP request, so cookies are meaningless anyway.
-                }
-            };
+            hrk = new AbstractHttpResponseKnob() {};
             response.attachHttpResponseKnob(hrk);
         }
         return hrk;

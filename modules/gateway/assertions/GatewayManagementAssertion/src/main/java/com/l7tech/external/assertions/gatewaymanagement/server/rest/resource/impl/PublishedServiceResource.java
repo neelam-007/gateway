@@ -2,11 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -16,7 +17,8 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(PublishedServiceResource.SERVICES_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + PublishedServiceResource.SERVICES_URI)
+@Singleton
 public class PublishedServiceResource extends DependentRestEntityResource<ServiceMO, ServiceRestResourceFactory> {
 
     protected static final String SERVICES_URI = "services";
@@ -27,12 +29,8 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SERVICE;
-    }
-
     @Override
-    protected Reference toReference(ServiceMO resource) {
+    protected Item<ServiceMO> toReference(ServiceMO resource) {
         return toReference(resource.getId(), resource.getServiceDetail().getName());
     }
 }

@@ -6,7 +6,6 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.apache.commons.lang.StringUtils;
 
@@ -114,7 +113,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
 
         useLastCredentialsRadioButton.setSelected(assertion.isLastCredential());
         specifyCredentialsRadioButton.setSelected(!assertion.isLastCredential());
-        credentialsTextField.setText(assertion.getLogin());
+        credentialsTextField.setText(assertion.getCredentialsName());
 
         enableDisableComponents();
     }
@@ -142,7 +141,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setCookieSourceVar(cookieVariablePanel.getVariable());
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
         assertion.setLastCredential(useLastCredentialsRadioButton.isSelected());
-        assertion.setLogin(credentialsTextField.getText());
+        assertion.setCredentialsName(credentialsTextField.getText());
         //set user credentials
 
         return assertion;

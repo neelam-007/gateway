@@ -1,6 +1,6 @@
 <l7:Bundle xmlns:l7="http://ns.l7tech.com/2012/09/policy-bundle" >
     <l7:Id>a07924c0-0265-42ea-90f1-2428e31ae5ae</l7:Id>
-    <l7:Version>2.1</l7:Version>
+    <l7:Version>2.1.1</l7:Version>
     <l7:Name>OAuth Manager</l7:Name>
     <l7:Description>Manager utility for Client and Token store for OAuth 1.0 and 2.0</l7:Description>
 </l7:Bundle>

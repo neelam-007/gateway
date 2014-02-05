@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.JMSDestinationRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.JMSDestinationMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -14,7 +14,8 @@ import javax.ws.rs.ext.Provider;
  * The jms destination resource
  */
 @Provider
-@Path(JMSDestinationResource.jmsDestination_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + JMSDestinationResource.jmsDestination_URI)
+@Singleton
 public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO, JMSDestinationRestResourceFactory> {
 
     protected static final String jmsDestination_URI = "jmsDestinations";
@@ -25,12 +26,8 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.JMS_ENDPOINT;
-    }
-
     @Override
-    protected Reference toReference(JMSDestinationMO resource) {
+    protected Item<JMSDestinationMO> toReference(JMSDestinationMO resource) {
         return toReference(resource.getId(), resource.getJmsDestinationDetail().getName());
     }
 }

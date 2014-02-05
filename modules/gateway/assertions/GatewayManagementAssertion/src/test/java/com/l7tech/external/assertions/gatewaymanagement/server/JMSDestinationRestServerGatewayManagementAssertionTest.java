@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.JMSDestinationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -100,12 +97,12 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        JMSDestinationMO result = (JMSDestinationMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        JMSDestinationMO result = (JMSDestinationMO) item.getContent();
 
         assertEquals("JMS Destination identifier:", jmsEndpoint.getId(), result.getId());
         assertEquals("JMS Destination name:", jmsEndpoint.getName(), result.getJmsDestinationDetail().getName());
@@ -120,7 +117,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         createObject.getJmsDestinationDetail().setName("New jms name");
         createObject.getJmsConnection().setId(null);
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(jmsDestinationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(jmsDestinationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         JmsEndpoint createdEntity = jmsEndpointManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -138,7 +135,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
         createObject.getJmsConnection().setId(null);
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(jmsDestinationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(jmsDestinationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created JMS Destination goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -150,14 +147,14 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        JMSDestinationMO entityGot = (JMSDestinationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        JMSDestinationMO entityGot = (JMSDestinationMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getJmsDestinationDetail().setName("Updated New jms");
-        Response response = processRequest(jmsDestinationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(jmsDestinationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created JMS Destination goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -172,7 +169,7 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath + jmsEndpoint.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -183,13 +180,13 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(jmsDestinationBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(jmsDestinationBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<JMSDestinationMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(jmsEndpointManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(jmsEndpointManagerStub.findAll().size(), item.getContent().size());
     }
 }

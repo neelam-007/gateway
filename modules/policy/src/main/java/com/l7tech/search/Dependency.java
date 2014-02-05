@@ -48,7 +48,7 @@ public @interface Dependency {
         TRUSTED_CERT(EntityType.TRUSTED_CERT),
         CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY),
         ID_PROVIDER_CONFIG(EntityType.ID_PROVIDER_CONFIG),
-        JMS_CONNECTION(EntityType.JMS_CONNECTION),
+        JMS_ENDPOINT(EntityType.JMS_ENDPOINT),
         SSG_KEYSTORE(EntityType.SSG_KEYSTORE),
         SSG_ACTIVE_CONNECTOR(EntityType.SSG_ACTIVE_CONNECTOR),
         SSG_PRIVATE_KEY(EntityType.SSG_KEY_ENTRY),
@@ -57,7 +57,10 @@ public @interface Dependency {
         SECURITY_ZONE(EntityType.SECURITY_ZONE),
         ENCAPSULATED_ASSERTION(EntityType.ENCAPSULATED_ASSERTION),
         POLICY_ALIAS(EntityType.POLICY_ALIAS),
-        SERVICE_ALIAS(EntityType.SERVICE_ALIAS);
+        SERVICE_ALIAS(EntityType.SERVICE_ALIAS),
+        USER(EntityType.USER),
+        GROUP(EntityType.GROUP),
+        RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY);
 
         private EntityType entityType;
 

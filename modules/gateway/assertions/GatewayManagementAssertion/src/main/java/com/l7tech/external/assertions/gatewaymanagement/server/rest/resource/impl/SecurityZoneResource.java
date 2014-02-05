@@ -2,11 +2,11 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SecurityZoneRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -14,7 +14,8 @@ import javax.ws.rs.ext.Provider;
  * The security zone resource
  */
 @Provider
-@Path(SecurityZoneResource.securityZone_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + SecurityZoneResource.securityZone_URI)
+@Singleton
 public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, SecurityZoneRestResourceFactory> {
 
     protected static final String securityZone_URI = "securityZones";
@@ -25,12 +26,8 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SECURITY_ZONE;
-    }
-
     @Override
-    protected Reference toReference(SecurityZoneMO resource) {
+    protected Item<SecurityZoneMO> toReference(SecurityZoneMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

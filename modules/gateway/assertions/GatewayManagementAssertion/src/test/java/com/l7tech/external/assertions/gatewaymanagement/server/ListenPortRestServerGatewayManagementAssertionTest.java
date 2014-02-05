@@ -2,35 +2,25 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ListenPortMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.transport.SsgConnectorManagerStub;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
-import org.mockito.InjectMocks;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.logging.Logger;
 
-import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
 import static junit.framework.Assert.assertEquals;
-import static org.mockito.Mockito.when;
 
 /**
  *
@@ -78,12 +68,12 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ListenPortMO result = (ListenPortMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ListenPortMO result = (ListenPortMO) item.getContent();
 
         assertEquals("Listen Port identifier:", ssgConnector.getId(), result.getId());
         assertEquals("Listen Port name:", ssgConnector.getName(), result.getName());
@@ -96,7 +86,7 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         createObject.setId(null);
         createObject.setName("New listen port");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(listenPortBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(listenPortBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         SsgConnector createdEntity = ssgConnectorManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -112,7 +102,7 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
         createObject.setName("New listen port");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(listenPortBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(listenPortBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Listen Port goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -124,15 +114,15 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         logger.info(responseGet.toString());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ListenPortMO entityGot = (ListenPortMO)MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ListenPortMO entityGot = (ListenPortMO)MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Updated New listen port");
-        Response response = processRequest(listenPortBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(listenPortBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Listen Port goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -147,7 +137,7 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(listenPortBasePath + ssgConnector.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -157,13 +147,13 @@ public class ListenPortRestServerGatewayManagementAssertionTest extends ServerRe
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(listenPortBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(listenPortBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<ListenPortMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(ssgConnectorManagerStub.findAll().size(), item.getContent().size());
     }
 }

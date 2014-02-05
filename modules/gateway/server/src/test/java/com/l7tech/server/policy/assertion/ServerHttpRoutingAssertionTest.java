@@ -37,11 +37,16 @@ import com.l7tech.server.transport.http.SslClientHostnameVerifier;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Config;
 import com.l7tech.util.IOUtils;
 import org.apache.http.pool.PoolStats;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -64,11 +69,33 @@ import java.util.logging.Logger;
 
 import static junit.framework.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ServerHttpRoutingAssertionTest {
 
     private static final String CLIENT_FACTORY = "httpRoutingHttpClientFactory2";
+    @Mock
+    private ApplicationContext mockApplicationContext;
+    @Mock
+    private GenericHttpClientFactory mockClientFactory;
+    @Mock
+    private GenericHttpClient mockClient;
+    @Mock
+    private GenericHttpRequest mockHttpRequest;
+    @Mock
+    private GenericHttpResponse mockHttpResponse;
+
+    @Before
+    public void setup() throws Exception  {
+        when(mockApplicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class)).thenReturn(mockClientFactory);
+        when(mockClientFactory.createHttpClient(anyInt(), anyInt(), anyInt(), anyInt(), anyObject())).thenReturn(mockClient);
+        when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(mockHttpRequest);
+        when(mockHttpRequest.getResponse()).thenReturn(mockHttpResponse);
+    }
 
     @Test(expected = AssertionStatusException.class)
     @BugNumber(11385)
@@ -152,7 +179,7 @@ public class ServerHttpRoutingAssertionTest {
 
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
-        hrequest.addHeader("Authorization", "abcde=");
+        request.getHeadersKnob().addHeader("Authorization", "abcde=");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -282,7 +309,7 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
-        assertEquals(0, pec.getResponse().getHttpResponseKnob().getHeaderValues("content-encoding").length);
+        assertEquals(0, pec.getResponse().getHeadersKnob().getHeaderValues("content-encoding").length);
     }
 
     @Test
@@ -301,6 +328,7 @@ public class ServerHttpRoutingAssertionTest {
         final String placeOrderSoapActionHeaderValue = "\"http://warehouse.acme.com/ws/placeOrder\"";
         hrequest.addHeader("SOAPAction", placeOrderSoapActionHeaderValue);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        request.getHeadersKnob().addHeader("SOAPACtion", placeOrderSoapActionHeaderValue);
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
@@ -1045,5 +1073,31 @@ public class ServerHttpRoutingAssertionTest {
         assertTrue(TestHandler.isAuditPresentContaining("FINEST: https-out"));
         peCtx.close();
 
+    }
+
+    @Test
+    public void responseHeadersSetOnHeadersKnob() throws Exception {
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.getResponseHeaderRules().setForwardAll(true);
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockApplicationContext);
+
+        final List<HttpHeader> responseHeaders = new ArrayList<>();
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_ENCODING, HttpConstants.ENCODING_UTF8));
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain"));
+        responseHeaders.add(new GenericHttpHeader("foo", "bar"));
+        when(mockHttpResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new HttpHeader[responseHeaders.size()])));
+        final Message response = new Message();
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), response);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
+        System.out.println(responseHeadersKnob.getHeaders());
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
+        final String[] fooValues = responseHeadersKnob.getHeaderValues("foo");
+        assertEquals(1, fooValues.length);
+        assertEquals("bar", fooValues[0]);
     }
 }

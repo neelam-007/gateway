@@ -248,7 +248,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
      */
     private boolean addCookies(PolicyEnforcementContext context, HttpContext state, String cookieDomain, Collection<Cookie> added) {
         boolean addedCookies = false;
-        final Set<HttpCookie> cookies = context.getCookies();
+        final Set<HttpCookie> cookies = context.getRequest().getHttpCookiesKnob().getCookies();
         CookieStore cookieStore = (CookieStore) state.getAttribute(ClientContext.COOKIE_STORE);
         if (cookieStore == null) {
             cookieStore = new BasicCookieStore();
@@ -303,7 +303,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
             basicClientCookie.setSecure(cookie.isSecure());
             basicClientCookie.setVersion(cookie.getVersion());
 
-            context.addCookie(CookieUtils.fromHttpClientCookie(basicClientCookie, true));
+            context.getResponse().getHttpCookiesKnob().addCookie(CookieUtils.fromHttpClientCookie(basicClientCookie, true));
         }
     }
 

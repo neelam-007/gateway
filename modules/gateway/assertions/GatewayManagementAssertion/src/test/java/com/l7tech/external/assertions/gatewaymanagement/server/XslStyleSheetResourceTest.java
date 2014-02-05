@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.objectmodel.Goid;
 import org.junit.*;
 
 import java.util.logging.Logger;
@@ -32,21 +31,9 @@ public class XslStyleSheetResourceTest extends ServerRestGatewayManagementAssert
 
     @Test
     public void testLoadDefaultStyleSheet() throws Exception {
-        Response response = processRequest("/stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
+        RestResponse response = processRequest("/../stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
         logger.info(response.toString());
 
-        Assert.assertEquals(200, response.getStatus());
-
-        response = processRequest("/roles/stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
-        Assert.assertEquals(200, response.getStatus());
-
-        response = processRequest("/roles/" + new Goid(123, 467) + "/stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
-        Assert.assertEquals(200, response.getStatus());
-
-        response = processRequest("/policies/" + new Goid(123, 467) + "/versions/stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
-        Assert.assertEquals(200, response.getStatus());
-
-        response = processRequest("/policies/" + new Goid(123, 467) + "/versions/" + new Goid(123, 467) + "/stylesheets/defaultStyleSheet.xsl", HttpMethod.GET, null, "");
         Assert.assertEquals(200, response.getStatus());
     }
 }

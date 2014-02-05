@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.util.IOUtils;
 
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -19,7 +20,8 @@ import java.io.OutputStream;
  * @author Victor Kazakov
  */
 @Provider
-@Path("{path:.*}" + XslStyleSheetResource.StyleSheetBasePath)
+@Path(XslStyleSheetResource.StyleSheetBasePath)
+@Singleton
 public class XslStyleSheetResource {
     public static final String StyleSheetBasePath = "stylesheets";
     public static final String DEFAULT_STYLESHEET_HEADER = "<?xml-stylesheet type=\"text/xsl\" href=\"" + XslStyleSheetResource.DefaultStyleSheetPath + "\"?>";
@@ -35,6 +37,5 @@ public class XslStyleSheetResource {
                 IOUtils.copyStream(XslStyleSheetResource.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/defaultStyleSheet.xsl"), output);
             }
         };
-
     }
 }

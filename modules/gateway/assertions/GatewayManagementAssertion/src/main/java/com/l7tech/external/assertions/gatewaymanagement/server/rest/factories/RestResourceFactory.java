@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +60,15 @@ public interface RestResourceFactory<R> {
     public R getResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException;
 
     /**
+     * This will return true if the resource with the given id exists. returns false otherwise.
+     *
+     * @param id The id of the resource to find
+     * @return true it the resource exists.
+     *
+     */
+    public boolean resourceExists(@NotNull String id);
+
+    /**
      * Returns a list of resources. The list starts at the given offset and contains a maximum of count elements. It
      * can optionally be sorted by the given sort key in either ascending or descending order. The filters given are
      * used to restrict the returned resources to only those entities that match the filters.
@@ -99,4 +110,22 @@ public interface RestResourceFactory<R> {
      *
      */
     public void deleteResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException;
+
+    /**
+     * This will return the default mapping for the entity.
+     *
+     * @param resource        The resource to create the mapping for
+     * @param defaultAction   The default action given
+     * @param defaultMapBy    The default map by given
+     * @return The mapping for the resource
+     */
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy);
+
+    /**
+     * Returns the entity type of the resource
+     *
+     * @return The resource entity type
+     */
+    @NotNull
+    public abstract EntityType getEntityType();
 }

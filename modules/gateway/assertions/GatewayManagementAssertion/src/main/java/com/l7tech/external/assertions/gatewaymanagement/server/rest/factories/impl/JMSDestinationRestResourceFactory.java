@@ -7,9 +7,11 @@ import com.l7tech.gateway.api.JMSConnection;
 import com.l7tech.gateway.api.JMSDestinationDetail;
 import com.l7tech.gateway.api.JMSDestinationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -39,6 +41,12 @@ public class JMSDestinationRestResourceFactory extends WsmanBaseResourceFactory<
                         .put("destination", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("destinationName", RestResourceFactoryUtils.stringConvert))
                         .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
                         .map());
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType(){
+        return EntityType.JMS_ENDPOINT;
     }
 
     @Override

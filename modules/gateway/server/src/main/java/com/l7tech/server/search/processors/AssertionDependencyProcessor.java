@@ -2,21 +2,30 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
+import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
 
 /**
  * The assertion dependencyProcessor finds the dependencies that an assertions has.
@@ -30,6 +39,12 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
 
     @Inject
     private ResourceEntryManager resourceEntryManager;
+
+    @Inject
+    private SecurePasswordManager securePasswordManager;
+
+    private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
+    private static final Pattern SECPASS_DESCRIPTION_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.description");
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -54,19 +69,53 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 final Entity entity = loadEntity(header);
                 if (entity != null) {
                     Dependency dependency = finder.getDependency(entity);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
         }
-        //If the assertion implements UsesVariables then all cluster properties used be the assertion as considered to be dependencies.
+        //If the assertion implements UsesVariables then all cluster properties or secure passwords used be the assertion as considered to be dependencies.
+        Boolean doSecPasswordPlaintext = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey, Boolean.class, true);
+        Boolean doSecPasswordDesc = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariableDescriptionOptionKey, Boolean.class, true);
+
         if (assertion instanceof UsesVariables) {
             for (String variable : ((UsesVariables) assertion).getVariablesUsed()) {
-                ClusterProperty property = clusterPropertyManager.findByUniqueName(variable);
-                if (property != null) {
-                    Dependency dependency = finder.getDependency(property);
-                    if (!dependencies.contains(dependency))
-                        dependencies.add(dependency);
+                if (variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
+                        variable.length() > PREFIX_CLUSTER_PROPERTY.length() &&
+                        !variable.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
+                    String cpName = variable.substring(PREFIX_CLUSTER_PROPERTY.length()+1);
+
+                    // try to get cluster property reference
+                    ClusterProperty property = clusterPropertyManager.findByUniqueName(cpName);
+                    if (property != null) {
+                        Dependency dependency = finder.getDependency(property);
+                        if (dependency != null && !dependencies.contains(dependency)){
+                            dependencies.add(dependency);
+                        }
+                }
+                }else if(doSecPasswordPlaintext){
+                    // try get secure password reference
+                    Matcher matcher = SECPASS_PLAINTEXT_PATTERN.matcher(variable);
+                    if (matcher.matches()) {
+                        String alias = matcher.group(1);
+                        final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
+                        if (securePassword != null) {
+                            Dependency dependency = finder.getDependency(securePassword);
+                            if (dependency != null && !dependencies.contains(securePassword)){
+                                dependencies.add(dependency);
+                            }
+                        }
+                    }
+                }else if (doSecPasswordDesc){
+                    Matcher descMatcher = SECPASS_DESCRIPTION_PATTERN.matcher(variable);
+                    String alias = descMatcher.group(1);
+                    final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
+                    if (securePassword != null) {
+                        Dependency dependency = finder.getDependency(securePassword);
+                        if (dependency != null && !dependencies.contains(securePassword)){
+                            dependencies.add(dependency);
+                        }
+                    }
                 }
             }
         }
@@ -80,7 +129,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
                 if (resourceEntry != null) {
                     Dependency dependency = finder.getDependency(resourceEntry);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -93,7 +142,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 final Entity keyEntry = loadEntity(new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias()));
                 if (keyEntry != null) {
                     Dependency dependency = finder.getDependency(keyEntry);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }
@@ -104,7 +153,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
 
     @Override
     public DependentObject createDependentObject(Assertion assertion) {
-        final AssertionNodeNameFactory assertionNodeNameFactory = (AssertionNodeNameFactory) assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        final AssertionNodeNameFactory assertionNodeNameFactory = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
         //noinspection unchecked
         return new DependentAssertion((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertionNodeNameFactory != null ? assertionNodeNameFactory.getAssertionName(assertion, true) : null);
     }

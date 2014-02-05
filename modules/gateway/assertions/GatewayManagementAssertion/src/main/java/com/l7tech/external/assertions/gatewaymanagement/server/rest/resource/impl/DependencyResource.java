@@ -1,27 +1,39 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
  * This is a provider for dependencies. It finds the dependencies of entities that can have dependencies.
  */
 @Provider
-@Path("dependencies")
+@Path(DependencyResource.Version_URI + "dependencies")
 public class DependencyResource {
+
+    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     @SpringBean
     private DependencyAnalyzer dependencyAnalyzer;
@@ -29,7 +41,14 @@ public class DependencyResource {
     @SpringBean
     private RestResourceLocator restResourceLocator;
 
+    @Context
+    private UriInfo uriInfo;
+
     private EntityHeader entityHeader;
+
+    public static enum ReturnType {
+        List, Tree
+    }
 
     public DependencyResource() {
         //TODO: need a way to specify all gateway dependencies.
@@ -40,21 +59,45 @@ public class DependencyResource {
     }
 
     @GET
-    public DependencyAnalysisMO get() throws FindException {
-        if(entityHeader == null) {
+    public Item get(@QueryParam("returnType") @DefaultValue("Tree") ReturnType returnType) throws FindException {
+        if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-        final HashMap<String, String> searchOptions = new HashMap<>(DependencyAnalyzer.DefaultSearchOptions);
-        searchOptions.put("returnAssertionsAsDependencies", "false");
-        return toManagedObject(dependencyAnalyzer.getDependencies(entityHeader, searchOptions));
+        switch (returnType) {
+            case Tree:
+                return new ItemBuilder<DependencyTreeMO>(entityHeader.toString() + " dependencies", "Dependency")
+                        .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                        .setContent(toDependencyTreeObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
+                        .build();
+            case List:
+                return new ItemBuilder<DependencyListMO>(entityHeader.toString() + " dependencies", "Dependency")
+                        .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                        .setContent(toDependencyListObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
+                        .build();
+            default:
+                throw new IllegalArgumentException("Unknown return type: " + returnType);
+        }
     }
 
     //TODO: move entity transformation work to a transformer class
-    private DependencyAnalysisMO toManagedObject(DependencySearchResults dependencySearchResults) {
-        DependencyAnalysisMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyResultsMO();
+    public DependencyTreeMO toDependencyTreeObject(DependencySearchResults dependencySearchResults) {
+        DependencyTreeMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyTreeMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
-        dependencyAnalysisMO.setSearchObjectReference(toReference(dependencySearchResults.getDependent()));
+        dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
         dependencyAnalysisMO.setDependencies(toManagedObject(dependencySearchResults.getDependencies()));
+        return dependencyAnalysisMO;
+    }
+
+    public DependencyListMO toDependencyListObject(DependencySearchResults dependencySearchResults) {
+        DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
+        dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
+        dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
+        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults), new Functions.Unary<Item, DependentObject>() {
+            @Override
+            public Item call(DependentObject dependentObject) {
+                return toReference(dependentObject);
+            }
+        }));
         return dependencyAnalysisMO;
     }
 
@@ -73,9 +116,9 @@ public class DependencyResource {
         return dependencyMO;
     }
 
-    private Reference toReference(DependentObject dependent) {
+    private Item toReference(DependentObject dependent) {
         if (dependent instanceof DependentAssertion) {
-            return new ReferenceBuilder(dependent.getName(), null, "Assertion").build();
+            return new ItemBuilder<>(dependent.getName(), null, "Assertion").build();
         } else if (dependent instanceof DependentEntity) {
             return buildReferenceFromEntityHeader(((DependentEntity) dependent).getEntityHeader());
         } else {
@@ -83,10 +126,27 @@ public class DependencyResource {
         }
     }
 
-    private Reference buildReferenceFromEntityHeader(EntityHeader entityHeader) {
+    private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
         RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
-        if(restEntityResource != null) {
+        if (restEntityResource != null) {
             return restEntityResource.toReference(entityHeader);
+        }
+        // handle special cases, user, groups
+        try {
+            if (entityHeader instanceof IdentityHeader) {
+                restEntityResource = restResourceLocator.findByEntityType(EntityType.ID_PROVIDER_CONFIG);
+                assert restEntityResource instanceof IdentityProviderResource;
+                if (entityHeader.getType().equals(EntityType.USER)) {
+                    UserResource userResource = ((IdentityProviderResource) restEntityResource).users(((IdentityHeader) entityHeader).getProviderGoid().toString());
+                    return userResource.toReference((IdentityHeader) entityHeader);
+                }
+                if (entityHeader.getType().equals(EntityType.GROUP)) {
+                    GroupResource groupResource = ((IdentityProviderResource) restEntityResource).groups(((IdentityHeader) entityHeader).getProviderGoid().toString());
+                    return groupResource.toReference((IdentityHeader) entityHeader);
+                }
+            }
+        } catch (ResourceFactory.ResourceNotFoundException e) {
+            throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType(), ExceptionUtils.getDebugException(e));
         }
         throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType());
     }

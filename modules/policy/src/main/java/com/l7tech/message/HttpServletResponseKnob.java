@@ -4,12 +4,11 @@ import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Implementation of {@link HttpResponseKnob} that knows how to place the HTTP response transport metadata
@@ -17,25 +16,30 @@ import java.util.List;
  */
 public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
     private final HttpServletResponse response;
-    private final List<Cookie> cookiesToSend = new ArrayList<Cookie>();
 
     public HttpServletResponseKnob(HttpServletResponse response) {
         if (response == null) throw new NullPointerException();
         this.response = response;
     }
 
-    @Override
-    public void addCookie(HttpCookie cookie) {
-        cookiesToSend.add(CookieUtils.toServletCookie(cookie));
+    /**
+     * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @deprecated use {@link #beginResponse(java.util.Collection, java.util.Collection)}.
+     */
+    @Deprecated
+    public void beginResponse() {
+        beginResponse(Collections.<Pair<String, Object>>emptyList(), Collections.<HttpCookie>emptyList());
     }
 
     /**
      * Begins the process of sending the response to the client by setting a status code and sending headers using the HttpServletResponse.
+     * @param headersToSend the collection of headers to send with the response.
+     * @param cookiesToSend the collection of HttpCookies to send with the response.
      */
-    public void beginResponse() {
+    public void beginResponse(@NotNull final Collection<Pair<String, Object>> headersToSend, @NotNull final Collection<HttpCookie> cookiesToSend) {
         response.setStatus(statusToSet);
-        
-        for ( final Pair<String, Object> pair : getHeadersToSend() ) {
+
+        for ( final Pair<String, Object> pair : headersToSend ) {
             final Object value = pair.right;
             if (value instanceof Long) {
                 response.addDateHeader(pair.left, (Long)value);
@@ -44,8 +48,8 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
             }
         }
 
-        for ( final Cookie cookie : cookiesToSend ) {
-            response.addCookie(cookie);
+        for ( final HttpCookie cookie : cookiesToSend ) {
+            response.addCookie(CookieUtils.toServletCookie(cookie));
         }
     }
 

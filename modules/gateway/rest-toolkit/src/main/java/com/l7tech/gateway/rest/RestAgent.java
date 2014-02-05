@@ -7,6 +7,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PrivilegedActionException;
+import java.util.Map;
 
 /**
  * This the rest management agent will process a rest request using jersey.
@@ -30,5 +31,5 @@ public interface RestAgent {
      * @throws PrivilegedActionException  This is thrown if the user given does not have access to a resource.
      * @throws RequestProcessingException This is thrown if there was an error processing the request.
      */
-    public RestResponse handleRequest(@NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @NotNull String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext) throws PrivilegedActionException, RequestProcessingException;
+    public RestResponse handleRequest(@NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException;
 }

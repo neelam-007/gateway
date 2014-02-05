@@ -183,6 +183,20 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     @Override
+    public boolean resourceExists(final Map<String,String> selectorMap) {
+        return transactional(new TransactionalCallback<Boolean>() {
+            @Override
+            public Boolean execute() throws ObjectModelException {
+                try {
+                    return selectEntity(selectorMap) != null;
+                } catch (ResourceNotFoundException e) {
+                    return false;
+                }
+            }
+        }, true);
+    }
+
+    @Override
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         checkReadOnly();
 
@@ -387,7 +401,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param entities The entities to filter.
      * @return The filtered collection.
      */
-    private List<E> filterEntities(final List<E> entities) {
+    protected List<E> filterEntities(final List<E> entities) {
         return Functions.grep(entities, new Functions.Unary<Boolean, E>() {
             @Override
             public Boolean call(E e) {

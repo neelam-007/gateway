@@ -6,9 +6,11 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Ws
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.TrustedCertificateMO;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -28,6 +30,12 @@ public class CertificateRestResourceFactory extends WsmanBaseResourceFactory<Tru
                         .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
                         .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
                         .map());
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType(){
+        return EntityType.TRUSTED_CERT;
     }
 
     @Override

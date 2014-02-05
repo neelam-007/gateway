@@ -3,10 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.TrustedCertificateMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -67,12 +64,12 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        TrustedCertificateMO result = (TrustedCertificateMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        TrustedCertificateMO result = (TrustedCertificateMO) item.getContent();
 
         assertEquals("Certificate identifier:", cert.getId(), result.getId());
         assertEquals("Certificate name:", cert.getName(), result.getName());
@@ -85,7 +82,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setId(null);
         createObject.setName("New Cert");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         TrustedCert createdEntity = trustedCertManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -100,7 +97,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setName("New Cert");
         createObject.getCertificateData().setEncoded("bad".getBytes());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -114,7 +111,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
         createObject.setId(null);
         createObject.setName("New Cert");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(certBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(certBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created certificate goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -126,14 +123,14 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(certBasePath + cert.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        TrustedCertificateMO entityGot = (TrustedCertificateMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        TrustedCertificateMO entityGot = (TrustedCertificateMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(certBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(certBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Certificate goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -148,7 +145,7 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(certBasePath + cert.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(certBasePath + cert.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -158,13 +155,13 @@ public class CertificateRestServerGatewayManagementAssertionTest extends ServerR
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(certBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(certBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<TrustedCertificateMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, references.getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

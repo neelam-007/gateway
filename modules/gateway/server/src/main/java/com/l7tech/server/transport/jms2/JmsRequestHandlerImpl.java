@@ -462,7 +462,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         jmsRequestMsg.getJMSMessageID() :
                         jmsRequestMsg.getJMSCorrelationID();
                 jmsResponseMsg.setJMSCorrelationID(newCorrId);
-                responseProducer.send( jmsResponseMsg );
+                responseProducer.send( jmsResponseMsg, jmsRequestMsg.getJMSDeliveryMode(), jmsRequestMsg.getJMSPriority(), jmsRequestMsg.getJMSExpiration() );
                 _logger.fine( "Sent response to " + jmsReplyDest );
             }
             sent = true;

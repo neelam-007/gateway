@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
-import com.l7tech.gateway.api.SecurityZoneMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -68,12 +65,12 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        SecurityZoneMO result = (SecurityZoneMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        SecurityZoneMO result = (SecurityZoneMO) item.getContent();
 
         assertEquals("Security Zone identifier:", securityZone.getId(), result.getId());
         assertEquals("Security Zone name:", securityZone.getName(), result.getName());
@@ -87,7 +84,7 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         createObject.setName("New Zone");
         createObject.setPermittedEntityTypes(CollectionUtils.list(EntityType.FOLDER.toString()));
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(securityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(securityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         SecurityZone createdEntity = securityZoneManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -106,7 +103,7 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         createObject.setPermittedEntityTypes(CollectionUtils.list(EntityType.FOLDER.toString()));
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(securityZoneBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(securityZoneBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Security Zone goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -125,7 +122,7 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
         createObject.setName("New Zone");
         createObject.setPermittedEntityTypes(CollectionUtils.list("Bad Entity Type"));
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(securityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(securityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -136,14 +133,14 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        SecurityZoneMO entityGot = (SecurityZoneMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        SecurityZoneMO entityGot = (SecurityZoneMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("New Name");
-        Response response = processRequest(securityZoneBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(securityZoneBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Updated Security Zone goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -158,7 +155,7 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(securityZoneBasePath + securityZone.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -168,13 +165,13 @@ public class SecurityZoneRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(securityZoneBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(securityZoneBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<SecurityZoneMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(securityZoneManager.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(securityZoneManager.findAll().size(), item.getContent().size());
     }
 }

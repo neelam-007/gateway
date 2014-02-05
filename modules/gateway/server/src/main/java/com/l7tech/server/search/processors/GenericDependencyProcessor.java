@@ -103,7 +103,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                 final Entity keyEntry = loadEntity(keyHeader);
                 if (keyEntry != null) {
                     Dependency dependency = finder.getDependency(keyEntry);
-                    if (!dependencies.contains(dependency))
+                    if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
                 }
             }

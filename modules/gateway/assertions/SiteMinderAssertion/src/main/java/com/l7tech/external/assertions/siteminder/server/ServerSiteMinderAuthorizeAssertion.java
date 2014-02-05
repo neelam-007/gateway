@@ -6,6 +6,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -151,9 +152,8 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
 
         HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment);
         Message response = pec.getResponse();
-        HttpResponseKnob httpResponseKnob = response.getKnob(HttpResponseKnob.class);
-        if(httpResponseKnob != null) {
-            httpResponseKnob.addCookie(cookie);
+        if(response.isHttpResponse()) {
+            response.getHttpCookiesKnob().addCookie(cookie);
             result = true;
         }
         else {

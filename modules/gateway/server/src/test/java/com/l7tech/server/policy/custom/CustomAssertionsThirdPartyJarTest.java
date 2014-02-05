@@ -7,7 +7,6 @@ import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
-import com.l7tech.util.SyspropUtil;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -49,8 +48,9 @@ public class CustomAssertionsThirdPartyJarTest {
     // The module temp directory name. This is where third-party jars in Custom Assertion jar are extracted to during
     // startup.
     //
-    private static final String MODULE_TEMP_DIR_NAME = "l7tech-CustomAssertionsThirdPartyJarTest";
+    private static final String MODULE_TEMP_DIR_NAME = "l7tech-CustomAssertionsThirdPartyJarTest-";
 
+    private static File moduleTmpDir;
     private static String modulesDirPath;
     private static String modulesTmpDirPath;
 
@@ -72,20 +72,12 @@ public class CustomAssertionsThirdPartyJarTest {
     private CustomAssertionsRegistrarImpl customAssertionsRegistrarImpl;
 
     @BeforeClass
-    public static void init() {
+    public static void init() throws Exception {
         // Create module temp directory.
-        // If directory already exists, delete it, and create a new one.
-        // This directory cannot be deleted on shutdown of this unit test (ie. @AfterClass) because the third-party
+        // In Windows environment, this directory does not get deleted on shutdown of this unit test because the third-party
         // jars were still being used by the current JVM.
         //
-        String tmpDirPath = SyspropUtil.getProperty("java.io.tmpdir");
-        File tmpDir = new File(tmpDirPath);
-        File moduleTmpDir = new File(tmpDir, MODULE_TEMP_DIR_NAME);
-        if (moduleTmpDir.exists()) {
-            FileUtils.deleteDir(moduleTmpDir);
-        }
-
-        moduleTmpDir.mkdir();
+        moduleTmpDir = FileUtils.createTempDirectory(MODULE_TEMP_DIR_NAME, null, null, true);
         modulesTmpDirPath = moduleTmpDir.getPath();
 
         // Get the resource directory of this unit test. This is where Custom Assertions will be loaded from during

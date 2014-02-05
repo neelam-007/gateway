@@ -748,7 +748,7 @@
     </l7:Policy>
     <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="e418c4cb-b910-49a7-b9f5-aa6ee18d21f9"
                id="57477c668279c3c8d34da687b89a775b" version="27">
-        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a76a1" guid="e418c4cb-b910-49a7-b9f5-aa6ee18d21f9"
+        <l7:PolicyDetail folderId="7864d3f60d281f929722cacc8c103cce" guid="e418c4cb-b910-49a7-b9f5-aa6ee18d21f9"
                          id="57477c668279c3c8d34da687b89a775b" version="27">
             <l7:Name>Require OAuth 2.0 Token</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>

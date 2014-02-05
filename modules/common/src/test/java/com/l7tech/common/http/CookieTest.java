@@ -39,7 +39,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(name, value, version, path, domain, maxAge, secure, comment);
 
-        assertEquals("Cookie should be new (as from a Set-Cookie header)", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Checking version property", version, cookie.getVersion());
@@ -61,7 +60,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(new URL("http://"+domain+path+"/apage.html"), headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Checking path property", path, cookie.getPath());
@@ -80,7 +78,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(new URL("http://"+domain+path+"/apage.html"), headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Checking path property", path, cookie.getPath());
@@ -106,7 +103,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -128,7 +124,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -137,6 +132,26 @@ public class CookieTest {
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Checking comment property", comment, cookie.getComment());
         assertEquals("Should be secure", true, cookie.isSecure());
+    }
+
+    @Test
+    public void testFullV1CookieHeader() throws Exception {
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String headerValue = name + "=" + value + "; $Path=" + path + "; $Domain=" + domain + "; $Version=1";
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.hasExpiry());
+        assertEquals(-1, cookie.getMaxAge());
+        assertFalse(cookie.isSecure());
     }
 
     @Test
@@ -169,6 +184,34 @@ public class CookieTest {
 
         HttpCookie cookie5 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
         assertEquals("Check unmodified path", cookie1, cookie5);
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullCookieDomainAndPath() {
+        HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, null, null);
+        HttpCookie cookie2 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
+        assertEquals("Check valid", cookie1, cookie2);
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullTargetDomain() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), null, "/gatewayPath");
+        assertEquals("originalDomain", cookie.getDomain());
+        assertEquals("/gatewayPath", cookie.getPath());
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullTargetPath() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), "gatewayDomain", null);
+        assertEquals("gatewayDomain", cookie.getDomain());
+        assertEquals("/originalPath", cookie.getPath());
+    }
+
+    @Test
+    public void ensureValidForDomainAndPathNullTargetDomainAndPath() {
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain"), null, null);
+        assertEquals("originalDomain", cookie.getDomain());
+        assertEquals("/originalPath", cookie.getPath());
     }
 
     @Test
@@ -239,7 +282,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -269,7 +311,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -302,7 +343,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -335,7 +375,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -365,7 +404,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -395,7 +433,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -423,7 +460,6 @@ public class CookieTest {
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
-        assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
@@ -432,6 +468,25 @@ public class CookieTest {
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
     }
+
+    @Test
+    public void nullRequestDomainAndPath() throws Exception {
+        final HttpCookie cookie = new HttpCookie((String) null, null, "foo=bar");
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+    }
+
+    @Test
+    public void copyCookieWithNullDomainAndPath() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test");
+        final HttpCookie copy = new HttpCookie(cookie, null, null);
+        assertNull(copy.getDomain());
+        assertNull(copy.getPath());
+        assertFalse(copy.isDomainExplicit());
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());

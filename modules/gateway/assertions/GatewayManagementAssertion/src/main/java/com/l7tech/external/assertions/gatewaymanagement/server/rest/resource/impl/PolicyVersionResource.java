@@ -1,10 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.gateway.api.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyVersionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public class PolicyVersionResource implements ListingResource, ReadingResource {
+public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, ReadingResource<PolicyVersionMO> {
 
     @SpringBean
     private PolicyVersionRestResourceFactory policyVersionRestResourceFactory;
@@ -48,23 +48,25 @@ public class PolicyVersionResource implements ListingResource, ReadingResource {
     }
 
     @Override
-    public References listResources(final int offset, final int count, final String sort, final String order) {
+    public ItemsList<PolicyVersionMO> listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = policyVersionRestResourceFactory.getSortKey(sort);
         if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, PolicyVersionMO>() {
+        List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
             @Override
-            public Reference call(PolicyVersionMO resource) {
+            public Item<PolicyVersionMO> call(PolicyVersionMO resource) {
                 return toReference(resource);
             }
         });
-        return ManagedObjectFactory.createReferences(references);
+        return new ItemsListBuilder<PolicyVersionMO>(EntityType.POLICY_VERSION + " list", "List").setContent(items)
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .build();
     }
 
-    private Reference toReference(PolicyVersionMO resource) {
-        return new ReferenceBuilder("Policy Version: " + resource.getVersion(), resource.getId(), EntityType.POLICY_VERSION.name())
+    private Item<PolicyVersionMO> toReference(PolicyVersionMO resource) {
+        return new ItemBuilder<PolicyVersionMO>("Policy Version: " + resource.getVersion(), resource.getId(), EntityType.POLICY_VERSION.name())
                 .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(getVersionsBaseUri(uriInfo.getAbsolutePath()), resource.getId())))
                 .build();
     }
@@ -76,9 +78,9 @@ public class PolicyVersionResource implements ListingResource, ReadingResource {
     }
 
     @Override
-    public Reference getResource(String id) throws FindException {
+    public Item<PolicyVersionMO> getResource(String id) throws FindException {
         PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getResource(policyId, id);
-        return new ReferenceBuilder(toReference(policyVersion))
+        return new ItemBuilder<>(toReference(policyVersion))
                 .setContent(policyVersion)
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(getVersionsBaseUri(uriInfo.getAbsolutePath()), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", getVersionsBaseUri(uriInfo.getAbsolutePath()).toString()))

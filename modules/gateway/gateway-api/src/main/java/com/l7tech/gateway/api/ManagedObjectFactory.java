@@ -533,7 +533,23 @@ public class ManagedObjectFactory {
         return new PrivateKeyRestExport();
     }
 
+    /**
+     * Create a new UserMO instance.
+     *
+     * @return The new instance
+     */
+    public static UserMO createUserMO() {
+        return new UserMO();
+    }
 
+    /**
+     * Create a new GroupMO instance.
+     *
+     * @return The new instance
+     */
+    public static GroupMO createGroupMO() {
+        return new GroupMO();
+    }
 
     /**
      * Read a managed object from the given data.
@@ -637,37 +653,39 @@ public class ManagedObjectFactory {
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
                 RbacRolePredicateMO.class,
-                DependencyAnalysisMO.class,
+                DependencyTreeMO.class,
+                DependencyListMO.class,
                 DependencyMO.class,
-                Reference.class,
-                References.class,
+                Item.class,
+                ItemsList.class,
+                Mapping.class,
                 Link.class,
                 PolicyVersionMO.class
         };
     }
 
-    public static DependencyAnalysisMO createDependencyResultsMO() {
-        return new DependencyAnalysisMO();
+    public static DependencyTreeMO createDependencyTreeMO() {
+        return new DependencyTreeMO();
+    }
+
+    public static DependencyListMO createDependencyListMO() {
+        return new DependencyListMO();
     }
 
     public static DependencyMO createDependencyMO() {
         return new DependencyMO();
     }
 
-    public static Reference createReference() {
-        return new Reference();
+    public static Mapping createMapping() {
+        return new Mapping();
     }
 
-    public static References createReferences() {
-        return new References();
+    public static Mapping createMapping(Mapping mapping) {
+        return new Mapping(mapping);
     }
 
-    public static References createReferences(List<Reference> references) {
-        return new References(references);
-    }
-
-    public static Link createLink(){
-        return new Link();
+    public static Mappings createMappings(List<Mapping> mappings) {
+        return new Mappings(mappings);
     }
 
     public static Link createLink(String rel, String uri){
@@ -680,6 +698,10 @@ public class ManagedObjectFactory {
 
     public static Bundle createBundle(){
         return new Bundle();
+    }
+
+    public static ErrorResponse createErrorResponse(){
+        return new ErrorResponse();
     }
 
     /**

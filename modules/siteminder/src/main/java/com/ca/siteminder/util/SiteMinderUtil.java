@@ -229,16 +229,11 @@ public abstract class SiteMinderUtil {
      * @throws java.security.cert.CertificateEncodingException
      */
     public static boolean handleCertificate(X509Certificate cert, UserCredentials userCreds) throws CertificateEncodingException {
-        boolean success = false;
-        if (cert != null) {
-            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-            String base64Cert = encoder.encode(cert.getEncoded());
-            userCreds.certBinary = base64Cert.getBytes();
-            userCreds.certIssuerDN = cert.getIssuerDN().toString();
-            userCreds.certUserDN = cert.getSubjectDN().toString();
-            success = true;
+        if (cert != null && userCreds != null) {
+            userCreds.certBinary = cert.getEncoded();
+            return true;
         }
-        return success;
+        return false;
     }
 
     /**

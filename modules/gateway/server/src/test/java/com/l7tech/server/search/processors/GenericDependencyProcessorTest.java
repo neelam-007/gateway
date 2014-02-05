@@ -6,7 +6,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
-import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.objects.Dependency;
@@ -24,6 +23,7 @@ import org.mockito.internal.verification.Times;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +48,7 @@ public class GenericDependencyProcessorTest {
     GenericDependencyProcessor processor = new GenericDependencyProcessor();
 
     @Spy
-    private DependencyFinder dependencyFinder = new DependencyFinder(DependencyAnalyzer.DefaultSearchOptions, new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.GENERIC, processor).map()));
+    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.GENERIC, processor).map()));
 
     @Test
     public void testCreateDependentObjectFromPolicy() {

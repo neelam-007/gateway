@@ -15,7 +15,7 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 public class DependencySearchResults {
-    private final Map<String, String> searchOptions;
+    private final Map<String, Object> searchOptions;
     private final DependentObject dependentObject;
     private final List<Dependency> dependencies;
 
@@ -26,7 +26,7 @@ public class DependencySearchResults {
      * @param dependencies  The dependencies that were found
      * @param searchOptions The search options used in the search.
      */
-    public DependencySearchResults(DependentObject dependentObject, List<Dependency> dependencies, Map<String, String> searchOptions) {
+    public DependencySearchResults(DependentObject dependentObject, List<Dependency> dependencies, Map<String, Object> searchOptions) {
         this.searchOptions = Collections.unmodifiableMap(searchOptions);
         this.dependentObject = dependentObject;
         this.dependencies = dependencies == null ? null : Collections.unmodifiableList(dependencies);
@@ -37,7 +37,7 @@ public class DependencySearchResults {
      *
      * @return The search options used for this search.
      */
-    public Map<String, String> getSearchOptions() {
+    public Map<String, Object> getSearchOptions() {
         return searchOptions;
     }
 

@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -80,12 +77,12 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        HttpConfigurationMO result = (HttpConfigurationMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        HttpConfigurationMO result = (HttpConfigurationMO) item.getContent();
 
         assertEquals("Http configuration identifier:", httpConfiguration.getId(), result.getId());
         assertEquals("Http configuration username:", httpConfiguration.getUsername(), result.getUsername());
@@ -98,7 +95,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         createObject.setId(null);
         createObject.setUsername("New user");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(httpConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(httpConfigurationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         HttpConfiguration createdEntity = httpConfigurationManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -114,7 +111,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
         createObject.setUsername("New user");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(httpConfigurationBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Http configuration goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -126,14 +123,14 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        HttpConfigurationMO entityGot = (HttpConfigurationMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setUsername("Updated user");
-        Response response = processRequest(httpConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(httpConfigurationBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Http configuration goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -148,7 +145,7 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath + httpConfiguration.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -158,13 +155,13 @@ public class HttpConfigurationRestServerGatewayManagementAssertionTest extends S
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(httpConfigurationBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(httpConfigurationBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<HttpConfigurationMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(httpConfigurationManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(httpConfigurationManagerStub.findAll().size(), item.getContent().size());
     }
 }

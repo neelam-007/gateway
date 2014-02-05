@@ -63,12 +63,12 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
     @Test
     public void getRoleTest() throws Exception {
-        Response response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        RbacRoleMO roleReturned = (RbacRoleMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        RbacRoleMO roleReturned = (RbacRoleMO) item.getContent();
 
         Assert.assertEquals(role.getId(), roleReturned.getId());
         Assert.assertEquals(role.getName(), roleReturned.getName());
@@ -76,11 +76,11 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
     @Test
     public void getRoleNotExistsTest() throws Exception {
-        Response response = processRequest(roleBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(roleBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", response.getBody());
+        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", getErrorMessage(response));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String roleMOString = writeMOToString(roleMO);
 
-        Response response = processRequest(roleBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
+        RestResponse response = processRequest(roleBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
         Role roleSaved = roleManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
@@ -109,7 +109,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String roleMOString = writeMOToString(roleMO);
 
-        Response response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
+        RestResponse response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
         final Goid goidReturned = new Goid(getFirstReferencedGoid(response));
@@ -131,16 +131,16 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String roleMOString = writeMOToString(roleMO);
 
-        Response response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
+        RestResponse response = processRequest(roleBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), roleMOString);
         logger.info(response.toString());
 
         Assert.assertEquals(403, response.getStatus());
-        Assert.assertEquals("Cannot save entity with ID in reserved Range. ID: "+id, response.getBody());
+        Assert.assertEquals("Cannot save entity with ID in reserved Range. ID: "+id, getErrorMessage(response));
     }
 
     @Test
     public void deleteRoleTest() throws Exception {
-        Response response = processRequest(roleBasePath + roleCustom.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(roleBasePath + roleCustom.getId(), HttpMethod.DELETE, null, "");
         logger.info(response.toString());
 
         Assert.assertNull(roleManager.findByPrimaryKey(roleCustom.getGoid()));
@@ -148,11 +148,11 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
     @Test
     public void updateRoleTest() throws Exception {
-        Response response = processRequest(roleBasePath + roleCustom.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(roleBasePath + roleCustom.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         roleReturned.setDescription("My Custom Role Updated");
 
@@ -168,11 +168,11 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
     @Test
     public void updateManagedRoleTest() throws Exception {
-        Response response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(roleBasePath + role.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        RbacRoleMO roleReturned = (RbacRoleMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         roleReturned.setDescription("My Custom Role Updated");
 
@@ -182,7 +182,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
         logger.info(response.toString());
 
         Assert.assertEquals(403, response.getStatus());
-        Assert.assertEquals("Cannot update gateway managed role.", response.getBody());
+        Assert.assertEquals("Cannot update gateway managed role.", getErrorMessage(response));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
         String assignmentsMOString = writeMOToString(addAssignmentsContext);
 
-        Response response = processRequest(roleBasePath + role.getId() + "/assignments", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), assignmentsMOString);
+        RestResponse response = processRequest(roleBasePath + role.getId() + "/assignments", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), assignmentsMOString);
 
         Assert.assertEquals(204, response.getStatus());
 
@@ -217,14 +217,14 @@ public class RbacRoleRestServerGatewayManagementAssertionTest extends ServerRest
 
     @Test
     public void listRoles() throws Exception {
-        Response response = processRequest(roleBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(roleBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        ItemsList<RbacRoleAssignmentMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
-        Assert.assertEquals(2, references.getReferences().size());
+        // check entity
+        Assert.assertEquals(2, item.getContent().size());
     }
 }

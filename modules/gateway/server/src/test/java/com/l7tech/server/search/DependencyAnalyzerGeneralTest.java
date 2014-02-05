@@ -18,7 +18,6 @@ import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,21 +29,9 @@ import java.util.Set;
 @RunWith(MockitoJUnitRunner.class)
 public class DependencyAnalyzerGeneralTest {
 
-    Map<String, String> depth0SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
-        {
-            put(DependencyAnalyzer.SearchDepthOptionKey, "0");
-        }
-    };
-    Map<String, String> depth1SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
-        {
-            put(DependencyAnalyzer.SearchDepthOptionKey, "1");
-        }
-    };
-    Map<String, String> depth2SearchOptions = new HashMap<String, String>(DependencyAnalyzer.DefaultSearchOptions) {
-        {
-            put(DependencyAnalyzer.SearchDepthOptionKey, "2");
-        }
-    };
+    Map<String, Object> depth0SearchOptions = CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.SearchDepthOptionKey, 0).map();
+    Map<String, Object> depth1SearchOptions = CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.SearchDepthOptionKey, 1).map();
+    Map<String, Object> depth2SearchOptions = CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.SearchDepthOptionKey, 2).map();
 
     @Mock
     private EntityCrud entityCrud;

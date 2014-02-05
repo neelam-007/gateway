@@ -233,7 +233,7 @@ public class TokenServiceServlet extends HttpServlet {
                     logger.fine("Credentials did not authenticate against any provider.");
                     if ( sawInvalidClientCertException ) {
                         // set response header so that the XML VPN Client is made aware of this situation
-                        context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                        context.getResponse().getHeadersKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
                                                                               SecureSpanConstants.CERT_INVALID);
                     }
                 } else {

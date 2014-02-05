@@ -129,8 +129,8 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     @Override
     public Map<String, Object> getVariableMap( final String[] names, final Audit auditor ) {
-        List<String> forChild = new ArrayList<String>();
-        List<String> forParent = new ArrayList<String>();
+        List<String> forChild = new ArrayList<>();
+        List<String> forParent = new ArrayList<>();
 
         for (String name : names) {
             if (isParentVariable(name)) {
@@ -140,7 +140,7 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
             }
         }
 
-        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Object> vars = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         vars.putAll(context.getVariableMap(forChild.toArray(new String[forChild.size()]), auditor));
         vars.putAll(super.getVariableMap(forParent.toArray(new String[forParent.size()]), auditor));
         return vars;
@@ -282,6 +282,11 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
+    public boolean hasTraceListener() {
+        return context.hasTraceListener();
+    }
+
+    @Override
     public void close() {
         // Do not close super, the parent context is not owned by the child
         context.close();
@@ -376,7 +381,7 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     private final PolicyEnforcementContext context;
     private final PolicyEnforcementContext parentContext;
-    private final Set<String> passthroughVariables = new HashSet<String>();
-    private final TreeSet<String> passthroughPrefixes = new TreeSet<String>();
-    private final TreeSet<String> outputVariables = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    private final Set<String> passthroughVariables = new HashSet<>();
+    private final TreeSet<String> passthroughPrefixes = new TreeSet<>();
+    private final TreeSet<String> outputVariables = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 }

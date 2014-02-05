@@ -3,8 +3,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.IdentityProviderMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -66,12 +66,12 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        IdentityProviderMO result = (IdentityProviderMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        IdentityProviderMO result = (IdentityProviderMO) item.getContent();
 
         assertEquals("Identity Provider identifier:", idProviderConfig.getId(), result.getId());
         assertEquals("Identity Provider name:", idProviderConfig.getName(), result.getName());
@@ -85,7 +85,7 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
         createObject.setId(null);
         createObject.setName("New Identity Provider");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(identityProviderBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(identityProviderBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         IdentityProviderConfig createdProvider = identityProviderConfigManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
@@ -102,7 +102,7 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
         createObject.setId(null);
         createObject.setName("New Identity Provider");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(identityProviderBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(identityProviderBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
         assertEquals("Created Identity Provider goid:", goid.toString(), getFirstReferencedGoid(response));
@@ -116,14 +116,14 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        IdentityProviderMO entityGot = (IdentityProviderMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        IdentityProviderMO entityGot = (IdentityProviderMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(identityProviderBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(identityProviderBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
@@ -140,7 +140,7 @@ public class IdentityProviderRestServerGatewayManagementAssertionTest extends Se
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(identityProviderBasePath + idProviderConfig.getId(), HttpMethod.DELETE, null, "");
         logger.info(response.toString());
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 

@@ -9,7 +9,7 @@
         <l7:Name>OAuthTokenStore</l7:Name>
     </l7:Folder>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a7e0f"
-               id="57477c668279c3c8d34da687b89a7e8f" version="0">
+               id="7864d3f60d281f929722cacc8c10453c" version="0">
         <l7:Name>OAuthClientStore</l7:Name>
     </l7:Folder>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="-5002"

@@ -1,11 +1,10 @@
 package com.l7tech.external.assertions.siteminder.server;
 
 import com.ca.siteminder.*;
-import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -113,11 +112,23 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             loginCredentials = context.getLastCredentials();
         }
         else{
-            String userName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getLogin(), variableMap, getAudit());
-            if(StringUtils.isNotBlank(userName)){
+            String credentialsName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCredentialsName(), variableMap, getAudit());
+            if(StringUtils.isNotBlank(credentialsName)){
                 List<LoginCredentials> creds = context.getCredentials();
                 for(LoginCredentials cred : creds){
-                    if(userName.equals(cred.getName())){
+                    if(cred.getFormat() == CredentialFormat.CLIENTCERT) {
+                        X509Certificate clientCert = cred.getClientCert();
+                        //now compare subject DN from the certificate or CN from the certificate
+                        if(clientCert != null &&
+                           (CertUtils.isEqualDNCanonical(CertUtils.getSubjectDN(clientCert), credentialsName) ||
+                            CertUtils.getCn(clientCert).equalsIgnoreCase(credentialsName))) {
+                            loginCredentials = cred;
+                            break;
+                        }
+                    }
+                    else if((cred.getFormat() == CredentialFormat.BASIC ||
+                            cred.getFormat() == CredentialFormat.CLEARTEXT) &&
+                            credentialsName.equals(cred.getName())) {
                         loginCredentials = cred;
                         break;
                     }
@@ -129,20 +140,21 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
     }
 
     private SiteMinderCredentials buildSiteMinderCredentials(List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
-        if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERT)
-                || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
-                || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
-            //certificate is a different case
-            if(loginCredentials.getFormat() == CredentialFormat.CLIENTCERT) {
-                try {
-                    return  new SiteMinderCredentials(loginCredentials.getClientCert());
-                } catch (CertificateEncodingException e) {
-                    logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate for login credentials:" + loginCredentials.getName());
-                    logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
+        if(loginCredentials != null) {
+            //X509 Certificate
+            if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERT)
+                    || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
+                    || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
+                //certificate is a different case
+                if(loginCredentials.getFormat() == CredentialFormat.CLIENTCERT) {
+                    try {
+                        return  new SiteMinderCredentials(loginCredentials.getClientCert());
+                    } catch (CertificateEncodingException e) {
+                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate for login credentials:" + loginCredentials.getName());
+                        logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
+                    }
                 }
             }
-        }
-        if(loginCredentials != null) {
             //BASIC authentication scheme
             if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.BASIC)){
                 if(loginCredentials.getFormat() == CredentialFormat.CLEARTEXT || loginCredentials.getFormat() == CredentialFormat.BASIC) {

@@ -16,6 +16,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.util.CollectionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -36,6 +37,8 @@ import java.util.regex.Pattern;
  * @see com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion
  */
 public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargetableServerAssertion<RESTGatewayManagementAssertion> {
+
+    public static final String Version1_0_URI = "1.0/";
 
     @Inject
     private StashManagerFactory stashManagerFactory;
@@ -80,6 +83,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             // get the uri
             final URI uri = getURI(context, message, assertion);
             final URI baseUri = getBaseURI(context, message, assertion);
+            //The service ID should always be a constant.
+            final String serviceId = context.getService().getId();
 
             HttpMethod action = getAction(context, message, assertion);
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
@@ -105,7 +110,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             };
-            RestResponse managementResponse = restAgent.handleRequest(baseUri, uri, action.getProtocolName(), message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE), message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext);
+            RestResponse managementResponse = restAgent.handleRequest(baseUri, uri, action.getProtocolName(), message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE), message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map());
             response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
@@ -115,7 +120,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     continue;
                 }
                 for(Object value : managementResponse.getHeaders().get(header)){
-                    response.getHttpResponseKnob().addHeader(header, value.toString());
+                    response.getHeadersKnob().addHeader(header, value.toString());
                 }
             }
 

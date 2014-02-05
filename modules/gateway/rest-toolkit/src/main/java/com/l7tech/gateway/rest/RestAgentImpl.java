@@ -2,6 +2,8 @@ package com.l7tech.gateway.rest;
 
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -24,8 +26,7 @@ import java.util.logging.Logger;
  * bean.
  * <p/>
  * After properties are set call {@link #init()} to initialize the rest handler. Once the handler has been initialized
- * you can handle requests by calling {@link #handleRequest(java.net.URI, java.net.URI, String, String,
- * java.io.InputStream, javax.ws.rs.core.SecurityContext)}
+ * you can handle requests by calling {@link #handleRequest(java.net.URI, java.net.URI, String, String, java.io.InputStream, javax.ws.rs.core.SecurityContext, java.util.Map)}
  */
 public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(RestAgentImpl.class.getName());
@@ -125,13 +126,13 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
      * @throws RequestProcessingException
      */
     @Override
-    public RestResponse handleRequest(URI baseUri, URI uri, String httpMethod, String contentType, InputStream body, SecurityContext securityContext) throws PrivilegedActionException, RequestProcessingException {
+    public RestResponse handleRequest(@NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
         if (handler == null) {
             throw new RequestProcessingException("The Rest handler has not yet been initialized. Cannot process requests until it have been.");
         }
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream(BUFFER_SIZE);
-        ContainerResponse response = handler.handle(baseUri, uri, httpMethod, contentType, body, securityContext, bout);
+        ContainerResponse response = handler.handle(baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
         final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
         return new RestResponse(bin, response.getMediaType() != null ? response.getMediaType().toString() : null, response.getStatus(), response.getHeaders());
     }
@@ -139,7 +140,7 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     /**
      * Sets the application context. Setting this will enable {@link SpringBean} injection to work.
      *
-     * @param applicationContext
+     * @param applicationContext The application context
      * @throws BeansException
      */
     @Override

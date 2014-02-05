@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.l7tech.gateway.api.AssertionSecurityZoneMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -10,14 +13,13 @@ import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
-import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
+import com.l7tech.util.Functions;
+import com.sun.istack.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
 
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
 
 /**
  * Only GET, PUT and Enumerate operations are supported
@@ -61,8 +63,8 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                     // create the assertion security zone
                 }
 
-                try{
-                    if(oldEntityBag == null || Goid.isDefault(oldEntityBag.getEntity().getGoid())){   // create
+                try {
+                    if (oldEntityBag == null || Goid.isDefault(oldEntityBag.getEntity().getGoid())) {   // create
                         final EntityBag<AssertionAccess> entityBag = fromResourceAsBag(resource);
                         for (PersistentEntity entity : entityBag) {
                             if (entity.getVersion() == VERSION_NOT_PRESENT) {
@@ -85,8 +87,7 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                         EntityContext.setEntityInfo(getType(), goid.toString());
                         return Eithers.right2(goid.toString());
 
-                    }
-                    else{  // update
+                    } else {  // update
                         final EntityBag<AssertionAccess> newEntityBag = fromResourceAsBag(resource);
 
                         if (resource instanceof AssertionSecurityZoneMO) {
@@ -111,7 +112,7 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
 
                         assertionAccessManager.update(oldEntityBag.getEntity());
                         afterUpdateEntity(oldEntityBag);
-                        return Eithers.right2( oldEntityBag.getEntity().getId() );
+                        return Eithers.right2(oldEntityBag.getEntity().getId());
                     }
                 } catch (InvalidResourceException e) {
                     return Eithers.left2_2(e);
@@ -145,6 +146,68 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
         }
 
         return resources;
+    }
+
+    public Iterable<AssertionSecurityZoneMO> listResources(final String sortKey, final Boolean ascending, final Map<String, List<Object>> filtersMap) {
+        try {
+            List<AssertionAccess> entities = new ArrayList<AssertionAccess>(assertionAccessManager.findAllRegistered());
+
+            entities = Lists.newArrayList(Iterables.filter(entities, new Predicate<AssertionAccess>() {
+                @Override
+                public boolean apply(@Nullable AssertionAccess assertionAccess) {
+                    boolean match = true;
+                    if (filtersMap.containsKey("name")) {
+                        match = filtersMap.get("name").contains(assertionAccess.getName());
+                    }
+                    if (match && filtersMap.containsKey("id")) {
+                        match = match &&  filtersMap.get("id").contains(assertionAccess.getGoid());
+                    }
+                    if (match && filtersMap.containsKey("securityZone.id") ) {
+                        match = match && (assertionAccess.getSecurityZone()!= null && filtersMap.get("securityZone.id").contains(assertionAccess.getSecurityZone().getGoid()));
+                    }
+                    return match;
+                }
+            }));
+
+            Collections.sort(entities,new Comparator<AssertionAccess>() {
+                @Override
+                public int compare(AssertionAccess o1, AssertionAccess o2) {
+                    if(sortKey == null)
+                        return 0;
+
+                    if(sortKey.equals("name")){
+                        return ascending ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
+                    }
+                    if(sortKey.equals("id")){
+                        return ascending ? o1.getId().compareTo(o2.getId()) :  o2.getId().compareTo(o1.getId());
+                    }
+                    if(sortKey.equals("securityZone.id")){
+                        if(o1.getSecurityZone().equals(o2.getSecurityZone()))
+                            return 0;
+                        if(o1.getSecurityZone() == null)
+                            return ascending ? 1: -1;
+                        if(o2.getSecurityZone() == null)
+                            return ascending ? -1: 1;
+                        return ascending ? o1.getSecurityZone().getId().compareTo(o2.getSecurityZone().getId()) :  o2.getSecurityZone().getId().compareTo(o1.getSecurityZone().getId());
+                    }
+                    return 0;
+                }
+            });
+
+            entities = accessFilter(entities, assertionAccessManager.getEntityType(), OperationType.READ, null);
+            entities = filterEntities(entities);
+
+            return Functions.map(entities, new Functions.UnaryThrows<AssertionSecurityZoneMO, AssertionAccess, ObjectModelException>() {
+                @Override
+                public AssertionSecurityZoneMO call(AssertionAccess e) throws ObjectModelException {
+                    return identify(asResource(loadEntityBag(e)), e);
+                }
+            });
+        }catch (ObjectModelException e) {
+            handleObjectModelException(e);
+        }
+
+        return Collections.emptyList();
     }
 
     @Override

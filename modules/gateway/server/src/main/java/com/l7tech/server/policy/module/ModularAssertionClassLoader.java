@@ -353,7 +353,7 @@ class ModularAssertionClassLoader extends URLClassLoader implements Closeable {
      * @param clazz the class to notify.  If this is null, or does not include a public onModuleUnloaded static
      *        method, this method takes no action.
      */
-    private void onModuleUnloaded(Class clazz) {
+    protected void onModuleUnloaded(Class clazz) {
         try {
             clazz.getMethod("onModuleUnloaded").invoke(null);
         } catch (NoClassDefFoundError | IllegalAccessException e) {

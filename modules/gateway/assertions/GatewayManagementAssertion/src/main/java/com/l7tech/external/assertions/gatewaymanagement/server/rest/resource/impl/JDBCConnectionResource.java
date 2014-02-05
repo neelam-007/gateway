@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.JDBCConnectionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.JDBCConnectionMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -16,7 +16,8 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(JDBCConnectionResource.jdbcConnections_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + JDBCConnectionResource.jdbcConnections_URI)
+@Singleton
 public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO, JDBCConnectionRestResourceFactory> {
 
     protected static final String jdbcConnections_URI = "jdbcConnections";
@@ -27,12 +28,8 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
         super.factory = factory;
     }
 
-    public EntityType getEntityType() {
-        return EntityType.JDBC_CONNECTION;
-    }
-
     @Override
-    protected Reference toReference(JDBCConnectionMO resource) {
+    protected Item<JDBCConnectionMO> toReference(JDBCConnectionMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

@@ -50,6 +50,8 @@ public class MultiplePolicyTabsTest {
         applicationContext = createApplicationContext();
 
         final MainWindow mainWindow = new MainWindow(applicationContext.getBean("ssmApplication", SsmApplication.class));
+        TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
+
         final JTree servicesAndPolicesTree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         final DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         servicesAndPolicesTree.setModel(servicesTreeModel);

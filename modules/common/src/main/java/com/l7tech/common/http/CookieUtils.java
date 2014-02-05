@@ -165,7 +165,7 @@ public class CookieUtils {
      * values but a modified domain and/or path.</p>
      *
      * @param cookie the cookie to check
-     * @param domain the cookies target domain
+     * @param domain the cookies target domain. If null, the cookie domain will be used for the return cookie domain.
      * @param path the cookies target path (not that the path is trimmed up to and including the last /)
      *             If null, the cookie path will be used for the return cookie path.
      * @return a valid cookie
@@ -182,14 +182,16 @@ public class CookieUtils {
                 calcPath = cookiePath;
             }
 
-            int trim = calcPath.lastIndexOf('/');
-            if(trim>0) {
-                calcPath = calcPath.substring(0, trim);
+            if (calcPath != null) {
+                int trim = calcPath.lastIndexOf('/');
+                if(trim>0) {
+                    calcPath = calcPath.substring(0, trim);
+                }
             }
 
-            if((cookieDomain!=null && !domain.endsWith(cookieDomain))
-            || (cookiePath!=null && !calcPath.startsWith(cookiePath))){
-                result = new HttpCookie(cookie, domain, calcPath);
+            if((cookieDomain!=null && domain != null && !domain.endsWith(cookieDomain))
+            || (cookiePath!=null && calcPath != null && !calcPath.startsWith(cookiePath))){
+                result = new HttpCookie(cookie, domain != null ? domain : cookieDomain, calcPath);
             }
         }
 

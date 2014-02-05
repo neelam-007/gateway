@@ -33,14 +33,24 @@ public class HttpCookie {
     }
 
     /**
+     * Create an HttpCookie out of the specified raw header value.
+     *
+     * @param headerFullValue the value of a Cookie or Set-Cookie header, ie:
+     *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
+     * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
+     */
+    public HttpCookie(final String headerFullValue) throws IllegalFormatException {
+        this((String)null, (String)null, headerFullValue);
+    }
+
+    /**
      * Create an HttpCookie out of the specified raw header value value.
      *
      * @param headerFullValue the value of a Set-Cookie header, ie:
      *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
      * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
      */
-    public HttpCookie(String requestDomain, String requestPath, String headerFullValue)
-            throws HttpCookie.IllegalFormatException {
+    public HttpCookie(String requestDomain, String requestPath, String headerFullValue) throws HttpCookie.IllegalFormatException {
         // Parse cookie
         if (headerFullValue == null || "".equals(headerFullValue)) {
             throw new HttpCookie.IllegalFormatException("Cookie value is empty");
@@ -82,13 +92,13 @@ public class HttpCookie {
                 String[] f = EQUALS.split(fields[j], 2);
                 if ("expires".equalsIgnoreCase(f[0])) {
                     parsedExpires = f[1];
-                } else if ("domain".equalsIgnoreCase(f[0])) {
+                } else if ("domain".equalsIgnoreCase(f[0]) || "$domain".equalsIgnoreCase(f[0])) {
                     parsedDomain = f[1];
-                } else if ("path".equalsIgnoreCase(f[0])) {
+                } else if ("path".equalsIgnoreCase(f[0]) || "$path".equalsIgnoreCase(f[0])) {
                     parsedPath = f[1];
                 } else if ("comment".equalsIgnoreCase(f[0])) {
                     parsedComment = f[1];
-                } else if ("version".equalsIgnoreCase(f[0])) {
+                } else if ("version".equalsIgnoreCase(f[0]) || "$version".equalsIgnoreCase(f[0])) {
                     parsedVersion = Integer.parseInt(trimQuotes(f[1],1));
                 } else if ("max-age".equalsIgnoreCase(f[0])) {
                     parsedMaxAge = Integer.parseInt(trimQuotes(f[1],1));
@@ -105,7 +115,7 @@ public class HttpCookie {
             domain = trimQuotes(parsedDomain, parsedVersion);
             explicitDomain = true;
         }
-        if(parsedPath==null) {
+        if(parsedPath==null && requestPath != null) {
             int trim = requestPath.lastIndexOf('/');
             if(trim>0) {
                 parsedPath = requestPath.substring(0, trim);
@@ -140,7 +150,7 @@ public class HttpCookie {
                 }
             }
             if(STRICT_COOKIE_EXPIRY_FORMAT && !match){
-                throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");                
+                throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");
             }
         }
 
@@ -150,7 +160,6 @@ public class HttpCookie {
         path = trimQuotes(parsedPath, parsedVersion);
         comment = trimQuotes(parsedComment, parsedVersion);
         version = parsedVersion;
-        newcook = true;
 
         createdTime = System.currentTimeMillis();
         id = buildId();
@@ -185,7 +194,6 @@ public class HttpCookie {
             this.comment = comment;
         }
         this.secure = secure;
-        this.newcook = true;
         this.createdTime = System.currentTimeMillis();
 
         this.id = buildId();
@@ -218,7 +226,6 @@ public class HttpCookie {
         this.fullValue = null;
         this.maxAge = -1;
         this.secure = false;
-        this.newcook = false;
         this.comment = null;
         this.createdTime = System.currentTimeMillis();
 
@@ -239,14 +246,13 @@ public class HttpCookie {
         this.version = cookie.version;
         this.maxAge = cookie.maxAge;
         this.secure = cookie.secure;
-        this.newcook = cookie.newcook;
         this.comment = cookie.comment;
         this.createdTime = cookie.createdTime;
 
         this.fullValue = null;
         this.path = path;
         this.domain = domain;
-        this.explicitDomain = true;
+        this.explicitDomain = domain != null;
 
         this.id = buildId();
     }
@@ -308,13 +314,6 @@ public class HttpCookie {
     /**
      *
      */
-    public boolean isNew() {
-        return newcook;
-    }
-
-    /**
-     *
-     */
     public boolean isExpired() {
         boolean expired = false;
         if(maxAge==0) {
@@ -327,14 +326,6 @@ public class HttpCookie {
         }
 
         return expired;
-    }
-
-    public boolean isOverwritePath() {
-        return overwritePath;
-    }
-
-    public void setOverwritePath(boolean overwritePath) {
-        this.overwritePath = overwritePath;
     }
 
     /**
@@ -391,28 +382,6 @@ public class HttpCookie {
         headerPart.append(cookieName);
         headerPart.append('=');
         headerPart.append(quoteIfNeeded(cookieValue));
-        return headerPart.toString();
-    }
-
-    /**
-     * Get this cookie formatted as part of a version 1 (RFC 2109) "cookie:"
-     * header.
-     *
-     * @return "<Name>=<Value>; $Path=<Path>; $Domain=<Domain>"
-     */
-    public String getV1CookieHeaderPart() {
-        StringBuffer headerPart = new StringBuffer();
-        headerPart.append(cookieName);
-        headerPart.append('=');
-        headerPart.append(quoteIfNeeded(cookieValue));
-        headerPart.append("; $Path=");
-        headerPart.append(path);
-
-        if(explicitDomain) {
-            headerPart.append("; $Domain=");
-            headerPart.append(domain);
-        }
-
         return headerPart.toString();
     }
 
@@ -500,10 +469,6 @@ public class HttpCookie {
     private final int maxAge;
     private final int version;
     private final boolean secure;
-    private final boolean newcook;
-
-    //Control attributes for the cookie
-    private boolean overwritePath = true;
 
     /**
      * Called when all properties have been set to generate the cookies ID
@@ -578,8 +543,8 @@ public class HttpCookie {
         return escaped;
     }
 
-    private static String quoteIfNeeded(final String text) {
-        String quoted = text;
+    public static String quoteIfNeeded(final String cookieValue) {
+        String quoted = cookieValue;
 
         if (quoted==null) {
             quoted = "";

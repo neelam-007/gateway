@@ -195,7 +195,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      * regardless whether it was successful or not.<br/>
      * Override this method to receive notification when certain scan is done.
      */
-    protected void onScanComplete() {
+    protected void onScanComplete(boolean changesMade) {
         // nothing to do.
     }
 
@@ -248,6 +248,15 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
      */
     protected void clearSkippedModTimes() {
         skipModTimes.clear();
+    }
+
+    /**
+     * Convenient method for extracting scanned modules.
+     *
+     * @return a concurrent and read-only view of the values contained with {@link #scannedModules}
+     */
+    public Collection<T> getModules() {
+        return Collections.unmodifiableCollection(scannedModules.values());
     }
 
     /**
@@ -428,7 +437,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
                 final ModuleLoadStatus loadStatus = onModuleLoad(module, sha1, lastModified);
 
                 // set the changes-made flag
-                changesMade = (loadStatus.isPrevModuleUnloaded() || (loadStatus.getLoadedModule() != null));
+                changesMade = changesMade || (loadStatus.isPrevModuleUnloaded() || (loadStatus.getLoadedModule() != null));
 
                 // should we skip this module
                 if (loadStatus.getLoadedModule() == null) {
@@ -485,6 +494,9 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
 
         logger.log(Level.FINE, "Scanning custom assertion modules directory {0}...", moduleDir.getAbsolutePath());
 
+        // a flag indicating if there are new, deleted or modified modules
+        boolean changesMade = false;
+
         try {
             lastScanDir = moduleDir;
             lastScanDirModTime = moduleDirLastModified;
@@ -525,7 +537,6 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
                         if (lcName.endsWith(disabledSuffix.trim().toLowerCase())) {
                             final String moduleName = name.substring(0, name.length() - disabledSuffix.length());
                             disabledModuleFileNames.add(moduleName);
-                            moduleFileNames.remove(moduleName);
                             logger.fine("Pretending module file \"" + moduleName + "\" isn't there, because it is flagged as disabled");
                         }
                     }
@@ -540,8 +551,10 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
                 return false;
             }
 
-            // a bit-flag indicating if there are new, deleted or modified modules
-            boolean changesMade = false;
+            // loop through all disabled modules and remove them from moduleFileNames
+            for (final String disabledModuleName : disabledModuleFileNames) {
+                moduleFileNames.remove(disabledModuleName);
+            }
 
             // Unregister removed or disabled custom assertion modules
             if (processRemovedModules(moduleFileNames)) {
@@ -560,7 +573,7 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
 
             return changesMade;
         } finally {
-            onScanComplete();
+            onScanComplete(changesMade);
         }
     }
 

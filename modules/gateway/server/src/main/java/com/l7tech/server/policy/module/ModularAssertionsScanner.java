@@ -42,6 +42,11 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
     // callbacks
     private final ScannerCallbacks.ModularAssertion callbacks;
 
+    /**
+     * Construct modular assertion scanner providing config and callback objects.
+     * @param modulesConfig    modular assertion modules configuration.
+     * @param callbacks        callback object defining the bridge between this class and {@link com.l7tech.server.policy.ServerAssertionRegistry ServerAssertionRegistry}.
+     */
     public ModularAssertionsScanner(@NotNull final ModularAssertionModulesConfig modulesConfig, @NotNull final ScannerCallbacks.ModularAssertion callbacks) {
         this.modulesConfig = modulesConfig;
         this.callbacks = callbacks;
@@ -72,7 +77,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      * @param assclass  the assertion class.  Required
      * @param classname  the name of the listener class to invoke.  Required.
      */
-    private void onModuleLoaded(Class<? extends Assertion> assclass, String classname) {
+    protected void onModuleLoaded(Class<? extends Assertion> assclass, String classname) {
         if (classname == null || classname.length() < 1) return;
         try {
             Class listenerClass = assclass.getClassLoader().loadClass(classname);
@@ -103,7 +108,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      * The module has been unloaded
      * @param module    the module that was just unloaded.
      */
-    private void onModuleUnloaded(ModularAssertionModule module) {
+    protected void onModuleUnloaded(ModularAssertionModule module) {
         Background.cancelAllTasksFromClassLoader(module.getModuleClassLoader());
         callbacks.publishEvent(new AssertionModuleUnregistrationEvent(this, module));
         try {
@@ -339,7 +344,7 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
     }
 
     @Override
-    protected void onScanComplete() {
+    protected void onScanComplete(boolean changesMade) {
         // reset force scan flag
         setScanNeeded(false);
     }
@@ -349,13 +354,6 @@ public class ModularAssertionsScanner extends ScheduledModuleScanner<ModularAsse
      */
     public boolean scanModules() {
         return super.scanModules(modulesConfig);
-    }
-
-    /**
-     * Convenient method for extracting scanned modules.
-     */
-    public Collection<ModularAssertionModule> getModules() {
-        return scannedModules.values();
     }
 
     /**

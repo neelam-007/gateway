@@ -5,10 +5,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
-import com.l7tech.gateway.api.Link;
-import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -27,15 +24,16 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
-import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.Nullable;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -48,12 +46,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 /**
  * Test the GatewayManagementAssertion for EmailListenerMO entity.
@@ -120,11 +113,11 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         return provider;
     }
 
-    protected Response processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         return processRequest(uri, null, method, contentType, body);
     }
 
-    protected Response processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body.getBytes("utf-8"));
@@ -143,7 +136,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         }
         httpServletRequest.setRemoteAddr("127.0.0.1");
         httpServletRequest.setServerName("127.0.0.1");
-        httpServletRequest.setRequestURI("/restman/" + uri);
+        httpServletRequest.setRequestURI("/restman/1.0/" + uri);
         httpServletRequest.setQueryString(queryString);
         httpServletRequest.setContent(body.getBytes("UTF-8"));
 
@@ -173,20 +166,21 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
             String responseBody = bout.toString("UTF-8");
             HashMap<String, String[]> headers = new HashMap<>();
-            for (String header : response.getHttpResponseKnob().getHeaderNames()) {
-                headers.put(header, response.getHttpResponseKnob().getHeaderValues(header));
+            for (String header : response.getHeadersKnob().getHeaderNames()) {
+                headers.put(header, response.getHeadersKnob().getHeaderValues(header));
             }
-            return new Response(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
+            return new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
         } finally {
             ResourceUtils.closeQuietly(context);
         }
     }
 
-    protected String getFirstReferencedGoid(Response response) throws IOException {
+    protected String getFirstReferencedGoid(RestResponse response) throws IOException {
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        List<Link> links = item.getLinks();
 
-        for(Link link : reference.getLinks()){
+        for(Link link : links){
             if("self".equals(link.getRel())){
                 return link.getUri().substring(link.getUri().lastIndexOf('/') + 1);
             }
@@ -194,51 +188,18 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
         return null;
     }
 
-    @After
-    public void after() throws Exception {
+    protected static String getErrorMessage(RestResponse response)  {
+        try{
+            final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+            ErrorResponse errorResponse = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+            return errorResponse.getDetail();
+        }catch(IOException e){
+            return null;
+        }
     }
 
-    protected class Response {
-        private String body;
-        private int status;
-        private Map<String, String[]> headers;
-        private AssertionStatus assertionStatus;
-
-        private Response(AssertionStatus assertionStatus, String body, int status, Map<String, String[]> headers) {
-            this.assertionStatus = assertionStatus;
-            this.body = body;
-            this.status = status;
-            this.headers = headers;
-        }
-
-        public String getBody() {
-            return body;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public String toString() {
-            return "Status: " + status + " headers: " + printHeaders(headers) + " Body:\n" + body;
-        }
-
-        private String printHeaders(Map<String, String[]> headers) {
-            return new StringBuilder(Functions.reduce(headers.entrySet(), "{", new Functions.Binary<String, String, Map.Entry<String, String[]>>() {
-                @Override
-                public String call(String s, Map.Entry<String, String[]> header) {
-                    return s + header.getKey() + "=" + Arrays.asList(header.getValue()).toString() + ", ";
-                }
-            })) + "}";
-        }
-
-        public AssertionStatus getAssertionStatus() {
-            return assertionStatus;
-        }
-
-        public Map<String, String[]> getHeaders() {
-            return headers;
-        }
+    @After
+    public void after() throws Exception {
     }
 
     public static class TestStashManagerFactory implements StashManagerFactory {

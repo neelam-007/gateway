@@ -2,11 +2,11 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.CertificateRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -14,7 +14,8 @@ import javax.ws.rs.ext.Provider;
  * The trusted certificate resource
  */
 @Provider
-@Path(CertificateResource.trustedCertificate_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + CertificateResource.trustedCertificate_URI)
+@Singleton
 public class CertificateResource extends RestEntityResource<TrustedCertificateMO, CertificateRestResourceFactory> {
 
     protected static final String trustedCertificate_URI = "trustedCertificates";
@@ -25,12 +26,8 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.TRUSTED_CERT;
-    }
-
     @Override
-    protected Reference toReference(TrustedCertificateMO resource) {
+    protected Item<TrustedCertificateMO> toReference(TrustedCertificateMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

@@ -64,12 +64,12 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        CustomKeyValueStoreMO result = (CustomKeyValueStoreMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        CustomKeyValueStoreMO result = (CustomKeyValueStoreMO) item.getContent();
 
         assertEquals("Custom Key Value identifier:", customKeyValStore.getId(), result.getId());
         assertEquals("Custom Key Value key:", customKeyValStore.getName(), result.getKey());
@@ -83,7 +83,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setId(null);
         createObject.setKey("New custom key value");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         CustomKeyValueStore createdEntity = customKeyValueStoreManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -100,7 +100,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setKey("New custom key value");
         createObject.setStoreName("Bad store");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -114,7 +114,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
         createObject.setId(null);
         createObject.setKey("New custom key value");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(customKeyValStoreBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(customKeyValStoreBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Custom Key Value goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -127,14 +127,14 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        CustomKeyValueStoreMO entityGot = (CustomKeyValueStoreMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        CustomKeyValueStoreMO entityGot = (CustomKeyValueStoreMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setKey(entityGot.getKey() + "_mod");
-        Response response = processRequest(customKeyValStoreBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(customKeyValStoreBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Custom Key Value goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -151,7 +151,7 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath + customKeyValStore.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -161,13 +161,13 @@ public class CustomKeyValueStoreRestServerGatewayManagementAssertionTest extends
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(customKeyValStoreBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(customKeyValStoreBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<CustomKeyValueStoreMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, references.getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

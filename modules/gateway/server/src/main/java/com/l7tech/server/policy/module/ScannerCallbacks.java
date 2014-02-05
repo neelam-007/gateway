@@ -2,6 +2,7 @@ package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.ext.ServiceFinder;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationContext;
@@ -79,5 +80,11 @@ public interface ScannerCallbacks {
          * @param descriptor    The custom assertion descriptor.
          */
         void unregisterAssertion(@NotNull CustomAssertionDescriptor descriptor);
+
+        /**
+         * Provide access to the {@link ServiceFinder} for locating Layer 7 API Services available to assertions.<br/>
+         * For available services see the Layer 7 API documentation.
+         */
+        ServiceFinder getServiceFinder();
     }
 }

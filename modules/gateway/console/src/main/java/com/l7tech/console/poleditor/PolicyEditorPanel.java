@@ -68,18 +68,45 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
 
     public static final String POLICYNAME_PROPERTY = "policy.name";
     public static final String TAB_TITLE_CHANGE_PROPERTY = "tabTitle.change";
+    @Deprecated // used in pre-Icefish
     public static final String SHOW_COMMENTS = "COMMENTS.SHOWSTATE";
-
+    @Deprecated // used in pre-Icefish
     private static final String PREF_PREFIX = "policy.editor.";
+    @Deprecated // used in pre-Icefish
     private static final String SHOW_ASSERTION_NUMBERS = PREF_PREFIX + "showAssertionNumbers";
+    @Deprecated // used in pre-Icefish
     private static final String MESSAGE_AREA_DIVIDER_KEY =  PREF_PREFIX + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
+
+    private static final String POLICY_TAB_PROPERTY_PREFIX = "policy.tabs.";
+    private static final String ASSERTION_PROPERTY_PREFIX = "assertion.";
+    private static final String SEARCH_PROPERTY_PREFIX = "search.";
+
+    private static final String POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS = POLICY_TAB_PROPERTY_PREFIX + ASSERTION_PROPERTY_PREFIX + "showNumbers";
+    public static final String POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS = POLICY_TAB_PROPERTY_PREFIX + ASSERTION_PROPERTY_PREFIX + "showComments";
+    public static final String POLICY_TAB_PROPERTY_SEARCH_SHOW = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "show";
+    public static final String POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "caseSensitive";
+    public static final String POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "showDisabled";
+    public static final String POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "includeProperties";
+    public static final String POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY = POLICY_TAB_PROPERTY_PREFIX + "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+
+    public static final String[] ALL_POLICY_TAB_PROPERTIES = new String[] {
+        POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
+        POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS,
+        POLICY_TAB_PROPERTY_SEARCH_SHOW,
+        POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE,
+        POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED,
+        POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES,
+        POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY
+    };
 
     private static final String PROP_PREFIX = "com.l7tech.console";
     private static final long DELAY_INITIAL = ConfigFactory.getLongProperty( PROP_PREFIX + ".policyValidator.serverSideDelay.initial", 71L );
@@ -415,7 +442,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private JPanel getFindPanel(){
         if(searchForm != null) return searchForm.getSearchPanel();
 
-        searchForm = new SearchForm();
+        searchForm = new SearchForm(this);
 
         final MouseListener listener = new MouseAdapter() {
             @Override
@@ -425,7 +452,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         };
 
         searchForm.addCloseLabelListener(listener);
-        boolean showSearch = Boolean.valueOf(preferences.getString( SearchForm.SHOW, "true" ));
+        boolean showSearch = Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_SEARCH_SHOW, SearchForm.SHOW, "true"));
         if (!showSearch) {
             searchForm.hidePanel();
         }
@@ -598,9 +625,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
           new PropertyChangeListener() {
               @Override
               public void propertyChange(PropertyChangeEvent evt) {
-                  SsmPreferences prefs = preferences;
                   int l = splitPane.getDividerLocation();
-                  prefs.putProperty(MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
+                  updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
               }
           });
         
@@ -612,8 +638,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if (!messagePane.isShowing()) return;
                 }
                 try {
-                    SsmPreferences prefs = preferences;
-                    String s = prefs.getString(MESSAGE_AREA_DIVIDER_KEY);
+                    String s = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, MESSAGE_AREA_DIVIDER_KEY, null);
                     if (s != null) {
                         int l = Integer.parseInt(s);
                         splitPane.setDividerLocation(l);
@@ -636,7 +661,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
         policyTree.getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
         policyTreePane = new NumberedPolicyTreePane(policyTree);
-        policyTreePane.setNumbersVisible( Boolean.valueOf(preferences.getString( SHOW_ASSERTION_NUMBERS, "false" )) );
+        policyTreePane.setNumbersVisible(Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, SHOW_ASSERTION_NUMBERS, "false")));
         return policyTreePane;
     }
 
@@ -847,6 +872,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     buttonSaveAndActivate.setEnabled(false);
                     bsaa.setEnabled(false);
                     buttonSaveOnly.setEnabled(false);
+
+                    // Update the tab title by adding an asterisk if unsaved changes occur.
+                    PolicyEditorPanel.this.updateHeadings();
+
+                    // Copy all policy tab properties for a new policy version
+                    copyAllPolicyTabPropertiesBasedOnUI();
                 }
             });
 
@@ -859,6 +890,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     appendToMessageArea("<i>Policy saved but not activated.</i>");
                     bsaa.setEnabled(false);
                     buttonSaveOnly.setEnabled(false);
+
+                    // Update the tab title by adding an asterisk if unsaved changes occur.
+                    PolicyEditorPanel.this.updateHeadings();
+
+                    // Copy all policy tab properties for a new policy version
+                    copyAllPolicyTabPropertiesBasedOnUI();
                 }
             });
 
@@ -1525,7 +1562,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
 
             if (!initialValidate) {
-                enableButtonSave();
+                updatePolicyEditorPanel();
+
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -1548,17 +1586,28 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         @Override
         public void treeNodesInserted(final TreeModelEvent e) {
-            enableButtonSave();
+            updatePolicyEditorPanel();
         }
 
         @Override
         public void treeNodesRemoved(TreeModelEvent e) {
-            enableButtonSave();
+            updatePolicyEditorPanel();
         }
 
         @Override
         public void treeStructureChanged(TreeModelEvent e) {
+            updatePolicyEditorPanel();
+        }
+
+        /**
+         * Update the policy editor panel such as enabling save buttons and updating tab titles.
+         */
+        private void updatePolicyEditorPanel() {
             enableButtonSave();
+
+            // If the policy tree node is changed, it means the policy is changed.
+            // Update the tab title by adding an asterisk if unsaved changes occur.
+            PolicyEditorPanel.this.updateHeadings();
         }
 
         private void enableButtonSave() {
@@ -1571,6 +1620,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
                 "You do not have permission to update this service/policy. In order to keep your changes, you may export it.", null);
             }
+
+            // If the policy tree node is changed, it means the policy is changed.
+            // Update the tab title by adding an asterisk if unsaved changes occur.
+            PolicyEditorPanel.this.updateHeadings();
         }
     };
 
@@ -2130,15 +2183,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 protected void performAction() {
                     //shown = true means the button should say 'Hide'
 
-                    if (isShowing()) preferences.putProperty(SHOW_COMMENTS, "false");
-                    else preferences.putProperty(SHOW_COMMENTS, "true");
+                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(!isShowing()));
 
-                    try {
-                        preferences.store();
-                    } catch ( IOException e ) {
-                        log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
-                    }
-                    
                     for (AbstractButton butn: showCmtsButtons) {
                         butn.setText(getName());
                         butn.setToolTipText(getName());
@@ -2162,7 +2208,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
 
                 private boolean isShowing(){
-                    final String showState = preferences.getString(SHOW_COMMENTS);
+                    final String showState = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, SHOW_COMMENTS, null);
                     return Boolean.parseBoolean(showState);
                 }
             };
@@ -2296,14 +2342,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 protected void performAction() {
                     // Update the status of assertion line numbers shown/hidden in the policy editor panel.
-                    boolean lineNumsShown = !policyTreePane.isNumbersVisible();
-                    policyTreePane.setNumbersVisible( lineNumsShown );
-                    preferences.putProperty( SHOW_ASSERTION_NUMBERS, Boolean.toString(lineNumsShown));
-                    try {
-                        preferences.store();
-                    } catch ( IOException e ) {
-                        log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
-                    }
+                    boolean toShowNumbers = !policyTreePane.isNumbersVisible();
+                    policyTreePane.setNumbersVisible(toShowNumbers);
+                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(toShowNumbers));
 
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
@@ -2333,5 +2374,225 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         return showAssertionLineNumbersAction;
+    }
+
+    /**
+     * Copy all policy tab properties based on the status of current UI components as showCmtsButtons, policyTreePane, splitPane, and searchForm
+     */
+    private void copyAllPolicyTabPropertiesBasedOnUI() {
+        updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(showCmtsButtons.get(0).getText().equals("Hide Comments")));
+        updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(policyTreePane.isNumbersVisible()));
+        updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, Integer.toString(splitPane.getDividerLocation()));
+
+        if (searchForm != null) {
+            searchForm.copyAllSearchPropertiesBasedOnUI();
+        }
+    }
+
+    /**
+     * Delete the settings of the current policy tab from all policy tab properties. The settings of other policy tabs remains unchanged.
+     * For example, policy_tab_prop_1=policy_goid_1(X#
+     */
+    public void deletePolicyTabSettingsFromAllPolicyTabProperties() {
+        final String policyGoid = getPolicyGoid().toString();
+
+        String propValue;
+        int goidIdx;
+        int goidIdxOffset;
+        int leftDelimiterIdx;
+        int rightDelimiterIdx;
+        int rightDelimiterLength;
+
+        for (String propName: ALL_POLICY_TAB_PROPERTIES) {
+            // If no such property found, then check a next property
+            propValue = preferences.getString(propName);
+            if (propValue == null) {
+                continue;
+            }
+
+            goidIdx = propValue.indexOf(policyGoid);
+            // If no such policy goid found, then check a next property
+            if (goidIdx == -1) {
+                continue;
+            }
+            leftDelimiterIdx = propValue.indexOf("(", goidIdx);
+
+            rightDelimiterIdx = propValue.indexOf("), ", goidIdx);
+            if (rightDelimiterIdx == -1) {
+                rightDelimiterIdx = propValue.indexOf("),", goidIdx);
+                if (rightDelimiterIdx == -1) {
+                    rightDelimiterIdx = propValue.indexOf(")", goidIdx);
+                    rightDelimiterLength = 1;
+                } else {
+                    rightDelimiterLength = 2;
+                }
+            } else {
+                rightDelimiterLength = 3;
+            }
+
+            if (leftDelimiterIdx == -1 || rightDelimiterIdx == -1) {
+                throw new RuntimeException("The property '" + propName + "' has an invalid formatted property value.");
+            }
+
+            goidIdxOffset = 0;
+            if (goidIdx > 2 && rightDelimiterLength == 1) { // rightDelimiterLength == 1 means the policy goid is the last one in the property value.
+                if (propValue.substring(goidIdx - 2, goidIdx).equals(", ")) {
+                    goidIdxOffset = 2;
+                } else if (propValue.substring(goidIdx - 1, goidIdx).equals(",")) {
+                    goidIdxOffset = 1;
+                }
+            }
+
+            propValue = propValue.substring(0, goidIdx - goidIdxOffset) + propValue.substring(rightDelimiterIdx + rightDelimiterLength);
+
+            if (propValue.trim().isEmpty()) {
+                preferences.remove(propName);
+            } else {
+                preferences.putProperty(propName, propValue);
+            }
+        }
+
+        try {
+            preferences.store();
+        } catch ( IOException e ) {
+            log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
+        }
+    }
+
+    /**
+     * A policy tab property consists of settings of all individual policy tabs in a format:
+     * policy_tab_prop_name=policy_oid(policy_version#value, ...), ...etc.
+     *
+     * This method is to extract the tab setting of the current policy from the property value retrieved by "propName".
+     *
+     * @param propName: the name of a policy tab property
+     * @param deprecatedPropName: the name of a deprecated property, which was used in pre-Icefish versions).  Since
+     *                    new property and deprecated property use different value format, to keep backward compatibility,
+     *                    somehow we need to retrieve property values of deprecated properties from ssg.properties.
+     *                    Set it as null if a deprecated property is not applicable.
+     *
+     * @return a tab setting extracted from the property value of the policy tab property with property name, propName.
+     *
+     */
+    public String getTabSettingFromPolicyTabProperty(String propName, String deprecatedPropName, String defaultValue) {
+        if (propName == null) {
+            if (deprecatedPropName == null) {
+                throw new IllegalArgumentException("No property name provided.");
+            } else {
+                return preferences.getString(deprecatedPropName, defaultValue);
+            }
+        } else {
+            if (! propName.startsWith(POLICY_TAB_PROPERTY_PREFIX)) {
+                throw new IllegalArgumentException("The name of the policy tab property '" + propName + "' does not start with 'policy.tabs.'");
+            }
+
+            String propValue = preferences.getString(propName);
+            if (propValue != null) {
+                final String policyGoid = getPolicyGoid().toString(); // + "#" + getVersionNumber() + "#";
+                final String policyVerNum = String.valueOf(getVersionNumber());
+
+                // The policy goid found means there is a tab setting for the particular policy version
+                final int goidIdx = propValue.indexOf(policyGoid);
+                if (goidIdx >= 0) {
+                    final int leftDelimiter = propValue.indexOf("(", goidIdx);
+                    final int rightDelimiter = propValue.indexOf(")", goidIdx);
+                    if (leftDelimiter == -1 || rightDelimiter == -1) {
+                        throw new RuntimeException("The property " + propName + " has an invalid formatted property value.");
+                    }
+
+                    // The property value has a format: (number1#value1, number2#value2, ... ect).
+                    // Split the property value by a comma with optional preceding and trailing whitespace
+                    final String tabSettings = propValue.substring(leftDelimiter + 1, rightDelimiter);
+                    List<String> values = Arrays.asList(TextUtils.CSV_STRING_SPLIT_PATTERN.split(tabSettings));
+
+                    for (String value: values) {
+                        // Split each item by a '#' with optional preceding and trailing whitespace
+                        String[] result = Pattern.compile("\\s*#\\s*").split(value);
+                        if (result == null || result.length != 2) {
+                            throw new RuntimeException("The property '" + propName + "' has an invalid formatted property value.");
+                        }
+                        if (result[0].equals(policyVerNum)) {
+                            return result[1];
+                        }
+                    }
+                    return defaultValue;
+                } else {
+                    // If the policy goid not found, then return the default value
+                    return defaultValue;
+                }
+            } else if (deprecatedPropName != null) {
+                return preferences.getString(deprecatedPropName, defaultValue);
+            } else {
+                return defaultValue;
+            }
+        }
+    }
+
+    /**
+     * Update the policy tab property, whose property value will be extracted and then add a new tab setting or replace an old setting with the new tab setting.
+     *
+     * @param propName: the property name, which must be in the format: "policy.tabs.XXX".
+     */
+    public void updatePolicyTabProperty(String propName, String tabSetting) {
+        if (propName == null || !propName.startsWith(POLICY_TAB_PROPERTY_PREFIX)) {
+            throw new IllegalArgumentException("Invalid policy tab property: " + propName);
+        }
+
+        final String policyGoid = getPolicyGoid().toString();
+        final String policyVerNum = String.valueOf(getVersionNumber());
+        String propValue = preferences.getString(propName);
+
+        // The property value has a format: (number1#value1, number2#value2, ... ect).
+        if (propValue == null) {
+            propValue = policyGoid + "(" + policyVerNum + "#" + tabSetting + ")";
+        } else {
+            // The policy goid found means there is a tab setting for the particular policy version
+            final int goidIdx = propValue.indexOf(policyGoid);
+            if (goidIdx >= 0) {
+                final int leftDelimiter = propValue.indexOf("(", goidIdx);
+                final int rightDelimiter = propValue.indexOf(")", goidIdx);
+                if (leftDelimiter == -1 || rightDelimiter == -1) {
+                    throw new RuntimeException("The property '" + propName + "' has an invalid formatted property value.");
+                }
+
+                // Split the property value by a comma with optional preceding and trailing whitespace
+                final String tabSettings = propValue.substring(leftDelimiter + 1, rightDelimiter);
+                List<String> values = Arrays.asList(TextUtils.CSV_STRING_SPLIT_PATTERN.split(tabSettings));
+
+                boolean found = false;
+                StringBuilder sb = new StringBuilder();
+                for (String value: values) {
+                    // Split each item by a '#' with optional preceding and trailing whitespace
+                    String[] result = Pattern.compile("\\s*#\\s*").split(value);
+                    if (result == null || result.length != 2) {
+                        throw new RuntimeException("The property '" + propName + "' has an invalid formatted property value.");
+                    }
+
+                    // Check if adding a delimiter ','
+                    sb.append(sb.length() > 0? ", " : "");
+
+                    if (result[0].equals(policyVerNum)) {
+                        sb.append(result[0]).append("#").append(tabSetting);
+                        found = true;
+                    } else {
+                        sb.append(value);
+                    }
+                }
+                if (!found) {
+                    sb.append(sb.length() > 0? ", " : "").append(policyVerNum).append("#").append(tabSetting);
+                }
+
+                propValue = propValue.substring(0, leftDelimiter + 1) + sb.toString() + propValue.substring(rightDelimiter);
+            } else {
+                propValue += ", " + policyGoid + "(" + policyVerNum + "#" + tabSetting + ")";
+            }
+        }
+        preferences.putProperty(propName, propValue);
+
+        try {
+            preferences.store();
+        } catch ( IOException e ) {
+            log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
+        }
     }
 }

@@ -62,6 +62,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     private JTextField readTimeoutField;
     private JSpinner maxMimeDepth;
     private TargetVariablePanel varPrefixPanel;
+    private JTextField responseReadTimeout;
 
     private DefaultListModel serverListModel;
     private SimpleTableModel<IcapServiceParameter> serviceParamTableModel;
@@ -119,6 +120,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         });
         connectionTimeoutField.setText("30");
         readTimeoutField.setText("30");
+        responseReadTimeout.setText("30");
     }
 
 
@@ -263,6 +265,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         serviceParams.setRowSorter(sorter);
         connectionTimeoutField.setText(assertion.getConnectionTimeout());
         readTimeoutField.setText(assertion.getReadTimeout());
+        responseReadTimeout.setText(assertion.getResponseReadTimeout());
         maxMimeDepth.setValue(assertion.getMaxMimeDepth());
 
         for (IcapServiceParameter row : assertion.getParameters()) {
@@ -285,6 +288,10 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
             throw new ValidationException("Read timeout value must be a valid integer with range 1 to 3600 inclusive.");
         }
+        timeoutText = responseReadTimeout.getText().trim();
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
+            throw new ValidationException("Response read timeout value must be a valid integer with range 1 to 3600 inclusive.");
+        }
         if(serverListModel.size() < 1){
             throw new ValidationException("One or more ICAP server must be added.");
         }
@@ -297,6 +304,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         assertion.setParameters(serviceParamTableModel.getRows());
         assertion.setConnectionTimeout(connectionTimeoutField.getText());
         assertion.setReadTimeout(readTimeoutField.getText());
+        assertion.setResponseReadTimeout(responseReadTimeout.getText());
         assertion.setMaxMimeDepth(Integer.valueOf(maxMimeDepth.getModel().getValue().toString()));
 
         if(varPrefixPanel.getErrorMessage()!=null){

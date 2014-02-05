@@ -31,8 +31,6 @@ public class HttpResponseFacet extends PreservableFacet {
             return httpResponseKnob;
         if (c == HttpServletResponseKnob.class && isServletKnob)
             return httpResponseKnob;
-        if (c == OutboundHeadersKnob.class)
-            return httpResponseKnob;
         return super.getKnob(c);
     }
 

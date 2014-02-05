@@ -1,6 +1,5 @@
 package com.l7tech.server.message;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -234,21 +233,6 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public Set<HttpCookie> getCookies() {
-        return delegate.getCookies();
-    }
-
-    @Override
-    public void addCookie( final HttpCookie cookie ) {
-        delegate.addCookie( cookie );
-    }
-
-    @Override
-    public void deleteCookie(HttpCookie cookie) {
-        delegate.deleteCookie(cookie);
-    }
-
-    @Override
     public ArrayList<String> getIncrementedCounters() {
         return delegate.getIncrementedCounters();
     }
@@ -282,8 +266,8 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
 
     @Override
     public Map<String, Object> getVariableMap(String[] names, Audit auditor) {
-        final Map<String,Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
-        final List<String> variableNames = new ArrayList<String>();
+        final Map<String,Object> vars = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        final List<String> variableNames = new ArrayList<>();
 
         for (String name : names) {
             if ( isBuiltinVariable(name) ) {
@@ -479,6 +463,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public boolean hasTraceListener() {
+        return delegate.hasTraceListener();
+    }
+
+    @Override
     public boolean isRequestWasCompressed() {
         return delegate.isRequestWasCompressed();
     }
@@ -531,6 +520,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void close() {
         delegate.close();
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookieAttributes() {
+        return delegate.isOverwriteResponseCookieAttributes();
+    }
+
+    @Override
+    public void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes) {
+        delegate.setOverwriteResponseCookieAttributes(overwriteResponseCookieAttributes);
     }
 
     //- PROTECTED

@@ -2,9 +2,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.DependencyAnalysisMO;
+import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -77,25 +77,25 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
 
     @Test
     public void getServiceDependenciesTest() throws Exception {
-        Response response = processRequest(basePath + publishedService.getId() + "/dependencies", HttpMethod.GET, null, "");
+        RestResponse response = processRequest(basePath + publishedService.getId() + "/dependencies", HttpMethod.GET, null, "");
         logger.info(response.toString());
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
-        DependencyAnalysisMO dependencyResultsMO = MarshallingUtils.unmarshal(DependencyAnalysisMO.class, source);
+        Item<DependencyTreeMO> dependencyResultsMO = MarshallingUtils.unmarshal(Item.class, source);
 
         dependencyResultsMO.toString();
     }
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ServiceMO result = (ServiceMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ServiceMO result = (ServiceMO) item.getContent();
 
         assertEquals("Service identifier:", publishedService.getId(), result.getId());
         assertEquals("Service name:", publishedService.getName(), result.getServiceDetail().getName());
@@ -109,10 +109,9 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         createObject.setId(null);
         createObject.getServiceDetail().setName("Create Service Name");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(basePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(basePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertTrue(response.toString().indexOf("l7:Reference") > 0);
 
         PublishedService createdEntity = serviceManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -124,17 +123,16 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceMO entityGot = (ServiceMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ServiceMO entityGot = (ServiceMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getServiceDetail().setName("Updated Service Name");
-        Response response = processRequest(basePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(basePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertTrue(response.toString().indexOf("l7:Reference") > 0);
         Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
 
         // check entity
@@ -148,11 +146,11 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(basePath + publishedService.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(basePath + publishedService.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
-        Response responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals("Status resource not found:", responseGet.getStatus(), HttpStatus.SC_NOT_FOUND);
 

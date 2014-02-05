@@ -177,7 +177,7 @@ public class RadiusAuthenticationPropertiesDialog extends AssertionPropertiesOkC
                                     return "The " + Utilities.removeColonFromLabel(authenticatorLabel) + " " + authenticatorComboBox.getSelectedItem() + " is not supported.";
                                 }
                         } else {
-                            return "The " + Utilities.removeColonFromLabel(authenticatorLabel) + " " + " must not be empty.";
+                            return "The " + Utilities.removeColonFromLabel(authenticatorLabel) + " must not be empty.";
                         }
                         return null;
                     }

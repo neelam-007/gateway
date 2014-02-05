@@ -28,6 +28,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -72,7 +74,7 @@ public class WorkSpacePanel extends JPanel {
      *
      * @param jc the new component to host
      */
-    public void setComponent(JComponent jc) throws ActionVetoException {
+    public void setComponent(final JComponent jc) throws ActionVetoException {
         // Check if HomePage tab exists or not.  If it does exist, set it as selected.
         // Note: HomePage index is always zero, since we always put HomePage at the first position.
         if (jc instanceof HomePagePanel && tabbedPane.getTabCount() > 0 && tabbedPane.getComponentAt(0) instanceof HomePagePanel) {
@@ -94,8 +96,8 @@ public class WorkSpacePanel extends JPanel {
                 (numOfAllTabs - maxNumOfTabsAllowed) >= foundTabsAllowToBeClosed.size()) { // Case: there are no enough number of without-unsaved-changes tabs to be automatically closed.
                 // At these cases, we don't automatically close some without-unsaved-changes tabs and display a warning
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "The number of currently opened policy tabs has reached the maximum value, " + maxNumOfTabsAllowed + ".\n" +
-                        "Please save some policies and close them in order to open a new policy tab.",
+                    "You have reached the maximum number of tabs allowed (" + maxNumOfTabsAllowed + ").\n" +
+                    "Either close some tabs or increase the maximum in Preferences.",
                     "Open New Policy Tab Warning", JOptionPane.WARNING_MESSAGE, null);
 
                 // If not found any existing component, it implies that user attempts to add a new tab, then return immediately to let user manually close some tabs.
@@ -132,7 +134,30 @@ public class WorkSpacePanel extends JPanel {
         final int index = tabbedPane.indexOfComponent(jc);
         final TabTitleComponentPanel newTabCompPanel = new TabTitleComponentPanel(jc);
         tabbedPane.setTabComponentAt(index, newTabCompPanel); // Add a table title render object
-        tabbedPane.setSelectedComponent(jc);
+        tabbedPane.setToolTipTextAt(index, jc.getName());
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (tabbedPane.indexOfComponent(jc) < 0) {
+                    return;
+                }
+
+                tabbedPane.setSelectedComponent(jc);
+
+                // Maybe the opened service/policy has a few other versions that have been added into the policy editor panel,
+                // so other tabs should keep their versions number unchanged and update active status as inactive.
+                if (jc instanceof PolicyEditorPanel) {
+                    try {
+                        final boolean currentActiveStatus = ((PolicyEditorPanel) jc).getPolicyNode().getPolicy().isVersionActive();
+                        updateTabsVersionNumAndActiveStatus(false, currentActiveStatus);
+                    } catch (FindException e) {
+                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                            "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
+                            "Open Policy Tab Error", JOptionPane.ERROR_MESSAGE, null);
+                    }
+                }
+            }
+        });
 
         // If foundAndRemoved object is not null, it means that the associated PolicyEditorPanel has been added back to
         // the workspace (see the above lines), so closedTabs should remove the foundAndRemoved object because of it added back (i.e., reopened).
@@ -156,20 +181,6 @@ public class WorkSpacePanel extends JPanel {
                 }
             }
         });
-
-        // Maybe the opened service/policy has a few other versions that have been added into the policy editor panel,
-        // so other tabs should keep their versions number unchanged and update active status as inactive.
-        if (jc instanceof PolicyEditorPanel) {
-            try {
-                final boolean currentActiveStatus = ((PolicyEditorPanel) jc).getPolicyNode().getPolicy().isVersionActive();
-                updateTabsVersionNumAndActiveStatus(false, currentActiveStatus);
-            } catch (FindException e) {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
-                    "Open Policy Tab Error", JOptionPane.ERROR_MESSAGE, null);
-            }
-        }
-
     }
 
     /**
@@ -195,6 +206,32 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
+     * Get the property of "Policy Tabs Layout" saved in the policy manager preference.
+     */
+    private int getPolicyTabsLayoutFromPreferences() {
+        final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+        if (preferences == null) return SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+
+        final String optionProp = preferences.asProperties().getProperty(SsmPreferences.POLICY_TABS_LAYOUT);
+        int option;
+        if (optionProp == null) {
+            option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+        } else {
+            try {
+                option = Integer.parseInt(optionProp);
+
+                // The tab layout option must be either 0 or 1, since WRAP_TAB_LAYOUT = 0 and SCROLL_TAB_LAYOUT = 1.
+                if (option != 0 && option != 1) {
+                    option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+                }
+            } catch (NumberFormatException e) {
+                option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
+            }
+        }
+        return option;
+    }
+
+    /**
      * Find all tabs associated with policies without unsaved changes
      * @return a HomePagePanel or PolicyEditorPanel without unsaved changes
      */
@@ -214,11 +251,12 @@ public class WorkSpacePanel extends JPanel {
     /**
      * This class is a Tab Title Renderer class.
      */
-    public class TabTitleComponentPanel extends JPanel {
-        private JLabel tabTitleLabel; // tab display name
-        private JComponent component; // a PolicyEditorPanel or HomePanel object
-        private long version;         // to preserve policy/service version number for this tab
-        private boolean active;       // to preserve policy active status
+    private class TabTitleComponentPanel extends JPanel {
+        private JLabel tabTitleLabel;   // tab display name
+        private JButton tabCloseButton; // button to close the tab
+        private JComponent component;   // a PolicyEditorPanel or HomePanel object
+        private long version;           // to preserve policy/service version number for this tab
+        private boolean active;         // to preserve policy active status
 
         TabTitleComponentPanel(final JComponent component) {
             super(new FlowLayout(FlowLayout.LEFT, 0, 2));
@@ -232,8 +270,15 @@ public class WorkSpacePanel extends JPanel {
             initializeComponents();
         }
 
+        String getTabTitle() {
+            return tabTitleLabel.getText();
+        }
+
         void setTabTitle(String title) {
             tabTitleLabel.setText(title);
+
+            // Check if the new title has a valid width for displaying
+            validateTabTitleLength(title);
         }
 
         JComponent getComponent() {
@@ -266,7 +311,7 @@ public class WorkSpacePanel extends JPanel {
 
             // Add a close tab button
             final Icon closeIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/tabClose16.png"));
-            final JButton tabCloseButton = new JButton(closeIcon);
+            tabCloseButton = new JButton(closeIcon);
             tabCloseButton.setToolTipText("Close this tab");
             tabCloseButton.addActionListener(new ActionListener() {
                 @Override
@@ -277,11 +322,87 @@ public class WorkSpacePanel extends JPanel {
             tabCloseButton.setBorder(BorderFactory.createEmptyBorder());
             add(tabCloseButton);
 
+            // This method should be called after tabTitleLabel and tabCloseButton are initialized.
+            validateTabTitleLength(component.getName());
+
             if (component instanceof PolicyEditorPanel) {
                 version = ((PolicyEditorPanel) component).getVersionNumber();
                 active = ((PolicyEditorPanel) component).isVersionActive();
             }
         }
+
+        /**
+         * Check if a title is too long.  If so, truncate the middle part and replace the truncated part with "..."
+         * to fit the width of the policy editor panel as possible.
+         *
+         * Then use the truncated title to set the policy tab title.
+         */
+        private void validateTabTitleLength(String title) {
+            final int workspaceWidth = getWorkspaceWidth();
+            int labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
+            int versionIdx;
+            int middleIdx;
+            String policyName;
+            String versionAndRest;
+
+            while (labelAndButtonWidth > workspaceWidth && workspaceWidth > 0 && title.length() > 4) {
+                versionIdx = title.lastIndexOf(" (v");
+                policyName = versionIdx == -1? title : title.substring(0, versionIdx);
+                versionAndRest = versionIdx == -1? "": title.substring(versionIdx);
+
+                if (policyName.length() > 13)  {
+                    // Every time truncate 10 characters in the middle of the policy name.  Note: version and active status remain the same.
+                    middleIdx = policyName.length() / 2;
+                    title = policyName.substring(0, middleIdx - 5) + "..." + policyName.substring(middleIdx + 5) + versionAndRest;
+                } else if (title.length() > 13) {
+                    if (title.contains("...")) {
+                        int dotsIdx = title.indexOf("...");
+                        title = title.substring(0, dotsIdx + 3) + title.substring(dotsIdx + 10);
+                    } else {
+                        middleIdx = title.length() / 2;
+                        title = title.substring(0, middleIdx - 5) + "..." + title.substring(middleIdx + 5);
+                    }
+                }
+
+                tabTitleLabel.setText(title);
+                labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
+            }
+        }
+    }
+
+    /**
+     * Get the width of the policy editor workspace
+     * @return an integer for the workspace width.  Return a non-positive number if any errors occur.
+     */
+    private int getWorkspaceWidth() {
+        int workspaceWidth = 0;
+
+        final int tabLayout = getPolicyTabsLayoutFromPreferences();
+        if (tabLayout == JTabbedPane.WRAP_TAB_LAYOUT) {
+            for (Component component: tabbedPane.getComponents()) {
+                // Check if the component is a BasicTabbedPaneUI.TabContainer
+                if (component instanceof JPanel && component instanceof UIResource) {
+                    workspaceWidth = component.getWidth();
+                    break;
+                }
+            }
+        } else if (tabLayout == JTabbedPane.SCROLL_TAB_LAYOUT) {
+            int viewportWidth = 0;
+            int scrollButtonsWidth = 0;
+
+            for (Component component: tabbedPane.getComponents()) {
+                // Check if the component is a BasicTabbedPaneUI.ScrollableTabViewport
+                if (component instanceof JViewport) {
+                    viewportWidth = component.getWidth();
+                } else if (component.isVisible() && component instanceof  BasicArrowButton) {
+                    scrollButtonsWidth += component.getWidth();
+                }
+            }
+
+            workspaceWidth = viewportWidth - scrollButtonsWidth;
+        }
+
+        return workspaceWidth;
     }
 
     /**
@@ -340,19 +461,19 @@ public class WorkSpacePanel extends JPanel {
 
         for (int i = tabbedPane.getTabCount() - 1; i >= 0; i--) {
             final Component component = tabbedPane.getComponentAt(i);
-            final Component tabComponent = tabbedPane.getTabComponentAt(i);
+            final TabTitleComponentPanel tabComponent = (TabTitleComponentPanel) tabbedPane.getTabComponentAt(i);
 
             if (component instanceof PolicyEditorPanel) {
                 // Remove the out-dated tab first
                 tabbedPane.removeTabAt(i);
                 // Add the tab back
                 try {
-                    reopenPolicyEditorPanel.call((PolicyEditorPanel) component, ((TabTitleComponentPanel) tabComponent).getVersion());
+                    reopenPolicyEditorPanel.call((PolicyEditorPanel) component, tabComponent.getVersion());
                 } catch (FindException e) {
                     // Report error, but still continue other tabs refresh
                     DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                        "Could not retrieve policy version or policy when refreshing Policy Editor Panel, '" + component.getName() + "'",
-                        "Refresh Error", JOptionPane.ERROR_MESSAGE, null);
+                        "Cannot retrieve the policy, '" + tabComponent.getTabTitle() + "'.",
+                        "Refresh Error", JOptionPane.WARNING_MESSAGE, null);
                     continue;
                 }
 
@@ -369,7 +490,7 @@ public class WorkSpacePanel extends JPanel {
         // Set the previous selected panel to be selected
         if (selectedComponent instanceof HomePagePanel) {
             tabbedPane.setSelectedIndex(0);
-        } else {
+        } else if (selectedComponent instanceof PolicyEditorPanel) {
             tabbedPane.setSelectedComponent(selectedComponent);
         }
 
@@ -390,6 +511,10 @@ public class WorkSpacePanel extends JPanel {
             // Get the full policy version, which contains policy xml for the version specified by "versionOrdinal".
             final Goid policyGoid = pep.getPolicyGoid();
             final PolicyVersion fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(policyGoid, versionOrdinal);
+
+            if (fullPolicyVersion == null) {
+                throw new FindException("Cannot find the policy '" + pep.getDisplayName() + "'");
+            }
 
             // Get the refresh entity node (ServiceNode or PolicyNode) in the ServicesAndPoliciesTree, associated with the policy editor panel.
             final String entityNodeGoidString = ((OrganizationHeader) pep.getPolicyNode().getUserObject()).getStrId();
@@ -469,6 +594,18 @@ public class WorkSpacePanel extends JPanel {
 
         UIManager.addPropertyChangeListener(l);
 
+        // Add a listener on workspace size, so redraw all tab titles if the workspace is resized.
+        this.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    final Component component = tabbedPane.getComponentAt(i);
+                    if (component instanceof PolicyEditorPanel) {
+                        ((PolicyEditorPanel) component).updateHeadings();
+                    }
+                }
+            }
+        });
 
         tabbedPane.addContainerListener(new ContainerAdapter() {
             @Override
@@ -557,6 +694,9 @@ public class WorkSpacePanel extends JPanel {
                     return mouseTabListener;
                 }
             });
+
+            final int tabLayout = getPolicyTabsLayoutFromPreferences();
+            setTabLayoutPolicy(tabLayout);
         }
 
         public MouseTabListener getMouseTabListener() {
@@ -712,7 +852,7 @@ public class WorkSpacePanel extends JPanel {
      * The mouse listener class handles  policy tab actions (Close Tab, Close Others, Close All, Close Unmodified, and
      * Reopen Closed Tab) triggered by mouse click on a policy tab.
      */
-    public class MouseTabListener extends PopUpMouseListener {
+    public class MouseTabListener extends MouseAdapter {
         private JTabbedPane tabPane;
 
         MouseTabListener (JTabbedPane tabbedPane) {
@@ -720,12 +860,11 @@ public class WorkSpacePanel extends JPanel {
         }
 
         @Override
-        public void mouseClicked(MouseEvent e) {
-            popUpMenuHandler(e);
+        public void mouseReleased(MouseEvent e) {
+            mouseActionHandler(e);
         }
 
-        @Override
-        public void popUpMenuHandler(MouseEvent e) {
+        private void mouseActionHandler(MouseEvent e) {
             final int index = tabPane.getUI().tabForCoordinate(tabPane, e.getX(), e.getY());
             if (index != -1) {
                 // Handel Mouse Left Click
@@ -837,12 +976,12 @@ public class WorkSpacePanel extends JPanel {
                     }  else {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                             "The reopened policy tab type is not recognized.",
-                            "Reopen Policy Error", JOptionPane.ERROR_MESSAGE, null);
+                            "Reopen Policy Error", JOptionPane.WARNING_MESSAGE, null);
                     }
                 } catch (FindException e1) {
                     DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                        "Could not retrieve policy version or policy when reopening , '" + component.getName() + "'.",
-                        "Reopen Policy Error", JOptionPane.ERROR_MESSAGE, null);
+                        "Cannot retrieve the policy, '" + lastClosedTabTitleComponentPanel.getTabTitle() + "'.",
+                        "Reopen Policy Error", JOptionPane.WARNING_MESSAGE, null);
                 }
             }
         }
@@ -920,15 +1059,20 @@ public class WorkSpacePanel extends JPanel {
         final int index = tabbedPane.indexOfComponent(policyEditorPanel);
         if (index == -1) return;
 
+        // Update the tab title
         final TabTitleComponentPanel tabComponentsPanel = (TabTitleComponentPanel) tabbedPane.getTabComponentAt(index);
-        tabComponentsPanel.setTabTitle(newTitle);
+        final String decoratedNewTitle = policyEditorPanel.isUnsavedChanges()? "* " + newTitle: newTitle;
+        tabComponentsPanel.setTabTitle(decoratedNewTitle);
+
+        // Update the tab tooltip
+        tabbedPane.setToolTipTextAt(index, newTitle);
     }
 
     /**
-     * Remove all tabs (each tab title has a different policy version) associated with a same policy node.
+     * Close all tabs (each tab title has a different policy version) associated with a same policy node.
      * @param policyNode: the policy node to find all related tabs.
      */
-    public void removeTabsRelatedToPolicyNode(EntityWithPolicyNode policyNode) {
+    public void closeTabsRelatedToPolicyNode(EntityWithPolicyNode policyNode) {
         java.util.List<Component> matchedComponents = new ArrayList<>();
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             final Component component = tabbedPane.getComponentAt(i);
@@ -942,6 +1086,22 @@ public class WorkSpacePanel extends JPanel {
 
         for (Component component: matchedComponents) {
             tabbedPane.remove(component);
+        }
+    }
+
+    /**
+     * Delete policy tab settings identified by the policy goid from all policy tab properties.
+     *
+     * @param policyGoid: the policy goid is used to identify policy tab settings in a policy tab property.
+     */
+    public void deletePolicyTabSettingsByPolicyGoid(final Goid policyGoid) {
+        Component component;
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            component = tabbedPane.getComponentAt(i);
+
+            if (component instanceof PolicyEditorPanel && ((PolicyEditorPanel) component).getPolicyGoid().equals(policyGoid)) {
+                ((PolicyEditorPanel) component).deletePolicyTabSettingsFromAllPolicyTabProperties();
+            }
         }
     }
 }

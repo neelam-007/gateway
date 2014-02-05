@@ -2,7 +2,9 @@ package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.util.*;
+import com.l7tech.util.Background;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -31,6 +33,15 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
 
     // flag indicating SSG shutdown, actually it's when the bean is destroyed.
     private boolean isShuttingDown = false;
+
+    // Acts as a cache for all modules (module names) being loaded since SSG startup.
+    // Note that this is ever-growing list, therefore potentially it can consume a lot of memory,
+    // though in order to become noticeable on memory imprint, hundreds of thousands perhaps millions of
+    // different modules need to be loaded at some point.
+    // This is highly unlikely to happen (at this point we do not have that many different modules),
+    // but in case it becomes an issue then, the set below should be redesign to use RAM as well as own file,
+    // similar to HybridStashManager.
+    private final Set<String> loadedModulesCache = new HashSet<>();
 
     /**
      * Indicates whether this is the initial scan or not (<code>true</code> by default).<br/>
@@ -262,7 +273,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                                             key.substring(0, key.indexOf(".class")),
                                             props,
                                             classLoader,
-                                            moduleFile.getName() //TODO was parseModuleFileName(resourceUrl.getPath(), caPropFileName), consider modifying the appropriate unit-tests
+                                            moduleFile.getName()
                                     ));
                                 } catch (ModuleException e) {
                                     logger.log(Level.WARNING, "Creating custom assertion descriptor failed:", e);
@@ -360,6 +371,44 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     }
 
     /**
+     * Helper class to close the custom assertion class loader if an error occurs.
+     */
+    private class CloseClassLoaderOnError {
+        private CustomAssertionClassLoader classLoader;
+
+        /**
+         * Set the class loader.<br/>
+         * Call when the class loader is created.
+         * @param classLoader    instance of {@link com.l7tech.server.policy.module.CustomAssertionClassLoader CustomAssertionClassLoader}.
+         */
+        void set(final CustomAssertionClassLoader classLoader) {
+            this.classLoader = classLoader;
+        }
+
+        /**
+         * Clears the associated custom assertion class loader.<br/>
+         * Call when the module has been successfully loaded.
+         */
+        void clear() {
+            this.classLoader = null;
+        }
+
+        /**
+         * Will try to close the associated custom assertion class loader.<br/>
+         * Call on function exit.
+         */
+        void close() {
+            if (classLoader != null) {
+                try {
+                    classLoader.close();
+                } catch (Throwable ex) {
+                    logger.log(Level.WARNING, "Failed to close custom assertion class loader.", ex);
+                }
+            }
+        }
+    }
+
+    /**
      * Attempt to register custom assertion from the specified jar-file, which must
      * contain custom_assertions.properties declaring at the custom assertion classes.
      * <p/>
@@ -392,6 +441,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             logger.log(Level.WARNING, "Failed to unload previous version of the module \"" + file.getName() + "\":", e);
         }
 
+        // object which will close the URLClassLoader if error occurs.
+        final CloseClassLoaderOnError classLoaderOnError = new CloseClassLoaderOnError();
+
         // load the new module
         try {
             // try to create custom assertion ClassLoader
@@ -403,24 +455,38 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             );
             // this probably means the jar file is not really a custom assertion jar
             if (classLoader == null) {
+                logger.warning("Module \"" + file.getName() + "\" is missing \"" + modulesConfig.getCustomAssertionPropertyFileName() + "\" descriptor. The module will be reloaded once modified.");
                 // skip it
                 retValue.setLoadedModule(null);
                 return retValue;
             }
 
+            // set the class loader
+            classLoaderOnError.set(classLoader);
+
             // try to create custom assertion descriptors
             final Set<CustomAssertionDescriptor> descriptors = buildDescriptors(file, classLoader);
-//                if (descriptors.isEmpty()) {
-//                    // TODO: we didn't find any custom assertions maybe skip the module
-//                }
+                if (descriptors.isEmpty()) {
+                    logger.warning("Module \"" + file.getName() + "\" doesn't contain any valid assertions. The module will be reloaded once modified.");
+                    // skip it
+                    retValue.setLoadedModule(null);
+                    return retValue;
+                }
 
             // create a new module.
-            final CustomAssertionModule module = new CustomAssertionModule(file.getName(), lastModified, sha1, classLoader, descriptors);
+            final CustomAssertionModule module = new CustomAssertionModule(
+                    file.getName(),
+                    lastModified,
+                    sha1,
+                    classLoader,
+                    descriptors,
+                    callbacks.getServiceFinder()
+            );
 
             // all assertions are going to be loaded during initial scan, so if this is not the initial load then
             // check if we can load this module i.e. if all assertions inside the module are implementing CustomDynamicLoader interface.
-            if (!isInitialScan && !module.isCustomDynamicLoader()) {
-                logger.warning("Module \"" + file.getName() + "\" doesn't support dynamic loading. The module will be loaded on next SSG start.");
+            if (!isInitialScan && !module.isCustomDynamicLoader() && loadedModulesCache.contains(module.getName())) {
+                logger.warning("Module \"" + module.getName() + "\" doesn't support dynamic loading and it was already loaded once. This version of the module will be loaded on next SSG start.");
                 // skip it
                 retValue.setLoadedModule(null);
                 return retValue;
@@ -431,6 +497,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
 
             // insert our new or modified module
             insertModule(module);
+
+            // mark module as loaded, add it to the loaded modules cache
+            loadedModulesCache.add(module.getName());
 
             // set the return variable accordingly, to indicate which module was loaded.
             retValue.setLoadedModule(module);
@@ -456,6 +525,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                 callbacks.publishEvent(new AssertionModuleRegistrationEvent(this, module));
             }
 
+            // indicate module successfully loaded.
+            classLoaderOnError.clear();
+
             return retValue;
         } catch (ModuleException e) {
             // just rethrow our exception
@@ -463,6 +535,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
         } catch (Throwable e) {
             // anything else throw ModuleException
             throw new ModuleException("Error while loading custom assertion module \"" + file.getName() + "\":", e);
+        } finally {
+            // close the class loader if set
+            classLoaderOnError.close();
         }
     }
 
@@ -540,7 +615,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     }
 
     @Override
-    protected void onScanComplete() {
+    protected void onScanComplete(boolean changesMade) {
         // reset initial scan flag
         isInitialScan = false;
     }
@@ -556,14 +631,5 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      */
     public boolean scanModules() {
         return super.scanModules(modulesConfig);
-    }
-
-    /**
-     * Convenient method for extracting scanned modules.
-     *
-     * @return a concurrent and read-only view of the values contained with {@link #scannedModules}
-     */
-    public Collection<CustomAssertionModule> getModules() {
-        return Collections.unmodifiableCollection(scannedModules.values());
     }
 }

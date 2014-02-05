@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.*;
 
+import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.PROP_ALLOW_TRACING;
 import static org.junit.Assert.*;
 
 public class EncapsulatedAssertionConfigTest {
@@ -33,16 +34,16 @@ public class EncapsulatedAssertionConfigTest {
         in = new EncapsulatedAssertionArgumentDescriptor();
         in.setArgumentName(NAME);
         in.setArgumentType(DataType.STRING.getShortName());
-        ins = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
+        ins = new HashSet<>();
         ins.add(in);
         policy = new Policy(PolicyType.INCLUDE_FRAGMENT, NAME, "xml", false);
         policy.setGuid(POLICY_GUID);
-        properties = new HashMap<String, String>();
+        properties = new HashMap<>();
         properties.put("propKey", "propValue");
         out = new EncapsulatedAssertionResultDescriptor();
         out.setResultName(NAME);
         out.setResultType(DataType.STRING.getShortName());
-        outs = new HashSet<EncapsulatedAssertionResultDescriptor>();
+        outs = new HashSet<>();
         outs.add(out);
         config = new EncapsulatedAssertionConfig();
         config.setArgumentDescriptors(ins);
@@ -114,6 +115,13 @@ public class EncapsulatedAssertionConfigTest {
     public void removePropertyLocked() {
         final EncapsulatedAssertionConfig locked = config.getReadOnlyCopy();
         locked.removeProperty("propKey");
+    }
+
+    @Test
+    public void putGetBooleanProperty() {
+        boolean allowTracing = true;
+        config.putBooleanProperty(PROP_ALLOW_TRACING, allowTracing);
+        assertEquals(allowTracing, config.getBooleanProperty(PROP_ALLOW_TRACING));
     }
 
     @Test

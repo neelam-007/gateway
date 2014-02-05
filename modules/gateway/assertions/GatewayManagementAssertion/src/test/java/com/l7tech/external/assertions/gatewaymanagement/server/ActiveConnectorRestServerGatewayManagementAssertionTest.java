@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ActiveConnectorMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
@@ -73,16 +70,16 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Active connector identifier:", activeConnector.getId(), reference.getId());
-        assertEquals("Active connector name:", activeConnector.getName(), ((ActiveConnectorMO) reference.getResource()).getName());
-        assertEquals("Active connector type:", activeConnector.getType(), ((ActiveConnectorMO) reference.getResource()).getType());
-        assertEquals("Active connector hardwired id:", activeConnector.getHardwiredServiceGoid().toString(), ((ActiveConnectorMO) reference.getResource()).getHardwiredId());
+        assertEquals("Active connector identifier:", activeConnector.getId(), item.getId());
+        assertEquals("Active connector name:", activeConnector.getName(), ((ActiveConnectorMO) item.getContent()).getName());
+        assertEquals("Active connector type:", activeConnector.getType(), ((ActiveConnectorMO) item.getContent()).getType());
+        assertEquals("Active connector hardwired id:", activeConnector.getHardwiredServiceGoid().toString(), ((ActiveConnectorMO) item.getContent()).getHardwiredId());
     }
 
     @Test
@@ -92,7 +89,7 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         createObject.setId(null);
         createObject.setName("New active connector");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(activeConnectorBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(activeConnectorBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         SsgActiveConnector createdConnector = activeConnectorManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -109,10 +106,16 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         createObject.setName("New active connector");
         createObject.setHardwiredId("not a id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(activeConnectorBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(activeConnectorBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
-        Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
+        logger.info(response.toString());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("INVALID_VALUES"));
+        Assert.assertEquals("InvalidResource",error.getType());
     }
 
     @Test
@@ -123,7 +126,7 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
         createObject.setId(null);
         createObject.setName("New active connector");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(activeConnectorBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(activeConnectorBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.log(Level.INFO, response.toString());
 
         assertEquals("Created active connector goid:", goid.toString(), getFirstReferencedGoid(response));
@@ -138,14 +141,14 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ActiveConnectorMO entityGot = (ActiveConnectorMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ActiveConnectorMO entityGot = (ActiveConnectorMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName(entityGot.getName() + "_mod");
-        Response response = processRequest(activeConnectorBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(activeConnectorBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created active connector goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -162,7 +165,7 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(activeConnectorBasePath + activeConnector.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -172,15 +175,15 @@ public class ActiveConnectorRestServerGatewayManagementAssertionTest extends Ser
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(activeConnectorBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(activeConnectorBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<ActiveConnectorMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(1, references.getReferences().size());
+        Assert.assertEquals(1, item.getContent().size());
     }
 }

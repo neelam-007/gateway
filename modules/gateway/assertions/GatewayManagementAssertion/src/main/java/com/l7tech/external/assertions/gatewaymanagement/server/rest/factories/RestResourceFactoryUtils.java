@@ -33,7 +33,7 @@ public class RestResourceFactoryUtils {
     public static Functions.UnaryThrows<Goid, String, IllegalArgumentException> goidConvert = new Functions.UnaryThrows<Goid, String, IllegalArgumentException>() {
         @Override
         public Goid call(String s) throws IllegalArgumentException {
-            return Goid.parseGoid(s);
+            return s == null || s.isEmpty() ? null : Goid.parseGoid(s);
         }
     };
 

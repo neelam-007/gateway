@@ -302,4 +302,25 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
     }
+
+    @Test
+    public void testJsonPathSingleNumericResult() {
+        try {
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$.store.book[1].price");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, status);
+
+            //check results
+            Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(1, pec.getVariable("jsonPath.count"));
+            try {
+                Assert.assertEquals("12.99", pec.getVariable("jsonPath.result"));
+            } catch (NoSuchVariableException e) {
+                Assert.fail("Should have NOT failed with NoSuchVariableException!");
+            }
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
 }

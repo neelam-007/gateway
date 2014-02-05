@@ -1,0 +1,1 @@
+This needs to be here so that the logs directory is created during the test runs.

@@ -504,7 +504,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             //TODO cleanup cookie init?
-            context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
+            request.getHttpCookiesKnob().addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
 
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());

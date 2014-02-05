@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -75,6 +77,11 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         return factory.getResource(buildSelectorMap(id));
     }
 
+    public boolean resourceExists(@NotNull String id) {
+        return factory.resourceExists(buildSelectorMap(id));
+    }
+
+
     @Override
     public List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
         return factory.getResources(offset, count, sort, ascending, filters);
@@ -127,5 +134,22 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     @Override
     public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
         return filters;
+    }
+
+    @Override
+    public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setType(getEntityType().toString());
+        mapping.setAction(defaultAction);
+        mapping.setSrcId(resource.getId());
+        mapping.setReferencePath(getReferencePath(resource.getId()));
+        if (!"id".equals(defaultMapBy)) {
+            mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("MapBy", defaultMapBy).map());
+        }
+        return mapping;
+    }
+
+    protected String getReferencePath(String id) {
+        return "//l7:Item[l7:id='" + id + "']";
     }
 }

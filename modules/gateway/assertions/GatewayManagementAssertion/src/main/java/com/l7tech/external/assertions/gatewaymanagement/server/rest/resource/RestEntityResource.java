@@ -1,12 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.ReferenceBuilder;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
@@ -32,7 +30,9 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource, UpdatingResource<R>, DeletingResource, ListingResource, TemplatingResource {
+public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource<R>, UpdatingResource<R>, DeletingResource, ListingResource<R>, TemplatingResource<R> {
+    public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
+
     /**
      * This is the rest resource factory method used to perform the crud operations on the entity.
      */
@@ -52,55 +52,80 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
     public abstract void setFactory(F factory);
 
     /**
+     * This will return the factory that is used by this rest entity resource.
+     *
+     * @return The factory that is used by this rest entity
+     */
+    public F getFactory() {
+        return factory;
+    }
+
+    /**
      * Returns the entity type of the resource
      *
      * @return The resource entity type
      */
     @NotNull
-    public abstract EntityType getEntityType();
+    public EntityType getEntityType() {
+        return factory.getEntityType();
+    }
 
     @Override
-    public References listResources(final int offset, final int count, final String sort, final String order) {
+    public ItemsList<R> listResources(final int offset, final int count, final String sort, final String order) {
         final String sortKey = factory.getSortKey(sort);
-        if(sort != null && sortKey == null) {
+        if (sort != null && sortKey == null) {
             throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
         }
 
-        List<Reference> references = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Reference, R>() {
+        List<Item<R>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<R>, R>() {
             @Override
-            public Reference call(R resource) {
+            public Item<R> call(R resource) {
                 return toReference(resource);
             }
         });
-        return ManagedObjectFactory.createReferences(references);
-    }
-
-    protected abstract Reference toReference(R resource);
-
-    public Reference toReference(EntityHeader entityHeader) {
-        return toReference(entityHeader.getStrId(), entityHeader.getName());
-    }
-
-    protected Reference toReference(String id, String title){
-        return new ReferenceBuilder(title, id, getEntityType().name())
-                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id)))
+        return new ItemsListBuilder<R>(getEntityType() + " list", "List").setContent(items)
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
 
+    protected abstract Item<R> toReference(R resource);
+
+    public Item<R> toReference(EntityHeader entityHeader) {
+        return toReference(entityHeader.getStrId(), entityHeader.getName());
+    }
+
+    protected Item<R> toReference(String id, String title) {
+        return new ItemBuilder<R>(title, id, getEntityType().name())
+                .addLink(ManagedObjectFactory.createLink("self", getUrl(id)))
+                .build();
+    }
+
+    /**
+     * Returns the Url of this resource with the given id
+     * @param id The id of the resource. Leave it blank to get the resource listing url
+     * @return The url of the resource
+     */
+    public String getUrl(String id) {
+        return RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id);
+    }
+
     @Override
-    public Reference getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Item<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        return new ReferenceBuilder(toReference(resource))
+        return new ItemBuilder<>(toReference(resource))
                 .setContent(resource)
-                .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
+                .addLink(ManagedObjectFactory.createLink("template", getUrl("template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
                 .build();
     }
 
     @Override
-    public Response getResourceTemplate() {
+    public Item<R> getResourceTemplate() {
         R resource = factory.getResourceTemplate();
-        return Response.ok(resource).build();
+        return new ItemBuilder<R>(getEntityType() + " Template", getEntityType().toString())
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .setContent(resource)
+                .build();
     }
 
     @Override
@@ -113,13 +138,8 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
 
     @Override
     public Response updateResource(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        R existingResource;
-        try {
-            existingResource = factory.getResource(id);
-        } catch (ResourceFactory.ResourceNotFoundException e){
-            existingResource = null;
-        }
-        if(existingResource != null){
+        boolean resourceExists = factory.resourceExists(id);
+        if (resourceExists) {
             factory.updateResource(id, resource);
             return Response.ok().entity(toReference(resource)).build();
         } else {

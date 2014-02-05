@@ -21,8 +21,6 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
         WINDOWS,REVERSE
     }
 
-    protected final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();
-
     protected static final Map<String, Integer> supportedChallenges;
 
     protected ChallengeMode challengeOrder = getChallengeMode(ConfigFactory.getProperty(AbstractHttpResponseKnob.CHALLENGE_ORDER_PROP, "windows"));
@@ -56,61 +54,6 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     protected int statusToSet;
 
     @Override
-    public void setDateHeader( final String name, final long date ) {
-        headerSupport.setDateHeader( name, date );
-    }
-
-    @Override
-    public void addDateHeader( final String name, final long date ) {
-        headerSupport.addDateHeader( name, date );
-    }
-
-    @Override
-    public void setHeader( final String name, final String value ) {
-        headerSupport.setHeader( name, value );
-    }
-
-    @Override
-    public void addHeader( final String name, final String value ) {
-        headerSupport.addHeader( name, value );
-    }
-
-    @Override
-    public String[] getHeaderValues( final String name ) {
-        return headerSupport.getHeaderValues( name );
-    }
-
-    @Override
-    public String[] getHeaderNames() {
-        return headerSupport.getHeaderNames( );
-    }
-
-    @Override
-    public boolean containsHeader( final String name ) {
-        return headerSupport.containsHeader( name );
-    }
-
-    @Override
-    public void removeHeader( final String name ) {
-        headerSupport.removeHeader( name );
-    }
-
-    @Override
-    public void removeHeader(final String name, final Object value) {
-        headerSupport.removeHeader( name, value );
-    }
-
-    @Override
-    public void clearHeaders() {
-        headerSupport.clearHeaders();
-    }
-
-    @Override
-    public void writeHeaders( final GenericHttpRequestParams target ) {
-        headerSupport.writeHeaders( target );
-    }
-
-    @Override
     public void addChallenge(String value) {
         Pair<String, Integer> pair = Pair.pair(value, supportedChallenges.containsKey(value.trim())? supportedChallenges.get(value.trim()) : CUSTOM_ORDER);
         challengesToSend.add(pair);
@@ -124,10 +67,6 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     @Override
     public int getStatus() {
         return statusToSet;
-    }
-
-    protected List<Pair<String, Object>> getHeadersToSend() {
-        return headerSupport.headersToSend;
     }
 
     protected static class ChallengeComparator implements Comparator<Pair<String, Integer>> {

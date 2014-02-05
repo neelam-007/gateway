@@ -5,9 +5,7 @@ import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.JmsKnobStub;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -22,6 +20,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -68,7 +69,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         //Setup Policy Enforcement Context
         Message requestMsg = new Message();
         Message responseMsg = new Message();
-        responseMsg.attachHttpResponseKnob(new TestResponse());
+        responseMsg.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
     }
 
@@ -87,8 +88,8 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
-        TestResponse response = (TestResponse)pec.getResponse().getHttpResponseKnob();
-        assertTrue(response != null && response.getTestHttpCookie() == null);
+        assertTrue(pec.getResponse().getHttpResponseKnob() != null);
+        assertTrue(pec.getResponse().getHttpCookiesKnob().getCookies().isEmpty());
 
     }
 
@@ -109,15 +110,17 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         when(mockHla.processAuthorizationRequest(anyString(), (String)isNull(), eq(mockContext))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
-        TestResponse response = (TestResponse)pec.getResponse().getHttpResponseKnob();
-        assertTrue(response != null && response.getTestHttpCookie() != null);
-        assertEquals("SMSESSION", response.getTestHttpCookie().getCookieName());
-        assertEquals(".domain", response.getTestHttpCookie().getDomain());
-        assertEquals("/some/path", response.getTestHttpCookie().getPath());
-        assertEquals(false, response.getTestHttpCookie().isSecure());
-        assertEquals(1000, response.getTestHttpCookie().getMaxAge());
-        assertEquals(1, response.getTestHttpCookie().getVersion());
-        assertEquals("this is a cookie comment", response.getTestHttpCookie().getComment());
+        assertTrue(pec.getResponse().getHttpResponseKnob() != null);
+        final Set<HttpCookie> cookies = pec.getResponse().getHttpCookiesKnob().getCookies();
+        assertEquals(1, cookies.size());
+        final HttpCookie cookie = cookies.iterator().next();
+        assertEquals("SMSESSION", cookie.getCookieName());
+        assertEquals(".domain", cookie.getDomain());
+        assertEquals("/some/path", cookie.getPath());
+        assertEquals(false, cookie.isSecure());
+        assertEquals(1000, cookie.getMaxAge());
+        assertEquals(1, cookie.getVersion());
+        assertEquals("this is a cookie comment", cookie.getComment());
 
     }
 
@@ -134,10 +137,12 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
-        TestResponse response = (TestResponse)pec.getResponse().getHttpResponseKnob();
-        assertTrue(response != null && response.getTestHttpCookie() != null);
-        assertEquals("SMSESSION", response.getTestHttpCookie().getCookieName());
-        assertEquals(SSO_TOKEN, response.getTestHttpCookie().getCookieValue());
+        assertTrue(pec.getResponse().getHttpResponseKnob() != null);
+        final Set<HttpCookie> cookies = pec.getResponse().getHttpCookiesKnob().getCookies();
+        assertEquals(1, cookies.size());
+        final HttpCookie cookie = cookies.iterator().next();
+        assertEquals("SMSESSION", cookie.getCookieName());
+        assertEquals(SSO_TOKEN, cookie.getCookieValue());
 
     }
 
@@ -176,18 +181,5 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion,mockAppCtx);
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
-    }
-
-    private static class TestResponse extends AbstractHttpResponseKnob {
-        HttpCookie httpCookie = null;
-        @Override
-        public void addCookie(HttpCookie cookie) {
-            httpCookie = cookie;
-        }
-
-        public HttpCookie getTestHttpCookie() {
-            return httpCookie;
-        }
-
     }
 }

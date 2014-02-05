@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -140,9 +141,9 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                 logAndAudit(AssertionMessages.IDENTITY_INVALID_CERT, pc.getLogin());
                 if ( isRequest() ) {
                     // set some response header so that the CP is made aware of this situation
-                    HttpResponseKnob httpResponseKnob = context.getResponse().getKnob(HttpResponseKnob.class);
-                    if(httpResponseKnob != null) {
-                        httpResponseKnob.addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                    HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
+                    if(headersKnob != null) {
+                        headersKnob.addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
                                                    SecureSpanConstants.CERT_INVALID);
                     }
                 }
@@ -180,7 +181,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         }
 
         if ( authResult.isCertSignedByStaleCA() && isRequest() ) {
-            HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);
+            HeadersKnob hrk = context.getResponse().getKnob(HeadersKnob.class);
             hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
         }
 

@@ -21,7 +21,7 @@
         <l7:Name>OAuthClients</l7:Name>
     </l7:Folder>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a75a1"
-               id="57477c668279c3c8d34da687b89a76a1" version="0">
+               id="7864d3f60d281f929722cacc8c103cce" version="0">
         <l7:Name>OAuthAccessControl</l7:Name>
     </l7:Folder>
     <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="57477c668279c3c8d34da687b89a74a9"

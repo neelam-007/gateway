@@ -1,7 +1,13 @@
 package com.l7tech.server.util;
 
+import com.l7tech.message.HeadersKnob;
+import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
+import org.jetbrains.annotations.NotNull;
+
 import javax.servlet.http.HttpServletRequest;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServletUtils {
@@ -36,5 +42,27 @@ public class ServletUtils {
 
         logger.info("Cert param present but type not suppoted " + param.getClass().getName());
         return null;
+    }
+
+    /**
+     * Loads a HeadersKnob with headers from request, filtering a specific set of 'non-application' headers.
+     *
+     * @param sourceRequest     the HttpServletRequest which is a source of headers.
+     * @param targetHeadersKnob the HeadersKnob to load with headers from the request.
+     * @see {@link com.l7tech.policy.assertion.HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
+     */
+    public static void loadHeaders(@NotNull final HttpServletRequest sourceRequest, @NotNull final HeadersKnob targetHeadersKnob) {
+        final Enumeration headerNames = sourceRequest.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            final String headerName = (String) headerNames.nextElement();
+            if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
+                final Enumeration headerValues = sourceRequest.getHeaders(headerName);
+                while (headerValues.hasMoreElements()) {
+                    targetHeadersKnob.addHeader(headerName, headerValues.nextElement());
+                }
+            } else {
+                logger.log(Level.FINEST, "Filtering request header " + headerName);
+            }
+        }
     }
 }

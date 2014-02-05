@@ -2,12 +2,11 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SecurePasswordRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
-import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -17,7 +16,8 @@ import javax.ws.rs.ext.Provider;
  * @author Victor Kazakov
  */
 @Provider
-@Path(SecurePasswordResource.securePassword_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + SecurePasswordResource.securePassword_URI)
+@Singleton
 public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO, SecurePasswordRestResourceFactory> {
 
     protected static final String securePassword_URI = "passwords";
@@ -28,14 +28,9 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
         super.factory = factory;
     }
 
-    @NotNull
-    @Override
-    public EntityType getEntityType() {
-        return EntityType.SECURE_PASSWORD;
-    }
 
     @Override
-    protected Reference toReference(StoredPasswordMO resource) {
+    protected Item<StoredPasswordMO> toReference(StoredPasswordMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

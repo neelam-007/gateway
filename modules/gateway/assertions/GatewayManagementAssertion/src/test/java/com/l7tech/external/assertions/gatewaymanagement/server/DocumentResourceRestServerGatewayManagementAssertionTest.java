@@ -72,12 +72,12 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        ResourceDocumentMO result = (ResourceDocumentMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        ResourceDocumentMO result = (ResourceDocumentMO) item.getContent();
 
         assertEquals("Document resource identifier:", resource.getId(), result.getId());
         assertEquals("Document resource source url:", resource.getUri(), result.getResource().getSourceUrl());
@@ -96,7 +96,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.getProperties().put("description", "new dtd");
         createObject.getProperties().put("publicIdentifier", "books2");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         ResourceEntry createdEntity = resourceEntryManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -115,7 +115,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.setProperties(new HashMap<String, Object>());
         createObject.getProperties().put("description", "new dtd");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -133,7 +133,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.setProperties(new HashMap<String, Object>());
         createObject.getProperties().put("description", "new dtd");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -151,7 +151,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.setProperties(new HashMap<String, Object>());
         createObject.getProperties().put("description", "new schema");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -169,7 +169,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.setProperties(new HashMap<String, Object>());
         createObject.getProperties().put("description", "new schema");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         ResourceEntry createdEntity = resourceEntryManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -190,7 +190,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
         createObject.getProperties().put("description", "new schema");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(documentResourceBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(documentResourceBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Document resource goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -202,14 +202,14 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ResourceDocumentMO entityGot = (ResourceDocumentMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ResourceDocumentMO entityGot = (ResourceDocumentMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getProperties().put("description", "new description");
-        Response response = processRequest(documentResourceBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(documentResourceBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Document resource goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -225,7 +225,7 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(documentResourceBasePath + resource.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -235,13 +235,13 @@ public class DocumentResourceRestServerGatewayManagementAssertionTest extends Se
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(documentResourceBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(documentResourceBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<ResourceDocumentMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(resourceEntryManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(resourceEntryManagerStub.findAll().size(), item.getContent().size());
     }
 }

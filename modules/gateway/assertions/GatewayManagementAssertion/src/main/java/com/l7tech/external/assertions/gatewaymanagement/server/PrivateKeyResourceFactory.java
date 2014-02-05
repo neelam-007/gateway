@@ -157,6 +157,22 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }, true);
     }
 
+    @Override
+    public boolean resourceExists(final Map<String, String> selectorMap) {
+        return transactional(new TransactionalCallback<Boolean>() {
+            @Override
+            public Boolean execute() throws ObjectModelException {
+                try {
+                    final Pair<Goid, String> keyId = getKeyId(selectorMap);
+                    final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry(keyId);
+                    return ssgKeyEntry != null;
+                } catch (ResourceNotFoundException e) {
+                    return false;
+                }
+            }
+        }, true);
+    }
+
     private PrivateKeyMO buildPrivateKeyResource(SsgKeyHeader header) {
         final PrivateKeyMO privateKeyMO = ManagedObjectFactory.createPrivateKey();
         privateKeyMO.setAlias(header.getAlias());

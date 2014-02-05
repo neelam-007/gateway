@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.EmailListenerMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Reference;
-import com.l7tech.gateway.api.References;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
@@ -13,11 +10,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.transport.email.EmailListenerManagerStub;
+import org.apache.cxf.helpers.XMLUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
 import org.mockito.InjectMocks;
 import org.w3c.dom.Document;
 
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -73,12 +73,12 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        EmailListenerMO result = (EmailListenerMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        EmailListenerMO result = (EmailListenerMO) item.getContent();
 
         assertEquals("Email listener identifier:", emailListener.getId(), result.getId());
         assertEquals("Email listener name:", emailListener.getName(), result.getName());
@@ -91,11 +91,45 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         createObject.setId(null);
         createObject.setName("New email listener");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(emailListenerBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(emailListenerBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         EmailListener createdEntity = emailListenerManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
         assertEquals("Email listener name:", createObject.getName(), createdEntity.getName());
+    }
+
+    @Test
+    public void createEntityTestInvalidPortValueFail() throws Exception {
+
+        final String emailListener =
+                "<l7:EmailListener version=\"1\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <l7:Name>Copy of fake</l7:Name>\n" +
+                "    <l7:Active>false</l7:Active>\n" +
+                "    <l7:Hostname>saee</l7:Hostname>\n" +
+                "    <l7:Port>143dd</l7:Port>\n" +
+                "    <l7:ServerType>IMAP</l7:ServerType>\n" +
+                "    <l7:UseSsl>false</l7:UseSsl>\n" +
+                "    <l7:DeleteOnReceive>false</l7:DeleteOnReceive>\n" +
+                "    <l7:Username>dsag</l7:Username>\n" +
+                "    <l7:Folder>adsawegaweg</l7:Folder>\n" +
+                "    <l7:PollInterval>60</l7:PollInterval>\n" +
+                "    <l7:Properties>\n" +
+                "        <l7:Property key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">\n" +
+                "            <l7:StringValue>false</l7:StringValue>\n" +
+                "        </l7:Property>\n" +
+                "    </l7:Properties>\n" +
+                "</l7:EmailListener>";
+        Document request = XMLUtils.parse(emailListener);
+        RestResponse response = processRequest(emailListenerBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+
+        logger.info(response.toString());
+        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+
+        Assert.assertTrue(error.getDetail().contains("143dd"));
+        Assert.assertEquals("BadRequest",error.getType());
     }
 
     @Test
@@ -107,7 +141,7 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
         createObject.setName("New email listener");
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(emailListenerBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(emailListenerBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Email listener goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -119,14 +153,14 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        EmailListenerMO entityGot = (EmailListenerMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        EmailListenerMO entityGot = (EmailListenerMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setName("Updated New Email Listener");
-        Response response = processRequest(emailListenerBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(emailListenerBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Created Email listener goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -141,7 +175,7 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(emailListenerBasePath + emailListener.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -151,13 +185,13 @@ public class EmailListenerRestServerGatewayManagementAssertionTest extends Serve
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(emailListenerBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(emailListenerBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<EmailListenerMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(emailListenerManagerStub.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(emailListenerManagerStub.findAll().size(), item.getContent().size());
     }
 }

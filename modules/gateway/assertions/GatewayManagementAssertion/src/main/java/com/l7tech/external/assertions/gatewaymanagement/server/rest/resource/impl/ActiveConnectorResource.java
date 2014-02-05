@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ActiveConnectorRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.ActiveConnectorMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -14,7 +14,8 @@ import javax.ws.rs.ext.Provider;
  * The active connector resource
  */
 @Provider
-@Path(ActiveConnectorResource.activeConnectors_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + ActiveConnectorResource.activeConnectors_URI)
+@Singleton
 public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorMO, ActiveConnectorRestResourceFactory> {
 
     protected static final String activeConnectors_URI = "activeConnectors";
@@ -25,12 +26,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.SSG_ACTIVE_CONNECTOR;
-    }
-
     @Override
-    protected Reference toReference(ActiveConnectorMO resource) {
+    protected Item<ActiveConnectorMO> toReference(ActiveConnectorMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

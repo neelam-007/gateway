@@ -7,9 +7,9 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ahttp.AsyncHttpRoutingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.message.OutboundHeadersKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -195,7 +195,7 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
             httpRequest.setHeader(HttpHeaders.Names.CONNECTION, assertion.isUseKeepAlives() ? HttpHeaders.Values.KEEP_ALIVE : HttpHeaders.Values.CLOSE);
         }
 
-        OutboundHeadersKnob heads = targetMessage.getKnob(OutboundHeadersKnob.class);
+        final HeadersKnob heads = targetMessage.getKnob(HeadersKnob.class);
         if (heads != null) {
             String[] names = heads.getHeaderNames();
             for (String name : names) {

@@ -213,11 +213,6 @@ public class ServerNtlmAuthenticationAssertionTest {
     }
 
     private static class Response extends AbstractHttpResponseKnob {
-
-        @Override
-        public void addCookie(HttpCookie cookie) {
-        }
-
         public String getChallengesToSend() {
             Collections.reverse(challengesToSend);
             return challengesToSend.get(0).left;

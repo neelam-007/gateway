@@ -129,11 +129,11 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
 
     @Test
     public void getEntityTest() throws Exception {
-        Response response = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        ServiceAliasMO result = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ServiceAliasMO result = (ServiceAliasMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         assertEquals("Service Alias identifier:", serviceAlias.getId(), result.getId());
         assertEquals("Service Alias ref service id:", serviceAlias.getEntityGoid().toString(), result.getServiceReference().getId());
@@ -147,7 +147,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.setFolderId(folder2.getId());
         createObject.getServiceReference().setId(publishedService2.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         PublishedServiceAlias createdEntity = serviceAliasManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
 
@@ -165,7 +165,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.getServiceReference().setId(publishedService2.getId());
 
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath + goid.toString(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         assertEquals("Created Service Alias goid:", goid.toString(), getFirstReferencedGoid(response));
 
@@ -183,7 +183,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.setFolderId(folder1.getId());
         createObject.getServiceReference().setId(publishedService1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -198,7 +198,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.setFolderId(rootFolder.getId());
         createObject.getServiceReference().setId(publishedService1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -212,7 +212,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.setFolderId(folder1.getId());
         createObject.getServiceReference().setId("Bad policy id");
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -226,7 +226,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
         createObject.setFolderId("Bad Folder id");
         createObject.getServiceReference().setId(publishedService1.getId());
         Document request = ManagedObjectFactory.write(createObject);
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -236,14 +236,14 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
     public void updateEntityChangeBackingPolicyTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.getServiceReference().setId(publishedService2.getId());
-        Response response = processRequest(serviceAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(serviceAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
         Assert.assertTrue(response.getBody().contains("INVALID_VALUES"));
@@ -253,14 +253,14 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
     public void updateEntityTest() throws Exception {
 
         // get
-        Response responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
+        RestResponse responseGet = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        ServiceAliasMO entityGot = (ServiceAliasMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         // update
         entityGot.setFolderId(folder2.getId());
-        Response response = processRequest(serviceAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        RestResponse response = processRequest(serviceAliasBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         assertEquals("Updated Service Alias goid:", entityGot.getId(), getFirstReferencedGoid(response));
@@ -275,7 +275,7 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void deleteEntityTest() throws Exception {
 
-        Response response = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(serviceAliasBasePath + serviceAlias.getId(), HttpMethod.DELETE, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         // check entity
@@ -285,13 +285,13 @@ public class ServiceAliasRestServerGatewayManagementAssertionTest extends Server
     @Test
     public void listEntitiesTest() throws Exception {
 
-        Response response = processRequest(serviceAliasBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(serviceAliasBasePath, HttpMethod.GET, null, "");
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        References references = MarshallingUtils.unmarshal(References.class, source);
+        ItemsList<ServiceAliasMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(serviceAliasManager.findAll().size(), references.getReferences().size());
+        Assert.assertEquals(serviceAliasManager.findAll().size(), item.getContent().size());
     }
 }

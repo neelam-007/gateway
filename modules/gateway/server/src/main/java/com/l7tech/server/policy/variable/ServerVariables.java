@@ -664,30 +664,17 @@ public class ServerVariables {
                     }
                 }
             }),
-            new SettableVariable("response.cookie.overwritePath",
+            new SettableVariable("response.cookie.overwriteAttributes",
                     new Getter() {
                         @Override
                         public Object get(String name, PolicyEnforcementContext context) {
-                            if (context.getCookies() == null || context.getCookies().size() == 0) {
-                                return true;
-                            } else {
-                                //return the first one from the cookie list.
-                                return context.getCookies().iterator().next().isOverwritePath();
-                            }
+                            return context.isOverwriteResponseCookieAttributes();
                         }
                     },
                     new Setter() {
                         @Override
                         public void set(String name, Object value, PolicyEnforcementContext context) {
-                            if (context.getCookies() == null || context.getCookies().isEmpty()) {
-                                return;
-                            } else {
-                                boolean val = Boolean.parseBoolean(value.toString());
-                                Iterator<HttpCookie> i = context.getCookies().iterator();
-                                while (i.hasNext()) {
-                                    i.next().setOverwritePath(val);
-                                }
-                            }
+                            context.setOverwriteResponseCookieAttributes(Boolean.parseBoolean(value.toString()));
                         }
                     }
             ),

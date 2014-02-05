@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
+import com.l7tech.gateway.api.Item;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
 
 /**
  * The template resource interface. All resources that allow retrieving a template should implement this in order to
@@ -10,7 +11,7 @@ import javax.ws.rs.core.Response;
  *
  * @author Victor Kazakov
  */
-public interface TemplatingResource {
+public interface TemplatingResource<R> {
     /**
      * This will return a template, example entity that can be used as a base to creating a new entity.
      *
@@ -18,5 +19,5 @@ public interface TemplatingResource {
      */
     @GET
     @Path("template")
-    public Response getResourceTemplate();
+    public Item<R> getResourceTemplate();
 }

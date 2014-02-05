@@ -2,7 +2,7 @@
 <enumeration>
     <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="44e17396-a7be-4983-aa1b-48086e48f65f"
                id="57477c668279c3c8d34da687b89a7f0f" version="1">
-        <l7:PolicyDetail folderId="57477c668279c3c8d34da687b89a7e8f" guid="44e17396-a7be-4983-aa1b-48086e48f65f"
+        <l7:PolicyDetail folderId="7864d3f60d281f929722cacc8c10453c" guid="44e17396-a7be-4983-aa1b-48086e48f65f"
                          id="57477c668279c3c8d34da687b89a7f0f" version="1">
             <l7:Name>setClientKeyOptionalValues</l7:Name>
             <l7:PolicyType>Include</l7:PolicyType>

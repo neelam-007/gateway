@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyVersionMO;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;

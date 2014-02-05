@@ -2,11 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.EncapsulatedAssertionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -15,7 +16,8 @@ import javax.ws.rs.ext.Provider;
  *
  */
 @Provider
-@Path(EncapsulatedAssertionResource.ENCAPSULATED_ASSERTION_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + EncapsulatedAssertionResource.ENCAPSULATED_ASSERTION_URI)
+@Singleton
 public class EncapsulatedAssertionResource extends DependentRestEntityResource<EncapsulatedAssertionMO, EncapsulatedAssertionRestResourceFactory> {
 
     protected static final String ENCAPSULATED_ASSERTION_URI = "encapsulatedAssertions";
@@ -26,12 +28,8 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
         super.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.ENCAPSULATED_ASSERTION;
-    }
-
     @Override
-    protected Reference toReference(EncapsulatedAssertionMO resource) {
+    protected Item<EncapsulatedAssertionMO> toReference(EncapsulatedAssertionMO resource) {
         return toReference(resource.getId(), resource.getName());
     }
 }

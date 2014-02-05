@@ -2,7 +2,7 @@
 <enumeration>
    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7f48"
                 version="6">
-        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a7e8f" id="57477c668279c3c8d34da687b89a7f48" version="6">
+        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c10453c" id="57477c668279c3c8d34da687b89a7f48" version="6">
             <l7:Name>oauth/clients</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -58,6 +58,44 @@
                     &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="usePortal"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="In order to get a better performance during token requests "/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="a local cache is used in order to support that requirement."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Police lines as of line 48 are caching client lookup results."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Since client configurations will hardly change these values can likely be cached for some time."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="---------------------------------------------"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Configure the cache name and the accepted cache life time here:"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows up to one hundred client configurations to be cached for the operation 'getAll')"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="(the cache allows configurations for up to 100000 byte)"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="YWxsQ2xpZW50VmFsdWVzQ2FjaGU="/&gt;
+                    &lt;L7p:VariableToSet stringValue="allClientValuesCacheName"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="NjA="/&gt;
+                    &lt;L7p:VariableToSet stringValue="allClientValuesCacheLifetimeInSeconds"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="=================================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:Include&gt;
                     &lt;L7p:PolicyGuid stringValue="e503f8c2-0466-478d-937d-87c5a5f19bee"/&gt;
                     &lt;/L7p:Include&gt;
@@ -237,7 +275,97 @@
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="==============================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Remove a potential entry in the cache for a given key if this is not a get* request."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="Most likey the values will change or be deleted and we do not want to store removed data."/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLmNsaWVudF9rZXl9"/&gt;
+                    &lt;L7p:VariableToSet stringValue="client_key"/&gt;
+                    &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                            &lt;L7p:ComparisonAssertion&gt;
+                                &lt;L7p:AssertionComment assertionComment="included"&gt;
+                                    &lt;L7p:Properties mapValue="included"&gt;
+                                        &lt;L7p:entry&gt;
+                                            &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                                            &lt;L7p:value stringValue="PORTAL_INTEGRATION"/&gt;
+                                        &lt;/L7p:entry&gt;
+                                    &lt;/L7p:Properties&gt;
+                                &lt;/L7p:AssertionComment&gt;
+                                &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                                &lt;L7p:Expression1 stringValue="${usePortal}"/&gt;
+                                &lt;L7p:Expression2 stringValue="false"/&gt;
+                                &lt;L7p:Predicates predicates="included"&gt;
+                                    &lt;L7p:item binary="included"&gt;
+                                        &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                                        &lt;L7p:RightValue stringValue="false"/&gt;
+                                    &lt;/L7p:item&gt;
+                                &lt;/L7p:Predicates&gt;
+                            &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${operation}"/&gt;
+                    &lt;L7p:Expression2 stringValue="get"/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="CONTAINS"/&gt;
+                    &lt;L7p:RightValue stringValue="get"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${client_key}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="cacheKey"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue=""/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="emptyMessage"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${allClientValuesCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="5"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="emptyMessage"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:TrueAssertion/&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="==============================="/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
                     &lt;L7p:CaseSensitive booleanValue="false"/&gt;
@@ -630,12 +758,142 @@
                     &lt;L7p:VariableToSet stringValue="content-type"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcyB4bWxucz0iaHR0cDovL25zLmw3dGVjaC5jb20vMjAxMi8xMS9vdGstY2xpZW50c3RvcmUiPg0KPC92YWx1ZXM+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcyB4bWxucz0iaHR0cDovL25zLmw3dGVjaC5jb20vMjAxMi8xMS9vdGstY2xpZW50c3RvcmUiPg0KPC92YWx1ZXM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
                     &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${operation}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item regex="included"&gt;
+                    &lt;L7p:Pattern stringValue="getAll"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:Expression1 stringValue="${client_key}"/&gt;
+                    &lt;L7p:Expression2 stringValue=""/&gt;
+                    &lt;L7p:Negate booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:Negated booleanValue="true"/&gt;
+                    &lt;L7p:Operator operator="EMPTY"/&gt;
+                    &lt;L7p:RightValue stringValue=""/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:EncodeDecode&gt;
+                    &lt;L7p:SourceVariableName stringValue="client_key"/&gt;
+                    &lt;L7p:TargetDataType variableDataType="string"/&gt;
+                    &lt;L7p:TargetVariableName stringValue="cacheKey"/&gt;
+                    &lt;L7p:TransformType transformType="URL_ENCODE"/&gt;
+                    &lt;/L7p:EncodeDecode&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;L7p:CacheLookup&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${allClientValuesCacheName}"/&gt;
+                    &lt;L7p:ContentTypeOverride stringValue="text/xml"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${allClientValuesCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="values"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheLookup&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="client_key values"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:MaxRecords intValue="1000"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT
+                    ock.client_key AS CLIENT_KEY,
+                    ock.secret AS CLIENT_SECRET,
+                    ock.scope AS SCOPE,
+                    ock.callback AS CALLBACK,
+                    ock.environment AS ENVIRONMENT,
+                    ock.expiration AS EXPIRATION,
+                    ock.status AS STATUS,
+                    ock.created AS CREATED,
+                    ock.created_by AS CREATED_BY
+                    FROM oauth_client_key ock
+                    WHERE ock.client_key = ${client_key}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:VariablePrefix stringValue="client_key"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${client_key.queryresult.count}"/&gt;
+                    &lt;L7p:Expression2 stringValue="0"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:RightValue stringValue="0"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="client values"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:MaxRecords intValue="1000"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT
+                    oc.client_ident AS CLIENT_IDENT,
+                    oc.name AS CLIENT_NAME,
+                    oc.type AS CLIENT_TYPE,
+                    oc.description AS DESCRIPTION,
+                    oc.organization AS ORGANIZATION,
+                    oc.registered_by AS REGISTERED_BY,
+                    oc.created AS CREATED
+                    FROM oauth_client oc, oauth_client_key ock
+                    WHERE ock.client_key = ${client_key}
+                    AND ock.client_ident = oc.client_ident]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:VariablePrefix stringValue="client"/&gt;
+                    &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjx2YWx1ZXMgeG1sbnM9Imh0dHA6Ly9ucy5sN3RlY2guY29tLzIwMTIvMTEvb3RrLWNsaWVudHN0b3JlIj4NCiAgICA8Y2xpZW50cz4NCiAgICAgICAgPHZhbHVlcz4NCiAgICAgICAgICAgIDx2YWx1ZSBpbmRleD0iMSI+DQogICAgICAgICAgICAgICAgPGNsaWVudF9pZGVudD48IVtDREFUQVske2NsaWVudC5DTElFTlRfSURFTlR9XV0+PC9jbGllbnRfaWRlbnQ+DQogICAgICAgICAgICAgICAgPG5hbWU+PCFbQ0RBVEFbJHtjbGllbnQuQ0xJRU5UX05BTUV9XV0+PC9uYW1lPg0KICAgICAgICAgICAgICAgIDx0eXBlPjwhW0NEQVRBWyR7Y2xpZW50LkNMSUVOVF9UWVBFfV1dPjwvdHlwZT4NCiAgICAgICAgICAgICAgICA8ZGVzY3JpcHRpb24+PCFbQ0RBVEFbJHtjbGllbnQuREVTQ1JJUFRJT059XV0+PC9kZXNjcmlwdGlvbj4NCiAgICAgICAgICAgICAgICA8b3JnYW5pemF0aW9uPjwhW0NEQVRBWyR7Y2xpZW50Lk9SR0FOSVpBVElPTn1dXT48L29yZ2FuaXphdGlvbj4NCiAgICAgICAgICAgICAgICA8cmVnaXN0ZXJlZF9ieT48IVtDREFUQVske2NsaWVudC5SRUdJU1RFUkVEX0JZfV1dPjwvcmVnaXN0ZXJlZF9ieT4NCiAgICAgICAgICAgICAgICA8Y3JlYXRlZD48IVtDREFUQVske2NsaWVudC5DUkVBVEVEfV1dPjwvY3JlYXRlZD4NCiAgICAgICAgICAgIDwvdmFsdWU+DQogICAgICAgIDwvdmFsdWVzPg0KICAgIDwvY2xpZW50cz4NCiAgICA8a2V5cz4NCiAgICAgICAgPHZhbHVlcz4NCiAgICAgICAgICAgIDx2YWx1ZSBpbmRleD0iMSI+DQogICAgICAgICAgICAgICAgPGNsaWVudF9pZGVudD48IVtDREFUQVske2NsaWVudC5DTElFTlRfSURFTlR9XV0+PC9jbGllbnRfaWRlbnQ+DQogICAgICAgICAgICAgICAgPGNsaWVudF9rZXk+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LkNMSUVOVF9LRVl9XV0+PC9jbGllbnRfa2V5Pg0KICAgICAgICAgICAgICAgIDxzZWNyZXQ+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LkNMSUVOVF9TRUNSRVR9XV0+PC9zZWNyZXQ+DQogICAgICAgICAgICAgICAgPHNjb3BlPjwhW0NEQVRBWyR7Y2xpZW50X2tleS5TQ09QRX1dXT48L3Njb3BlPg0KICAgICAgICAgICAgICAgIDxjYWxsYmFjaz48IVtDREFUQVske2NsaWVudF9rZXkuQ0FMTEJBQ0t9XV0+PC9jYWxsYmFjaz4NCiAgICAgICAgICAgICAgICA8ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LkVOVklST05NRU5UfV1dPjwvZW52aXJvbm1lbnQ+DQogICAgICAgICAgICAgICAgPGV4cGlyYXRpb24+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LkVYUElSQVRJT059XV0+PC9leHBpcmF0aW9uPg0KICAgICAgICAgICAgICAgIDxzdGF0dXM+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LlNUQVRVU31dXT48L3N0YXR1cz4NCiAgICAgICAgICAgICAgICA8Y3JlYXRlZD48IVtDREFUQVske2NsaWVudF9rZXkuQ1JFQVRFRH1dXT48L2NyZWF0ZWQ+DQogICAgICAgICAgICAgICAgPGNyZWF0ZWRfYnk+PCFbQ0RBVEFbJHtjbGllbnRfa2V5LkNSRUFURURfQll9XV0+PC9jcmVhdGVkX2J5Pg0KICAgICAgICAgICAgPC92YWx1ZT4NCiAgICAgICAgPC92YWx1ZXM+DQogICAgPC9rZXlzPg0KPC92YWx1ZXM+"/&gt;
+                    &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
+                    &lt;L7p:DataType variableDataType="message"/&gt;
+                    &lt;L7p:VariableToSet stringValue="values"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:CacheStorage&gt;
+                    &lt;L7p:CacheEntryKey stringValue="${cacheKey}"/&gt;
+                    &lt;L7p:CacheId stringValue="${allClientValuesCacheName}"/&gt;
+                    &lt;L7p:MaxEntries stringValue="100"/&gt;
+                    &lt;L7p:MaxEntryAgeSeconds stringValue="${allClientValuesCacheLifetimeInSeconds}"/&gt;
+                    &lt;L7p:MaxEntrySizeBytes stringValue="100000"/&gt;
+                    &lt;L7p:OtherTargetMessageVariable stringValue="values"/&gt;
+                    &lt;L7p:Target target="OTHER"/&gt;
+                    &lt;/L7p:CacheStorage&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Preferred handling of getAll|client_key"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -897,8 +1155,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="Tm9uLXZhbGlkIHBhcmFtZXRlciBsaXN0IGZvciB0aGlzIG9wZXJhdGlvbg=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="Tm9uLXZhbGlkIHBhcmFtZXRlciBsaXN0IGZvciB0aGlzIG9wZXJhdGlvbg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -949,8 +1206,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPGNsaWVudF9rZXlzPjxjbGllbnRfa2V5PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9rZXl8XV0+PC9jbGllbnRfa2V5PjxjbGllbnRfa2V5PjwhW0NEQVRBW31dXT48L2NsaWVudF9rZXk+PC9jbGllbnRfa2V5cz4NCgk8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQoJPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQoJPGNhbGxiYWNrcz48Y2FsbGJhY2s+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2FsbGJhY2t8XV0+PC9jYWxsYmFjaz48Y2FsbGJhY2s+PCFbQ0RBVEFbfV1dPjwvY2FsbGJhY2s+PC9jYWxsYmFja3M+DQoJPGVudmlyb25tZW50cz48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuZW52aXJvbm1lbnR8XV0+PC9lbnZpcm9ubWVudD48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbfV1dPjwvZW52aXJvbm1lbnQ+PC9lbnZpcm9ubWVudHM+DQoJPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCgk8c3RhdHV1cz48c3RhdHVzPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnN0YXR1c3xdXT48L3N0YXR1cz48c3RhdHVzPjwhW0NEQVRBW31dXT48L3N0YXR1cz48L3N0YXR1dXM+DQoJPGNyZWF0ZWRzPjxjcmVhdGVkPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNyZWF0ZWR8XV0+PC9jcmVhdGVkPjxjcmVhdGVkPjwhW0NEQVRBW31dXT48L2NyZWF0ZWQ+PC9jcmVhdGVkcz4NCgk8Y3JlYXRlZF9ieXM+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZF9ieXxdXT48L2NyZWF0ZWRfYnk+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZF9ieT48L2NyZWF0ZWRfYnlzPg0KPC92YWx1ZXM+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPGNsaWVudF9rZXlzPjxjbGllbnRfa2V5PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9rZXl8XV0+PC9jbGllbnRfa2V5PjxjbGllbnRfa2V5PjwhW0NEQVRBW31dXT48L2NsaWVudF9rZXk+PC9jbGllbnRfa2V5cz4NCgk8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQoJPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQoJPGNhbGxiYWNrcz48Y2FsbGJhY2s+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2FsbGJhY2t8XV0+PC9jYWxsYmFjaz48Y2FsbGJhY2s+PCFbQ0RBVEFbfV1dPjwvY2FsbGJhY2s+PC9jYWxsYmFja3M+DQoJPGVudmlyb25tZW50cz48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuZW52aXJvbm1lbnR8XV0+PC9lbnZpcm9ubWVudD48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbfV1dPjwvZW52aXJvbm1lbnQ+PC9lbnZpcm9ubWVudHM+DQoJPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCgk8c3RhdHV1cz48c3RhdHVzPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnN0YXR1c3xdXT48L3N0YXR1cz48c3RhdHVzPjwhW0NEQVRBW31dXT48L3N0YXR1cz48L3N0YXR1dXM+DQoJPGNyZWF0ZWRzPjxjcmVhdGVkPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNyZWF0ZWR8XV0+PC9jcmVhdGVkPjxjcmVhdGVkPjwhW0NEQVRBW31dXT48L2NyZWF0ZWQ+PC9jcmVhdGVkcz4NCgk8Y3JlYXRlZF9ieXM+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZF9ieXxdXT48L2NyZWF0ZWRfYnk+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZF9ieT48L2NyZWF0ZWRfYnlzPg0KPC92YWx1ZXM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -1008,8 +1264,7 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPGNsaWVudF9uYW1lcz48Y2xpZW50X25hbWU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2xpZW50X25hbWV8XV0+PC9jbGllbnRfbmFtZT48Y2xpZW50X25hbWU+PCFbQ0RBVEFbfV1dPjwvY2xpZW50X25hbWU+PC9jbGllbnRfbmFtZXM+DQoJPGNsaWVudF9rZXlzPjxjbGllbnRfa2V5PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9rZXl8XV0+PC9jbGllbnRfa2V5PjxjbGllbnRfa2V5PjwhW0NEQVRBW31dXT48L2NsaWVudF9rZXk+PC9jbGllbnRfa2V5cz4NCgk8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQoJPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQoJPGNhbGxiYWNrcz48Y2FsbGJhY2s+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2FsbGJhY2t8XV0+PC9jYWxsYmFjaz48Y2FsbGJhY2s+PCFbQ0RBVEFbfV1dPjwvY2FsbGJhY2s+PC9jYWxsYmFja3M+DQoJPGVudmlyb25tZW50cz48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuZW52aXJvbm1lbnR8XV0+PC9lbnZpcm9ubWVudD48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbfV1dPjwvZW52aXJvbm1lbnQ+PC9lbnZpcm9ubWVudHM+DQoJPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCgk8c3RhdHV1cz48c3RhdHVzPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnN0YXR1c3xdXT48L3N0YXR1cz48c3RhdHVzPjwhW0NEQVRBW31dXT48L3N0YXR1cz48L3N0YXR1dXM+DQoJPGNyZWF0ZWRzPjxjcmVhdGVkPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNyZWF0ZWR8XV0+PC9jcmVhdGVkPjxjcmVhdGVkPjwhW0NEQVRBW31dXT48L2NyZWF0ZWQ+PC9jcmVhdGVkcz4NCgk8Y3JlYXRlZF9ieXM+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZF9ieXxdXT48L2NyZWF0ZWRfYnk+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZF9ieT48L2NyZWF0ZWRfYnlzPg0KPC92YWx1ZXM+"/&gt;
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPGNsaWVudF9uYW1lcz48Y2xpZW50X25hbWU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2xpZW50X25hbWV8XV0+PC9jbGllbnRfbmFtZT48Y2xpZW50X25hbWU+PCFbQ0RBVEFbfV1dPjwvY2xpZW50X25hbWU+PC9jbGllbnRfbmFtZXM+DQoJPGNsaWVudF9rZXlzPjxjbGllbnRfa2V5PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9rZXl8XV0+PC9jbGllbnRfa2V5PjxjbGllbnRfa2V5PjwhW0NEQVRBW31dXT48L2NsaWVudF9rZXk+PC9jbGllbnRfa2V5cz4NCgk8c2VjcmV0cz48c2VjcmV0PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnNlY3JldHxdXT48L3NlY3JldD48c2VjcmV0PjwhW0NEQVRBW31dXT48L3NlY3JldD48L3NlY3JldHM+DQoJPHNjb3Blcz48c2NvcGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuc2NvcGV8XV0+PC9zY29wZT48c2NvcGU+PCFbQ0RBVEFbfV1dPjwvc2NvcGU+PC9zY29wZXM+DQoJPGNhbGxiYWNrcz48Y2FsbGJhY2s+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY2FsbGJhY2t8XV0+PC9jYWxsYmFjaz48Y2FsbGJhY2s+PCFbQ0RBVEFbfV1dPjwvY2FsbGJhY2s+PC9jYWxsYmFja3M+DQoJPGVudmlyb25tZW50cz48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuZW52aXJvbm1lbnR8XV0+PC9lbnZpcm9ubWVudD48ZW52aXJvbm1lbnQ+PCFbQ0RBVEFbfV1dPjwvZW52aXJvbm1lbnQ+PC9lbnZpcm9ubWVudHM+DQoJPGV4cGlyYXRpb25zPjxleHBpcmF0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmV4cGlyYXRpb258XV0+PC9leHBpcmF0aW9uPjxleHBpcmF0aW9uPjwhW0NEQVRBW31dXT48L2V4cGlyYXRpb24+PC9leHBpcmF0aW9ucz4NCgk8c3RhdHV1cz48c3RhdHVzPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LnN0YXR1c3xdXT48L3N0YXR1cz48c3RhdHVzPjwhW0NEQVRBW31dXT48L3N0YXR1cz48L3N0YXR1dXM+DQoJPGNyZWF0ZWRzPjxjcmVhdGVkPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNyZWF0ZWR8XV0+PC9jcmVhdGVkPjxjcmVhdGVkPjwhW0NEQVRBW31dXT48L2NyZWF0ZWQ+PC9jcmVhdGVkcz4NCgk8Y3JlYXRlZF9ieXM+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkuY3JlYXRlZF9ieXxdXT48L2NyZWF0ZWRfYnk+PGNyZWF0ZWRfYnk+PCFbQ0RBVEFbfV1dPjwvY3JlYXRlZF9ieT48L2NyZWF0ZWRfYnlzPg0KPC92YWx1ZXM+"/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -1425,8 +1680,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="Tm9uLXZhbGlkIHBhcmFtZXRlciBsaXN0IGZvciB0aGlzIG9wZXJhdGlvbg=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="Tm9uLXZhbGlkIHBhcmFtZXRlciBsaXN0IGZvciB0aGlzIG9wZXJhdGlvbg=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;L7p:ResponseStatus stringValue="400"/&gt;
@@ -1477,8 +1731,7 @@
                     &lt;/L7p:Predicates&gt;
                     &lt;/L7p:ComparisonAssertion&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcz4NCjxjbGllbnRzPg0KPHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPG5hbWVzPjxuYW1lPjwhW0NEQVRBWyR7amRiY1F1ZXJ5Lm5hbWV8XV0+PC9uYW1lPjxuYW1lPjwhW0NEQVRBW31dXT48L25hbWU+PC9uYW1lcz4NCgk8dHlwZXM+PHR5cGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkudHlwZXxdXT48L3R5cGU+PHR5cGU+PCFbQ0RBVEFbfV1dPjwvdHlwZT48L3R5cGVzPg0KCTxkZXNjcmlwdGlvbnM+PGRlc2NyaXB0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmRlc2NyaXB0aW9ufF1dPjwvZGVzY3JpcHRpb24+PGRlc2NyaXB0aW9uPjwhW0NEQVRBW31dXT48L2Rlc2NyaXB0aW9uPjwvZGVzY3JpcHRpb25zPg0KCTxvcmdhbml6YXRpb25zPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkub3JnYW5pemF0aW9ufF1dPjwvb3JnYW5pemF0aW9uPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbfV1dPjwvb3JnYW5pemF0aW9uPjwvb3JnYW5pemF0aW9ucz4NCgk8cmVnaXN0ZXJlZF9ieXM+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVnaXN0ZXJlZF9ieXxdXT48L3JlZ2lzdGVyZWRfYnk+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbfV1dPjwvcmVnaXN0ZXJlZF9ieT48L3JlZ2lzdGVyZWRfYnlzPg0KCTxjcmVhdGVkcz48Y3JlYXRlZD48IVtDREFUQVske2pkYmNRdWVyeS5jcmVhdGVkfF1dPjwvY3JlYXRlZD48Y3JlYXRlZD48IVtDREFUQVt9XV0+PC9jcmVhdGVkPjwvY3JlYXRlZHM+DQo8L3ZhbHVlcz4NCjwvY2xpZW50cz4NCiR7a2V5c30NCjwvdmFsdWVzPg=="/&gt;
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcz4NCjxjbGllbnRzPg0KPHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPG5hbWVzPjxuYW1lPjwhW0NEQVRBWyR7amRiY1F1ZXJ5Lm5hbWV8XV0+PC9uYW1lPjxuYW1lPjwhW0NEQVRBW31dXT48L25hbWU+PC9uYW1lcz4NCgk8dHlwZXM+PHR5cGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkudHlwZXxdXT48L3R5cGU+PHR5cGU+PCFbQ0RBVEFbfV1dPjwvdHlwZT48L3R5cGVzPg0KCTxkZXNjcmlwdGlvbnM+PGRlc2NyaXB0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmRlc2NyaXB0aW9ufF1dPjwvZGVzY3JpcHRpb24+PGRlc2NyaXB0aW9uPjwhW0NEQVRBW31dXT48L2Rlc2NyaXB0aW9uPjwvZGVzY3JpcHRpb25zPg0KCTxvcmdhbml6YXRpb25zPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkub3JnYW5pemF0aW9ufF1dPjwvb3JnYW5pemF0aW9uPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbfV1dPjwvb3JnYW5pemF0aW9uPjwvb3JnYW5pemF0aW9ucz4NCgk8cmVnaXN0ZXJlZF9ieXM+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVnaXN0ZXJlZF9ieXxdXT48L3JlZ2lzdGVyZWRfYnk+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbfV1dPjwvcmVnaXN0ZXJlZF9ieT48L3JlZ2lzdGVyZWRfYnlzPg0KCTxjcmVhdGVkcz48Y3JlYXRlZD48IVtDREFUQVske2pkYmNRdWVyeS5jcmVhdGVkfF1dPjwvY3JlYXRlZD48Y3JlYXRlZD48IVtDREFUQVt9XV0+PC9jcmVhdGVkPjwvY3JlYXRlZHM+DQo8L3ZhbHVlcz4NCjwvY2xpZW50cz4NCiR7a2V5c30NCjwvdmFsdWVzPg=="/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -1544,8 +1797,8 @@
                     &lt;/wsp:All&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:SetVariable&gt;
-                    &lt;L7p:Base64Expression
-                    stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPG5hbWVzPjxuYW1lPjwhW0NEQVRBWyR7amRiY1F1ZXJ5Lm5hbWV8XV0+PC9uYW1lPjxuYW1lPjwhW0NEQVRBW31dXT48L25hbWU+PC9uYW1lcz4NCgk8dHlwZXM+PHR5cGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkudHlwZXxdXT48L3R5cGU+PHR5cGU+PCFbQ0RBVEFbfV1dPjwvdHlwZT48L3R5cGVzPg0KCTxkZXNjcmlwdGlvbnM+PGRlc2NyaXB0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmRlc2NyaXB0aW9ufF1dPjwvZGVzY3JpcHRpb24+PGRlc2NyaXB0aW9uPjwhW0NEQVRBW31dXT48L2Rlc2NyaXB0aW9uPjwvZGVzY3JpcHRpb25zPg0KCTxvcmdhbml6YXRpb25zPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkub3JnYW5pemF0aW9ufF1dPjwvb3JnYW5pemF0aW9uPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbfV1dPjwvb3JnYW5pemF0aW9uPjwvb3JnYW5pemF0aW9ucz4NCgk8cmVnaXN0ZXJlZF9ieXM+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVnaXN0ZXJlZF9ieXxdXT48L3JlZ2lzdGVyZWRfYnk+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbfV1dPjwvcmVnaXN0ZXJlZF9ieT48L3JlZ2lzdGVyZWRfYnlzPg0KCTxjcmVhdGVkcz48Y3JlYXRlZD48IVtDREFUQVske2pkYmNRdWVyeS5jcmVhdGVkfF1dPjwvY3JlYXRlZD48Y3JlYXRlZD48IVtDREFUQVt9XV0+PC9jcmVhdGVkPjwvY3JlYXRlZHM+DQo8L3ZhbHVlcz4="/&gt;
+
+                    &lt;L7p:Base64Expression stringValue="PHZhbHVlcz4NCgk8Y2xpZW50X2lkZW50cz48Y2xpZW50X2lkZW50PjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmNsaWVudF9pZGVudHxdXT48L2NsaWVudF9pZGVudD48Y2xpZW50X2lkZW50PjwhW0NEQVRBW31dXT48L2NsaWVudF9pZGVudD48L2NsaWVudF9pZGVudHM+DQoJPG5hbWVzPjxuYW1lPjwhW0NEQVRBWyR7amRiY1F1ZXJ5Lm5hbWV8XV0+PC9uYW1lPjxuYW1lPjwhW0NEQVRBW31dXT48L25hbWU+PC9uYW1lcz4NCgk8dHlwZXM+PHR5cGU+PCFbQ0RBVEFbJHtqZGJjUXVlcnkudHlwZXxdXT48L3R5cGU+PHR5cGU+PCFbQ0RBVEFbfV1dPjwvdHlwZT48L3R5cGVzPg0KCTxkZXNjcmlwdGlvbnM+PGRlc2NyaXB0aW9uPjwhW0NEQVRBWyR7amRiY1F1ZXJ5LmRlc2NyaXB0aW9ufF1dPjwvZGVzY3JpcHRpb24+PGRlc2NyaXB0aW9uPjwhW0NEQVRBW31dXT48L2Rlc2NyaXB0aW9uPjwvZGVzY3JpcHRpb25zPg0KCTxvcmdhbml6YXRpb25zPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbJHtqZGJjUXVlcnkub3JnYW5pemF0aW9ufF1dPjwvb3JnYW5pemF0aW9uPjxvcmdhbml6YXRpb24+PCFbQ0RBVEFbfV1dPjwvb3JnYW5pemF0aW9uPjwvb3JnYW5pemF0aW9ucz4NCgk8cmVnaXN0ZXJlZF9ieXM+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbJHtqZGJjUXVlcnkucmVnaXN0ZXJlZF9ieXxdXT48L3JlZ2lzdGVyZWRfYnk+PHJlZ2lzdGVyZWRfYnk+PCFbQ0RBVEFbfV1dPjwvcmVnaXN0ZXJlZF9ieT48L3JlZ2lzdGVyZWRfYnlzPg0KCTxjcmVhdGVkcz48Y3JlYXRlZD48IVtDREFUQVske2pkYmNRdWVyeS5jcmVhdGVkfF1dPjwvY3JlYXRlZD48Y3JlYXRlZD48IVtDREFUQVt9XV0+PC9jcmVhdGVkPjwvY3JlYXRlZHM+DQo8L3ZhbHVlcz4="/&gt;
                     &lt;L7p:ContentType stringValue="text/xml; charset=utf-8"/&gt;
                     &lt;L7p:DataType variableDataType="message"/&gt;
                     &lt;L7p:VariableToSet stringValue="values"/&gt;
@@ -1619,6 +1872,7 @@
                     &lt;L7p:TrueAssertion/&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;/wsp:All&gt;
+                    &lt;/wsp:OneOrMore&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:ComparisonAssertion&gt;
@@ -2114,8 +2368,7 @@
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="oauth_client_key references oauth_client and gets deleted via foreign
-                    key with ON DELETE CASCADE "/&gt;
+                    &lt;L7p:Comment stringValue="oauth_client_key references oauth_client and gets deleted via foreign                     key with ON DELETE CASCADE "/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionComment assertionComment="included"&gt;
@@ -2140,8 +2393,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudChzKSBkZWxldGVk"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudChzKSBkZWxldGVk"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -2320,8 +2572,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudF9rZXkocykgcmV2b2tlZA=="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudF9rZXkocykgcmV2b2tlZA=="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -2457,8 +2708,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudChzKSB1cGRhdGVk"/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudChzKSB1cGRhdGVk"/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;
@@ -2544,8 +2794,7 @@
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:AssertionComment&gt;
-                    &lt;L7p:Base64ResponseBody
-                    stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudF9rZXlzKHMpIHVwZGF0ZWQ="/&gt;
+                    &lt;L7p:Base64ResponseBody stringValue="JHtqZGJjUXVlcnkucXVlcnlyZXN1bHQuY291bnR9IGNsaWVudF9rZXlzKHMpIHVwZGF0ZWQ="/&gt;
                     &lt;L7p:EarlyResponse booleanValue="true"/&gt;
                     &lt;L7p:ResponseContentType stringValue="text/plain; charset=UTF-8"/&gt;
                     &lt;/L7p:HardcodedResponse&gt;

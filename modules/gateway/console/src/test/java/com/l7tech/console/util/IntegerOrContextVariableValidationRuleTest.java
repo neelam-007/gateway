@@ -112,13 +112,87 @@ public class IntegerOrContextVariableValidationRuleTest {
         validateNonIntegerError(error);
     }
 
-    private void validateNonIntegerError(String error) {
-        assertEquals("The " + FIELD_NAME + " field must be an integer between " + MIN + " and " + MAX + ".", error);
-    }
-
     @Test
     public void spacesTrimmed() {
         textComponent.setText("   1   ");
         assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void nullStringAllowed() {
+        textComponent.setText(null);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void emptyStringAllowed() {
+        textComponent.setText("");
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxNumeric() {
+        final JComboBox comboBox = createEditableComboBox("1");
+        assertNull(new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxContextVar() {
+        final JComboBox comboBox = createEditableComboBox("${testVar}");
+        assertNull(new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxOverMax() {
+        final JComboBox comboBox = createEditableComboBox("5");
+        assertEquals("The version field must be an integer between 0 and 1.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxNull() {
+        final JComboBox comboBox = createEditableComboBox(null);
+        assertEquals("The version must not be empty.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxEmpty() {
+        final JComboBox comboBox = createEditableComboBox("");
+        assertEquals("The version must not be empty.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxNotNumeric() {
+        final JComboBox comboBox = createEditableComboBox("notNumeric");
+        assertEquals("The version field must be an integer between 0 and 1.", new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox).getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxNullAllowed() {
+        final JComboBox comboBox = createEditableComboBox(null);
+        final IntegerOrContextVariableValidationRule rule = new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void validateCheckBoxEmptyAllowed() {
+        final JComboBox comboBox = createEditableComboBox("");
+        final IntegerOrContextVariableValidationRule rule = new IntegerOrContextVariableValidationRule(0, 1, "version", comboBox);
+        rule.setAllowEmpty(true);
+        assertNull(rule.getValidationError());
+    }
+
+    private void validateNonIntegerError(String error) {
+        assertEquals("The " + FIELD_NAME + " field must be an integer between " + MIN + " and " + MAX + ".", error);
+    }
+
+    private JComboBox createEditableComboBox(final String selectedItem) {
+        final JComboBox comboBox = new JComboBox();
+        comboBox.setModel(new DefaultComboBoxModel(new String[]{"0", "1"}));
+        comboBox.setEditable(true);
+        comboBox.setSelectedItem(selectedItem);
+        return comboBox;
     }
 }

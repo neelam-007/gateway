@@ -305,7 +305,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                                     junction.add( reduce(entry.getValue(), disjunction(), new Functions.Binary<Junction, Junction, Object>() {
                                         @Override
                                         public Junction call(Junction junction, Object o) {
-                                            if (o == NULL) {
+                                            if (o == NULL || o == null) {
                                                 junction.add(Restrictions.isNull(entry.getKey()));
                                             } else if (o == NOTNULL) {
                                                 junction.add(Restrictions.isNotNull(entry.getKey()));
@@ -337,7 +337,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     criteria.setFetchSize( count );
                     criteria.setMaxResults( count );
 
-                    return (List<ET>)criteria.list();
+                    final List<ET> list = (List<ET>) criteria.list();
+                    for (final ET et : list) {
+                        initializeLazilyLoaded(et);
+                    }
+                    return list;
                 }
             });
         } catch (Exception e) {

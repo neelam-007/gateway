@@ -863,6 +863,8 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
                 new Java5EnumTypeMapping(GenericHttpRequestParams.HttpVersion.class, "httpVersion")
         )));
 
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddHttpRoutingAssertionAdvice");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

@@ -1,9 +1,8 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.util.NonObfuscatable;
-
-import javax.xml.bind.annotation.*;
-import java.util.ArrayList;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -11,19 +10,16 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-@XmlRootElement(name = "Reference")
-@XmlType(name = "EntityReferenceType", propOrder = {"title", "id", "type", "links", "resourceList"})
-public class Reference {
+@XmlTransient
+public abstract class Reference<R> {
     private String id;
     private String type;
-    private String title;
+    private String name;
     private List<Link> links;
-    private Object resource;
+    private R content;
+    private Date date;
 
-    Reference() {
-    }
-
-    @XmlElement(name = "id", required = true)
+    @XmlElement(name = "Id")
     public String getId() {
         return id;
     }
@@ -32,7 +28,7 @@ public class Reference {
         this.id = id;
     }
 
-    @XmlElement(name = "type", required = true)
+    @XmlElement(name = "Type", required = true)
     public String getType() {
         return type;
     }
@@ -41,16 +37,16 @@ public class Reference {
         this.type = type;
     }
 
-    @XmlElement(name = "title", required = true)
-    public String getTitle() {
-        return title;
+    @XmlElement(name = "Name", required = true)
+    public String getName() {
+        return name;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    @XmlElement(name = "link")
+    @XmlElement(name = "Link")
     public List<Link> getLinks() {
         return links;
     }
@@ -59,53 +55,22 @@ public class Reference {
         this.links = links;
     }
 
-    @XmlElementRefs({
-            @XmlElementRef(type = ActiveConnectorMO.class),
-            @XmlElementRef(type = TrustedCertificateMO.class),
-            @XmlElementRef(type = ClusterPropertyMO.class),
-            @XmlElementRef(type = CustomKeyValueStoreMO.class),
-            @XmlElementRef(type = ResourceDocumentMO.class),
-            @XmlElementRef(type = EmailListenerMO.class),
-            @XmlElementRef(type = EncapsulatedAssertionMO.class),
-            @XmlElementRef(type = FolderMO.class),
-            @XmlElementRef(type = GenericEntityMO.class),
-            @XmlElementRef(type = HttpConfigurationMO.class),
-            @XmlElementRef(type = IdentityProviderMO.class),
-            @XmlElementRef(type = JDBCConnectionMO.class),
-            @XmlElementRef(type = JMSDestinationMO.class),
-            @XmlElementRef(type = ListenPortMO.class),
-            @XmlElementRef(type = PolicyAliasMO.class),
-            @XmlElementRef(type = PolicyMO.class),
-            @XmlElementRef(type = PolicyVersionMO.class),
-            @XmlElementRef(type = PrivateKeyMO.class),
-            @XmlElementRef(type = ServiceMO.class),
-            @XmlElementRef(type = RbacRoleMO.class),
-            @XmlElementRef(type = StoredPasswordMO.class),
-            @XmlElementRef(type = SecurityZoneMO.class),
-            @XmlElementRef(type = ServiceAliasMO.class),
-    })
-    @XmlAnyElement(lax = true)
-    @XmlElementWrapper(name = "resource", required = false)
-    //This needs to be NonObfuscatable in order to avoid jaxb issues
-    @NonObfuscatable
-    private List<Object> getResourceList() {
-        if (resource == null) {
-            return null;
-        }
-        ArrayList<Object> list = new ArrayList<>(1);
-        list.add(resource);
-        return list;
+    @XmlTransient
+    public R getContent() {
+        return content;
     }
 
-    private void setResourceList(List<Object> content) {
-        this.resource = content != null && !content.isEmpty() ? content.get(0) : null;
+    public void setContent(R content) {
+        date = new Date();
+        this.content = content;
     }
 
-    public Object getResource() {
-        return resource;
+    @XmlElement(name = "TimeStamp")
+    public Date getDate() {
+        return date;
     }
 
-    public void setResource(Object resource) {
-        this.resource = resource;
+    public void setDate(Date date) {
+        this.date = date;
     }
 }

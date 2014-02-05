@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.HasOutputVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -22,10 +23,9 @@ import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.trace.TracePolicyEvaluator;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.Either;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
@@ -35,9 +35,12 @@ import org.springframework.context.ApplicationListener;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+
+import static com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig.*;
 
 /**
  * Server implementation of encapsulated assertion invoker.
@@ -54,8 +57,11 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
     @Inject
     private PolicyCache policyCache;
 
-    private final AtomicReference<Either<String,EncapsulatedAssertionConfig>> configOrErrorRef = new AtomicReference<Either<String,EncapsulatedAssertionConfig>>();
-    private final AtomicReference<String[]> varsUsed = new AtomicReference<String[]>(new String[0]);
+    @Inject
+    private Config config;
+
+    private final AtomicReference<Either<String,EncapsulatedAssertionConfig>> configOrErrorRef = new AtomicReference<>();
+    private final AtomicReference<String[]> varsUsed = new AtomicReference<>(new String[0]);
     private ApplicationListener updateListener;
 
     /**
@@ -164,6 +170,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
         final Either<String, EncapsulatedAssertionConfig> configOrError = configOrErrorRef.get();
         if (configOrError.isLeft()) {
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: " + configOrError.left());
@@ -177,14 +184,23 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
             throw new PolicyAssertionException(assertion, msg);
         }
 
+        final Policy policy = config.getPolicy();
+        if (policy == null) {
+            getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: no policy.");
+            return AssertionStatus.SERVER_ERROR;
+        }
+
         runningOnThread.set(true);
         try {
+            context.pushAssertionOrdinal(assertion.getOrdinal());
+
             String[] varsUsed = this.varsUsed.get();
             Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
-            final Policy policy = config.getPolicy();
 
             PolicyEnforcementContext childContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(context);
             ShadowsParentVariables spv = (ShadowsParentVariables) childContext;
+
+            enableTracing(context, childContext, config.getBooleanProperty(PROP_ALLOW_TRACING));
 
             populateInputVariables(config, variableMap, context, childContext, spv);
             declareOutputVariables(config, (HasOutputVariables) childContext);
@@ -196,8 +212,30 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
             return result;
         } finally {
+            context.popAssertionOrdinal();
             runningOnThread.set(false);
         }
+    }
+
+    protected void enableTracing(final PolicyEnforcementContext parentContext, final PolicyEnforcementContext childContext, boolean allowTracing) {
+        if (parentContext.hasTraceListener() && allowTracing) {
+            for (Integer assertionOrdinal : parentContext.getAssertionOrdinalPath()) {
+                childContext.pushAssertionOrdinal(assertionOrdinal);
+            }
+
+            String traceGuid = config().getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+            if (traceGuid == null || traceGuid.trim().length() < 1) {
+                logger.info("Tracing enabled but no trace policy configured");
+                return;
+            }
+
+            // TODO how to detect policy change? so as to cache policy handle in instance field, instead of looking up a new one for every request
+            TracePolicyEvaluator.createAndAttachToContext(childContext, policyCache.getServerPolicy(traceGuid));
+        }
+    }
+
+    private Config config() {
+        return config != null ? config : ConfigFactory.getCachedConfig();
     }
 
     private AssertionStatus lookupAndExecutePolicy(final Goid policyGoid, PolicyEnforcementContext childContext) throws PolicyAssertionException, IOException {

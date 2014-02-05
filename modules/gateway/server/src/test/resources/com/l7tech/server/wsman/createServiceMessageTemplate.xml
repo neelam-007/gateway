@@ -1,0 +1,48 @@
+<!-- This is a template message for creating a service -->
+<!-- Configuration: -->
+<!-- ===SERVICENAME=== - name of the service -->
+<!-- ===SERVICEURL=== - url of the service -->
+<!-- ===SERVICEPOLICY=== - policy xml of the service -->
+<!-- Configuration: -->
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+            xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+            xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+            xmlns:n1="http://ns.l7tech.com/2010/04/gateway-management"
+        >
+	<s:Header>
+		<wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>
+		<wsa:To s:mustUnderstand="true">http://127.0.0.1:8080/wsman</wsa:To>
+		<wsman:ResourceURI s:mustUnderstand="true">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>
+		<wsa:MessageID s:mustUnderstand="true">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID>
+		<wsa:ReplyTo>
+			<wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+		</wsa:ReplyTo>
+	</s:Header>
+	<s:Body>
+		 <n1:Service type="soap">
+         <n1:ServiceDetail>
+            <n1:Name>===SERVICENAME===</n1:Name>
+            <n1:Enabled>true</n1:Enabled>
+            <n1:ServiceMappings>
+               <n1:HttpMapping>
+                  <n1:UrlPattern>===SERVICEURL===</n1:UrlPattern>
+                  <n1:Verbs>
+                     <n1:Verb>GET</n1:Verb>
+                     <n1:Verb>POST</n1:Verb>
+                     <n1:Verb>PUT</n1:Verb>
+                     <n1:Verb>DELETE</n1:Verb>
+                  </n1:Verbs>
+               </n1:HttpMapping>
+               <n1:SoapMapping>
+                  <n1:Lax>true</n1:Lax>
+               </n1:SoapMapping>
+            </n1:ServiceMappings>
+         </n1:ServiceDetail>
+         <n1:Resources>
+           <n1:ResourceSet tag="policy">
+               <n1:Resource type="policy" version="5"><![CDATA[===SERVICEPOLICY===]]></n1:Resource>
+            </n1:ResourceSet>
+         </n1:Resources>
+      </n1:Service>
+	</s:Body>
+</s:Envelope>

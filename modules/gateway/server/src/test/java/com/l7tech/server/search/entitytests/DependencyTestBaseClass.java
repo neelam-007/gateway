@@ -57,6 +57,8 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     AssertionDependencyProcessor assertionDependencyProcessor = new AssertionDependencyProcessor();
     @InjectMocks
+    JmsEndpointDependencyProcessor jdbcDependencyProcessor = new JmsEndpointDependencyProcessor();
+    @InjectMocks
     ClusterPropertyDependencyProcessor clusterPropertyDependencyProcessor = new ClusterPropertyDependencyProcessor();
     @InjectMocks
     IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
@@ -75,6 +77,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
+            .put(Dependency.DependencyType.JMS_ENDPOINT, jdbcDependencyProcessor)
             .map());
 
     @InjectMocks

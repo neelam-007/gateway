@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
@@ -1102,12 +1103,10 @@ public class ServerVariablesTest {
     @Test
     public void testResponseCookieOverwritePath() throws Exception {
         final PolicyEnforcementContext context = context();
-        context.addCookie(new HttpCookie("name", "valuea", 1, "/some", ".domain.com"));
-        context.setVariable("response.cookie.overwritePath", false);
-        Iterator<HttpCookie> i = context.getCookies().iterator();
-        while (i.hasNext()) {
-            assertEquals(false, i.next().isOverwritePath());
-        }
+        // default is true
+        assertTrue(context.isOverwriteResponseCookieAttributes());
+        context.setVariable("response.cookie.overwriteAttributes", false);
+        assertFalse(context.isOverwriteResponseCookieAttributes());
     }
 
 

@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.HttpConfigurationRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.Reference;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
@@ -14,7 +14,8 @@ import javax.ws.rs.ext.Provider;
  * The Http Configuration resource
  */
 @Provider
-@Path(HttpConfigurationResource.httpConfiguration_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + HttpConfigurationResource.httpConfiguration_URI)
+@Singleton
 public class HttpConfigurationResource extends RestEntityResource<HttpConfigurationMO, HttpConfigurationRestResourceFactory> {
 
     protected static final String httpConfiguration_URI = "httpConfigurations";
@@ -25,12 +26,8 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
         super.factory = factory;
     }
 
-    public EntityType getEntityType() {
-        return EntityType.HTTP_CONFIGURATION;
-    }
-
     @Override
-    protected Reference toReference(HttpConfigurationMO resource) {
+    protected Item<HttpConfigurationMO> toReference(HttpConfigurationMO resource) {
         return toReference(resource.getId(), resource.getHost());
     }
 }

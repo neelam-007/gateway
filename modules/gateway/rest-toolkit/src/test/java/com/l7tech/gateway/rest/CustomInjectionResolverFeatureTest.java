@@ -57,7 +57,7 @@ public class CustomInjectionResolverFeatureTest {
         Mockito.when(applicationContext1.getBean(String.class)).thenReturn("applicationContext1");
         Mockito.when(applicationContext2.getBean(String.class)).thenReturn("applicationContext2");
 
-        RestResponse response1 = restAgent1.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null);
+        RestResponse response1 = restAgent1.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null, null);
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         IOUtils.copyStream(response1.getInputStream(), bout);
@@ -65,7 +65,7 @@ public class CustomInjectionResolverFeatureTest {
 
         Assert.assertEquals("applicationContext1", response1Body);
 
-        RestResponse response2 = restAgent2.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null);
+        RestResponse response2 = restAgent2.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null, null);
 
         bout = new ByteArrayOutputStream();
         IOUtils.copyStream(response2.getInputStream(), bout);
@@ -120,7 +120,7 @@ public class CustomInjectionResolverFeatureTest {
         restAgent.init();
 
 
-        RestResponse response1 = restAgent.handleRequest(new URI(""), new URI("test/inject1"), "GET", null, new EmptyInputStream(), null);
+        RestResponse response1 = restAgent.handleRequest(new URI(""), new URI("test/inject1"), "GET", null, new EmptyInputStream(), null, null);
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         IOUtils.copyStream(response1.getInputStream(), bout);
@@ -128,7 +128,7 @@ public class CustomInjectionResolverFeatureTest {
 
         Assert.assertEquals("inject1", response1Body);
 
-        RestResponse response2 = restAgent.handleRequest(new URI(""), new URI("test/inject2"), "GET", null, new EmptyInputStream(), null);
+        RestResponse response2 = restAgent.handleRequest(new URI(""), new URI("test/inject2"), "GET", null, new EmptyInputStream(), null, null);
 
         bout = new ByteArrayOutputStream();
         IOUtils.copyStream(response2.getInputStream(), bout);
@@ -136,7 +136,7 @@ public class CustomInjectionResolverFeatureTest {
 
         Assert.assertEquals("inject2", response2Body);
 
-        RestResponse response3 = restAgent.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null);
+        RestResponse response3 = restAgent.handleRequest(new URI(""), new URI("test"), "GET", null, new EmptyInputStream(), null, null);
 
         bout = new ByteArrayOutputStream();
         IOUtils.copyStream(response3.getInputStream(), bout);

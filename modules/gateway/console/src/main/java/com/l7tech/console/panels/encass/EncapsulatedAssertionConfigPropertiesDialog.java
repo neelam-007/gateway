@@ -81,6 +81,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JLabel artifactVersionLabel;
     private JScrollPane artifactVersionScrollPane;
     private SecurityZoneWidget zoneControl;
+    private JCheckBox allowTracingCheckBox;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
@@ -275,7 +276,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
 
     // Find names already used by objects in the specified table model, excluding the specified self object.
     private <RT> Set<String> findUsedNames(SimpleTableModel<RT> tableModel, Functions.Unary<String, RT> nameExtractor, @Nullable RT self) {
-        Set<String> usedNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> usedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         usedNames.addAll(Functions.map(tableModel.getRows(), nameExtractor));
         if (self != null) {
             usedNames.remove(optional(nameExtractor.call(self)).orSome(""));
@@ -350,9 +351,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 final int[] selectedIndices = table.getSelectedRows();
-                final List<RT> rows = new ArrayList<RT>(selectedIndices.length);
-                for (int i = 0; i < selectedIndices.length; i++) {
-                    rows.add(tableModel.getRowObject(selectedIndices[i]));
+                final List<RT> rows = new ArrayList<>(selectedIndices.length);
+                for (int selectedIndex : selectedIndices) {
+                    rows.add(tableModel.getRowObject(selectedIndex));
                 }
                 for (final RT row : rows) {
                     tableModel.removeRow(row);
@@ -380,7 +381,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
 
         inputsTableModel.setRows(config.sortedArguments());
-        outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
+        outputsTableModel.setRows(new ArrayList<>(config.getResultDescriptors()));
         sortOutputsTableModel();
 
         if (config.getGuid() == null && config.getPolicy() != null) {
@@ -396,6 +397,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (artifactVersion != null) {
             artifactVersionDisplayLabel.setText(artifactVersion);
         }
+
+        allowTracingCheckBox.setSelected(config.getBooleanProperty(PROP_ALLOW_TRACING));
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -431,9 +434,10 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         for (EncapsulatedAssertionArgumentDescriptor input : inputs) {
             input.setOrdinal(ord++);
         }
-        config.setArgumentDescriptors(new HashSet<EncapsulatedAssertionArgumentDescriptor>(inputs));
-        config.setResultDescriptors(new HashSet<EncapsulatedAssertionResultDescriptor>(outputsTableModel.getRows()));
+        config.setArgumentDescriptors(new HashSet<>(inputs));
+        config.setResultDescriptors(new HashSet<>(outputsTableModel.getRows()));
         config.setSecurityZone(zoneControl.getSelectedZone());
+        config.putBooleanProperty(PROP_ALLOW_TRACING, allowTracingCheckBox.isSelected());
     }
 
     private void enableOrDisableThings() {
@@ -646,7 +650,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
             final Pair<EncapsulatedAssertionConsoleUtil.IconType, ImageIcon> currentIcon = EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64);
-            final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>>(EncapsulatedAssertionConfigPropertiesDialog.this,
+            final OkCancelDialog<Pair<EncapsulatedAssertionConsoleUtil.IconType, String>> okCancelDialog = new OkCancelDialog<>(EncapsulatedAssertionConfigPropertiesDialog.this,
                     SELECT_ICON, true, new IconSelectorPanel(currentIcon.left.equals(EncapsulatedAssertionConsoleUtil.IconType.CUSTOM_IMAGE) ? null : currentIcon.right));
             okCancelDialog.pack();
             Utilities.centerOnParentWindow(okCancelDialog);
@@ -684,9 +688,9 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
     };
     private static final Functions.Unary<String, EncapsulatedAssertionArgumentDescriptor> argumentNameExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentName");
-    private static final Functions.Unary<DataType, EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.<DataType, EncapsulatedAssertionArgumentDescriptor>propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
+    private static final Functions.Unary<DataType, EncapsulatedAssertionArgumentDescriptor> argumentTypeExtractor = Functions.propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "argumentType");
     private static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> argumentGuiLabelExtractor = propertyTransform(EncapsulatedAssertionArgumentDescriptor.class, "guiLabel");
 
     private static final Functions.Unary<String, EncapsulatedAssertionResultDescriptor> resultNameExtractor = propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultName");
-    private static final Functions.Unary<DataType, EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.<DataType, EncapsulatedAssertionResultDescriptor>propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");
+    private static final Functions.Unary<DataType, EncapsulatedAssertionResultDescriptor> resultTypeExtractor = Functions.propertyTransform(EncapsulatedAssertionResultDescriptor.class, "resultType");
 }

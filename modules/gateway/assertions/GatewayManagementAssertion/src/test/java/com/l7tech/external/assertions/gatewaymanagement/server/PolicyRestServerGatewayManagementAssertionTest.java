@@ -99,12 +99,12 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void getPolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy1.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Reference reference = MarshallingUtils.unmarshal(Reference.class, source);
-        PolicyMO policyReturned = (PolicyMO) reference.getResource();
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+        PolicyMO policyReturned = (PolicyMO) item.getContent();
 
         Assert.assertEquals(policy1.getId(), policyReturned.getId());
         Assert.assertEquals(policy1.getName(), policyReturned.getPolicyDetail().getName());
@@ -112,11 +112,11 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void getPolicyNotExistsTest() throws Exception {
-        Response response = processRequest(policyBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + new Goid(123, 456), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", response.getBody());
+        Assert.assertEquals("Resource not found {id=" + new Goid(123, 456) + "}", getErrorMessage(response));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         String policyMOString = writeMOToString(policyMO);
 
-        Response response = processRequest(policyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
+        RestResponse response = processRequest(policyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
         Policy policySaved = policyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
@@ -190,7 +190,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
         String policyMOString = writeMOToString(policyMO);
 
-        Response response = processRequest(policyBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
+        RestResponse response = processRequest(policyBasePath + id, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
 
         Policy policySaved = policyManager.findByPrimaryKey(id);
@@ -204,7 +204,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void deletePolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy2.getId(), HttpMethod.DELETE, null, "");
+        RestResponse response = processRequest(policyBasePath + policy2.getId(), HttpMethod.DELETE, null, "");
         logger.info(response.toString());
 
         Assert.assertNull(policyManager.findByPrimaryKey(policy2.getGoid()));
@@ -212,11 +212,11 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void updatePolicyTest() throws Exception {
-        Response response = processRequest(policyBasePath + policy2.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy2.getId(), HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Reference.class, source).getResource();
+        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
 
         policyReturned.getPolicyDetail().setName("Policy Updated");
 
@@ -231,14 +231,14 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
 
     @Test
     public void listPolicies() throws Exception {
-        Response response = processRequest(policyBasePath, HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath, HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
 
-        JAXBContext jsxb = JAXBContext.newInstance(References.class, Reference.class);
-        References references = jsxb.createUnmarshaller().unmarshal(source, References.class).getValue();
+        ItemsList<PolicyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
-        Assert.assertEquals(2, references.getReferences().size());
+        // check entity
+        Assert.assertEquals(2, item.getContent().size());
     }
 }

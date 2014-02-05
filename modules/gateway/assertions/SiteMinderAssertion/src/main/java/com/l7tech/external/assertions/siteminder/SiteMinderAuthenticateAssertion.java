@@ -10,7 +10,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -25,7 +24,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
     private boolean useSMCookie;
     private String prefix;
     private boolean isLastCredential = true;
-    private String login;
+    private String credentialsName;
     protected final MessageTargetableSupport messageTargetableSupport;
 
     public SiteMinderAuthenticateAssertion() {
@@ -36,12 +35,12 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, false);
     }
 
-    public String getLogin() {
-        return login;
+    public String getCredentialsName() {
+        return credentialsName;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    public void setCredentialsName(String credentialsName) {
+        this.credentialsName = credentialsName;
     }
 
     public boolean isLastCredential() {
@@ -87,7 +86,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         }
 
         if (!isLastCredential) {
-            String[] refNames = Syntax.getReferencedNames(login);
+            String[] refNames = Syntax.getReferencedNames(credentialsName);
             varsUsed.addAll(Arrays.asList(refNames));
         }
 

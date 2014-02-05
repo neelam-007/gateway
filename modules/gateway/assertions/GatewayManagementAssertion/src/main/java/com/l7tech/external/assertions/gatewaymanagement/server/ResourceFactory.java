@@ -137,6 +137,13 @@ public interface ResourceFactory<R> {
      */
     List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters);
 
+    /**
+     * Returns true is the resource exists. False otherwise.
+     * @param selectorMap the selector map used to find the entity.
+     * @return true if the resource exists, false otherwise.
+     */
+    boolean resourceExists(Map<String,String> selectorMap);
+
 
     /**
      * Annotation for the resource name.
