@@ -380,6 +380,13 @@ public class PreferencesDialog extends JDialog {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
+                    for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                        final Component component = tabbedPane.getComponentAt(i);
+                        if (component instanceof PolicyEditorPanel) {
+                            ((PolicyEditorPanel) component).updateHeadings();
+                        }
+                    }
+
                     tabbedPane.setSelectedComponent(selectedComponent);
                 }
             });
@@ -447,7 +454,7 @@ public class PreferencesDialog extends JDialog {
                     option = Integer.parseInt(optionProp);
                 }
                 // The tab layout option must be either 0 or 1, since WRAP_TAB_LAYOUT = 0 and SCROLL_TAB_LAYOUT = 1.
-                if (option != 0 && option != 1) {
+                if (option != JTabbedPane.WRAP_TAB_LAYOUT && option != JTabbedPane.SCROLL_TAB_LAYOUT) {
                     option = SsmPreferences.DEFAULT_POLICY_TABS_LAYOUT;
                 }
             } catch (NumberFormatException e) {
@@ -455,8 +462,8 @@ public class PreferencesDialog extends JDialog {
             }
             previousTabLayout = option;
 
-            wrapTabsRadioButton.setSelected(option == 0);
-            scrollTabsRadioButton.setSelected(option == 1);
+            wrapTabsRadioButton.setSelected(option == JTabbedPane.WRAP_TAB_LAYOUT);
+            scrollTabsRadioButton.setSelected(option == JTabbedPane.SCROLL_TAB_LAYOUT);
 
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);

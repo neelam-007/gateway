@@ -5,6 +5,7 @@
 
 package com.l7tech.console.util;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -112,7 +113,7 @@ public interface SsmPreferences {
     int DEFAULT_MAX_LEFT_COMMENT = 30;
     int DEFAULT_MAX_RIGHT_COMMENT = 100;
     int DEFAULT_MAX_NUM_POLICY_TABS = 30;
-    int DEFAULT_POLICY_TABS_LAYOUT = 0; // WRAP_TAB_LAYOUT = 0; SCROLL_TAB_LAYOUT = 1
+    int DEFAULT_POLICY_TABS_LAYOUT = JTabbedPane.WRAP_TAB_LAYOUT; // WRAP_TAB_LAYOUT = 0; SCROLL_TAB_LAYOUT = 1
 
     /**
      * Update preferences from given properties, optionally

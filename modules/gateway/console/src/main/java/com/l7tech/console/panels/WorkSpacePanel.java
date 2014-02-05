@@ -28,6 +28,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -336,7 +338,7 @@ public class WorkSpacePanel extends JPanel {
          * Then use the truncated title to set the policy tab title.
          */
         private void validateTabTitleLength(String title) {
-            final int workspaceWidth = ((MainWindow) TopComponents.getInstance().getComponent("mainWindow")).getMainSplitPaneRight().getSize().width;
+            final int workspaceWidth = getWorkspaceWidth();
             int labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
             int versionIdx;
             int middleIdx;
@@ -366,6 +368,41 @@ public class WorkSpacePanel extends JPanel {
                 labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
             }
         }
+    }
+
+    /**
+     * Get the width of the policy editor workspace
+     * @return an integer for the workspace width.  Return a non-positive number if any errors occur.
+     */
+    private int getWorkspaceWidth() {
+        int workspaceWidth = 0;
+
+        final int tabLayout = getPolicyTabsLayoutFromPreferences();
+        if (tabLayout == JTabbedPane.WRAP_TAB_LAYOUT) {
+            for (Component component: tabbedPane.getComponents()) {
+                // Check if the component is a BasicTabbedPaneUI.TabContainer
+                if (component instanceof JPanel && component instanceof UIResource) {
+                    workspaceWidth = component.getWidth();
+                    break;
+                }
+            }
+        } else if (tabLayout == JTabbedPane.SCROLL_TAB_LAYOUT) {
+            int viewportWidth = 0;
+            int scrollButtonsWidth = 0;
+
+            for (Component component: tabbedPane.getComponents()) {
+                // Check if the component is a BasicTabbedPaneUI.ScrollableTabViewport
+                if (component instanceof JViewport) {
+                    viewportWidth = component.getWidth();
+                } else if (component.isVisible() && component instanceof  BasicArrowButton) {
+                    scrollButtonsWidth += component.getWidth();
+                }
+            }
+
+            workspaceWidth = viewportWidth - scrollButtonsWidth;
+        }
+
+        return workspaceWidth;
     }
 
     /**
@@ -820,11 +857,6 @@ public class WorkSpacePanel extends JPanel {
 
         MouseTabListener (JTabbedPane tabbedPane) {
             tabPane = tabbedPane;
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-            mouseActionHandler(e);
         }
 
         @Override

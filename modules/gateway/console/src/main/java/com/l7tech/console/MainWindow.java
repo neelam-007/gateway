@@ -1797,7 +1797,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JPanel
      */
-    public JPanel getMainSplitPaneRight() {
+    private JPanel getMainSplitPaneRight() {
         if (mainSplitPaneRight != null)
             return mainSplitPaneRight;
 
