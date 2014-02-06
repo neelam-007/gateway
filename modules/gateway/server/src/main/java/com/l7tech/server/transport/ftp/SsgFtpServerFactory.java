@@ -174,7 +174,7 @@ public class SsgFtpServerFactory {
         factory.setActiveEnabled(false); // SSG default - active data connections are unsupported
 
         int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");
-        int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count"); // TODO jwilliams: this old behaviour is incorrect (range + 1) - must be fixed
+        int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count") - 1;
 
         factory.setPassivePorts(portStart + "-" + portEnd);
         factory.setImplicitSsl(null != sslConfiguration);
