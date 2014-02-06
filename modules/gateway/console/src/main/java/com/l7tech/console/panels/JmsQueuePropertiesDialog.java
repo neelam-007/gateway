@@ -129,6 +129,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JLabel sessionPoolMaxWait;
     private JSpinner maxIdleSessionSpinner;
     private JLabel maxSessionIdleLabel;
+    private JRadioButton passThroughAllJMSRadioButton;
+    private JRadioButton customizeJMSMessagePropertiesRadioButton;
+    private JTable jmsMessagePropertyTable;
+    private JButton editJmsPropertyButton;
+    private JButton addJmsPropertyButton;
+    private JButton removeJmsPropertyButton;
+    private JTabbedPane tabbedPane1;
 
 
     private JmsConnection connection = null;
@@ -554,11 +561,27 @@ public class JmsQueuePropertiesDialog extends JDialog {
         zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT), operation,
                 connection != null ? connection.getSecurityZone() : null);
 
+        passThroughAllJMSRadioButton.setSelected(true);//initial state
+        passThroughAllJMSRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableJmsMessageRules();
+            }
+        });
+
+
         pack();
         initializeView();
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private void enableOrDisableJmsMessageRules() {
+        jmsMessagePropertyTable.setEnabled(customizeJMSMessagePropertiesRadioButton.isSelected());
+        addJmsPropertyButton.setEnabled(customizeJMSMessagePropertiesRadioButton.isSelected());
+        editJmsPropertyButton.setEnabled(customizeJMSMessagePropertiesRadioButton.isSelected());
+        removeJmsPropertyButton.setEnabled(customizeJMSMessagePropertiesRadioButton.isSelected());
     }
 
     private void loadContentTypesModel() {
@@ -941,6 +964,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundRadioButton.isSelected()) {
             ep.setRequestMaxSize(byteLimitPanel.getLongValue());
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
+            ep.setPassthroughMessageRules(passThroughAllJMSRadioButton.isSelected());
+            if(customizeJMSMessagePropertiesRadioButton.isSelected()) {
+                Set<JmsEndpointMessagePropertyRule> rules = new LinkedHashSet<>();
+                //JmsEndpointMessagePropertyRule rule = new JmsEndpointMessagePropertyRule();
+                //rules.add(rule);
+            }
         }
 
         return ep;
@@ -1376,6 +1405,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         applyReset.setEnabled( canEdit && providerComboBox.getSelectedItem() != null );
 
         dedicatedConsumerConnectionLimitSpinner.setEnabled(dedicatedConsumerConnectionsCheckBox.isSelected());
+        enableOrDisableJmsMessageRules();
 
 /*        if (dedicatedConsumerConnectionsCheckBox.isSelected()) {
             dedicatedConsumerConnectionLimitTextField.setEnabled(true);

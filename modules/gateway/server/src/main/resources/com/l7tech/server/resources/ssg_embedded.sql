@@ -561,7 +561,7 @@ create table jms_endpoint (
     use_message_id_for_correlation smallint,
     username varchar(255),
     security_zone_goid CHAR(16) FOR BIT DATA references security_zone(goid) on delete set null,
-    is_passthrough_message_rules smallint default 0,
+    is_passthrough_message_rules smallint default 1,
     primary key (goid)
 );
 
@@ -575,7 +575,8 @@ create table jms_endpoint_message_rule (
   PRIMARY KEY (goid)
 );
 
-create table keystore_file (    goid CHAR(16) FOR BIT DATA not null,
+create table keystore_file (
+    goid CHAR(16) FOR BIT DATA not null,
     version integer,
     name varchar(128) not null,
     format varchar(255),

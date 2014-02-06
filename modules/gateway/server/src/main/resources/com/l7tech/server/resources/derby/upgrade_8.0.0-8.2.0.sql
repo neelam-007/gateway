@@ -8,7 +8,7 @@
 --
 -- Update the version
 --
-UPDATE ssg_version SET current_version = '8.0.0';
+UPDATE ssg_version SET current_version = '8.2.0';
 
 alter table jms_endpoint add column is_passthrough_message_rules smallint default 0;
 
