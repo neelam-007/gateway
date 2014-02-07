@@ -88,15 +88,15 @@ public class WorkSpacePanel extends JPanel {
         TabTitleComponentPanel foundAndRemoved = tabbedPane.removeExistingComponent(jc);
 
         // Remove some least-recently-used tab(s) without unsaved changes if the number of tabs reaches the "Maximum Num Of Policy Tabs" defined in Preferences.
-        final int maxNumOfTabsAllowed = getMaxNumOfTabsPropertyFromPreferences();
-        final int numOfAllTabs = tabbedPane.getTabCount();
-        final List<JComponent> foundTabsAllowToBeClosed = findTabsWithoutUnsavedChanges();
-        if (numOfAllTabs >= maxNumOfTabsAllowed) {
-            if ((!openedTabs.isEmpty() && foundTabsAllowToBeClosed.isEmpty()) ||           // Case: all tabs are changes-unsaved tabs.
-                (numOfAllTabs - maxNumOfTabsAllowed) >= foundTabsAllowToBeClosed.size()) { // Case: there are no enough number of without-unsaved-changes tabs to be automatically closed.
+        final int numOfTabsAllowed = getMaxNumOfTabsPropertyFromPreferences();
+        final int numOfTabsOpened = tabbedPane.getTabCount();
+        final List<JComponent> tabsAbleToBeClosed = findTabsWithoutUnsavedChanges();
+        if (numOfTabsOpened >= numOfTabsAllowed) {
+            if ((!openedTabs.isEmpty() && tabsAbleToBeClosed.isEmpty()) ||           // Case: all tabs are changes-unsaved tabs.
+                (numOfTabsOpened - numOfTabsAllowed) >= tabsAbleToBeClosed.size()) { // Case: there are no enough number of without-unsaved-changes tabs to be automatically closed.
                 // At these cases, we don't automatically close some without-unsaved-changes tabs and display a warning
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "You have reached the maximum number of tabs allowed (" + maxNumOfTabsAllowed + ").\n" +
+                    "You have reached the maximum number of tabs allowed (" + numOfTabsAllowed + ").\n" +
                     "Either close some tabs or increase the maximum in Preferences.",
                     "Open New Policy Tab Warning", JOptionPane.WARNING_MESSAGE, null);
 
@@ -108,9 +108,16 @@ public class WorkSpacePanel extends JPanel {
             }
             // Otherwise, automatically close some tabs without any unsaved changes
             else {
-                for (int i = 0; i <= numOfAllTabs - maxNumOfTabsAllowed; i++) {
-                    JComponent component = foundTabsAllowToBeClosed.get(i);
+                for (int i = 0; i <= numOfTabsOpened - numOfTabsAllowed; i++) {
+                    JComponent component = tabsAbleToBeClosed.get(i);
                     tabbedPane.remove(component);
+
+                    // Move the last element of closedTabs to the first position due to automatic deletion.
+                    // This is to avoid a tab recursive reopen.
+                    if (!closedTabs.isEmpty()) {
+                        TabTitleComponentPanel lastEl = closedTabs.remove(closedTabs.size() - 1);
+                        closedTabs.add(0, lastEl);
+                    }
                 }
             }
         }
@@ -160,7 +167,8 @@ public class WorkSpacePanel extends JPanel {
         });
 
         // If foundAndRemoved object is not null, it means that the associated PolicyEditorPanel has been added back to
-        // the workspace (see the above lines), so closedTabs should remove the foundAndRemoved object because of it added back (i.e., reopened).
+        // the workspace (see the above lines), so closedTabs should remove the foundAndRemoved object because it was
+        // added back by the above line: tabbedPane.removeExistingComponent(jc).
         if (foundAndRemoved != null) {
             closedTabs.remove(foundAndRemoved);
         }
@@ -457,7 +465,7 @@ public class WorkSpacePanel extends JPanel {
      */
     public Collection<Refreshable> refreshWorkspace() {
         final Collection<Refreshable> alreadyRefreshed = new ArrayList<>();
-        JComponent selectedComponent = getComponent();
+        Component selectedComponent = getComponent();
 
         for (int i = tabbedPane.getTabCount() - 1; i >= 0; i--) {
             final Component component = tabbedPane.getComponentAt(i);
@@ -481,18 +489,29 @@ public class WorkSpacePanel extends JPanel {
                 PolicyTree policyTree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
                 alreadyRefreshed.add(policyTree);
 
+                // Update closeTabs and openedTabs lists, since tabbedPane.removeTabAt(i) changed these two lists.
+                closedTabs.remove(tabComponent);
+                openedTabs.add((TabTitleComponentPanel) tabbedPane.getTabComponentAt(tabbedPane.getTabCount() - 1));
+
+                // Update the selected component
                 if (component == selectedComponent) {
-                    selectedComponent = getComponent();
+                    selectedComponent = tabbedPane.getComponentAt(tabbedPane.getTabCount() - 1);
                 }
             }
         }
 
         // Set the previous selected panel to be selected
-        if (selectedComponent instanceof HomePagePanel) {
-            tabbedPane.setSelectedIndex(0);
-        } else if (selectedComponent instanceof PolicyEditorPanel) {
-            tabbedPane.setSelectedComponent(selectedComponent);
-        }
+        final Component componentToBeSelected = selectedComponent;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (componentToBeSelected instanceof HomePagePanel) {
+                    tabbedPane.setSelectedIndex(0);
+                } else if (componentToBeSelected instanceof PolicyEditorPanel) {
+                    tabbedPane.setSelectedComponent(componentToBeSelected);
+                }
+            }
+        });
 
         return alreadyRefreshed;
     }
@@ -816,9 +835,6 @@ public class WorkSpacePanel extends JPanel {
                     if (Goid.equals(policyNodeGoid, tempPolicyGoid)) {
                         if (version == tempVersion) {
                             TabTitleComponentPanel tabTitleCompPanel = (TabTitleComponentPanel) getTabComponentAt(i);
-                            closedTabs.remove(tabTitleCompPanel);
-                            openedTabs.remove(tabTitleCompPanel);
-
                             removeTabAt(i);
                             return tabTitleCompPanel;
                         }
