@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
 import com.l7tech.objectmodel.EntityType;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -17,7 +17,7 @@ public class RestResourceLocatorImpl implements ApplicationListener<ContextRefre
     /**
      * The rest resource entity map
      */
-    private final Map<EntityType, RestEntityResource> restEntityResourceMap = new HashMap<>();
+    private final Map<EntityType, RestEntityBaseResource> restEntityResourceMap = new HashMap<>();
 
     /**
      * This returns the RestEntityResource for the given entity type. Or null if there is no such RestEntityResource
@@ -26,7 +26,7 @@ public class RestResourceLocatorImpl implements ApplicationListener<ContextRefre
      * @return The RestEntityResource for the given entityType or null if there is no such RestEntityResource
      */
     @Override
-    public RestEntityResource findByEntityType(EntityType entityType) {
+    public RestEntityBaseResource findByEntityType(EntityType entityType) {
         return restEntityResourceMap.get(entityType);
     }
 
@@ -47,8 +47,8 @@ public class RestResourceLocatorImpl implements ApplicationListener<ContextRefre
      * @param applicationContext The applicationContext to find the RestEntityResource's in
      */
     private void buildReferenceEntityCache(ApplicationContext applicationContext) {
-        final Map<String, RestEntityResource> beans = applicationContext.getBeansOfType(RestEntityResource.class);
-        for (RestEntityResource restEntityResource : beans.values()) {
+        final Map<String, RestEntityBaseResource> beans = applicationContext.getBeansOfType(RestEntityBaseResource.class);
+        for (RestEntityBaseResource restEntityResource : beans.values()) {
             restEntityResourceMap.put(restEntityResource.getEntityType(), restEntityResource);
         }
     }

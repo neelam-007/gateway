@@ -7,10 +7,12 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -28,7 +30,7 @@ import java.util.List;
 @Provider
 @Path(PrivateKeyResource.Version_URI + PrivateKeyResource.privateKey_URI)
 @Singleton
-public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationContext>, ReadingResource<PrivateKeyMO>, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource<PrivateKeyMO>, TemplatingResource<PrivateKeyMO> {
+public class PrivateKeyResource implements RestEntityBaseResource<PrivateKeyMO>,  CreatingResource<PrivateKeyCreationContext>, ReadingResource<PrivateKeyMO>, UpdatingResource<PrivateKeyMO>, DeletingResource, ListingResource<PrivateKeyMO>, TemplatingResource<PrivateKeyMO> {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
@@ -108,6 +110,24 @@ public class PrivateKeyResource implements CreatingResource<PrivateKeyCreationCo
     public Response updateResource(PrivateKeyMO resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.updateResource(id, resource);
         return Response.ok().entity(toReference(resource)).build();
+    }
+
+    @Override
+    public Item<PrivateKeyMO> toReference(EntityHeader entityHeader) {
+        return new ItemBuilder<PrivateKeyMO>(entityHeader.getName(), entityHeader.getStrId(), factory.getEntityType().name())
+                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), entityHeader.getStrId())))
+                .build();
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType() {
+        return factory.getEntityType();
+    }
+
+    @Override
+    public String getUrl(String id) {
+        return RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id);
     }
 
     @POST

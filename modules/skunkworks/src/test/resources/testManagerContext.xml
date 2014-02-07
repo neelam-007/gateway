@@ -745,6 +745,10 @@
         <constructor-arg index="6" ref="ssgKeyMetadataManager"/>
     </bean>
 
+    <bean id="keyAccessFilter" class="com.l7tech.server.GatewayKeyAccessFilter">
+        <property name="defaultKey" ref="defaultKey"/>
+    </bean>
+
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
     <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance" primary="true"/>

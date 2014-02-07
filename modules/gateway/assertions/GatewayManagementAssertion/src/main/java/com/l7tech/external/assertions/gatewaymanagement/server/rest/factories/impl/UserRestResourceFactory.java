@@ -31,6 +31,7 @@ public class UserRestResourceFactory {
 
 
     private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
+            .put("id", "id")
             .put("login", "login").map();
     private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
             .put("login", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("login", RestResourceFactoryUtils.stringConvert))
@@ -51,6 +52,10 @@ public class UserRestResourceFactory {
             if(filters.containsKey("login")){
                 for(Object login: filters.get("login")){
                     users.add(userManager.userToHeader(userManager.findByLogin(login.toString())));
+                }
+            }else if(filters.containsKey("id")){
+                for(Object id: filters.get("id")){
+                    users.add(userManager.userToHeader(userManager.findByPrimaryKey(id.toString())));
                 }
             }else{
                 users.addAll(userManager.findAllHeaders());
@@ -81,7 +86,7 @@ public class UserRestResourceFactory {
     }
 
     public UserMO getResource(@NotNull String providerId, @NotNull String login) throws FindException, ResourceFactory.ResourceNotFoundException {
-        User user = retrieveUserManager(providerId).findByLogin(login);
+        User user = retrieveUserManager(providerId).findByPrimaryKey(login);
         if(user== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + login);
         }

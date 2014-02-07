@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
 public class DependencyPublishedServiceTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyPublishedServiceTest.class.getName());
 
-    private final Policy policy =  new Policy(PolicyType.INTERNAL, "Policy","",false);
+    private final Policy policy =  new Policy(PolicyType.PRIVATE_SERVICE, "Policy for service","",false);
     private final PublishedService service = new PublishedService();
     private final SecurityZone securityZone =  new SecurityZone();
     private final SecurityZone securityZone1 =  new SecurityZone();
@@ -80,6 +80,7 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
                         "</wsp:Policy>";
 
         policy.setXml(policyXml);
+        policy.setName("Policy for Test Service");
         policy.setGuid(UUID.randomUUID().toString());
         policyManager.save(policy);
         policyGoids.add(policy.getGoid());

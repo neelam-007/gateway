@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
@@ -127,7 +127,7 @@ public class DependencyResource {
     }
 
     private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
-        RestEntityResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
+        RestEntityBaseResource restEntityResource = restResourceLocator.findByEntityType(entityHeader.getType());
         if (restEntityResource != null) {
             return restEntityResource.toReference(entityHeader);
         }
@@ -144,6 +144,8 @@ public class DependencyResource {
                     GroupResource groupResource = ((IdentityProviderResource) restEntityResource).groups(((IdentityHeader) entityHeader).getProviderGoid().toString());
                     return groupResource.toReference((IdentityHeader) entityHeader);
                 }
+            }else if (entityHeader.getType().equals(EntityType.SSG_KEY_ENTRY)){
+                entityHeader.getStrId();
             }
         } catch (ResourceFactory.ResourceNotFoundException e) {
             throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType(), ExceptionUtils.getDebugException(e));

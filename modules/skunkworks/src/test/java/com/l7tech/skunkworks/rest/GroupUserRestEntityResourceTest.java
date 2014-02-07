@@ -87,7 +87,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         assertNotNull(userList.getContent());
         assertEquals(1, userList.getContent().size());
-        assertEquals(users.get(0).getLogin(),userList.getContent().get(0).getName());
+        assertEquals(users.get(0).getId(),userList.getContent().get(0).getId());
 
     }
 
@@ -113,7 +113,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         assertNotNull(groupList.getContent());
         assertEquals(1, groupList.getContent().size());
-        assertEquals(groups.get(0).getName(),groupList.getContent().get(0).getName());
+        assertEquals(groups.get(0).getId(),groupList.getContent().get(0).getId());
 
     }
 

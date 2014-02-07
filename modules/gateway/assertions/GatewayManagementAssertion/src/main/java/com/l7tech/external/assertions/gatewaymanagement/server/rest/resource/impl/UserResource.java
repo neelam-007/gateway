@@ -62,8 +62,8 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
     }
 
     private Item<UserMO> toReference(UserMO resource) {
-        return new ItemBuilder<UserMO>(resource.getLogin(), resource.getId(), EntityType.USER.name())
-                .addLink(ManagedObjectFactory.createLink("self",getUsersUri(resource.getLogin()).toString()))
+        return new ItemBuilder<UserMO>(resource.getId(), resource.getId(), EntityType.USER.name())
+                .addLink(ManagedObjectFactory.createLink("self",getUsersUri(resource.getId()).toString()))
                 .build();
     }
 

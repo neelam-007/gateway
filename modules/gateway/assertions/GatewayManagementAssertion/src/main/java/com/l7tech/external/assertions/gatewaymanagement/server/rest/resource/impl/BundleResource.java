@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
@@ -131,17 +132,22 @@ public class BundleResource {
                 })) {
                     continue;
                 }
-                // todo add handling for groups,users
-                RestEntityResource restResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
-                Item resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
-                filterLinks(resource);
-                items.add(resource);
-                //noinspection unchecked
-                Mapping mapping = restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy);
-                mapping.setSrcUri(restResource.getUrl(resource.getId()));
-                //TODO: is there a better way to get these dependencies?
-                mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
-                mappings.add(mapping);
+                RestEntityBaseResource restBaseResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
+                if(restBaseResource instanceof RestEntityResource){
+                    RestEntityResource restResource = (RestEntityResource)restBaseResource;
+                    Item resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
+                    filterLinks(resource);
+                    items.add(resource);
+                    //noinspection unchecked
+                    Mapping mapping = restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy);
+                    mapping.setSrcUri(restResource.getUrl(resource.getId()));
+                    //TODO: is there a better way to get these dependencies?
+                    mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
+                    mappings.add(mapping);
+                }else{
+                    // todo add handling for groups,users, private keys
+                    throw new UnsupportedOperationException("make it work for: "+restBaseResource.getClass());
+                }
             }
         }
 

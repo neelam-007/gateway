@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements CreatingResource<R>, ReadingResource<R>, UpdatingResource<R>, DeletingResource, ListingResource<R>, TemplatingResource<R> {
+public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & TemplateFactory<R>> implements RestEntityBaseResource<R>, CreatingResource<R>, ReadingResource<R>, UpdatingResource<R>, DeletingResource, ListingResource<R>, TemplatingResource<R> {
     public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     /**
@@ -90,6 +90,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
 
     protected abstract Item<R> toReference(R resource);
 
+    @Override
     public Item<R> toReference(EntityHeader entityHeader) {
         return toReference(entityHeader.getStrId(), entityHeader.getName());
     }
@@ -105,6 +106,7 @@ public abstract class RestEntityResource<R, F extends RestResourceFactory<R> & T
      * @param id The id of the resource. Leave it blank to get the resource listing url
      * @return The url of the resource
      */
+    @Override
     public String getUrl(String id) {
         return RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id);
     }

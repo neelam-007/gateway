@@ -49,7 +49,6 @@ public @interface Dependency {
         CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY),
         ID_PROVIDER_CONFIG(EntityType.ID_PROVIDER_CONFIG),
         JMS_ENDPOINT(EntityType.JMS_ENDPOINT),
-        SSG_KEYSTORE(EntityType.SSG_KEYSTORE),
         SSG_ACTIVE_CONNECTOR(EntityType.SSG_ACTIVE_CONNECTOR),
         SSG_PRIVATE_KEY(EntityType.SSG_KEY_ENTRY),
         SSG_CONNECTOR(EntityType.SSG_CONNECTOR),

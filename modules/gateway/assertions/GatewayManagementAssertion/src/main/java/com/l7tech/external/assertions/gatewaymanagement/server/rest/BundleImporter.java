@@ -1,12 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.CreatingResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.UpdatingResource;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -57,7 +60,7 @@ public class BundleImporter {
                         throw new IllegalArgumentException("Cannot find mapping for " + item.getType() + " id: " + item.getId());
                     }
 
-                    RestEntityResource restEntityResource = restResourceLocator.findByEntityType(EntityType.valueOf(mapping.getType()));
+                    RestEntityBaseResource restEntityResource = restResourceLocator.findByEntityType(EntityType.valueOf(mapping.getType()));
 
                     switch (mapping.getAction()) {
                         case NewOrExisting:
@@ -79,7 +82,7 @@ public class BundleImporter {
                                     transactionStatus.setRollbackOnly();
                                 } else {
                                     try {
-                                        createResourse(item, mapping, restEntityResource);
+                                        createResource(item, mapping, restEntityResource);
                                     } catch (Exception e) {
                                         transactionStatus.setRollbackOnly();
                                     }
@@ -107,25 +110,29 @@ public class BundleImporter {
         return mappingsRtn;
     }
 
-    protected void createResourse(Item item, Mapping mapping, RestEntityResource restEntityResource) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException {
-        try {
-            //noinspection unchecked
-            restEntityResource.updateResource(item.getContent(), item.getId());
-        } catch (ResourceFactory.ResourceNotFoundException e) {
-            mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
-            throw e;
-        } catch (ResourceFactory.InvalidResourceException e) {
-            mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
-            throw e;
+    protected void createResource(Item item, Mapping mapping, RestEntityBaseResource restEntityResource) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException {
+        if(restEntityResource instanceof CreatingResource && restEntityResource instanceof UpdatingResource){
+            try {
+                //noinspection unchecked
+                ((UpdatingResource)restEntityResource).updateResource(item.getContent(), item.getId());
+            } catch (ResourceFactory.ResourceNotFoundException e) {
+                mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
+                throw e;
+            } catch (ResourceFactory.InvalidResourceException e) {
+                mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
+                throw e;
+            }
+            mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
+            mapping.setTargetId(item.getId());
+            mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
+        }else{
+            throw new UnsupportedOperationException("Operation not supported for entity type" + item.getType());
         }
-        mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
-        mapping.setTargetId(item.getId());
-        mapping.setTargetUri(restEntityResource.getUrl(item.getId()));
 
         //apply mappings
     }
 
-    private Item locateResource(final Mapping mapping, final RestEntityResource restEntityResource) {
+    private Item locateResource(final Mapping mapping, final RestEntityBaseResource restEntityResource) {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         final TransactionTemplate tt = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         tt.setReadOnly( true );
@@ -135,12 +142,12 @@ public class BundleImporter {
                 public Item doInTransaction( final TransactionStatus transactionStatus ) {
                     try {
                         return restEntityResource.getResource(mapping.getTargetId() != null ? mapping.getTargetId() : mapping.getSrcId());
-                    } catch (ResourceFactory.ResourceNotFoundException e) {
+                    } catch (ResourceFactory.ResourceNotFoundException | FindException e) {
                         return null;
                     }
                 }
             });
-        } catch(UnexpectedRollbackException e){
+        } catch(UnexpectedRollbackException  e){
             return null;
         }
     }

@@ -168,7 +168,6 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /** @return the keystore id from which this entry came. */
-    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.SSG_KEYSTORE)
     public Goid getKeystoreId() {
         return keystoreId;
     }

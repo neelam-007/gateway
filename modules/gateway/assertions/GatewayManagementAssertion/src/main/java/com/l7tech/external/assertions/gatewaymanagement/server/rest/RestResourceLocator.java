@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
 import com.l7tech.objectmodel.EntityType;
 
 /**
@@ -13,5 +13,5 @@ public interface RestResourceLocator {
      * @param entityType The entity type to return the entity resource for.
      * @return The RestEntityResource for the given entity type, or null if there is no RestEntityResource for that type.
      */
-    RestEntityResource findByEntityType(EntityType entityType);
+    RestEntityBaseResource findByEntityType(EntityType entityType);
 }
