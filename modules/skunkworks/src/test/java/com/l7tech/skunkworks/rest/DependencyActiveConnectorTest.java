@@ -10,6 +10,8 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.junit.*;
@@ -23,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 *
 */
 
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyActiveConnectorTest extends DependencyTestBase{
     private static final Logger logger = Logger.getLogger(DependencyActiveConnectorTest.class.getName());
 
@@ -127,7 +130,7 @@ public class DependencyActiveConnectorTest extends DependencyTestBase{
                 assertEquals(securePassword.getId(), keyDep.getDependentObject().getId());
                 assertEquals(securePassword.getName(), keyDep.getDependentObject().getName());
 
-                DependencyMO zoneDep = getDependency(dep.getDependencies(),EntityType.SECURITY_ZONE);
+                DependencyMO zoneDep = getDependency(dep.getDependencies(), EntityType.SECURITY_ZONE);
 
                 assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getDependentObject().getType());
                 assertEquals(securityZone.getId(), zoneDep.getDependentObject().getId());
