@@ -243,13 +243,10 @@ if [ "$RHEL_MAJOR_RELEASE" == "5" ]; then
 	echo 'ttyS0' >> /etc/securetty
         fi
 elif [ "$RHEL_MAJOR_RELEASE" == "6" ]; then
-	# SSG-5875
-	for TTY_TO_ADD in `echo "ttyS0 ttyS1"`; do
-		if [ ! -f "/etc/init/layer7-$TTY_TO_ADD.conf" ]; then
-			echo "stop on runlevel [S016]" > "/etc/init/layer7-$TTY_TO_ADD.conf"
-			echo "start on runlevel [23]" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
-			echo "respawn" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
-			echo "exec agetty -L /dev/$TTY_TO_ADD 9600 vt100" >> "/etc/init/layer7-$TTY_TO_ADD.conf"
+	# SSG-8108 (undoing SSG-5875)
+	for TTY_TO_REMOVE in `echo "ttyS0 ttyS1"`; do
+		if [ -f "/etc/init/layer7-$TTY_TO_REMOVE.conf" ]; then
+			rm -f "/etc/init/layer7-$TTY_TO_REMOVE.conf" &>/dev/null
 		fi
 	done
 fi
