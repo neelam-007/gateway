@@ -427,30 +427,115 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals("/cookiePath", cCookie.getPath());
     }
 
+    /**
+     * For backwards compatibility, request domain and/or path should only be used if the response cookie domain and/or path is missing and the context is configured to overwrite the domain and/or path.
+     */
+    @BugId("SSG-8033")
     @Test
-    public void responseSetCookieHeadersDoNotOverwriteDomainAndPath() throws Exception {
+    public void responseSetCookieHeadersDoNotOverwriteDomain() throws Exception {
         requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "a=hasPath; path=/cookiePath"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
-        context.setOverwriteResponseCookieAttributes(false);
+        context.setOverwriteResponseCookieDomain(false);
         HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(0, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(4, cookiesMap.size());
+
         final HttpCookie fooCookie = cookiesMap.get("foo");
         assertEquals("bar", fooCookie.getCookieValue());
         assertNull(fooCookie.getDomain());
-        assertNull(fooCookie.getPath());
+        assertEquals("/test", fooCookie.getPath());
+
         final HttpCookie aCookie = cookiesMap.get("a");
         assertEquals("hasPath", aCookie.getCookieValue());
         assertNull(aCookie.getDomain());
         assertEquals("/cookiePath", aCookie.getPath());
+
         final HttpCookie bCookie = cookiesMap.get("b");
         assertEquals("hasDomain", bCookie.getCookieValue());
         assertEquals("cookieDomain", bCookie.getDomain());
-        assertNull("/test", bCookie.getPath());
+        assertEquals("/test", bCookie.getPath());
+
+        final HttpCookie cCookie = cookiesMap.get("c");
+        assertEquals("hasPathAndDomain", cCookie.getCookieValue());
+        assertEquals("cookieDomain", cCookie.getDomain());
+        assertEquals("/cookiePath", cCookie.getPath());
+    }
+
+    /**
+     * For backwards compatibility, request domain and/or path should only be used if the response cookie domain and/or path is missing and the context is configured to overwrite the domain and/or path.
+     */
+    @BugId("SSG-8033")
+    @Test
+    public void responseSetCookieHeadersDoNotOverwritePath() throws Exception {
+        requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "a=hasPath; path=/cookiePath"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
+        context.setOverwriteResponseCookiePath(false);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
+        assertEquals(4, cookiesMap.size());
+
+        final HttpCookie fooCookie = cookiesMap.get("foo");
+        assertEquals("bar", fooCookie.getCookieValue());
+        assertEquals("localhost", fooCookie.getDomain());
+        assertNull(fooCookie.getPath());
+
+        final HttpCookie aCookie = cookiesMap.get("a");
+        assertEquals("hasPath", aCookie.getCookieValue());
+        assertEquals("localhost", aCookie.getDomain());
+        assertEquals("/cookiePath", aCookie.getPath());
+
+        final HttpCookie bCookie = cookiesMap.get("b");
+        assertEquals("hasDomain", bCookie.getCookieValue());
+        assertEquals("cookieDomain", bCookie.getDomain());
+        assertNull(bCookie.getPath());
+
+        final HttpCookie cCookie = cookiesMap.get("c");
+        assertEquals("hasPathAndDomain", cCookie.getCookieValue());
+        assertEquals("cookieDomain", cCookie.getDomain());
+        assertEquals("/cookiePath", cCookie.getPath());
+    }
+
+    /**
+     * For backwards compatibility, request domain and/or path should only be used if the response cookie domain and/or path is missing and the context is configured to overwrite the domain and/or path.
+     */
+    @BugId("SSG-8033")
+    @Test
+    public void responseSetCookieHeadersDoNotOverwriteDomainOrPath() throws Exception {
+        requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "a=hasPath; path=/cookiePath"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
+        context.setOverwriteResponseCookieDomain(false);
+        context.setOverwriteResponseCookiePath(false);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
+        assertEquals(4, cookiesMap.size());
+
+        final HttpCookie fooCookie = cookiesMap.get("foo");
+        assertEquals("bar", fooCookie.getCookieValue());
+        assertNull(fooCookie.getDomain());
+        assertNull(fooCookie.getPath());
+
+        final HttpCookie aCookie = cookiesMap.get("a");
+        assertEquals("hasPath", aCookie.getCookieValue());
+        assertNull(aCookie.getDomain());
+        assertEquals("/cookiePath", aCookie.getPath());
+
+        final HttpCookie bCookie = cookiesMap.get("b");
+        assertEquals("hasDomain", bCookie.getCookieValue());
+        assertEquals("cookieDomain", bCookie.getDomain());
+        assertNull(bCookie.getPath());
+
         final HttpCookie cCookie = cookiesMap.get("c");
         assertEquals("hasPathAndDomain", cCookie.getCookieValue());
         assertEquals("cookieDomain", cCookie.getDomain());

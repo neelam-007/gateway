@@ -502,16 +502,26 @@ public interface PolicyEnforcementContext extends Closeable {
     void close();
 
     /**
-     * @return true if response cookies should have their domain and path overwritten with the gateway domain and path
-     * respectively or false if the response cookies should retain their original domain and path (ie. for a reverse-proxy).
+     * @return true if response cookies should have their path overwritten with the gateway path or false if the
+     * response cookies should retain their original path (ie. for a reverse-proxy).
      */
-    boolean isOverwriteResponseCookieAttributes();
+    boolean isOverwriteResponseCookiePath();
 
     /**
-     * @param overwriteResponseCookieAttributes set to true if response cookies should have their domain and path overwritten
-     *                                         with the gateway domain and service path respectively.
+     * @param overwriteResponseCookiePath set to true if response cookies should have their path overwritten with the gateway path.
      */
-    void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes);
+    void setOverwriteResponseCookiePath(final boolean overwriteResponseCookiePath);
+
+    /**
+     * @return true if response cookies should have their domain overwritten with the gateway domain or false if the
+     * response cookies should retain their original domain (ie. for a reverse-proxy).
+     */
+    boolean isOverwriteResponseCookieDomain();
+
+    /**
+     * @param overwriteResponseCookieDomain set to true if response cookies should have their domain overwritten with the gateway domain.
+     */
+    void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain);
 
     final static class AssertionResult {
         private final Assertion assertion;

@@ -2,7 +2,6 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
@@ -14,7 +13,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
@@ -48,6 +46,7 @@ import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.policy.assertion.ServerTrueAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import org.junit.AfterClass;
@@ -64,7 +63,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Level;
@@ -1100,16 +1098,25 @@ public class ServerVariablesTest {
         expandAndCheck(context, "${ssgnode.hostname}", ServerConfig.getInstance().getHostname());
     }
 
+    @BugId("SSG-8033")
     @Test
     public void testResponseCookieOverwritePath() throws Exception {
         final PolicyEnforcementContext context = context();
         // default is true
-        assertTrue(context.isOverwriteResponseCookieAttributes());
-        context.setVariable("response.cookie.overwriteAttributes", false);
-        assertFalse(context.isOverwriteResponseCookieAttributes());
+        assertTrue(context.isOverwriteResponseCookiePath());
+        context.setVariable("response.cookie.overwritePath", false);
+        assertFalse(context.isOverwriteResponseCookiePath());
     }
 
-
+    @BugId("SSG-8033")
+    @Test
+    public void testResponseCookieOverwriteDomain() throws Exception {
+        final PolicyEnforcementContext context = context();
+        // default is true
+        assertTrue(context.isOverwriteResponseCookieDomain());
+        context.setVariable("response.cookie.overwriteDomain", false);
+        assertFalse(context.isOverwriteResponseCookieDomain());
+    }
 
 
     // - PRIVATE

@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -400,13 +401,10 @@ public class HttpForwardingRuleEnforcer {
             for (String setCookieValue : setCookieValues) {
                 try {
                     final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                    if (context.isOverwriteResponseCookieAttributes()) {
-                        // possibly overwrite cookie domain and path
-                        cookiesKnob.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
-                    } else {
-                        // always use original cookie domain and path
-                        cookiesKnob.addCookie(new HttpCookie(setCookieValue));
-                    }
+                    final URL requestUrl = routedRequestParams.getTargetUrl();
+                    final HttpCookie cookie = new HttpCookie(context.isOverwriteResponseCookieDomain() ? requestUrl.getHost() : null,
+                            context.isOverwriteResponseCookiePath() ? requestUrl.getPath() : null, setCookieValue);
+                    cookiesKnob.addCookie(cookie);
                 } catch (final HttpCookie.IllegalFormatException e) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
                 }

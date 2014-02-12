@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
@@ -635,17 +634,31 @@ public class ServerVariables {
                     }
                 }
             }),
-            new SettableVariable("response.cookie.overwriteAttributes",
+            new SettableVariable("response.cookie.overwritePath",
                     new Getter() {
                         @Override
-                        public Object get(String name, PolicyEnforcementContext context) {
-                            return context.isOverwriteResponseCookieAttributes();
+                        public Object get(final String name, final PolicyEnforcementContext context) {
+                            return context.isOverwriteResponseCookiePath();
                         }
                     },
                     new Setter() {
                         @Override
-                        public void set(String name, Object value, PolicyEnforcementContext context) {
-                            context.setOverwriteResponseCookieAttributes(Boolean.parseBoolean(value.toString()));
+                        public void set(final String name, final Object value, final PolicyEnforcementContext context) {
+                            context.setOverwriteResponseCookiePath(Boolean.parseBoolean(value.toString()));
+                        }
+                    }
+            ),
+            new SettableVariable("response.cookie.overwriteDomain",
+                    new Getter() {
+                        @Override
+                        public Object get(final String name, final PolicyEnforcementContext context) {
+                            return context.isOverwriteResponseCookieDomain();
+                        }
+                    },
+                    new Setter() {
+                        @Override
+                        public void set(final String name, final Object value, final PolicyEnforcementContext context) {
+                            context.setOverwriteResponseCookieDomain(Boolean.parseBoolean(value.toString()));
                         }
                     }
             ),

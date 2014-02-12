@@ -523,13 +523,23 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public boolean isOverwriteResponseCookieAttributes() {
-        return delegate.isOverwriteResponseCookieAttributes();
+    public boolean isOverwriteResponseCookiePath() {
+        return delegate.isOverwriteResponseCookiePath();
     }
 
     @Override
-    public void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes) {
-        delegate.setOverwriteResponseCookieAttributes(overwriteResponseCookieAttributes);
+    public void setOverwriteResponseCookiePath(final boolean overwriteResponseCookiePath) {
+        delegate.setOverwriteResponseCookiePath(overwriteResponseCookiePath);
+    }
+
+    @Override
+    public boolean isOverwriteResponseCookieDomain() {
+        return delegate.isOverwriteResponseCookieDomain();
+    }
+
+    @Override
+    public void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain) {
+        delegate.setOverwriteResponseCookieDomain(overwriteResponseCookieDomain);
     }
 
     //- PROTECTED

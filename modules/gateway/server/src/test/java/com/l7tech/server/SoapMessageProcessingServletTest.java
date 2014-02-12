@@ -9,6 +9,7 @@ import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
@@ -213,8 +214,9 @@ public class SoapMessageProcessingServletTest {
         assertEquals("b", cookiesMap.get("2"));
     }
 
+    @BugId("SSG-8033")
     @Test
-    public void contextResponseCookiesAddedToResponseDoNotOverwriteDomainAndPath() throws Exception {
+    public void contextResponseCookiesAddedToResponseDoNotOverwriteDomain() throws Exception {
         request.setContent("test".getBytes());
         request.setServerName("test.l7tech.com");
         request.setRequestURI("/test");
@@ -222,7 +224,70 @@ public class SoapMessageProcessingServletTest {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
-                context.setOverwriteResponseCookieAttributes(false);
+                context.setOverwriteResponseCookieDomain(false);
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        final Map<String, String> cookiesMap = new HashMap<>();
+        final Cookie[] cookies = response.getCookies();
+        for (final Cookie cookie : cookies) {
+            cookiesMap.put(cookie.getName(), cookie.getValue());
+            assertEquals("original", cookie.getDomain());
+            assertEquals("/test", cookie.getPath());
+        }
+        assertEquals(2, cookiesMap.size());
+        assertEquals("a", cookiesMap.get("1"));
+        assertEquals("b", cookiesMap.get("2"));
+    }
+
+    @BugId("SSG-8033")
+    @Test
+    public void contextResponseCookiesAddedToResponseDoNotOverwritePath() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                context.setOverwriteResponseCookiePath(false);
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        final Map<String, String> cookiesMap = new HashMap<>();
+        final Cookie[] cookies = response.getCookies();
+        for (final Cookie cookie : cookies) {
+            cookiesMap.put(cookie.getName(), cookie.getValue());
+            assertEquals("test.l7tech.com", cookie.getDomain());
+            assertEquals("/original", cookie.getPath());
+        }
+        assertEquals(2, cookiesMap.size());
+        assertEquals("a", cookiesMap.get("1"));
+        assertEquals("b", cookiesMap.get("2"));
+    }
+
+    @BugId("SSG-8033")
+    @Test
+    public void contextResponseCookiesAddedToResponseDoNotOverwriteDomainOrPath() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                context.setOverwriteResponseCookiePath(false);
+                context.setOverwriteResponseCookieDomain(false);
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
                 cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
                 cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));

@@ -81,7 +81,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean responseWss11;
     private boolean malformedRequest;
     private boolean policyExecutionAttempted;
-    private boolean overwriteResponseCookieAttributes = true;
+    private boolean overwriteResponseCookiePath = true;
+    private boolean overwriteResponseCookieDomain = true;
     private String savedRequestL7aMessageId;
     private Deque<Integer> assertionOrdinalPath = null; // null by default, rather than an empty LinkedList, so we don't pay for it unless at least one Include is used
     private AssertionTraceListener traceListener = null;
@@ -707,13 +708,22 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
-    public boolean isOverwriteResponseCookieAttributes() {
-        return overwriteResponseCookieAttributes;
+    public boolean isOverwriteResponseCookiePath() {
+        return overwriteResponseCookiePath;
+    }
+
+    public void setOverwriteResponseCookiePath(final boolean overwriteResponseCookiePath) {
+        this.overwriteResponseCookiePath = overwriteResponseCookiePath;
     }
 
     @Override
-    public void setOverwriteResponseCookieAttributes(final boolean overwriteResponseCookieAttributes) {
-        this.overwriteResponseCookieAttributes = overwriteResponseCookieAttributes;
+    public boolean isOverwriteResponseCookieDomain() {
+        return overwriteResponseCookieDomain;
+    }
+
+    @Override
+    public void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain) {
+        this.overwriteResponseCookieDomain = overwriteResponseCookieDomain;
     }
 
     /** @return true if the MessageProcessor got as far as calling checkRequest() for this context. */

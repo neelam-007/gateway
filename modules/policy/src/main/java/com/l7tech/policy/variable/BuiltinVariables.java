@@ -225,7 +225,8 @@ public class BuiltinVariables {
             new VariableMetadata("response.authenticateddns", true, false, null, false),
             new VariableMetadata("response.soap", true, false, null, false),
             new VariableMetadata("response.buffer", true, false, null, false),
-            new VariableMetadata("response.cookie.overwriteAttributes", true, false, null, true),
+            new VariableMetadata("response.cookie.overwritePath", true, false, null, true),
+            new VariableMetadata("response.cookie.overwriteDomain", true, false, null, true),
 
             new VariableMetadata("request.tcp.remoteaddress", true, false, null, false),
             new VariableMetadata("request.tcp.remoteip", true, false, null, false),

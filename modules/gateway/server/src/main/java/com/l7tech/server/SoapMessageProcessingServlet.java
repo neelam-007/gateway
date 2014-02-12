@@ -486,12 +486,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
             }
             URI url = URI.create(reqKnob.getRequestUrl());
-            //SSG-6881 Determine to overwrite the path using the SSG request path or the original path.
-            if (context.isOverwriteResponseCookieAttributes()) {
-                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
-            } else {
-                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie, null, null));
-            }
+            //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
+            cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie,
+                context.isOverwriteResponseCookieDomain() ? url.getHost() : null,
+                context.isOverwriteResponseCookiePath() ? url.getPath() : null));
         }
         return cookies;
     }
