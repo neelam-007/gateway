@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57f541927144f77cd71f562ef2d31656" version="1">
-        <l7:ServiceDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" id="57f541927144f77cd71f562ef2d31656" version="1">
+    <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57f541927144f77cd71f562ef2d31656" version="2">
+        <l7:ServiceDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" id="57f541927144f77cd71f562ef2d31656" version="2">
             <l7:Name>simpleRestService</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -18,7 +18,7 @@
         </l7:ServiceDetail>
         <l7:Resources>
             <l7:ResourceSet tag="policy">
-                <l7:Resource type="policy" version="8"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+                <l7:Resource type="policy" version="2"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:All wsp:Usage="Required">
         <L7p:Simple/>
@@ -45,8 +45,16 @@
             <L7p:SqlQuery stringValue="select current_version from ssg_version;"/>
             <L7p:VariablePrefix stringValue="simpleJdbcQuery"/>
         </L7p:JdbcQuery>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+            <L7p:VariableToSet stringValue="inSimpleCompositeEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Encapsulated>
+            <L7p:EncapsulatedAssertionConfigGuid stringValue="75062052-9f23-4be2-b7fc-c3caad51620d"/>
+            <L7p:EncapsulatedAssertionConfigName stringValue="Simple Composite Encapsulated Assertion"/>
+        </L7p:Encapsulated>
         <L7p:HardcodedResponse>
-            <L7p:Base64ResponseBody stringValue="PHNpbXBsZVJlc3BvbnNlPgogICA8cmVxdWVzdC51cmw+JHtyZXF1ZXN0LnVybH08L3JlcXVlc3QudXJsPgogICA8cmVxdWVzdC5odHRwLm1ldGhvZD4ke3JlcXVlc3QuaHR0cC5tZXRob2R9PC9yZXF1ZXN0Lmh0dHAubWV0aG9kPgogICA8cmVxdWVzdC5tYWlucGFydD4ke3JlcXVlc3QubWFpbnBhcnR9PC9yZXF1ZXN0Lm1haW5wYXJ0PgogICA8c2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgICAgJHtzaW1wbGVJbmNsdWRlZFBvbGljeUZyYWdtZW50VmFyaWFibGV9CiAgIDwvc2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgPG91dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50PgogICAgICAke291dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50fQogICA8L291dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50PgogICA8c2ltcGxlSmRiY1F1ZXJ5PgogICAgICA8c3NnVmVyc2lvbj4ke3NpbXBsZUpkYmNRdWVyeS5zc2dWZXJzaW9ufTwvc3NnVmVyc2lvbj4KICAgPC9zaW1wbGVKZGJjUXVlcnk+Cjwvc2ltcGxlUmVzcG9uc2U+"/>
+            <L7p:Base64ResponseBody stringValue="PHNpbXBsZVJlc3BvbnNlPgogICA8cmVxdWVzdC51cmw+JHtyZXF1ZXN0LnVybH08L3JlcXVlc3QudXJsPgogICA8cmVxdWVzdC5odHRwLm1ldGhvZD4ke3JlcXVlc3QuaHR0cC5tZXRob2R9PC9yZXF1ZXN0Lmh0dHAubWV0aG9kPgogICA8cmVxdWVzdC5tYWlucGFydD4ke3JlcXVlc3QubWFpbnBhcnR9PC9yZXF1ZXN0Lm1haW5wYXJ0PgogICA8c2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgICAgJHtzaW1wbGVJbmNsdWRlZFBvbGljeUZyYWdtZW50VmFyaWFibGV9CiAgICAgICAgICR7c2ltcGxlTmVzdGVkSW5jbHVkZWRQb2xpY3lGcmFnbWVudFZhcmlhYmxlfQogICA8L3NpbXBsZUluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+CiAgIDxvdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudD4KICAgICAgJHtvdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudH0KICAgPC9vdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudD4KICAgPHNpbXBsZUpkYmNRdWVyeT4KICAgICAgPHNzZ1ZlcnNpb24+JHtzaW1wbGVKZGJjUXVlcnkuc3NnVmVyc2lvbn08L3NzZ1ZlcnNpb24+CiAgIDwvc2ltcGxlSmRiY1F1ZXJ5PgogICA8b3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnQ+CiAgICAgICR7b3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnR9CiAgIDwvb3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnQ+Cjwvc2ltcGxlUmVzcG9uc2U+"/>
         </L7p:HardcodedResponse>
     </wsp:All>
 </wsp:Policy>]]></l7:Resource>

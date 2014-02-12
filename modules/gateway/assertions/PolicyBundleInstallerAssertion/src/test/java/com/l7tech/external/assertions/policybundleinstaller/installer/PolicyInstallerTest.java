@@ -117,9 +117,11 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testAllPolicyBundlesInstall() throws Exception {
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/oauthtest");
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            installPoliciesTest(bundleInfo.left, null);
+            if (OAUTH_TEST_BUNDLE_BASE_NAME.equals(bundleInfo.right)) {
+                installPoliciesTest(bundleInfo.left, null);
+            }
         }
     }
 
@@ -229,9 +231,11 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
      */
     @Test
     public void testPolicyNamePrefixedInstallation() throws Exception {
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), "/com/l7tech/external/assertions/policybundleinstaller/bundles/oauthtest");
+        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
         for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            installPoliciesTest(bundleInfo.left, "Version 1 - ");
+            if (OAUTH_TEST_BUNDLE_BASE_NAME.equals(bundleInfo.right)) {
+                installPoliciesTest(bundleInfo.left, "Version 1 - ");
+            }
         }
 
     }

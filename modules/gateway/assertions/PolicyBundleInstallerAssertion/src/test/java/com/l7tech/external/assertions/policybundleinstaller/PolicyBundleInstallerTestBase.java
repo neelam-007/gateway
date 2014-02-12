@@ -22,6 +22,7 @@ import java.text.MessageFormat;
 import java.util.*;
 
 public abstract class PolicyBundleInstallerTestBase {
+    protected final static String TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles";
     protected final static String OAUTH_TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles/oauthtest";
     protected final static String OAUTH_TEST_BUNDLE_ID = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
     protected final static String SIMPLE_TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles/simpletest";
