@@ -45,7 +45,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
     //- PROTECTED
 
     @Override
-    protected IdentityProviderMO asResource( final IdentityProviderConfig identityProviderConfig ) {
+    public IdentityProviderMO asResource( final IdentityProviderConfig identityProviderConfig ) {
         IdentityProviderMO identityProvider = ManagedObjectFactory.createIdentityProvider();
 
         identityProvider.setName( identityProviderConfig.getName() );

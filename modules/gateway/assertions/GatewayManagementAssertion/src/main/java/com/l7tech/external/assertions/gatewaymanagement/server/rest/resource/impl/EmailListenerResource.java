@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.EmailListenerRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.EmailListenerAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.EmailListenerTransformer;
 import com.l7tech.gateway.api.EmailListenerMO;
-import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -16,18 +17,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + EmailListenerResource.emailListener_URI)
 @Singleton
-public class EmailListenerResource extends RestEntityResource<EmailListenerMO, EmailListenerRestResourceFactory> {
+public class EmailListenerResource extends RestEntityResource<EmailListenerMO, EmailListenerAPIResourceFactory, EmailListenerTransformer> {
 
     protected static final String emailListener_URI = "emailListeners";
 
     @Override
     @SpringBean
-    public void setFactory(EmailListenerRestResourceFactory factory) {
+    public void setFactory(EmailListenerAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<EmailListenerMO> toReference(EmailListenerMO resource) {
-        return toReference(resource.getId(), resource.getName());
+    @SpringBean
+    public void setTransformer(EmailListenerTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EmailListenerMO emailListenerMO) {
+        return getUrlString(emailListenerMO.getId());
     }
 }

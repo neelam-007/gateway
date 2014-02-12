@@ -38,7 +38,7 @@ import static com.l7tech.util.TextUtils.trim;
 /**
  *
  */
-abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
+abstract class ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
 
     //- PUBLIC
 

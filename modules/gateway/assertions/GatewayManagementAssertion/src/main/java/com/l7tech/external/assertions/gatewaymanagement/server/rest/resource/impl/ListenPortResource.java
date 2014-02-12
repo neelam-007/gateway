@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ListenPortRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ListenPortAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ListenPortTransformer;
 import com.l7tech.gateway.api.ListenPortMO;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -16,18 +17,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ListenPortResource.listenPort_URI)
 @Singleton
-public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenPortRestResourceFactory> {
+public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenPortAPIResourceFactory, ListenPortTransformer> {
 
     protected static final String listenPort_URI = "listenPorts";
 
     @Override
     @SpringBean
-    public void setFactory(ListenPortRestResourceFactory factory) {
+    public void setFactory(ListenPortAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<ListenPortMO> toReference(ListenPortMO resource) {
-        return toReference(resource.getId(), resource.getName());
+    @SpringBean
+    public void setTransformer(ListenPortTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull ListenPortMO listenPortMO) {
+        return getUrlString(listenPortMO.getId());
     }
 }

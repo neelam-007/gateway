@@ -2,10 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityBaseResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
@@ -42,7 +44,10 @@ public class BundleResource {
     private DependencyAnalyzer dependencyAnalyzer;
 
     @SpringBean
-    private RestResourceLocator restResourceLocator;
+    private APIUtilityLocator apiUtilityLocator;
+
+    @SpringBean
+    private URLAccessibleLocator URLAccessibleLocator;
 
     @SpringBean
     private BundleImporter bundleImporter;
@@ -116,6 +121,7 @@ public class BundleResource {
                 .build();
     }
 
+    @SuppressWarnings("unchecked")
     private Bundle createBundle(boolean includeRequestFolder, Mapping.Action defaultAction, String defaultMapBy, EntityHeader... headers) throws ResourceFactory.ResourceNotFoundException, IOException, FindException {
         List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
         List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
@@ -132,22 +138,22 @@ public class BundleResource {
                 })) {
                     continue;
                 }
-                RestEntityBaseResource restBaseResource = restResourceLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
-                if(restBaseResource instanceof RestEntityResource){
-                    RestEntityResource restResource = (RestEntityResource)restBaseResource;
-                    Item resource = restResource.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
-                    filterLinks(resource);
-                    items.add(resource);
-                    //noinspection unchecked
-                    Mapping mapping = restResource.getFactory().buildMapping(resource.getContent(), defaultAction, defaultMapBy);
-                    mapping.setSrcUri(restResource.getUrl(resource.getId()));
-                    //TODO: is there a better way to get these dependencies?
-                    mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
-                    mappings.add(mapping);
-                }else{
-                    // todo add handling for groups,users, private keys
-                    throw new UnsupportedOperationException("make it work for: "+restBaseResource.getClass());
+                APIResourceFactory apiResourceFactory = apiUtilityLocator.findFactoryByEntityType(dependentObject.getDependencyType().getEntityType());
+                APITransformer transformer = apiUtilityLocator.findTransformerByEntityType(dependentObject.getDependencyType().getEntityType());
+                URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
+                if(apiResourceFactory==null || transformer == null || urlAccessible == null){
+                    throw new FindException("Cannot find resource worker service for " + dependentObject.getDependencyType().getEntityType());
                 }
+                Object resource = apiResourceFactory.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
+                Item<?> item = transformer.convertToItem(resource);
+                item = new ItemBuilder<>(item).addLink(urlAccessible.getLink(resource)).build();
+                items.add(item);
+                //noinspection unchecked
+                Mapping mapping = apiResourceFactory.buildMapping(resource, defaultAction, defaultMapBy);
+                mapping.setSrcUri(urlAccessible.getUrl(resource));
+                //TODO: this may not be needed?
+                mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
+                mappings.add(mapping);
             }
         }
 
@@ -190,16 +196,5 @@ public class BundleResource {
             }
         }
         return null;
-    }
-
-    //TODO: is there a better way to do this?
-    private void filterLinks(Item item) {
-        Iterator<Link> links = item.getLinks().iterator();
-        while(links.hasNext()){
-            Link link = links.next();
-            if(!"self".equals(link.getRel())){
-                links.remove();
-            }
-        }
     }
 }

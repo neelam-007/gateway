@@ -84,7 +84,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
 
     @NotNull
     @Override
-    InterfaceTagMO internalAsResource( @NotNull final InterfaceTag interfaceTag ) {
+    public InterfaceTagMO internalAsResource( @NotNull final InterfaceTag interfaceTag ) {
         final InterfaceTagMO resource = ManagedObjectFactory.createInterfaceTag();
         resource.setId( getIdentifier(interfaceTag));
         resource.setName( interfaceTag.getName() );
@@ -94,7 +94,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
 
     @NotNull
     @Override
-    Pair<InterfaceTag,Integer> internalFromResource( @NotNull final Object resource ) throws InvalidResourceException {
+    public Pair<InterfaceTag,Integer> internalFromResource( @NotNull final Object resource ) throws InvalidResourceException {
         if ( !(resource instanceof InterfaceTagMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected interface tag");
 

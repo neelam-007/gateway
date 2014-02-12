@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RoleTransformer;
 import com.l7tech.gateway.api.RbacRoleMO;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -21,7 +22,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RoleResource.ROLES_URI)
 @Singleton
-public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourceFactory> {
+public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResourceFactory, RoleTransformer> {
 
     protected static final String ROLES_URI = "roles";
 
@@ -30,17 +31,24 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleRestResourc
 
     @Override
     @SpringBean
-    public void setFactory(RoleRestResourceFactory factory) {
+    public void setFactory(RoleAPIResourceFactory factory) {
         super.factory = factory;
+    }
+
+    @Override
+    @SpringBean
+    public void setTransformer(RoleTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull RbacRoleMO rbacRoleMO) {
+        return getUrlString(rbacRoleMO.getId());
     }
 
     @Path("{id}/assignments")
     public RoleAssignmentsResource assignment(@PathParam("id") String id){
         return resourceContext.initResource(new RoleAssignmentsResource(id));
-    }
-
-    @Override
-    protected Item<RbacRoleMO> toReference(RbacRoleMO resource) {
-        return toReference(resource.getId(), resource.getName());
     }
 }

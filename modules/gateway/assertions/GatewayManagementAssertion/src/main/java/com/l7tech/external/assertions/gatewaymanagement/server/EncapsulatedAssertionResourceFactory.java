@@ -223,7 +223,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
     }
 
     @Override
-    protected EncapsulatedAssertionMO asResource(EncapsulatedAssertionConfig ec) {
+    public EncapsulatedAssertionMO asResource(EncapsulatedAssertionConfig ec) {
         EncapsulatedAssertionMO er = ManagedObjectFactory.createEncapsulatedAssertion();
 
         er.setName(ec.getName());

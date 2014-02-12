@@ -2,18 +2,23 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.AssertionSecurityZoneRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.AssertionSecurityZoneAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.AssertionSecurityZoneTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,27 +26,29 @@ import java.util.List;
  */
 @Provider
 @Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
-public class AssertionSecurityZoneResource implements UpdatingResource<AssertionSecurityZoneMO>, ReadingResource<AssertionSecurityZoneMO>, ListingResource<AssertionSecurityZoneMO>, TemplatingResource<AssertionSecurityZoneMO> {
+public class AssertionSecurityZoneResource implements UpdatingResource<AssertionSecurityZoneMO>, ReadingResource<AssertionSecurityZoneMO>, ListingResource<AssertionSecurityZoneMO>, TemplatingResource<AssertionSecurityZoneMO>, URLAccessible<AssertionSecurityZoneMO> {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
     protected static final String activeConnectors_URI = "assertionSecurityZones";
-    protected AssertionSecurityZoneRestResourceFactory factory;
+    private AssertionSecurityZoneAPIResourceFactory factory;
+    private AssertionSecurityZoneTransformer transformer;
     @Context
     protected UriInfo uriInfo;
 
     @SpringBean
-    public void setFactory(AssertionSecurityZoneRestResourceFactory factory) {
+    public void setFactory(AssertionSecurityZoneAPIResourceFactory factory) {
         this.factory = factory;
     }
 
-    public EntityType getEntityType(){
-        return EntityType.ASSERTION_ACCESS;
+    @SpringBean
+    public void setTransformer(AssertionSecurityZoneTransformer transformer) {
+        this.transformer = transformer;
     }
 
-    protected Item<AssertionSecurityZoneMO> toReference(AssertionSecurityZoneMO resource) {
-        return new ItemBuilder<AssertionSecurityZoneMO>(resource.getName(), resource.getId(), getEntityType().name())
-                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), resource.getName())))
-                .build();
+    @NotNull
+    @Override
+    public EntityType getEntityType(){
+        return EntityType.ASSERTION_ACCESS;
     }
 
     @Override
@@ -55,11 +62,14 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
         List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
             @Override
             public Item<AssertionSecurityZoneMO> call(AssertionSecurityZoneMO resource) {
-                return toReference(resource);
+                return new ItemBuilder<>(transformer.convertToItem(resource))
+                        .addLink(getLink(resource))
+                        .build();
             }
         });
         return new ItemsListBuilder<AssertionSecurityZoneMO>(EntityType.ASSERTION_ACCESS + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLinks(getRelatedLinks(null))
                 .build();
     }
 
@@ -74,10 +84,9 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
     @Override
     public Item<AssertionSecurityZoneMO> getResource(String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
-        return new ItemBuilder<>(toReference(resource))
-                .setContent(resource)
-                .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
-                .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
+        return new ItemBuilder<>(transformer.convertToItem(resource))
+                .addLink(getLink(resource))
+                .addLinks(getRelatedLinks(resource))
                 .build();
     }
 
@@ -86,6 +95,7 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
         AssertionSecurityZoneMO resource = factory.getResourceTemplate();
         return new ItemBuilder<AssertionSecurityZoneMO>(getEntityType() + " Template", getEntityType().toString())
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLinks(getRelatedLinks(resource))
                 .setContent(resource)
                 .build();
 
@@ -104,6 +114,43 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
     @Override
     public Response updateResource(AssertionSecurityZoneMO resource, String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
-        return Response.ok().entity(toReference(updatedResource)).build();
+        return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(updatedResource))
+                .addLink(getLink(resource))
+                .addLinks(getRelatedLinks(updatedResource))
+                .build()).build();
+    }
+
+    @NotNull
+    @Override
+    public Link getLink(@NotNull AssertionSecurityZoneMO resource) {
+        return ManagedObjectFactory.createLink("self", getUrl(resource));
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable AssertionSecurityZoneMO resource) {
+        return Arrays.asList(
+                ManagedObjectFactory.createLink("template", getUrlString("template")),
+                ManagedObjectFactory.createLink("list", getUrlString(null))
+        );
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull AssertionSecurityZoneMO assertionSecurityZoneMO) {
+        return getUrlString(assertionSecurityZoneMO.getName());
+    }
+
+    /**
+     * Returns the Url of this resource with the given id
+     * @param id The id of the resource. Leave it blank to get the resource listing url
+     * @return The url of the resource
+     */
+    private String getUrlString(@Nullable String id) {
+        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
+        if(id != null) {
+            uriBuilder.path(id);
+        }
+        return uriBuilder.build().toString();
     }
 }

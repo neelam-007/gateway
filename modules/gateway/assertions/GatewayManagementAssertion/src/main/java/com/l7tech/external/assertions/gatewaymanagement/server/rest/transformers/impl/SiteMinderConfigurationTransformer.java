@@ -1,0 +1,28 @@
+package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
+
+import com.l7tech.external.assertions.gatewaymanagement.server.SiteMinderConfigurationResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.SiteMinderConfigurationMO;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+
+@Component
+public class SiteMinderConfigurationTransformer extends APIResourceWsmanBaseTransformer<SiteMinderConfigurationMO, SiteMinderConfiguration, SiteMinderConfigurationResourceFactory> {
+
+    @Override
+    @Inject
+    protected void setFactory(SiteMinderConfigurationResourceFactory factory) {
+        super.factory = factory;
+    }
+
+    @Override
+    public Item<SiteMinderConfigurationMO> convertToItem(SiteMinderConfigurationMO m) {
+        return new ItemBuilder<SiteMinderConfigurationMO>(m.getName(), m.getId(), factory.getType().name())
+                .setContent(m)
+                .build();
+    }
+}

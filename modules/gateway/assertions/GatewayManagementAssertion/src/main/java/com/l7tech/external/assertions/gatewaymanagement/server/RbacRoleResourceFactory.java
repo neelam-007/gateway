@@ -145,7 +145,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
      * @return The managed object representing the role
      */
     @Override
-    protected RbacRoleMO asResource(final Role role) {
+    public RbacRoleMO asResource(final Role role) {
         RbacRoleMO rbacRoleMO = ManagedObjectFactory.createRbacRoleMO();
 
         rbacRoleMO.setName(role.getName());

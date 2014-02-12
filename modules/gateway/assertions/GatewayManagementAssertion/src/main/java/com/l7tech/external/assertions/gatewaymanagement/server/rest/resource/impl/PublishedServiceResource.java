@@ -1,11 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -19,18 +20,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PublishedServiceResource.SERVICES_URI)
 @Singleton
-public class PublishedServiceResource extends DependentRestEntityResource<ServiceMO, ServiceRestResourceFactory> {
+public class PublishedServiceResource extends DependentRestEntityResource<ServiceMO, ServiceAPIResourceFactory, PublishedServiceTransformer> {
 
     protected static final String SERVICES_URI = "services";
 
     @Override
     @SpringBean
-    public void setFactory( ServiceRestResourceFactory factory) {
+    public void setFactory( ServiceAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<ServiceMO> toReference(ServiceMO resource) {
-        return toReference(resource.getId(), resource.getServiceDetail().getName());
+    @SpringBean
+    public void setTransformer(PublishedServiceTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull ServiceMO serviceMO) {
+        return getUrlString(serviceMO.getId());
     }
 }

@@ -1,9 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DependencyResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -17,7 +18,7 @@ import javax.ws.rs.core.Context;
  *
  * @author Victor Kazakov
  */
-public abstract class DependentRestEntityResource<R extends ManagedObject, F extends RestResourceFactory<R> & TemplateFactory<R>> extends RestEntityResource<R, F> {
+public abstract class DependentRestEntityResource<R extends ManagedObject, F extends APIResourceFactory<R> & TemplateFactory<R>, T extends APITransformer<R,?>> extends RestEntityResource<R,F,T> {
     @Context
     private ResourceContext resourceContext;
 

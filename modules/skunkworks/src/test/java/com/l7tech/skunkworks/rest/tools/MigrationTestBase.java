@@ -13,8 +13,11 @@ import org.junit.*;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @Ignore
 public abstract class MigrationTestBase {
@@ -25,10 +28,36 @@ public abstract class MigrationTestBase {
     private static JVMDatabaseBasedRestManagementEnvironment targetEnvironment;
 
     @BeforeClass
-    public static void beforeClass() throws IOException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         if (!IgnoreOnDaily.isDaily()) {
-            sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("srcgateway");
-            targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("trggateway");
+            final List<Exception> exceptions = Collections.synchronizedList(new ArrayList<Exception>());
+            final CountDownLatch enviromentsStarted = new CountDownLatch(2);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        sourceEnvironment = new JVMDatabaseBasedRestManagementEnvironment("srcgateway");
+                    } catch (IOException e) {
+                        exceptions.add(e);
+                    }
+                    enviromentsStarted.countDown();
+                }
+            }).start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        targetEnvironment = new JVMDatabaseBasedRestManagementEnvironment("trggateway");
+                    } catch (IOException e) {
+                        exceptions.add(e);
+                    }
+                    enviromentsStarted.countDown();
+                }
+            }).start();
+            enviromentsStarted.await(5, TimeUnit.MINUTES);
+            if(!exceptions.isEmpty()){
+                throw exceptions.get(0);
+            }
         }
     }
 

@@ -32,7 +32,7 @@ public class SecurityZoneResourceFactory extends EntityManagerResourceFactory<Se
     //- PROTECTED
 
     @Override
-    protected SecurityZoneMO asResource(SecurityZone securityZone) {
+    public SecurityZoneMO asResource(SecurityZone securityZone) {
         SecurityZoneMO zoneResource = ManagedObjectFactory.createSecurityZone();
 
         zoneResource.setId( securityZone.getId() );

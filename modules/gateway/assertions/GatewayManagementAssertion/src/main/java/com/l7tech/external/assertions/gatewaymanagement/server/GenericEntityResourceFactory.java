@@ -34,7 +34,7 @@ public class GenericEntityResourceFactory extends EntityManagerResourceFactory<G
     //- PROTECTED
 
     @Override
-    protected GenericEntityMO asResource(GenericEntity entity) {
+    public GenericEntityMO asResource(GenericEntity entity) {
         final GenericEntityMO genericEntityResource = ManagedObjectFactory.createGenericEntity();
 
         genericEntityResource.setName(entity.getName());

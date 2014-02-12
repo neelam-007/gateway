@@ -5,13 +5,12 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.AliasHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -19,7 +18,7 @@ import com.l7tech.server.service.AliasManager;
 import com.l7tech.util.Option;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.*;
+import java.util.Collections;
 
 import static com.l7tech.util.Option.optional;
 
@@ -47,7 +46,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
     //- PROTECTED
 
     @Override
-    protected PolicyAliasMO asResource(final PolicyAlias policyAlias) {
+    public PolicyAliasMO asResource(final PolicyAlias policyAlias) {
         PolicyAliasMO policyAliasRes = ManagedObjectFactory.createPolicyAlias();
 
         policyAliasRes.setId(policyAlias.getId());

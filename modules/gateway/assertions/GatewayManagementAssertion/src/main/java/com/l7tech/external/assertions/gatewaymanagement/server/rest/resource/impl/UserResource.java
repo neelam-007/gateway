@@ -5,28 +5,35 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * This resource handles user operations.
  *
  */
-
-public class UserResource implements ListingResource<UserMO>, ReadingResource<UserMO> {
+@Path("users")
+public class UserResource implements ListingResource<UserMO>, ReadingResource<UserMO>, URLAccessible<UserMO> {
 
     @SpringBean
     private UserRestResourceFactory userRestResourceFactory;
+
+    @SpringBean
+    private UserTransformer transformer;
 
     @Context
     private UriInfo uriInfo;
@@ -53,7 +60,9 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
         List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(userRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<UserMO>, UserMO>() {
             @Override
             public Item<UserMO> call(UserMO resource) {
-                return toReference(resource);
+                return new ItemBuilder<>(transformer.convertToItem(resource))
+                        .addLink(getLink(resource))
+                        .build();
             }
         });
         return new ItemsListBuilder<UserMO>(EntityType.USER + " list", "List").setContent(items)
@@ -61,30 +70,46 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
                 .build();
     }
 
-    private Item<UserMO> toReference(UserMO resource) {
-        return new ItemBuilder<UserMO>(resource.getId(), resource.getId(), EntityType.USER.name())
-                .addLink(ManagedObjectFactory.createLink("self",getUsersUri(resource.getId()).toString()))
-                .build();
-    }
-
-    private URI getUsersUri(String id) {
-        String path = uriInfo.getBaseUriBuilder().path(IdentityProviderResource.class).build().toString();
-        path = path + "/"+ providerId + "/users/" + id;
-        return UriBuilder.fromPath(path).build();
-    }
-
     @Override
     public Item<UserMO> getResource(String id)  throws ResourceFactory.ResourceNotFoundException, FindException {
         UserMO user = userRestResourceFactory.getResource(providerId, id);
-        return new ItemBuilder<>(toReference(user))
-                .setContent(user)
-                .addLink(ManagedObjectFactory.createLink("list", getUsersUri(null).toString()))
+        return new ItemBuilder<>(transformer.convertToItem(user))
+                .addLink(getLink(user))
+                .addLinks(getRelatedLinks(user))
                 .build();
     }
 
-    public Item toReference(IdentityHeader entityHeader) {
-        return new ItemBuilder<UserMO>(entityHeader.getName(), entityHeader.getStrId(), EntityType.USER.name())
-                .addLink(ManagedObjectFactory.createLink("self", getUsersUri(entityHeader.getName()).toString()))
-                .build();
+    @NotNull
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.USER;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull UserMO user) {
+        //TODO: check if the user is from the default identity provider.
+        return getUrlString(user.getLogin());
+    }
+
+    @NotNull
+    @Override
+    public Link getLink(@NotNull UserMO user) {
+        return ManagedObjectFactory.createLink("self", getUrl(user));
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable UserMO user) {
+        //TODO: check if the user is from the default identity provider.
+        return Arrays.asList(ManagedObjectFactory.createLink("list", getUrlString(null)));
+    }
+
+    public String getUrlString(@Nullable String id) {
+        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
+        if(id != null) {
+            uriBuilder.path(id);
+        }
+        return uriBuilder.build().toString();
     }
 }

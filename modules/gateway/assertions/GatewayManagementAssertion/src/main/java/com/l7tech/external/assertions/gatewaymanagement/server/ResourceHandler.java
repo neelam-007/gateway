@@ -137,7 +137,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                      final Management request,
                      final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
-        final ResourceFactory<?> factory = opContext.getResourceFactory();
+        final ResourceFactory<?,?> factory = opContext.getResourceFactory();
         final Map<String,String> selectorMap = buildSelectorMap( context, request, factory.getSelectors() );
         setOperationInfo( context, "Read", null );
 
@@ -162,7 +162,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                      final Management request,
                      final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
-        final ResourceFactory<?> factory = opContext.getResourceFactory();
+        final ResourceFactory<?,?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Update", null );
 
         if ( !factory.isUpdateSupported() ) {
@@ -201,7 +201,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                         final Management request,
                         final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
-        final ResourceFactory<?> factory = opContext.getResourceFactory();
+        final ResourceFactory<?,?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Delete", null );
 
         if ( !factory.isDeleteSupported() ) {
@@ -227,7 +227,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                         final Management request,
                         final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
-        final ResourceFactory<?> factory = opContext.getResourceFactory();
+        final ResourceFactory<?,?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Create", null );
 
         if ( !factory.isCreateSupported() ) {
@@ -266,7 +266,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
 
         if ( action != null && action.startsWith(MANAGEMENT_NAMESPACE+"/") ) {
             final OperationContext opContext = new OperationContext( context, request );
-            final ResourceFactory<?> factory = opContext.getResourceFactory();
+            final ResourceFactory<?,?> factory = opContext.getResourceFactory();
             final String resourceUri = opContext.getResourceUri();
 
             final String customMethod = action.startsWith(resourceUri+"/") ?
@@ -445,7 +445,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      * Get the updated resource representation either from the request or from the current state plus a fragment update.
      */
     @SuppressWarnings({ "unchecked" })
-    private Object getResourceWithFragmentUpdate( final ResourceFactory<?> factory,
+    private Object getResourceWithFragmentUpdate( final ResourceFactory<?,?> factory,
                                                   final Map<String, String> selectorMap,
                                                   final TransferExtensions transferRequest,
                                                   final SOAPHeaderElement fragmentHeader ) throws SOAPException, ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException, JAXBException {
@@ -639,8 +639,8 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             return resourceUri;
         }
 
-        private ResourceFactory<?> getResourceFactory() {
-            final ResourceFactory<?> factory = getResourceFactoryRegistry().getResourceFactory(resourceUri);
+        private ResourceFactory<?,?> getResourceFactory() {
+            final ResourceFactory<?,?> factory = getResourceFactoryRegistry().getResourceFactory(resourceUri);
             if ( factory == null ) {
                 throw new DestinationUnreachableFault("ResourceURI: " + resourceUri,
                         DestinationUnreachableFault.Detail.INVALID_RESOURCE_URI);

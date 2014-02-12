@@ -28,7 +28,7 @@ import static com.l7tech.util.Option.optional;
  * Custom methods should call <code>checkPermitted</code> or <code>accessFilter</code>
  * to enforce access controls.</p>
  */
-abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R> {
+abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
 
     //- PUBLIC
 
@@ -296,7 +296,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param entity The entity
      * @return The resource representation of the entity
      */
-    protected R asResource( final E entity ) {
+    @Override
+    public R asResource(final E entity) {
         throw new ResourceAccessException("Not implemented");
     }
 
@@ -332,8 +333,15 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @return The entity
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the resource cannot be converted
      */
-    protected E fromResource( Object resource ) throws InvalidResourceException {
+    protected E fromResource(Object resource) throws InvalidResourceException {
         throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "update not supported");
+    }
+
+    @Override
+    public E fromResource(Object resource, boolean strict) throws InvalidResourceException {
+        //TODO: Need to implement
+        return fromResource(resource);
+        //throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "update not supported");
     }
 
     /**

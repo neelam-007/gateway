@@ -218,7 +218,7 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
     //- PROTECTED
 
     @Override
-    protected AssertionSecurityZoneMO asResource(AssertionAccess entity) {
+    public AssertionSecurityZoneMO asResource(AssertionAccess entity) {
         AssertionSecurityZoneMO resource = ManagedObjectFactory.createAssertionAccess();
 
         resource.setName( entity.getName() );

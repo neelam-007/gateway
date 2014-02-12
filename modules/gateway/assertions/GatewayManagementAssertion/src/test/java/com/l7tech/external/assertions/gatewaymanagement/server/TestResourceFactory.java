@@ -15,7 +15,7 @@ import java.util.*;
  * ResourceFactory for testing custom methods
  */
 @ResourceFactory.ResourceType(type=TestResourceFactory.TestResource.class)
-public class TestResourceFactory implements ResourceFactory<Object> {
+public class TestResourceFactory implements ResourceFactory<Object, Object> {
 
     //- PUBLIC
 
@@ -90,6 +90,16 @@ public class TestResourceFactory implements ResourceFactory<Object> {
 
     @Override
     public boolean resourceExists(Map<String, String> stringStringMap) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Object asResource(Object entity) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Object fromResource(Object resource, boolean strict) throws InvalidResourceException {
         throw new NotImplementedException();
     }
 

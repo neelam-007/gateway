@@ -32,7 +32,7 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
     //- PROTECTED
 
     @Override
-    protected StoredPasswordMO asResource( final SecurePassword entity ) {
+    public StoredPasswordMO asResource( final SecurePassword entity ) {
         final StoredPasswordMO storedPassword = ManagedObjectFactory.createStoredPassword();
 
         storedPassword.setName( entity.getName() );

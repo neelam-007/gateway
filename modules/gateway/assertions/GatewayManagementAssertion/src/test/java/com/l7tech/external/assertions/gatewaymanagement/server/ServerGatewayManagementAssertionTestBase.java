@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -62,6 +63,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -166,6 +168,8 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub());
         applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
         applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub());
+
+        Mockito.when(identityProviderConfigManager.getImpClass()).thenReturn(IdentityProviderConfig.class);
 
         moreInit();
 

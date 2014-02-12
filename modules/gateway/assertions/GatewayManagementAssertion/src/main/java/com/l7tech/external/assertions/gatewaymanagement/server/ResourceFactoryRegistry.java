@@ -32,7 +32,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
      *
      * @param factories The map of resource names to factories.
      */
-    public ResourceFactoryRegistry( final List<ResourceFactory<?>> factories ) {
+    public ResourceFactoryRegistry( final List<ResourceFactory<?,?>> factories ) {
         this.factories = Collections.unmodifiableMap(asMap(factories));
     }
 
@@ -43,12 +43,12 @@ public class ResourceFactoryRegistry implements InitializingBean {
      * @return The resource factory or null if not found
      */
     @SuppressWarnings({"unchecked"})
-    public <R> ResourceFactory<R> getResourceFactory( final String resourceUri ) {
-        ResourceFactory<R> factory = null;
+    public <R,E> ResourceFactory<R,E> getResourceFactory( final String resourceUri ) {
+        ResourceFactory<R,E> factory = null;
 
         if ( resourceUri.startsWith(RESOURCE_URI_PREFIX) ) {
             final String resourceId = resourceUri.substring( RESOURCE_URI_PREFIX.length() );
-            factory = (ResourceFactory<R>) factories.get( resourceId );
+            factory = (ResourceFactory<R,E>) factories.get( resourceId );
         }
 
         return factory;
@@ -59,7 +59,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
      */
     @Override
     public void afterPropertiesSet() throws Exception {
-        for ( Map.Entry<String,ResourceFactory<?>> resourceFactoryEntry : factories.entrySet() ) {
+        for ( Map.Entry<String,ResourceFactory<?,?>> resourceFactoryEntry : factories.entrySet() ) {
             final String resourceUri =  RESOURCE_URI_PREFIX + resourceFactoryEntry.getKey();
             try {
                 logger.fine("Registering enumeration support for resource '"+resourceUri+"'.");
@@ -78,13 +78,13 @@ public class ResourceFactoryRegistry implements InitializingBean {
 
     private static final String RESOURCE_URI_PREFIX = ResourceHandler.MANAGEMENT_NAMESPACE + "/";
 
-    private final Map<String,ResourceFactory<?>> factories;
+    private final Map<String,ResourceFactory<?,?>> factories;
 
     /**
      * Build resource factory map using factory annotation. 
      */
-    private Map<String, ? extends ResourceFactory<?>> asMap( final List<ResourceFactory<?>> factories ) {
-        final Map<String,ResourceFactory<?>> factoryMap = new HashMap<String,ResourceFactory<?>>();
+    private Map<String, ? extends ResourceFactory<?,?>> asMap( final List<ResourceFactory<?,?>> factories ) {
+        final Map<String,ResourceFactory<?,?>> factoryMap = new HashMap<String,ResourceFactory<?,?>>();
 
         for ( final ResourceFactory factory : factories ) {
             final ResourceFactory.ResourceType resourceType =
@@ -107,10 +107,10 @@ public class ResourceFactoryRegistry implements InitializingBean {
      */
     private final static class ResourceIteratorFactory implements IteratorFactory {
         private final String resourceUri;
-        private final ResourceFactory<?> resourceFactory;
+        private final ResourceFactory<?,?> resourceFactory;
 
         ResourceIteratorFactory( final String resourceUri,
-                                 final ResourceFactory<?> resourceFactory ) {
+                                 final ResourceFactory<?,?> resourceFactory ) {
             this.resourceUri = resourceUri;
             this.resourceFactory = resourceFactory;
         }
@@ -128,7 +128,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
             return new ResourceEnumerationIterator( resourceUri, resourceFactory, context.getURL(), includeItem, includeEPR );
         }
 
-        private String getEntityType( final ResourceFactory<?> factory ) {
+        private String getEntityType( final ResourceFactory<?,?> factory ) {
             final EntityType type = factory.getType();
             return type==null ? null : type.getName();
         }
@@ -139,7 +139,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
      */
     private final static class ResourceEnumerationIterator implements EnumerationIterator {
         private final String resourceUri;
-        private final ResourceFactory<?> resourceFactory;
+        private final ResourceFactory<?,?> resourceFactory;
         private final Collection<Map<String,String>> resourceSelectors;
         private final Iterator<Map<String,String>> resourceSelectorIterator;
         private final String address;
@@ -147,7 +147,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
         private final boolean includeEPR;
 
         ResourceEnumerationIterator( final String resourceUri,
-                                     final ResourceFactory<?> resourceFactory,
+                                     final ResourceFactory<?,?> resourceFactory,
                                      final String address,
                                      final boolean includeItem,
                                      final boolean includeEPR ) {

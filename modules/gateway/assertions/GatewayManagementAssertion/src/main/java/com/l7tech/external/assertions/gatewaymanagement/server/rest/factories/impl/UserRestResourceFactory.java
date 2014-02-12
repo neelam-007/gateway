@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.UserMO;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -29,6 +29,8 @@ public class UserRestResourceFactory {
     @Inject
     private IdentityProviderFactory identityProviderFactory;
 
+    @Inject
+    private UserTransformer userTransformer;
 
     private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
             .put("id", "id")
@@ -65,7 +67,7 @@ public class UserRestResourceFactory {
                 public UserMO call(IdentityHeader userHeader) {
                     if(userHeader.getType().equals(EntityType.USER))
                     {
-                        return getResource(userHeader);
+                        return userTransformer.convertToMO(userHeader);
                     }
                     return null;
                 }
@@ -75,41 +77,12 @@ public class UserRestResourceFactory {
         }
     }
 
-    public static UserMO getResource(IdentityHeader userHeader){
-        UserMO userMO = ManagedObjectFactory.createUserMO();
-        userMO.setId(userHeader.getStrId());
-        userMO.setLogin(userHeader.getName());
-        userMO.setFirstName(userHeader.getCommonName());
-        userMO.setLastName(userHeader.getDescription());
-        userMO.setProviderId(userHeader.getProviderGoid().toString());
-        return userMO;
-    }
-
     public UserMO getResource(@NotNull String providerId, @NotNull String login) throws FindException, ResourceFactory.ResourceNotFoundException {
         User user = retrieveUserManager(providerId).findByPrimaryKey(login);
         if(user== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + login);
         }
-        return buildMO(user);
-    }
-
-    /**
-     * Builds a user MO
-     *
-     * @param user The user to build the MO from
-     * @return The user MO
-     */
-    private UserMO buildMO(User user) {
-        UserMO userMO = ManagedObjectFactory.createUserMO();
-        userMO.setId(user.getId());
-        userMO.setLogin(user.getLogin());
-        userMO.setProviderId(user.getProviderId().toString());
-        userMO.setFirstName(user.getFirstName());
-        userMO.setLastName(user.getLastName());
-        userMO.setEmail(user.getEmail());
-        userMO.setDepartment(user.getDepartment());
-        userMO.setSubjectDn(user.getSubjectDn());
-        return userMO;
+        return userTransformer.convertToMO(user);
     }
 
     private UserManager retrieveUserManager(String providerId) throws FindException {

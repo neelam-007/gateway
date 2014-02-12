@@ -40,7 +40,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
     //- PROTECTED
 
     @Override
-    protected SiteMinderConfigurationMO asResource(SiteMinderConfiguration siteMinderCfg) {
+    public SiteMinderConfigurationMO asResource(SiteMinderConfiguration siteMinderCfg) {
         SiteMinderConfigurationMO smResource = ManagedObjectFactory.createSiteMinderConfiguration();
 
         smResource.setId( siteMinderCfg.getId() );

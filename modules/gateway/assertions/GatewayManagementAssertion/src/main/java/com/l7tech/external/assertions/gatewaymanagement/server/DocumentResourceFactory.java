@@ -58,7 +58,7 @@ public class DocumentResourceFactory extends SecurityZoneableEntityManagerResour
     //- PROTECTED
 
     @Override
-    protected ResourceDocumentMO asResource( final ResourceEntry resourceEntry ) {
+    public ResourceDocumentMO asResource( final ResourceEntry resourceEntry ) {
         final ResourceDocumentMO document = ManagedObjectFactory.createResourceDocument();
 
         final Resource resource = ManagedObjectFactory.createResource();

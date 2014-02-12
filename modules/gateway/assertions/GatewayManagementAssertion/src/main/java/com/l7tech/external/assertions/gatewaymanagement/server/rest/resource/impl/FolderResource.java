@@ -1,11 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.FolderRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.FolderAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.FolderTransformer;
 import com.l7tech.gateway.api.FolderMO;
-import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -19,18 +20,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + FolderResource.FOLDERS_URI)
 @Singleton
-public class FolderResource extends DependentRestEntityResource<FolderMO, FolderRestResourceFactory> {
+public class FolderResource extends DependentRestEntityResource<FolderMO, FolderAPIResourceFactory, FolderTransformer> {
 
     protected static final String FOLDERS_URI = "folders";
 
     @Override
     @SpringBean
-    public void setFactory( FolderRestResourceFactory factory) {
+    public void setFactory( FolderAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<FolderMO> toReference(FolderMO resource) {
-        return toReference(resource.getId(), resource.getName());
+    @SpringBean
+    public void setTransformer(FolderTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull FolderMO folderMO) {
+        return getUrlString(folderMO.getId());
     }
 }

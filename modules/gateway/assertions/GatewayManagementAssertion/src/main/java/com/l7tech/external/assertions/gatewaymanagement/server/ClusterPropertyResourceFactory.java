@@ -30,7 +30,7 @@ public class ClusterPropertyResourceFactory extends EntityManagerResourceFactory
     //- PROTECTED
 
     @Override
-    protected ClusterPropertyMO asResource( final ClusterProperty clusterProperty ) {
+    public ClusterPropertyMO asResource( final ClusterProperty clusterProperty ) {
         ClusterPropertyMO property = ManagedObjectFactory.createClusterProperty();
 
         property.setName( clusterProperty.getName() );

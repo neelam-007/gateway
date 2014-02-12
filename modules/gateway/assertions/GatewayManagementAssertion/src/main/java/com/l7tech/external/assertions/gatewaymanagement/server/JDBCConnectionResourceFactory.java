@@ -34,7 +34,7 @@ public class JDBCConnectionResourceFactory extends SecurityZoneableEntityManager
     //- PROTECTED
 
     @Override
-    protected JDBCConnectionMO asResource( final JdbcConnection jdbcConnection ) {
+    public JDBCConnectionMO asResource( final JdbcConnection jdbcConnection ) {
         JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
 
         jdbcConnectionMO.setId(jdbcConnection.getId());

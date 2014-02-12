@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.objectmodel.EntityType;
 import junit.framework.Assert;
 import org.junit.After;
@@ -9,13 +9,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class RestResourseLocatorTest extends ServerRestGatewayManagementAssertionTestBase {
-    private RestResourceLocator restResourceLocator;
+    private URLAccessibleLocator URLAccessibleLocator;
 
     @Before
     public void before() throws Exception {
         super.before();
 
-        restResourceLocator = restManagementAssertion.assertionContext.getBean("restResourceLocator", RestResourceLocator.class);
+        URLAccessibleLocator = restManagementAssertion.assertionContext.getBean("urlAccessibleLocator", URLAccessibleLocator.class);
     }
 
     @After
@@ -30,13 +30,13 @@ public class RestResourseLocatorTest extends ServerRestGatewayManagementAssertio
 
     @Test
     public void test() {
-        Assert.assertNotNull("The restResourceLocator cannot be loaded", restResourceLocator);
+        Assert.assertNotNull("The URLAccessibleLocator cannot be loaded", URLAccessibleLocator);
 
-        Assert.assertNull("There should never be a restEntity resource for the ANY entity type", restResourceLocator.findByEntityType(EntityType.ANY));
-        Assert.assertNotNull("Cannot find the rest entity resource for SERVICE", restResourceLocator.findByEntityType(EntityType.SERVICE));
-        Assert.assertNotNull("Cannot find the rest entity resource for Folder", restResourceLocator.findByEntityType(EntityType.FOLDER));
-        Assert.assertNotNull("Cannot find the rest entity resource for Policy", restResourceLocator.findByEntityType(EntityType.POLICY));
-        Assert.assertNotNull("Cannot find the rest entity resource for Trusted Cert", restResourceLocator.findByEntityType(EntityType.TRUSTED_CERT));
+        Assert.assertNull("There should never be a restEntity resource for the ANY entity type", URLAccessibleLocator.findByEntityType(EntityType.ANY));
+        Assert.assertNotNull("Cannot find the rest entity resource for SERVICE", URLAccessibleLocator.findByEntityType(EntityType.SERVICE));
+        Assert.assertNotNull("Cannot find the rest entity resource for Folder", URLAccessibleLocator.findByEntityType(EntityType.FOLDER));
+        Assert.assertNotNull("Cannot find the rest entity resource for Policy", URLAccessibleLocator.findByEntityType(EntityType.POLICY));
+        Assert.assertNotNull("Cannot find the rest entity resource for Trusted Cert", URLAccessibleLocator.findByEntityType(EntityType.TRUSTED_CERT));
 
     }
 }

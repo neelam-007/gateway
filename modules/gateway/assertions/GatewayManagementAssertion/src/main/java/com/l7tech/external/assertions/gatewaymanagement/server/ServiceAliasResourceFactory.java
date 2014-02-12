@@ -19,7 +19,6 @@ import com.l7tech.server.service.AliasManager;
 import com.l7tech.util.Option;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.Collection;
 import java.util.Collections;
 
 import static com.l7tech.util.Option.optional;
@@ -48,7 +47,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
     //- PROTECTED
 
     @Override
-    protected ServiceAliasMO asResource(final PublishedServiceAlias serviceAlias) {
+    public ServiceAliasMO asResource(final PublishedServiceAlias serviceAlias) {
         ServiceAliasMO serviceAliasRes = ManagedObjectFactory.createServiceAlias();
 
         serviceAliasRes.setId(serviceAlias.getId());

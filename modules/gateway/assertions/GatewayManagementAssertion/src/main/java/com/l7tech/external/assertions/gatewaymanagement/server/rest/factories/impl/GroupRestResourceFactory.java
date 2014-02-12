@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GroupTransformer;
 import com.l7tech.gateway.api.GroupMO;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
@@ -27,6 +27,8 @@ public class GroupRestResourceFactory {
     @Inject
     private IdentityProviderFactory identityProviderFactory;
 
+    @Inject
+    private GroupTransformer transformer;
 
     private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
             .put("name", "name").map();
@@ -58,7 +60,7 @@ public class GroupRestResourceFactory {
                 public GroupMO call(IdentityHeader idHeader) {
                     if(idHeader.getType().equals(EntityType.GROUP))
                     {
-                        return getResource(idHeader);
+                        return transformer.convertToMO(idHeader);
                     }
                     return null;
                 }
@@ -68,36 +70,12 @@ public class GroupRestResourceFactory {
         }
     }
 
-    public static GroupMO getResource(IdentityHeader groupHeader){
-        GroupMO groupMO = ManagedObjectFactory.createGroupMO();
-        groupMO.setId(groupHeader.getStrId());
-        groupMO.setDescription(groupHeader.getDescription());
-        groupMO.setName(groupHeader.getName());
-        groupMO.setProviderId(groupHeader.getProviderGoid().toString());
-        return groupMO;
-    }
-
     public GroupMO getResource(@NotNull String providerId, @NotNull String name) throws FindException, ResourceFactory.ResourceNotFoundException {
         Group group = retrieveGroupManager(providerId).findByName(name);
         if(group== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + name);
         }
-        return buildMO(group);
-    }
-
-    /**
-     * Builds a group MO
-     *
-     * @param group The group to build the MO from
-     * @return The group MO
-     */
-    private GroupMO buildMO(Group group) {
-        GroupMO groupMO = ManagedObjectFactory.createGroupMO();
-        groupMO.setId(group.getId());
-        groupMO.setProviderId(group.getProviderId().toString());
-        groupMO.setName(group.getName());
-        groupMO.setDescription(group.getDescription());
-        return groupMO;
+        return transformer.convertToMO(group);
     }
 
     private GroupManager retrieveGroupManager(String providerId) throws FindException {

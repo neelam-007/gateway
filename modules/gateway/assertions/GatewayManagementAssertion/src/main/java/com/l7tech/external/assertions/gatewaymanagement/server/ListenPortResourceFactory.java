@@ -51,7 +51,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
     //- PROTECTED
 
     @Override
-    protected ListenPortMO asResource( final SsgConnector entity ) {
+    public ListenPortMO asResource( final SsgConnector entity ) {
         final ListenPortMO listenPort = ManagedObjectFactory.createListenPort();
 
         listenPort.setName( entity.getName() );

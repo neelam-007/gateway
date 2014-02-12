@@ -44,7 +44,7 @@ public class CustomKeyValueStoreResourceFactory extends EntityManagerResourceFac
     }
 
     @Override
-    protected CustomKeyValueStoreMO asResource(CustomKeyValueStore entity) {
+    public CustomKeyValueStoreMO asResource(CustomKeyValueStore entity) {
         final CustomKeyValueStoreMO customKeyValueStoreResource = ManagedObjectFactory.createCustomKeyValueStore();
 
         customKeyValueStoreResource.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);

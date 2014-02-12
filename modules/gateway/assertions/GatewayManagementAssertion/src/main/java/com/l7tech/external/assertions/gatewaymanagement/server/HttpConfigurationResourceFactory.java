@@ -34,7 +34,7 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
      * Converts from an HttpConfiguration to an HttpConfigurationMO
      */
     @Override
-    protected HttpConfigurationMO asResource(final HttpConfiguration httpConfiguration) {
+    public HttpConfigurationMO asResource(final HttpConfiguration httpConfiguration) {
         HttpConfigurationMO httpConfigurationMO = ManagedObjectFactory.createHttpConfiguration();
 
         httpConfigurationMO.setId(httpConfiguration.getId());

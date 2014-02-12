@@ -1,12 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAliasRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAliasAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyAliasTransformer;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.AliasHeader;
-import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -18,26 +17,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PolicyAliasResource.policyAlias_URI)
 @Singleton
-public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, PolicyAliasRestResourceFactory> {
+public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, PolicyAliasAPIResourceFactory, PolicyAliasTransformer> {
 
     protected static final String policyAlias_URI = "policyAliases";
 
     @Override
     @SpringBean
-    public void setFactory(PolicyAliasRestResourceFactory factory) {
+    public void setFactory(PolicyAliasAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<PolicyAliasMO> toReference(PolicyAliasMO resource) {
-        return toReference(resource.getId(), resource.getPolicyReference().getId());
+    @SpringBean
+    public void setTransformer(PolicyAliasTransformer transformer) {
+        super.transformer = transformer;
     }
+
+    @NotNull
     @Override
-    public Item<PolicyAliasMO> toReference(EntityHeader entityHeader) {
-        if (entityHeader instanceof AliasHeader) {
-            return toReference(entityHeader.getStrId(),((AliasHeader) entityHeader).getAliasedEntityId().toString());
-        } else {
-            return super.toReference(entityHeader);
-        }
+    public String getUrl(@NotNull PolicyAliasMO policyAliasMO) {
+        return getUrlString(policyAliasMO.getId());
     }
 }

@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleAPIResourceFactory;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
 import com.l7tech.gateway.rest.SpringBean;
@@ -16,7 +16,7 @@ import javax.ws.rs.PUT;
  */
 public class RoleAssignmentsResource {
     @SpringBean
-    private RoleRestResourceFactory factory;
+    private RoleAPIResourceFactory factory;
 
     private String roleId;
 

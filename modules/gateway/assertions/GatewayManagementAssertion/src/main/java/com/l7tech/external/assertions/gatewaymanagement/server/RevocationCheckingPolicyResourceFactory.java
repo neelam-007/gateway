@@ -29,7 +29,7 @@ public class RevocationCheckingPolicyResourceFactory extends SecurityZoneableEnt
     //- PROTECTED
 
     @Override
-    protected RevocationCheckingPolicyMO asResource( final RevocationCheckPolicy entity ) {
+    public RevocationCheckingPolicyMO asResource( final RevocationCheckPolicy entity ) {
         final RevocationCheckingPolicyMO revocationCheckingPolicy = ManagedObjectFactory.createRevocationCheckingPolicy();
 
         revocationCheckingPolicy.setName( entity.getName() );

@@ -127,7 +127,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     //- PROTECTED
 
     @Override
-    protected PolicyMO asResource( final Policy policy ) {
+    public PolicyMO asResource( final Policy policy ) {
         final PolicyMO policyRes = ManagedObjectFactory.createPolicy();
         final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
 

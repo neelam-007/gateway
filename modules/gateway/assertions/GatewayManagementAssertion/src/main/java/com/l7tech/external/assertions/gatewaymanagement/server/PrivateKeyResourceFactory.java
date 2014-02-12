@@ -72,7 +72,7 @@ import static java.util.EnumSet.allOf;
  * you can only replace the certificate chain.</p>
  */
 @ResourceFactory.ResourceType(type=PrivateKeyMO.class)
-public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKeyMO> {
+public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKeyMO, SsgKeyEntry> {
 
     //- PUBLIC
 
@@ -147,10 +147,16 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     public String call(Object o) {
                         return o.toString();
                     }
-                })), offset, count), new Functions.Unary<PrivateKeyMO, SsgKeyHeader>() {
+                })), offset, count), new Functions.UnaryThrows<PrivateKeyMO, SsgKeyHeader, FindException>() {
                     @Override
-                    public PrivateKeyMO call( final SsgKeyHeader header ) {
-                        return buildPrivateKeyResource(header);
+                    public PrivateKeyMO call( final SsgKeyHeader header ) throws FindException{
+                        SsgKeyEntry keyEntry;
+                        try {
+                            keyEntry = getSsgKeyEntry(new Pair<>(header.getKeystoreId(), header.getAlias()));
+                        } catch (ResourceNotFoundException e) {
+                            throw new FindException(e.getMessage(), e);
+                        }
+                        return buildPrivateKeyResource(keyEntry, Option.<Collection<SpecialKeyType>>none());
                     }
                 } );
             }
@@ -171,6 +177,16 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 }
             }
         }, true);
+    }
+
+    @Override
+    public PrivateKeyMO asResource(SsgKeyEntry entity) {
+        return buildPrivateKeyResource(entity, Option.<Collection<SpecialKeyType>>none());
+    }
+
+    @Override
+    public SsgKeyEntry fromResource(Object resource, boolean strict) throws InvalidResourceException {
+        throw new UnsupportedOperationException("From resource for a private key is not supported.");
     }
 
     private PrivateKeyMO buildPrivateKeyResource(SsgKeyHeader header) {

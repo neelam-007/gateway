@@ -5,7 +5,6 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -36,7 +35,7 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
     //- PROTECTED
 
     @Override
-    protected EmailListenerMO asResource(EmailListener emailListener) {
+    public EmailListenerMO asResource(EmailListener emailListener) {
         EmailListenerMO emailResource = ManagedObjectFactory.createEmailListener();
 
         emailResource.setId(emailListener.getId());

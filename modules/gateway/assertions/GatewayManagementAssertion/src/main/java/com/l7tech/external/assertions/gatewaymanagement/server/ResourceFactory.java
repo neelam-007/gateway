@@ -19,7 +19,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Factory for resource CRUD.
  */
 @SuppressWarnings({"serial"})
-public interface ResourceFactory<R> {
+public interface ResourceFactory<R,E> {
 
     /**
      * Get the entity type for this resource factory.
@@ -143,6 +143,26 @@ public interface ResourceFactory<R> {
      * @return true if the resource exists, false otherwise.
      */
     boolean resourceExists(Map<String,String> selectorMap);
+
+    /**
+     * Return the entity as a resource object
+     *
+     * @param entity The entity to convert to a resource object
+     * @return The resource object representing the entity
+     */
+    R asResource(E entity);
+
+    /**
+     * Returns an entity from a resource object. Specify strict to throw error when other referenced entities are
+     * missing. leaving it as false will create dummy referenced entities with the given id's
+     *
+     * @param resource The resource to convert to an entity
+     * @param strict   if true exceptions will be thrown if referenced entities are missing. Otherwise dummy references
+     *                 will be added.
+     * @return The entity representing the given resource
+     * @throws InvalidResourceException
+     */
+    E fromResource(Object resource, boolean strict) throws InvalidResourceException;
 
 
     /**

@@ -4,6 +4,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyVersionTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityType;
@@ -11,6 +13,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -19,7 +23,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -27,10 +31,13 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, ReadingResource<PolicyVersionMO> {
+public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, ReadingResource<PolicyVersionMO>, URLAccessible<PolicyVersionMO> {
 
     @SpringBean
     private PolicyVersionRestResourceFactory policyVersionRestResourceFactory;
+
+    @SpringBean
+    private PolicyVersionTransformer transformer;
 
     @Context
     private UriInfo uriInfo;
@@ -57,7 +64,9 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
         List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
             @Override
             public Item<PolicyVersionMO> call(PolicyVersionMO resource) {
-                return toReference(resource);
+                return new ItemBuilder<>(transformer.convertToItem(resource))
+                        .addLink(getLink(resource))
+                        .build();
             }
         });
         return new ItemsListBuilder<PolicyVersionMO>(EntityType.POLICY_VERSION + " list", "List").setContent(items)
@@ -65,25 +74,12 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
                 .build();
     }
 
-    private Item<PolicyVersionMO> toReference(PolicyVersionMO resource) {
-        return new ItemBuilder<PolicyVersionMO>("Policy Version: " + resource.getVersion(), resource.getId(), EntityType.POLICY_VERSION.name())
-                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(getVersionsBaseUri(uriInfo.getAbsolutePath()), resource.getId())))
-                .build();
-    }
-
-    private URI getVersionsBaseUri(URI absolutePath) {
-        String path = absolutePath.toString();
-        path = path.substring(0, path.indexOf("/versions") + 9);
-        return UriBuilder.fromPath(path).build();
-    }
-
     @Override
     public Item<PolicyVersionMO> getResource(String id) throws FindException {
         PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getResource(policyId, id);
-        return new ItemBuilder<>(toReference(policyVersion))
-                .setContent(policyVersion)
-                .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(getVersionsBaseUri(uriInfo.getAbsolutePath()), "template")))
-                .addLink(ManagedObjectFactory.createLink("list", getVersionsBaseUri(uriInfo.getAbsolutePath()).toString()))
+        return new ItemBuilder<>(transformer.convertToItem(policyVersion))
+                .addLink(getLink(policyVersion))
+                .addLinks(getRelatedLinks(policyVersion))
                 .build();
     }
 
@@ -99,6 +95,44 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
     @Path("{id}/comment")
     public Response setComment(@PathParam("id") String id, String comment) throws FindException, UpdateException {
         policyVersionRestResourceFactory.updateComment(policyId, id, comment);
-        return Response.ok(toReference(policyVersionRestResourceFactory.getResource(policyId, id))).build();
+        PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getResource(policyId, id);
+        return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))
+                .addLink(getLink(policyVersion))
+                .addLinks(getRelatedLinks(policyVersion))
+                .build()).build();
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.POLICY_VERSION;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull PolicyVersionMO policyVersion) {
+        return getUrlString(policyVersion.getId());
+    }
+
+    @NotNull
+    @Override
+    public Link getLink(@NotNull PolicyVersionMO policyVersion) {
+        return ManagedObjectFactory.createLink("self", getUrl(policyVersion));
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable PolicyVersionMO policyVersion) {
+        return Arrays.asList(
+                ManagedObjectFactory.createLink("template", getUrlString("template")),
+                ManagedObjectFactory.createLink("list", getUrlString(null)));
+    }
+
+    public String getUrlString(@Nullable String id) {
+        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(PolicyResource.class).path(policyId).path("versions");
+        if(id != null) {
+            uriBuilder.path(id);
+        }
+        return uriBuilder.build().toString();
     }
 }

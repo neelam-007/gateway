@@ -39,7 +39,7 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
     //- PROTECTED
 
     @Override
-    protected TrustedCertificateMO asResource( final TrustedCert trustedCert ) {
+    public TrustedCertificateMO asResource( final TrustedCert trustedCert ) {
         TrustedCertificateMO certificate = ManagedObjectFactory.createTrustedCertificate();
 
         certificate.setName( trustedCert.getName() );

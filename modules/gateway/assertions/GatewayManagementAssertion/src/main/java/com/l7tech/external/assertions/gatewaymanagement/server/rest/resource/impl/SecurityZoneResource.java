@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SecurityZoneRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SecurityZoneAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.SecurityZoneTransformer;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -16,18 +17,25 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + SecurityZoneResource.securityZone_URI)
 @Singleton
-public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, SecurityZoneRestResourceFactory> {
+public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, SecurityZoneAPIResourceFactory, SecurityZoneTransformer> {
 
     protected static final String securityZone_URI = "securityZones";
 
     @Override
     @SpringBean
-    public void setFactory(SecurityZoneRestResourceFactory factory) {
+    public void setFactory(SecurityZoneAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<SecurityZoneMO> toReference(SecurityZoneMO resource) {
-        return toReference(resource.getId(), resource.getName());
+    @SpringBean
+    public void setTransformer(SecurityZoneTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull SecurityZoneMO securityZoneMO) {
+        return getUrlString(securityZoneMO.getId());
     }
 }

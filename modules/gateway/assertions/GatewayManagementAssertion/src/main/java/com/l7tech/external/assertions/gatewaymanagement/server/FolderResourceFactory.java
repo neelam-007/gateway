@@ -52,7 +52,7 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
     //- PROTECTED
 
     @Override
-    protected FolderMO asResource( final Folder folder ) {
+    public FolderMO asResource( final Folder folder ) {
         FolderMO folderRes = ManagedObjectFactory.createFolder();
 
         folderRes.setId( folder.getId() );

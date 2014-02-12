@@ -280,6 +280,7 @@
         </property>
     </bean>
 
-    <bean id="restResourceLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RestResourceLocatorImpl" />
+    <bean id="urlAccessibleLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocatorImpl" />
+    <bean id="apiUtilityLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocatorImpl" />
     <bean id="bundleImporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter" />
 </beans>

@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.DependencyTreeMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServiceMO;
@@ -73,18 +72,6 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
     @BeforeClass
     public static void beforeClass() throws Exception {
         ServerRestGatewayManagementAssertionTestBase.beforeClass();
-    }
-
-    @Test
-    public void getServiceDependenciesTest() throws Exception {
-        RestResponse response = processRequest(basePath + publishedService.getId() + "/dependencies", HttpMethod.GET, null, "");
-        logger.info(response.toString());
-        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-
-        final StreamSource source = new StreamSource( new StringReader(response.getBody()) );
-        Item<DependencyTreeMO> dependencyResultsMO = MarshallingUtils.unmarshal(Item.class, source);
-
-        dependencyResultsMO.toString();
     }
 
     @Test

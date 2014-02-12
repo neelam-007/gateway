@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extends ResourceFactory<R>> implements RestResourceFactory<R>, TemplateFactory<R> {
+public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extends ResourceFactory<R,?>> implements APIResourceFactory<R>, TemplateFactory<R> {
 
     /**
      * The wiseman resource factory

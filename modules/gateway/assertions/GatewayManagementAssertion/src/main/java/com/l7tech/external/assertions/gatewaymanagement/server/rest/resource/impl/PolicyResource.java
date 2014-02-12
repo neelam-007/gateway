@@ -1,12 +1,13 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -23,7 +24,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PolicyResource.POLICIES_URI)
 @Singleton
-public class PolicyResource extends DependentRestEntityResource<PolicyMO, PolicyRestResourceFactory> {
+public class PolicyResource extends DependentRestEntityResource<PolicyMO, PolicyAPIResourceFactory, PolicyTransformer> {
 
     protected static final String POLICIES_URI = "policies";
 
@@ -32,13 +33,20 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
 
     @Override
     @SpringBean
-    public void setFactory(PolicyRestResourceFactory factory) {
+    public void setFactory(PolicyAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<PolicyMO> toReference(PolicyMO resource) {
-        return toReference(resource.getId(), resource.getPolicyDetail().getName());
+    @SpringBean
+    public void setTransformer(PolicyTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull PolicyMO policyMO) {
+        return getUrlString(policyMO.getId());
     }
 
     /**

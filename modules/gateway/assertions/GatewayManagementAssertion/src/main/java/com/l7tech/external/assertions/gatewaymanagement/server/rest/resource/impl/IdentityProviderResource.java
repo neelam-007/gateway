@@ -1,11 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.IdentityProviderRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.IdentityProviderAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.IdentityProviderTransformer;
 import com.l7tech.gateway.api.IdentityProviderMO;
-import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.rest.SpringBean;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -21,7 +22,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + IdentityProviderResource.jdbcConnections_URI)
 @Singleton
-public class IdentityProviderResource extends RestEntityResource<IdentityProviderMO, IdentityProviderRestResourceFactory> {
+public class IdentityProviderResource extends RestEntityResource<IdentityProviderMO, IdentityProviderAPIResourceFactory, IdentityProviderTransformer> {
 
     protected static final String jdbcConnections_URI = "identityProviders";
 
@@ -30,13 +31,20 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
 
     @Override
     @SpringBean
-    public void setFactory( IdentityProviderRestResourceFactory factory) {
+    public void setFactory( IdentityProviderAPIResourceFactory factory) {
         super.factory = factory;
     }
 
     @Override
-    protected Item<IdentityProviderMO> toReference(IdentityProviderMO resource) {
-        return toReference(resource.getId(), resource.getName());
+    @SpringBean
+    public void setTransformer(IdentityProviderTransformer transformer) {
+        super.transformer = transformer;
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull IdentityProviderMO identityProviderMO) {
+        return getUrlString(identityProviderMO.getId());
     }
 
     /**

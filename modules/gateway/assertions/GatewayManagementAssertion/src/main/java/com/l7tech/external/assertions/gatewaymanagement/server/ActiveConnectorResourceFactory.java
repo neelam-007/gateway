@@ -33,7 +33,7 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
     }
 
     @Override
-    protected ActiveConnectorMO asResource(final SsgActiveConnector entity) {
+    public ActiveConnectorMO asResource(final SsgActiveConnector entity) {
         ActiveConnectorMO ssgActiveConnectorMO = ManagedObjectFactory.createActiveConnector();
 
         ssgActiveConnectorMO.setName(entity.getName());
