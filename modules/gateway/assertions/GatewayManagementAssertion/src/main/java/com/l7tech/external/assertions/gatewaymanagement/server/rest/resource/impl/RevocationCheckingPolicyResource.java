@@ -2,13 +2,13 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RevocationCheckingPolicyRestResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -23,7 +23,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
 @Singleton
-public class RevocationCheckingPolicyResource implements ReadingResource<RevocationCheckingPolicyMO>, ListingResource<RevocationCheckingPolicyMO> {
+public class RevocationCheckingPolicyResource implements RestEntityBaseResource<RevocationCheckingPolicyMO> , ListingResource<RevocationCheckingPolicyMO> {
 
     protected static final String revocationCheckingPolicies_URI = "revocationCheckingPolicies";
     private RevocationCheckingPolicyRestResourceFactory factory;
@@ -67,5 +67,23 @@ public class RevocationCheckingPolicyResource implements ReadingResource<Revocat
                 .addLink(ManagedObjectFactory.createLink("template", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), "template")))
                 .addLink(ManagedObjectFactory.createLink("list", uriInfo.getBaseUriBuilder().path(this.getClass()).build().toString()))
                 .build();
+    }
+
+    @Override
+    public Item<RevocationCheckingPolicyMO> toReference(EntityHeader entityHeader) {
+        return new ItemBuilder<RevocationCheckingPolicyMO>(entityHeader.getName(), entityHeader.getStrId(), factory.getEntityType().name())
+                .addLink(ManagedObjectFactory.createLink("self", RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(),  entityHeader.getStrId())))
+                .build();
+    }
+
+    @NotNull
+    @Override
+    public EntityType getEntityType() {
+        return factory.getEntityType();
+    }
+
+    @Override
+    public String getUrl(String id) {
+        return RestEntityResourceUtils.createURI(uriInfo.getBaseUriBuilder().path(this.getClass()).build(), id);
     }
 }

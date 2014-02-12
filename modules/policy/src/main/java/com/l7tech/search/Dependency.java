@@ -55,11 +55,13 @@ public @interface Dependency {
         ANY(EntityType.ANY),
         SECURITY_ZONE(EntityType.SECURITY_ZONE),
         ENCAPSULATED_ASSERTION(EntityType.ENCAPSULATED_ASSERTION),
+        REVOCATION_CHECK_POLICY(EntityType.REVOCATION_CHECK_POLICY),
         POLICY_ALIAS(EntityType.POLICY_ALIAS),
         SERVICE_ALIAS(EntityType.SERVICE_ALIAS),
         USER(EntityType.USER),
         GROUP(EntityType.GROUP),
-        RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY);
+        RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
+        SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION);
 
         private EntityType entityType;
 

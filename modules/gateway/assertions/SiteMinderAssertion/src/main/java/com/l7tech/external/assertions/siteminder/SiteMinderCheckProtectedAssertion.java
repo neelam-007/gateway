@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.search.Dependency;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +21,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author ymoiseyenko
  * Date: 7/12/13
  */
-public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables {
+public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables{
  
     public static final String DEFAULT_PREFIX = "siteminder";
 
@@ -48,6 +49,8 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         this.smAgentName = smAgentName;
     }
 
+
+    @Dependency(type = Dependency.DependencyType.SITEMINDER_CONFIGURATION, methodReturnType = Dependency.MethodReturnType.GOID)
     public Goid getAgentGoid() {
         return agentGoid;
     }
