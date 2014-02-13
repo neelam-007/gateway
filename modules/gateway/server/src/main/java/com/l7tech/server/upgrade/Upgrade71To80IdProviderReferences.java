@@ -13,10 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.secureconversation.StoredSecureConversationSession;
 import com.l7tech.server.util.ServerGoidUpgradeMapper;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import org.hibernate.*;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -151,24 +148,44 @@ public class Upgrade71To80IdProviderReferences implements UpgradeTask {
             new HibernateTemplate(sessionFactory).execute(new HibernateCallback<Void>() {
                 @Override
                 public Void doInHibernate(final Session session) throws HibernateException, SQLException {
-                    Criteria schemaCriteria = session.createCriteria(MessageContextMappingValues.class);
-                    for (Object schemaCriteriaObj : schemaCriteria.list()) {
-                        if (schemaCriteriaObj instanceof MessageContextMappingValues) {
-                            MessageContextMappingValues mappingValues = (MessageContextMappingValues) schemaCriteriaObj;
-                            Goid providerId = mappingValues.getAuthUserProviderId();
-                            boolean updated = false;
-                            if(isInternal(providerId) ){
-                                mappingValues.setAuthUserUniqueId(getInternalUserId(internal_user_prefix, mappingValues.getAuthUserUniqueId()));
-                            }
-                            else if(isFederated(providerId)){
-                                mappingValues.setAuthUserUniqueId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(mappingValues.getAuthUserUniqueId()))));
-                            }
-                            if(updated){
-                                mappingValues.setDigested(mappingValues.generateDigest());
+                    // use a separate stateless session to read all the MessageContextMappingValues, this will not load
+                    // them all into memory causing memory issues when there are many rows in the table
+                    StatelessSession statelessSession = sessionFactory.openStatelessSession();
+                    try {
+                        Criteria schemaCriteria = statelessSession.createCriteria(MessageContextMappingValues.class);
+                        ScrollableResults scroller = schemaCriteria
+                                // MIN_VALUE gives hint to JDBC driver to stream results
+                                .setFetchSize(Integer.MIN_VALUE)
+                                .scroll(ScrollMode.FORWARD_ONLY);
+                        long updateCount = 0;
+                        while(scroller.next()) {
+                            Object schemaCriteriaObj = scroller.get(0);
+                            if (schemaCriteriaObj instanceof MessageContextMappingValues) {
+                                MessageContextMappingValues mappingValues = (MessageContextMappingValues) schemaCriteriaObj;
+                                Goid providerId = mappingValues.getAuthUserProviderId();
+                                boolean updated = false;
+                                if (isInternal(providerId)) {
+                                    mappingValues.setAuthUserUniqueId(getInternalUserId(internal_user_prefix, mappingValues.getAuthUserUniqueId()));
+                                    updated = true;
+                                } else if (isFederated(providerId)) {
+                                    mappingValues.setAuthUserUniqueId(Goid.toString(new Goid(fed_user_prefix, Long.parseLong(mappingValues.getAuthUserUniqueId()))));
+                                    updated = true;
+                                }
+                                if (updated) {
+                                    mappingValues.setDigested(mappingValues.generateDigest());
+                                    session.update(mappingValues);
+                                    //flush every once in a while to avoid memory issues
+                                    if (++updateCount % 1000 == 0) {
+                                        session.flush();
+                                        session.clear();
+                                    }
+                                }
                             }
                         }
+                        return null;
+                    } finally {
+                        statelessSession.close();
                     }
-                    return null;
                 }
             });
         } catch (Exception e) {
