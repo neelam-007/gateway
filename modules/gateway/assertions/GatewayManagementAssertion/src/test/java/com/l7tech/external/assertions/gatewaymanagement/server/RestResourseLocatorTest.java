@@ -32,11 +32,11 @@ public class RestResourseLocatorTest extends ServerRestGatewayManagementAssertio
     public void test() {
         Assert.assertNotNull("The URLAccessibleLocator cannot be loaded", URLAccessibleLocator);
 
-        Assert.assertNull("There should never be a restEntity resource for the ANY entity type", URLAccessibleLocator.findByEntityType(EntityType.ANY));
-        Assert.assertNotNull("Cannot find the rest entity resource for SERVICE", URLAccessibleLocator.findByEntityType(EntityType.SERVICE));
-        Assert.assertNotNull("Cannot find the rest entity resource for Folder", URLAccessibleLocator.findByEntityType(EntityType.FOLDER));
-        Assert.assertNotNull("Cannot find the rest entity resource for Policy", URLAccessibleLocator.findByEntityType(EntityType.POLICY));
-        Assert.assertNotNull("Cannot find the rest entity resource for Trusted Cert", URLAccessibleLocator.findByEntityType(EntityType.TRUSTED_CERT));
+        Assert.assertNull("There should never be a restEntity resource for the ANY entity type", URLAccessibleLocator.findByEntityType(EntityType.ANY.toString()));
+        Assert.assertNotNull("Cannot find the rest entity resource for SERVICE", URLAccessibleLocator.findByEntityType(EntityType.SERVICE.toString()));
+        Assert.assertNotNull("Cannot find the rest entity resource for Folder", URLAccessibleLocator.findByEntityType(EntityType.FOLDER.toString()));
+        Assert.assertNotNull("Cannot find the rest entity resource for Policy", URLAccessibleLocator.findByEntityType(EntityType.POLICY.toString()));
+        Assert.assertNotNull("Cannot find the rest entity resource for Trusted Cert", URLAccessibleLocator.findByEntityType(EntityType.TRUSTED_CERT.toString()));
 
     }
 }

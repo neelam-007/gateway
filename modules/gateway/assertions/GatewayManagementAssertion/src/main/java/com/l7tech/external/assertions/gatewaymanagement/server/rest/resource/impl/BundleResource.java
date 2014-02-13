@@ -138,9 +138,9 @@ public class BundleResource {
                 })) {
                     continue;
                 }
-                APIResourceFactory apiResourceFactory = apiUtilityLocator.findFactoryByEntityType(dependentObject.getDependencyType().getEntityType());
-                APITransformer transformer = apiUtilityLocator.findTransformerByEntityType(dependentObject.getDependencyType().getEntityType());
-                URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(dependentObject.getDependencyType().getEntityType());
+                APIResourceFactory apiResourceFactory = apiUtilityLocator.findFactoryByResourceType(dependentObject.getDependencyType().getEntityType().toString());
+                APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(dependentObject.getDependencyType().getEntityType().toString());
+                URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(dependentObject.getDependencyType().getEntityType().toString());
                 if(apiResourceFactory==null || transformer == null || urlAccessible == null){
                     throw new FindException("Cannot find resource worker service for " + dependentObject.getDependencyType().getEntityType());
                 }

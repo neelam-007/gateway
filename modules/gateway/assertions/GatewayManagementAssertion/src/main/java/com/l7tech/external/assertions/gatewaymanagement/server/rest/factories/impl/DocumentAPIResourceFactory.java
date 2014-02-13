@@ -30,16 +30,14 @@ public class DocumentAPIResourceFactory extends WsmanBaseResourceFactory<Resourc
                         .put("uri", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("uri", RestResourceFactoryUtils.stringConvert))
                         .put("description", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("description", RestResourceFactoryUtils.stringConvert))
                         .put("type", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("type", RestResourceFactoryUtils.stringConvert))
-//                        .put("targetNamespace", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("resourceKey1", RestResourceFactoryUtils.stringConvert))
-//                        .put("publicId", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("resourceKey1", RestResourceFactoryUtils.stringConvert))
                         .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
                         .map());
     }
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.RESOURCE_ENTRY;
+    public String getResourceType(){
+        return EntityType.RESOURCE_ENTRY.toString();
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.AP
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,8 +71,8 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
      */
     @Override
     @NotNull
-    public EntityType getEntityType() {
-        return factory.getEntityType();
+    public String getResourceType() {
+        return factory.getResourceType();
     }
 
     @Override
@@ -91,7 +90,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                         .build();
             }
         });
-        return new ItemsListBuilder<R>(getEntityType() + " list", "List").setContent(items)
+        return new ItemsListBuilder<R>(getResourceType() + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .addLinks(getRelatedLinks(null))
                 .build();
@@ -139,7 +138,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
     @Override
     public Item<R> getResourceTemplate() {
         R resource = factory.getResourceTemplate();
-        return new ItemBuilder<R>(getEntityType() + " Template", getEntityType().toString())
+        return new ItemBuilder<R>(getResourceType() + " Template", getResourceType().toString())
                 .addLink(ManagedObjectFactory.createLink("self", getUrlString("template")))
                 .addLinks(getRelatedLinks(resource))
                 .setContent(resource)

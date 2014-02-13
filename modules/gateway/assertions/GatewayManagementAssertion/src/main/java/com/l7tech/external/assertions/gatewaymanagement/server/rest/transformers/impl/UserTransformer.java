@@ -23,8 +23,8 @@ public class UserTransformer implements APITransformer<UserMO, User> {
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.USER;
+    public String getResourceType() {
+        return EntityType.USER.toString();
     }
 
     @Override

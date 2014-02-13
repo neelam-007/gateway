@@ -40,8 +40,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.POLICY;
+    public String getResourceType(){
+        return EntityType.POLICY.toString();
     }
 
     @Override

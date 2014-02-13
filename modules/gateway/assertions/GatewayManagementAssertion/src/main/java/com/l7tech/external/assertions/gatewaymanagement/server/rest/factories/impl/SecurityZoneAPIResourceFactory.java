@@ -33,8 +33,8 @@ public class SecurityZoneAPIResourceFactory extends WsmanBaseResourceFactory<Sec
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SECURITY_ZONE;
+    public String getResourceType(){
+        return EntityType.SECURITY_ZONE.toString();
     }
 
     @Override

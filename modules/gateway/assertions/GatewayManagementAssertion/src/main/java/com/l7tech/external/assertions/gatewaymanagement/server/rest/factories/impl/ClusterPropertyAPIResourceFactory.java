@@ -32,8 +32,8 @@ public class ClusterPropertyAPIResourceFactory extends WsmanBaseResourceFactory<
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.CLUSTER_PROPERTY;
+    public String getResourceType(){
+        return EntityType.CLUSTER_PROPERTY.toString();
     }
 
     @Override

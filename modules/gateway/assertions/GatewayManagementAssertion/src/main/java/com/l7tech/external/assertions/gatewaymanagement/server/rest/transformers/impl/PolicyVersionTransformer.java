@@ -25,8 +25,8 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.POLICY_VERSION;
+    public String getResourceType() {
+        return EntityType.POLICY_VERSION.toString();
     }
 
     @Override

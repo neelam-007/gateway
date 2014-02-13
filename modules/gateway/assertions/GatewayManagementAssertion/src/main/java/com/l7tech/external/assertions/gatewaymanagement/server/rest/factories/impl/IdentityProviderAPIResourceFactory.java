@@ -57,8 +57,8 @@ public class IdentityProviderAPIResourceFactory extends WsmanBaseResourceFactory
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.ID_PROVIDER_CONFIG;
+    public String getResourceType(){
+        return EntityType.ID_PROVIDER_CONFIG.toString();
     }
 
     @Override

@@ -127,7 +127,7 @@ public class DependencyResource {
     }
 
     private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
-        APITransformer transformer = apiUtilityLocator.findTransformerByEntityType(entityHeader.getType());
+        APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityHeader.getType().toString());
         if (transformer != null) {
             return transformer.convertToItem(entityHeader);
         }

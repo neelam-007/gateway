@@ -39,8 +39,8 @@ public class JDBCConnectionAPIResourceFactory extends WsmanBaseResourceFactory<J
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.JDBC_CONNECTION;
+    public String getResourceType(){
+        return EntityType.JDBC_CONNECTION.toString();
     }
 
     @Override

@@ -34,8 +34,8 @@ public class EncapsulatedAssertionAPIResourceFactory extends WsmanBaseResourceFa
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.ENCAPSULATED_ASSERTION;
+    public String getResourceType(){
+        return EntityType.ENCAPSULATED_ASSERTION.toString();
     }
 
     @Override

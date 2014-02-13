@@ -37,8 +37,8 @@ public class ServiceAliasAPIResourceFactory extends WsmanBaseResourceFactory<Ser
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SERVICE_ALIAS;
+    public String getResourceType(){
+        return EntityType.SERVICE_ALIAS.toString();
     }
 
     @Override

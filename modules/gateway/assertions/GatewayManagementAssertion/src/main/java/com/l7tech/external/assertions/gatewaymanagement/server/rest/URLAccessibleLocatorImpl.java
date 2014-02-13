@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
-import com.l7tech.objectmodel.EntityType;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -17,7 +16,7 @@ public class URLAccessibleLocatorImpl implements ApplicationListener<ContextRefr
     /**
      * The URLAccessible entity map
      */
-    private final Map<EntityType, URLAccessible> urlAccessibleMap = new HashMap<>();
+    private final Map<String, URLAccessible> urlAccessibleMap = new HashMap<>();
 
     /**
      * This returns the URLAccessible for the given entity type. Or null if there is no such URLAccessible
@@ -26,7 +25,7 @@ public class URLAccessibleLocatorImpl implements ApplicationListener<ContextRefr
      * @return The URLAccessible for the given entityType or null if there is no such URLAccessible
      */
     @Override
-    public URLAccessible findByEntityType(EntityType entityType) {
+    public URLAccessible findByEntityType(String entityType) {
         return urlAccessibleMap.get(entityType);
     }
 
@@ -49,7 +48,7 @@ public class URLAccessibleLocatorImpl implements ApplicationListener<ContextRefr
     private void buildURLAccessibleCache(ApplicationContext applicationContext) {
         final Map<String, URLAccessible> beans = applicationContext.getBeansOfType(URLAccessible.class);
         for (URLAccessible restEntityResource : beans.values()) {
-            urlAccessibleMap.put(restEntityResource.getEntityType(), restEntityResource);
+            urlAccessibleMap.put(restEntityResource.getResourceType(), restEntityResource);
         }
     }
 }

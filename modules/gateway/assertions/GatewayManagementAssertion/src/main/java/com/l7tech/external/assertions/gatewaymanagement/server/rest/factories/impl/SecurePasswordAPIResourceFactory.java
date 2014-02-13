@@ -34,8 +34,8 @@ public class SecurePasswordAPIResourceFactory extends WsmanBaseResourceFactory<S
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SECURE_PASSWORD;
+    public String getResourceType(){
+        return EntityType.SECURE_PASSWORD.toString();
     }
 
     @Override

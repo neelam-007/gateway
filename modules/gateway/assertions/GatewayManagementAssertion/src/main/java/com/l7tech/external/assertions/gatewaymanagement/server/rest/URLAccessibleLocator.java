@@ -13,5 +13,5 @@ public interface URLAccessibleLocator {
      * @param entityType The entity type to return the url accessible for.
      * @return The URLAccessible for the given entity type, or null if there is no URLAccessible for that type.
      */
-    URLAccessible findByEntityType(EntityType entityType);
+    URLAccessible findByEntityType(String entityType);
 }

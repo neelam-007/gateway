@@ -23,8 +23,8 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.GROUP;
+    public String getResourceType() {
+        return EntityType.GROUP.toString();
     }
 
     @Override

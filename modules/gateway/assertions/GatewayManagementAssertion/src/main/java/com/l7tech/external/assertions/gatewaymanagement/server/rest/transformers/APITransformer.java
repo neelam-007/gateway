@@ -16,12 +16,12 @@ import org.jetbrains.annotations.NotNull;
 public interface APITransformer<M, E> {
 
     /**
-     * Returns the EntityType that this transformer is for.
+     * Returns the ResourceType that this transformer is for.
      *
-     * @return The EntityType this transformer transforms
+     * @return The ResourceType this transformer transforms
      */
     @NotNull
-    public EntityType getEntityType();
+    public String getResourceType();
 
     /**
      * Converts a gateway object to it equivalent api object

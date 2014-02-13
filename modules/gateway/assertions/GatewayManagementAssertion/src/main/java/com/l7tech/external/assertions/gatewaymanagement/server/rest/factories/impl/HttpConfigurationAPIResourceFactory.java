@@ -46,8 +46,8 @@ public class HttpConfigurationAPIResourceFactory extends WsmanBaseResourceFactor
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.HTTP_CONFIGURATION;
+    public String getResourceType(){
+        return EntityType.HTTP_CONFIGURATION.toString();
     }
 
     @Override

@@ -45,8 +45,8 @@ public class JMSDestinationAPIResourceFactory extends WsmanBaseResourceFactory<J
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.JMS_ENDPOINT;
+    public String getResourceType(){
+        return EntityType.JMS_ENDPOINT.toString();
     }
 
     @Override

@@ -81,8 +81,8 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.USER;
+    public String getResourceType() {
+        return EntityType.USER.toString();
     }
 
     @NotNull

@@ -10,18 +10,18 @@ import com.l7tech.objectmodel.EntityType;
  */
 public interface APIUtilityLocator {
     /**
-     * Returns an APIResourceFactory for the given entityType.
+     * Returns an APIResourceFactory for the given resource type.
      *
-     * @param entityType The entity type to return the factory for.
-     * @return The APIResourceFactory for the given entity type, or null if there is no APIResourceFactory for that type.
+     * @param resourceType The resource type to return the factory for.
+     * @return The APIResourceFactory for the given resource type, or null if there is no APIResourceFactory for that type.
      */
-    APIResourceFactory findFactoryByEntityType(EntityType entityType);
+    APIResourceFactory findFactoryByResourceType(String resourceType);
 
     /**
-     * Returns an APITransformer for the given entity type.
+     * Returns an APITransformer for the given resource type.
      *
-     * @param entityType The entity type to return the transformer for.
-     * @return The APITransformer for the given entity type, or null if there is no APITransformer for that type.
+     * @param resourceType The resource type to return the transformer for.
+     * @return The APITransformer for the given resource type, or null if there is no APITransformer for that type.
      */
-    APITransformer findTransformerByEntityType(EntityType entityType);
+    APITransformer findTransformerByResourceType(String resourceType);
 }

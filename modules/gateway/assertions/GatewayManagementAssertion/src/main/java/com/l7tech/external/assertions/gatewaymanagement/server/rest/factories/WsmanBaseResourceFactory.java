@@ -139,7 +139,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     @Override
     public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
         Mapping mapping = ManagedObjectFactory.createMapping();
-        mapping.setType(getEntityType().toString());
+        mapping.setType(getResourceType().toString());
         mapping.setAction(defaultAction);
         mapping.setSrcId(resource.getId());
         mapping.setReferencePath(getReferencePath(resource.getId()));

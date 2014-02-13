@@ -36,8 +36,8 @@ public class GenericEntityAPIResourceFactory extends WsmanBaseResourceFactory<Ge
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.GENERIC;
+    public String getResourceType(){
+        return EntityType.GENERIC.toString();
     }
 
     @Override

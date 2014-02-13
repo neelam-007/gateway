@@ -37,8 +37,8 @@ public class PolicyAliasAPIResourceFactory extends WsmanBaseResourceFactory<Poli
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.POLICY_ALIAS;
+    public String getResourceType(){
+        return EntityType.POLICY_ALIAS.toString();
     }
 
     @Override

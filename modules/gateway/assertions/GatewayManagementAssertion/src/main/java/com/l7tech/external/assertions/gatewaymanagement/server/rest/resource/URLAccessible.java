@@ -10,12 +10,12 @@ import java.util.List;
 public interface URLAccessible<M> {
 
     /**
-     * Returns the entity type for this url accessible object
+     * Returns the resource type for this url accessible object
      *
-     * @return The entity type for this url accessible object
+     * @return The resource type for this url accessible object
      */
     @NotNull
-    public EntityType getEntityType();
+    public String getResourceType();
 
     /**
      * Returns the full url string for the given entity.

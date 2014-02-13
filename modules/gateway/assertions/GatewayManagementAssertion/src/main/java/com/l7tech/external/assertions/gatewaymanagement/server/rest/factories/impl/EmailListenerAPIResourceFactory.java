@@ -44,8 +44,8 @@ public class EmailListenerAPIResourceFactory extends WsmanBaseResourceFactory<Em
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.EMAIL_LISTENER;
+    public String getResourceType(){
+        return EntityType.EMAIL_LISTENER.toString();
     }
 
     @Override

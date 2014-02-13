@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RevocationCheckingPolicyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +55,7 @@ public class RevocationCheckingPolicyResource implements ReadingResource<Revocat
                         .build();
             }
         });
-        return new ItemsListBuilder<RevocationCheckingPolicyMO>(factory.getEntityType() + " list", "List").setContent(items)
+        return new ItemsListBuilder<RevocationCheckingPolicyMO>(factory.getResourceType() + " list", "List").setContent(items)
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .addLinks(getRelatedLinks(null))
                 .build();
@@ -73,8 +72,8 @@ public class RevocationCheckingPolicyResource implements ReadingResource<Revocat
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return factory.getEntityType();
+    public String getResourceType() {
+        return factory.getResourceType().toString();
     }
 
     @NotNull

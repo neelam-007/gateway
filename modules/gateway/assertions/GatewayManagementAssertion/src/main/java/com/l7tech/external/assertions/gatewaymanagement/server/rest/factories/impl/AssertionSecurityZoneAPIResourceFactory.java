@@ -38,8 +38,8 @@ public class AssertionSecurityZoneAPIResourceFactory extends WsmanBaseResourceFa
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.ASSERTION_ACCESS;
+    public String getResourceType() {
+        return EntityType.ASSERTION_ACCESS.toString();
     }
 
     @Override

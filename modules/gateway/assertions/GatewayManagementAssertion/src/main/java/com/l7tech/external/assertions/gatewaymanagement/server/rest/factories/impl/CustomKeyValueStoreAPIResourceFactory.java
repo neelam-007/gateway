@@ -33,8 +33,8 @@ public class CustomKeyValueStoreAPIResourceFactory extends WsmanBaseResourceFact
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.CUSTOM_KEY_VALUE_STORE;
+    public String getResourceType(){
+        return EntityType.CUSTOM_KEY_VALUE_STORE.toString();
     }
 
     @Override

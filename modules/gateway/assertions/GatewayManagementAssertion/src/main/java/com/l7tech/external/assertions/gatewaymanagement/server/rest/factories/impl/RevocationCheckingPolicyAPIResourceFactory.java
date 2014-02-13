@@ -34,8 +34,8 @@ public class RevocationCheckingPolicyAPIResourceFactory extends WsmanBaseResourc
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.REVOCATION_CHECK_POLICY;
+    public String getResourceType(){
+        return EntityType.REVOCATION_CHECK_POLICY.toString();
     }
 
     @Override

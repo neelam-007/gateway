@@ -35,8 +35,8 @@ public class SiteMinderConfigurationAPIResourceFactory extends WsmanBaseResource
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SITEMINDER_CONFIGURATION;
+    public String getResourceType(){
+        return EntityType.SITEMINDER_CONFIGURATION.toString();
     }
 
     @Override

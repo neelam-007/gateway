@@ -38,8 +38,8 @@ public class RoleAPIResourceFactory extends WsmanBaseResourceFactory<RbacRoleMO,
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.RBAC_ROLE;
+    public String getResourceType(){
+        return EntityType.RBAC_ROLE.toString();
     }
 
     @Override

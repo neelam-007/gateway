@@ -37,8 +37,8 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.FOLDER;
+    public String getResourceType(){
+        return EntityType.FOLDER.toString();
     }
 
     @Override

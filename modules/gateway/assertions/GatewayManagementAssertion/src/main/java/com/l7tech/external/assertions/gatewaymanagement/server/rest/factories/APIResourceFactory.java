@@ -122,10 +122,10 @@ public interface APIResourceFactory<R> {
     public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy);
 
     /**
-     * Returns the entity type of the resource
+     * Returns the type of the resource
      *
-     * @return The resource entity type
+     * @return The resource type
      */
     @NotNull
-    public abstract EntityType getEntityType();
+    public abstract String getResourceType();
 }

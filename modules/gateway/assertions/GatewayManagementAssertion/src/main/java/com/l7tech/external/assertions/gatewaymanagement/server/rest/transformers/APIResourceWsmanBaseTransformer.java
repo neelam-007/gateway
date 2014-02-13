@@ -30,8 +30,8 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @Override
     @NotNull
-    public EntityType getEntityType(){
-        return factory.getType();
+    public String getResourceType(){
+        return factory.getType().toString();
     }
 
     @Override

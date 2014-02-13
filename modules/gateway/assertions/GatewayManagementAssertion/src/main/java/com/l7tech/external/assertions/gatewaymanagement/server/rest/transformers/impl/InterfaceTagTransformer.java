@@ -8,7 +8,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +28,8 @@ public class InterfaceTagTransformer implements APITransformer<InterfaceTagMO, I
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return factory.getType();
+    public String getResourceType() {
+        return "INTERFACE_TAG";
     }
 
     @Override
@@ -57,7 +56,7 @@ public class InterfaceTagTransformer implements APITransformer<InterfaceTagMO, I
 
     @Override
     public Item<InterfaceTagMO> convertToItem(InterfaceTagMO m) {
-        return new ItemBuilder<InterfaceTagMO>(m.getName(), m.getId(), factory.getType().name())
+        return new ItemBuilder<InterfaceTagMO>(m.getName(), m.getId(), getResourceType())
                 .setContent(m)
                 .build();
     }

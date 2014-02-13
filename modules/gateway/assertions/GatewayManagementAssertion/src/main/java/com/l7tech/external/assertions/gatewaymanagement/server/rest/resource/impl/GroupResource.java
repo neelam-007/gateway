@@ -85,8 +85,8 @@ public class GroupResource implements ListingResource<GroupMO>, ReadingResource<
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.GROUP;
+    public String getResourceType() {
+        return EntityType.GROUP.toString();
     }
 
     @NotNull

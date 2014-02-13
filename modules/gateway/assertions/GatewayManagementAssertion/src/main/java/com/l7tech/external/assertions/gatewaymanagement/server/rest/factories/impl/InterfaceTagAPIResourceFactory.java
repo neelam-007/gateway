@@ -32,8 +32,8 @@ public class InterfaceTagAPIResourceFactory extends WsmanBaseResourceFactory<Int
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.CLUSTER_PROPERTY;
+    public String getResourceType(){
+        return "INTERFACE_TAG";
     }
 
     @Override

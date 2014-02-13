@@ -81,7 +81,7 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.SSG_KEY_ENTRY;
+    public String getResourceType() {
+        return EntityType.SSG_KEY_ENTRY.toString();
     }
 }

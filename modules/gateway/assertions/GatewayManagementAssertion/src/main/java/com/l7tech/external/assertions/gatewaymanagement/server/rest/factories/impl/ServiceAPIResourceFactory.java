@@ -39,8 +39,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SERVICE;
+    public String getResourceType(){
+        return EntityType.SERVICE.toString();
     }
 
     @Override

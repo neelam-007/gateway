@@ -37,8 +37,8 @@ public class ActiveConnectorAPIResourceFactory extends WsmanBaseResourceFactory<
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SSG_ACTIVE_CONNECTOR;
+    public String getResourceType(){
+        return EntityType.SSG_ACTIVE_CONNECTOR.toString();
     }
 
     @Override

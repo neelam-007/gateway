@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.imp
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -33,7 +34,7 @@ public abstract class DependentRestEntityResource<R extends ManagedObject, F ext
     @Path("{id}/dependencies")
     public DependencyResource dependencies(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        EntityHeader serviceHeader = new EntityHeader(resource.getId(), getEntityType(), null, null);
+        EntityHeader serviceHeader = new EntityHeader(resource.getId(), EntityType.valueOf(getResourceType()), null, null);
         return resourceContext.initResource(new DependencyResource(serviceHeader));
     }
 }

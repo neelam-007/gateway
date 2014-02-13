@@ -47,8 +47,8 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.ASSERTION_ACCESS;
+    public String getResourceType(){
+        return EntityType.ASSERTION_ACCESS.toString();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
     @Override
     public Item<AssertionSecurityZoneMO> getResourceTemplate() {
         AssertionSecurityZoneMO resource = factory.getResourceTemplate();
-        return new ItemBuilder<AssertionSecurityZoneMO>(getEntityType() + " Template", getEntityType().toString())
+        return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType().toString())
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .addLinks(getRelatedLinks(resource))
                 .setContent(resource)

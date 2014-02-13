@@ -40,8 +40,8 @@ public class ListenPortAPIResourceFactory extends WsmanBaseResourceFactory<Liste
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.SSG_CONNECTOR;
+    public String getResourceType(){
+        return EntityType.SSG_CONNECTOR.toString();
     }
 
     @Override

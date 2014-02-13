@@ -104,8 +104,8 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
 
     @NotNull
     @Override
-    public EntityType getEntityType() {
-        return EntityType.POLICY_VERSION;
+    public String getResourceType() {
+        return EntityType.POLICY_VERSION.toString();
     }
 
     @NotNull

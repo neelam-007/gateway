@@ -34,8 +34,8 @@ public class CertificateAPIResourceFactory extends WsmanBaseResourceFactory<Trus
 
     @NotNull
     @Override
-    public EntityType getEntityType(){
-        return EntityType.TRUSTED_CERT;
+    public String getResourceType(){
+        return EntityType.TRUSTED_CERT.toString();
     }
 
     @Override

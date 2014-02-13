@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URL
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.util.Functions;
@@ -64,7 +63,7 @@ public class BundleImporter {
                         throw new IllegalArgumentException("Cannot find mapping for " + item.getType() + " id: " + item.getId());
                     }
 
-                    URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(EntityType.valueOf(mapping.getType()));
+                    URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(mapping.getType());
 
                     Item existingResourceItem = locateResource(mapping);
                     if (existingResourceItem != null) {
@@ -147,7 +146,7 @@ public class BundleImporter {
     protected void createResource(@NotNull Item item, @Nullable String id, @NotNull Mapping mapping, @NotNull List<Mapping> resourcesProcessed) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException, FindException {
         try {
             //get transformer
-            APITransformer transformer = apiUtilityLocator.findTransformerByEntityType(EntityType.valueOf(mapping.getType()));
+            APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
             //noinspection unchecked
             Entity entity = (Entity) transformer.convertFromMO(item.getContent(), true);
             //dependencyAnalyzer.replaceDependencies(entity, null);
@@ -158,7 +157,7 @@ public class BundleImporter {
             if(managedObject instanceof StoredPasswordMO) {
                 ((StoredPasswordMO)managedObject).setPassword(((StoredPasswordMO)item.getContent()).getPassword());
             }
-            final APIResourceFactory factory = apiUtilityLocator.findFactoryByEntityType(EntityType.valueOf(mapping.getType()));
+            final APIResourceFactory factory = apiUtilityLocator.findFactoryByResourceType(mapping.getType());
 
             //save the mo
             if(managedObject instanceof ManagedObject){
@@ -176,14 +175,14 @@ public class BundleImporter {
         mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
         mapping.setTargetId(item.getId());
 
-        URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(EntityType.valueOf(mapping.getType()));
+        URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(mapping.getType());
 
         mapping.setTargetUri(urlAccessible.getUrl(item.getContent()));
     }
 
     private Item locateResource(final Mapping mapping) {
-        final APIResourceFactory factory = apiUtilityLocator.findFactoryByEntityType(EntityType.valueOf(mapping.getType()));
-        final APITransformer transformer = apiUtilityLocator.findTransformerByEntityType(EntityType.valueOf(mapping.getType()));
+        final APIResourceFactory factory = apiUtilityLocator.findFactoryByResourceType(mapping.getType());
+        final APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         final TransactionTemplate tt = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         tt.setReadOnly( true );
