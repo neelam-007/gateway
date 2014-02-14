@@ -47,7 +47,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private static final String TYPE_QUEUE = "Queue";
     private static final String TYPE_TOPIC = "Topic";
     private static final Integer CONSUMER_CONNECTIONS_MIN_VALUE = 1;
-    private static final Integer CONSUMER_CONNECTIONS_DEFAULT_VALUE = 25;
+    private static final Integer CONSUMER_CONNECTIONS_DEFAULT_VALUE = 1;
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -121,7 +121,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JLabel queuePasswordWarningLabel;
     private ByteLimitPanel byteLimitPanel;
     private SecurityZoneWidget zoneControl;
-    private JCheckBox dedicatedConsumerConnectionsCheckBox;
     private JSpinner dedicatedConsumerConnectionLimitSpinner;
     private JSpinner sessionPoolSizeSpinner;
     private JTextField sessionPoolMaxWaitTextField;
@@ -129,6 +128,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JLabel sessionPoolMaxWait;
     private JSpinner maxIdleSessionSpinner;
     private JLabel maxSessionIdleLabel;
+    private JLabel jmsConsumerConnectionsLabel;
 
 
     private JmsConnection connection = null;
@@ -326,11 +326,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
 
         });
-
+        Utilities.enableGrayOnDisabled(jmsConsumerConnectionsLabel);
         dedicatedConsumerConnectionLimitSpinner.setModel(new SpinnerNumberModel(1, 1, 10000, 1));
         Utilities.enableGrayOnDisabled(dedicatedConsumerConnectionLimitSpinner);
-        dedicatedConsumerConnectionLimitSpinner.setEnabled(false);
-        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, dedicatedConsumerConnectionsCheckBox.getText()));
+
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
@@ -346,7 +346,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 onSave();
             }
         });
-        dedicatedConsumerConnectionsCheckBox.addItemListener(enableDisableListener);
 
 
         useQueueCredentialsCheckBox.addItemListener(new ItemListener() {
@@ -847,9 +846,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             properties.setProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
         }
 
-        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem()) && dedicatedConsumerConnectionsCheckBox.isSelected()) {
+        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem())) {
             properties.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
-//            properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitTextField.getText());
             properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitSpinner.getValue().toString());
         }
 
@@ -1064,12 +1062,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             environmentPropertiesTableModel.setRows( environmentProperties );
             String isDedicatedConsumer = props.getProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER);
             if (isDedicatedConsumer != null && Boolean.parseBoolean(isDedicatedConsumer)) {
-                dedicatedConsumerConnectionsCheckBox.setSelected(true);
-                //dedicatedConsumerConnectionLimitTextField.setText(getConsumerConnectionLimit(props));
                 dedicatedConsumerConnectionLimitSpinner.setValue(getConsumerConnectionLimit(props));
             } else {
-                dedicatedConsumerConnectionsCheckBox.setSelected(false);
-//                dedicatedConsumerConnectionLimitTextField.setText("");
                 dedicatedConsumerConnectionLimitSpinner.setValue(CONSUMER_CONNECTIONS_MIN_VALUE);
             }
 
@@ -1192,7 +1186,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getConsumerConnectionLimit(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, "25");
+        String val = props.getProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE);
         if(val == null ) return CONSUMER_CONNECTIONS_DEFAULT_VALUE;
         try{
             return new Integer(val);
@@ -1300,16 +1294,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (byteLimitPanel.validateFields()!=null)
             return false;
-        /*if(null != inputValidator.validate())
-            return false;*/
-        //TODO: we might not even need this check since we don't share consumers any more
-/*        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem())) {
-            if (dedicatedConsumerConnectionsCheckBox.isSelected()) {
-                if (!Registry.getDefault().getJmsManager().isValidConsumerConnectionSize(dedicatedConsumerConnectionLimitTextField.getText())) {
-                    return false;
-                }
-            }
-        }*/
 
         return true;
     }
@@ -1325,19 +1309,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableDedicatedConsumerConnections() {
-        boolean enabled = TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem());
-        dedicatedConsumerConnectionsCheckBox.setEnabled(enabled);
-//        dedicatedConsumerConnectionLimitTextField.setEnabled(enabled);
-        dedicatedConsumerConnectionLimitSpinner.setEnabled(enabled);
-
-/*        if (TYPE_TOPIC.equals(destinationTypeComboBox.getSelectedItem())) {
-            dedicatedConsumerConnectionsCheckBox.setEnabled(false);
-            dedicatedConsumerConnectionLimitTextField.setEnabled(false);
-            dedicatedConsumerConnectionLimitSpinner.setEnabled()
-        } else {
-            dedicatedConsumerConnectionsCheckBox.setEnabled(true);
-            dedicatedConsumerConnectionLimitTextField.setEnabled(true);
-        }*/
+        boolean isEnabled = TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem());
+        dedicatedConsumerConnectionLimitSpinner.setEnabled(isEnabled);
+        jmsConsumerConnectionsLabel.setEnabled(isEnabled);
     }
 
     /**
@@ -1375,18 +1349,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
         isTemplateQueue.setEnabled(canEdit && outboundRadioButton.isSelected());
         applyReset.setEnabled( canEdit && providerComboBox.getSelectedItem() != null );
 
-        dedicatedConsumerConnectionLimitSpinner.setEnabled(dedicatedConsumerConnectionsCheckBox.isSelected());
-
-/*        if (dedicatedConsumerConnectionsCheckBox.isSelected()) {
-            dedicatedConsumerConnectionLimitTextField.setEnabled(true);
-        } else {
-            dedicatedConsumerConnectionLimitTextField.setEnabled(false);
-        }*/
 
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && canEdit);
         testButton.setEnabled(valid && !viewIsTemplate());
         enableContentTypeControls();
+        enableOrDisableDedicatedConsumerConnections();
     }
 
     private boolean canEdit() {
