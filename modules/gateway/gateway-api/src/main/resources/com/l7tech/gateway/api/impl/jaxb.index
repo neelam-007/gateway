@@ -9,3 +9,4 @@ PrivateKeyImportContext
 PrivateKeySpecialPurposeContext
 AddAssignmentsContext
 RemoveAssignmentsContext
+VersionComment

@@ -4,20 +4,23 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.I
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
+import com.l7tech.gateway.api.impl.VersionComment;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.Either;
+import com.l7tech.util.Eithers;
 import com.l7tech.util.Eithers.*;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
@@ -44,11 +47,13 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                                   final PolicyManager policyManager,
                                   final PolicyHelper policyHelper,
                                   final FolderResourceFactory folderResourceFactory,
-                                  final SecurityZoneManager securityZoneManager ) {
+                                  final SecurityZoneManager securityZoneManager,
+                                  final PolicyVersionManager policyVersionManager) {
         super( false, true, true, services, securityFilter, transactionManager, policyManager, securityZoneManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
         this.folderResourceFactory = folderResourceFactory;
+        this.policyVersionManager = policyVersionManager;
     }
 
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
@@ -122,6 +127,40 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                 }
             }
         }, true ) );
+    }
+
+    @ResourceMethod(name="SetVersionComment", selectors=true, resource=true)
+    public void setVersionComment( final Map<String,String> selectorMap,
+                                            final VersionComment resource ) throws ResourceNotFoundException, InvalidResourceException {
+        Eithers.extract2(transactional(new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, String>>() {
+            @SuppressWarnings({"unchecked"})
+            @Override
+            public E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
+                try {
+                    final Policy policy = selectEntity(selectorMap);
+                    policyHelper.checkPolicyAssertionAccess(policy);
+                    checkPermitted(OperationType.READ, null, policy);
+                    // update comment
+                    PolicyVersion policyVersion = null;
+                    if (resource.getVersionNumber() != null) {
+                        policyVersion = policyVersionManager.findPolicyVersionForPolicy(policy.getGoid(), resource.getVersionNumber());
+                    } else {
+                        policyVersion = policyVersionManager.findActiveVersionForPolicy(policy.getGoid());
+                    }
+                    if (policyVersion == null) throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Version not found " + resource.getVersionNumber());
+                    checkPermitted(OperationType.UPDATE, null, policyVersion);
+                    policyVersion.setName(resource.getComment());
+                    policyVersionManager.update(policyVersion);
+                    return right2(policyVersion.getName());
+                } catch (FindException e) {
+                    return left2_1(new ResourceNotFoundException(ExceptionUtils.getMessage(e), e));
+                } catch (ResourceNotFoundException e) {
+                    return left2_1(e);
+                } catch (InvalidResourceException e) {
+                    return left2_2(e);
+                }
+            }
+        }, false));
     }
     
     //- PROTECTED
@@ -277,6 +316,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     private final PolicyManager policyManager;
     private final PolicyHelper policyHelper;
     private final FolderResourceFactory folderResourceFactory;
+    private final PolicyVersionManager policyVersionManager;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
 }

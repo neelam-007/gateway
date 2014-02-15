@@ -13,6 +13,14 @@ import java.util.List;
  */
 public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,EntityHeader> implements PolicyVersionManager {
 
+    public PolicyVersionManagerStub(){
+        super();
+    }
+
+    public PolicyVersionManagerStub(PolicyVersion... entitiesIn){
+        super(entitiesIn);
+    }
+
     @Override
     public PolicyVersion checkpointPolicy( final Policy newPolicy, final boolean activated, final boolean newEntity ) throws ObjectModelException {
         throw new ObjectModelException("Not Implemented");
@@ -20,7 +28,12 @@ public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,En
 
     @Override
     public PolicyVersion findByPrimaryKey( final Goid policyOid, final Goid policyVersionOid ) throws FindException {
-        return entities.get(policyVersionOid);
+        for(PolicyVersion policyVersion : entities.values()){
+            if(Goid.equals(policyVersion.getPolicyGoid(), policyOid) && Goid.equals(policyVersion.getGoid(), policyVersionOid)){
+                return policyVersion;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -41,12 +54,22 @@ public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,En
 
     @Override
     public PolicyVersion findActiveVersionForPolicy( final Goid policyOid ) throws FindException {
-        throw new FindException("Not Implemented");
+        for(PolicyVersion policyVersion : entities.values()){
+            if(Goid.equals(policyVersion.getPolicyGoid(), policyOid) && policyVersion.isActive()){
+                return policyVersion;
+            }
+        }
+        return null;
     }
 
     @Override
     public PolicyVersion findPolicyVersionForPolicy(Goid policyGoid, long versionOrdinal) throws FindException {
-        throw new FindException("Not Implemented");
+        for(PolicyVersion policyVersion : entities.values()){
+            if(Goid.equals(policyVersion.getPolicyGoid(), policyGoid) && policyVersion.getOrdinal() == versionOrdinal){
+                return policyVersion;
+            }
+        }
+        return null;
     }
 
     @Override

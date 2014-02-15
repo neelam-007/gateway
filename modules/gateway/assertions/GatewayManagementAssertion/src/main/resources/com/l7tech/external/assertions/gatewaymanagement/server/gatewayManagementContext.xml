@@ -104,6 +104,7 @@
         <constructor-arg index="4" ref="policyHelper"/>
         <constructor-arg index="5" ref="folderResourceFactory"/>
         <constructor-arg index="6" ref="securityZoneManager"/>
+        <constructor-arg index="7" ref="policyVersionManager"/>
     </bean>
 
     <bean id="serviceResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="resourceFactoryParent">
@@ -119,6 +120,7 @@
         <constructor-arg index="7" ref="policyHelper"/>
         <constructor-arg index="8" ref="folderResourceFactory"/>
         <constructor-arg index="9" ref="securityZoneManager"/>
+        <constructor-arg index="10" ref="policyVersionManager"/>
     </bean>
     <bean id="certificateResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory" parent="resourceFactoryParent">
         <constructor-arg index="3" ref="trustedCertManager"/>
