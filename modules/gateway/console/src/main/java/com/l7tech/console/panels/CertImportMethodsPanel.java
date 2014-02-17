@@ -18,6 +18,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.apache.commons.lang.WordUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -328,9 +329,10 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             } catch (IOException ioe) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.url.io.error") + "\n" +
-                                       urlConnTextField.getText().trim() + "\nPlease ensure the URL is correct.",
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                        WordUtils.wrap(urlConnTextField.getText().trim(),
+                        Integer.valueOf(resources.getString("view.error.wrapCharLength")), null, true) + "\nPlease ensure the URL is correct.",
+                        resources.getString("view.error.title"),
+                      JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
