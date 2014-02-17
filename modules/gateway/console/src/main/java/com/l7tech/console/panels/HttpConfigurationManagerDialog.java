@@ -245,26 +245,34 @@ public class HttpConfigurationManagerDialog extends JDialog {
                     final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
                     try {
                         admin.saveHttpConfiguration( httpConfiguration );
-                    } catch ( DuplicateObjectException e ) {
-                        DialogDisplayer.showMessageDialog(
-                                HttpConfigurationManagerDialog.this,
-                                "The HTTP Options conflict with existing options.\nPlease update the 'General' settings and try again.",
-                                "Duplicate HTTP Options",
-                                JOptionPane.INFORMATION_MESSAGE,
-                                new Runnable(){
-                            @Override
-                            public void run() {
-                                doEdit( httpConfiguration, false );
-                            }
-                        } );
-                    } catch ( ObjectModelException e ) {
-                        throw ExceptionUtils.wrap( e );
+                    } catch ( final DuplicateObjectException e ) {
+                        handleDuplicateError(httpConfiguration);
+                    } catch ( final ObjectModelException e ) {
+                        if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                            handleDuplicateError(httpConfiguration);
+                        } else {
+                            throw ExceptionUtils.wrap( e );
+                        }
                     }
 
                     loadHttpConfigurations();
                 }
             }
         } );
+    }
+
+    private void handleDuplicateError(final HttpConfiguration httpConfiguration) {
+        DialogDisplayer.showMessageDialog(
+                this,
+                "The HTTP Options conflict with existing options.\nPlease update the 'General' settings and try again.",
+                "Duplicate HTTP Options",
+                JOptionPane.INFORMATION_MESSAGE,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        doEdit(httpConfiguration, false);
+                    }
+                });
     }
 
     private void doRemove(){
