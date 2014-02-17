@@ -3519,6 +3519,52 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testServiceSetVersionComment() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header>" +
+                        "<env:Body><VersionComment xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">" +
+                        "<Comment>New Comment</Comment>" +
+                        "</VersionComment></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @Test
+    public void testServiceSetVersion1Comment() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header>" +
+                        "<env:Body><VersionComment xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">" +
+                        "<Comment>New Comment</Comment><VersionNumber>1</VersionNumber>" +
+                        "</VersionComment></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        assertNull("No body content", soapBody.getFirstChild());
+    }
+
+    @Test
+    public void testServiceSetVersion2CommentFails() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header>" +
+                        "<env:Body><VersionComment xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">" +
+                        "<Comment>New Comment</Comment><VersionNumber>2</VersionNumber>" +
+                        "</VersionComment></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element soapFault = XmlUtil.findExactlyOneChildElementByName(soapBody, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Fault");
+        final Element code = XmlUtil.findExactlyOneChildElementByName(soapFault, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Code");
+        final Element subcode = XmlUtil.findExactlyOneChildElementByName(code, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
+        final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+        assertEquals("SOAP Fault value", "wxf:InvalidRepresentation", XmlUtil.getTextValue(value));
+    }
+
+    @Test
     public void testPolicyImport() throws Exception {
         final String message =
                 "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">"+new Goid(0,1)+"</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
@@ -5284,7 +5330,13 @@ public class ServerGatewayManagementAssertionTest {
         policyVersion1.setOrdinal(1);
         policyVersion1.setActive(true);
         policyVersion1.setName("Comment");
-        applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub(policyVersion1));
+        final PolicyVersion serviceVersion1 = new PolicyVersion();
+        serviceVersion1.setGoid(new Goid(0,2));
+        serviceVersion1.setPolicyGoid(new Goid(1,1l));
+        serviceVersion1.setOrdinal(1);
+        serviceVersion1.setActive(true);
+        serviceVersion1.setName("Comment");
+        applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub(policyVersion1,serviceVersion1));
 
         final SecurityZone securityZone1 = new SecurityZone();
         securityZone1.setGoid(new Goid(0,1));
@@ -5537,6 +5589,7 @@ public class ServerGatewayManagementAssertionTest {
         final PublishedService service = new PublishedService();
         service.setGoid(goid);
         service.setName( name );
+        service.getPolicy().setGoid(new Goid(1,goid.getLow()));
         service.getPolicy().setName( "Policy for " + name + " (#" + goid + ")" );
         service.getPolicy().setGuid( UUID.randomUUID().toString() );
         service.getPolicy().setXml( POLICY );
