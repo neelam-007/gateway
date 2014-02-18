@@ -60,17 +60,23 @@ public class RolePermissionsPanel extends JPanel {
     private Set<Permission> permissions;
     private SimpleTableModel<PermissionGroup> permissionsModel;
     private boolean readOnly;
+    private boolean differentiateNewPermissions;
     private Map<String, Integer> columnIndices = new HashMap<>();
 
+    /**
+     * Creates a read-only permissions panel.
+     */
     public RolePermissionsPanel() {
-        this(true);
+        this(true, false);
     }
 
     /**
-     * @param readOnly true if the user should not be allowed to edit the permissions.
+     * @param readOnly                    true if the user should not be allowed to edit the permissions.
+     * @param differentiateNewPermissions true if new permissions should be differentiated from existing permissions.
      */
-    public RolePermissionsPanel(final boolean readOnly) {
+    public RolePermissionsPanel(final boolean readOnly, final boolean differentiateNewPermissions) {
         this.readOnly = readOnly;
+        this.differentiateNewPermissions = differentiateNewPermissions;
         initTable();
         initButtons();
         initFiltering();
@@ -147,7 +153,7 @@ public class RolePermissionsPanel extends JPanel {
 
     private void initTable() {
         final List<TableUtil.Col<PermissionGroup>> columns = new ArrayList<>();
-        if (!readOnly) {
+        if (!readOnly && differentiateNewPermissions) {
             columns.add(column(NEW, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
                 @Override
                 public Boolean call(final PermissionGroup permissionGroup) {
@@ -207,7 +213,7 @@ public class RolePermissionsPanel extends JPanel {
         }));
 
         int index = 0;
-        if (!readOnly) {
+        if (!readOnly && differentiateNewPermissions) {
             columnIndices.put(NEW, index++);
         }
         columnIndices.put(TYPE, index++);
@@ -224,7 +230,7 @@ public class RolePermissionsPanel extends JPanel {
         final HighlightedCellRenderer highlightedCellRenderer = new HighlightedCellRenderer();
         permissionsTable.getColumnModel().getColumn(columnIndices.get(TYPE)).setCellRenderer(highlightedCellRenderer);
         permissionsTable.getColumnModel().getColumn(columnIndices.get(SCOPE)).setCellRenderer(highlightedCellRenderer);
-        if (!readOnly) {
+        if (!readOnly && differentiateNewPermissions) {
             permissionsTable.getColumnModel().getColumn(columnIndices.get(NEW)).setCellRenderer(new CheckCellRenderer());
         }
         final CheckOrXCellRenderer checkXRenderer = new CheckOrXCellRenderer();
@@ -239,13 +245,13 @@ public class RolePermissionsPanel extends JPanel {
         final int[] cols = new int[numCols];
         final boolean[] order = new boolean[numCols];
         Comparator[] comparators = null;
-        if (!readOnly) {
+        if (!readOnly && differentiateNewPermissions) {
             comparators = new Comparator[numCols];
         }
         for (int i = 0; i < numCols; i++) {
             cols[i] = i;
             order[i] = true;
-            if (!readOnly && comparators != null) {
+            if (comparators != null) {
                 comparators[i] = i == columnIndices.get(NEW) ? ComparatorUtils.booleanComparator(true) : null;
             }
         }
@@ -382,7 +388,7 @@ public class RolePermissionsPanel extends JPanel {
             final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
                 component.setForeground(table.getForeground());
-                if (!readOnly) {
+                if (!readOnly && differentiateNewPermissions) {
                     if (row >= 0) {
                         final int modelIndex = permissionsTable.convertRowIndexToModel(row);
                         if (modelIndex >= 0) {
@@ -396,7 +402,7 @@ public class RolePermissionsPanel extends JPanel {
                         }
                     }
                 } else {
-                    // table is just for viewing, don't highlight
+                    // don't highlight
                     component.setBackground(table.getBackground());
                 }
             } else {

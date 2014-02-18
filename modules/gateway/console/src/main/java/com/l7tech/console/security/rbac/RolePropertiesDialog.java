@@ -2,13 +2,11 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.BasicPropertiesPanel;
 import com.l7tech.console.panels.OkCancelPanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -130,7 +128,7 @@ public class RolePropertiesDialog extends JDialog {
     }
 
     private void createUIComponents() {
-        permissionsPanel = new RolePermissionsPanel(readOnly);
+        permissionsPanel = new RolePermissionsPanel(readOnly, !role.isUnsaved());
     }
 
     private class OkButtonActionListener implements ActionListener {
