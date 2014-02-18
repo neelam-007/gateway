@@ -348,7 +348,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
                             newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
                         } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {
-                            newAncestor = new ForEachLoopAssertionPolicyNode(new ForEachLoopAssertion());
+                            final ForEachLoopAssertionPolicyNode forEachNode = (ForEachLoopAssertionPolicyNode) ancestor;
+                            final ForEachLoopAssertion forEach = new ForEachLoopAssertion();
+                            forEach.setLoopVariableName(forEachNode.assertion.getLoopVariableName());
+                            forEach.setVariablePrefix(forEachNode.assertion.getVariablePrefix());
+                            newAncestor = new ForEachLoopAssertionPolicyNode(forEach);
                         } else {
                             break;
                         }
