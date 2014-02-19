@@ -276,7 +276,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( serviceMO, service );
+        doSecurityZoneFromResource( serviceMO, service, true );
 
         return new ServiceEntityBag( service, serviceDocuments );
     }

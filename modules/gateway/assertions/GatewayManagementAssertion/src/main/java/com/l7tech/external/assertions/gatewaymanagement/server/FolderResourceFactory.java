@@ -67,23 +67,30 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
     }
 
     @Override
-    protected Folder fromResource( final Object resource ) throws InvalidResourceException {
+    public Folder fromResource( final Object resource, final boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof FolderMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected folder");
 
         final FolderMO folderResource = (FolderMO) resource;
 
         final Folder folderEntity;
-        try {
-            folderEntity = new Folder(
-                    asName(folderResource.getName()),
-                    folderResource.getFolderId()==null ? null : selectEntity( Collections.singletonMap( IDENTITY_SELECTOR, handleRootFolderOid(folderResource.getFolderId()) ) ) );
-        } catch ( ResourceNotFoundException e ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid parent folder");
+        Folder parentFolder = null;
+        if(folderResource.getFolderId() != null) {
+            try {
+                parentFolder = selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, handleRootFolderOid(folderResource.getFolderId())));
+            } catch ( ResourceNotFoundException e ) {
+                if(strict)
+                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid parent folder");
+                parentFolder = new Folder();
+                parentFolder.setId(handleRootFolderOid(folderResource.getFolderId()));
+            }
         }
+        folderEntity = new Folder(
+                asName(folderResource.getName()),
+                parentFolder);
 
         // handle SecurityZone
-        doSecurityZoneFromResource( folderResource, folderEntity );
+        doSecurityZoneFromResource( folderResource, folderEntity, strict );
 
         return folderEntity;
     }

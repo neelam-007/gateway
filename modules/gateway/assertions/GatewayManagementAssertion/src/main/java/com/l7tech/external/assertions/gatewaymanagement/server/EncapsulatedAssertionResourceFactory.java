@@ -185,14 +185,13 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
     //- PROTECTED
 
     @Override
-    protected EncapsulatedAssertionConfig fromResource(Object resource) throws InvalidResourceException {
+    public EncapsulatedAssertionConfig fromResource(Object resource, boolean strict) throws InvalidResourceException {
         if ( !(resource instanceof EncapsulatedAssertionMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected encapsulated assertion");
 
         final EncapsulatedAssertionMO encassResource = (EncapsulatedAssertionMO) resource;
 
         final EncapsulatedAssertionConfig encassEntity;
-        try {
             encassEntity = new EncapsulatedAssertionConfig();
             encassEntity.setName(asName(encassResource.getName()));
 
@@ -205,18 +204,24 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
             encassEntity.setArgumentDescriptors(getArgumentDescriptorSet(encassResource, encassEntity));
             encassEntity.setResultDescriptors(getResultDescriptorSet(encassResource, encassEntity));
 
-            Policy policy = policyManager.findByPrimaryKey(toInternalId(EntityType.POLICY, encassResource.getPolicyReference().getId(), "Policy Resource Identifier")) ;
-            if (policy == null)
-                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy reference");
-            checkPermitted(OperationType.READ, null, policy);
-            encassEntity.setPolicy(policy);
-
+        Policy policy = null;
+        try {
+            policy = policyManager.findByPrimaryKey(toInternalId(EntityType.POLICY, encassResource.getPolicyReference().getId(), "Policy Resource Identifier")) ;
         } catch (FindException e) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown policy reference");
+            if(strict)
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown policy reference");
         }
+        if (policy == null && strict)
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy reference");
+        else if(policy == null){
+            policy = new Policy(PolicyType.INCLUDE_FRAGMENT, null, null, false);
+            policy.setId(encassResource.getPolicyReference().getId());
+        }
+        checkPermitted(OperationType.READ, null, policy);
+        encassEntity.setPolicy(policy);
 
         // handle SecurityZone
-        doSecurityZoneFromResource( encassResource, encassEntity );
+        doSecurityZoneFromResource( encassResource, encassEntity, strict );
 
         return encassEntity;
 

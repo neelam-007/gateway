@@ -45,7 +45,7 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
     }
 
     @Override
-    protected SecurePassword fromResource( final Object resource ) throws InvalidResourceException {
+    public SecurePassword fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof StoredPasswordMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected stored password");
 
@@ -61,7 +61,7 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
         }
 
         // handle SecurityZone
-        doSecurityZoneFromResource( storedPassword, securePasswordEntity );
+        doSecurityZoneFromResource( storedPassword, securePasswordEntity, strict );
 
         return securePasswordEntity;
     }

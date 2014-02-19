@@ -74,7 +74,7 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
     }
 
     @Override
-    protected EmailListener fromResource(Object resource) throws InvalidResourceException {
+    public EmailListener fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if (!(resource instanceof EmailListenerMO))
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected SiteMinder configuration");
@@ -116,7 +116,7 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
         emailListener.properties(emailProperties);
 
         // handle SecurityZone
-        doSecurityZoneFromResource(emailResource, emailListener);
+        doSecurityZoneFromResource(emailResource, emailListener, strict);
 
         return emailListener;
     }

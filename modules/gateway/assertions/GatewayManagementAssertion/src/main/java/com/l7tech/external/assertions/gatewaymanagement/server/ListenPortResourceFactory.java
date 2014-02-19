@@ -71,7 +71,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
     }
 
     @Override
-    protected SsgConnector fromResource( final Object resource ) throws InvalidResourceException {
+    public SsgConnector fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof ListenPortMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected listen port");
 
@@ -100,7 +100,7 @@ public class ListenPortResourceFactory extends SecurityZoneableEntityManagerReso
         setTlsProperties( listenPort, connector );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( listenPort, connector );
+        doSecurityZoneFromResource( listenPort, connector, strict );
 
         return connector;
     }

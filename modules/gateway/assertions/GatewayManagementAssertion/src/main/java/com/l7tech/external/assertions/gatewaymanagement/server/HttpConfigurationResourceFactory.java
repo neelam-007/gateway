@@ -81,7 +81,7 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
     }
 
     @Override
-    protected HttpConfiguration fromResource(final Object resource) throws InvalidResourceException {
+    public HttpConfiguration fromResource(final Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof HttpConfigurationMO))
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected http configuration");
 
@@ -108,7 +108,7 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
         httpConfiguration.setProxyConfiguration(httpConfigurationMO.getProxyConfiguration() == null ? new HttpProxyConfiguration() : convertProxyFromResource(httpConfigurationMO.getProxyConfiguration()));
 
         // handle SecurityZone
-        doSecurityZoneFromResource(httpConfigurationMO, httpConfiguration);
+        doSecurityZoneFromResource(httpConfigurationMO, httpConfiguration, strict);
 
         return httpConfiguration;
     }

@@ -186,18 +186,18 @@ public class BundleImporter {
         throw new NotImplementedException();
     }
 
-    protected void createResource(@NotNull Item item, @Nullable String id, @NotNull Mapping mapping, @NotNull Map<EntityHeader, EntityHeader> resourceMapping) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException, FindException {
+    protected void createResource(@NotNull final Item item, @Nullable final String id, @NotNull final Mapping mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException, FindException {
         try {
             //get transformer
-            APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
+            final APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
             //noinspection unchecked
-            Entity entity = (Entity) transformer.convertFromMO(item.getContent(), true);
+            Entity entity = (Entity) transformer.convertFromMO(item.getContent(), false);
             //replace dependencies in the entity
             dependencyAnalyzer.replaceDependencies(entity, resourceMapping);
             //TODO: is there a way to do this without converting back to an MO?
             //convert back to an mo
-            //TODO: special cases like passwords, is there a beter way to handle them
-            Object managedObject = transformer.convertToMO(entity);
+            //TODO: special cases like passwords, is there a better way to handle them
+            final Object managedObject = transformer.convertToMO(entity);
             if(managedObject instanceof StoredPasswordMO) {
                 ((StoredPasswordMO)managedObject).setPassword(((StoredPasswordMO)item.getContent()).getPassword());
             }
@@ -207,11 +207,32 @@ public class BundleImporter {
             if(managedObject instanceof ManagedObject){
                 ((ManagedObject)managedObject).setId(id);
             }
-            if(id == null) {
-                factory.createResource(managedObject);
-            } else {
-                factory.createResource(id, managedObject);
+            // Create the managed object within a transaction so that it can be flushed after it is created.
+            // Flushing allows it to be found later by the entity managers.
+            final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+            tt.setReadOnly( false );
+            ResourceFactory.InvalidResourceException exception = tt.execute(new TransactionCallback<ResourceFactory.InvalidResourceException>() {
+                @Override
+                public ResourceFactory.InvalidResourceException doInTransaction(final TransactionStatus transactionStatus) {
+                    try {
+                        if (id == null) {
+                            factory.createResource(managedObject);
+                        } else {
+                            factory.createResource(id, managedObject);
+                        }
+                    } catch (ResourceFactory.InvalidResourceException e) {
+                        return e;
+                    }
+                    //flush the newly created object so that it can be found by the entity managers later.
+                    transactionStatus.flush();
+                    return null;
+                }
+            });
+            //throw the exception if there was one attempting to save the entity.
+            if(exception != null) {
+                throw exception;
             }
+
             // Adds the mapped headers to the resourceMapping map if they are different.
             try {
                 EntityHeader createdHeader = transformer.convertToHeader(managedObject);

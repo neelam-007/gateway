@@ -6,6 +6,8 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.EntityHeaderUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,12 +49,17 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @Override
     public E convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException {
-        return factory.fromResource(m, strict);
+        E entity = factory.fromResource(m, strict);
+        if(entity instanceof PersistentEntity && m.getId() != null){
+            //set the entity id as it is not always set
+            ((PersistentEntity)entity).setGoid(Goid.parseGoid(m.getId()));
+        }
+        return entity;
     }
 
     @Override
     public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException {
-        return EntityHeaderUtils.fromEntity((Entity) factory.fromResource(m, false));
+        return EntityHeaderUtils.fromEntity((Entity) convertFromMO(m, false));
     }
 
     @Override

@@ -54,7 +54,7 @@ public class SecurityZoneResourceFactory extends EntityManagerResourceFactory<Se
     }
 
     @Override
-    protected SecurityZone fromResource(Object resource) throws InvalidResourceException {
+    public SecurityZone fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if ( !(resource instanceof SecurityZoneMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected security zone");

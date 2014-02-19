@@ -99,6 +99,12 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
     private void buildDependentObjectsList(List<DependentObject> dependentObjects, final DependentObject dependent, List<Dependency> dependencies) {
         if (dependent != null && com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
+            //if it is a folder we still need to put security zone dependencies first.
+            for (Dependency dependency : dependencies) {
+                if(com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependency.getDependent().getDependencyType())) {
+                    buildDependentObjectsList(dependentObjects, dependency.getDependent(), dependency.getDependencies());
+                }
+            }
             buildDependentObjectsList(dependentObjects, dependent);
         }
         for (Dependency dependency : dependencies) {

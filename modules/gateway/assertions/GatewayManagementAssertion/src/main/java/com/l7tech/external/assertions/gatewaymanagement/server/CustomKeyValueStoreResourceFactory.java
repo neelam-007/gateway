@@ -26,7 +26,7 @@ public class CustomKeyValueStoreResourceFactory extends EntityManagerResourceFac
     //- PROTECTED
 
     @Override
-    protected CustomKeyValueStore fromResource(Object resource) throws InvalidResourceException {
+    public CustomKeyValueStore fromResource(Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof CustomKeyValueStoreMO )) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected custom key value");
         }

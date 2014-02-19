@@ -26,29 +26,34 @@ public abstract class SecurityZoneableEntityManagerResourceFactory<R extends Sec
         }
     }
 
-    protected void doSecurityZoneFromResource(R resource, final E entity) throws InvalidResourceException {
+    protected void doSecurityZoneFromResource(R resource, final E entity, final boolean strict) throws InvalidResourceException {
         if (entity instanceof ZoneableEntity) {
 
             if (resource.getSecurityZoneId() != null && !resource.getSecurityZoneId().isEmpty()) {
                 final Goid securityZoneId;
                 try {
                     securityZoneId = GoidUpgradeMapper.mapId(EntityType.SECURITY_ZONE, resource.getSecurityZoneId());
-                } catch( IllegalArgumentException nfe ) {
+                } catch (IllegalArgumentException nfe) {
                     throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
                 }
+                SecurityZone zone = null;
                 try {
-
-                    SecurityZone zone = securityZoneManager.findByPrimaryKey( securityZoneId );
-                    if ( zone == null )
-                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
-                    if ( !zone.permitsEntityType(EntityType.findTypeByEntity(entity.getClass())) )
-                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "entity type not permitted for referenced security zone");
-
-                    ((ZoneableEntity) entity).setSecurityZone( zone );
-
+                    zone = securityZoneManager.findByPrimaryKey(securityZoneId);
                 } catch (FindException e) {
-                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
+                    if(strict)
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
                 }
+                if (strict) {
+                    if (zone == null)
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown security zone reference");
+                    if (!zone.permitsEntityType(EntityType.findTypeByEntity(entity.getClass())))
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "entity type not permitted for referenced security zone");
+                } else if (zone == null) {
+                    zone = new SecurityZone();
+                    zone.setGoid(securityZoneId);
+                    zone.setName(resource.getSecurityZone());
+                }
+                ((ZoneableEntity) entity).setSecurityZone(zone);
             }
         }
     }

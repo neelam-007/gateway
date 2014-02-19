@@ -47,7 +47,7 @@ public class GenericEntityResourceFactory extends EntityManagerResourceFactory<G
     }
 
     @Override
-    protected GenericEntity fromResource(Object resource) throws InvalidResourceException {
+    public GenericEntity fromResource(Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof GenericEntityMO)) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected generic entity");
         }

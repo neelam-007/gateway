@@ -16,16 +16,11 @@ import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
-import static com.l7tech.util.TextUtils.trim;
-
-import com.l7tech.util.ValidationUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+
+import static com.l7tech.util.TextUtils.trim;
 
 /**
  * 
@@ -144,7 +139,7 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         }
 
         // handleSecurityZone
-        doSecurityZoneFromResource( jmsDestination, jmsEndpoint );
+        doSecurityZoneFromResource( jmsDestination, jmsEndpoint, true );
         jmsConnection.setSecurityZone( jmsEndpoint.getSecurityZone() );
 
         return new JmsEntityBag( jmsEndpoint, jmsConnection );

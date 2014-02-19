@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -21,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import java.util.Collections;
 
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 
 /**
  *
@@ -61,25 +63,35 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
     }
 
     @Override
-    protected PolicyAlias fromResource(final Object resource) throws InvalidResourceException {
+    public PolicyAlias fromResource(final Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof PolicyAliasMO))
             throw new InvalidResourceException(ExceptionType.UNEXPECTED_TYPE, "expected policy alias");
 
         final PolicyAliasMO policyAliasResource = (PolicyAliasMO) resource;
 
-        final Option<Folder> parentFolder = folderResourceFactory.getFolder(optional(policyAliasResource.getFolderId()));
-        if (!parentFolder.isSome())
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Folder not found");
+        Option<Folder> parentFolder = folderResourceFactory.getFolder(optional(policyAliasResource.getFolderId()));
+        if (!parentFolder.isSome()){
+            if(strict) {
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Folder not found");
+            } else {
+                Folder folder = new Folder();
+                folder.setId(optional(policyAliasResource.getFolderId()).orSome(Folder.ROOT_FOLDER_ID.toString()));
+                parentFolder = some(folder);
+            }
+        }
         folderResourceFactory.checkMovePermitted(null,parentFolder.some());
 
         final String policyId = policyAliasResource.getPolicyReference().getId();
-        final Policy policy;
+        Policy policy;
         try {
             policy = policyResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, policyId));
             if (isRootFolder(policy.getFolder()) ? isRootFolder(parentFolder.some()) : policy.getFolder().equals(parentFolder.some()))
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original");
         } catch (NullPointerException | ResourceNotFoundException e) {
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
+            if(strict)
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
+            policy = new Policy(PolicyType.INCLUDE_FRAGMENT, null, null, false);
+            policy.setId(policyId);
         }
 
         // policy alias referencing same policy cannot be in same folder
@@ -92,7 +104,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         }
         final PolicyAlias policyAliasEntity = new PolicyAlias(policy, parentFolder.some());
         // handle SecurityZone
-        doSecurityZoneFromResource(policyAliasResource, policyAliasEntity);
+        doSecurityZoneFromResource(policyAliasResource, policyAliasEntity, strict);
 
         return policyAliasEntity;
     }

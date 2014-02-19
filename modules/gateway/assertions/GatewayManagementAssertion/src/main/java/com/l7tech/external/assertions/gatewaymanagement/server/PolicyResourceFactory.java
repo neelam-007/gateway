@@ -32,6 +32,7 @@ import static com.l7tech.util.Eithers.*;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 
 /**
  *
@@ -210,7 +211,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     }
 
     @Override
-    protected Policy fromResource( final Object resource ) throws InvalidResourceException {
+    public Policy fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof PolicyMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected policy");
 
@@ -227,9 +228,16 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
         if ( resourceSetMap.size() > 1 ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unexpected resource sets " + resourceSetMap.keySet().remove( ResourceHelper.POLICY_TAG ));
         }
-        final Option<Folder> folder = folderResourceFactory.getFolder( optional( policyDetail.getFolderId() ) );
-        if ( !folder.isSome() )
-            throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
+        Option<Folder> folder = folderResourceFactory.getFolder( optional( policyDetail.getFolderId() ) );
+        if ( !folder.isSome() ){
+            if(strict) {
+                throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
+            } else {
+                Folder folderParent = new Folder();
+                folderParent.setId(optional(policyDetail.getFolderId()).orSome(Folder.ROOT_FOLDER_ID.toString()));
+                folder = some(folderParent);
+            }
+        }
 
         final String policyName = asName(policyDetail.getName());
         final PolicyType policyType;
@@ -252,7 +260,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
         setProperties( policy, policyDetail.getProperties(), Policy.class );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( policyMO, policy );
+        doSecurityZoneFromResource( policyMO, policy, strict );
 
         return policy;
     }

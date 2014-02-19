@@ -22,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import java.util.Collections;
 
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 
 /**
  *
@@ -62,26 +63,35 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
     }
 
     @Override
-    protected PublishedServiceAlias fromResource(final Object resource) throws InvalidResourceException {
+    public PublishedServiceAlias fromResource(final Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof ServiceAliasMO))
             throw new InvalidResourceException(ExceptionType.UNEXPECTED_TYPE, "expected policy alias");
 
         final ServiceAliasMO PublishedServiceAliasResource = (ServiceAliasMO) resource;
 
-        final Option<Folder> parentFolder = folderResourceFactory.getFolder(optional(PublishedServiceAliasResource.getFolderId()));
+        Option<Folder> parentFolder = folderResourceFactory.getFolder(optional(PublishedServiceAliasResource.getFolderId()));
         if (!parentFolder.isSome())
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Parent folder not found");
+            if(strict) {
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Parent folder not found");
+            } else {
+                Folder folder = new Folder();
+                folder.setId(optional(PublishedServiceAliasResource.getFolderId()).orSome(Folder.ROOT_FOLDER_ID.toString()));
+                parentFolder = some(folder);
+            }
         folderResourceFactory.checkMovePermitted(null,parentFolder.some());
 
         // policy alias cannot be in same folder as the original
-        final PublishedService service;
+        PublishedService service;
         final String serviceID = PublishedServiceAliasResource.getServiceReference().getId();
         try {
             service = serviceResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR,serviceID) );
             if (isRootFolder(service.getFolder()) ? isRootFolder(parentFolder.some()) : service.getFolder().equals(parentFolder.some()))
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original");
         } catch (NullPointerException | ResourceNotFoundException e) {
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
+            if(strict)
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
+            service = new PublishedService();
+            service.setId(serviceID);
         }
 
         // policy alias referencing same policy cannot be in same folder
@@ -95,7 +105,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
 
         final PublishedServiceAlias PublishedServiceAliasEntity = new PublishedServiceAlias(service, parentFolder.some());
         // handle SecurityZone
-        doSecurityZoneFromResource(PublishedServiceAliasResource, PublishedServiceAliasEntity);
+        doSecurityZoneFromResource(PublishedServiceAliasResource, PublishedServiceAliasEntity, strict);
 
         return PublishedServiceAliasEntity;
     }

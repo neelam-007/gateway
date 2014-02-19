@@ -67,7 +67,7 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
     }
 
     @Override
-    protected TrustedCert fromResource( final Object resource ) throws InvalidResourceException {
+    public TrustedCert fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof TrustedCertificateMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected certificate");
 
@@ -92,7 +92,7 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
         setProperties( certificateEntity, certificateResource.getProperties(), TrustedCert.class );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( certificateResource, certificateEntity );
+        doSecurityZoneFromResource( certificateResource, certificateEntity, strict );
 
         return certificateEntity;
     }

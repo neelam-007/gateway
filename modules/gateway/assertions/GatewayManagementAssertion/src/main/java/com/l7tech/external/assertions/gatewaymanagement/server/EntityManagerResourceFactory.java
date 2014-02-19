@@ -330,18 +330,13 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * the identity and version of the entity.<p>
      *
      * @param resource The resource representation
+     * @param strict If true throw an exception if a referenced entity cannot be found. Otherwise add a dummy referenced entity
      * @return The entity
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the resource cannot be converted
      */
-    protected E fromResource(Object resource) throws InvalidResourceException {
-        throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "update not supported");
-    }
-
     @Override
     public E fromResource(Object resource, boolean strict) throws InvalidResourceException {
-        //TODO: Need to implement
-        return fromResource(resource);
-        //throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "update not supported");
+        throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "update not supported");
     }
 
     /**
@@ -360,7 +355,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the resource cannot be converted
      */
     protected EntityBag<E> fromResourceAsBag( Object resource ) throws InvalidResourceException {
-       return new EntityBag<E>( fromResource( resource ) );
+       return new EntityBag<>( fromResource( resource, true ) );
     }
 
     /**

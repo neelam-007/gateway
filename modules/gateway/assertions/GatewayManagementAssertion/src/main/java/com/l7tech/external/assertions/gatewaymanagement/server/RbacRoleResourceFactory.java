@@ -231,7 +231,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
      * @throws InvalidResourceException
      */
     @Override
-    protected Role fromResource(final Object resource) throws InvalidResourceException {
+    public Role fromResource(final Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof RbacRoleMO))
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected rbac role");
 

@@ -72,7 +72,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
     }
 
     @Override
-    protected SiteMinderConfiguration fromResource(Object resource) throws InvalidResourceException {
+    public SiteMinderConfiguration fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if ( !(resource instanceof SiteMinderConfigurationMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected SiteMinder configuration");
@@ -90,14 +90,16 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setUserName( smResource.getUserName() );
         if ( smResource.getPasswordId() != null && !smResource.getPasswordId().isEmpty() ) {
             try {
-                SecurePassword password = securePasswordManager.findByPrimaryKey( GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()) );
-
-                if (password == null) {
-                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
+                try {
+                    SecurePassword password = securePasswordManager.findByPrimaryKey( GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()) );
+                    if (password == null && strict) {
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
+                    }
+                } catch (FindException e) {
+                    if(strict)
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
                 }
                 smConfiguration.setPasswordGoid(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, smResource.getPasswordId()));
-            } catch (FindException e) {
-                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             } catch (IllegalArgumentException ile) {
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid or unknown secure password reference");
             }
@@ -119,7 +121,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setProperties( smProperties );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( smResource, smConfiguration );
+        doSecurityZoneFromResource( smResource, smConfiguration, strict );
 
         return smConfiguration;
     }

@@ -89,7 +89,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
     }
 
     @Override
-    protected IdentityProviderConfig fromResource( final Object resource ) throws InvalidResourceException {
+    public IdentityProviderConfig fromResource( final Object resource, final boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof IdentityProviderMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected identity provider");
 
@@ -118,7 +118,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
         identityProvider.setCertificateValidationType( certificateValidationTypeFromProperties( identityProviderResource.getProperties() ) );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( identityProviderResource, identityProvider );
+        doSecurityZoneFromResource( identityProviderResource, identityProvider, strict );
 
         return identityProvider;
     }

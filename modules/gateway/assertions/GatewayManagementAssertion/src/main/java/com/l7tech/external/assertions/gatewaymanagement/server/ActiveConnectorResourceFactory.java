@@ -56,7 +56,7 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
     }
 
     @Override
-    protected SsgActiveConnector fromResource(final Object resource) throws InvalidResourceException {
+    public SsgActiveConnector fromResource(final Object resource, boolean strict) throws InvalidResourceException {
         if (!(resource instanceof ActiveConnectorMO)) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected active connector");
         }
@@ -76,7 +76,7 @@ public class ActiveConnectorResourceFactory extends SecurityZoneableEntityManage
         activeConnector.setType(connectionResource.getType());
 
         // handle securityZone
-        doSecurityZoneFromResource( connectionResource, activeConnector );
+        doSecurityZoneFromResource( connectionResource, activeConnector, strict );
 
         Map<String, String> props = connectionResource.getProperties();
         if(props!=null){

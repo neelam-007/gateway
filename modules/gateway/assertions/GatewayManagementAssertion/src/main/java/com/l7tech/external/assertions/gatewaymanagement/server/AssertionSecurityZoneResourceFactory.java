@@ -230,7 +230,7 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
     }
 
     @Override
-    protected AssertionAccess fromResource(Object resource) throws InvalidResourceException {
+    public AssertionAccess fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if ( !(resource instanceof AssertionSecurityZoneMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected assertion access");
@@ -242,7 +242,7 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
         accessEntity.setName( assertionResource.getName() );
 
         // handle SecurityZone
-        doSecurityZoneFromResource(assertionResource, accessEntity);
+        doSecurityZoneFromResource(assertionResource, accessEntity, strict);
 
         return accessEntity;
     }

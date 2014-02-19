@@ -90,7 +90,7 @@ public class DocumentResourceFactory extends SecurityZoneableEntityManagerResour
     }
 
     @Override
-    protected ResourceEntry fromResource( final Object resource ) throws InvalidResourceException {
+    public ResourceEntry fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof ResourceDocumentMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected resource document");
 
@@ -127,7 +127,7 @@ public class DocumentResourceFactory extends SecurityZoneableEntityManagerResour
         setProperties( resourceEntry, resourceDocument.getProperties(), ResourceEntry.class );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( resourceDocument, resourceEntry );
+        doSecurityZoneFromResource( resourceDocument, resourceEntry, strict );
 
         return resourceEntry;
     }

@@ -53,7 +53,7 @@ public class JDBCConnectionResourceFactory extends SecurityZoneableEntityManager
     }
 
     @Override
-    protected JdbcConnection fromResource( final Object resource ) throws InvalidResourceException {
+    public JdbcConnection fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof JDBCConnectionMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected jdbc connection");
 
@@ -71,7 +71,7 @@ public class JDBCConnectionResourceFactory extends SecurityZoneableEntityManager
         setProperties( jdbcConnection, connectionResource.getProperties(), JdbcConnection.class );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( connectionResource, jdbcConnection );
+        doSecurityZoneFromResource( connectionResource, jdbcConnection, strict );
 
         return jdbcConnection;
     }

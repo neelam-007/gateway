@@ -40,7 +40,7 @@ public class ClusterPropertyResourceFactory extends EntityManagerResourceFactory
     }
 
     @Override
-    protected ClusterProperty fromResource( final Object resource ) throws InvalidResourceException {
+    public ClusterProperty fromResource( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof ClusterPropertyMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected cluster property");
 
