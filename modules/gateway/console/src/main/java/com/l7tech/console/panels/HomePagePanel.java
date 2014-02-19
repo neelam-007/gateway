@@ -36,6 +36,7 @@ public class HomePagePanel extends JPanel {
     private JPanel toolbarPanel;
     private JPanel rootPanel;
     private JLabel toolbarIndenter;
+    private JPanel scrollPanel;
     private List<HomePageToolbarAction> actions = new ArrayList<HomePageToolbarAction>();
     private ImageIcon pageBanner;
     private final LicenseListener licenseListener = new LicenseListener() {
@@ -48,6 +49,7 @@ public class HomePagePanel extends JPanel {
         setLayout(new BorderLayout());
         add(rootPanel, BorderLayout.CENTER);
         rootPanel.setBackground(Color.WHITE);
+        scrollPanel.setBackground(Color.WHITE);
         setName("Home");
 
         ClassLoader cl = getClass().getClassLoader();
