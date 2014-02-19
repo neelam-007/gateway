@@ -104,11 +104,9 @@ public class JVMDatabaseBasedRestManagementEnvironment {
     public RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
         // send the request to the other jvm process
         printWriter.println(DatabaseBasedRestManagementEnvironment.PROCESS);
-        printWriter.println(uri);
-        printWriter.println(queryString);
-        printWriter.println(method.toString());
-        printWriter.println(contentType);
-        printWriter.println(body.replaceAll("\n", " "));
+
+        byte[] requestBytes = SerializationUtils.serialize(new RestRequest(uri, queryString, method, contentType, body));
+        printWriter.println(Arrays.toString(requestBytes));
 
         //unmarshall and return the RestResponse
         String restResponseSerialized = scanner.nextLine();

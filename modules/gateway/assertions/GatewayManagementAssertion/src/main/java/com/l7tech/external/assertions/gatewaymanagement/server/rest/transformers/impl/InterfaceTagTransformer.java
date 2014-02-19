@@ -49,6 +49,12 @@ public class InterfaceTagTransformer implements APITransformer<InterfaceTagMO, I
     }
 
     @Override
+    public EntityHeader convertToHeader(InterfaceTagMO m) throws ResourceFactory.InvalidResourceException {
+        return new EntityHeader(m.getId(), factory.getType(), m.getName(), null, m.getVersion());
+    }
+
+
+    @Override
     public Item<InterfaceTagMO> convertToItem(EntityHeader header){
         return new ItemBuilder<InterfaceTagMO>(header.getName(), header.getStrId(), factory.getType().name())
                 .build();

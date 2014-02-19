@@ -1,5 +1,6 @@
 package com.l7tech.server.search;
 
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -71,6 +72,15 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders, Map<String, Object> searchOptions) throws FindException;
+
+    /**
+     * This will replace the dependencies referenced in the given entity by the ones available in the replacement map.
+     * If the entity has a dependencies not in the replacement map then it will not be replaced.
+     *
+     * @param entity         the entity who's dependencies to replace.
+     * @param replacementMap The replacement map is a map of EntityHeaders to replace.
+     */
+    public <E extends Entity> void replaceDependencies(E entity, Map<EntityHeader, EntityHeader> replacementMap) throws FindException;
 
     public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult);
 

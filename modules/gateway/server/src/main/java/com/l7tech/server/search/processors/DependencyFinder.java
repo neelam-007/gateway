@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -167,7 +168,7 @@ public class DependencyFinder {
      *                  Assertion}
      * @return The DependentObject for the given dependent
      */
-    private DependentObject createDependentObject(Object dependent) {
+    protected DependentObject createDependentObject(Object dependent) {
         //Finds the correct processor to use
         DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(dependent));
         // use the processor to create the DependentObject from the dependent
@@ -244,5 +245,37 @@ public class DependencyFinder {
             }
         }
         return dependencies;
+    }
+
+    /**
+     * This will replace the dependencies referenced in the given object by the ones available in the replacement map.
+     * If the object has a dependencies not in the replacement map then they will not be replaced.
+     *
+     * @param object         the object who's dependencies to replace.
+     * @param replacementMap The replacement map is a map of entity headers to replace.
+     */
+    public <O> void replaceDependencies(O object, Map<EntityHeader, EntityHeader> replacementMap) throws FindException {
+        //find the dependency processor to use.
+        DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(object));
+        //noinspection unchecked
+        processor.replaceDependencies(object, replacementMap, this);
+    }
+
+    /**
+     * This will create a dependent object from the given information
+     *
+     * @param searchValue     The value to use to create the dependent entity
+     * @param dependencyType  The Type of the dependency
+     * @param searchValueType The type of the search value
+     * @return The list of create dependent entities
+     */
+    public List<DependentEntity> createDependentObject(Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+        //Finds the correct processor to use to retrieve the entity
+        DependencyProcessor processor = processorStore.getProcessor(
+                // If the search value type is an entity the get the processor based on the type of entity.
+                com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType) ? getTypeFromObject(searchValue) : dependencyType);
+        // use the processor to retrieve the entity using the search value.
+        //noinspection unchecked
+        return processor.createDependentObject(searchValue, dependencyType, searchValueType);
     }
 }

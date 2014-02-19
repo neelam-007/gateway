@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
@@ -124,7 +125,8 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(409, response.getStatus());
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
@@ -182,7 +184,8 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(409, response.getStatus());
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 

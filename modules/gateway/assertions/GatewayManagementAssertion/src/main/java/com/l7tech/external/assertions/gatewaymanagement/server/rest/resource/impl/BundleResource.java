@@ -26,6 +26,7 @@ import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.*;
@@ -114,11 +115,28 @@ public class BundleResource {
     }
 
     @PUT
-    public Item<Mappings> importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) {
-        return new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
+    public Response importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) {
+        List<Mapping> mappings = bundleImporter.importBundle(bundle, test);
+        Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(ManagedObjectFactory.createMappings(bundleImporter.importBundle(bundle, test)))
+                .setContent(ManagedObjectFactory.createMappings(mappings))
                 .build();
+        return containsErrors(mappings) ? Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();
+    }
+
+    /**
+     * Checks if there are errors in the mappings list. If there is any error it will fail.
+     *
+     * @param mappings The list of mappings to check for errors
+     * @return true if there is an error in the mappings list
+     */
+    private boolean containsErrors(List<Mapping> mappings) {
+        return Functions.exists(mappings, new Functions.Unary<Boolean, Mapping>() {
+            @Override
+            public Boolean call(Mapping mapping) {
+                return mapping.getErrorType() != null;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

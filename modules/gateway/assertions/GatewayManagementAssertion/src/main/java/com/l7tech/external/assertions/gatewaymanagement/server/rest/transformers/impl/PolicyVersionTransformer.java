@@ -69,6 +69,11 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
     }
 
     @Override
+    public EntityHeader convertToHeader(PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
+        return new EntityHeader(policyVersionMO.getId(), EntityType.POLICY_VERSION, null, null, policyVersionMO.getVersion());
+    }
+
+    @Override
     public Item<PolicyVersionMO> convertToItem(PolicyVersionMO m) {
         return new ItemBuilder<PolicyVersionMO>("Policy Version: " + m.getVersion(), m.getId(), EntityType.POLICY_VERSION.name())
                 .setContent(m)

@@ -3,8 +3,10 @@ package com.l7tech.server.search.processors;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -43,6 +45,30 @@ public class SecurePasswordDependencyProcessor extends GenericDependencyProcesso
             }
             default:
                 return (List<SecurePassword>) super.find(searchValue, dependencyType, searchValueType);
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<DependentObject> createDependentObject(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+        switch (searchValueType) {
+            case NAME: {
+                return Arrays.asList(createDependentObject(new SecurePassword((String) searchValue)));
+            }
+            case VARIABLE: {
+                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
+                if (!matcher.matches()) {
+                    // Assume it is a literal password
+                    return null;
+                }
+                String alias = matcher.group(1);
+                assert alias != null; // enforced by regex
+                assert alias.length() > 0; // enforced by regex
+                return Arrays.asList(createDependentObject(new SecurePassword(alias)));
+            }
+            default:
+                //if a different search method is specified then create the secure password using the GenericDependency processor
+                return super.createDependentObject(searchValue, dependencyType, searchValueType);
         }
     }
 }

@@ -62,6 +62,11 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
     }
 
     @Override
+    public EntityHeader convertToHeader(GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
+        return new IdentityHeader(Goid.parseGoid(groupMO.getProviderId()), groupMO.getId(), EntityType.GROUP, groupMO.getName(), groupMO.getDescription(), null, groupMO.getVersion());
+    }
+
+    @Override
     public Item<GroupMO> convertToItem(GroupMO m) {
         return new ItemBuilder<GroupMO>(m.getName(), m.getId(), EntityType.GROUP.name())
                 .setContent(m)

@@ -16,7 +16,10 @@ import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.persistence.Transient;
@@ -141,6 +144,31 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     }
 
     /**
+     * This is a helper method to create a list of dependent entities from the given info
+     *
+     * @param annotation        The annotation describing the method return value
+     * @param methodReturnValue The method return value to create the dependent entity from
+     * @param finder            The dependency finder to use to create the entity
+     * @return The list of dependent entities created from the method return value.
+     */
+    private List<DependentEntity> getDependentEntitiesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) {
+        List<DependentEntity> dependentEntities;
+        if (annotation != null) {
+            if (methodReturnValue instanceof Map) {
+                if (annotation.key().isEmpty())
+                    throw new IllegalStateException("When an entity method returns a map the map key must be specified in order to retrieve the correct search value.");
+                methodReturnValue = ((Map) methodReturnValue).get(annotation.key());
+            }
+            //If the dependency annotation is specified use the finder to retrieve the entity.
+            dependentEntities = methodReturnValue == null ? null : finder.createDependentObject(methodReturnValue, annotation.type(), annotation.methodReturnType());
+        } else {
+            // in this case the methodReturnValue will be the dependent object
+            dependentEntities = methodReturnValue == null ? null : Arrays.asList((DependentEntity) finder.createDependentObject(methodReturnValue));
+        }
+        return dependentEntities;
+    }
+
+    /**
      * Finds an entity given the search value and information about the search value
      *
      * @param searchValue     The search value that should uniquely identify the entity.
@@ -195,7 +223,225 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         if (dependent instanceof IdentityProviderConfig) {
             entityHeader.setType(EntityType.ID_PROVIDER_CONFIG);
         }
+        return createDependentObject(entityHeader);
+    }
+
+    private DependentObject createDependentObject(EntityHeader entityHeader) {
         return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader);
+    }
+
+    @Nullable
+    @Override
+    public List<DependentObject> createDependentObject(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+        switch (searchValueType) {
+            case GOID: {
+                //create an entity header using the giod
+                List<EntityHeader> headers;
+                if (searchValue instanceof Goid)
+                    headers = Arrays.asList(new EntityHeader((Goid) searchValue, dependencyType.getEntityType(), null, null));
+                else if (searchValue instanceof String)
+                    headers = Arrays.asList(new EntityHeader((String) searchValue, dependencyType.getEntityType(), null, null));
+                else if (searchValue instanceof Goid[]) {
+                    Goid[] goids = (Goid[]) searchValue;
+                    headers = new ArrayList<>(goids.length);
+                    for (Goid goid : goids) {
+                        headers.add(new EntityHeader(goid, dependencyType.getEntityType(), null, null));
+                    }
+                } else
+                    throw new IllegalArgumentException("Unsupported GOID value type: " + searchValue.getClass());
+                //convert the headers map to a list of dependent objects
+                return Functions.map(headers, new Functions.Unary<DependentObject, EntityHeader>() {
+                    @Override
+                    public DependentObject call(EntityHeader entityHeader) {
+                        return createDependentObject(entityHeader);
+                    }
+                });
+            }
+            case ENTITY:
+                if (searchValue instanceof Entity)
+                    //noinspection unchecked
+                    return Arrays.asList(createDependentObject((O) searchValue));
+                else
+                    throw new IllegalStateException("Method return type is Entity but the returned object is not an entity: " + searchValue.getClass());
+            case ENTITY_HEADER:
+                return Arrays.asList(createDependentObject((EntityHeader) searchValue));
+            default:
+                throw new IllegalArgumentException("Unsupported search method: " + searchValueType);
+        }
+    }
+
+    @Override
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws FindException {
+        //Get all the methods that this entity declares
+        List<Method> entityMethods = getAllMethods(object.getClass());
+        for (Method method : entityMethods) {
+            //process each method that return an Entity or is annotated with @Dependency.
+            if (isEntityMethod(method)) {
+                try {
+                    Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
+                    if (dependenciesAnnotation == null) {
+                        //gets the Dependency annotation on the method if one is specified.
+                        com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
+                        if (annotation != null && annotation.searchObject()) {
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            //replace the dependencies in the search object
+                            finder.replaceDependencies(getterMethodReturn, replacementMap);
+                        } else {
+                            //get the dependent entity referenced
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            List<DependentEntity> dependentEntities = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                            if (dependentEntities != null) {
+                                for (DependentEntity dependentEntity : dependentEntities) {
+                                    //replace the dependent entity with one that is in the replacement map
+                                    EntityHeader header = findMappedHeader(replacementMap, dependentEntity);
+                                    if (header != null) {
+                                        setDependencyForMethod(object, method, annotation, header);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        for (com.l7tech.search.Dependency annotation : dependenciesAnnotation.value()) {
+                            //calls the getter method and retrieves the dependency referenced
+                            Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
+                            final List<DependentEntity> dependenciesFromMethodReturnValue = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                            if (dependenciesFromMethodReturnValue != null) {
+                                for (DependentEntity dependentEntity : dependenciesFromMethodReturnValue) {
+                                    //replace the dependent entity with one that is in the replacement map
+                                    EntityHeader mappedHeader = findMappedHeader(replacementMap, dependentEntity);
+                                    if (mappedHeader != null) {
+                                        setDependencyForMethod(object, method, annotation, mappedHeader);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    //if an exception is thrown attempting to retrieve the dependency then log the exception but continue processing.
+                    logger.log(Level.FINE, "WARNING replacing dependencies - error replacing dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass(), e);
+                    throw new FindException("WARNING replacing dependencies - error replacing dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass());
+                }
+            }
+        }
+
+        //if the object implements UsesPrivateKeys then add the used private keys as dependencies.
+        if (object instanceof UsesPrivateKeys && ((UsesPrivateKeys) object).getPrivateKeysUsed() != null) {
+            for (SsgKeyHeader keyHeader : ((UsesPrivateKeys) object).getPrivateKeysUsed()) {
+                DependentObject dependentObject = finder.createDependentObject(keyHeader);
+                EntityHeader mappedHeader = findMappedHeader(replacementMap, ((DependentEntity) dependentObject));
+                if (mappedHeader != null) {
+                    //TODO: need a way to set the private keys used.
+                    throw new NotImplementedException();
+                }
+            }
+        }
+    }
+
+    /**
+     * This will find a mapped header in the given headers map it will first chek by id, then by guid, then by name
+     *
+     * @param replacementMap  The map to search for a mapped header
+     * @param dependentEntity The depended entity to find a mapping for
+     * @return The mapped entity header
+     */
+    @Nullable
+    private EntityHeader findMappedHeader(Map<EntityHeader, EntityHeader> replacementMap, final DependentEntity dependentEntity) {
+        EntityHeader header = replacementMap.get(dependentEntity.getEntityHeader());
+        // check by GUID
+        if (header == null && dependentEntity.getEntityHeader() instanceof GuidEntityHeader) {
+            EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
+                @Override
+                public Boolean call(EntityHeader entityHeader) {
+                    return entityHeader instanceof GuidEntityHeader && entityHeader.getType().equals(dependentEntity.getEntityHeader().getType())
+                            && StringUtils.equals(((GuidEntityHeader) entityHeader).getGuid(), ((GuidEntityHeader) dependentEntity.getEntityHeader()).getGuid());
+                }
+            });
+            if (headerKey != null) {
+                header = replacementMap.get(headerKey);
+            }
+        }
+        //check by name
+        if (header == null) {
+            EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
+                @Override
+                public Boolean call(EntityHeader entityHeader) {
+                    return entityHeader.getType().equals(dependentEntity.getEntityHeader().getType())
+                            && StringUtils.equals(entityHeader.getName(), dependentEntity.getEntityHeader().getName());
+                }
+            });
+            if (headerKey != null) {
+                header = replacementMap.get(headerKey);
+            }
+        }
+        return header;
+    }
+
+    /**
+     * This will set the dependency for an object given the getter method
+     *
+     * @param object       The object to set the dependency on
+     * @param getterMethod The getter method
+     * @param annotation   The annotation applied to the getter method
+     * @param header       The entity header to map to.
+     * @throws FindException This is thrown if the entity referenced by the entity header cannot be found or the setter
+     *                       method could not be found.
+     */
+    private void setDependencyForMethod(@NotNull O object, @NotNull Method getterMethod, @Nullable com.l7tech.search.Dependency annotation, @NotNull EntityHeader header) throws FindException {
+        if (annotation != null) {
+            //finds the setter method
+            Method setterMethod = findMethod(object.getClass(), "set" + getterMethod.getName().substring(3), getterMethod.getReturnType());
+            try {
+                switch (annotation.methodReturnType()) {
+                    case NAME:
+                        setterMethod.invoke(object, header.getName());
+                        break;
+                    case VARIABLE:
+                        //TODO: do this in the secure password dependency processor?
+                        if (com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD.equals(annotation.type())) {
+                            setterMethod.invoke(object, "${secpass." + header.getName() + ".plaintext}");
+                            break;
+                        } else {
+                            throw new FindException("WARNING replacing dependencies - unsupported method type " + annotation.methodReturnType() + " for method " + getterMethod.getName().substring(3) + " for entity " + object.getClass());
+                        }
+                    default:
+                        throw new FindException("WARNING replacing dependencies - unsupported method type " + annotation.methodReturnType() + " for method " + getterMethod.getName().substring(3) + " for entity " + object.getClass());
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new FindException("WARNING replacing dependencies - could not invoke setter method for " + getterMethod.getName().substring(3) + " for entity " + object.getClass(), e);
+            }
+        } else {
+            Entity replacement = loadEntity(header);
+            //find setting method
+            Method setterMethod = findMethod(object.getClass(), "set" + getterMethod.getName().substring(3), replacement.getClass());
+            try {
+                setterMethod.invoke(object, replacement);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new FindException("WARNING replacing dependencies - could not invoke setter method for " + getterMethod.getName().substring(3) + " for entity " + object.getClass(), e);
+            }
+        }
+    }
+
+    /**
+     * Finds a method given a class method name and parameter type
+     *
+     * @param aClass        The class to search
+     * @param methodName    The method name
+     * @param parameterType The parameter type that the method can take
+     * @return The method
+     * @throws FindException
+     */
+    @NotNull
+    private Method findMethod(@NotNull Class<?> aClass, @NotNull final String methodName, @NotNull final Class<?> parameterType) throws FindException {
+        Method method = Functions.grepFirst(Arrays.asList(aClass.getMethods()), new Functions.Unary<Boolean, Method>() {
+            @Override
+            public Boolean call(Method method) {
+                return methodName.equals(method.getName()) && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(parameterType);
+            }
+        });
+        if (method == null) {
+            throw new FindException("Cannot find a setter method for setting " + parameterType + " on " + aClass.getClass());
+        }
+        return method;
     }
 
     /**

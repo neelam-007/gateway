@@ -4,8 +4,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.EntityHeaderUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,6 +48,11 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
     @Override
     public E convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException {
         return factory.fromResource(m, strict);
+    }
+
+    @Override
+    public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException {
+        return EntityHeaderUtils.fromEntity((Entity) factory.fromResource(m, false));
     }
 
     @Override

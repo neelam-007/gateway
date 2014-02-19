@@ -20,9 +20,11 @@ import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
@@ -34,6 +36,7 @@ import org.springframework.mock.web.MockServletContext;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -91,25 +94,35 @@ public class DatabaseBasedRestManagementEnvironment {
         System.out.println(SERVER_STARTED);
         Scanner sc = new Scanner(System.in);
         while (sc.hasNextLine()) {
-            String line = sc.nextLine();
-            if (line.equals(EXIT)) {
-                System.exit(0);
-            } else if (line.equals(PROCESS)) {
-                String uri = sc.nextLine();
-                String queryString = sc.nextLine();
-                HttpMethod method = HttpMethod.valueOf(sc.nextLine());
-                String contentType = sc.nextLine();
-                contentType = "null".equals(contentType) ? null : contentType;
-                String body = sc.nextLine();
-                try {
-                    RestResponse restResponse = databaseBasedRestManagementEnvironment.processRequest(uri, queryString, method, contentType, body);
-                    byte[] bytes = SerializationUtils.serialize(restResponse);
-                    System.out.println(Arrays.toString(bytes));
-                } catch (Exception e) {
-                    System.out.println(FATAL_EXCEPTION + ": " + e.getMessage());
+            try {
+                String line = sc.nextLine();
+                if (line.equals(EXIT)) {
+                    System.exit(0);
+                } else if (line.equals(PROCESS)) {
+                    String restRequestSerialized = sc.nextLine();
+                    List<Byte> requestBytes = Functions.map(Arrays.asList(restRequestSerialized.substring(1, restRequestSerialized.length() - 1).split(",")), new Functions.Unary<Byte, String>() {
+                        @Override
+                        public Byte call(String s) {
+                            return Byte.parseByte(s.trim());
+                        }
+                    });
+                    RestRequest request = (RestRequest) SerializationUtils.deserialize(ArrayUtils.toPrimitive(requestBytes.toArray(new Byte[requestBytes.size()])));
+                    try {
+                        RestResponse restResponse = databaseBasedRestManagementEnvironment.processRequest(request.getUri(), request.getQueryString(), request.getMethod(), request.getContentType(), request.getBody());
+                        byte[] bytes = SerializationUtils.serialize(restResponse);
+                        System.out.println(Arrays.toString(bytes));
+                    } catch (Exception e) {
+                        System.out.println(FATAL_EXCEPTION + ": " + e.getMessage());
+                    }
+                } else {
+                    System.err.println("Unknown command:" + line);
+                    System.out.println(FATAL_EXCEPTION + ": " + "Unknown command:" + line);
                 }
-            } else {
-                System.err.println(line);
+            } catch(Throwable t){
+                System.err.println(t.getMessage());
+                t.printStackTrace();
+                System.out.println(FATAL_EXCEPTION + ": " + "Exception Thrown:" + t.toString());
+                break;
             }
         }
         System.exit(1);

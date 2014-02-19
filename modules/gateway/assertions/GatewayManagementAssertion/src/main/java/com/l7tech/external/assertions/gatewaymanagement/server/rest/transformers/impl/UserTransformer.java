@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.UserMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
@@ -67,6 +64,11 @@ public class UserTransformer implements APITransformer<UserMO, User> {
         user.setDepartment(userMO.getDepartment());
         user.setSubjectDn(userMO.getSubjectDn());
         return user;
+    }
+
+    @Override
+    public EntityHeader convertToHeader(UserMO userMO) throws ResourceFactory.InvalidResourceException {
+        return new IdentityHeader(Goid.parseGoid(userMO.getProviderId()), userMO.getId(), EntityType.USER, userMO.getLogin(), null, null, userMO.getVersion());
     }
 
     @Override

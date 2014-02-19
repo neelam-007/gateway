@@ -73,6 +73,18 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         return dependencyFinder.process(entities);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <E extends Entity> void replaceDependencies(E entity, Map<EntityHeader, EntityHeader> replacementMap) throws FindException {
+        if(replacementMap.isEmpty())
+            //nothing to replace
+            return;
+        DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), processorStore);
+        dependencyFinder.replaceDependencies(entity, replacementMap);
+    }
+
     public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult) {
         return buildFlatDependencyList(Arrays.asList(dependencySearchResult));
     }

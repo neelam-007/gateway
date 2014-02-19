@@ -1,9 +1,6 @@
 package com.l7tech.server.search;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
@@ -127,6 +124,16 @@ public class DependencyAnalyzerGeneralTest {
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
         Assert.assertTrue(dependencies.getDependencies().iterator().next().areDependenciesSet());
+    }
+
+    @Test
+    public void testReplaceDependencies() throws FindException {
+        dependencyAnalyzer.replaceDependencies(myEntityWithOneDependency, CollectionUtils.MapBuilder.<EntityHeader, EntityHeader>builder()
+                .put(
+                        EntityHeaderUtils.fromEntity(myEntityWithNoDependencies),
+                        EntityHeaderUtils.fromEntity(myEntityWithDifferentGetter)).map());
+        Assert.assertEquals(myEntityWithOneDependency.getDependency(), myEntityWithDifferentGetter);
+
     }
 
     public class MyEntityWithInheritedDependency extends MyEntityWithOneDependency {

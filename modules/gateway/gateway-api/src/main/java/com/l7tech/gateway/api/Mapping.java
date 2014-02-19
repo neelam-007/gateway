@@ -28,15 +28,15 @@ public class Mapping {
     private List<String> dependencies;
 
     public static enum Action {
-        NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore;
+        NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore
     }
 
     public static enum ActionTaken {
-        UsedExisting, CreatedNew, UpdatedExisting, Ignored;
+        UsedExisting, CreatedNew, UpdatedExisting, Ignored
     }
 
     public static enum ErrorType {
-        TargetExists, TargetNotFound, UniqueKeyConflict;
+        TargetExists, TargetNotFound, UniqueKeyConflict, InvalidResource
     }
 
     Mapping(){}
