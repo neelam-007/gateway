@@ -237,7 +237,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     protected void doUpdateModel() {
         model.setVerifyCertificateName(null);
         model.setVerifyCertificateVariableName(null);
-        model.setVerifyCertificateGoid(PersistentEntity.DEFAULT_GOID);
+        model.setVerifyCertificateGoid(null);
         model.setIgnoreKeyInfo(keyInfoOverrideCheckBox.isSelected());
 
         if (certSelectRadioButton.isSelected()) {
