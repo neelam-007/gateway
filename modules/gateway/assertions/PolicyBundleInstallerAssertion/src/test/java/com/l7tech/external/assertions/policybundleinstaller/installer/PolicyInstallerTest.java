@@ -115,6 +115,18 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
             "    </env:Body>\n" +
             "</env:Envelope>";
 
+    protected static final String CANNED_SET_VERSION_COMMENT_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\" xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\" xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "   <env:Header>\n" +
+            "      <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionCommentResponse</wsa:Action>\n" +
+            "      <wsa:MessageID env:mustUnderstand=\"true\">uuid:bf1dbf0e-b644-4240-8cca-4a1d149665b4</wsa:MessageID>\n" +
+            "      <wsa:RelatesTo>uuid:a711f948-7d39-1d39-8002-481688002100</wsa:RelatesTo>\n" +
+            "      <wsa:To env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n" +
+            "   </env:Header>\n" +
+            "   <env:Body/>\n" +
+            "</env:Envelope>";
+
+    private static final String POLICIES_SET_VERSION_COMMENT_ACTION = "http://ns.l7tech.com/2010/04/gateway-management/policies/SetVersionComment";
+
     @Test
     public void testAllPolicyBundlesInstall() throws Exception {
         final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
@@ -162,7 +174,11 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
                             assertTrue("Policy name was not prefixed", policyName.startsWith(installationPrefix));
                         }
 
-                        setResponse(context, alreadyExistsResponse);
+                        final Pair<AssertionStatus, Document> documentPair = cannedIdResponse(enumPolicyDocument);
+                        setResponse(context, documentPair.right);
+                        return AssertionStatus.NONE;
+                    } else if (requestXml.contains(POLICIES_SET_VERSION_COMMENT_ACTION)) {
+                        setResponse(context, CANNED_SET_VERSION_COMMENT_RESPONSE);
                         return AssertionStatus.NONE;
                     } else {
 

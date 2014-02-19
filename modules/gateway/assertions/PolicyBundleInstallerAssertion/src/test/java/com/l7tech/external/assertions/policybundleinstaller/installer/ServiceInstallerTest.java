@@ -31,10 +31,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
 import static org.junit.Assert.assertEquals;
 
 public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
     protected static final String SIMPLE_TEST_BUNDLE_SERVICE_ID = "57f541927144f77cd71f562ef2d31656";
+
+    protected static final String SERVICES_SET_VERSION_COMMENT_ACTION = "http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionComment";
 
     @Test
     public void testInstallServices() throws Exception {
@@ -112,6 +115,9 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                         final Pair<AssertionStatus, Document> documentPair = cannedIdResponse(documentReadOnly);
                         setResponse(context, documentPair.right);
                         return documentPair.left;
+                    } else if (requestXml.contains(SERVICES_SET_VERSION_COMMENT_ACTION)) {
+                        setResponse(context, CANNED_SET_VERSION_COMMENT_RESPONSE);
+                        return AssertionStatus.NONE;
                     }
 
                     throw new RuntimeException("Unexpected request");

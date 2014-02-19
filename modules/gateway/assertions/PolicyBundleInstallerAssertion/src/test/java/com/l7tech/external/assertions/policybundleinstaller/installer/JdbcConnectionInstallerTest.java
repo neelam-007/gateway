@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.ServiceInstallerTest.SERVICES_SET_VERSION_COMMENT_ACTION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -70,6 +72,9 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
                     // reply with a does not exist
                     // just reply with any non created response
                     setResponse(context, alreadyExistsResponse);
+                    return AssertionStatus.NONE;
+                }  else if (requestXml.contains(SERVICES_SET_VERSION_COMMENT_ACTION)) {
+                    setResponse(context, CANNED_SET_VERSION_COMMENT_RESPONSE);
                     return AssertionStatus.NONE;
                 } else {
                     // Validate any JDBC references

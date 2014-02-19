@@ -43,6 +43,36 @@ import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
 public class PolicyInstaller extends BaseInstaller {
     public static final String POLICIES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/policies";
 
+    /**
+     * Parameter order: {0} revision type, {1} UUID, {2} selector value, {3} comment
+     */
+    private static final String GATEWAY_MGMT_SET_REVISION_COMMENT_REQUEST = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"\n" +
+            "    xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"\n" +
+            "    xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"\n" +
+            "    xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <env:Header>\n" +
+            "        <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/{0}/SetVersionComment</wsa:Action>\n" +
+            "        <wsa:ReplyTo>\n" +
+            "            <wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>\n" +
+            "        </wsa:ReplyTo>\n" +
+            "       <wsa:MessageID env:mustUnderstand=\"true\">{1}</wsa:MessageID>\n" +
+            "       <wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To>\n" +
+            "       <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/{0}</wsman:ResourceURI>\n" +
+            "       <wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout>\n" +
+            "       <wsman:SelectorSet>\n" +
+            "            <wsman:Selector Name=\"id\">{2}</wsman:Selector>\n" +
+            "       </wsman:SelectorSet>\n" +
+            "    </env:Header>\n" +
+            "    <env:Body>\n" +
+            "       <VersionComment xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+            "            <Comment>{3}</Comment>\n" +
+            "</VersionComment>\n" +
+            "    </env:Body>\n" +
+            "</env:Envelope>\n";
+
+    private static final String REVISION_COMMENT_FORMAT = "{0} (v{1})";
+
     @Nullable
     private PreBundleSavePolicyCallback savePolicyCallback;
 
@@ -302,6 +332,7 @@ public class PolicyInstaller extends BaseInstaller {
             }
         } else {
             // we just created it
+            setRevisionComment(createdId, false);
             idToUse = getExistingPolicyId(policyNameToUse);
             guidToUse = getExistingPolicyGuid(policyNameToUse);
         }
@@ -331,6 +362,19 @@ public class PolicyInstaller extends BaseInstaller {
             throw new RuntimeException("Unexpected exception performing xpath to obtain policy guid for policy name '" + policyName + "'", e);
         }
         return xpathResult.getString();
+    }
+
+    protected void setRevisionComment(@NotNull final Goid goid, boolean isServiceGoid)
+            throws InterruptedException,
+            AccessDeniedManagementResponse,
+            GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+
+        BundleInfo bundleInfo = context.getBundleInfo();
+        String comment = MessageFormat.format(REVISION_COMMENT_FORMAT, bundleInfo.getName(), bundleInfo.getVersion());
+
+        String revisionType = isServiceGoid ? "services" : "policies";
+        logger.finest("Setting revision comment for " + revisionType + " GOID '" +  goid + "'.");
+        callManagementCheckInterrupted(MessageFormat.format(GATEWAY_MGMT_SET_REVISION_COMMENT_REQUEST, revisionType, getUuid(), goid, comment));
     }
 
     @Nullable

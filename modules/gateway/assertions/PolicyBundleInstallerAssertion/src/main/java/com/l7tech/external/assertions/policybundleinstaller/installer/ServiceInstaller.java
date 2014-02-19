@@ -196,6 +196,8 @@ public class ServiceInstaller extends BaseInstaller {
                 throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse("Could not get the id for service from bundle with id: #{" + id + "}");
             }
 
+            policyInstaller.setRevisionComment(createdId, true);
+
             oldIdsToNewServiceIds.put(id, createdId);
         }
     }
