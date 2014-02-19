@@ -35,8 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
@@ -280,6 +279,35 @@ public class ServerForEachLoopAssertionTest {
         assertEquals(DataType.INTEGER, varsSet[1].getType());
         assertEquals("i.exceededlimit", varsSet[2].getName());
         assertEquals(DataType.BOOLEAN, varsSet[2].getType());
+    }
+
+    @Test
+    public void checkRequestHeaders() throws Exception {
+        ass.setVariablePrefix("i");
+        ass.setLoopVariableName("request.http.allheadervalues");
+        context = context();
+        context.getRequest().getHeadersKnob().addHeader("foo", "bar");
+
+        checkRequest();
+        assertEquals(1, context.getVariable("i.iterations"));
+        assertEquals("foo:bar", context.getVariable("i.current"));
+        assertFalse((Boolean) context.getVariable("i.exceededlimit"));
+    }
+
+    @Test
+    public void checkRequestMessageVariableHeaders() throws Exception {
+        ass.setVariablePrefix("i");
+        ass.setLoopVariableName("myMsg.http.allheadervalues");
+        context = context();
+        final Message myMsg = new Message();
+        myMsg.initialize(XmlUtil.createEmptyDocument());
+        myMsg.getHeadersKnob().addHeader("foo", "bar");
+        context.setVariable("myMsg", myMsg);
+
+        checkRequest();
+        assertEquals(1, context.getVariable("i.iterations"));
+        assertEquals("foo:bar", context.getVariable("i.current"));
+        assertFalse((Boolean) context.getVariable("i.exceededlimit"));
     }
 
     private void assertNoSuchVariable(String var) {
