@@ -43,6 +43,9 @@ public class JVMDatabaseBasedRestManagementEnvironment {
         String className = DatabaseBasedRestManagementEnvironment.class.getCanonicalName();
         List<String> command = new ArrayList<>();
         command.add(javaBin);
+        //increase memory otherwise it will not have enough on the build machine
+        command.add("-Xmx1024m");
+        command.add("-XX:MaxPermSize=256m");
         if(rdAddress != null && runFromIdea()){
             command.add("-agentlib:jdwp=transport=dt_shmem,server=y,suspend=n,address=" + rdAddress);
         }
@@ -107,6 +110,15 @@ public class JVMDatabaseBasedRestManagementEnvironment {
 
         byte[] requestBytes = SerializationUtils.serialize(new RestRequest(uri, queryString, method, contentType, body));
         printWriter.println(Arrays.toString(requestBytes));
+
+        //validate that the process is still running.
+        try {
+            process.exitValue();
+            //the process should not have exited yet!
+            throw new IllegalStateException("The JVMDatabaseBasedRestManagementEnvironment process has already exited!");
+        } catch (IllegalThreadStateException e){
+            //continue;
+        }
 
         //unmarshall and return the RestResponse
         String restResponseSerialized = scanner.nextLine();
