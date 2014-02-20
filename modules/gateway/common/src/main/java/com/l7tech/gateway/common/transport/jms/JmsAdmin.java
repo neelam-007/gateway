@@ -228,10 +228,12 @@ public interface JmsAdmin {
 
     /**
      * Validate the JMS dedicated pool size
-     * @param size The size of the pool
+     *
+     *
      * @return True if the size is valid, False if not.
      */
+    @Transactional(readOnly=true)
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    boolean isValidConsumerConnectionSize(String size);
+    int getDefaultConsumerConnectionSize();
 
 }

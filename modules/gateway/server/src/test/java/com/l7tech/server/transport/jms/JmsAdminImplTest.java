@@ -31,12 +31,4 @@ public class JmsAdminImplTest {
         rule = new JmsMessagePropertyRule("NotPredefinedProperty", false, "string");
         assertTrue(jmsAdmin.isValidProperty(rule));
     }
-
-    @Test
-    public void testIsDedicatedThreadPool() {
-        assertFalse(jmsAdmin.isValidConsumerConnectionSize("A"));
-        assertTrue(jmsAdmin.isValidConsumerConnectionSize("1"));
-        assertFalse(jmsAdmin.isValidConsumerConnectionSize("100"));
-        assertTrue(jmsAdmin.isValidConsumerConnectionSize("10"));
-    }
 }

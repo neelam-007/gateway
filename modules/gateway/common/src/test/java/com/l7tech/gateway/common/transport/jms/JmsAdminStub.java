@@ -140,8 +140,8 @@ public class JmsAdminStub implements JmsAdmin {
     }
 
     @Override
-    public boolean isValidConsumerConnectionSize(String size) {
-        return true;
+    public int getDefaultConsumerConnectionSize() {
+        return 0;
     }
 
 }

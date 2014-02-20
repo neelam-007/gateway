@@ -46,8 +46,6 @@ import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
 public class JmsQueuePropertiesDialog extends JDialog {
     private static final String TYPE_QUEUE = "Queue";
     private static final String TYPE_TOPIC = "Topic";
-    private static final Integer CONSUMER_CONNECTIONS_MIN_VALUE = 1;
-    private static final Integer CONSUMER_CONNECTIONS_DEFAULT_VALUE = 1;
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -327,7 +325,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         });
         Utilities.enableGrayOnDisabled(jmsConsumerConnectionsLabel);
-        dedicatedConsumerConnectionLimitSpinner.setModel(new SpinnerNumberModel(1, 1, 10000, 1));
+        dedicatedConsumerConnectionLimitSpinner.setModel(new SpinnerNumberModel(Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize(), 1, 10000, 1));
         Utilities.enableGrayOnDisabled(dedicatedConsumerConnectionLimitSpinner);
 
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
@@ -1064,7 +1062,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (isDedicatedConsumer != null && Boolean.parseBoolean(isDedicatedConsumer)) {
                 dedicatedConsumerConnectionLimitSpinner.setValue(getConsumerConnectionLimit(props));
             } else {
-                dedicatedConsumerConnectionLimitSpinner.setValue(CONSUMER_CONNECTIONS_MIN_VALUE);
+                dedicatedConsumerConnectionLimitSpinner.setValue(Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize());
             }
 
             sessionPoolSizeSpinner.setValue(getSessionPoolSize(props));
@@ -1187,11 +1185,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private Integer getConsumerConnectionLimit(Properties props) {
         String val = props.getProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE);
-        if(val == null ) return CONSUMER_CONNECTIONS_DEFAULT_VALUE;
+        if(val == null ) return Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize();
         try{
             return new Integer(val);
         } catch (NumberFormatException ex) {
-            return CONSUMER_CONNECTIONS_DEFAULT_VALUE;
+            return Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize();
         }
     }
 

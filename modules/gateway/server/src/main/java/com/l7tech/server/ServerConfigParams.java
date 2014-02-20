@@ -204,4 +204,5 @@ public interface ServerConfigParams {
     String PARAM_DATE_TIME_AUTO_FORMATS = "datetime.autoFormats";
     String PARAM_THROUGHPUTQUOTA_ENFORCE_MAX_QUOTA = "throughputQuota.enforce_max_quota";
     String PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA = "throughputQuota.max_throughput_quota";
+    String PARAM_IO_JMS_CONSUMER_CONNECTIONS = "ioJmsConsumerConnections";
 }
