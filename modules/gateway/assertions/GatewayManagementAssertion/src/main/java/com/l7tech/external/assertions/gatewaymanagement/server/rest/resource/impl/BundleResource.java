@@ -3,11 +3,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
@@ -15,10 +13,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.process.internal.RequestScoped;
@@ -52,6 +46,9 @@ public class BundleResource {
 
     @SpringBean
     private BundleImporter bundleImporter;
+
+    @SpringBean
+    private BundleExporter bundleExporter;
 
     @Context
     private UriInfo uriInfo;
@@ -141,78 +138,13 @@ public class BundleResource {
 
     @SuppressWarnings("unchecked")
     private Bundle createBundle(boolean includeRequestFolder, Mapping.Action defaultAction, String defaultMapBy, EntityHeader... headers) throws ResourceFactory.ResourceNotFoundException, IOException, FindException {
-        List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService ? CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(containerRequest.getProperty("ServiceId"))).map() : Collections.<String, Object>emptyMap());
-        List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
-
-        ArrayList<Item> items = new ArrayList<>();
-        ArrayList<Mapping> mappings = new ArrayList<>();
-        for (final DependentObject dependentObject : dependentObjects) {
-            if (dependentObject instanceof DependentEntity) {
-                if (!includeRequestFolder && EntityType.FOLDER.equals(((DependentEntity) dependentObject).getEntityHeader().getType()) && Functions.exists(Arrays.asList(headers), new Functions.Unary<Boolean, EntityHeader>() {
-                    @Override
-                    public Boolean call(EntityHeader entityHeader) {
-                        return Goid.equals(((DependentEntity) dependentObject).getEntityHeader().getGoid(), entityHeader.getGoid());
-                    }
-                })) {
-                    continue;
-                }
-                APIResourceFactory apiResourceFactory = apiUtilityLocator.findFactoryByResourceType(dependentObject.getDependencyType().getEntityType().toString());
-                APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(dependentObject.getDependencyType().getEntityType().toString());
-                URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(dependentObject.getDependencyType().getEntityType().toString());
-                if(apiResourceFactory==null || transformer == null || urlAccessible == null){
-                    throw new FindException("Cannot find resource worker service for " + dependentObject.getDependencyType().getEntityType());
-                }
-                Object resource = apiResourceFactory.getResource(((DependentEntity) dependentObject).getEntityHeader().getStrId());
-                Item<?> item = transformer.convertToItem(resource);
-                item = new ItemBuilder<>(item).addLink(urlAccessible.getLink(resource)).build();
-                items.add(item);
-                //noinspection unchecked
-                Mapping mapping = apiResourceFactory.buildMapping(resource, defaultAction, defaultMapBy);
-                mapping.setSrcUri(urlAccessible.getUrl(resource));
-                //TODO: this may not be needed?
-                mapping.setDependencies(findDependencies(dependentObject, dependencySearchResults));
-                mappings.add(mapping);
-            }
+        CollectionUtils.MapBuilder<String, Object> bundleOptionsBuilder = CollectionUtils.MapBuilder.<String, Object>builder()
+                .put(BundleExporter.IncludeRequestFolderOption, includeRequestFolder)
+                .put(BundleExporter.DefaultMappingActionOption, defaultAction)
+                .put(BundleExporter.DefaultMapByOption, defaultMapBy);
+        if(containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService){
+            bundleOptionsBuilder.put(BundleExporter.IgnoredEntityIdsOption, Arrays.asList(containerRequest.getProperty("ServiceId")));
         }
-
-        Bundle bundle = ManagedObjectFactory.createBundle();
-        bundle.setReferences(items);
-        bundle.setMappings(mappings);
-        return bundle;
-    }
-
-    private List<String> findDependencies(DependentObject dependentObject, List<DependencySearchResults> dependencySearchResults) {
-        final List<String> dependentIds = new ArrayList<>();
-        for(DependencySearchResults dependencySearchResult : dependencySearchResults){
-            List<String> dependencies = findDependencies(dependentObject, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies());
-            for(String dependency : dependencies) {
-                if(!dependentIds.contains(dependency)){
-                    dependentIds.add(dependency);
-                }
-            }
-        }
-        return dependentIds;
-    }
-
-    private List<String> findDependencies(DependentObject dependentObject, DependentObject current, List<Dependency> dependencies) {
-        if(dependentObject.equals(current)){
-            List<String> dependencyIds = new ArrayList<>();
-            for(Dependency dependency : dependencies) {
-                if(dependency.getDependent() instanceof DependentEntity){
-                    dependencyIds.add(((DependentEntity) dependency.getDependent()).getEntityHeader().getStrId());
-                } else {
-                    dependencyIds.addAll(findDependencies(dependency.getDependent(), dependency.getDependent(), dependency.getDependencies()));
-                }
-            }
-            return dependencyIds;
-        } else {
-            for(Dependency dependency : dependencies) {
-                List<String> dependencyIds = findDependencies(dependentObject, dependency.getDependent(), dependency.getDependencies());
-                if(dependencyIds != null){
-                    return dependencyIds;
-                }
-            }
-        }
-        return null;
+        return bundleExporter.exportBundle(bundleOptionsBuilder.map(), headers);
     }
 }
