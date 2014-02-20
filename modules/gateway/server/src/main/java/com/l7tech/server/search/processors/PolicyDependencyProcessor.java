@@ -112,8 +112,10 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         SecurityZone securityZone = policy.getSecurityZone();
         if (securityZone != null) {
             EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
-            securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
-            policy.setSecurityZone(securityZone);
+            if(securityZoneHeaderToUse != null) {
+                securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
+                policy.setSecurityZone(securityZone);
+            }
         }
     }
 }

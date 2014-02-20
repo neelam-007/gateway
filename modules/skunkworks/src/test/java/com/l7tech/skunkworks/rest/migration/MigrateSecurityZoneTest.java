@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -171,5 +172,109 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
         Assert.assertNotNull(securityZoneDependency);
         Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
         Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+    }
+
+    @Test
+    public void testPolicyMapSecurityZone() throws Exception {
+        //create policy;
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setSecurityZoneId(securityZoneItem.getId());
+        policyMO.setSecurityZone(securityZoneItem.getName());
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("MyPolicy");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n");
+
+        RestResponse response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItem.setContent(policyMO);
+        try {
+
+            //create securityZone;
+            SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
+            securityZoneMO.setName("MySecurityZoneTarget");
+            securityZoneMO.setDescription("MySecurityZone description");
+            securityZoneMO.setPermittedEntityTypes(CollectionUtils.list(EntityType.ANY.toString()));
+            response = getTargetEnvironment().processRequest("securityZones", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(securityZoneMO)));
+
+            assertOkCreatedResponse(response);
+
+            Item securityZoneItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //map the securityZone to the one created above.
+            bundleItem.getContent().getMappings().get(0).setTargetId(securityZoneItemTarget.getId());
+
+            Assert.assertEquals("The bundle should have 2 items. A security zone and folder", 2, bundleItem.getContent().getReferences().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
+
+            DependencyMO securityZoneDependency = policyDependencies.get(0);
+            Assert.assertNotNull(securityZoneDependency);
+            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+
+        } finally {
+            response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 }

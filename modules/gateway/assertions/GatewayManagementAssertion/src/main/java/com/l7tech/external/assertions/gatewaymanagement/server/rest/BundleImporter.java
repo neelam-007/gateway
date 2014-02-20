@@ -5,11 +5,12 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.AP
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,6 @@ import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -105,12 +105,17 @@ public class BundleImporter {
                                     }
                                     break;
                                 case NewOrUpdate:
-                                    //update the existing entity
-                                    updateResource(item, existingResourceItem, mapping, resourceMapping);
+                                    try {
+                                        //update the existing entity
+                                        createOrUpdateResource(item, existingResourceItem.getId(), mapping, resourceMapping, false);
+                                    } catch (Exception e) {
+                                        mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
+                                        transactionStatus.setRollbackOnly();
+                                    }
                                     break;
                                 case AlwaysCreateNew:
                                     try {
-                                        createResource(item, null, mapping, resourceMapping);
+                                        createOrUpdateResource(item, null, mapping, resourceMapping, true);
                                     } catch (Exception e) {
                                         mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
                                         transactionStatus.setRollbackOnly();
@@ -137,7 +142,7 @@ public class BundleImporter {
                                 case AlwaysCreateNew:
                                     //Create a new entity.
                                     try {
-                                        createResource(item, item.getId(), mapping, resourceMapping);
+                                        createOrUpdateResource(item, item.getId(), mapping, resourceMapping, true);
                                     } catch (Exception e) {
                                         mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
                                         transactionStatus.setRollbackOnly();
@@ -182,11 +187,11 @@ public class BundleImporter {
                 && StringUtils.equals(header1.getName(), header2.getName());
     }
 
-    private void updateResource(Item item, Item existingResourceItem, Mapping mapping, @NotNull Map<EntityHeader, EntityHeader> resourceMapping) {
-        throw new NotImplementedException();
-    }
-
-    protected void createResource(@NotNull final Item item, @Nullable final String id, @NotNull final Mapping mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException, FindException {
+    private void createOrUpdateResource(@NotNull final Item item, @Nullable final String id, @NotNull final Mapping mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final boolean create) throws ResourceFactory.ResourceFactoryException, FindException {
+        //validate that the id is not null if create is false
+        if (!create && id == null) {
+            throw new IllegalArgumentException("Must specify an id when updating an existing entity.");
+        }
         try {
             //get transformer
             final APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
@@ -211,27 +216,32 @@ public class BundleImporter {
             // Flushing allows it to be found later by the entity managers.
             final TransactionTemplate tt = new TransactionTemplate(transactionManager);
             tt.setReadOnly( false );
-            ResourceFactory.InvalidResourceException exception = tt.execute(new TransactionCallback<ResourceFactory.InvalidResourceException>() {
+            Either<ResourceFactory.ResourceFactoryException, String> idOrException = tt.execute(new TransactionCallback<Either<ResourceFactory.ResourceFactoryException, String>>() {
                 @Override
-                public ResourceFactory.InvalidResourceException doInTransaction(final TransactionStatus transactionStatus) {
+                public Either<ResourceFactory.ResourceFactoryException, String> doInTransaction(final TransactionStatus transactionStatus) {
+                    final String importedID;
                     try {
-                        if (id == null) {
-                            factory.createResource(managedObject);
+                        if(create){
+                            if (id == null) {
+                                importedID = factory.createResource(managedObject);
+                            } else {
+                                factory.createResource(id, managedObject);
+                                importedID = id;
+                            }
                         } else {
-                            factory.createResource(id, managedObject);
+                            factory.updateResource(id, managedObject);
+                            importedID = id;
                         }
-                    } catch (ResourceFactory.InvalidResourceException e) {
-                        return e;
+                    } catch (ResourceFactory.ResourceFactoryException e) {
+                        return Either.left(e);
                     }
                     //flush the newly created object so that it can be found by the entity managers later.
                     transactionStatus.flush();
-                    return null;
+                    return Either.right(importedID);
                 }
             });
             //throw the exception if there was one attempting to save the entity.
-            if(exception != null) {
-                throw exception;
-            }
+            final String importedID = Eithers.extract(idOrException);
 
             // Adds the mapped headers to the resourceMapping map if they are different.
             try {
@@ -244,16 +254,17 @@ public class BundleImporter {
                 mapping.setErrorType(Mapping.ErrorType.InvalidResource);
                 throw e;
             }
-        } catch (ResourceFactory.InvalidResourceException e) {
+            mapping.setActionTaken(create ? Mapping.ActionTaken.CreatedNew : Mapping.ActionTaken.UpdatedExisting);
+            mapping.setTargetId(importedID);
+
+            URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(mapping.getType());
+
+            mapping.setTargetUri(urlAccessible.getUrl(managedObject));
+
+        } catch (ResourceFactory.ResourceFactoryException e) {
             mapping.setErrorType(Mapping.ErrorType.InvalidResource);
             throw e;
         }
-        mapping.setActionTaken(Mapping.ActionTaken.CreatedNew);
-        mapping.setTargetId(item.getId());
-
-        URLAccessible urlAccessible = URLAccessibleLocator.findByEntityType(mapping.getType());
-
-        mapping.setTargetUri(urlAccessible.getUrl(item.getContent()));
     }
 
     private Item locateResource(final Mapping mapping, final Item item) {

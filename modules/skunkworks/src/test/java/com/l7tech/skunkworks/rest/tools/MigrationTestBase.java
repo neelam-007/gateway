@@ -5,6 +5,8 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
@@ -99,7 +101,7 @@ public abstract class MigrationTestBase {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
         for (Mapping mapping : reverseMappingsList) {
-            if(mapping.getErrorType() == null){
+            if(mapping.getErrorType() == null && !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId()))){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");

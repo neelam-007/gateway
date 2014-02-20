@@ -2,7 +2,6 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
@@ -10,18 +9,18 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Finds dependencies that a folder has. The folder dependencies include sub-folders, policies, services, and aliases
@@ -44,9 +43,6 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
 
     @Inject
     private ServiceAliasManager serviceAliasManager;
-
-    @Inject
-    private SecurityZoneManager securityZoneManager;
 
     /**
      * Find the dependencies of a folder. The dependencies are returned in the following order: sub-folders, policies,
@@ -120,16 +116,5 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         }
 
         return dependencies;
-    }
-
-    @Override
-    public void replaceDependencies(@NotNull Folder folder, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws FindException {
-        //replace the security zone
-        SecurityZone securityZone = folder.getSecurityZone();
-        if (securityZone != null) {
-            EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
-            securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
-            folder.setSecurityZone(securityZone);
-        }
     }
 }
