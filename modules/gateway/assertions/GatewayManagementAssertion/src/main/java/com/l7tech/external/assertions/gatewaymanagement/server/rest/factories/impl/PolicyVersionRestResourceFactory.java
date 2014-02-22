@@ -39,6 +39,7 @@ public class PolicyVersionRestResourceFactory {
     private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
             .put("version", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("ordinal", RestResourceFactoryUtils.longConvert))
             .put("active", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("active", RestResourceFactoryUtils.booleanConvert))
+            .put("comment", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
             .map();
 
     public String getSortKey(String sort) {
@@ -69,11 +70,21 @@ public class PolicyVersionRestResourceFactory {
     }
 
     public PolicyVersionMO getResource(@NotNull String policyId, @NotNull String id) throws FindException {
-        return buildMO(policyVersionManager.findByPrimaryKey(Goid.parseGoid(policyId), Goid.parseGoid(id)));
+        return buildMO(policyVersionManager.findPolicyVersionForPolicy(Goid.parseGoid(policyId),Long.parseLong(id)));
+    }
+
+    public PolicyVersionMO getActiveVersion(String policyId) throws FindException {
+        return buildMO(policyVersionManager.findActiveVersionForPolicy(Goid.parseGoid(policyId)));
     }
 
     public void updateComment(@NotNull String policyId, @NotNull String id, @Nullable String comment) throws FindException, UpdateException {
-        PolicyVersion policyVersion = policyVersionManager.findByPrimaryKey(Goid.parseGoid(policyId), Goid.parseGoid(id));
+        PolicyVersion policyVersion = policyVersionManager.findPolicyVersionForPolicy(Goid.parseGoid(policyId), Long.parseLong(id));
+        policyVersion.setName(comment);
+        policyVersionManager.update(policyVersion);
+    }
+
+    public void updateActiveComment(String policyId, String comment) throws FindException, UpdateException {
+        PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(Goid.parseGoid(policyId));
         policyVersion.setName(comment);
         policyVersionManager.update(policyVersion);
     }

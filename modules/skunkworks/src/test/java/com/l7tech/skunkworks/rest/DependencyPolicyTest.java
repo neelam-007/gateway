@@ -1,28 +1,34 @@
 package com.l7tech.skunkworks.rest;
 
-import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
+import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.apache.http.entity.ContentType;
+import org.junit.*;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -143,6 +149,107 @@ public class DependencyPolicyTest extends DependencyTestBase {
         securityZoneManager.delete(securityZone1);
     }
 
+    @Test
+    public void policyVersionTest() throws Exception {
+
+        RestResponse versionCheck = processRequest("policies/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
+        logger.info("versions" + versionCheck.toString());
+
+        // get
+        RestResponse responseGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
+        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
+        PolicyMO entityGot = (PolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
+        entityGot.setSecurityZoneId(null);
+        getDatabaseBasedRestManagementEnvironment().processRequest( "policies/" + policy.getId() , HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+
+
+
+        responseGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
+        entityGot = (PolicyMO) MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(responseGet.getBody()))).getContent();
+        final String newPolicyXML =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AuditDetailAssertion>\n" +
+                        "            <L7p:Detail stringValue=\"new policy\"/>\n" +
+                        "        </L7p:AuditDetailAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+        final List<ResourceSet> resourceSets = new ArrayList<ResourceSet>();
+        entityGot.setResourceSets( resourceSets );
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSets.add( resourceSet );
+        resourceSet.setTag( "policy" );
+        final Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources( Collections.singletonList(resource) );
+        resource.setType( "policy" );
+        resource.setContent( newPolicyXML );
+
+        String comment = "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "policies/" + policy.getId() + "?versionComment="+comment+"&active=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        logger.info("update response" + response.toString());
+
+        RestResponse updateGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
+        logger.info("check updated" + updateGet.toString());
+
+        RestResponse versionsGet = processRequest("policies/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
+        logger.info("check versions" + versionsGet.toString());
+    }
+
+    @Test
+    public void createServiceWithCommentTest() throws Exception {
+
+        final String serviceMOxml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                        "<l7:Service xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                        "    <l7:ServiceDetail folderId=\"0000000000000000ffffffffffffec76\">\n" +
+                        "        <l7:Name>blah</l7:Name>\n" +
+                        "        <l7:Enabled>true</l7:Enabled>\n" +
+                        "        <l7:ServiceMappings>\n" +
+                        "            <l7:HttpMapping>\n" +
+                        "                <l7:UrlPattern>/blah</l7:UrlPattern>\n" +
+                        "                <l7:Verbs>\n" +
+                        "                    <l7:Verb>GET</l7:Verb>\n" +
+                        "                </l7:Verbs>\n" +
+                        "            </l7:HttpMapping>\n" +
+                        "        </l7:ServiceMappings>\n" +
+                        "        <l7:Properties>\n" +
+                        "            <l7:Property key=\"policyRevision\">\n" +
+                        "                <l7:LongValue>23</l7:LongValue>\n" +
+                        "            </l7:Property>\n" +
+                        "            <l7:Property key=\"wssProcessingEnabled\">\n" +
+                        "                <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                        "            </l7:Property>\n" +
+                        "            <l7:Property key=\"soap\">\n" +
+                        "                <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                        "            </l7:Property>\n" +
+                        "            <l7:Property key=\"internal\">\n" +
+                        "                <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                        "            </l7:Property>\n" +
+                        "        </l7:Properties>\n" +
+                        "    </l7:ServiceDetail>\n" +
+                        "    <l7:Resources>\n" +
+                        "        <l7:ResourceSet tag=\"policy\">\n" +
+                        "            <l7:Resource type=\"policy\" version=\"24\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                        "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+                        "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+                        "        &lt;L7p:AuditDetailAssertion&gt;\n" +
+                        "            &lt;L7p:Detail stringValue=&quot;created!&quot;/&gt;\n" +
+                        "        &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                        "    &lt;/wsp:All&gt;\n" +
+                        "&lt;/wsp:Policy&gt;\n" +
+                        "            </l7:Resource>\n" +
+                        "        </l7:ResourceSet>\n" +
+                        "    </l7:Resources>\n" +
+                        "</l7:Service>";
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "services/" + policy.getId() + "?versionComment=newComment&active=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  serviceMOxml);
+        logger.info("update response" + response.toString());
+
+        RestResponse versionsGet = processRequest("services/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
+        logger.info("check versions" + versionsGet.toString());
+    }
 
     @Test
     public void policyTest() throws Exception {

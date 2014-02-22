@@ -72,6 +72,20 @@ public interface PolicyVersionManager extends EntityManager<PolicyVersion, Entit
     PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException;
 
     /**
+     * Examine the specified policy and record a new PolicyVersion if necessary.
+     *
+     * @param newPolicy a possibly-mutated policy that has not yet been committed to the database.
+     *                  This policy must already have been assigned a valid GOID.
+     * @param activated if true, the newly saved revision should be marked as the active revision for this policy.
+     * @param comment   comment for the newly saved policy revision
+     * @param newEntity if true, this is a new Policy entity being created
+     * @return the new PolicyVersion resulting from this checkpoint.
+     * @throws com.l7tech.objectmodel.ObjectModelException if there is a problem finding or updating information from the database
+     * @throws IllegalArgumentException if newPolicy does not have a valid GOID
+     */
+    PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, String comment, boolean newEntity) throws ObjectModelException;
+
+    /**
      * Finds the latest PolicyVersion for the given Policy Goid.
      *
      * @param policyGoid the GOID of the policy whose versions will be searched. Required.

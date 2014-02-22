@@ -23,7 +23,30 @@ public class PolicyVersionManagerStub extends EntityManagerStub<PolicyVersion,En
 
     @Override
     public PolicyVersion checkpointPolicy( final Policy newPolicy, final boolean activated, final boolean newEntity ) throws ObjectModelException {
-        throw new ObjectModelException("Not Implemented");
+        return checkpointPolicy(newPolicy, activated, null, newEntity);
+    }
+
+    @Override
+    public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, String comment, boolean newEntity) throws ObjectModelException {
+        PolicyVersion version = new PolicyVersion();
+        version.setPolicyGoid(newPolicy.getGoid());
+        version.setActive(activated);
+        version.setName(comment);
+        long ordinal = (long) (newPolicy.getVersion() + 1);
+        if (!newEntity) ordinal++;
+        version.setOrdinal(ordinal);
+        version.setTime(System.currentTimeMillis());
+        version.setXml(newPolicy.getXml());
+
+
+
+        if(activated && !newEntity){
+            for(PolicyVersion oldVersion: findAllForPolicy(newPolicy.getGoid())){
+                oldVersion.setActive(false);
+            }
+        }
+        save(version);
+        return version;
     }
 
     @Override

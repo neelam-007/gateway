@@ -76,12 +76,19 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
     @Override
     public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
+        return checkpointPolicy(newPolicy, activated, null, newEntity);
+
+    }
+
+    @Override
+    public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, String comment, boolean newEntity) throws ObjectModelException {
         final Goid policyGoid = newPolicy.getGoid();
         if (Goid.isDefault(policyGoid))
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
 
         AdminInfo adminInfo = AdminInfo.find(false);
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
+        ver.setName(comment);
 
         // If the most active or most recent PolicyVersion matches then this was a do-nothing policy change
         // and should be ignored (Bug #4569, #10662, SSG-7672)

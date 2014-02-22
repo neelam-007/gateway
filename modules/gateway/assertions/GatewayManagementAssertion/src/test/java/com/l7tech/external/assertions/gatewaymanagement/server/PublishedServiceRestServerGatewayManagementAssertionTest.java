@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -12,9 +13,12 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManagerStub;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManagerStub;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
@@ -39,6 +43,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
 
     private static final PublishedService publishedService = new PublishedService();
     private static ServiceManagerStub serviceManager;
+    private static PolicyVersionManager policyVersionManager;
     private static final String basePath = "services/";
 
     @InjectMocks
@@ -54,6 +59,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         Folder testFolder = new Folder("Test Folder", null);
         folderManager.save(testFolder);
 
+        policyVersionManager = applicationContext.getBean("policyVersionManager", PolicyVersionManager.class);
         serviceManager = applicationContext.getBean("serviceManager", ServiceManagerStub.class);
         publishedService.setName("Service1");
         publishedService.setRoutingUri("/test");
@@ -62,6 +68,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         publishedService.setSoap(false);
         publishedService.getPolicy().setGuid(UUID.randomUUID().toString());
         serviceManager.save(publishedService);
+        policyVersionManager.checkpointPolicy(publishedService.getPolicy(), true, true);
     }
 
     @After
@@ -97,6 +104,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         createObject.getServiceDetail().setName("Create Service Name");
         Document request = ManagedObjectFactory.write(createObject);
         RestResponse response = processRequest(basePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
 
@@ -104,6 +112,30 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
 
         assertEquals("Service name:", createdEntity.getName(), createObject.getServiceDetail().getName());
         assertEquals("Service folder:", createdEntity.getFolder().getId(), createObject.getServiceDetail().getFolderId());
+    }
+
+    @Test
+    public void createEntityWithCommentTest() throws Exception {
+
+        ServiceMO createObject = serviceResourceFactory.asResource(new ServiceResourceFactory.ServiceEntityBag(publishedService, Collections.<ServiceDocument>emptySet()));
+        createObject.setId(null);
+        createObject.getServiceDetail().setName("Create Service Name");
+        Document request = ManagedObjectFactory.write(createObject);
+        RestResponse response = processRequest(basePath + "?versionComment=COMMENT!", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+        Goid serviceGoid = new Goid(getFirstReferencedGoid(response));
+        PublishedService createdEntity = serviceManager.findByPrimaryKey(serviceGoid);
+
+        assertEquals("Service name:", createdEntity.getName(), createObject.getServiceDetail().getName());
+        assertEquals("Service folder:", createdEntity.getFolder().getId(), createObject.getServiceDetail().getFolderId());
+
+        PolicyVersion version = policyVersionManager.findPolicyVersionForPolicy(createdEntity.getPolicy().getGoid(), 1);
+        assertEquals("Comment:", "COMMENT!", version.getName());
+
+
     }
 
     @Test
@@ -118,6 +150,7 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         // update
         entityGot.getServiceDetail().setName("Updated Service Name");
         RestResponse response = processRequest(basePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
@@ -128,6 +161,50 @@ public class PublishedServiceRestServerGatewayManagementAssertionTest extends Se
         assertEquals("Service identifier:", updatedEntity.getId(), entityGot.getId());
         assertEquals("Service name:", updatedEntity.getName(), entityGot.getServiceDetail().getName());
         assertEquals("Service folder:", updatedEntity.getFolder().getId(), entityGot.getServiceDetail().getFolderId());
+    }
+
+    @Test
+    public void updateEntityWithCommentTest() throws Exception {
+
+        // get
+        RestResponse responseGet = processRequest(basePath + publishedService.getId(), HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
+        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
+        ServiceMO entityGot = (ServiceMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
+
+        // update
+        entityGot.getServiceDetail().setName("Updated Service Name");
+        Resource policyResource = entityGot.getResourceSets().get(0).getResources().get(0);
+        policyResource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <exp:References/>\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <L7p:AuditDetailAssertion>\n" +
+                "                <L7p:Detail stringValue=\"Policy Fragment: temp\"/>\n" +
+                "            </L7p:AuditDetailAssertion>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>\n");
+        RestResponse response = processRequest(basePath + entityGot.getId() + "?versionComment=MYCOMMENT", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
+
+        // check entity
+        Goid serviceGoid = new Goid(entityGot.getId());
+        PublishedService updatedEntity = serviceManager.findByPrimaryKey(serviceGoid);
+
+        assertEquals("Service identifier:", updatedEntity.getId(), entityGot.getId());
+        assertEquals("Service name:", updatedEntity.getName(), entityGot.getServiceDetail().getName());
+        assertEquals("Service folder:", updatedEntity.getFolder().getId(), entityGot.getServiceDetail().getFolderId());
+
+        PolicyVersion version = policyVersionManager.findPolicyVersionForPolicy(updatedEntity.getPolicy().getGoid(), 2);
+        Assert.assertNotNull(version);
+        assertEquals("Comment:", "MYCOMMENT", version.getName());
     }
 
     @Test

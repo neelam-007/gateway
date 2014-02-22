@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.PolicyVersionMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -13,7 +14,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.policy.PolicyManagerStub;
-import com.l7tech.server.policy.PolicyVersionManagerStub;
+import com.l7tech.server.policy.PolicyVersionManager;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamSource;
@@ -31,12 +32,12 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
     private static final Logger logger = Logger.getLogger(PolicyVersionRestServerGatewayManagementAssertionTest.class.getName());
 
     private static final Policy policy1 = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy1", "", false);
-    private static final PolicyVersion policyVersion = new PolicyVersion();
     private static PolicyManagerStub policyManager;
+    private static final String comment = "MyComment 1";
     private static final String policyBasePath = "policies/";
     private static final String policyVersionsPath = "versions/";
     private Folder rootFolder;
-    private PolicyVersionManagerStub policyVersionManager;
+    private PolicyVersionManager policyVersionManager;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -46,6 +47,8 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
     @Before
     public void before() throws Exception {
         super.before();
+        policyVersionManager = applicationContext.getBean("policyVersionManager", PolicyVersionManager.class);
+
         FolderManagerStub folderManager = applicationContext.getBean("folderManager", FolderManagerStub.class);
         rootFolder = new Folder("ROOT FOLDER", null);
         folderManager.save(rootFolder);
@@ -65,15 +68,7 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
         policyManager = applicationContext.getBean("policyManager", PolicyManagerStub.class);
         policyManager.save(policy1);
 
-        policyVersion.setName("MyComment 1");
-        policyVersion.setActive(true);
-        policyVersion.setOrdinal(1);
-        policyVersion.setPolicyGoid(policy1.getGoid());
-        policyVersion.setTime(System.currentTimeMillis());
-        policyVersion.setXml("version1");
-
-        policyVersionManager = applicationContext.getBean("policyVersionManager", PolicyVersionManagerStub.class);
-        policyVersionManager.save(policyVersion);
+        policyVersionManager.checkpointPolicy(policy1,true,comment,true);
     }
 
     @After
@@ -92,25 +87,24 @@ public class PolicyVersionRestServerGatewayManagementAssertionTest extends Serve
 
     @Test
     public void getPolicyVersionTest() throws Exception {
-        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId(), HttpMethod.GET, null, "");
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + "1", HttpMethod.GET, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Item item = MarshallingUtils.unmarshal(Item.class, source);
         PolicyVersionMO policyVersionReturned = (PolicyVersionMO) item.getContent();
 
-        Assert.assertEquals(policyVersion.getId(), policyVersionReturned.getId());
-        Assert.assertEquals(policyVersion.getName(), policyVersionReturned.getComment());
-        Assert.assertEquals(policyVersion.getXml(), policyVersionReturned.getXml());
+        Assert.assertEquals(comment, policyVersionReturned.getComment());
+        Assert.assertEquals(policy1.getXml(), policyVersionReturned.getXml());
     }
 
     @Test
     public void updatePolicyVersionCommentTest() throws Exception {
         final String newPolicyComment = "Policy Version Comment Updated";
-        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + policyVersion.getId() + "/comment", HttpMethod.PUT, null, newPolicyComment);
+        RestResponse response = processRequest(policyBasePath + policy1.getId() + "/" + policyVersionsPath + "1/comment", HttpMethod.PUT, null, newPolicyComment);
         logger.info(response.toString());
 
-        PolicyVersion policyVersionSaved = policyVersionManager.findByPrimaryKey(policyVersion.getGoid());
+        PolicyVersion policyVersionSaved = policyVersionManager.findPolicyVersionForPolicy(policy1.getGoid(), 1);
         Assert.assertEquals(newPolicyComment, policyVersionSaved.getName());
     }
 

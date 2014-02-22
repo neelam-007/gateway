@@ -195,10 +195,12 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
 
     //- PROTECTED
 
+
     @Override
     protected ServiceMO asResource( final EntityBag<PublishedService> entityBag ) {
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
         final PublishedService publishedService = serviceEntityBag.getPublishedService();
+
         final Collection<ServiceDocument> serviceDocuments = serviceEntityBag.getServiceDocuments();
         final Policy policy = publishedService.getPolicy();
 
@@ -216,7 +218,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
 
         serviceDetail.setId( publishedService.getId() );
         serviceDetail.setVersion( publishedService.getVersion() );
-        serviceDetail.setFolderId( getFolderId( publishedService ) );        
+        serviceDetail.setFolderId( getFolderId( publishedService ) );
         serviceDetail.setName( publishedService.getName() );
         serviceDetail.setEnabled( !publishedService.isDisabled() );
         serviceDetail.setServiceMappings( buildServiceMappings(publishedService) );
@@ -231,6 +233,15 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         doSecurityZoneAsResource( service, publishedService );
 
         return service;
+    }
+
+    public Pair<PublishedService,Collection<ServiceDocument>> fromResource(Object resource) throws InvalidResourceException {
+        ServiceEntityBag bag = (ServiceEntityBag)fromResourceAsBag(resource);
+        return new Pair<PublishedService,Collection<ServiceDocument>>(bag.getPublishedService(),bag.getServiceDocuments());
+    }
+
+    public ServiceMO asResource(Pair<PublishedService,Collection<ServiceDocument>> serviceEntity) {
+        return asResource(new ServiceResourceFactory.ServiceEntityBag(serviceEntity.left, serviceEntity.right));
     }
 
     @Override

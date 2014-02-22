@@ -75,7 +75,7 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
 
     @Override
     public Item<PolicyVersionMO> convertToItem(PolicyVersionMO m) {
-        return new ItemBuilder<PolicyVersionMO>("Policy Version: " + m.getVersion(), m.getId(), EntityType.POLICY_VERSION.name())
+        return new ItemBuilder<PolicyVersionMO>("Policy Version: " + m.getOrdinal(), m.getId(), EntityType.POLICY_VERSION.name())
                 .setContent(m)
                 .build();
     }

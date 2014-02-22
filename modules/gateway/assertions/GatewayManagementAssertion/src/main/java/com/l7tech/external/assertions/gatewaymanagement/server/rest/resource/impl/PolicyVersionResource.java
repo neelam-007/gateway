@@ -16,6 +16,7 @@ import org.glassfish.jersey.message.XmlHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -83,6 +84,16 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
                 .build();
     }
 
+    @GET
+    @Path("active")
+    public Item<PolicyVersionMO> getActiveVersion() throws FindException {
+        PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getActiveVersion(policyId);
+        return new ItemBuilder<>(transformer.convertToItem(policyVersion))
+                .addLink(getLink(policyVersion))
+                .addLinks(getRelatedLinks(policyVersion))
+                .build();
+    }
+
     /**
      * Sets the comment on a specific policy version.
      *
@@ -102,6 +113,18 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
                 .build()).build();
     }
 
+    @PUT
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    @Path("active/comment")
+    public Response setComment(String comment) throws FindException, UpdateException {
+        policyVersionRestResourceFactory.updateActiveComment(policyId, comment);
+        PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getActiveVersion(policyId);
+        return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))
+                .addLink(getLink(policyVersion))
+                .addLinks(getRelatedLinks(policyVersion))
+                .build()).build();
+    }
+
     @NotNull
     @Override
     public String getResourceType() {
@@ -111,7 +134,7 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
     @NotNull
     @Override
     public String getUrl(@NotNull PolicyVersionMO policyVersion) {
-        return getUrlString(policyVersion.getId());
+        return getUrlString(Long.toString(policyVersion.getOrdinal()));
     }
 
     @NotNull
