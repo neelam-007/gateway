@@ -1,9 +1,11 @@
 package com.l7tech.server.transport.email;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.mail.pop3.POP3Store;
@@ -79,12 +81,13 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
                     props.setProperty("mail.pop3s.socketFactory.class", SOCKET_FACTORY_CLASSNAME);
                 }
                 Session session = Session.getInstance(props);
+                final GatewaySecurePasswordReferenceExpander passwordExpander = new GatewaySecurePasswordReferenceExpander(new LoggingAudit(log));
                 POP3Store store = (POP3Store)session.getStore(new URLName(useSSL ? "pop3s" : "pop3",
                                                                           hostname,
                                                                           port,
                                                                           null,
                                                                           username,
-                                                                          password));
+                                                                          new String(passwordExpander.expandPasswordReference(password))));
                 store.connect();
                 store.getFolder("INBOX");
                 store.close();
