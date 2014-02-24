@@ -10,7 +10,7 @@ public enum FtpCommand {
     /* Upload commands */
     APPE("Append", true, true),
     STOR("Store", true, true),
-    STOU("Store unique", true, false),
+    STOU("Store unique", true, false), // N.B. many servers accept an argument for STOU but that is not RFC compliant
 
     /* Download commands */
     RETR("Retrieve", true, true),

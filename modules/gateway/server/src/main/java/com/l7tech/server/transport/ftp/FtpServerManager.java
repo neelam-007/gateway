@@ -111,7 +111,7 @@ public class FtpServerManager extends TransportModule {
 
         try {
             ftpServer.start();
-            ftpServers.put(connector.getGoid(), pair(connector,ftpServer));
+            ftpServers.put(connector.getGoid(), pair(connector, ftpServer));
         } catch (Exception e) {
             throw new ListenerException("Unable to start FTP server " + describe(connector) + ": " + ExceptionUtils.getMessage(e), e);
         }
@@ -157,13 +157,11 @@ public class FtpServerManager extends TransportModule {
     protected void doStop() throws LifecycleException {
         try {
             unregisterProtocols();
-            List<Goid> goidsToStop;
-            goidsToStop = new ArrayList<>(ftpServers.keySet());
-            for (Goid goid : goidsToStop) {
+
+            for (Goid goid : ftpServers.keySet()) {
                 removeConnector(goid);
             }
-        }
-        catch(Exception e) {
+        } catch(Exception e) {
             auditError("FTP(S)", "Error while shutting down.", e);
         }
     }

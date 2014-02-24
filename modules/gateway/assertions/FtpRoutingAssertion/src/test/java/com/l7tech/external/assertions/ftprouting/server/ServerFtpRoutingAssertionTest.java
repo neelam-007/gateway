@@ -426,7 +426,6 @@ public class ServerFtpRoutingAssertionTest {
     }
 
     private void setPattern(FtpRoutingAssertion assertion, FtpFileDetails file) {
-        assertion.setFileNameSource(FtpFileNameSource.ARGUMENT);
         assertion.setArguments(file.getName());
         assertion.setDirectory(file.getDirectory());
     }

@@ -23,7 +23,6 @@ public class FtpRoutingAssertionTest {
         "        <L7p:CredentialsSource credentialsSource=\"specified\"/>\n" +
         "        <L7p:Directory stringValue=\"/somepath\"/>\n" +
         "        <L7p:Arguments stringValue=\"ftp_aa\"/>\n" +
-        "        <L7p:FileNameSource fileNameSource=\"argument\"/>\n" +
         "        <L7p:HostName stringValue=\"somehost\"/>\n" +
         "        <L7p:Password stringValue=\"pass123\"/>\n" +
         "        <L7p:Port intValue=\"990\"/>\n" +
@@ -46,7 +45,6 @@ public class FtpRoutingAssertionTest {
         assertEquals(FtpCredentialsSource.SPECIFIED, assertion.getCredentialsSource());
         assertEquals("/somepath", assertion.getDirectory());
         assertEquals("ftp_aa", assertion.getArguments());
-        assertEquals(FtpFileNameSource.ARGUMENT, assertion.getFileNameSource());
         assertEquals("somehost", assertion.getHostName());
         assertEquals("990", assertion.getPort());
         assertEquals("someuser", assertion.getUserName());

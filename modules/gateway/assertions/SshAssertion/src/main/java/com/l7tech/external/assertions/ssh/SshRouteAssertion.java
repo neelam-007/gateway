@@ -130,7 +130,6 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
-            new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
             new Java5EnumTypeMapping(CommandKnob.CommandType.class, "commandType")
         )));

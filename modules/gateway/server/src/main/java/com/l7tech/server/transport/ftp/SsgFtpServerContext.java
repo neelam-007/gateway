@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SSG implementation of Apache FtpServerContext.
@@ -24,6 +26,8 @@ import java.util.concurrent.TimeUnit;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class SsgFtpServerContext implements FtpServerContext {
+    private static final Logger logger = Logger.getLogger(FtpServerContext.class.getName());
+
     private final ConnectionConfig connectionConfig;
     private final FtpRequestProcessor requestProcessor;
 
@@ -120,9 +124,11 @@ public class SsgFtpServerContext implements FtpServerContext {
             try {
                 threadPoolExecutor.awaitTermination(5000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                // nothing
+                logger.log(Level.FINE, "Thread pool shutdown interrupted: " + e.getMessage());
             }
         }
+
+        requestProcessor.dispose();
     }
 
     @Override

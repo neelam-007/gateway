@@ -546,4 +546,56 @@ public class MessageSelectorTest {
             throw e;
         }
     }
+
+    @Test
+    public void selectFtpReplyCodeValue() {
+        message.attachFtpResponseKnob(new FtpResponseKnob() {
+            @Override
+            public int getReplyCode() {
+                return 150;
+            }
+
+            @Override
+            public String getReplyText() {
+                return "File status okay; about to open data connection.";
+            }
+        });
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "ftp.replycode", handler, false);
+
+        assertNotNull(selection);
+        assertEquals(150, selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectFtpReplyCodeValueNullFtpResponseKnob() {
+        assertNull(message.getKnob(FtpResponseKnob.class));
+        assertNull(selector.select(null, message, "ftp.replycode", handler, false));
+    }
+
+    @Test
+    public void selectFtpReplyTextValue() {
+        message.attachFtpResponseKnob(new FtpResponseKnob() {
+            @Override
+            public int getReplyCode() {
+                return 150;
+            }
+
+            @Override
+            public String getReplyText() {
+                return "File status okay; about to open data connection.";
+            }
+        });
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "ftp.replytext", handler, false);
+
+        assertNotNull(selection);
+        assertEquals("File status okay; about to open data connection.", selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectFtpReplyTextValueNullFtpResponseKnob() {
+        assertNull(message.getKnob(FtpResponseKnob.class));
+        assertNull(selector.select(null, message, "ftp.replytext", handler, false));
+    }
 }

@@ -47,6 +47,7 @@ public interface FtpAdmin {
                         int port,
                         String userName,
                         String password,
+                        Goid passwordGoid,
                         boolean useClientCert,
                         @Nullable Goid clientCertKeystoreId,
                         String clientCertKeyAlias,

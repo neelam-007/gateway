@@ -371,6 +371,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
                         Integer.parseInt(_portNumberTextField.getText()),
                         _userNameTextField.getText(),
                         new String(_passwordField.getPassword()),
+                        null,
                         false,
                         new Goid(0,0),
                         null,

@@ -20,19 +20,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class SsgFtpServerFactory {
     private static final int IDLE_TIMEOUT_DEFAULT = 60;
     private static final int MAX_LOGINS_DEFAULT = 10;
-    private static final int MAX_ANONYMOUS_LOGINS_DEFAULT = 10;
-    private static final boolean ANONYMOUS_LOGINS_ENABLED_DEFAULT = true;
+    private static final int MAX_THREADS_DEFAULT = 10;
 
     private static final String SECURE_LISTENER_NAME = "secure";
     private static final String DEFAULT_LISTENER_NAME = "default";
     private static final String DEFAULT_FTPLET_NAME = "default";
 
+    // TODO jwilliams: these settings should come from the connector, not cluster properties
 //    private static final String CP_FTP_TIMEOUT_POLL_INTERVAL = "ftp.connection.timeout_poll_interval";  // TODO jwilliams: document removal - poll interval not settable any more because handled by MINA
-//    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: no analogue in new library?
-
-    // TODO jwilliams: doesn't make sense - these cluster properties shouldn't apply to every ftp/s connector the same
-    private static final String CP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
-    private static final String CP_MAX_LOGIN = "ftp.connection.max_login";
+    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: document that this now corresponds to max threads? or change/add cp?
+    private static final String CP_FTP_MAX_LOGINS = "ftp.connection.max_login";
+    private static final String CP_FTP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
 
     @Autowired
     private FtpSslFactory ftpSslFactory;
@@ -54,8 +52,10 @@ public class SsgFtpServerFactory {
     }
 
     private SsgFtpServerContext createServerContext(SsgConnector connector) throws ListenerException {
+        ConnectionConfig connectionConfig = createConnectionConfig();
+
         SsgFtpServerContext context =
-                new SsgFtpServerContext(createConnectionConfig(), createCommandProcessor(connector));
+                new SsgFtpServerContext(connectionConfig, createRequestProcessor(connector, connectionConfig));
 
         Listener listener = createListener(connector);
 
@@ -67,7 +67,7 @@ public class SsgFtpServerFactory {
     }
 
     /**
-     * Creates a control socket ConnectionConfig based on the factory SsgConnector settings.
+     * Creates a control socket ConnectionConfig based on the relevant cluster properties.
      *
      * @return a new ConnectionConfig
      */
@@ -75,11 +75,10 @@ public class SsgFtpServerFactory {
         ConnectionConfigFactory factory = new ConnectionConfigFactory();
 
         int maxLogins = MAX_LOGINS_DEFAULT;
-        int maxAnonymousLogins = MAX_ANONYMOUS_LOGINS_DEFAULT;
-        boolean anonymousAllowed = ANONYMOUS_LOGINS_ENABLED_DEFAULT;
+        int maxThreads = MAX_THREADS_DEFAULT;
 
-        try { // TODO jwilliams: these settings should really come from the connector, not cluster properties
-            String maxLoginsProperty = clusterPropertyManager.getProperty(CP_MAX_LOGIN);
+        try {
+            String maxLoginsProperty = clusterPropertyManager.getProperty(CP_FTP_MAX_LOGINS);
 
             if (null != maxLoginsProperty) {
                 maxLogins = toInt(maxLoginsProperty, "Max logins");
@@ -88,18 +87,23 @@ public class SsgFtpServerFactory {
             // ignore
         }
 
-        // factory default values that we don't have any settings for
-//        int maxLoginFailures = 3;
-//        int loginFailureDelay = 500;
-//        int maxThreads = 0;
+        try {
+            String maxConnectionsProperty = clusterPropertyManager.getProperty(CP_FTP_MAX_CONNECTIONS);
 
-        factory.setMaxLogins(maxLogins); // 10
-        factory.setAnonymousLoginEnabled(anonymousAllowed); // true
-        factory.setMaxAnonymousLogins(maxAnonymousLogins); // 10
+            if (null != maxConnectionsProperty) {
+                maxThreads = toInt(maxConnectionsProperty, "Max connections");
+            }
+        } catch (FindException e) {
+            // ignore
+        }
 
+        factory.setMaxLogins(maxLogins);
+        factory.setMaxThreads(maxThreads);
+        factory.setMaxAnonymousLogins(maxLogins);
+
+        // factory default values that we don't currently have any settings for
 //        factory.setMaxLoginFailures(maxLoginFailures); // 3
 //        factory.setLoginFailureDelay(loginFailureDelay); // 500
-//        factory.setMaxThreads(maxThreads); // 0
 
         return factory.createConnectionConfig();
     }
@@ -110,8 +114,8 @@ public class SsgFtpServerFactory {
      * @return the new FtpRequestProcessor
      * @throws ListenerException on invalid overridden content type specified in SsgConnector
      */
-    private FtpRequestProcessor createCommandProcessor(SsgConnector connector) throws ListenerException {
-        return ftpRequestProcessorFactory.create(connector);
+    private FtpRequestProcessor createRequestProcessor(SsgConnector connector, ConnectionConfig connectionConfig) throws ListenerException {
+        return ftpRequestProcessorFactory.create(connector, connectionConfig);
     }
 
     /**
@@ -124,8 +128,8 @@ public class SsgFtpServerFactory {
 
         int idleTimeout = IDLE_TIMEOUT_DEFAULT;
 
-        try { // TODO jwilliams: these settings should really come from the connector, not cluster properties
-            String idleTimeoutProperty = clusterPropertyManager.getProperty(CP_IDLE_TIMEOUT);
+        try {
+            String idleTimeoutProperty = clusterPropertyManager.getProperty(CP_FTP_IDLE_TIMEOUT);
 
             if (null != idleTimeoutProperty) {
                 idleTimeout = toInt(idleTimeoutProperty, "Default idle timeout");

@@ -247,9 +247,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = commandParameterSelector;
         } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
             selector = commandTypeSelector;
-        } else if (lname.startsWith(FTP_REPLY_CODE)) {
+        } else if (lname.equals(FTP_REPLY_CODE)) {
             selector = ftpReplyCodeSelector;
-        } else if (lname.startsWith(FTP_REPLY_TEXT)) {
+        } else if (lname.equals(FTP_REPLY_TEXT)) {
             selector = ftpReplyTextSelector;
         } else if (lname.equals(HTTP_COOKIES) || lname.equals(HTTP_COOKIENAMES) || lname.startsWith(HTTP_COOKIES_PREFIX) || lname.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
             selector = cookiesSelector;
@@ -279,7 +279,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         return new String[]{
                 "http",
                 "jms",
-
+                "ftp",
                 "command",
                 "mainpart",
                 "parts",

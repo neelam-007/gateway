@@ -46,9 +46,6 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     private Goid clientCertKeystoreGoid = PersistentEntity.DEFAULT_GOID;
     private String clientCertKeyAlias;
 
-    private FtpFileNameSource fileNameSource;
-    private String pattern;
-
     private FtpClientConfigImpl() {
     }
 
@@ -128,8 +125,8 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
      * the build() methods will throw IllegalStateException.
      *
      * @see com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource
-     * @param credSource
-     * @return
+     * @param credSource the credentials source
+     * @return this instance
      */
     @Override
     public FtpClientConfig setCredentialsSource(FtpCredentialsSource credSource) {
@@ -154,12 +151,6 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     @Override
     public String getClientCertAlias() { return this.clientCertKeyAlias; }
 
-    public FtpClientConfig setFileNameSource(FtpFileNameSource filenameSource) { this.fileNameSource = filenameSource; return this; }
-    public FtpFileNameSource getFilenameSource() { return this.fileNameSource; }
-
-    public FtpClientConfig setFileNamePattern(String pattern) { this.pattern = pattern; return this; }
-    public String getFileNamePattern() { return this.pattern; }
-
     @Override
     public FtpClientConfig setEnabled(boolean enabled) { this.enabled = enabled; return this; }
     @Override
@@ -173,7 +164,7 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     /**
      * Everything apart from the printstream can be cloned using default super behaviour. All other primitive
      * non primitive types are immutable classes
-     * @return
+     * @return a clone of this instance
      * @throws CloneNotSupportedException
      */
     @Override

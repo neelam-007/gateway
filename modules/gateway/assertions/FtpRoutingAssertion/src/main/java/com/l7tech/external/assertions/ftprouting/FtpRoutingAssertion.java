@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
@@ -25,6 +26,7 @@ import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.MessageTargetableSupport.VariablesSet;
 
 /**
  * <code>FtpRoutingAssertion</code> is an assertion that routes the request
@@ -74,12 +76,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Working directory. Can contain context variables. (Formerly used to specify upload directory.) */
     private String _directory;
 
-    /** Where the file name on server will come from. */
-    private FtpFileNameSource _fileNameSource;
-
-//    /** File name pattern if {@link #_fileNameSource} is {@link FtpFileNameSource#PATTERN}; can contain context variables. */
-//    private String _fileNamePattern;
-
     /** Where the login credentials wil come from. */
     private FtpCredentialsSource _credentialsSource;
 
@@ -112,10 +108,10 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private String arguments;
 
-    private MessageTargetableSupport _requestTarget = defaultRequestTarget();
+    private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
     @NotNull
-    private MessageTargetableSupport _responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
+    private MessageTargetableSupport responseTarget = defaultResponseTarget();
 
     private String responseByteLimit;
 
@@ -132,6 +128,10 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private MessageTargetableSupport defaultRequestTarget() {
         return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
+    }
+
+    private MessageTargetableSupport defaultResponseTarget() {
+        return new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     }
 
     public FtpRoutingAssertion() {
@@ -192,14 +192,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setDirectory(String directory) {
         _directory = directory;
-    }
-
-    public FtpFileNameSource getFileNameSource() {
-        return _fileNameSource;
-    }
-
-    public void setFileNameSource(FtpFileNameSource fileNameSource) {
-        _fileNameSource = fileNameSource;
     }
 
     public String getHostName() {
@@ -267,21 +259,21 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _userName = userName;
     }
 
-    public MessageTargetableSupport get_requestTarget() {
-        return _requestTarget != null ? _requestTarget : defaultRequestTarget();
+    public MessageTargetableSupport getRequestTarget() {
+        return requestTarget;
     }
 
-    public void setRequestTarget(MessageTargetableSupport _requestTarget) {
-        this._requestTarget = _requestTarget;
+    public void setRequestTarget(MessageTargetableSupport requestTarget) {
+        this.requestTarget = requestTarget;
     }
 
     @NotNull
     public MessageTargetableSupport getResponseTarget() {
-        return _responseTarget;
+        return responseTarget;
     }
 
     public void setResponseTarget(@NotNull final MessageTargetableSupport responseTarget) {
-        this._responseTarget = responseTarget;
+        this.responseTarget = responseTarget;
     }
 
     public FtpCommand getFtpCommand() {
@@ -348,7 +340,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public boolean needsInitializedRequest() {
-        return _requestTarget == null || TargetMessageType.REQUEST == _requestTarget.getTarget();
+        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override
@@ -358,7 +350,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public boolean needsInitializedResponse() {
-        return _requestTarget != null && TargetMessageType.RESPONSE == _requestTarget.getTarget();
+        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
     }
 
     private final static String baseName = "Route via FTP(S)";
@@ -434,7 +426,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
-            new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
             new Java5EnumTypeMapping(FtpCommand.class, "ftpCommand")
         )));
@@ -467,11 +458,16 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         expressions.add(arguments);
         expressions.add(responseByteLimit);
 
-//        Syntax.getReferencedNames( expressions.toArray( new String[ expressions.size() ] ) );
+        MessageTargetableSupport.VariablesUsed variablesUsed;
 
-        return _requestTarget.getMessageTargetVariablesUsed()
-                .with(_responseTarget.getMessageTargetVariablesUsed())
-                .withExpressions(expressions).asArray();
+        if (null == requestTarget) {
+            variablesUsed = responseTarget.getMessageTargetVariablesUsed();
+        } else {
+            variablesUsed = requestTarget.getMessageTargetVariablesUsed()
+                    .with(responseTarget.getMessageTargetVariablesUsed());
+        }
+
+        return variablesUsed.withExpressions(expressions).asArray();
     }
 
     @Override
@@ -485,7 +481,34 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return _requestTarget.getMessageTargetVariablesSet().with(_responseTarget.getMessageTargetVariablesSet()).asArray();
+        VariablesSet variablesSet;
+
+        if (null == requestTarget) {
+            variablesSet = responseTarget.getMessageTargetVariablesSet();
+        } else {
+            variablesSet = requestTarget.getMessageTargetVariablesSet()
+                    .with(responseTarget.getMessageTargetVariablesSet());
+        }
+
+        String targetVariableName = null;
+
+        if (responseTarget.getTarget() == TargetMessageType.RESPONSE) {
+            targetVariableName = BuiltinVariables.PREFIX_RESPONSE;
+        } else if (responseTarget.getTarget() == TargetMessageType.OTHER) {
+            targetVariableName = responseTarget.getOtherTargetMessageVariable();
+        }
+
+        if (null == targetVariableName) {
+            return variablesSet.asArray();
+        }
+
+        final VariableMetadata[] ftpReply = new VariableMetadata[] {
+                new VariableMetadata(targetVariableName + ".ftp.replycode", false, false, null, true),
+                new VariableMetadata(targetVariableName + ".ftp.replytext", false, false, null, true)
+        };
+
+        return variablesSet.withVariables(ftpReply).asArray();
+
     }
 
     @Override

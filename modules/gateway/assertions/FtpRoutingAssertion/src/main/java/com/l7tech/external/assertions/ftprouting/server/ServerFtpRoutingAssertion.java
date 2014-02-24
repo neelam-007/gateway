@@ -5,7 +5,6 @@ import com.jscape.inet.ftps.Ftps;
 import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.*;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.ftp.*;
@@ -31,7 +30,6 @@ import org.xml.sax.SAXException;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.HostnameVerifier;
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
@@ -66,10 +64,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private final DefaultKey _keyFinder;
     private final String[] variablesUsed;
 
-    private int ftpConnectionIdleTime;
     private StashManagerFactory stashManagerFactory;
-    private FtpConnectionPoolManager ftpConnectionPoolManager;
-    private FtpsConnectionPoolManager ftpsConnectionPoolManager;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext);
@@ -82,46 +77,35 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         // Initialize the executor if necessary
         if (assertionExecutor == null)
             initializeAssertionExecutor(config);
-        ftpConnectionIdleTime = config.getIntProperty(ClusterProperty.asServerConfigPropertyName(FtpRoutingAssertion.CP_BINDING_TIMEOUT),
-                ConnectionPoolManager.DEFAULT_BINDING_TIMEOUT);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Message request = getRequestTarget(context);
-
-        final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
-
-        if (mimeKnob == null) {
-            // Uninitialized request
-            logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
-            return AssertionStatus.BAD_REQUEST;
-        }
+        Message sourceTarget = getSourceMessage(context);
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
-        try {
-            handleProcessedSecurityHeader(request);
-        } catch (SAXException se) {
-            logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+        if (null != sourceTarget) {
+            try {
+                handleProcessedSecurityHeader(sourceTarget);
+            } catch (SAXException se) {
+                logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+            }
         }
 
         final VariableExpander variableExpander = getVariableExpander(context);
 
         Pair<String, String> usernamePasswordPair = getCredentials(context, variableExpander);
 
-        String arguments = getArguments(context, variableExpander);
+        String arguments = getArguments(variableExpander);
 
         FtpCommand ftpCommand = getFtpCommand(context);
-
-        final ClientIdentity identity = createClientIdentity(context, request, usernamePasswordPair.left);
 
         final FtpClientWrapper ftpClient;
 
         // get ftp(s) client
-        // TODO jwilliams: implement in factory once the new connection pool is added
         try {
-            ftpClient = getFtpClient(identity, usernamePasswordPair.left,
-                    usernamePasswordPair.right, variableExpander, assertion.getSecurity());
+            ftpClient = createFtpClient(usernamePasswordPair.left, usernamePasswordPair.right,
+                    variableExpander, assertion.getSecurity());
         } catch (FtpException e) {
             logAndAudit(FTP_ROUTING_CONNECTION_ERROR,
                     new String[] {e.getMessage()}, getDebugException(e));
@@ -137,19 +121,31 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 case STOR:
                     final InputStream messageBodyStream;
 
+                    if (sourceTarget == null) {
+                        // Uninitialized request
+                        logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+
+                    final MimeKnob mimeKnob = sourceTarget.getKnob(MimeKnob.class);
+
+                    if (mimeKnob == null) {
+                        // Uninitialized request
+                        logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+
                     try {
                         messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
                     } catch (NoSuchPartException e) {
                         logAndAudit(NO_SUCH_PART,
-                                new String[] {assertion.get_requestTarget().getTargetName(), e.getWhatWasMissing()},
+                                new String[] {assertion.getRequestTarget().getTargetName(), e.getWhatWasMissing()},
                                 ExceptionUtils.getDebugException(e));
 
                         return AssertionStatus.BAD_REQUEST;
                     }
 
-                    final long bodyContentLength = mimeKnob.getContentLength();
-
-                    ftpReply = routeUpload(ftpClient, messageBodyStream, bodyContentLength, ftpCommand, arguments);
+                    ftpReply = routeUpload(ftpClient, messageBodyStream, ftpCommand, arguments);
 
                     break;
                 case RETR:
@@ -162,12 +158,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             logAndAudit(FTP_ROUTING_ERROR,
                     new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
-        } catch (FtpUploadTruncatedException e) {
-            logAndAudit(FTP_ROUTING_ERROR,
-                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-            return AssertionStatus.FAILED;
         } catch (FtpRoutingException e) {
-            // if there is was a reply it must be evaluated to decide the assertion result
+            // if there was a reply it must be evaluated to decide the assertion result
             ftpReply = e.getFtpReply();
 
             if (ftpReply.isNoReply()) {
@@ -232,34 +224,19 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         return status;
     }
 
-    private Message getRequestTarget(PolicyEnforcementContext context) {
-        Message request;
+    private Message getSourceMessage(PolicyEnforcementContext context) {
+        Message request = null;
 
         try {
-            request = context.getTargetMessage(assertion.get_requestTarget());
+            if (null != assertion.getRequestTarget()) {
+                request = context.getTargetMessage(assertion.getRequestTarget());
+            }
         } catch (NoSuchVariableException e) {
+            logAndAudit(MESSAGE_TARGET_ERROR, e.getVariable(), getMessage(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
+
         return request;
-    }
-
-    private ClientIdentity createClientIdentity(PolicyEnforcementContext context, Message request, String userName) {
-        FtpRequestKnob ftpRequest = request.getKnob(FtpRequestKnob.class);
-
-        if (ftpRequest != null) {
-            return new ClientIdentity(ftpRequest.getCredentials().getUserName(), ftpRequest.getRemoteHost(),
-                    ftpRequest.getRemotePort(), ftpRequest.getPath());
-        } else {
-            final HttpServletRequestKnob httpServletRequestKnob =
-                    context.getRequest().getKnob(HttpServletRequestKnob.class);
-
-            URL url = httpServletRequestKnob.getRequestURL();
-            String host = url.getHost();
-            int port = url.getPort();
-            String path = url.getPath();
-
-            return new ClientIdentity(userName, host, port, path);
-        }
     }
 
     private String getHostName(final VariableExpander variableExpander) {
@@ -348,28 +325,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         return new Pair<>(userName, password);
     }
 
-    private String getArguments(PolicyEnforcementContext context, VariableExpander variableExpander) {
-        String arguments = null;
-
-        if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            // Cannot use STOU because
-            // {@link com.jscape.inet.ftp.Ftp.uploadUnique(InputStream, String)}
-            // sends a parameter as filename seed, which causes IIS to respond
-            // with "500 'STOU seed': Invalid number of parameters".
-            // This was reported (2007-05-07) to JSCAPE, who said they will add
-            // a method to control STOU parameter.
-
-            /**
-             * That IIS behaviour is RFC compliant. Taking a parameter for a filename seed is extended,
-             * non-standard functionality. We should do our best to accommodate it while maintaining
-             * our own standards compliance.
-             */
-            arguments = context.getRequestId().toString();
-        } else if (assertion.getFileNameSource() == FtpFileNameSource.ARGUMENT) {
-            arguments = variableExpander.expandVariables(assertion.getArguments());
-        }
-
-        return arguments;
+    private String getArguments(VariableExpander variableExpander) {
+        return variableExpander.expandVariables(assertion.getArguments());
     }
 
     private String getUserName(final VariableExpander variableExpander) {
@@ -386,45 +343,34 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private FtpReply routeUpload(final FtpClientWrapper ftp, final InputStream is,
-                                 final long contentLength, final FtpCommand ftpCommand, final String filename)
-            throws FtpRoutingException, IOException, FtpUploadTruncatedException {
-        final FtpReplyListener replyListener = new FtpReplyListener() {
-            @Override
-            public void upload(final FtpUploadEvent ftpUploadEvent) {
-                setSize(ftpUploadEvent.getSize());
-            }
-        };
+    private FtpReply routeUpload(final FtpClientWrapper ftpClient, final InputStream is, final FtpCommand ftpCommand,
+                                 final String filename) throws FtpRoutingException, IOException {
+        final FtpReplyListener replyListener = new FtpReplyListener();
 
         try {
-            ftp.addFtpListener(replyListener);
+            ftpClient.addFtpListener(replyListener);
 
             switch (ftpCommand) {
                 case STOR:
-                    ftp.upload(is, filename);
+                case STOU: // due to library limitations, STOU commands are routed as though they were STOR commands
+                    ftpClient.upload(is, filename);
                     break;
                 case APPE:
-                    ftp.upload(is, filename, true);
+                    ftpClient.upload(is, filename, true);
                     break;
-                case STOU:
-
-
-                    break;
+                default:
+                    // command not supported/implemented - cannot perform upload routing
+                    logAndAudit(FTP_ROUTING_UNSUPPORTED_COMMAND, ftpCommand.toString());
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
             }
         } catch (FtpException e) {
             throw new FtpRoutingException("Failed to process upload to '" + filename +
                     "': " + e.getMessage(), e, replyListener.getFtpReply());
         } finally {
-            ftp.removeFtpListener(replyListener);
+            ftpClient.removeFtpListener(replyListener);
 
-            // return the client to the pool // TODO jwilliams: implement with new connection pool
-//            pool.returnObject(ftpClient.getKey(), ftpClient);
-        }
-
-        // check that the upload did not send fewer bytes than expected
-        if (replyListener.getSize() < contentLength) {
-            throw new FtpUploadTruncatedException("File '" + filename +
-                    "' upload truncated from " + contentLength + "to " + replyListener.getSize() + " bytes.");
+            // disconnect from remote FTP server
+            ftpClient.disconnect();
         }
 
         return replyListener.getFtpReply();
@@ -455,7 +401,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     public void responseReceived(FtpResponseEvent ftpResponseEvent) {
                         super.responseReceived(ftpResponseEvent);
 
-                        if (getLastReplyCode() == 150) {
+                        if (getLastReplyCode() == REPLY_CODE_150) {
                             // data connection being opened
                             startSignal.countDown();
                         }
@@ -475,6 +421,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     // remove the ftp reply listener
                     ftpClient.removeFtpListener(replyListener);
 
+                    // disconnect from remote FTP server
+                    ftpClient.disconnect();
+
                     // save the FTP reply details
                     FtpReply ftpErrorResult = replyListener.getFtpReply();
                     ftpErrorResult.setDataStream(pis);
@@ -482,9 +431,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
                     // call countdown in case it hasn't been called already
                     startSignal.countDown();
-
-                    // return the client to the pool // TODO jwilliams: implement with new connection pool
-//                    pool.returnObject(ftpClient.getKey(), ftpClient);
                 }
             }
         });
@@ -522,7 +468,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             throws FtpRoutingException, CausedIOException {
         InputStream is = null;
 
-        final FtpReplyListener replyListener = new FtpReplyListener() {};
+        final FtpReplyListener replyListener = new FtpReplyListener();
 
         try {
             ftpClient.addFtpListener(replyListener);
@@ -608,8 +554,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         } finally {
             ftpClient.removeFtpListener(replyListener);
 
-            // return the client to the pool // TODO jwilliams: implement with new connection pool
-//            pool.returnObject(ftpClient.getKey(), ftpClient);
+            // disconnect from remote FTP server
+            ftpClient.disconnect();
         }
     }
 
@@ -656,13 +602,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     /*
      * Download the given file on a new thread using the ExecutorService.
      */
-    private Future<Void> startFtpDownloadTask(final PipedOutputStream pos, final Runnable downloadFunction)
+    private void startFtpDownloadTask(final PipedOutputStream pos, final Runnable downloadFunction)
             throws CausedIOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
 
-        final Future<Void> future = assertionExecutor.submit(new Callable<Void>() {
-            @Override
-            public Void call() {
+        assertionExecutor.submit(new Runnable() {
+            public void run() {
                 try {
                     startedSignal.countDown();
                     downloadFunction.run();
@@ -670,8 +615,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     ResourceUtils.closeQuietly(pos);
                     startedSignal.countDown();
                 }
-
-                return null;
             }
         });
 
@@ -682,8 +625,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             Thread.currentThread().interrupt();
             throw new CausedIOException("Interrupted waiting for download task to begin execution.", e);
         }
-
-        return future;
     }
 
     private static void initializeAssertionExecutor(Config config) {
@@ -750,30 +691,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         assertionExecutor.shutdownNow();
     }
 
-    private FtpConnectionPoolManager getFtpConnectionPoolManager() {
-        FtpConnectionPoolManager ftpConnectionPoolManager = this.ftpConnectionPoolManager;
-
-        if (ftpConnectionPoolManager == null) {
-            ftpConnectionPoolManager = new FtpConnectionPoolManager();
-            ftpConnectionPoolManager.setBindingTimeout(ftpConnectionIdleTime);
-            this.ftpConnectionPoolManager = ftpConnectionPoolManager;
-        }
-
-        return ftpConnectionPoolManager;
-    }
-
-    private FtpsConnectionPoolManager getFtpsConnectionPoolManager() {
-        FtpsConnectionPoolManager ftpsConnectionPoolManager = this.ftpsConnectionPoolManager;
-
-        if (ftpsConnectionPoolManager == null) {
-            ftpsConnectionPoolManager = new FtpsConnectionPoolManager();
-            ftpsConnectionPoolManager.setBindingTimeout(ftpConnectionIdleTime);
-            this.ftpsConnectionPoolManager = ftpsConnectionPoolManager;
-        }
-
-        return ftpsConnectionPoolManager;
-    }
-
     private static FtpResponseKnob buildFtpResponseKnob(final FtpReply ftpReply) {
         return new FtpResponseKnob() {
             @Override
@@ -788,8 +705,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         };
     }
 
-    public FtpClientWrapper getFtpClient(ClientIdentity identity, String userName, String password,
-                                         VariableExpander variableExpander, FtpSecurity security) throws FtpException {
+    public FtpClientWrapper createFtpClient(String userName, String password, VariableExpander variableExpander,
+                                            FtpSecurity security) throws FtpException {
         //------COMMON------
 
         String hostName = getHostName(variableExpander);
@@ -805,12 +722,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 .setTimeout(assertion.getTimeout());
 
         if (FtpSecurity.FTP_UNSECURED == security) {
-            FtpConnectionPoolManager ftpConnectionManager = getFtpConnectionPoolManager();
-            ftpConnectionManager.setId(identity);
-            ftpConnectionManager.bind();
-
-            final Ftp ftp = ftpConnectionManager.getConnection(config);
-            ftpConnectionManager.setBoundFtp(identity, ftp, true);
+            final Ftp ftp = FtpUtils.newFtpClient(config);
 
             return buildFtpClient(ftp);
         } else {
@@ -838,13 +750,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 keyFinder = _keyFinder;
             }
 
-            FtpsConnectionPoolManager ftpsConnectionManager = getFtpsConnectionPoolManager();
-            ftpsConnectionManager.setId(identity, trustManager, hostnameVerifier);
-            ftpsConnectionManager.bind(trustManager, hostnameVerifier);
-
-            Ftps ftps = ftpsConnectionManager.getConnection(config, keyFinder, trustManager, hostnameVerifier);
-
-            ftpsConnectionManager.setBoundFtp(identity, ftps, true);
+            Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
 
             return buildFtpsClient(ftps);
         }
@@ -953,8 +859,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
-            public void uploadUnique(InputStream inputStream, String remoteFile) throws FtpException {
-                ftps.uploadUnique(inputStream, remoteFile);
+            public void disconnect() {
+                ftps.disconnect();
             }
         };
     }
@@ -1062,8 +968,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
-            public void uploadUnique(InputStream inputStream, String remoteFile) throws FtpException {
-                ftp.uploadUnique(inputStream, remoteFile);
+            public void disconnect() {
+                ftp.disconnect();
             }
         };
     }
@@ -1085,28 +991,30 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    /**
-     * Thrown when a STOR, STOU, or APPE command uploads fewer bytes
-     * than expected.
-     */
-    private class FtpUploadTruncatedException extends Throwable {
-        public FtpUploadTruncatedException(String message) {
-            super(message);
-        }
-    }
-
     private static interface FtpClientWrapper {
 
         public void addFtpListener(FtpListener listener);
 
         public void removeFtpListener(FtpListener listener);
 
+        /**
+         * MKD
+         */
         public void makeDir(String remoteDir) throws FtpException;
 
+        /**
+         * RMD
+         */
         public void deleteDir(String remoteDir, boolean b) throws FtpException;
 
+        /**
+         * DELE
+         */
         public void deleteFile(String remoteFile) throws FtpException;
 
+        /**
+         * RETR
+         */
         public void download(OutputStream outputStream, String remoteFile) throws FtpException;
 
         /**
@@ -1114,6 +1022,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
          */
         public String getDir() throws FtpException;
 
+        /**
+         * LIST
+         */
         public Enumeration getDirListing() throws FtpException;
 
         public Enumeration getDirListing(String filter) throws FtpException;
@@ -1140,24 +1051,40 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
          */
         public long getFilesize(String remoteFile) throws FtpException;
 
+        /**
+         * MDTM
+         */
         public Date getFileTimestamp(String remoteFile) throws FtpException;
 
+        /**
+         * NOOP
+         */
         public void noop() throws FtpException;
 
+        /**
+         * CWD
+         */
         public void setDir(String remoteDir) throws FtpException;
 
+        /**
+         * CDUP
+         */
         public void setDirUp() throws FtpException;
 
+        /**
+         * STOR
+         */
         public void upload(InputStream inputStream, String remoteFile) throws FtpException;
 
+        /**
+         * APPE
+         */
         public void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException;
 
-        public void uploadUnique(InputStream inputStream, String remoteFile) throws FtpException;
+        public void disconnect();
     }
 
-    private abstract static class FtpReplyListener extends FtpAdapter {
-        private long size;
-
+    private static class FtpReplyListener extends FtpAdapter {
         ReentrantLock lock = new ReentrantLock();
 
         private int lastReplyCode;
@@ -1166,14 +1093,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
         public FtpReplyListener() {
             super();
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        protected void setSize(long size) {
-            this.size = size;
         }
 
         public FtpReply getFtpReply() {
@@ -1216,102 +1135,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             } finally {
                 lock.unlock();
             }
-        }
-    }
-
-    private class ClientIdentity {
-
-        private String clientUser;
-        private String clientServer;
-        private int clientPort;
-        private String clientPath;
-        private volatile String cachedToString;
-
-        public ClientIdentity (String clientUser, String clientServer, int clientPort, String clientPath) {
-           this.clientUser = clientUser;
-           this.clientServer = clientServer;
-           this.clientPort = clientPort;
-           this.clientPath = clientPath;
-        }
-
-        public void setClientUser(String clientUser) {
-            this.clientUser = clientUser;
-        }
-
-        public String getClientUser() {
-            return this.clientUser;
-        }
-
-        public void setClientServer(String clientServer) {
-            this.clientServer = clientServer;
-        }
-
-        public String getClientServer() {
-            return this.clientServer;
-        }
-
-        public void setClientPort(int clientPort) {
-            this.clientPort = clientPort;
-        }
-
-        public int getClientPort() {
-            return this.clientPort;
-        }
-
-        public void setClientPath(String clientPath) {
-            this.clientPath = clientPath;
-        }
-
-        public String getClientPath() {
-            return this.clientPath;
-        }
-
-        @Override
-        public int hashCode() {
-            int result;
-            result = (clientUser != null ? clientUser.hashCode() : 0);
-            result = 31 * result + (clientServer != null ? clientServer.hashCode() : 0);
-            result = 31 * result + clientPort;
-            result = 31 * result + (clientPath != null ? clientPath.hashCode() : 0);
-            return result;
-        }
-
-        @SuppressWarnings({"RedundantIfStatement"})
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final ClientIdentity that = (ClientIdentity) o;
-
-            if (clientUser != null ? !clientUser.equals(that.clientUser) : that.clientUser != null) return false;
-            if (clientServer != null ? !clientServer.equals(that.clientServer) : that.clientServer != null) return false;
-            if (String.valueOf(clientPort) != null ? !String.valueOf(clientPort).equals(String.valueOf(that.clientPort)) : String.valueOf(that.clientPort) != null) return false;
-            if (clientPath != null ? !clientPath.equals(that.clientPath) : that.clientPath != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            if (cachedToString == null) {
-                StringBuilder sb = new StringBuilder("<ClientIdentity user=\"");
-                sb.append(clientUser);
-                sb.append("\" ");
-                sb.append("server=\"");
-                sb.append(clientServer);
-                sb.append("\" ");
-                sb.append("port=\"");
-                sb.append(clientPort);
-                sb.append("\" ");
-                sb.append("path=\"");
-                sb.append(clientPath);
-                sb.append("\"/>");
-
-                cachedToString = sb.toString();
-            }
-
-            return cachedToString;
         }
     }
 

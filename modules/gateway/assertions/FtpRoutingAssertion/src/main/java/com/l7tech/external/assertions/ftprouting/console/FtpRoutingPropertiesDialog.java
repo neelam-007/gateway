@@ -72,7 +72,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     public static final FtpCommand[] COMMANDS = new FtpCommand[]{
             APPE,
             STOR,
-            STOU,
             RETR,
             DELE,
             LIST,
@@ -116,12 +115,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JRadioButton storedPasswordRadioButton;
     private JRadioButton passwordExpressionRadioButton;
     private JLabel plainTextPasswordWarningLabel;
-    private JCheckBox autoFilenameCheckBox; // TODO jwilliams: change label to "Use request id for filename" to be clearer?
     private JLabel userNameLabel;
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private ByteLimitPanel responseLimitPanel;
     private TargetVariablePanel commandVariablePanel;
-    private TargetVariablePanel targetVariablePanel; // TODO jwilliams: use TargetMessagePanel
+    private TargetVariablePanel targetVariablePanel;
 
     private char echoChar;
     private InputValidator inputValidator, connectionTestValidator;
@@ -321,13 +319,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         // Response limit settings
         responseLimitPanel = new ByteLimitPanel();
         responseLimitPanel.setAllowContextVars(true);
+        responseLimitPanel.setEnabled(true);
         responseLimitHolderPanel.setLayout(new BorderLayout());
         responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
 
         // WSS security settings
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
-        // TODO: add more validators for various ftp commands e.g. require arguments for MKD or LIST?
         // ----------------------------------
         // ----------- VALIDATION -----------
         // ----------------------------------
@@ -396,16 +394,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                     return getResourceString("argumentsNotSupportedError");
                 }
 
-                // auto-filename option may only be used with the STOR command or a
-                // command variable, and only to the mutual exclusion of the arguments field
-                if (FtpCommand.STOR == command) {
-                    if (autoFilenameCheckBox.isSelected() && !argumentsTextField.getText().trim().isEmpty()) {
-                        return getResourceString("bothAutoFilenameAndArgumentsSpecifiedError");
-                    }
-                } else if (autoFilenameCheckBox.isSelected()) {
-                    return getResourceString("nonUploadAutoFilenameError");
-                }
-
                 return null;
             }
         });
@@ -441,7 +429,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             @Override
             public String getValidationError() {
                 if(specifyUserCredsRadioButton.isSelected()
-                        && !storedPasswordRadioButton.isSelected() && !passwordExpressionRadioButton.isSelected()) {
+                        && !storedPasswordRadioButton.isSelected()
+                        && !passwordExpressionRadioButton.isSelected()) {
                     return getResourceString("passwordSourceUnspecifiedError");
                 }
 
@@ -456,21 +445,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         inputValidator.addRule(new InputValidator.ComponentValidationRule(storedPasswordComboBox) {
             @Override
             public String getValidationError() {
-                if(specifyUserCredsRadioButton.isSelected() && // TODO jwilliams: this doesn't account for plaintext passwords, should check storedPasswordComboBox.isEnabled()
-                        (storedPasswordComboBox == null || storedPasswordComboBox.getItemCount() == 0)) {
+                if(specifyUserCredsRadioButton.isSelected()
+                        && storedPasswordRadioButton.isSelected()
+                        && storedPasswordComboBox.getSelectedSecurePassword() == null) {
                     return getResourceString("passwordEmptyError");
-                }
-
-                return null;
-            }
-        });
-
-        // only plaintext passwords can be used in the connection test // TODO jwilliams: check this
-        connectionTestValidator.addRule(new InputValidator.ComponentValidationRule(passwordExpressionRadioButton) {
-            @Override
-            public String getValidationError() {
-                if(!passwordExpressionRadioButton.isSelected()) {
-                    return getResourceString("connectionTestFailurePasswordNotPlaintextMessage");
                 }
 
                 return null;
@@ -535,27 +513,22 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if (commandComboBox.getSelectedIndex() == OPTION_COMPONENT_NULL_SELECTION_INDEX) {
             messageSourceComboBox.setEnabled(false);
             messageTargetComboBox.setEnabled(false);
-            responseLimitPanel.setEnabled(false);
-            autoFilenameCheckBox.setEnabled(false);
         } else {
-            if (commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX) {
+            if (isCommandFromVariable()) {
                 messageSourceComboBox.setEnabled(true);
-                responseLimitPanel.setEnabled(true);
-                autoFilenameCheckBox.setEnabled(true);
             } else {
-                boolean isUploadCommand = isCommandFromVariable() ||
-                        isCommandUploadType((String) commandComboBox.getSelectedItem());
+                String commandString = (String) commandComboBox.getSelectedItem();
 
-                messageSourceComboBox.setEnabled(isUploadCommand);
-                autoFilenameCheckBox.setEnabled(isUploadCommand);
-                responseLimitPanel.setEnabled(!isUploadCommand);
+                if (null == commandString || commandString.isEmpty()) {
+                    messageSourceComboBox.setEnabled(false);
+                    messageSourceComboBox.setSelectedIndex(0); // selected the 'none' option
+                } else {
+                    FtpCommand command = FtpCommand.valueOf(commandString);
+                    messageSourceComboBox.setEnabled(command == STOR || command == APPE);
+                }
             }
 
             messageTargetComboBox.setEnabled(true);
-        }
-
-        if (!autoFilenameCheckBox.isEnabled()) {
-            autoFilenameCheckBox.setSelected(false);
         }
 
         enableOrDisableTargetVariablePanel();
@@ -591,18 +564,22 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void populateRequestSourceComboBox(FtpRoutingAssertion assertion) {
-        MessageTargetableSupport msgSource = assertion.get_requestTarget();
+        MessageTargetableSupport msgSource = assertion.getRequestTarget();
         TargetMessageType msgSourceType = msgSource != null ? msgSource.getTarget() : null;
 
-        if (msgSourceType == TargetMessageType.REQUEST)
+        if (null == msgSource) {
             messageSourceComboBox.setSelectedIndex(0);
-        else if (msgSourceType == TargetMessageType.RESPONSE)
+        } else if (msgSourceType == TargetMessageType.REQUEST) {
             messageSourceComboBox.setSelectedIndex(1);
-        else {
+        } else if (msgSourceType == TargetMessageType.RESPONSE) {
+            messageSourceComboBox.setSelectedIndex(2);
+        } else {
             String msgSourceVariable = msgSourceType == TargetMessageType.OTHER ? msgSource.getOtherTargetMessageVariable() : null;
+
             if (msgSourceVariable != null) {
                 boolean msgSourceFound = false;
-                for (int i = 2; i < messageSourceComboBox.getItemCount(); i++) {
+
+                for (int i = 3; i < messageSourceComboBox.getItemCount(); i++) {
                     MessageTargetableSupport messageSourceItem = messageSourceComboBox.getItemAt(i);
                     if (msgSourceVariable.equals(messageSourceItem.getOtherTargetMessageVariable())) {
                         msgSourceFound = true;
@@ -610,6 +587,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                         break;
                     }
                 }
+
                 if (!msgSourceFound) {
                     MessageTargetableSupport notFoundMsgSource = new MessageTargetableSupport(msgSourceVariable);
                     messageSourceComboBox.addItem(notFoundMsgSource);
@@ -671,13 +649,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // message source
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+        messageSourceComboBox.insertItemAt(null, 0);
 
         populateRequestSourceComboBox(assertion);
 
         // message target
         messageTargetComboBox.setModel(buildMessageTargetComboBoxModel(false));
-        final MessageTargetableSupport responseTarget = new MessageTargetableSupport(assertion.getResponseTarget());
-        messageTargetComboBox.setSelectedItem(responseTarget);
+        final MessageTargetableSupport responseTarget = assertion.getResponseTarget();
+        messageTargetComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
 
         // message target variable
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
@@ -690,9 +669,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // directory
         directoryTextField.setText(assertion.getDirectory());
-
-        // auto file name
-        autoFilenameCheckBox.setSelected(assertion.getFileNameSource() == FtpFileNameSource.AUTO);
 
         // arguments
         argumentsTextField.setText(assertion.getArguments());
@@ -799,7 +775,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         // message source
-        assertion.setRequestTarget((MessageTargetableSupport) messageSourceComboBox.getSelectedItem());
+        if (messageSourceComboBox.isEnabled()) {
+            assertion.setRequestTarget((MessageTargetableSupport) messageSourceComboBox.getSelectedItem());
+        } else {
+            assertion.setRequestTarget(null);
+        }
 
         // message target
         final MessageTargetableSupport responseTarget =
@@ -815,13 +795,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // directory
         assertion.setDirectory(directoryTextField.getText());
-
-        // auto file name
-        if (autoFilenameCheckBox.isSelected()) {
-            assertion.setFileNameSource(FtpFileNameSource.AUTO);
-        } else {
-            assertion.setFileNameSource(FtpFileNameSource.ARGUMENT);
-        }
 
         // arguments
         assertion.setArguments(argumentsTextField.getText().trim());
@@ -856,7 +829,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         assertion.setUserName(userNameTextField.getText());
-        assertion.setPasswordUsesContextVariables(contextVariableInPasswordCheckBox.isSelected());
+        assertion.setPasswordUsesContextVariables(contextVariableInPasswordCheckBox.isEnabled() &&
+                contextVariableInPasswordCheckBox.isSelected());
         assertion.setUseClientCert(supplyClientCertCheckBox.isSelected());
 
         if (supplyClientCertCheckBox.isSelected()) {
@@ -875,7 +849,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         // validate for test
         final String error = connectionTestValidator.validate();
 
-        if(error != null){
+        if (error != null) {
             JOptionPane.showMessageDialog(
                     FtpRoutingPropertiesDialog.this,
                     error,
@@ -928,6 +902,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                             Integer.parseInt(a.getPort()),
                             a.getUserName(),
                             a.getPassword(),
+                            a.getPasswordGoid(),
                             a.isUseClientCert(),
                             a.getClientCertKeystoreId(),
                             a.getClientCertKeyAlias(),
@@ -1041,16 +1016,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private boolean isCommandFromVariable() {
         return commandComboBox.getSelectedIndex() == COMMAND_COMBO_ITEM_FROM_VARIABLE_INDEX;
-    }
-
-    private boolean isCommandUploadType(String commandString) {
-        if (null == commandString || commandString.isEmpty()) {
-            return false;
-        }
-
-        FtpCommand command = FtpCommand.valueOf(commandString);
-
-        return command == STOR || command == APPE || command == STOU;
     }
 
     /**
