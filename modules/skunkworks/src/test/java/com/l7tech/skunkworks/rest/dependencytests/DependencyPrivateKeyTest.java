@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest;
+package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.api.DependencyMO;

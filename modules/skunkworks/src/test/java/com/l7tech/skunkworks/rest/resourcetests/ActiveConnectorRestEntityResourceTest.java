@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.rest;
+package com.l7tech.skunkworks.rest.resourcetests;
 
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.Link;
