@@ -2,6 +2,7 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.IdListToStringTypeAdapter;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -36,7 +37,7 @@ public class Mapping {
     }
 
     public static enum ErrorType {
-        TargetExists, TargetNotFound, UniqueKeyConflict, InvalidResource
+        TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, InvalidResource
     }
 
     Mapping(){}
@@ -157,7 +158,27 @@ public class Mapping {
         this.dependencies = dependencies;
     }
 
+    /**
+     * This will retrieve a property from the properties map
+     *
+     * @param key The property to retrieve
+     * @param <T> The Type of the property
+     * @return The property value or null if there is no such property.
+     */
     public <T> T getProperty(String key) {
         return properties != null ? (T) properties.get(key) : null;
+    }
+
+    /**
+     * This will add a property to the properties map. It will create a new map if the current one is null
+     *
+     * @param key The property key to use
+     * @param value The value of the property to add
+     */
+    public void addProperty(@NotNull String key, String value) {
+        if(properties == null) {
+            properties = new HashMap<>();
+        }
+        properties.put(key, value);
     }
 }

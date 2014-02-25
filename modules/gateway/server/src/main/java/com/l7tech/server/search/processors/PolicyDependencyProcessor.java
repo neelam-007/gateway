@@ -7,6 +7,8 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.EmptyIterator;
@@ -85,7 +87,7 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
     }
 
     @Override
-    public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws FindException {
+    public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
@@ -113,7 +115,11 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         if (securityZone != null) {
             EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
             if(securityZoneHeaderToUse != null) {
-                securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
+                try {
+                    securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
+                } catch (FindException e) {
+                    throw new CannotRetrieveDependenciesException(securityZoneHeaderToUse.getName(), SecurityZone.class, policy.getClass(), "Cannot find security zone", e);
+                }
                 policy.setSecurityZone(securityZone);
             }
         }

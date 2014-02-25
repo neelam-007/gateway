@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.search.processors.GenericDependencyProcessor;
@@ -127,7 +129,7 @@ public class DependencyAnalyzerGeneralTest {
     }
 
     @Test
-    public void testReplaceDependencies() throws FindException {
+    public void testReplaceDependencies() throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         dependencyAnalyzer.replaceDependencies(myEntityWithOneDependency, CollectionUtils.MapBuilder.<EntityHeader, EntityHeader>builder()
                 .put(
                         EntityHeaderUtils.fromEntity(myEntityWithNoDependencies),

@@ -7,6 +7,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyProcessorStore;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -254,7 +256,7 @@ public class DependencyFinder {
      * @param object         the object who's dependencies to replace.
      * @param replacementMap The replacement map is a map of entity headers to replace.
      */
-    public <O> void replaceDependencies(O object, Map<EntityHeader, EntityHeader> replacementMap) throws FindException {
+    public <O> void replaceDependencies(O object, Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         //find the dependency processor to use.
         DependencyProcessor processor = processorStore.getProcessor(getTypeFromObject(object));
         //noinspection unchecked

@@ -7,9 +7,11 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -143,8 +145,21 @@ public class BundleImporter {
                                     //Create a new entity.
                                     try {
                                         createOrUpdateResource(item, item.getId(), mapping, resourceMapping, true);
-                                    } catch (Exception e) {
+                                    } catch (CannotReplaceDependenciesException e) {
+                                        mapping.setErrorType(Mapping.ErrorType.CannotReplaceDependency);
+                                        mapping.addProperty("ErrorMessage", e.getMessage());
+                                        transactionStatus.setRollbackOnly();
+                                    } catch (ResourceFactory.ResourceNotFoundException e) {
+                                        mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
+                                        mapping.addProperty("ErrorMessage", e.getMessage());
+                                        transactionStatus.setRollbackOnly();
+                                    } catch (ResourceFactory.ResourceFactoryException e) {
                                         mapping.setErrorType(Mapping.ErrorType.UniqueKeyConflict);
+                                        mapping.addProperty("ErrorMessage", e.getMessage());
+                                        transactionStatus.setRollbackOnly();
+                                    } catch (CannotRetrieveDependenciesException e) {
+                                        mapping.setErrorType(Mapping.ErrorType.TargetNotFound);
+                                        mapping.addProperty("ErrorMessage", e.getMessage());
                                         transactionStatus.setRollbackOnly();
                                     }
                                     break;
@@ -187,7 +202,7 @@ public class BundleImporter {
                 && StringUtils.equals(header1.getName(), header2.getName());
     }
 
-    private void createOrUpdateResource(@NotNull final Item item, @Nullable final String id, @NotNull final Mapping mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final boolean create) throws ResourceFactory.ResourceFactoryException, FindException {
+    private void createOrUpdateResource(@NotNull final Item item, @Nullable final String id, @NotNull final Mapping mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final boolean create) throws ResourceFactory.ResourceFactoryException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         //validate that the id is not null if create is false
         if (!create && id == null) {
             throw new IllegalArgumentException("Must specify an id when updating an existing entity.");
@@ -197,6 +212,13 @@ public class BundleImporter {
             final APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(mapping.getType());
             //noinspection unchecked
             Entity entity = (Entity) transformer.convertFromMO(item.getContent(), false);
+            //if it is a mapping by name and the mapped name is set it should be preserved here.
+            if(mapping.getProperties() != null && "name".equals(mapping.getProperties().get("MapBy")) && entity instanceof NamedEntityImp){
+                String mapTo = (String) mapping.getProperties().get("MapTo");
+                if(mapTo != null) {
+                    ((NamedEntityImp)entity).setName(mapTo);
+                }
+            }
             //replace dependencies in the entity
             dependencyAnalyzer.replaceDependencies(entity, resourceMapping);
             //TODO: is there a way to do this without converting back to an MO?

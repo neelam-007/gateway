@@ -3,6 +3,8 @@ package com.l7tech.server.search.processors;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentObject;
 import org.apache.commons.lang.NotImplementedException;
@@ -42,7 +44,7 @@ public abstract class BaseDependencyProcessor<O> implements DependencyProcessor<
     }
 
     @Override
-    public void replaceDependencies(@NotNull O entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws FindException {
+    public void replaceDependencies(@NotNull O entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         throw new NotImplementedException("The replaceDependencies method is not yet implemented for this dependency processor: " + this.getClass());
     }
 }

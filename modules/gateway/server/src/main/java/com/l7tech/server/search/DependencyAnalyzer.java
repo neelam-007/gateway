@@ -3,6 +3,8 @@ package com.l7tech.server.search;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentObject;
 
@@ -80,7 +82,7 @@ public interface DependencyAnalyzer {
      * @param entity         the entity who's dependencies to replace.
      * @param replacementMap The replacement map is a map of EntityHeaders to replace.
      */
-    public <E extends Entity> void replaceDependencies(E entity, Map<EntityHeader, EntityHeader> replacementMap) throws FindException;
+    public <E extends Entity> void replaceDependencies(E entity, Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException;
 
     public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult);
 
