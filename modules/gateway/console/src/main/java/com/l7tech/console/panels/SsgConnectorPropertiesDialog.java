@@ -451,14 +451,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 }
                 try {
                     int count = Integer.parseInt(portRangeCountField.getText());
-                    if (start + count > 65535)
-                        return "Port Range Start plus Port Range Count cannot exceed 65535";
+                    if ((start + count - 1) > 65535)
+                        return "Port Range end cannot exceed 65535";
                     return null;
                 } catch (NumberFormatException nfe) {
                     return "Port Range Count must be a number from 1 to 65535";
                 }
             }
         });
+
         inputValidator.addRule(new InputValidator.ComponentValidationRule(privateKeyComboBox) {
             @Override
             public String getValidationError() {
