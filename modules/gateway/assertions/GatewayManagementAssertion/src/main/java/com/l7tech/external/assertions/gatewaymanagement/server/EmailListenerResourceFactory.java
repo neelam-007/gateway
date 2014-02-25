@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -11,6 +12,7 @@ import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.email.EmailListenerManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -27,9 +29,11 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
                                         final SecurityFilter securityFilter,
                                         final PlatformTransactionManager transactionManager,
                                         final EmailListenerManager emailListenerManager,
+                                        final ServiceResourceFactory serviceResourceFactory,
                                         final SecurityZoneManager securityZoneManager) {
         super(false, true, rbacServices, securityFilter, transactionManager, emailListenerManager, securityZoneManager);
         this.emailListenerManager = emailListenerManager;
+        this.serviceResourceFactory = serviceResourceFactory;
     }
 
     //- PROTECTED
@@ -77,21 +81,41 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
     public EmailListener fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if (!(resource instanceof EmailListenerMO))
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected SiteMinder configuration");
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected email listener");
 
         final EmailListenerMO emailResource = (EmailListenerMO) resource;
 
         final EmailListener emailListener;
         emailListener = new EmailListener();
 
-        emailListener.setName(emailResource.getName());
+        //SSG-8164
+        String name = emailResource.getName();
+        if(name.isEmpty()) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "name cannot be empty");
+        }
+        emailListener.setName(name);
         emailListener.setActive(emailResource.getActive());
-        emailListener.setHost(emailResource.getHostname());
-        emailListener.setPort(emailResource.getPort());
+        //SSG-8165
+        String hostname = emailResource.getHostname();
+        if(hostname.isEmpty()) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "host name cannot be empty");
+        }
+        emailListener.setHost(hostname);
+        //SSG-8166
+        int port = emailResource.getPort();
+        if(port <= 0 || port > 65535) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "port number must be between 1 and 65535");
+        }
+        emailListener.setPort(port);
         emailListener.setFolder(emailResource.getFolder());
         emailListener.setUseSsl(emailResource.getUseSsl());
         emailListener.setDeleteOnReceive(emailResource.getDeleteOnReceive());
-        emailListener.setPollInterval(emailResource.getPollInterval());
+        //SSG-8167
+        int pollInterval = emailResource.getPollInterval();
+        if(pollInterval <= 0) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "poll interval must be greater then 0");
+        }
+        emailListener.setPollInterval(pollInterval);
         emailListener.setUsername(emailResource.getUsername());
         emailListener.setPassword(emailResource.getPassword());
 
@@ -112,6 +136,18 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
             for (Map.Entry<String, String> entry : emailResource.getProperties().entrySet()) {
                 emailProperties.put(entry.getKey(), entry.getValue());
             }
+        }
+        //SSG-8175 - check that the service exists.
+        if(emailProperties.getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID) != null && strict){
+            final String serviceID = emailProperties.getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
+            PublishedService service;
+            try {
+                service = serviceResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, serviceID));
+            } catch (NullPointerException | ResourceNotFoundException e) {
+                service = null;
+            }
+            if (service == null)
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "Cannot find published service with id: " + serviceID);
         }
         emailListener.properties(emailProperties);
 
@@ -150,5 +186,6 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
     //- PRIVATE
 
     private EmailListenerManager emailListenerManager;
+    private final ServiceResourceFactory serviceResourceFactory;
 
 }

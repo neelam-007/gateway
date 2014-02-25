@@ -185,7 +185,8 @@
     </bean>
     <bean id="emailListenerResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.EmailListenerResourceFactory" parent="entityResourceFactoryParent">
         <constructor-arg index="3" ref="emailListenerManager"/>
-        <constructor-arg index="4" ref="securityZoneManager"/>
+        <constructor-arg index="4" ref="serviceResourceFactory"/>
+        <constructor-arg index="5" ref="securityZoneManager"/>
     </bean>
     <bean id="serviceAliasResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceAliasResourceFactory" parent="entityResourceFactoryParent">
         <constructor-arg index="3" ref="serviceAliasManager"/>

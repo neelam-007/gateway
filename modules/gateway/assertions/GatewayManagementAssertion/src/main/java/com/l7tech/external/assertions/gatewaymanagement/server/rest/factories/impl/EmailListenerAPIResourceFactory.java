@@ -5,8 +5,10 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Re
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.EmailListenerMO;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -62,7 +64,14 @@ public class EmailListenerAPIResourceFactory extends WsmanBaseResourceFactory<Em
         emailListenerMO.setPort(1234);
         emailListenerMO.setActive(true);
         emailListenerMO.setUsername("username");
-        emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("ConnectorProperty", "PropertyValue").map());
+        emailListenerMO.setServerType(EmailListenerMO.EmailServerType.POP3);
+        emailListenerMO.setFolder("INBOX");
+        emailListenerMO.setPollInterval(1000);
+        emailListenerMO.setUseSsl(false);
+        emailListenerMO.setDeleteOnReceive(true);
+        emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put(EmailListener.PROP_HARDWIRED_SERVICE_ID, new Goid(123, 456).toString())
+                .put(EmailListener.PROP_IS_HARDWIRED_SERVICE, Boolean.TRUE.toString()).map());
         return emailListenerMO;
 
     }

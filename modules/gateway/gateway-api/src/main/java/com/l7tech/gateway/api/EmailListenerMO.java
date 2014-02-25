@@ -355,7 +355,7 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
         return properties;
     }
 
-    @XmlElement(name="UseSsl")
+    @XmlElement(name="UseSsl", required=true)
     public AttributeExtensibleBoolean getUseSslValue() {
         return useSsl;
     }
