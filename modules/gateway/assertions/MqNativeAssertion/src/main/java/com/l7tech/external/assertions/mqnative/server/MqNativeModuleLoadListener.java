@@ -5,16 +5,15 @@ import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.message.HeadersKnob;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.search.DependencyProcessorRegistry;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
@@ -22,6 +21,7 @@ import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.GoidUpgradeMapper;
+import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -133,6 +133,33 @@ public class MqNativeModuleLoadListener {
                         dependentEntities.addAll(finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEY_ENTRY, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
                     }
                     return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
+                }
+
+                @Override
+                public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+                    if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
+                        // replace password dependency
+                        activeConnector.setProperty(
+                                SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID,
+                                findReplacementPasswordId(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID)).toString(),replacementMap));
+                    }
+                    //add the ssl key used if it is set
+                    if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
+                        // todo replace private key dependency
+                        String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
+                        String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
+                        throw new NotImplementedException();
+                    }
+                }
+
+                private String findReplacementPasswordId(String srcId, @NotNull Map<EntityHeader, EntityHeader> replacementMap) {
+                    for(EntityHeader srcHeader:  replacementMap.keySet()){
+                        if(srcHeader.getType().equals(EntityType.SECURE_PASSWORD) && srcHeader.getStrId().equalsIgnoreCase(srcId)){
+                            return replacementMap.get(srcHeader).getStrId();
+                        }
+                    }
+                    // nothing to replace
+                    return srcId;
                 }
             });
         }

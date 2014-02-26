@@ -133,7 +133,6 @@ public class JVMDatabaseBasedRestManagementEnvironment {
             }
         });
         RestResponse response = (RestResponse) SerializationUtils.deserialize(ArrayUtils.toPrimitive(bytes.toArray(new Byte[bytes.size()])));
-        logger.log(Level.INFO, response.toString());
         return response;
     }
 

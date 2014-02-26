@@ -13,6 +13,8 @@ import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
@@ -21,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,5 +167,21 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     @SuppressWarnings("unchecked")
     public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         throw new UnsupportedOperationException("Assertions cannot be loaded as entities");
+    }
+
+    @Override
+    public void replaceDependencies(@NotNull Assertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+        super.replaceDependencies(assertion, replacementMap, finder);
+
+        if (assertion instanceof UsesEntities) {
+            UsesEntities usesEntities = (UsesEntities) assertion;
+            EntityHeader[] entitiesUsed = usesEntities.getEntitiesUsed();
+            for (EntityHeader entityUsed : entitiesUsed) {
+                EntityHeader newEntity = replacementMap.get(entityUsed);
+                if (newEntity != null) {
+                    usesEntities.replaceEntity(entityUsed, newEntity);
+                }
+            }
+        }
     }
 }

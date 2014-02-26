@@ -92,6 +92,11 @@ public abstract class MigrationTestBase {
         Assert.assertEquals(200, response.getStatus());
     }
 
+    protected void assertNotFoundResponse(RestResponse response) {
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(404, response.getStatus());
+    }
+
     protected void assertOkDeleteResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(204, response.getStatus());
@@ -110,6 +115,16 @@ public abstract class MigrationTestBase {
         }
     }
 
+    protected void validateNotFound(Item<Mappings> mappings) throws Exception {
+        for (Mapping mapping : mappings.getContent().getMappings()) {
+            if(mapping.getErrorType() == null){
+                Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
+                String uri = getUri(mapping.getTargetUri());
+                RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
+                assertNotFoundResponse(response);
+            }
+        }
+    }
 
     protected void validate(Item<Mappings> mappings) throws Exception {
         for (Mapping mapping : mappings.getContent().getMappings()) {
