@@ -22,20 +22,14 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
-import com.l7tech.util.Functions.UnaryVoid;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
-import org.jboss.netty.channel.group.ChannelGroupFutureListener;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.*;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
@@ -47,9 +41,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.regex.Matcher;
 
 import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_DEFAULT_PORT;
@@ -76,7 +70,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     @Inject @Named("stashManagerFactory")
     private StashManagerFactory stashManagerFactory;
 
-    private final Map<String, BlockingQueue<ChannelInfo>> channelPool = new HashMap<String, BlockingQueue<ChannelInfo>>();
+    private final Map<String, BlockingDeque<ChannelInfo>> channelPool = new HashMap<String, BlockingDeque<ChannelInfo>>();
 
     private final Timer idleTimer = new Timer();
 
@@ -93,10 +87,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         failoverStrategy = AbstractFailoverStrategy.makeSynchronized(FailoverStrategyFactory.createFailoverStrategy(
                 assertion.getFailoverStrategy(),
                 assertion.getIcapServers().toArray(new String[assertion.getIcapServers().size()])));
-
-        socketFactory = new OioClientSocketChannelFactory(new ThreadPoolExecutor(10, 10,
-                60L, java.util.concurrent.TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>()));
+        socketFactory = new OioClientSocketChannelFactory(Executors.newCachedThreadPool());
         channelIdleTimeout = config.getTimeUnitProperty(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME, TimeUnit.MINUTES.toMillis(1));
         idleTimer.schedule(new IdleTimerTask(), channelIdleTimeout, 5000);
     }
@@ -122,26 +113,27 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private ClientBootstrap intializeClient(final PolicyEnforcementContext context) {
         final ClientBootstrap client = new ClientBootstrap(socketFactory);
 
-        client.setPipelineFactory(new IcapClientChannelPipeline(getTimeoutValue(context, assertion.getReadTimeout())));
+        client.setPipelineFactory(new IcapClientChannelPipeline(getTimeoutValue(context, assertion.getResponseReadTimeout())));
         client.setOption("soLinger", 0);
         client.setOption("connectTimeoutMillis", getTimeoutValue(context, assertion.getConnectionTimeout()));
-        client.setOption("readTimeoutMillis", getTimeoutValue(context, assertion.getResponseReadTimeout()));
+        client.setOption("readTimeoutMillis", getTimeoutValue(context, assertion.getReadTimeout()));
         return client;
     }
 
     private ChannelInfo getChannelForEndpoint(String endpoint) {
         synchronized (channelPool) {
-            BlockingQueue<ChannelInfo> available = channelPool.get(endpoint);
-            if (available == null || available.isEmpty()) {
+            BlockingDeque<ChannelInfo> available = channelPool.get(endpoint);
+            if (available == null) {
                 return null;
             }
-            for (; ; ) {
+            while(!available.isEmpty()){
                 ChannelInfo channel = available.poll();
-                if (channel.isChannelValid()) {
+                if (channel != null && channel.isChannelValid()) {
                     return channel;
                 }
             }
         }
+        return null;
     }
 
     private int getTimeoutValue(final PolicyEnforcementContext context, String value) {
@@ -215,7 +207,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     ChannelFuture future = client.connect(new InetSocketAddress(hostname, Integer.parseInt(portText)));
                     future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
                     Channel channel = future.awaitUninterruptibly().getChannel();
-                    if (!future.isSuccess()) {
+                    if (!(future.isDone() && future.isSuccess() && future.getChannel().isConnected())) {
                         logAndAudit(AssertionMessages.ICAP_CONNECTION_FAILED, hostAndPort);
                         failoverStrategy.reportFailure(selectedService);
                         continue;
@@ -287,6 +279,14 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 }
             } else {
                 ChannelInfo channelInfo = getChannel(client, context);
+                if(channelInfo == null){
+                    logAndAudit(AssertionMessages.ICAP_NO_VALID_SERVER);
+                    return AssertionStatus.FAILED;
+                }
+                if(!channelInfo.isChannelValid()){
+                    logAndAudit(AssertionMessages.ICAP_CONNECTION_FAILED, channelInfo.getIcapUri());
+                    return AssertionStatus.FAILED;
+                }
                 try {
                     final AbstractIcapResponseHandler handler = (AbstractIcapResponseHandler) channelInfo.getChannel().getPipeline().get("handler");
                     final IcapRequest request = createRequest(context, partInfo, channelInfo);
@@ -319,11 +319,11 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     return AssertionStatus.FAILED;
                 }
                 finally {
-                    if(channelInfo != null && channelInfo.getChannel().isOpen()){
+                    if(channelInfo != null && channelInfo.isChannelValid()){
                         synchronized (channelPool) {
-                            BlockingQueue<ChannelInfo> channels = channelPool.get(channelInfo.getHostAndPort());
+                            BlockingDeque<ChannelInfo> channels = channelPool.get(channelInfo.getHostAndPort());
                             if (channels == null) {
-                                channels = new LinkedBlockingQueue<ChannelInfo>(10);
+                                channels = new LinkedBlockingDeque<ChannelInfo>();
                             }
                             try {
                                 channelInfo.setLastUsed(System.currentTimeMillis());

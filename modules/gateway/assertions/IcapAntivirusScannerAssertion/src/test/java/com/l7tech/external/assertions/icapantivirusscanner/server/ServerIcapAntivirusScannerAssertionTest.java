@@ -117,6 +117,10 @@ public class ServerIcapAntivirusScannerAssertionTest {
                 public ChannelFuture connect() {
                     Channel mockedChannel = Mockito.mock(Channel.class);
                     Mockito.when(mockedChannel.getPipeline()).thenReturn(new MockIcapChannelPipeline().getPipeline());
+                    Mockito.when(mockedChannel.isConnected()).thenReturn(true);
+                    Mockito.when(mockedChannel.isOpen()).thenReturn(true);
+                    Mockito.when(mockedChannel.isReadable()).thenReturn(true);
+                    Mockito.when(mockedChannel.isWritable()).thenReturn(true);
                     return Channels.succeededFuture(mockedChannel);
                 }
 

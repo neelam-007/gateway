@@ -52,7 +52,6 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e) {
-        LOGGER.warning(e.toString());
         boolean interrupted = false;
         try {
             responseQueue.put(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
