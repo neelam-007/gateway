@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
@@ -42,6 +43,7 @@ public class ResourceEntry extends ZoneableEntityImp {
         this.contentType = contentType;
     }
 
+    @RbacAttribute
     @Size(min = 0, max = 255)
     @Column(name = "description", length = 255)
     public String getDescription() {
@@ -82,6 +84,7 @@ public class ResourceEntry extends ZoneableEntityImp {
         this.resourceKey3 = resourceKey3;
     }
 
+    @RbacAttribute
     @NotNull
     @Column(name = "type", length = 32)
     @Enumerated(EnumType.STRING)
@@ -93,6 +96,7 @@ public class ResourceEntry extends ZoneableEntityImp {
         this.type = type;
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min = 1, max = 4096)
     @Column(name = "uri", length = 4096)

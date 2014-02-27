@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
@@ -92,6 +93,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
     public UDDIRegistry() {
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return isEnabled;
@@ -101,6 +103,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         isEnabled = enabled;
     }
 
+    @RbacAttribute
     @Column(name="registry_type")
     public String getUddiRegistryType() {
         return uddiRegistryType;
@@ -110,6 +113,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.uddiRegistryType = uddiRegistryType;
     }
 
+    @RbacAttribute
     @Column(name="base_url")
     public String getBaseUrl() {
         return baseUrl;
@@ -119,6 +123,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.baseUrl = baseUrl;
     }
 
+    @RbacAttribute
     @Column(name="inquiry_url")
     public String getInquiryUrl() {
         return inquiryUrl;
@@ -128,6 +133,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.inquiryUrl = inquiryUrl;
     }
 
+    @RbacAttribute
     @Column(name="publish_url")
     public String getPublishUrl() {
         return publishUrl;
@@ -137,6 +143,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.publishUrl = publishUrl;
     }
 
+    @RbacAttribute
     @Column(name="security_url")
     public String getSecurityUrl() {
         return securityUrl;
@@ -146,6 +153,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.securityUrl = securityUrl;
     }
 
+    @RbacAttribute
     @Column(name="subscription_url")
     public String getSubscriptionUrl() {
         return subscriptionUrl;
@@ -183,6 +191,7 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         this.keyAlias = keyAlias;
     }
 
+    @RbacAttribute
     @Column(name="user_name")
     public String getRegistryAccountUserName() {
         return registryAccountUserName;

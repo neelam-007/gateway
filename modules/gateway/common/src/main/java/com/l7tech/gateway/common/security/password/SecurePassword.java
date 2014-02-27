@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.security.password;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
@@ -43,6 +44,7 @@ public class SecurePassword extends ZoneableNamedEntityImp {
         this(name, new Date().getTime());
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Transient
     @Override
@@ -50,6 +52,7 @@ public class SecurePassword extends ZoneableNamedEntityImp {
         return super.getName();
     }
 
+    @RbacAttribute
     @Column(name = "description", length = 256, nullable = true)
     @Size(max=256)
     public String getDescription() {
@@ -60,6 +63,7 @@ public class SecurePassword extends ZoneableNamedEntityImp {
         this.description = description;
     }
 
+    @RbacAttribute(displayNameIdentifier = "securePassword.usageFromVariable")
     @Column(name = "usage_from_variable")
     public boolean isUsageFromVariable() {
         return usageFromVariable;
@@ -90,6 +94,7 @@ public class SecurePassword extends ZoneableNamedEntityImp {
         this.lastUpdate = new Date(lastUpdate);
     }
 
+    @RbacAttribute
     @Column(name = "type", length = 64, nullable = false)
     @Enumerated(EnumType.STRING)
     @NotNull

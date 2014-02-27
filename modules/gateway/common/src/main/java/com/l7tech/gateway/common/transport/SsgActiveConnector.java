@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.util.Functions.Unary;
@@ -122,6 +123,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
         return ret;
     }
 
+    @RbacAttribute
     @Size(min = 1, max = 128)
     @Transient
     @Override
@@ -129,6 +131,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
         return super.getName();
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
@@ -139,6 +142,7 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
         this.enabled = enabled;
     }
 
+    @RbacAttribute
     @Column(name = "type", length = 64, nullable = false)
     public String getType() {
         return type;

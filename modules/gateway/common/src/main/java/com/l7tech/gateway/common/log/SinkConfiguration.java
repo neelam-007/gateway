@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.log;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
@@ -178,6 +179,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
      *
      * @return the description
      */
+    @RbacAttribute
     @Column(name="description", length=Integer.MAX_VALUE)
     @Lob
     public String getDescription() {
@@ -198,6 +200,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
      *
      * @return An instance of SinkType
      */
+    @RbacAttribute
     @Enumerated(EnumType.STRING)
     @Column(name="type", length=32)
     public SinkType getType() {
@@ -229,6 +232,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
      *
      * @return <code>true</code> if this log sink is enabled.
      */
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
@@ -248,6 +252,7 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
      *
      * @return the severity threshold
      */
+    @RbacAttribute
     @Enumerated(EnumType.STRING)
     @Column(name="severity", length=32)
     public SeverityThreshold getSeverity() {

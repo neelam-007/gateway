@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.security.rbac.RbacAttribute;
 import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
@@ -28,6 +29,7 @@ public class SecurityZone extends NamedEntityImp {
     private String description = "";
     private Set<EntityType> permittedEntityTypes = EnumSet.noneOf(EntityType.class);
 
+    @RbacAttribute
     @Size(min = 1, max = 128)
     @Transient
     @Override
@@ -38,6 +40,7 @@ public class SecurityZone extends NamedEntityImp {
     /**
      * @return description of security zone, or null.
      */
+    @RbacAttribute
     @Size(max = 255)
     public String getDescription() {
         return description;

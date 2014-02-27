@@ -6,6 +6,7 @@
  */
 package com.l7tech.gateway.common.cluster;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import org.hibernate.annotations.Proxy;
 
@@ -70,6 +71,7 @@ public class ClusterProperty extends NamedEntityWithPropertiesImp implements Com
         this.value = value;
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Transient
     @Override

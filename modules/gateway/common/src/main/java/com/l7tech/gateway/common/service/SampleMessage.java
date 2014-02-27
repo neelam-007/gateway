@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 
 /**
@@ -37,6 +38,7 @@ public class SampleMessage extends ZoneableNamedEntityImp {
     /**
      * @return the name of the operation under which this message was categorized
      */
+    @RbacAttribute
     public String getOperationName() {
         return operationName;
     }

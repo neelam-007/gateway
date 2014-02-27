@@ -151,21 +151,26 @@ public class RoleManagerWindow extends JDialog {
         crudController.setEntityEditor(new EntityEditor<Role>() {
             @Override
             public void displayEditDialog(@NotNull final Role role, @NotNull final Functions.UnaryVoidThrows<Role, SaveException> afterEditListener) {
-                boolean create = role.isUnsaved();
+                Role toEdit = role;
+                boolean create = toEdit.isUnsaved();
                 AttemptedOperation operation = create
-                        ? new AttemptedCreateSpecific(EntityType.RBAC_ROLE, role)
-                        : new AttemptedUpdate(EntityType.RBAC_ROLE, role);
+                        ? new AttemptedCreateSpecific(EntityType.RBAC_ROLE, toEdit)
+                        : new AttemptedUpdate(EntityType.RBAC_ROLE, toEdit);
                 boolean readOnly = !Registry.getDefault().getSecurityProvider().hasPermission(operation);
                 final Set<String> roleNames = new HashSet<>();
                 if (!readOnly) {
                     for (int i = 0; i < rolesTableModel.getRowCount() - 1; i++) {
                         final Object value = rolesTableModel.getValueAt(i, 0);
-                        if (value instanceof String && !value.equals(role.getName())) {
+                        if (value instanceof String && !value.equals(toEdit.getName())) {
                             roleNames.add((String) value);
                         }
                     }
                 }
-                final RolePropertiesDialog dlg = new RolePropertiesDialog(RoleManagerWindow.this, role, readOnly, roleNames, afterEditListener);
+                if (!create && (toEdit.getPermissions() == null || toEdit.getPermissions().isEmpty())) {
+                    // permissions may not have been attached
+                    toEdit = fetchRoleWithPermissions(toEdit.getGoid());
+                }
+                final RolePropertiesDialog dlg = new RolePropertiesDialog(RoleManagerWindow.this, toEdit, readOnly, roleNames, afterEditListener);
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
@@ -233,13 +238,7 @@ public class RoleManagerWindow extends JDialog {
     private void handleTableChange(@Nullable final Role selectedRole) {
         Role role = selectedRole;
         if (role != null) {
-            try {
-                // load full role with permissions and attached entity
-                role = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(selectedRole.getGoid());
-                attachPredicateEntities(role);
-            } catch (final FindException e) {
-                logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
+            role = fetchRoleWithPermissions(role.getGoid());
         }
         propertiesPanel.configure(role, role == null ? null : getNameForRole(role));
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
@@ -250,6 +249,18 @@ public class RoleManagerWindow extends JDialog {
                 securityProvider.hasPermission(new AttemptedDeleteSpecific(EntityType.RBAC_ROLE, role)));
         filterPanel.allowFiltering(rolesTableModel.getRowCount() > 0);
         loadCount();
+    }
+
+    private Role fetchRoleWithPermissions(final Goid roleGoid) {
+        Role found = null;
+        try {
+            // load full role with permissions and attached entity
+            found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(roleGoid);
+            attachPredicateEntities(found);
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        return found;
     }
 
     private String getNameForRole(Role role) {

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.security.rbac.RbacAttribute;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -106,6 +107,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
                 isSoap());
     }
 
+    @RbacAttribute
     public String getName() {
         return name;
     }
@@ -126,6 +128,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return serviceDocuments;
     }
 
+    @RbacAttribute
     public ServiceType getType() {
         return type;
     }
@@ -159,6 +162,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return serviceDescriptorUrl;
     }
 
+    @RbacAttribute
     public boolean isSoap() {
         return isSoap;
     }

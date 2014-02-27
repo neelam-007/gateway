@@ -5,6 +5,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 
@@ -107,6 +108,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Get the logging level of the log. For serialization purposes only.
      * @return String the logging level.
      */
+    @RbacAttribute
     public String getStrLvl() {
         return getLevel().getName();
     }
@@ -175,6 +177,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor.
      * @return the IP address of the entity that caused this AuditRecord to be created, or null if there isn't one.
      */
+    @RbacAttribute
     public String getIpAddress() {
         return ipAddress;
     }
@@ -242,6 +245,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @return the name or login of the user who was authenticated, or null if the request was not authenticated.
      */
+    @RbacAttribute
     public String getUserName() {
         return userName;
     }
@@ -250,6 +254,7 @@ public abstract class AuditRecord implements NamedEntity, PersistentEntity, Seri
      * Gets the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      * @return the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
+    @RbacAttribute
     public String getUserId() {
         return userId;
     }

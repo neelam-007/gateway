@@ -7,6 +7,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 
 import java.util.logging.Level;
 import java.io.OutputStream;
@@ -51,6 +52,7 @@ public class SystemAuditRecord extends AuditRecord {
      * The code for the component this audit record relates to
      * @see com.l7tech.gateway.common.Component#getId()
      */
+    @RbacAttribute
     public int getComponentId() {
         return componentId;
     }
@@ -63,6 +65,7 @@ public class SystemAuditRecord extends AuditRecord {
      * Gets a short description of the action that was happening when the event was generated
      * @return a short description of the action that was happening when the event was generated
      */
+    @RbacAttribute
     public String getAction() {
         return action;
     }

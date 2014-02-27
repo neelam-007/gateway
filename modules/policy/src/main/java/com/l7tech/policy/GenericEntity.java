@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
@@ -43,6 +44,7 @@ public class GenericEntity extends NamedEntityImp {
         dest.setValueXml(source.getValueXml());
     }
 
+    @RbacAttribute
     @Size(min=0,max=131072) // limit to 128k
     @Column(name="description", length=Integer.MAX_VALUE)
     @Lob
@@ -54,6 +56,7 @@ public class GenericEntity extends NamedEntityImp {
         this.description = description;
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1,max=255)
     @Column(name="classname", length=255)
@@ -68,6 +71,7 @@ public class GenericEntity extends NamedEntityImp {
         this.entityClassName = entityClassName;
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;

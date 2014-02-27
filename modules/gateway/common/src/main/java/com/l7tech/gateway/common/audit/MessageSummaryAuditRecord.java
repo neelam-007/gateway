@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -198,6 +199,7 @@ public class MessageSummaryAuditRecord extends AuditRecord implements ZoneableEn
     }
 
     /** @return the name of the operation the request was for if it's a SOAP service, or likely null otherwise */
+    @RbacAttribute
     public String getOperationName() {
         if (operationName == null) {
             if (operationNameHaver != null)

@@ -1,6 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -132,6 +133,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      * @return the SKI of the certificate (base64-encoded), or null either if there is no cert,
      * or the cert has no SKI
      */
+    @RbacAttribute
     @Size(max=64)
     @Column(name="ski",length=64)
     public String getSki() {
@@ -163,6 +165,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return the subjectDn from the cert, or null.
      */
+    @RbacAttribute
     @Size(max=2048)
     @Column(name="subject_dn", length=2048)
     public String getSubjectDn() {
@@ -193,6 +196,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return The issuer DN or null
      */
+    @RbacAttribute
     @Size(max=2048)
     @Column(name="issuer_dn",length=2048)
     public String getIssuerDn() {
@@ -204,6 +208,7 @@ public abstract class X509Entity extends PersistentEntityImp {
         this.issuerDn = issuerDn;
     }
 
+    @RbacAttribute
     @Type(type="com.l7tech.server.util.BigIntegerBase64UserType")
     public BigInteger getSerial() {
         return serial;

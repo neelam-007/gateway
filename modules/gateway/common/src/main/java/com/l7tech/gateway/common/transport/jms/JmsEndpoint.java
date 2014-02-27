@@ -9,6 +9,7 @@ package com.l7tech.gateway.common.transport.jms;
 import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
@@ -95,6 +96,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
                : null;
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Transient
     @Override
@@ -102,6 +104,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         return super.getName();
     }
 
+    @RbacAttribute
     @Size(max=255)
     @Column(name="username",length=255)
     public String getUsername() {
@@ -135,6 +138,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
      * @return true if the endpoint is inbound (that is the ssg gets messages from the queue);
      *         false if the endpoint is outbound (that is the gateway routes messages to the queue).
      */
+    @RbacAttribute(displayNameIdentifier = "jms.messageSource")
     @Column(name="is_message_source")
     public boolean isMessageSource() {
         return _messageSource;
@@ -174,6 +178,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
      *
      * @return True if the destination is a queue.
      */
+    @RbacAttribute(displayNameIdentifier = "jms.queue")
     @Column(name="destination_type")
     public boolean isQueue() {
         return queue;
@@ -185,6 +190,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
     }
 
 
+    @RbacAttribute
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
     @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=128)
@@ -198,6 +204,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         _destinationName = name;
     }
 
+    @RbacAttribute
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
     @Size(max=128)
     @Column(name="failure_destination_name", length=128)
@@ -234,6 +241,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         _replyType = replyType;
     }
 
+    @RbacAttribute
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
     @Size(max=128)
     @Column(name="reply_to_queue_name", length=128)
@@ -259,6 +267,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         this.outboundMessageType = outboundMessageType;
     }
 
+    @RbacAttribute
     @Column(name="disabled")
     public boolean isDisabled() {
         return disabled;
@@ -286,6 +295,7 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         this.useMessageIdForCorrelation = useMessageIdForCorrelation;
     }
 
+    @RbacAttribute(displayNameIdentifier = "jms.template")
     @Column(name="is_template")
     public boolean isTemplate() {
         return template;

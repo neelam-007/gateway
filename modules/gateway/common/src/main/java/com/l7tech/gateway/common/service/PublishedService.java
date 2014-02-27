@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.PersistentEntityUtil;
@@ -114,6 +115,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         return super.getId();
     }
 
+    @RbacAttribute
     @Size(min = 1, max = 255)
     @Override
     public String getName() {
@@ -141,6 +143,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      *
      * @return the URL from which the WSDL was originally downloaded.  Never null, but could be empty.
      */
+    @RbacAttribute
     @Size(max=4096)
     public String getWsdlUrl() {
         if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
@@ -237,6 +240,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      *
      * @return the base URI from the WSDL, or null
      */
+    @RbacAttribute
     public String getBaseURI() {
          if (_wsdlUrl == null) return null;
          return Wsdl.extractBaseURI(_wsdlUrl);
@@ -375,6 +379,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
         }
     }
 
+    @RbacAttribute
     public boolean isDisabled() {
         return _disabled;
     }
@@ -414,6 +419,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      *
      * @return true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
+    @RbacAttribute
     public boolean isSoap() {
         return soap;
     }
@@ -437,6 +443,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * services which will then be made available for publishing via the "publish internal service" wizard.
      * @return true if this service is an internal service.
      */
+    @RbacAttribute
     public boolean isInternal() {
         return internal;
     }
@@ -480,6 +487,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
             @Pattern(regexp="(?!.*?/service/\\d+$).*"),
             @Pattern(regexp="/.+")
     } )
+    @RbacAttribute
     public String getRoutingUri() {
         return routingUri;
     }
@@ -500,6 +508,7 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
      * @return The default routing URL
      * @see #serviceUrl() <code>serviceUrl</code>, which should be used to get the URL with fallback to WSDL endpoint
      */
+    @RbacAttribute
     @Size(max=4096)
     public String getDefaultRoutingUrl() {
         return defaultRoutingUrl;

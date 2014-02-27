@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,7 @@ public class AssertionAccess extends ZoneableNamedEntityImp implements Serializa
         setName(assertionClass);
     }
 
+    @RbacAttribute
     @Size(min = 1, max = 255)
     @Transient
     @Override

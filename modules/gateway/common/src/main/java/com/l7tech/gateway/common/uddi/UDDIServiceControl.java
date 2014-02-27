@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
@@ -68,6 +69,7 @@ public class UDDIServiceControl extends ZoneableEntityImp {
         this.uddiRegistryGoid = uddiRegistryGoid;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_business_key", updatable = false)
     public String getUddiBusinessKey() {
         return uddiBusinessKey;
@@ -77,6 +79,7 @@ public class UDDIServiceControl extends ZoneableEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_business_name", updatable = false)
     public String getUddiBusinessName() {
         return uddiBusinessName;
@@ -86,6 +89,7 @@ public class UDDIServiceControl extends ZoneableEntityImp {
         this.uddiBusinessName = uddiBusinessName;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_service_key", updatable = false)
     public String getUddiServiceKey() {
         return uddiServiceKey;
@@ -95,6 +99,7 @@ public class UDDIServiceControl extends ZoneableEntityImp {
         this.uddiServiceKey = uddiServiceKey;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_service_name", updatable = false)
     public String getUddiServiceName() {
         return uddiServiceName;
@@ -104,6 +109,7 @@ public class UDDIServiceControl extends ZoneableEntityImp {
         this.uddiServiceName = uddiServiceName;
     }
 
+    @RbacAttribute
     @Column(name = "wsdl_service_name", updatable = false)
     public String getWsdlServiceName() {
         return wsdlServiceName;

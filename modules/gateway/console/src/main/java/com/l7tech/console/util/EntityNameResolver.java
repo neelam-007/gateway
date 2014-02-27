@@ -327,18 +327,10 @@ public class EntityNameResolver {
             }
         } else if (entity instanceof AttributePredicate) {
             final AttributePredicate predicate = (AttributePredicate) entity;
+            final Permission permission = predicate.getPermission();
             final String mode = predicate.getMode();
-            final String attribute = predicate.getAttribute();
-            String value = predicate.getValue();
-            if (predicate.getPermission() != null &&
-                    predicate.getPermission().getEntityType() == EntityType.ASSERTION_ACCESS &&
-                    (predicate.getMode() == null || AttributePredicate.EQUALS.equalsIgnoreCase(predicate.getMode()))) {
-                // we don't want to show the full class name
-                final Assertion assertion = assertionRegistry.findByClassName(predicate.getValue());
-                if (assertion != null) {
-                    value = getNameForAssertion(assertion, predicate.getValue());
-                }
-            }
+            String attribute = getDisplayNameForAttribute(predicate, permission);
+            String value = getDisplayNameForValue(predicate, permission);
             if (mode == null || AttributePredicate.EQUALS.equalsIgnoreCase(mode) || AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode)) {
                 final String operation = AttributePredicate.STARTS_WITH.equalsIgnoreCase(mode) ? "starts with" : "equals";
                 name = attribute + " " + operation + " " + value;
@@ -548,6 +540,31 @@ public class EntityNameResolver {
         }
 
         return path.toString();
+    }
+
+    private String getDisplayNameForValue(final AttributePredicate predicate, final Permission permission) {
+        String value = predicate.getValue();
+        if (permission != null &&
+                permission.getEntityType() == EntityType.ASSERTION_ACCESS &&
+                (predicate.getMode() == null || AttributePredicate.EQUALS.equalsIgnoreCase(predicate.getMode()))) {
+            // we don't want to show the full class name
+            final Assertion assertion = assertionRegistry.findByClassName(predicate.getValue());
+            if (assertion != null) {
+                value = getNameForAssertion(assertion, predicate.getValue());
+            }
+        }
+        return value;
+    }
+
+    private String getDisplayNameForAttribute(final AttributePredicate predicate, final Permission permission) {
+        String attribute = predicate.getAttribute();
+        if (permission != null && permission.getEntityType() != null) {
+            final Map<String, String> availableAttributes = RbacAttributeCollector.collectAttributes(permission.getEntityType());
+            if (availableAttributes.containsKey(attribute)) {
+                attribute = availableAttributes.get(attribute);
+            }
+        }
+        return attribute;
     }
 
     private void validateFoundEntity(final EntityHeader header, final Entity foundEntity) throws FindException {

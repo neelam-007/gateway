@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PartiallyZoneableEntity;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
@@ -152,6 +153,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         assertion = null;
     }
 
+    @RbacAttribute
     @Size(min = 1, max = 255)
     @Override
     public String getName() {
@@ -173,6 +175,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     }
 
     //TODO: move guid property into an interface identifies entities with GUIDS as is done for the entity managers
+    @RbacAttribute
     @NotNull
     @Size(min=36,max=36)
     public String getGuid() {
@@ -183,6 +186,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         this.guid = guid;
     }
 
+    @RbacAttribute
     @NotNull
     public PolicyType getType() {
         return type;
@@ -193,6 +197,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         this.type = type;
     }
 
+    @RbacAttribute
     public boolean isSoap() {
         return soap;
     }
@@ -216,6 +221,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
      * Detect if this policy has been disabled by calling {@link #disable}.
      * @return true if this policy is currently disabled.  To reenable it, set a different policy xml.
      */
+    @RbacAttribute
     public boolean isDisabled() {
         String pxml = getXml();
         return pxml == null || pxml.trim().equals(DISABLED_POLICY_XML); // trim() currently not optional

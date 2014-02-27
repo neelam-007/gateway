@@ -781,6 +781,13 @@ public class EntityNameResolverTest {
     }
 
     @Test
+    public void getNameForAttributePredicateGetsDisplayNameForAttribute() throws Exception {
+        final AttributePredicate predicate = new AttributePredicate(new Permission(new Role(), OperationType.READ, EntityType.POLICY), "soap", "true");
+        predicate.setMode("eq");
+        assertEquals("is SOAP equals true", resolver.getNameForEntity(predicate, false));
+    }
+
+    @Test
     public void getNameForSecurityZonePredicate() throws Exception {
         final SecurityZone zone = new SecurityZone();
         zone.setName("test");

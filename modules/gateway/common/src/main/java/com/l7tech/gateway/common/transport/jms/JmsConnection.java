@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
@@ -135,6 +136,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         return "<JmsConnection goid=\"" + getGoid() + "\" name=\"" + _name + "\"/>";
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Transient
     @Override
@@ -142,6 +144,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         return super.getName();
     }
 
+    @RbacAttribute
     @Size(max=255)
     @Column(name="username", length=255)
     public String getUsername() {
@@ -166,6 +169,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _password = password;
     }
 
+    @RbacAttribute
     @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=255)
     @Column(name="factory_classname", length=255)
@@ -178,6 +182,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _initialContextFactoryClassname = initialContextFactoryClassname;
     }
 
+    @RbacAttribute
     @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=255)
     @Column(name="jndi_url", length=255)
@@ -190,6 +195,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _jndiUrl = jndiUrl;
     }
 
+    @RbacAttribute
     @Size(min=1,max=255)
     @Column(name="queue_factory_url", length=255)
     public String getQueueFactoryUrl() {
@@ -201,6 +207,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _queueFactoryUrl = queueFactoryUrl;
     }
 
+    @RbacAttribute
     @Size(min=1,max=255)
     @Column(name="topic_factory_url", length=255)
     public String getTopicFactoryUrl() {
@@ -212,6 +219,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _topicFactoryUrl = topicFactoryUrl;
     }
 
+    @RbacAttribute
     @Size(min=1,max=255)
     @Column(name="destination_factory_url", length=255)
     public String getDestinationFactoryUrl() {
@@ -223,6 +231,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         _destinationFactoryUrl = destinationFactoryUrl;
     }
 
+    @RbacAttribute(displayNameIdentifier = "jms.template")
     @Column(name="is_template")
     public boolean isTemplate() {
         return _template;
@@ -287,6 +296,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
         cachedProperties = null;
     }
 
+    @RbacAttribute
     @Column(name="provider_type")
     @Enumerated(EnumType.STRING)
     public JmsProviderType getProviderType() {

@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.encass;
 
 import com.l7tech.objectmodel.JaxbMapType;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.policy.Policy;
@@ -71,6 +72,7 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     /**
      * @return the GUID for this encapsulated assertion configuration, or null if not yet assigned.
      */
+    @RbacAttribute
     @Nullable
     @Column(name="guid", nullable=false, length=255)
     @XmlAttribute(name = "guid")

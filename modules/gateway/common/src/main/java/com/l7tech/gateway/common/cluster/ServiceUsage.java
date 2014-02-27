@@ -105,6 +105,14 @@ public class ServiceUsage extends NamedEntityImp {
     }
 
     /**
+     * Overridden so that it won't be registered as an @RbacAttribute
+     */
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public boolean equals(Object obj) {

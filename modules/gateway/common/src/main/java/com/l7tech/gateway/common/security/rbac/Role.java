@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.TextUtils;
 import org.hibernate.annotations.*;
 import org.jetbrains.annotations.NotNull;
@@ -97,6 +98,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * @return true if this role was created by an administrator, rather than being pre-supplied as part of the Gateway
      *              schema or auto-created by the Gateway.
      */
+    @RbacAttribute
     @Column(name="user_created", nullable=true)
     public Boolean isUserCreated() {
         return userCreated;
@@ -264,6 +266,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         return String.CASE_INSENSITIVE_ORDER.compare( this.getName(), that.getName() );
     }
 
+    @RbacAttribute
     @Size(max = 255)
     @Column(name="description", length=255)
     public String getDescription() {
@@ -278,6 +281,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * If this Role is scoped to a particular entity, this property will contain the type of that entity.
      * Otherwise, it will be null.
      */
+    @RbacAttribute
     @Transient
     public EntityType getEntityType() {
         return entityType;

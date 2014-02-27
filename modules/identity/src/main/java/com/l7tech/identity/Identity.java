@@ -5,6 +5,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 
 import java.security.Principal;
 
@@ -32,4 +33,7 @@ public interface Identity extends Principal, Entity {
      * @return <code>true</code> if the IDs are semantically equivalent, <code>false</code> otherwise.
      */
     boolean isEquivalentId(Object thatId);
+
+    @RbacAttribute
+    String getName();
 }

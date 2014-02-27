@@ -6,6 +6,7 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 
 import java.util.logging.Level;
 import java.io.OutputStream;
@@ -73,6 +74,7 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the classname of the entity that this record concerns
      * @return the classname of the entity that this record concerns
      */
+    @RbacAttribute
     public String getEntityClassname() {
         return entityClassname;
     }
@@ -89,6 +91,7 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets a character indicating the type of event that generated this record.
      * @return a character indicating the type of event that generated this record.
      */
+    @RbacAttribute
     public char getAction() {
         return action;
     }

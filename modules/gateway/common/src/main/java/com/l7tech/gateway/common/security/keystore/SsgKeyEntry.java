@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
@@ -101,6 +102,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
         return alias == null ? null : (keystoreId + ":" + alias);
     }
 
+    @RbacAttribute
     @Override
     public String getName() {
         return getAlias();

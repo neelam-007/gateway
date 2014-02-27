@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Functions;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.hibernate.annotations.Proxy;
@@ -102,6 +103,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
         }
     }
 
+    @RbacAttribute
     @Override
     @NotNull
     @Size(min=1,max=128)
@@ -156,6 +158,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
      * Is this cert is trusted as an SSL server cert? (probably self-signed)
      * @return <code>true</code> if this cert is trusted as an SSL server cert (probably self-signed), <code>false</code> otherwise.
      */
+    @RbacAttribute
     @Column(name="trusted_for_ssl")
     public boolean isTrustedForSsl() {
         return isTrustedFor(TrustedFor.SSL);
@@ -173,6 +176,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
      * Is this cert is trusted as a CA that signs SSL client certs?
      * @return <code>true</code> if this cert is trusted as a CA cert for signing client certs, <code>false</code> otherwise.
      */
+    @RbacAttribute
     @Column(name="trusted_for_client")
     public boolean isTrustedForSigningClientCerts() {
         return isTrustedFor(TrustedFor.SIGNING_CLIENT_CERTS);
@@ -192,6 +196,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
      * @return <code>true</code> if this cert is trusted as a CA cert for signing server certs,
      * <code>false</code> otherwise.
      */
+    @RbacAttribute
     @Column(name="trusted_for_server")
     public boolean isTrustedForSigningServerCerts() {
         return isTrustedFor(TrustedFor.SIGNING_SERVER_CERTS);
@@ -210,6 +215,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
      * Is this cert is trusted to sign SAML tokens?
      * @return <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
+    @RbacAttribute
     @Column(name="trusted_for_saml")
     public boolean isTrustedAsSamlIssuer() {
         return isTrustedFor(TrustedFor.SAML_ISSUER);
@@ -227,6 +233,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
      * Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only.
      * @return <code>true</code> if this cert is trusted as SAML attesting entity, <code>false</code> otherwise.
      */
+    @RbacAttribute
     @Column(name="trusted_as_saml_attesting_entity")
     public boolean isTrustedAsSamlAttestingEntity() {
         return isTrustedFor(TrustedFor.SAML_ATTESTING_ENTITY);
@@ -263,6 +270,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, Z
     /**
      * @return true if this certificate is a trust anchor, i.e. path validation doesn't need to proceed any higher
      */
+    @RbacAttribute
     @Column(name="trust_anchor")
     public boolean isTrustAnchor() {
         return trustAnchor;

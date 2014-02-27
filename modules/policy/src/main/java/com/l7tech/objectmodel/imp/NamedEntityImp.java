@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.security.rbac.RbacAttribute;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -34,6 +35,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
      *
      * @return String name of the entity
      */
+    @RbacAttribute
     @Override
     @NotNull
     //@NotNull annotation is not enforced outside of management api module. Many named entities allow null and set null as default

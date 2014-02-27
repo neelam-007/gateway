@@ -9,6 +9,7 @@ import javax.persistence.Table;
 import javax.persistence.Id;
 import java.io.Serializable;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import org.hibernate.annotations.Proxy;
 
 /**
@@ -50,6 +51,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
     /**
      * Name for the node
      */
+    @RbacAttribute
     @Column(name="name", nullable=false, length=128)
     public String getName() {
         return name;

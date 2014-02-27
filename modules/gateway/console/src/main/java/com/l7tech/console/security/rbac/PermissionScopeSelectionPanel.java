@@ -7,6 +7,7 @@ import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.security.rbac.RbacAttributeCollector;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -190,7 +191,11 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                         if (type == EntityType.AUDIT_RECORD) {
                             tabPanel.addTab(TYPES, typesTab);
                         }
-                        tabPanel.addTab(ATTRIBUTES, attributesTab);
+                        final Map<String, String> availableAttributes = RbacAttributeCollector.collectAttributes(type);
+                        if (!availableAttributes.isEmpty()) {
+                            tabPanel.addTab(ATTRIBUTES, attributesTab);
+                            reloadAttributeComboBox(availableAttributes);
+                        }
                         if (type == EntityType.ANY || type.isFolderable()) {
                             tabPanel.addTab(FOLDERS, foldersTab);
                         }
@@ -198,7 +203,6 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
                             tabPanel.addTab(ZONES, zonesTab);
                             enableDisableZones();
                         }
-                        reloadAttributeComboBox();
                         notifyListeners();
                         break;
                     case SPECIFIC_OBJECTS:
@@ -357,7 +361,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         });
         Utilities.setRowSorter(attributePredicatesTable, attributesModel, new int[]{0, 1, 2}, new boolean[]{true, true, true}, new Comparator[]{null, null, null});
 
-        reloadAttributeComboBox();
+        reloadAttributeComboBox(RbacAttributeCollector.collectAttributes(config == null ? EntityType.ANY : config.getType()));
         comparisonComboBox.setModel(new DefaultComboBoxModel(validComparisons.keySet().toArray()));
 
         addButton.setEnabled(false);
@@ -416,13 +420,27 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
         });
     }
 
-    private void reloadAttributeComboBox() {
+    private void reloadAttributeComboBox(final Map<String, String> availableAttributes) {
+        attributeComboBox.setModel(new DefaultComboBoxModel(availableAttributes.keySet().toArray()));
+        attributeComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(final JList<?> list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
+                Object val = value;
+                if (value != null && availableAttributes.containsKey(value)) {
+                    val = availableAttributes.get(value);
+                }
+                return super.getListCellRendererComponent(list, val, index, isSelected, cellHasFocus);
+            }
+        });
+    }
+
+    private EntityType getEntityTypeFromConfigOrAuditCheckBoxes() {
         EntityType type = config == null ? EntityType.ANY : config.getType();
         final Set<EntityType> auditTypes = getSelectedAuditTypes(config);
         if (auditTypes != null && auditTypes.size() == 1) {
             type = auditTypes.iterator().next();
         }
-        attributeComboBox.setModel(new DefaultComboBoxModel(findAttributeNames(type).toArray()));
+        return type;
     }
 
     private void initFoldersTable() {
@@ -695,7 +713,7 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableAuditTypes();
-                reloadAttributeComboBox();
+                reloadAttributeComboBox(RbacAttributeCollector.collectAttributes(getEntityTypeFromConfigOrAuditCheckBoxes()));
                 notifyListeners();
             }
         };

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.siteminder;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Fetch;
@@ -62,6 +63,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         updateSSOToken = false;
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Override
     @Transient
@@ -69,6 +71,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         return super.getName();
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1,max=128)
     @Column(name="address",nullable=true)
@@ -100,6 +103,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.ipcheck = ipcheck;
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
@@ -109,6 +113,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.enabled = enabled;
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1,max=255)
     @Column(name="hostname",nullable=false)
@@ -201,6 +206,7 @@ public class SiteMinderConfiguration extends ZoneableNamedEntityImp implements C
         this.updateSSOToken = updateSSOToken;
     }
 
+    @RbacAttribute
     @Size(min=1,max=256)
     @Column(name="user_name")
     public String getUserName() {

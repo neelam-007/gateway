@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
@@ -260,6 +261,7 @@ public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
         this.uddiRegistryGoid = uddiRegistryGoid;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_business_key", updatable = false)
     public String getUddiBusinessKey() {
         return uddiBusinessKey;
@@ -269,6 +271,7 @@ public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
     }
 
+    @RbacAttribute
     @Column(name = "uddi_business_name", updatable = false)
     public String getUddiBusinessName() {
         return uddiBusinessName;
@@ -317,6 +320,7 @@ public class UDDIProxiedServiceInfo extends ZoneableEntityImp {
         this.proxiedServices = proxiedServices;
     }
 
+    @RbacAttribute
     @Column(name = "publish_type")
     @Enumerated(EnumType.STRING)
     public PublishType getPublishType() {

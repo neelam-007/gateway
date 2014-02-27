@@ -4,6 +4,7 @@ import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.search.Dependencies;
 import com.l7tech.search.Dependency;
@@ -260,6 +261,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
         this.keyAlias = keyAlias;
     }
 
+    @RbacAttribute
     @Size(min=1, max=128)
     @Transient
     @Override
@@ -267,6 +269,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
         return super.getName();
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
@@ -282,6 +285,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
      *
      * @return a TCP port from 1-65535.
      */
+    @RbacAttribute
     @Min(1025) //This is the minimum permitted in the UI
     @Max(65535)
     @Column(name="port")
@@ -304,6 +308,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
      *
      * @return a scheme; current one of "http" or "https".
      */
+    @RbacAttribute
     @NotNull
     @Size(min=1, max=128)
     @Column(name="scheme", length=128, nullable=false)

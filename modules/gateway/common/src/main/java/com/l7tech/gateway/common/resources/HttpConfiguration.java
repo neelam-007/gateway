@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
@@ -106,6 +107,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         return super.getVersion();
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1, max = 128)
     @Column(name="host", nullable=false, length=128)
@@ -118,6 +120,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.host = host;
     }
 
+    @RbacAttribute
     @Min(0)
     @Max(0xFFFF)
     @Column(name="port")
@@ -130,6 +133,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.port = port;
     }
 
+    @RbacAttribute
     @Column(name="protocol")
     @Enumerated(EnumType.STRING)
     public Protocol getProtocol() {
@@ -141,6 +145,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.protocol = protocol;
     }
 
+    @RbacAttribute
     @Size(max = 4096)
     @Column(name="path", length=4096)
     public String getPath() {
@@ -152,6 +157,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.path = path;
     }
 
+    @RbacAttribute
     @Size(max = 255)
     @Column(name="username", length=255)
     public String getUsername() {
@@ -180,6 +186,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.passwordGoid = passwordGoid;
     }
 
+    @RbacAttribute
     @Size(max = 128)
     @Column(name="ntlm_host", length=128)
     public String getNtlmHost() {
@@ -191,6 +198,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.ntlmHost = ntlmHost;
     }
 
+    @RbacAttribute
     @Size(max = 255)
     @Column(name="ntlm_domain", length=255)
     public String getNtlmDomain() {

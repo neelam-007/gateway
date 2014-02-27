@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
@@ -49,6 +50,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         enabled = true;
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Override
     @Transient
@@ -56,6 +58,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         return super.getName();
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1,max=256)
     @Column(name="driver_class",nullable=false)
@@ -67,6 +70,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         this.driverClass = driverClass;
     }
 
+    @RbacAttribute
     @NotNull
     @Size(min=1,max=4096)
     @Column(name="jdbc_url",nullable=false)
@@ -78,6 +82,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         this.jdbcUrl = jdbcUrl;
     }
 
+    @RbacAttribute
     @NotNull
     @Size(max=128)
     @Column(name="user_name",nullable=false)
@@ -102,6 +107,7 @@ public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable
         this.password = password;
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;

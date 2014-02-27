@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.transport.firewall;
 
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Fetch;
@@ -50,6 +51,7 @@ public class SsgFirewallRule extends NamedEntityImp {
         this.ordinal = ordinal;
     }
 
+    @RbacAttribute
     @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;

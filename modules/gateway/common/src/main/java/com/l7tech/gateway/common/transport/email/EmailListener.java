@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.search.Dependency;
@@ -158,6 +159,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         emailListenerState.setLastMessageId(lastMessageId);
     }
 
+    @RbacAttribute
     @Column(name="host", length=128, nullable=false)
     public String getHost() {
         return host;
@@ -210,6 +212,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         }
     }
 
+    @RbacAttribute
     @Column(name="port", nullable=false)
     public int getPort() {
         return port;
@@ -219,6 +222,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         this.port = port;
     }
 
+    @RbacAttribute
     @Enumerated(EnumType.STRING)
     @Column(name="server_type", length=4, nullable=false)
     public EmailServerType getServerType() {
@@ -247,6 +251,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         this.deleteOnReceive = deleteOnReceive;
     }
 
+    @RbacAttribute
     @Column(name="username", length=255, nullable=false)
     public String getUsername() {
         return username;
@@ -267,6 +272,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         this.password = password;
     }
 
+    @RbacAttribute
     @Column(name="folder", length=255, nullable=false)
     public String getFolder() {
         return folder;
@@ -285,6 +291,7 @@ public class EmailListener extends ZoneableNamedEntityImp {
         this.pollInterval = pollInterval;
     }
 
+    @RbacAttribute
     @Column(name="active", nullable=false)
     public boolean isActive() {
         return active;

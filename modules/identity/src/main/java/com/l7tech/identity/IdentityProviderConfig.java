@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.*;
@@ -56,6 +57,7 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
         this.type = other.type;
     }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Override
     @Transient
@@ -76,6 +78,7 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
         return true; // Internal is writable and there's no InternalIdentityProviderConfig
     }
 
+    @RbacAttribute
     @Column(name="description", length=Integer.MAX_VALUE)
     @Lob
     public String getDescription() {
@@ -197,6 +200,7 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
     /**
      * for serialization by axis and hibernate only.
      */
+    @RbacAttribute
     @Column(name="type", insertable=false, updatable=false)
     public int getTypeVal() {
         return type.toVal();
@@ -209,6 +213,7 @@ public class IdentityProviderConfig extends ZoneableNamedEntityImp {
         type = IdentityProviderType.fromVal(val);
     }
 
+    @RbacAttribute
     @Transient
     public boolean isAdminEnabled() {
         Boolean b = (Boolean) getProperty(ADMIN_ENABLED);

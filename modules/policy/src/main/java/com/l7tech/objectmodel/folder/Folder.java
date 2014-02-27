@@ -3,6 +3,7 @@ package com.l7tech.objectmodel.folder;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.security.rbac.RbacAttribute;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -66,6 +67,7 @@ public class Folder extends ZoneableNamedEntityImp implements HasFolder {
     @Deprecated // For Serialization and persistence only
     public Folder() { }
 
+    @RbacAttribute
     @Size(min=1,max=128)
     @Override
     public String getName() {
