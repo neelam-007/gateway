@@ -6,7 +6,7 @@ import javax.xml.bind.annotation.*;
 import java.util.List;
 
 @XmlRootElement(name = "User")
-@XmlType(name = "UserType", propOrder = {"login", "firstName","lastName","email","department","subjectDn","extensions"})
+@XmlType(name = "UserType", propOrder = {"login", "password", "firstName","lastName","email","department","subjectDn","extensions"})
 @AccessorSupport.AccessibleResource(name = "users")
 public class UserMO extends AccessibleObject {
 
@@ -29,6 +29,25 @@ public class UserMO extends AccessibleObject {
      */
     public void setLogin( final String login ) {
         this.login = login;
+    }
+
+    /**
+     * The password for the user
+     *
+     * @return The password
+     */
+    @XmlElement(name = "Password")
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * Set the password for the user, only for create.
+     *
+     * @param password The password to use.
+     */
+    public void setPassword( final String password ) {
+        this.password = password;
     }
 
     /**
@@ -159,6 +178,7 @@ public class UserMO extends AccessibleObject {
     //- PRIVATE
 
     private String login;
+    private String password;
     private String firstName;
     private String lastName;
     private String email;

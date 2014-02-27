@@ -49,17 +49,17 @@ import com.l7tech.server.export.PolicyExporterImporterManagerStub;
 import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.HttpConfigurationManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.TestIdentityProvider;
-import com.l7tech.server.identity.TestIdentityProviderConfigManager;
+import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
+import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
+import com.l7tech.server.logon.LogonInfoManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
@@ -5199,7 +5199,8 @@ public class ServerGatewayManagementAssertionTest {
                 prop( new Goid(0,3), "testProp3", "testValue3"),
                 prop( new Goid(0,4), "interfaceTags", "localhost(127.0.0.1)"),
                 prop( new Goid(0,5), "keyStore.defaultSsl.alias", "0:bob" ) );
-        applicationContext.getBeanFactory().registerSingleton( "serverConfig", new MockConfig( new Properties() ) );
+        Config serverConfig = new MockConfig( new Properties() );
+        applicationContext.getBeanFactory().registerSingleton( "serverConfig", serverConfig );
         final TestTrustedCertManager testTrustedCertManager = new TestTrustedCertManager(
                 cert(new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
                 cert(new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()));
@@ -5288,6 +5289,14 @@ public class ServerGatewayManagementAssertionTest {
         customRole.setUserCreated(true);
         roleManager.save(customRole);
         applicationContext.getBeanFactory().registerSingleton( "roleManager", roleManager );
+
+        applicationContext.getBeanFactory().registerSingleton("trustedEsmUserManager", new TrustedEsmUserManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("logonManager", new LogonInfoManagerStub());
+        final TestPasswordHasher testPasswordHasher = new TestPasswordHasher();
+        applicationContext.getBeanFactory().registerSingleton("passwordHasher", new TestPasswordHasher());
+        final IdentityProviderPasswordPolicyManagerStub idPasswordPolicyManager = new IdentityProviderPasswordPolicyManagerStub();
+        applicationContext.getBeanFactory().registerSingleton("passwordPolicyManger", idPasswordPolicyManager);
+        applicationContext.getBeanFactory().registerSingleton("passwordEnforcerManager", passwordEnforcerManager(serverConfig,idPasswordPolicyManager, roleManager,testPasswordHasher));
 
         final Map<String,String> mqMap = new HashMap<String,String>();
         mqMap.put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_HOST_NAME,"host");
@@ -5435,6 +5444,11 @@ public class ServerGatewayManagementAssertionTest {
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
+    }
+
+    private PasswordEnforcerManager passwordEnforcerManager(Config config,IdentityProviderPasswordPolicyManager passwordPolicyManager,MockRoleManager roleManager, TestPasswordHasher passwordHasher) {
+        return new PasswordEnforcerManager(config,passwordPolicyManager,roleManager,passwordHasher,
+                IdentityProviderPasswordPolicyManagerStub.testPasswordPolicy,IdentityProviderPasswordPolicyManagerStub.testPasswordPolicy);
     }
 
     private Role role() throws SaveException {

@@ -47,7 +47,8 @@ public class UserTransformer implements APITransformer<UserMO, User> {
     public User convertFromMO(UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
-        user.setLastName(userMO.getLogin());
+        user.setLogin(userMO.getLogin());
+        user.setName(userMO.getLogin());
 
         Goid identityProviderGoid = Goid.parseGoid(userMO.getProviderId());
         try {

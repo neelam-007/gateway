@@ -1446,4 +1446,44 @@
         <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="entityFinder"/>
     </bean>
+
+    <!-- password enforcer to enforce the password constraints -->
+    <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="passwordPolicyManger"/>
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="passwordHasher"/>
+        <constructor-arg ref="testPasswordPolicy"/>
+        <constructor-arg ref="testPasswordPolicy"/>
+    </bean>
+
+    <bean id="testPasswordPolicy" class="com.l7tech.identity.IdentityProviderPasswordPolicy">
+        <constructor-arg index="0" value="true"/>
+        <!-- forcePasswordChange -->
+        <constructor-arg index="1" value="true"/>
+        <!-- noRepeatingCharacters -->
+        <constructor-arg index="2" value="3"/>
+        <!-- minPasswordLength -->
+        <constructor-arg index="3" value="10"/>
+        <!-- maxPasswordLength -->
+        <constructor-arg index="4" value="0"/>
+        <!-- minUpperCharacters -->
+        <constructor-arg index="5" value="0"/>
+        <!-- minLowerCharacters -->
+        <constructor-arg index="6" value="0"/>
+        <!-- minNumberCharacters -->
+        <constructor-arg index="7" value="0"/>
+        <!-- minSymbolCharacters -->
+        <constructor-arg index="8" value="0"/>
+        <!-- minNonNumberCharacters -->
+        <constructor-arg index="9" value="0"/>
+        <!-- minCharacterDifference -->
+        <constructor-arg index="10" value="1"/>
+        <!-- passwordRepeatFrequency -->
+        <constructor-arg index="11" value="90"/>
+        <!-- passwordExpiryDays -->
+        <constructor-arg index="12" value="false"/>
+        <!-- passwordChangeDaily -->
+    </bean>
+
 </beans>
