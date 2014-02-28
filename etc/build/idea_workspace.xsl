@@ -4,7 +4,7 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <!-- Parameters for customizing options -->
-    <xsl:param name="idea.teamcity.server">http://mobius.l7tech.com:8111/</xsl:param>
+    <xsl:param name="idea.teamcity.server">http://devteamcity.l7tech.com:8111/</xsl:param>
     <xsl:param name="idea.teamcity.user"></xsl:param>
     <xsl:param name="idea.teamcity.password"></xsl:param>
     <xsl:param name="idea.teamcity.remember">true</xsl:param>
