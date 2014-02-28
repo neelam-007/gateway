@@ -4,7 +4,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.transport.ListenerException;
@@ -40,8 +39,17 @@ public class FtpRequestProcessorFactory {
      * @throws com.l7tech.server.transport.ListenerException on invalid overridden content type specified in SsgConnector
      */
     public FtpRequestProcessor create(SsgConnector connector, ConnectionConfig connectionConfig) throws ListenerException {
-        Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE,
-                SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
+        boolean supportExtendedCommands =
+                connector.getBooleanProperty(SsgConnector.PROP_SUPPORT_EXTENDED_FTP_COMMANDS);
+
+        Goid hardwiredServiceGoid =
+                connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, null);
+
+
+        // to support proxying FTP requests for the extended command set the listener must be hardwired to a service
+        if (null == hardwiredServiceGoid && supportExtendedCommands) {
+            throw new ListenerException("Unable to start FTP listener: no service specified for listener.");
+        }
 
         String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader overrideContentType = null;
@@ -50,8 +58,8 @@ public class FtpRequestProcessorFactory {
             if (overrideContentTypeStr != null)
                 overrideContentType = ContentTypeHeader.parseValue(overrideContentTypeStr);
         } catch (IOException e) {
-            throw new ListenerException("Unable to start FTP listener: Invalid overridden content type: " +
-                    overrideContentTypeStr);
+            throw new ListenerException("Unable to start FTP listener: invalid overridden content type '" +
+                    overrideContentTypeStr + "'.");
         }
 
         // this executor handles upload tasks, with a maximum pool size equal to the maximum number of connections
@@ -60,15 +68,30 @@ public class FtpRequestProcessorFactory {
                 new LinkedBlockingQueue<Runnable>(connectionConfig.getMaxThreads()),
                 new ThreadPoolExecutor.AbortPolicy());
 
-        return new FtpRequestProcessor(
-                messageProcessor,
-                soapFaultManager,
-                stashManagerFactory,
-                messageProcessingEventChannel,
-                transferTaskExecutor,
-                overrideContentType,
-                hardwiredServiceGoid,
-                connector.getGoid(),
-                connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L));
+        long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L);
+
+        if (supportExtendedCommands) {
+            return new ExtendedCommandsFtpRequestProcessor(
+                    messageProcessor,
+                    soapFaultManager,
+                    stashManagerFactory,
+                    messageProcessingEventChannel,
+                    transferTaskExecutor,
+                    overrideContentType,
+                    hardwiredServiceGoid,
+                    connector.getGoid(),
+                    maxRequestSize);
+        } else {
+            return new UploadOnlyFtpRequestProcessor(
+                    messageProcessor,
+                    soapFaultManager,
+                    stashManagerFactory,
+                    messageProcessingEventChannel,
+                    transferTaskExecutor,
+                    overrideContentType,
+                    hardwiredServiceGoid,
+                    connector.getGoid(),
+                    maxRequestSize);
+        }
     }
 }

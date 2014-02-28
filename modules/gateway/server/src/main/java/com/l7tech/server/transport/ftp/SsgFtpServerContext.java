@@ -28,12 +28,12 @@ import java.util.logging.Logger;
 public class SsgFtpServerContext implements FtpServerContext {
     private static final Logger logger = Logger.getLogger(FtpServerContext.class.getName());
 
+    private final CommandFactory commandFactory;
     private final ConnectionConfig connectionConfig;
     private final FtpRequestProcessor requestProcessor;
 
     private final UserManager userManager = new FtpUserManager();
     private final FtpStatistics statistics = new DefaultFtpStatistics();
-    private final CommandFactory commandFactory = new FtpCommandFactory();
     private final FtpletContainer ftpletContainer = new DefaultFtpletContainer();
     private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager();
     private final MessageResource messageResource = new MessageResourceFactory().createMessageResource();
@@ -45,8 +45,10 @@ public class SsgFtpServerContext implements FtpServerContext {
      */
     private ThreadPoolExecutor threadPoolExecutor = null;
 
-    public SsgFtpServerContext(@NotNull ConnectionConfig connectionConfig,
+    public SsgFtpServerContext(@NotNull CommandFactory commandFactory,
+                               @NotNull ConnectionConfig connectionConfig,
                                @NotNull FtpRequestProcessor requestProcessor) {
+        this.commandFactory = commandFactory;
         this.connectionConfig = connectionConfig;
         this.requestProcessor = requestProcessor;
     }

@@ -50,7 +50,7 @@ class VirtualFileSystem implements FileSystemView {
     }
 
     public FtpFile getWorkingDirectory() throws FtpException {
-        return buildDirectoryFileObject(buildCurrentPath());
+        return buildDirectoryFtpFile(buildCurrentPath());
     }
 
     @Override
@@ -60,11 +60,11 @@ class VirtualFileSystem implements FileSystemView {
         switch (file) {
             case ".":
             case "./":
-                fileObject = buildDirectoryFileObject(buildCurrentPath());
+                fileObject = buildDirectoryFtpFile(buildCurrentPath());
                 break;
             case "..":
             case "../":
-                fileObject = buildDirectoryFileObject(combinePaths(buildCurrentPath(), ".."));
+                fileObject = buildDirectoryFtpFile(combinePaths(buildCurrentPath(), ".."));
                 break;
             default:
                 fileObject = buildFileObject(buildCurrentPath(), file);
@@ -76,7 +76,7 @@ class VirtualFileSystem implements FileSystemView {
 
     @Override
     public FtpFile getHomeDirectory() throws FtpException {
-        return buildDirectoryFileObject("/");
+        return buildDirectoryFtpFile("/");
     }
 
     @Override
@@ -171,7 +171,7 @@ class VirtualFileSystem implements FileSystemView {
         return new VirtualFileObject(true, combinePaths(path, file));
     }
 
-    private FtpFile buildDirectoryFileObject(final String path) {
+    private FtpFile buildDirectoryFtpFile(final String path) {
         return new VirtualFileObject(false, path);
     }
 }

@@ -90,6 +90,9 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     /** If a port range is required, this property holds the number of ports in the range. */
     public static final String PROP_PORT_RANGE_COUNT = "portRangeCount";
 
+    /** If the scheme is FTP or FTPS, this property flags whether to support the extended command set. */
+    public static final String PROP_SUPPORT_EXTENDED_FTP_COMMANDS = "useExtendedFtpCommandSet";
+
     /** If specified, this is a specified interface IP address to bind the listen port.  Otherwise, it will bind INADDR_ANY. */
     public static final String PROP_BIND_ADDRESS = "bindAddress";
 

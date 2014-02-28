@@ -8,18 +8,38 @@ import org.apache.ftpserver.command.NotSupportedCommand;
 import org.apache.ftpserver.command.impl.*;
 
 import static com.l7tech.common.ftp.FtpCommand.*;
+
 /**
  * Self-contained implementation of CommandFactory that has no need for a CommandFactoryFactory.
  *
+ * The ExtendedCommandFactory enables routing of a large number of FTP commands.
+ *
  * <p>This implementation cannot be extended via configuration.</p>
  *
- * @author Steve Jones
- * @author jwilliams
+ * @author Jamie Williams - jamie.williams2@ca.com
  */
-class FtpCommandFactory implements CommandFactory {
+class ExtendedCommandFactory implements CommandFactory {
+
+    /**
+     * Add this to the supported extensions if/when explicit FTPS is needed:
+     *
+     *   \n AUTH SSL\n AUTH TLS
+     */
+    private final static String[] EXTENSIONS =  new String[] {
+            "SIZE",
+            "MDTM",
+            "LANG en",
+            "MLST",
+            "MODE Z",
+            "UTF8",
+            "EPRT",
+            "EPSV",
+            "PASV",
+    };
+
     private final HashMap<String, Command> commandMap;
 
-    public FtpCommandFactory() {
+    public ExtendedCommandFactory() {
         commandMap = new HashMap<>();
 
         // Commands are RFC 959 unless otherwise noted
@@ -32,8 +52,8 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("DELE", new ProxyFtpCommand(DELE));
         commandMap.put("EPRT", new EPRT()); // RFC 2428 Nat / IPv6 extensions
         commandMap.put("EPSV", new EPSV()); // RFC 2428 Nat / IPv6 extensions
-        commandMap.put("FEAT", new FtpCommands.FEAT()); // RFC 2389 Feature negotiation
-        commandMap.put("HELP", new HELP());
+        commandMap.put("FEAT", new FtpCommands.FEAT(EXTENSIONS)); // RFC 2389 Feature negotiation
+        commandMap.put("HELP", new HELP()); // TODO: would be nice to have a custom implementation, like FEAT
         commandMap.put("LANG", new FtpCommands.LANG()); // RFC 2640 I18N
         commandMap.put("LIST", new ProxyFtpCommand(LIST));
         commandMap.put("MDTM", new ProxyFtpCommand(MDTM)); // RFC 3659 Extensions to FTP
@@ -43,7 +63,7 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("MODE", new MODE());
         commandMap.put("NLST", new ProxyFtpCommand(NLST));
         commandMap.put("NOOP", new NOOP());
-        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation // TODO jwilliams: implement OPTS - OPTS_MLST should not be supported; OPTS_UTF8 can keep the library implementation
+        commandMap.put("OPTS", new OPTS()); // RFC 2389 Feature negotiation
         commandMap.put("PASS", new PASS());
         commandMap.put("PASV", new PASV());
         commandMap.put("PBSZ", new PBSZ()); // RFC 2228 Security Extensions
@@ -67,7 +87,6 @@ class FtpCommandFactory implements CommandFactory {
         commandMap.put("TYPE", new TYPE());
         commandMap.put("USER", new USER());
 
-        // Unimplemented commands
         //commandMap.put("MD5", new org.apache.ftpserver.command.MD5()); // draft-twine-ftpmd5-00.txt MD5
         //commandMap.put("MMD5", new org.apache.ftpserver.command.MD5()); // draft-twine-ftpmd5-00.txt MD5
 

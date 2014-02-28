@@ -7,6 +7,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.InetAddressUtil;
 import org.apache.ftpserver.*;
+import org.apache.ftpserver.command.CommandFactory;
 import org.apache.ftpserver.ftplet.Ftplet;
 import org.apache.ftpserver.impl.DefaultFtpServer;
 import org.apache.ftpserver.listener.Listener;
@@ -26,9 +27,8 @@ public class SsgFtpServerFactory {
     private static final String DEFAULT_LISTENER_NAME = "default";
     private static final String DEFAULT_FTPLET_NAME = "default";
 
-    // TODO jwilliams: these settings should come from the connector, not cluster properties
-//    private static final String CP_FTP_TIMEOUT_POLL_INTERVAL = "ftp.connection.timeout_poll_interval";  // TODO jwilliams: document removal - poll interval not settable any more because handled by MINA
-    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max"; // TODO jwilliams: document that this now corresponds to max threads? or change/add cp?
+    // TODO: these settings should be definable per-connector
+    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max";
     private static final String CP_FTP_MAX_LOGINS = "ftp.connection.max_login";
     private static final String CP_FTP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
 
@@ -52,10 +52,13 @@ public class SsgFtpServerFactory {
     }
 
     private SsgFtpServerContext createServerContext(SsgConnector connector) throws ListenerException {
+        CommandFactory commandFactory = createCommandFactory(connector);
+
         ConnectionConfig connectionConfig = createConnectionConfig();
 
-        SsgFtpServerContext context =
-                new SsgFtpServerContext(connectionConfig, createRequestProcessor(connector, connectionConfig));
+        FtpRequestProcessor requestProcessor = createRequestProcessor(connector, connectionConfig);
+
+        SsgFtpServerContext context = new SsgFtpServerContext(commandFactory, connectionConfig, requestProcessor);
 
         Listener listener = createListener(connector);
 
@@ -64,6 +67,15 @@ public class SsgFtpServerFactory {
         context.addFtplet(DEFAULT_FTPLET_NAME, createFtplet());
 
         return context;
+    }
+
+    private CommandFactory createCommandFactory(SsgConnector connector) {
+        boolean supportExtendedCommands =
+                connector.getBooleanProperty(SsgConnector.PROP_SUPPORT_EXTENDED_FTP_COMMANDS);
+
+        return supportExtendedCommands
+                ? new ExtendedCommandFactory()
+                : new UploadOnlyCommandFactory();
     }
 
     /**
