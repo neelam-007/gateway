@@ -243,6 +243,14 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.validateWebSsoRules = validateWebSsoRules;
     }
 
+    public boolean isIncludeSignerCertChain() {
+        return includeSignerCertChain;
+    }
+
+    public void setIncludeSignerCertChain( boolean includeSignerCertChain ) {
+        this.includeSignerCertChain = includeSignerCertChain;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -348,6 +356,13 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private String issuerValue;
     private String issuerFormat;
     private String issuerNameQualifier;
+
+    /**
+     * Include the signer's full certificate chain in the KeyInfo rather than just the signer cert (SSG-6065).
+     * <p/>
+     * Default of false for backwards compatibility.
+     */
+    private boolean includeSignerCertChain = false;
 
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";

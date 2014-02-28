@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -203,8 +204,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     xsdIdAttribute+"' on element to sign '" + responseElement.getNodeName()+"'");
         }
 
-        final Element signature = DsigUtil.createEnvelopedSignature(
-                responseElement, idValue, signer.getCertificate(), signer.getPrivate(), null, null, null);
+        final Map<String, Element> elementsToSignWithIDs = new HashMap<>();
+        elementsToSignWithIDs.put( idValue, responseElement );
+        X509Certificate[] chain =
+                assertion.isIncludeSignerCertChain()
+                    ? signer.getCertificateChain()
+                    : new X509Certificate[] { signer.getCertificate() };
+        final Element signature = DsigUtil.createSignature( elementsToSignWithIDs,
+                responseElement.getOwnerDocument(), chain, signer.getPrivate(), null, null, null, null, true, false );
 
         //Signature must be added AFTER the Issuer element, if it's present, for SAML 2.0
         final Node insertBeforeNode;

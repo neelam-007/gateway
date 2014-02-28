@@ -124,6 +124,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         signResponseCheckBox.setSelected(assertion.isSignResponse());
+        includeSignerCertChainCheckBox.setSelected( assertion.isIncludeSignerCertChain() );
         validateWebSSORulesCheckBox.setSelected(assertion.isValidateWebSsoRules());
         statusMessageTextField.setText(assertion.getStatusMessage());
         statusDetailTextField.setText(assertion.getStatusDetail());
@@ -177,6 +178,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final SamlVersion samlVersion = (SamlVersion) samlVersionComboBox.getSelectedItem();
         assertion.setVersion(samlVersion.getVersionInt());
         assertion.setSignResponse(signResponseCheckBox.isSelected());
+        assertion.setIncludeSignerCertChain( includeSignerCertChainCheckBox.isSelected() );
         assertion.setValidateWebSsoRules(validateWebSSORulesCheckBox.isSelected());
 
         samlIssuerPanel.getData(assertion);
@@ -412,6 +414,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JCheckBox validateWebSSORulesCheckBox;
     private JPanel samlIssuerHolderPanel;
     private JTabbedPane issuerTabbedPane;
+    private JCheckBox includeSignerCertChainCheckBox;
     private SamlIssuerPanel samlIssuerPanel;
 
     private final Set<String> allStatuses = SamlStatus.getAllSamlStatusSet();

@@ -149,7 +149,7 @@ public class DsigUtil {
      *
      * @param elementsToSignWithIDs  the elements to sign, along with their corresponding reference values.  Required.  May be empty, in which case a signature with no References will be created.
      * @param document              Document to use as a factory for the new signature element.  Required.
-     * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
+     * @param senderSigningCert    certificate to sign it with.  cert will be included inline in KeyInfo as X509Certificate element if no keyinfo or key name specified
      * @param senderSigningKey      private key to sign it with.
      * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
@@ -166,6 +166,42 @@ public class DsigUtil {
     public static Element createSignature(final Map<String, Element> elementsToSignWithIDs,
                                           final Document document,
                                           X509Certificate senderSigningCert,
+                                          PrivateKey senderSigningKey,
+                                          Element keyInfoChildElement,
+                                          String keyName,
+                                          String signatureMethodDigestAlg,
+                                          @Nullable String referenceDigestAlg,
+                                          boolean includeEnvelopedTransform,
+                                          final boolean enableImplicitEmptyUriRef)
+            throws SignatureException, SignatureStructureException, XSignatureException
+    {
+        return createSignature( elementsToSignWithIDs, document, new X509Certificate[] { senderSigningCert },
+                senderSigningKey, keyInfoChildElement, keyName, signatureMethodDigestAlg, referenceDigestAlg, includeEnvelopedTransform,
+                enableImplicitEmptyUriRef );
+    }
+
+    /**
+     * Digitally signs the specified elements and returns a signature element that can be inserted into this document or a different one.
+     *
+     * @param elementsToSignWithIDs  the elements to sign, along with their corresponding reference values.  Required.  May be empty, in which case a signature with no References will be created.
+     * @param document              Document to use as a factory for the new signature element.  Required.
+     * @param senderSigningCertChain     certificate chain to sign it with.  zeroth element must be signer cert.  full chain will be included inline in KeyInfo as X509Certificate elements if no keyinfo or key name specified
+     * @param senderSigningKey      private key to sign it with.
+     * @param keyInfoChildElement   Custom key info child element to use
+     * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
+     * @param signatureMethodDigestAlg the message digest algorithm to use for the signature, or null to use the default behavior, which is:
+     *                               SHA-1 for everything except an EC private key, in which case SHA-256
+     * @param referenceDigestAlg message digest algorithm for References, if different from that of the signature method, or null to use the same as the signature method.
+     * @param includeEnvelopedTransform  if true, the created signature will include the Enveloped transform, so it can be added as a descendant of one of the signed elements.
+     * @param enableImplicitEmptyUriRef  if true, a Reference to an ID consisting of the empty string will be recognized as a reference to the document root.
+     * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
+     * @throws SignatureException   if there is a problem creating the signature or if the xsdIdAttribute is not found on the Element to sign
+     * @throws SignatureStructureException if there is a problem creating the signature
+     * @throws XSignatureException  if there is a problem creating the signature
+     */
+    public static Element createSignature(final Map<String, Element> elementsToSignWithIDs,
+                                          final Document document,
+                                          X509Certificate[] senderSigningCertChain,
                                           PrivateKey senderSigningKey,
                                           Element keyInfoChildElement,
                                           String keyName,
@@ -209,11 +245,14 @@ public class DsigUtil {
         } else if (keyInfoChildElement != null) {
             keyInfo.setUnknownChildren(new Element[] { keyInfoChildElement });
         } else {
-            //keyInfo.setKeyValue(senderSigningCert.getPublicKey());
-            KeyInfo.X509Data x5data = new KeyInfo.X509Data();
-            x5data.setCertificate(senderSigningCert);
-            x5data.setParameters(senderSigningCert, false, false, false);
-            keyInfo.setX509Data(new KeyInfo.X509Data[] { x5data });
+            List<KeyInfo.X509Data> datas = new ArrayList<>();
+            for ( X509Certificate cert : senderSigningCertChain ) {
+                KeyInfo.X509Data data = new KeyInfo.X509Data();
+                data.setCertificate( cert );
+                data.setParameters( cert, false, false, false );
+                datas.add( data );
+            }
+            keyInfo.setX509Data( datas.toArray( new KeyInfo.X509Data[datas.size()] ) );
         }
         keyInfo.insertTo(sigElement, "ds", template);
 
@@ -232,7 +271,7 @@ public class DsigUtil {
             }
         });
         try {
-            KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCert, senderSigningKey);
+            KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCertChain[0], senderSigningKey);
         } catch (CertificateException e) {
             throw new SignatureException(e);
         }
