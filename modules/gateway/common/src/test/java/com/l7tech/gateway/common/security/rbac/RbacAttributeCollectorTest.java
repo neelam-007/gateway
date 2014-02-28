@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.rbac.RbacAttribute;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 
 import java.util.Map;
@@ -418,6 +419,18 @@ public class RbacAttributeCollectorTest {
         assertFalse(attributes.containsKey("unsupportedReturnType"));
     }
 
+    @Test
+    public void allowAllAttributes() {
+        SyspropUtil.setProperty(RbacAttributeCollector.ALLOW_ALL_PROP, "true");
+        final Map<String, String> attributes = RbacAttributeCollector.collectAttributes(StubEntity.class);
+        assertEquals(13, attributes.size());
+        // non-annotated methods should be valid
+        assertEquals("nonAnnotated", attributes.get("nonAnnotated"));
+        // non-annotated methods should get a display name if possible
+        assertEquals(IS_SOAP, attributes.get(SOAP));
+        SyspropUtil.clearProperty(RbacAttributeCollector.ALLOW_ALL_PROP);
+    }
+
     private void assertNameOnly(final EntityType type) {
         final Map<String, String> attributes = RbacAttributeCollector.collectAttributes(type);
         assertEquals(1, attributes.size());
@@ -493,6 +506,10 @@ public class RbacAttributeCollectorTest {
 
         public String getNonAnnotated() {
             return "should not be exposed as an attribute because annotation is missing";
+        }
+
+        public boolean isSoap() {
+            return false;
         }
 
         @RbacAttribute
