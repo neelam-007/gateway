@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.EncapsulatedAssertionTransformer;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -33,11 +32,5 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
     @SpringBean
     public void setTransformer(EncapsulatedAssertionTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull EncapsulatedAssertionMO encapsulatedAssertionMO) {
-        return getUrlString(encapsulatedAssertionMO.getId());
     }
 }

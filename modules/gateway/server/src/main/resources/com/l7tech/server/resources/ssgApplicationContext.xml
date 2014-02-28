@@ -2258,6 +2258,7 @@
                 <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
+                <ref bean="securityZoneManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -2517,6 +2518,10 @@
         <constructor-arg ref="sshSessionFactory" />
         <constructor-arg ref="serverConfig" />
     </bean>
+
+    <bean id="entityBundleImporter" class="com.l7tech.server.bundling.EntityBundleImporterImpl" />
+    <bean id="entityBundleExporter" class="com.l7tech.server.bundling.EntityBundleExporterImpl" />
+    <bean id="mappingInstructionsBuilder" class="com.l7tech.server.bundling.MappingInstructionsBuilder" />
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 

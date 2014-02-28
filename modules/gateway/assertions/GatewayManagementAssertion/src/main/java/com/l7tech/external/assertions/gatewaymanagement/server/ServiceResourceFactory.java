@@ -38,6 +38,7 @@ import static com.l7tech.util.Eithers.*;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 
 /**
  * 
@@ -245,7 +246,16 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
     }
 
     @Override
+    public PublishedService fromResource(Object resource, boolean strict) throws InvalidResourceException {
+        return fromResourceAsBag(resource, strict).getEntity();
+    }
+
+    @Override
     protected EntityBag<PublishedService> fromResourceAsBag( final Object resource ) throws InvalidResourceException {
+        return fromResourceAsBag(resource, true);
+    }
+
+    protected EntityBag<PublishedService> fromResourceAsBag( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof ServiceMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected service");
 
@@ -254,9 +264,16 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         if ( serviceDetail == null ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing details");
         }
-        final Option<Folder> folder = folderResourceFactory.getFolder( optional( serviceDetail.getFolderId() ) );
-        if ( !folder.isSome() )
-            throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
+        Option<Folder> folder = folderResourceFactory.getFolder( optional( serviceDetail.getFolderId() ) );
+        if ( !folder.isSome() ) {
+            if(strict) {
+                throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
+            } else {
+                Folder folderParent = new Folder();
+                folderParent.setId(optional(serviceDetail.getFolderId()).orSome(Folder.ROOT_FOLDER_ID.toString()));
+                folder = some(folderParent);
+            }
+        }
         final Map<String,ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( serviceMO.getResourceSets() );
         final Resource policyResource = resourceHelper.getResource( resourceSetMap, ResourceHelper.POLICY_TAG, ResourceHelper.POLICY_TYPE, true, null );
         final Collection<Resource> wsdlResources = resourceHelper.getResources( resourceSetMap, ResourceHelper.WSDL_TAG, false, new Functions.UnaryThrows<String,String, IOException>(){
@@ -287,7 +304,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
         // handle SecurityZone
-        doSecurityZoneFromResource( serviceMO, service, true );
+        doSecurityZoneFromResource( serviceMO, service, strict );
 
         return new ServiceEntityBag( service, serviceDocuments );
     }

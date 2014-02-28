@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.DocumentTransformer;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     @SpringBean
     public void setTransformer(DocumentTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull ResourceDocumentMO resourceDocumentMO) {
-        return getUrlString(resourceDocumentMO.getId());
     }
 }

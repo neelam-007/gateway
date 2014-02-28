@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RevocationCheckingPolicyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,6 +81,12 @@ public class RevocationCheckingPolicyResource implements ReadingResource<Revocat
     @Override
     public String getUrl(@NotNull RevocationCheckingPolicyMO resource) {
         return getUrlString(resource.getId());
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader header) {
+        return getUrlString(header.getStrId());
     }
 
     @NotNull

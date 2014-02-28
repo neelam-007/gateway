@@ -25,7 +25,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -415,9 +414,10 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         // import fail
         assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertNotSame(400, response.getStatus());
-        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, new StreamSource(new StringReader(response.getBody())));
-        assertTrue("Error message:",error.getDetail().contains("must be unique"));
+        assertEquals(409, response.getStatus());
+        Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
+        assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
     }
 
     @Test

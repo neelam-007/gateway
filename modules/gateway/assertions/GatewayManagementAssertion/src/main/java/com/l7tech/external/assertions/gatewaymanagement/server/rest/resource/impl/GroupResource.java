@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URL
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GroupTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
@@ -93,6 +94,12 @@ public class GroupResource implements ListingResource<GroupMO>, ReadingResource<
     @Override
     public String getUrl(@NotNull GroupMO group) {
         return getGroupUri(group.getName());
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader groupHeader) {
+        return getGroupUri(groupHeader.getName());
     }
 
     @NotNull

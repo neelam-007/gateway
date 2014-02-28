@@ -26,7 +26,6 @@ public class HttpConfigurationAPIResourceFactory extends WsmanBaseResourceFactor
                 CollectionUtils.MapBuilder.<String, String>builder()
                         .put("id", "id")
                         .put("host", "host")
-                        .put("entityClassName", "entityClassName")
                         .map(),
                 CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
                         .put("host", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("host", RestResourceFactoryUtils.stringConvert))

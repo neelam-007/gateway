@@ -34,6 +34,7 @@ import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
+import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -185,8 +186,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     @Override
+    public final PrivateKeyMO identify( final PrivateKeyMO resource, final SsgKeyEntry entity ) {
+        resource.setId(entity.getId());
+        return resource;
+    }
+
+    @Override
     public SsgKeyEntry fromResource(Object resource, boolean strict) throws InvalidResourceException {
-        throw new UnsupportedOperationException("From resource for a private key is not supported.");
+        throw new NotImplementedException("From resource for a private key is not yet implemented.");
     }
 
     private PrivateKeyMO buildPrivateKeyResource(SsgKeyHeader header) {

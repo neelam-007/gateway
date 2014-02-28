@@ -15,6 +15,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -71,6 +72,11 @@ public class SecuredEntityCrud implements EntityCrud {
     }
 
     @Override
+    public <ET extends Entity> List<ET> findAll(Class<ET> entityClass, Map<String, List<Object>> filters, int offset, int max, Boolean ascending, String sortKey) throws FindException {
+        return securityFilter.filter(entityCrud.findAll(entityClass, filters, offset, max, ascending, sortKey), getUser(), OperationType.READ, null);
+    }
+
+    @Override
     public EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, Map<String, String> filters, int offset, int max) throws FindException {
         return (EntityHeaderSet<EntityHeader>) securityFilter.filter(entityCrud.findAllInScope(entityClass, header, filters, offset, max), getUser(), OperationType.READ, null);
     }
@@ -84,6 +90,12 @@ public class SecuredEntityCrud implements EntityCrud {
     public Serializable save(Entity entity) throws SaveException {
         checkPermitted(OperationType.CREATE, entity, SaveException.class);
         return entityCrud.save(entity);
+    }
+
+    @Override
+    public void save(Goid id, Entity entity) throws SaveException {
+        checkPermitted(OperationType.CREATE, entity, SaveException.class);
+        entityCrud.save(id, entity);
     }
 
     @Override

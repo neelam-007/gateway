@@ -365,7 +365,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param entity The entity whose identity should be used
      * @return The (possibly updated) resource
      */
-    protected final R identify( final R resource, final E entity ) {
+    @Override
+    public final R identify( final R resource, final E entity ) {
         return identify( resource, entity.getId(), entity.getVersion() );
     }
 

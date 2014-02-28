@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
@@ -142,6 +143,13 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
     public String getUrl(@NotNull UserMO user) {
         //TODO: check if the user is from the default identity provider.
         return getUrlString(user.getId());
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader header) {
+        //TODO: check if the user is from the default identity provider.
+        return getUrlString(header.getName());
     }
 
     @NotNull

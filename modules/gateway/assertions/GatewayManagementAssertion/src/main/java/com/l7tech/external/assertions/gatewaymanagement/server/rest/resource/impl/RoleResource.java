@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RoleTransformer;
 import com.l7tech.gateway.api.RbacRoleMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -39,12 +38,6 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     @SpringBean
     public void setTransformer(RoleTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull RbacRoleMO rbacRoleMO) {
-        return getUrlString(rbacRoleMO.getId());
     }
 
     @Path("{id}/assignments")

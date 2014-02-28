@@ -41,6 +41,8 @@ import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
+import com.l7tech.server.bundling.EntityBundleExporterStub;
+import com.l7tech.server.bundling.EntityBundleImporterStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -5403,6 +5405,9 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub(emailListener){});
 
         applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
+
+        applicationContext.getBeanFactory().registerSingleton("entityBundleImporter", new EntityBundleImporterStub());
+        applicationContext.getBeanFactory().registerSingleton("entityBundleExporter", new EntityBundleExporterStub());
 
         applicationContext.refresh();
 

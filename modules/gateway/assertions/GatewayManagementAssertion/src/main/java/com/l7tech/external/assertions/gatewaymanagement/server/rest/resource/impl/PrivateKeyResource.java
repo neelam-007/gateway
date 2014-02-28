@@ -10,7 +10,6 @@ import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
 import org.glassfish.jersey.message.XmlHeader;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -81,12 +80,6 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
                 .addLinks(getRelatedLinks(mo))
                 .build())
                 .build();
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull PrivateKeyMO privateKeyMO) {
-        return getUrlString(privateKeyMO.getId());
     }
 
     @POST

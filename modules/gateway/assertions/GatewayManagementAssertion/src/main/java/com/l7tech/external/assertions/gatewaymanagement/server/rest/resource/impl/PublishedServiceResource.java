@@ -6,15 +6,12 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Dep
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
 import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.glassfish.jersey.message.XmlHeader;
-import org.jetbrains.annotations.NotNull;
-import sun.util.logging.resources.logging;
 
 import javax.inject.Singleton;
-import javax.ws.rs.*;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -50,13 +47,6 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     public void setTransformer(PublishedServiceTransformer transformer) {
         super.transformer = transformer;
     }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull ServiceMO serviceMO) {
-        return getUrlString(serviceMO.getId());
-    }
-
 
     /**
      * Shows the policy versions

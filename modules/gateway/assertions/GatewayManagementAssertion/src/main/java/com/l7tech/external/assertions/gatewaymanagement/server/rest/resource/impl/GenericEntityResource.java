@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GenericEntityTransformer;
 import com.l7tech.gateway.api.GenericEntityMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     @SpringBean
     public void setTransformer(GenericEntityTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull GenericEntityMO genericEntityMO) {
-        return getUrlString(genericEntityMO.getId());
     }
 }

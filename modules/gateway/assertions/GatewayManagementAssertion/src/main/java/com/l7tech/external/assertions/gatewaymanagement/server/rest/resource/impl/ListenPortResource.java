@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ListenPortTransformer;
 import com.l7tech.gateway.api.ListenPortMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     @SpringBean
     public void setTransformer(ListenPortTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull ListenPortMO listenPortMO) {
-        return getUrlString(listenPortMO.getId());
     }
 }

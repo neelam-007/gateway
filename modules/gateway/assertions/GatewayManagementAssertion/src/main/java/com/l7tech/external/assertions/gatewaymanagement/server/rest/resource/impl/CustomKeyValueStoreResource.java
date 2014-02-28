@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CustomKeyValueStoreTransformer;
 import com.l7tech.gateway.api.CustomKeyValueStoreMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     @SpringBean
     public void setTransformer(CustomKeyValueStoreTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull CustomKeyValueStoreMO customKeyValueStoreMO) {
-        return getUrlString(customKeyValueStoreMO.getId());
     }
 }

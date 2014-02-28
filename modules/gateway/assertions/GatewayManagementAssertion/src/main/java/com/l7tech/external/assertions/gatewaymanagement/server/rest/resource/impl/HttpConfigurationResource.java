@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.HttpConfigurationTransformer;
 import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     @SpringBean
     public void setTransformer(HttpConfigurationTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull HttpConfigurationMO httpConfigurationMO) {
-        return getUrlString(httpConfigurationMO.getId());
     }
 }

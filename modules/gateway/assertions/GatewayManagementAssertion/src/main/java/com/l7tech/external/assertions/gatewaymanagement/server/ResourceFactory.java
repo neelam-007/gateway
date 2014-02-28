@@ -164,6 +164,14 @@ public interface ResourceFactory<R,E> {
      */
     E fromResource(Object resource, boolean strict) throws InvalidResourceException;
 
+    /**
+     * Set identity information on the given resource.
+     *
+     * @param resource The resource to process
+     * @param entity The entity whose identity should be used
+     * @return The (possibly updated) resource
+     */
+    R identify(R resource, E entity);
 
     /**
      * Annotation for the resource name.

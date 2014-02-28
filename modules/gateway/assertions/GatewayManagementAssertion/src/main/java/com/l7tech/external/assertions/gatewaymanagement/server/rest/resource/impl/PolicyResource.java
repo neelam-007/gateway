@@ -8,7 +8,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -45,12 +44,6 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     @SpringBean
     public void setTransformer(PolicyTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull PolicyMO policyMO) {
-        return getUrlString(policyMO.getId());
     }
 
     /**

@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URL
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyVersionTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -135,6 +136,12 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
     @Override
     public String getUrl(@NotNull PolicyVersionMO policyVersion) {
         return getUrlString(Long.toString(policyVersion.getOrdinal()));
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader policyVersionHeader) {
+        throw new UnsupportedOperationException("Cannot get the url of a policy version from its entity header.");
     }
 
     @NotNull

@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.EmailListenerTransformer;
 import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     @SpringBean
     public void setTransformer(EmailListenerTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull EmailListenerMO emailListenerMO) {
-        return getUrlString(emailListenerMO.getId());
     }
 }

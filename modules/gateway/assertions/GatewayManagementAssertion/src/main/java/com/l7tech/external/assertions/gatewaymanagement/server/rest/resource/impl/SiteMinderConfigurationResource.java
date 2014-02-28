@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.SiteMinderConfigurationTransformer;
 import com.l7tech.gateway.api.SiteMinderConfigurationMO;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -31,11 +30,5 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     @SpringBean
     public void setTransformer(SiteMinderConfigurationTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull SiteMinderConfigurationMO siteMinderConfigurationMO) {
-        return getUrlString(siteMinderConfigurationMO.getId());
     }
 }

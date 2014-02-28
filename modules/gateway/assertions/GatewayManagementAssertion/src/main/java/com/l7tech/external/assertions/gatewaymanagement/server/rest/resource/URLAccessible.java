@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.gateway.api.Link;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +25,15 @@ public interface URLAccessible<M> {
      */
     @NotNull
     public String getUrl(@NotNull M m);
+
+    /**
+     * Returns the full url string for the given entity header.
+     *
+     * @param entityHeader The entity header to return the full url string for
+     * @return The full url string that can be used to access the object referenced by the entity header
+     */
+    @NotNull
+    public String getUrl(@NotNull EntityHeader entityHeader);
 
     /**
      * Return the objects link

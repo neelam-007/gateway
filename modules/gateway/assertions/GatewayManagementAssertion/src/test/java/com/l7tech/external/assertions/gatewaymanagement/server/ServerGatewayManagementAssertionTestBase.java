@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -18,6 +19,8 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.PolicyValidatorStub;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
+import com.l7tech.server.bundling.EntityBundleExporterStub;
+import com.l7tech.server.bundling.EntityBundleImporterStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -28,14 +31,18 @@ import com.l7tech.server.globalresources.HttpConfigurationManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerStub;
 import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
+import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
+import com.l7tech.server.logon.LogonInfoManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
@@ -113,8 +120,10 @@ public class ServerGatewayManagementAssertionTestBase {
     public void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
 
+        Config serverConfig = new MockConfig( new Properties() );
+
         final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager();
-        applicationContext.getBeanFactory().registerSingleton( "serverConfig", new MockConfig( new Properties() ) );
+        applicationContext.getBeanFactory().registerSingleton( "serverConfig", serverConfig );
         applicationContext.getBeanFactory().registerSingleton( "trustedCertManager", new TestTrustedCertManager());
         applicationContext.getBeanFactory().registerSingleton( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
         applicationContext.getBeanFactory().registerSingleton( "clusterPropertyManager", clusterPropertyManager);
@@ -149,7 +158,8 @@ public class ServerGatewayManagementAssertionTestBase {
         ) );
         applicationContext.getBeanFactory().registerSingleton( "encapsulatedAssertionConfigManager", new EncapsulatedAssertionConfigManagerStub() );
         applicationContext.getBeanFactory().registerSingleton( "httpConfigurationManager", new HttpConfigurationManagerStub() );
-        applicationContext.getBeanFactory().registerSingleton( "roleManager", new MockRoleManager(null) );
+        MockRoleManager roleManager = new MockRoleManager(null);
+        applicationContext.getBeanFactory().registerSingleton( "roleManager", roleManager );
         applicationContext.getBeanFactory().registerSingleton("genericEntityManager",new GenericEntityManagerStub() );
         applicationContext.getBeanFactory().registerSingleton("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub() );
 
@@ -170,6 +180,17 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton( "policyVersionManager", new PolicyVersionManagerStub());
 
         Mockito.when(identityProviderConfigManager.getImpClass()).thenReturn(IdentityProviderConfig.class);
+
+        applicationContext.getBeanFactory().registerSingleton("trustedEsmUserManager", new TrustedEsmUserManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("logonManager", new LogonInfoManagerStub());
+        final TestPasswordHasher testPasswordHasher = new TestPasswordHasher();
+        applicationContext.getBeanFactory().registerSingleton("passwordHasher", new TestPasswordHasher());
+        final IdentityProviderPasswordPolicyManagerStub idPasswordPolicyManager = new IdentityProviderPasswordPolicyManagerStub();
+        applicationContext.getBeanFactory().registerSingleton("passwordPolicyManger", idPasswordPolicyManager);
+        applicationContext.getBeanFactory().registerSingleton("passwordEnforcerManager", passwordEnforcerManager(serverConfig,idPasswordPolicyManager, roleManager,testPasswordHasher));
+
+        applicationContext.getBeanFactory().registerSingleton("entityBundleImporter", new EntityBundleImporterStub());
+        applicationContext.getBeanFactory().registerSingleton("entityBundleExporter", new EntityBundleExporterStub());
 
         moreInit();
 
@@ -215,6 +236,11 @@ public class ServerGatewayManagementAssertionTestBase {
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
+    }
+
+    private PasswordEnforcerManager passwordEnforcerManager(Config config,IdentityProviderPasswordPolicyManager passwordPolicyManager,MockRoleManager roleManager, TestPasswordHasher passwordHasher) {
+        return new PasswordEnforcerManager(config,passwordPolicyManager,roleManager,passwordHasher,
+                IdentityProviderPasswordPolicyManagerStub.testPasswordPolicy,IdentityProviderPasswordPolicyManagerStub.testPasswordPolicy);
     }
 
     protected void moreInit() throws SaveException {}

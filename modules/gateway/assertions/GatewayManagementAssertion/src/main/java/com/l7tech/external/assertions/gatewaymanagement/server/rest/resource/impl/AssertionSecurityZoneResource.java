@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.AssertionSecurityZoneTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -137,8 +138,14 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
 
     @NotNull
     @Override
-    public String getUrl(@NotNull AssertionSecurityZoneMO assertionSecurityZoneMO) {
-        return getUrlString(assertionSecurityZoneMO.getName());
+    public String getUrl(@NotNull AssertionSecurityZoneMO resource) {
+        return getUrlString(resource.getName());
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader header) {
+        return getUrlString(header.getName());
     }
 
     /**

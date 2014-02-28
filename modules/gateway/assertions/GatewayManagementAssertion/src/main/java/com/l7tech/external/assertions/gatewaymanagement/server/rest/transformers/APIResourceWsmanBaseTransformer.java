@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <E> The Entity that that MO transforms into
  * @param <F> The wsman resource factory that can transform the MO
  */
-public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E, F extends ResourceFactory<M,E>> implements APITransformer<M, E> {
+public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E extends Entity, F extends ResourceFactory<M,E>> implements APITransformer<M, E> {
 
     /**
      * The wiseman resource factory
@@ -39,7 +39,9 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @Override
     public M convertToMO(E e) {
-        return factory.asResource(e);
+        //need to 'identify' the MO because by default the wsman factories will no set the id and version in the
+        // asResource method
+        return factory.identify(factory.asResource(e), e);
     }
 
     @Override
@@ -59,7 +61,7 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @Override
     public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException {
-        return EntityHeaderUtils.fromEntity((Entity) convertFromMO(m, false));
+        return EntityHeaderUtils.fromEntity(convertFromMO(m, false));
     }
 
     @Override

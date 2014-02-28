@@ -573,6 +573,10 @@
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 
+    <bean id="entityBundleImporter" class="com.l7tech.server.bundling.EntityBundleImporterStub" />
+    <bean id="entityBundleExporter" class="com.l7tech.server.bundling.EntityBundleExporterStub" />
+    <bean id="mappingInstructionsBuilder" class="com.l7tech.server.bundling.MappingInstructionsBuilder" />
+
     <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
         <property name="sessionFactory" ><bean class="com.l7tech.server.SessionFactoryStub"/></property>
         <constructor-arg ref="entityFinder"/>

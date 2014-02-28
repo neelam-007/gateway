@@ -8,12 +8,16 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyMO;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.util.*;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +28,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
+import java.util.UUID;
 
 /**
  * This was created: 11/18/13 as 4:30 PM
@@ -66,9 +71,10 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
     @Override
     public PolicyMO getResourceTemplate() {
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
-        policyMO.setGuid("Policy Guid");
+        policyMO.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
 
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
         policyDetail.setFolderId("FolderID");
         policyDetail.setName("Policy Name");
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
@@ -87,47 +93,38 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
     private PolicyTransformer policyTransformer;
 
     public String createResource(@NotNull final PolicyMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
-        validateCreateResource(null, resource);
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly( false );
-        return tt.execute( new TransactionCallback<String>(){
-            @Override
-            public String doInTransaction( final TransactionStatus transactionStatus ) {
-                try {
-                    Policy newPolicy = policyTransformer.convertFromMO(resource);
-                    newPolicy.setVersion(0);
-
-                    String id = policyManager.save(newPolicy).toString();
-                    policyVersionManager.checkpointPolicy(newPolicy, true , comment, true);
-                    resource.setId(id);
-                    return id;
-
-                }catch(ResourceFactory.InvalidResourceException e){
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
-                } catch ( ObjectModelException ome ) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to save policy version when updating policy.", ome);
-                }
-            }
-        });
+        return createResourceInternal(null, resource, comment);
     }
 
     public void createResource(@NotNull final String id, @NotNull final PolicyMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
+        createResourceInternal(id, resource, comment);
+    }
+
+    private String createResourceInternal(@Nullable final String id, @NotNull final PolicyMO resource, @Nullable final String comment) {
         validateCreateResource(id, resource);
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly( false );
-        tt.execute( new TransactionCallback(){
+        String savedId = tt.execute( new TransactionCallback<String>(){
             @Override
             public String doInTransaction( final TransactionStatus transactionStatus ) {
                 try {
                     Policy newPolicy = policyTransformer.convertFromMO(resource);
                     newPolicy.setVersion(0);
+                    //generate a new Guid if none is set.
+                    if(newPolicy.getGuid() == null) {
+                        newPolicy.setGuid(UUID.randomUUID().toString());
+                    }
 
-                    policyManager.save(Goid.parseGoid(id),newPolicy);
+                    final String savedId;
+                    if(id == null){
+                        savedId = policyManager.save(newPolicy).toString();
+                    } else {
+                        policyManager.save(Goid.parseGoid(id),newPolicy);
+                        savedId = id;
+                    }
                     policyVersionManager.checkpointPolicy(newPolicy, true , comment, true);
 
-                    return null;
+                    return savedId;
                 } catch(ResourceFactory.InvalidResourceException e){
                     transactionStatus.setRollbackOnly();
                     throw new ResourceFactory.ResourceAccessException(e);
@@ -141,7 +138,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                 }
             }
         });
-        resource.setId(id);
+        resource.setId(savedId);
+        return savedId;
     }
 
     private void validateCreateResource(@Nullable String id, PolicyMO resource) {

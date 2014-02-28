@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.AP
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -109,6 +110,22 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
             uriBuilder.path(id);
         }
         return uriBuilder.build().toString();
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull R resource) {
+        if(resource instanceof ManagedObject){
+            return getUrlString(((ManagedObject)resource).getId());
+        }
+        //In this case the getUrl method should have been overriden by the specific entityResource
+        throw new IllegalArgumentException("Cannot get url for a non managed object resource: " + resource.getClass());
+    }
+
+    @NotNull
+    @Override
+    public String getUrl(@NotNull EntityHeader header) {
+        return getUrlString(header.getStrId());
     }
 
     @NotNull

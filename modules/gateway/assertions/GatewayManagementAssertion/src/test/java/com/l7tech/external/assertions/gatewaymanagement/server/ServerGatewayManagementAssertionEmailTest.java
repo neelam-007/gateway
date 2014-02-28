@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
  * Test the GatewayManagementAssertion for EmailListenerMO entity.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ServerGatewayManagementAssertionTestEmail extends ServerGatewayManagementAssertionTestBase {
+public class ServerGatewayManagementAssertionEmailTest extends ServerGatewayManagementAssertionTestBase {
 
     private static final String RESOURCE_URI = "http://ns.l7tech.com/2010/04/gateway-management/emailListeners";
     private EmailListenerManager emailListenerManager;
@@ -47,7 +47,7 @@ public class ServerGatewayManagementAssertionTestEmail extends ServerGatewayMana
                         "    <l7:PollInterval>60</l7:PollInterval>\n" +
                         "    <l7:Properties>\n" +
                         "        <l7:Property key=\"com.l7tech.server.jms.prop.hardwired.service.id\">\n" +
-                        "            <l7:StringValue>"+new Goid(0,2).toString()+"</l7:StringValue>\n" +
+                        "            <l7:StringValue>"+new Goid(0,1).toString()+"</l7:StringValue>\n" +
                         "        </l7:Property>\n" +
                         "        <l7:Property key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">\n" +
                         "            <l7:StringValue>true</l7:StringValue>\n" +

@@ -7,7 +7,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.InterfaceTagMO;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.rest.SpringBean;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Path;
@@ -34,12 +33,6 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     @SpringBean
     public void setTransformer(InterfaceTagTransformer transformer) {
         super.transformer = transformer;
-    }
-
-    @NotNull
-    @Override
-    public String getUrl(@NotNull InterfaceTagMO interfaceTagMO) {
-        return getUrlString(interfaceTagMO.getId());
     }
 
     @Override

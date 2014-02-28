@@ -18,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Generic CRUD for persistent entities.  Reads delegated to {@link EntityFinderImpl} unless some {@link com.l7tech.objectmodel.EntityManager}
@@ -68,6 +65,16 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
             return new EntityHeaderSet<EntityHeader>((EntityHeader[])headers.toArray(new EntityHeader[headers.size()]));
         }
         return entityFinder.findAll(entityClass);
+    }
+
+    @Override
+    public <ET extends Entity> List<ET> findAll(Class<ET> entityClass, Map<String, List<Object>> filters, int offset, int max, Boolean ascending, String sortKey) throws FindException {
+        EntityManager manager = getEntityManager(entityClass);
+        if ( manager != null ){
+            return manager.findPagedMatching(offset, max, sortKey, ascending, filters);
+        } else {
+            throw new FindException("Could not find entity manager for entity type: " + entityClass.getName());
+        }
     }
 
     @Override
@@ -141,6 +148,19 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
                 return session.save(e);
             }
         });
+    }
+
+    @Override
+    public void save(final Goid id, final Entity e) throws SaveException {
+        final EntityManager manager = getEntityManager(e.getClass());
+        if (manager != null) {
+            manager.save(id, (PersistentEntity) e);
+            if (manager instanceof RoleAwareEntityManager) {
+                ((RoleAwareEntityManager) manager).createRoles((PersistentEntity) e);
+            }
+        } else {
+            throw new SaveException("Could not find entity manager for entity type: " + e.getClass().getName());
+        }
     }
 
     @Override

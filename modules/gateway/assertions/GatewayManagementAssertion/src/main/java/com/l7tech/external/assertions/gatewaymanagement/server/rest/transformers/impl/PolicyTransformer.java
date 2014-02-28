@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -24,5 +25,15 @@ public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO,
         return new ItemBuilder<PolicyMO>(m.getPolicyDetail().getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
+    }
+
+    @Override
+    public Policy convertFromMO(PolicyMO policyMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+        Policy policy = super.convertFromMO(policyMO, strict);
+        //preserve the policy guid if it is set.
+        if(policyMO.getGuid() != null) {
+            policy.setGuid(policyMO.getGuid());
+        }
+        return policy;
     }
 }

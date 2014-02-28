@@ -103,6 +103,11 @@ public class TestResourceFactory implements ResourceFactory<Object, Object> {
         throw new NotImplementedException();
     }
 
+    @Override
+    public Object identify(Object resource, Object entity) {
+        throw new NotImplementedException();
+    }
+
     @ResourceFactory.ResourceMethod(name="Create")
     public Object customCreate() {
         return newResource();

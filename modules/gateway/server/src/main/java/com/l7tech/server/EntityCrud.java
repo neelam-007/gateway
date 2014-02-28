@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,6 +20,9 @@ import java.util.Map;
 public interface EntityCrud extends EntityFinder, SecurityZoneEntityManager {
     @Secured(stereotype=MethodStereotype.SAVE)
     Serializable save(Entity entity) throws SaveException;
+
+    @Secured(stereotype=MethodStereotype.SAVE)
+    void save(Goid id, Entity entity) throws SaveException;
 
     @Secured(stereotype=MethodStereotype.UPDATE)
     void update(Entity entity) throws UpdateException;
@@ -32,6 +36,9 @@ public interface EntityCrud extends EntityFinder, SecurityZoneEntityManager {
 
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, Map<String,String> filters, int offset, int max) throws FindException;
+
+    @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
+    <ET extends Entity> List<ET> findAll(Class<ET> entityClass, Map<String, List<Object>> filters, int offset, int max, Boolean ascending, String sortKey) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, Map<String,String> filters, int offset, int max) throws FindException;
