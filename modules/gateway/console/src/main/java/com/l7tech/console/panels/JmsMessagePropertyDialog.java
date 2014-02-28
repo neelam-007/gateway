@@ -156,7 +156,7 @@ public class JmsMessagePropertyDialog extends JDialog {
             }
         }
 
-        if (JmsRoutingAssertionDialog.JmsMessagePropertiesPanel.PASS_THROUGH.equals(name)) {
+        if (JmsMsgPropertiesPanel.PASS_THROUGH.equals(name)) {
             JOptionPane.showMessageDialog(this,
                                           "Reserved name not allowed.",
                                           "JMS Message Property Error",
