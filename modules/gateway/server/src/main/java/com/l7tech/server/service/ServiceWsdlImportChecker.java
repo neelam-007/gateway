@@ -1,5 +1,6 @@
 package com.l7tech.server.service;
 
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.FindException;
@@ -7,8 +8,10 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -17,10 +20,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.WSDLException;
+import javax.wsdl.xml.WSDLLocator;
+import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -125,13 +132,20 @@ public class ServiceWsdlImportChecker implements InitializingBean {
                     }
                     is.setCharacterStream(new StringReader(service.getWsdlXml()));
 
+                    // Build a map of the service documents in the database
+                    final Map<String, ServiceDocument> cached = Functions.toMap(serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT"), new Functions.Unary<Pair<String, ServiceDocument>, ServiceDocument>() {
+                        @Override
+                        public Pair<String, ServiceDocument> call(ServiceDocument serviceDocument) {
+                            return new Pair<>(serviceDocument.getUri(), serviceDocument);
+                        }
+                    });
+
                     // Parse to process imports
-                    ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(Wsdl.getWSDLLocator(is, false), false, true, true);
+                    ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(new CacheCheckingWSDLLocator(is, cached), false, true, true);
                     Wsdl.newInstance(wloc);
 
-                    Collection<String> cached = asString.call(serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT"));
                     for (ResourceTrackingWSDLLocator.WSDLResource wsdlResource : wloc.getWSDLResources()) {
-                        if(cached.contains(wsdlResource.getUri())){
+                        if(cached.containsKey(wsdlResource.getUri())){
                             continue;
                         }
                         try {
@@ -144,7 +158,8 @@ public class ServiceWsdlImportChecker implements InitializingBean {
                         }
                     }
                 } catch (WSDLException we) {
-                    logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getGoid()+"'.", we);
+                    //should not log the stack trace here. SSG-7734
+                    logger.log(Level.WARNING, "Could not process WSDL imports for service '"+service.getGoid()+"'. Message: " + we.getMessage());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "Could not retrieve cached service documents for service '"+service.getGoid()+"'.", e);
                 }
@@ -152,14 +167,85 @@ public class ServiceWsdlImportChecker implements InitializingBean {
         });
     }
 
-    private final Functions.Unary<Collection<String>, Collection<ServiceDocument>> asString = new Functions.Unary<java.util.Collection<java.lang.String>, java.util.Collection<com.l7tech.gateway.common.service.ServiceDocument>>() {
-        @Override
-        public Collection<String> call(Collection<ServiceDocument> serviceDocuments) {
-            Collection<String> ret = new HashSet<String>();
-            for(ServiceDocument s : serviceDocuments){
-                ret.add(s.getUri());
-            }
-            return ret;
+    /**
+     * This is a wsdl locator that will check a given service document cache to see if the wsdl exist in it. If it does that wsdl is returned
+     */
+    private class CacheCheckingWSDLLocator implements WSDLLocator {
+        @NotNull
+        private final InputSource inputSource;
+        @NotNull
+        private final Map<String, ServiceDocument> cached;
+        private String lastResolvedUri = null;
+
+        private CacheCheckingWSDLLocator(@NotNull InputSource inputSource, @NotNull Map<String, ServiceDocument> cached) {
+            this.inputSource = inputSource;
+            this.cached = cached;
         }
-    };
+
+        @Override
+        public InputSource getBaseInputSource() {
+            lastResolvedUri = getBaseURI();
+            return inputSource;
+        }
+
+        @Override
+        public String getBaseURI() {
+            return inputSource.getSystemId();
+        }
+
+        /**
+         * Resolve a (possibly relative) import.
+         *
+         * @param parentLocation A URI specifying the location of the document doing the importing. This can be null if
+         *                       the import location is not relative to the parent location.
+         * @param importLocation A URI specifying the location of the document to import. This might be relative to the
+         *                       parent document's location.
+         * @return the InputSource object or null if the import cannot be found.
+         */
+        @Override
+        public InputSource getImportInputSource(String parentLocation, String importLocation) {
+            InputSource is = null;
+            URI resolvedUri;
+            lastResolvedUri = importLocation; // ensure set even if not valid
+
+            try {
+                if (parentLocation != null) {
+                    URI base = new URI(parentLocation);
+                    URI relative = new URI(importLocation);
+                    resolvedUri = base.resolve(relative);
+                } else {
+                    resolvedUri = new URI(importLocation);
+                }
+                lastResolvedUri = resolvedUri.toString();
+
+                //check the cache for the resource
+                if (cached.containsKey(resolvedUri.toString())) {
+                    is = new InputSource();
+                    is.setSystemId(resolvedUri.toString());
+                    is.setCharacterStream(new StringReader(cached.get(resolvedUri.toString()).getContents()));
+                } else if (resolvedUri.isAbsolute()) {
+                    if (!"file".equals(resolvedUri.getScheme())) {
+                        is = new InputSource();
+                        is.setSystemId(resolvedUri.toString());
+                    } else {
+                        is = new InputSource();
+                        is.setSystemId(resolvedUri.toString());
+                        is.setByteStream(new IOExceptionThrowingInputStream(new IOException("Local import not permitted '" + resolvedUri.toString() + "'.")));
+                    }
+                }
+            } catch (URISyntaxException e) {
+                //invalid uri. We can return null
+            }
+            return is;
+        }
+
+        @Override
+        public String getLatestImportURI() {
+            return lastResolvedUri;
+        }
+
+        @Override
+        public void close() {
+        }
+    }
 }

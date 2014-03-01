@@ -7,7 +7,6 @@ import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Binary;
-import static com.l7tech.util.Functions.reduce;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -29,6 +28,8 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.reduce;
 
 /**
  * WSDLLocator that keeps track of imported documents.
@@ -218,7 +219,8 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 resources.add(resource);
             }
         } catch (IOException ioe) {
-            logger.log(Level.WARNING, "Error getting import input source '"+uri+"'.", ioe);
+            //should not log the stack trace here. SSG-7734
+            logger.log(Level.WARNING, "Error getting import input source '"+uri+"'. Message: " + ioe.getMessage());
             InputSource errorSource = new InputSource();
             errorSource.setSystemId( uri );
             errorSource.setCharacterStream( new IOExceptionThrowingReader(ioe, false) );
