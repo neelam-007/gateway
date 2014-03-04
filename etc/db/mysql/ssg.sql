@@ -2096,6 +2096,6 @@ CREATE TABLE goid_upgrade_map (
 INSERT INTO goid_upgrade_map (table_name, prefix) VALUES
       ('keystore_file', 0);
 
-INSERT INTO ssg_version (current_version) VALUES ('8.0.0');
+INSERT INTO ssg_version (current_version) VALUES ('8.2.00');
 
 SET FOREIGN_KEY_CHECKS = 1;

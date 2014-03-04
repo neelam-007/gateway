@@ -210,7 +210,7 @@ create table ssg_version (
     current_version varchar(10) not null
 );
 
-insert into ssg_version (current_version) VALUES ('8.0.0');
+insert into ssg_version (current_version) VALUES ('8.2.00');
 
 -- **************************************************************************
 -- Schema for hibernate support
