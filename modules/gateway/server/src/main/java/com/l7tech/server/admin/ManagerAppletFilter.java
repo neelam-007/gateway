@@ -151,6 +151,10 @@ public class ManagerAppletFilter implements Filter {
         HttpServletResponse hresp = (HttpServletResponse)resp;
         HttpServletRequest hreq = (HttpServletRequest)req;
 
+        if ( hreq.getCharacterEncoding() == null ) {
+            hreq.setCharacterEncoding( "UTF-8" );
+        }
+
         Auditor auditor = new Auditor(this, applicationContext, logger);
 
         PolicyEnforcementContext context = null;
