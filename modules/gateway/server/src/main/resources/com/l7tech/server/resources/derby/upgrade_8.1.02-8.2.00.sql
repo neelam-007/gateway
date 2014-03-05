@@ -8,7 +8,7 @@
 --
 UPDATE ssg_version SET current_version = '8.2.00';
 
-alter table jms_endpoint add column is_passthrough_message_rules smallint default 0;
+alter table jms_endpoint add column is_passthrough_message_rules smallint default 1;
 
 create table jms_endpoint_message_rule (
   goid CHAR(16) FOR BIT DATA not null,

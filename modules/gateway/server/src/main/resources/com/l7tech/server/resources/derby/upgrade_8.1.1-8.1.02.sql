@@ -6,5 +6,5 @@
 
 -- Update the version at the very end, safe to start gateway
 --
-UPDATE ssg_version SET current_version = '8.1.0';
+UPDATE ssg_version SET current_version = '8.1.02';
 
