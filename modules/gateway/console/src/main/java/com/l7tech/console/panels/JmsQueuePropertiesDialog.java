@@ -18,6 +18,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.VersionException;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
@@ -32,6 +34,7 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -127,6 +130,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JSpinner maxIdleSessionSpinner;
     private JLabel maxSessionIdleLabel;
     private JLabel jmsConsumerConnectionsLabel;
+    private JTabbedPane tabbedPane1;
+    private JmsMsgPropertiesPanel jmsCustomMsgPropertiesPanel;
 
 
     private JmsConnection connection = null;
@@ -144,6 +149,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     public ServiceAdmin getServiceAdmin() {
         return Registry.getDefault().getServiceManager();
+    }
+
+    private void createUIComponents() {
+        jmsCustomMsgPropertiesPanel = new JmsMsgPropertiesPanel(this);
     }
 
 
@@ -937,9 +946,25 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundRadioButton.isSelected()) {
             ep.setRequestMaxSize(byteLimitPanel.getLongValue());
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
+            JmsMessagePropertyRuleSet ruleSet = jmsCustomMsgPropertiesPanel.getData();
+            ep.setPassthroughMessageRules(ruleSet.isPassThruAll());
+            ep.setJmsEndpointMessagePropertyRules(rulesSetToJmsEndpoint(ruleSet));
         }
 
         return ep;
+    }
+
+    private Set<JmsEndpointMessagePropertyRule> rulesSetToJmsEndpoint(JmsMessagePropertyRuleSet ruleSet) {
+        Set<JmsEndpointMessagePropertyRule> rules = new LinkedHashSet<>();
+        for(JmsMessagePropertyRule rule: ruleSet.getRules()){
+            JmsEndpointMessagePropertyRule jmsEndpointMessagePropertyRule = new JmsEndpointMessagePropertyRule();
+            jmsEndpointMessagePropertyRule.setJmsEndpoint(endpoint);
+            jmsEndpointMessagePropertyRule.setRuleName(rule.getName());
+            jmsEndpointMessagePropertyRule.setPassThru(rule.isPassThru());
+            jmsEndpointMessagePropertyRule.setCustomPattern(rule.getCustomPattern());
+            rules.add(jmsEndpointMessagePropertyRule);
+        }
+        return rules;
     }
 
     private static void configureEndpointReplyBehaviour(JmsEndpoint ep, String what, final JRadioButton autoButton, final JRadioButton noneButton, final JRadioButton specifiedButton, final JTextField specifiedField, JRadioButton messageIdRadioButton) {
@@ -1140,6 +1165,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton.setSelected(true);
                 else
                     inboundCorrelationIdRadioButton.setSelected(true);
+
+                jmsCustomMsgPropertiesPanel.setData(getJmsMessagePropertyRules(endpoint));
             } else {
                 outboundReplyAutomaticRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.AUTOMATIC);
                 outboundReplyNoneRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.NO_REPLY);
@@ -1181,6 +1208,22 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         enableOrDisableComponents();
+    }
+
+    private JmsMessagePropertyRuleSet getJmsMessagePropertyRules(JmsEndpoint endpoint) {
+        JmsMessagePropertyRuleSet ruleSet = null;
+        Set<JmsEndpointMessagePropertyRule> endpointMessagePropRuleSet = endpoint.getJmsEndpointMessagePropertyRules();
+        if(endpointMessagePropRuleSet.size() > 0) {
+            List<JmsMessagePropertyRule> ruleList = new ArrayList<>();
+            for(JmsEndpointMessagePropertyRule endpointMessageRule: endpointMessagePropRuleSet){
+                ruleList.add(new JmsMessagePropertyRule(endpointMessageRule.getRuleName(),endpointMessageRule.isPassThru(), endpointMessageRule.getCustomPattern()));
+            }
+            ruleSet = new JmsMessagePropertyRuleSet(endpoint.isPassthroughMessageRules(), ruleList.toArray(new JmsMessagePropertyRule[0]));
+        }
+        else {
+            ruleSet = new JmsMessagePropertyRuleSet(endpoint.isPassthroughMessageRules(), new JmsMessagePropertyRule[0]);//empty ruleSet
+        }
+        return ruleSet;
     }
 
     private Integer getConsumerConnectionLimit(Properties props) {
@@ -1347,6 +1390,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         isTemplateQueue.setEnabled(canEdit && outboundRadioButton.isSelected());
         applyReset.setEnabled( canEdit && providerComboBox.getSelectedItem() != null );
 
+        jmsCustomMsgPropertiesPanel.setEnabled(inboundRadioButton.isSelected());
 
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && canEdit);
@@ -1483,7 +1527,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void onEnvironmentAdd() {
-        editEnvironmentProperty( null );
+        editEnvironmentProperty(null);
     }
 
     private void onEnvironmentEdit() {

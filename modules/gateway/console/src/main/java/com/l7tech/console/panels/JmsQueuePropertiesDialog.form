@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="22" y="44" width="682" height="899"/>
+      <xy x="22" y="44" width="670" height="807"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -571,7 +571,7 @@
               </component>
             </children>
           </grid>
-          <grid id="29b97" binding="inboundOptionsPanel" layout-manager="GridLayoutManager" row-count="13" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="29b97" binding="inboundOptionsPanel" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="Inbound Options"/>
@@ -579,335 +579,387 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="89e27" class="javax.swing.JLabel">
+              <tabbedpane id="cbb1c" binding="tabbedPane1" default-binding="true">
                 <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <labelFor value="6d5b3"/>
-                  <text value="&amp;Acknowledgement Behavior:"/>
-                </properties>
-              </component>
-              <component id="6d5b3" class="javax.swing.JComboBox" binding="acknowledgementModeComboBox">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="9b8b5" class="javax.swing.JCheckBox" binding="useQueueForFailedCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="6" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Send &amp;failed requests to the specified queue:"/>
-                </properties>
-              </component>
-              <component id="db52a" class="javax.swing.JLabel" binding="failureQueueLabel">
-                <constraints>
-                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <labelFor value="23c"/>
-                  <text value="Failure queue name:"/>
-                </properties>
-              </component>
-              <component id="23c" class="javax.swing.JTextField" binding="failureQueueNameTextField">
-                <constraints>
-                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                  <grid row="0" column="0" row-span="2" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                    <preferred-size width="200" height="200"/>
                   </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <vspacer id="5eb37">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                    <minimum-size width="-1" height="4"/>
-                  </grid>
-                </constraints>
-              </vspacer>
-              <grid id="f9bf2" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none" title="Inbound Reply Behavior"/>
-                <children>
-                  <component id="83d91" class="javax.swing.JRadioButton" binding="inboundReplyAutomaticRadioButton">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <selected value="true"/>
-                      <text value="Auto&amp;matic (send reply if specified in inbound message)"/>
-                      <toolTipText value="&lt;html&gt;If a ReplyTo queue was designated in inbound message, the Gateway should&lt;p&gt;send its response on it; otherwise no reply will be sent.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                  <component id="aed24" class="javax.swing.JRadioButton" binding="inboundReplyNoneRadioButton">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Do &amp;not send replies (one-way)"/>
-                      <toolTipText value="&lt;html&gt;The Gateway should never send a reply to messages received on this queue,&lt;p&gt;even for incoming messages with a designated ReplyTo queue set.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                  <component id="816c2" class="javax.swing.JRadioButton" binding="inboundReplySpecifiedQueueRadioButton">
-                    <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Send Re&amp;ply to specified queue:"/>
-                      <toolTipText value="&lt;html&gt;The Gateway should always send its reply to the specified queue, ignoring any&lt;p&gt;ReplyTo queue that may have been designated in the inbound request.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                  <component id="bfec9" class="javax.swing.JTextField" binding="inboundReplySpecifiedQueueField">
-                    <constraints>
-                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                        <preferred-size width="150" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <enabled value="true"/>
-                    </properties>
-                  </component>
-                </children>
-              </grid>
-              <vspacer id="9b2b0">
-                <constraints>
-                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                    <minimum-size width="-1" height="4"/>
-                  </grid>
-                </constraints>
-              </vspacer>
-              <vspacer id="17bd6">
-                <constraints>
-                  <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                    <minimum-size width="-1" height="4"/>
-                  </grid>
-                </constraints>
-              </vspacer>
-              <component id="5e087" class="javax.swing.JCheckBox" binding="disableListeningTheQueueCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="9" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Stop &amp;listening on this destination"/>
-                </properties>
-              </component>
-              <grid id="dba60" binding="inboundCorrelationPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none" title="Request/Response Correlation"/>
-                <children>
-                  <component id="a0d59" class="javax.swing.JRadioButton" binding="inboundMessageIdRadioButton" default-binding="true">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Set Response CorrelationI&amp;D from Request's MessageID"/>
-                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the MessageID from the inbound&lt;p&gt;request message to the JMSCorrelationID attribute on the outbound response.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                  <component id="3c0fa" class="javax.swing.JRadioButton" binding="inboundCorrelationIdRadioButton" default-binding="true">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <selected value="true"/>
-                      <text value="Cop&amp;y CorrelationID from Request to Response"/>
-                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                </children>
-              </grid>
-              <grid id="61a76" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none" title="Service Resolution"/>
-                <children>
-                  <component id="bf3d4" class="javax.swing.JCheckBox" binding="useJmsMsgPropAsSoapActionRadioButton">
-                    <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <actionCommand value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
-                      <label value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
-                      <text value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
-                      <toolTipText value="&lt;html&gt;This option uses a specific JMS message property as the &quot;SOAPAction&quot;&lt;p&gt;for service resolution purposes.&lt;/html&gt;"/>
-                    </properties>
-                  </component>
-                  <grid id="c0831" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="0" left="0" bottom="0" right="0"/>
-                    <constraints>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="591e" class="javax.swing.JLabel" binding="jmsMsgPropWithSoapActionLabel">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <labelFor value="9a0ff"/>
-                          <text value="Property name:"/>
-                        </properties>
-                      </component>
-                      <component id="9a0ff" class="javax.swing.JTextField" binding="jmsMsgPropWithSoapActionTextField">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                    </children>
-                  </grid>
-                  <grid id="1853a" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="0" left="0" bottom="0" right="0"/>
-                    <constraints>
-                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="f7ad2" class="javax.swing.JRadioButton" binding="specifyContentTypeFreeForm">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <selected value="true"/>
-                          <text value="Use Content &amp;Type"/>
-                        </properties>
-                      </component>
-                      <component id="1dc38" class="javax.swing.JRadioButton" binding="specifyContentTypeFromHeader">
-                        <constraints>
-                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value="Get Content Type from &amp;JMS Property"/>
-                        </properties>
-                      </component>
-                      <component id="fcaa3" class="javax.swing.JComboBox" binding="contentTypeValues">
-                        <constraints>
-                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <editable value="true"/>
-                        </properties>
-                      </component>
-                      <component id="a2781" class="javax.swing.JTextField" binding="getContentTypeFromProperty">
-                        <constraints>
-                          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <hspacer id="37113">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                      </hspacer>
-                    </children>
-                  </grid>
-                  <component id="640aa" class="javax.swing.JCheckBox" binding="specifyContentTypeCheckBox" default-binding="true">
-                    <constraints>
-                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Specify Content Type"/>
-                    </properties>
-                  </component>
-                  <component id="6b03f" class="javax.swing.JCheckBox" binding="associateQueueWithPublishedService">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <actionCommand value="Associate queue with published service (bypass resolution)"/>
-                      <label value="Associate destination with published service (bypass resolution)"/>
-                      <text value="Associate destination with published service (bypass resolution)"/>
-                    </properties>
-                  </component>
-                  <grid id="a0d42" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="0" left="0" bottom="0" right="0"/>
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="a4543" class="javax.swing.JLabel" binding="serviceNameLabel">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <labelFor value="ec6f4"/>
-                          <text value="Ser&amp;vice name:"/>
-                        </properties>
-                      </component>
-                      <component id="ec6f4" class="javax.swing.JComboBox" binding="serviceNameCombo">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <minimum-size width="100" height="-1"/>
-                            <preferred-size width="200" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties/>
-                      </component>
-                    </children>
-                  </grid>
-                </children>
-              </grid>
-              <vspacer id="38e76">
-                <constraints>
-                  <grid row="12" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </vspacer>
-              <nested-form id="bedae" form-file="com/l7tech/console/panels/resources/ByteLimitPanel.form" binding="byteLimitPanel" default-binding="true">
-                <constraints>
-                  <grid row="11" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </nested-form>
-              <grid id="dbbae" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="10" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="a2bf3" class="javax.swing.JSpinner" binding="dedicatedConsumerConnectionLimitSpinner">
+                  <grid id="5535a" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                      <tabbedpane title="Standard"/>
                     </constraints>
                     <properties/>
-                  </component>
-                  <component id="9010b" class="javax.swing.JLabel" binding="jmsConsumerConnectionsLabel">
+                    <border type="none"/>
+                    <children>
+                      <component id="89e27" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <labelFor value="6d5b3"/>
+                          <text value="&amp;Acknowledgement Behavior:"/>
+                        </properties>
+                      </component>
+                      <grid id="f9bf2" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none" title="Inbound Reply Behavior"/>
+                        <children>
+                          <component id="83d91" class="javax.swing.JRadioButton" binding="inboundReplyAutomaticRadioButton">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <selected value="true"/>
+                              <text value="Auto&amp;matic (send reply if specified in inbound message)"/>
+                              <toolTipText value="&lt;html&gt;If a ReplyTo queue was designated in inbound message, the Gateway should&lt;p&gt;send its response on it; otherwise no reply will be sent.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                          <component id="aed24" class="javax.swing.JRadioButton" binding="inboundReplyNoneRadioButton">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Do &amp;not send replies (one-way)"/>
+                              <toolTipText value="&lt;html&gt;The Gateway should never send a reply to messages received on this queue,&lt;p&gt;even for incoming messages with a designated ReplyTo queue set.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                          <component id="816c2" class="javax.swing.JRadioButton" binding="inboundReplySpecifiedQueueRadioButton">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Send Re&amp;ply to specified queue:"/>
+                              <toolTipText value="&lt;html&gt;The Gateway should always send its reply to the specified queue, ignoring any&lt;p&gt;ReplyTo queue that may have been designated in the inbound request.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                          <component id="bfec9" class="javax.swing.JTextField" binding="inboundReplySpecifiedQueueField">
+                            <constraints>
+                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                <preferred-size width="150" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties>
+                              <enabled value="true"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <component id="6d5b3" class="javax.swing.JComboBox" binding="acknowledgementModeComboBox">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                      </component>
+                      <grid id="dba60" binding="inboundCorrelationPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none" title="Request/Response Correlation"/>
+                        <children>
+                          <component id="a0d59" class="javax.swing.JRadioButton" binding="inboundMessageIdRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Set Response CorrelationI&amp;D from Request's MessageID"/>
+                              <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the MessageID from the inbound&lt;p&gt;request message to the JMSCorrelationID attribute on the outbound response.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                          <component id="3c0fa" class="javax.swing.JRadioButton" binding="inboundCorrelationIdRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <selected value="true"/>
+                              <text value="Cop&amp;y CorrelationID from Request to Response"/>
+                              <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <grid id="61a76" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none" title="Service Resolution"/>
+                        <children>
+                          <component id="bf3d4" class="javax.swing.JCheckBox" binding="useJmsMsgPropAsSoapActionRadioButton">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <actionCommand value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
+                              <label value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
+                              <text value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
+                              <toolTipText value="&lt;html&gt;This option uses a specific JMS message property as the &quot;SOAPAction&quot;&lt;p&gt;for service resolution purposes.&lt;/html&gt;"/>
+                            </properties>
+                          </component>
+                          <grid id="c0831" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="591e" class="javax.swing.JLabel" binding="jmsMsgPropWithSoapActionLabel">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <labelFor value="9a0ff"/>
+                                  <text value="Property name:"/>
+                                </properties>
+                              </component>
+                              <component id="9a0ff" class="javax.swing.JTextField" binding="jmsMsgPropWithSoapActionTextField">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                            </children>
+                          </grid>
+                          <grid id="1853a" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="f7ad2" class="javax.swing.JRadioButton" binding="specifyContentTypeFreeForm">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <selected value="true"/>
+                                  <text value="Use Content &amp;Type"/>
+                                </properties>
+                              </component>
+                              <component id="1dc38" class="javax.swing.JRadioButton" binding="specifyContentTypeFromHeader">
+                                <constraints>
+                                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text value="Get Content Type from &amp;JMS Property"/>
+                                </properties>
+                              </component>
+                              <component id="fcaa3" class="javax.swing.JComboBox" binding="contentTypeValues">
+                                <constraints>
+                                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties>
+                                  <editable value="true"/>
+                                </properties>
+                              </component>
+                              <component id="a2781" class="javax.swing.JTextField" binding="getContentTypeFromProperty">
+                                <constraints>
+                                  <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <hspacer id="37113">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                              </hspacer>
+                            </children>
+                          </grid>
+                          <component id="640aa" class="javax.swing.JCheckBox" binding="specifyContentTypeCheckBox" default-binding="true">
+                            <constraints>
+                              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Specify Content Type"/>
+                            </properties>
+                          </component>
+                          <component id="6b03f" class="javax.swing.JCheckBox" binding="associateQueueWithPublishedService">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <actionCommand value="Associate queue with published service (bypass resolution)"/>
+                              <label value="Associate destination with published service (bypass resolution)"/>
+                              <text value="Associate destination with published service (bypass resolution)"/>
+                            </properties>
+                          </component>
+                          <grid id="a0d42" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="a4543" class="javax.swing.JLabel" binding="serviceNameLabel">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <labelFor value="ec6f4"/>
+                                  <text value="Ser&amp;vice name:"/>
+                                </properties>
+                              </component>
+                              <component id="ec6f4" class="javax.swing.JComboBox" binding="serviceNameCombo">
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="100" height="-1"/>
+                                    <preferred-size width="200" height="-1"/>
+                                  </grid>
+                                </constraints>
+                                <properties/>
+                              </component>
+                            </children>
+                          </grid>
+                        </children>
+                      </grid>
+                      <grid id="b829d" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="9b8b5" class="javax.swing.JCheckBox" binding="useQueueForFailedCheckBox" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Send &amp;failed requests to the specified queue:"/>
+                            </properties>
+                          </component>
+                          <hspacer id="a256a">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                          </hspacer>
+                          <component id="db52a" class="javax.swing.JLabel" binding="failureQueueLabel">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="4" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <labelFor value="23c"/>
+                              <text value="Failure queue name:"/>
+                            </properties>
+                          </component>
+                          <component id="23c" class="javax.swing.JTextField" binding="failureQueueNameTextField">
+                            <constraints>
+                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                <preferred-size width="150" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties/>
+                          </component>
+                          <component id="5e087" class="javax.swing.JCheckBox" binding="disableListeningTheQueueCheckBox" default-binding="true">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text value="Stop &amp;listening on this destination"/>
+                            </properties>
+                          </component>
+                          <grid id="dbbae" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                            <margin top="0" left="0" bottom="0" right="0"/>
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <nested-form id="bedae" form-file="com/l7tech/console/panels/resources/ByteLimitPanel.form" binding="byteLimitPanel" default-binding="true">
+                                <constraints>
+                                  <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                              </nested-form>
+                              <grid id="f55a8" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                                <margin top="0" left="0" bottom="0" right="0"/>
+                                <constraints>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties/>
+                                <border type="none"/>
+                                <children>
+                                  <component id="89aae" class="javax.swing.JLabel" binding="jmsConsumerConnectionsLabel">
+                                    <constraints>
+                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="Consumer Connections:"/>
+                                    </properties>
+                                  </component>
+                                  <hspacer id="8618c">
+                                    <constraints>
+                                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                  </hspacer>
+                                  <component id="a2bf3" class="javax.swing.JSpinner" binding="dedicatedConsumerConnectionLimitSpinner">
+                                    <constraints>
+                                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
+                                </children>
+                              </grid>
+                            </children>
+                          </grid>
+                        </children>
+                      </grid>
+                    </children>
+                  </grid>
+                  <grid id="aa06f" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <tabbedpane title="Advanced"/>
                     </constraints>
-                    <properties>
-                      <text value="Consumer Connections:"/>
-                    </properties>
-                  </component>
-                  <hspacer id="70326">
-                    <constraints>
-                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <vspacer id="ae15e">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </vspacer>
+                      <grid id="7cc17" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <nested-form id="f13db" form-file="com/l7tech/console/panels/JmsMsgPropertiesPanel.form" binding="jmsCustomMsgPropertiesPanel" custom-create="true" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                                <preferred-size width="606" height="517"/>
+                              </grid>
+                            </constraints>
+                          </nested-form>
+                        </children>
+                      </grid>
+                    </children>
+                  </grid>
                 </children>
-              </grid>
+              </tabbedpane>
             </children>
           </grid>
           <grid id="67a2b" binding="outboundOptionsPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -1151,6 +1203,10 @@
     <group name="contentTypeButtons">
       <member id="f7ad2"/>
       <member id="1dc38"/>
+    </group>
+    <group name="buttonGroup1">
+      <member id="74e46"/>
+      <member id="35bb3"/>
     </group>
   </buttonGroups>
   <inspectionSuppressions>

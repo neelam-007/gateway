@@ -1,13 +1,19 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.AttributeExtensibleType;
 import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import com.l7tech.util.Functions;
+
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,7 +21,7 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
-@XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "properties", "extension", "extensions"})
+@XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "passthroughMessageRules", "jmsEndpointMessagePropertyRuleList", "properties", "extension", "extensions"})
 public class JMSDestinationDetail extends ElementExtensionSupport {
 
     //- PUBLIC
@@ -168,6 +174,18 @@ public class JMSDestinationDetail extends ElementExtensionSupport {
     }
 
     /**
+     * Set the passthrougMessageRules flag for the destination
+     * @return passthroughMessageRules True for passthrough
+     */
+    public Boolean isPassthroughMessageRules() {
+        return get(passthroughMessageRules, Boolean.TRUE);
+    }
+
+    public void setPassthroughMessageRules(final Boolean passthroughMessageRules) {
+        this.passthroughMessageRules = set(this.passthroughMessageRules, passthroughMessageRules);
+    }
+
+    /**
      * Get the properties for the destination.
      *
      * @return The properties or null
@@ -234,19 +252,155 @@ public class JMSDestinationDetail extends ElementExtensionSupport {
         this.template = template;
     }
 
+    @XmlElement(name="PassthroughMessageRules")
+    public AttributeExtensibleBoolean getPassthroughMessageRules() {
+        return passthroughMessageRules;
+    }
+
+    public void setPassthroughMessageRules(final AttributeExtensibleBoolean passthroughMessageRules) {
+        this.passthroughMessageRules = passthroughMessageRules;
+    }
+
+    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
+
     //- PACKAGE
 
     JMSDestinationDetail() {
     }
 
-    //- PRIVATE
 
+    @XmlRootElement(name="JmsEndpointMessagePropertyRule")
+    @XmlType(name="JmsEndpointMessagePropertyRuleType",propOrder={"rulenameValue","passThruValue","customPatternValue","extension","extensions"})
+    public static class JmsEndpointMessagePropertyRuleSupport extends ElementExtensionSupport {
+        private AttributeExtensibleString rulename;
+        private AttributeExtensibleString customPattern;
+        private AttributeExtensibleBoolean passThru;
+
+        protected  JmsEndpointMessagePropertyRuleSupport(){
+
+        }
+
+        public String getRulename() {
+            return get(rulename);
+        }
+
+        public void setRulename(String rulename) {
+            this.rulename = set(this.rulename, rulename);
+        }
+
+        public Boolean getPassThru() {
+            return get(passThru);
+        }
+
+        public void setPassThru(Boolean passThru) {
+            this.passThru = set(this.passThru, passThru);
+        }
+
+
+        public String getCustomPattern() {
+            return get(customPattern);
+        }
+
+        public void setCustomPattern(String customPattern) {
+            this.customPattern = set(this.customPattern, customPattern);
+        }
+
+        @XmlElement(name = "RuleName")
+        protected AttributeExtensibleString getRulenameValue() {
+            return rulename;
+        }
+
+        protected void setRulenameValue(AttributeExtensibleString rulenameValue) {
+            this.rulename = rulenameValue;
+        }
+
+        @XmlElement(name="PassThru")
+        protected  AttributeExtensibleBoolean getPassThruValue() {
+            return passThru;
+        }
+
+        protected void setPassThruValue(AttributeExtensibleBoolean passThruValue) {
+            this.passThru = passThruValue;
+        }
+
+        @XmlElement(name="CustomPattern")
+        protected AttributeExtensibleString getCustomPatternValue() {
+            return customPattern;
+        }
+
+        protected void setCustomPatternValue(AttributeExtensibleString customPatternValue) {
+            this.customPattern = customPatternValue;
+        }
+    }
+
+    @XmlType(name="JmsEndpointMessagePropertyRulesType", propOrder={"value"})
+    public static class JmsEndpointMessagePropertyRuleList extends AttributeExtensibleType.AttributeExtensible<List<JmsEndpointMessagePropertyRuleSupport>> {
+
+        protected List<JmsEndpointMessagePropertyRuleSupport> value = new ArrayList<>();
+
+        protected  JmsEndpointMessagePropertyRuleList(){
+
+        }
+        /**
+         * Get the value of the attribute.
+         *
+         * @return the value (may be null)
+         */
+        @Override
+        @XmlElement(name="JmsEndpointMessagePropertyRule")
+        public List<JmsEndpointMessagePropertyRuleSupport> getValue() {
+            return value;
+        }
+
+        /**
+         * Set the value of the attribute.
+         *
+         * @param value The value to use (should not be null)
+         */
+        @Override
+        public void setValue(List<JmsEndpointMessagePropertyRuleSupport> value) {
+            this.value = value;
+        }
+
+        private static final Functions.Nullary<JmsEndpointMessagePropertyRuleList> Builder =
+                new Functions.Nullary<JmsEndpointMessagePropertyRuleList>(){
+                    @Override
+                    public JmsEndpointMessagePropertyRuleList call() {
+                        return new JmsEndpointMessagePropertyRuleList();
+                    }
+                };
+
+    }
+
+
+    public List<JmsEndpointMessagePropertyRuleSupport> getJmsEndpointMessagePropertyRules() {
+        return get(jmsEndpointMessagePropertyRuleList, new ArrayList<JmsEndpointMessagePropertyRuleSupport>() );
+    }
+
+    public void setJmsEndpointMessagePropertyRules(List<JmsEndpointMessagePropertyRuleSupport> rules) {
+        this.jmsEndpointMessagePropertyRuleList = set(this.jmsEndpointMessagePropertyRuleList, rules, JmsEndpointMessagePropertyRuleList.Builder);
+
+    }
+    @XmlElement(name="JmsEndpointMessagePropertyRules")
+    public JmsEndpointMessagePropertyRuleList getJmsEndpointMessagePropertyRuleList() {
+        return jmsEndpointMessagePropertyRuleList;
+    }
+
+    public void setJmsEndpointMessagePropertyRuleList(JmsEndpointMessagePropertyRuleList jmsEndpointMessagePropertyRuleList) {
+        this.jmsEndpointMessagePropertyRuleList = jmsEndpointMessagePropertyRuleList;
+    }
+    //- PRIVATE
     private String id;
     private Integer version;
     private AttributeExtensibleString name;
     private AttributeExtensibleString destinationName;
+
     private AttributeExtensibleBoolean inbound = new AttributeExtensibleBoolean(false);
-    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
+
     private AttributeExtensibleBoolean template;
+    private AttributeExtensibleBoolean passthroughMessageRules;
+
     private Map<String,Object> properties;
+
+    private JmsEndpointMessagePropertyRuleList jmsEndpointMessagePropertyRuleList;
 }

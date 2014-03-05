@@ -1,14 +1,18 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpointMessagePropertyRule;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
@@ -325,14 +329,22 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                         // Copies the JMS message properties from the response JmsKnob to the response JMS message.
                         // Propagation rules has already been enforced in the knob by the JMS routing assertion.
+                        final Map<String, Object> respJmsMsgProps = new HashMap<>();
                         final JmsKnob jmsResponseKnob = context.getResponse().getKnob(JmsKnob.class);
                         if (jmsResponseKnob != null) {
-                            final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
-                            for (String name : respJmsMsgProps.keySet()) {
-                                jmsResponse.setObjectProperty(name, respJmsMsgProps.get(name));
-                            }
+                            respJmsMsgProps.putAll(jmsResponseKnob.getJmsMsgPropMap());
                         }
 
+                        //apply JMS rules on response
+                        JmsMessagePropertyRule[] rules = getJmsMessagePropertyRules(endpointCfg);
+
+                        JmsMessagePropertyRuleSet ruleSet = new JmsMessagePropertyRuleSet(endpointCfg.getEndpoint().isPassthroughMessageRules(), rules);
+                        final Map<String, Object> outResJmsMsgProps = new HashMap<>();
+                        JmsUtil.enforceJmsMessagePropertyRuleSet(context, ruleSet, respJmsMsgProps, outResJmsMsgProps, new LoggingAudit(_logger));
+                        //and now set enforced jms message properties
+                        for (String name : outResJmsMsgProps.keySet()) {
+                            jmsResponse.setObjectProperty(name, outResJmsMsgProps.get(name));
+                        }
                         responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, endpointCfg );
                     } else { // is stealth mode
                         responseSuccess = true;
@@ -379,6 +391,22 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 }
             }
         }
+    }
+
+    private JmsMessagePropertyRule[] getJmsMessagePropertyRules(JmsEndpointConfig endpointCfg) {
+        JmsMessagePropertyRule[] rules = null;
+        Set<JmsEndpointMessagePropertyRule> endpointMessagePropRuleSet = endpointCfg.getEndpoint().getJmsEndpointMessagePropertyRules();
+        if(endpointMessagePropRuleSet.size() > 0) {
+            List<JmsMessagePropertyRule> ruleList = new ArrayList<>();
+            for(JmsEndpointMessagePropertyRule endpointMessageRule: endpointMessagePropRuleSet){
+                ruleList.add(new JmsMessagePropertyRule(endpointMessageRule.getRuleName(),endpointMessageRule.isPassThru(), endpointMessageRule.getCustomPattern()));
+            }
+            rules = ruleList.toArray(new JmsMessagePropertyRule[0]);
+        }
+        else {
+            rules = new JmsMessagePropertyRule[0];//empty array
+        }
+        return rules;
     }
 
     private ContentTypeHeader getContentType(Message jmsRequest, Properties props)
