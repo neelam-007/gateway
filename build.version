@@ -12,6 +12,15 @@ build.em.version.minor=12
 build.em.version.subminor=00
 build.em.version.revision=1
 
+# "layer7-api module" version is decoupled from the Gateway version.
+# This module produces the layer7-api-<major.minor.subminor>.jar file. This module/jar is also known as the Custom Assertion API.
+# If updated, this jar file must be keep in sync in the following SVN repositories:
+#   - CustomAssertions: lib/com.l7tech/
+#   - CustomAssertionSample: lib/com.l7tech/
+# Recommended guidelines for when to increment layer7-api version:
+#   - Major: major changes to the published API (significant features added).
+#   - Minor: minor changes to the published API from added feature(s).
+#   - Subminor: minor changes to the published API from bug fix(es).
 build.api.version.major=8
 build.api.version.minor=2
 build.api.version.subminor=00
