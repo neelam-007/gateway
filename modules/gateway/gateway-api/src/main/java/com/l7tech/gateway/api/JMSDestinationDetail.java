@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
-@XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "passthroughMessageRules", "jmsEndpointMessagePropertyRuleList", "properties", "extension", "extensions"})
+@XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "passthroughMessageRulesValue", "jmsEndpointMessagePropertyRuleListValue", "properties", "extension", "extensions"})
 public class JMSDestinationDetail extends ElementExtensionSupport {
 
     //- PUBLIC
@@ -253,11 +253,11 @@ public class JMSDestinationDetail extends ElementExtensionSupport {
     }
 
     @XmlElement(name="PassthroughMessageRules")
-    public AttributeExtensibleBoolean getPassthroughMessageRules() {
+    public AttributeExtensibleBoolean getPassthroughMessageRulesValue() {
         return passthroughMessageRules;
     }
 
-    public void setPassthroughMessageRules(final AttributeExtensibleBoolean passthroughMessageRules) {
+    public void setPassthroughMessageRulesValue(final AttributeExtensibleBoolean passthroughMessageRules) {
         this.passthroughMessageRules = passthroughMessageRules;
     }
 
@@ -382,11 +382,11 @@ public class JMSDestinationDetail extends ElementExtensionSupport {
 
     }
     @XmlElement(name="JmsEndpointMessagePropertyRules")
-    public JmsEndpointMessagePropertyRuleList getJmsEndpointMessagePropertyRuleList() {
+    public JmsEndpointMessagePropertyRuleList getJmsEndpointMessagePropertyRuleListValue() {
         return jmsEndpointMessagePropertyRuleList;
     }
 
-    public void setJmsEndpointMessagePropertyRuleList(JmsEndpointMessagePropertyRuleList jmsEndpointMessagePropertyRuleList) {
+    public void setJmsEndpointMessagePropertyRuleListValue(JmsEndpointMessagePropertyRuleList jmsEndpointMessagePropertyRuleList) {
         this.jmsEndpointMessagePropertyRuleList = jmsEndpointMessagePropertyRuleList;
     }
     //- PRIVATE
