@@ -28,6 +28,9 @@ CREATE TABLE jms_endpoint_message_rule(
   PRIMARY KEY (goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Modify the fed user table subject_dn index so that is is smaller then 767 byts. SSG-8229
+ALTER TABLE fed_user DROP INDEX i_subject_dn;
+ALTER TABLE fed_user ADD INDEX i_subject_dn(subject_dn(255));
 
 --
 -- Reenable FK at very end of script

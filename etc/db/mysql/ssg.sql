@@ -587,7 +587,7 @@ CREATE TABLE fed_user (
   INDEX i_provider_goid (provider_goid),
   INDEX i_email (email),
   INDEX i_login (login),
-  INDEX i_subject_dn (subject_dn),
+  INDEX i_subject_dn (subject_dn(255)),
   UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
