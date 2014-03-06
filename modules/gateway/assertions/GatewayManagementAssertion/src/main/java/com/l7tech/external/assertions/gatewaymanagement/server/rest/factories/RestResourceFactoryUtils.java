@@ -23,7 +23,10 @@ public class RestResourceFactoryUtils {
     public static Functions.UnaryThrows<Boolean, String, IllegalArgumentException> booleanConvert = new Functions.UnaryThrows<Boolean, String, IllegalArgumentException>() {
         @Override
         public Boolean call(String s) throws IllegalArgumentException {
-            return Boolean.parseBoolean(s);
+            if(s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false")) {
+                return Boolean.parseBoolean(s);
+            }
+            throw new IllegalArgumentException("Invalid Parameter " + s + " expected either 'true' or 'false'");
         }
     };
 

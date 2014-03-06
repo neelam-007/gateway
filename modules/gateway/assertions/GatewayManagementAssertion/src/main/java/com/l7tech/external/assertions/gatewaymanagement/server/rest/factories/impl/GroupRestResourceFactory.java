@@ -36,8 +36,8 @@ public class GroupRestResourceFactory {
             .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
             .map();
 
-    public String getSortKey(String sort) {
-        return sortKeys.get(sort);
+    public Map<String, String> getSortKeysMap() {
+        return sortKeys;
     }
 
     public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {

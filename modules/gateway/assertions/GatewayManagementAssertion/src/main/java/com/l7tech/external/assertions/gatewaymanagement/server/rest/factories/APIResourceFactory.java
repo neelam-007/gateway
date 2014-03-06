@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Mapping;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -84,12 +83,11 @@ public interface APIResourceFactory<R> {
 
 
     /**
-     * Returns the sort key for the given sort.
+     * Returns the sort keys map for this factory.
      *
-     * @param sort The sort key
-     * @return The sort key to use by the entity manager.
+     * @return The sort keys map for this factory.
      */
-    String getSortKey(String sort);
+    Map<String, String> getSortKeysMap();
 
     /**
      * Returns filter info for the given filter. The filter info is a Pair of filter name (the one to pass to the

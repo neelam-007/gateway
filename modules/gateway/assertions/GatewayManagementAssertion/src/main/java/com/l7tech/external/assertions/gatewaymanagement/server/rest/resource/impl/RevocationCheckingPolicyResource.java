@@ -42,13 +42,9 @@ public class RevocationCheckingPolicyResource implements ReadingResource<Revocat
     private RevocationCheckingPolicyTransformer transformer;
 
     @Override
-    public ItemsList<RevocationCheckingPolicyMO> listResources(final int offset, final int count, final String sort, final String order) {
-        final String sortKey = factory.getSortKey(sort);
-        if (sort != null && sortKey == null) {
-            throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
-        }
-
-        List<Item<RevocationCheckingPolicyMO>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<RevocationCheckingPolicyMO>, RevocationCheckingPolicyMO>() {
+    public ItemsList<RevocationCheckingPolicyMO> listResources(final ListRequestParameters listRequestParameters) {
+        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, factory.getSortKeysMap(), factory.getFiltersInfo());
+        List<Item<RevocationCheckingPolicyMO>> items = Functions.map(factory.listResources(listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<RevocationCheckingPolicyMO>, RevocationCheckingPolicyMO>() {
             @Override
             public Item<RevocationCheckingPolicyMO> call(RevocationCheckingPolicyMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

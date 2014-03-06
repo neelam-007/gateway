@@ -26,6 +26,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SerializationUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -132,10 +133,10 @@ public class DatabaseBasedRestManagementEnvironment {
         return processRequest(uri, null, method, contentType, body);
     }
 
-    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
-        request.initialize(contentTypeHeader, body.getBytes("utf-8"));
+        request.initialize(contentTypeHeader, body == null ? new byte[0] : body.getBytes("utf-8"));
         final Message response = new Message();
 
         final MockServletContext servletContext = new MockServletContext();
@@ -153,7 +154,7 @@ public class DatabaseBasedRestManagementEnvironment {
         httpServletRequest.setServerName("127.0.0.1");
         httpServletRequest.setRequestURI("/restman/1.0/" + uri);
         httpServletRequest.setQueryString(queryString);
-        httpServletRequest.setContent(body.getBytes("UTF-8"));
+        httpServletRequest.setContent( body == null ? new byte[0] : body.getBytes("utf-8"));
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
         request.attachHttpRequestKnob(reqKnob);

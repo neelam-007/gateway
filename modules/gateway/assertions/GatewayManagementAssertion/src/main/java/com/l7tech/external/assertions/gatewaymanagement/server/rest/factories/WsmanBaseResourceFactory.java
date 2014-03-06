@@ -127,8 +127,8 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public String getSortKey(String sort) {
-        return sortKeys.get(sort);
+    public Map<String, String> getSortKeysMap() {
+        return sortKeys;
     }
 
     @Override

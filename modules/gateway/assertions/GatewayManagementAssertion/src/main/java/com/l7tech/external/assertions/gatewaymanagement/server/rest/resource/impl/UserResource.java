@@ -54,13 +54,9 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
     }
 
     @Override
-    public ItemsList<UserMO> listResources(final int offset, final int count, final String sort, final String order) {
-        final String sortKey = userRestResourceFactory.getSortKey(sort);
-        if (sort != null && sortKey == null) {
-            throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
-        }
-
-        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(userRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<UserMO>, UserMO>() {
+    public ItemsList<UserMO> listResources(final ListRequestParameters listRequestParameters) {
+        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, userRestResourceFactory.getSortKeysMap(), userRestResourceFactory.getFiltersInfo());
+        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<UserMO>, UserMO>() {
             @Override
             public Item<UserMO> call(UserMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

@@ -77,13 +77,9 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
     }
 
     @Override
-    public ItemsList<R> listResources(final int offset, final int count, final String sort, final String order) {
-        final String sortKey = factory.getSortKey(sort);
-        if (sort != null && sortKey == null) {
-            throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
-        }
-
-        List<Item<R>> items = Functions.map(factory.listResources(offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<R>, R>() {
+    public ItemsList<R> listResources(final ListRequestParameters listRequestParameters) {
+        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, factory.getSortKeysMap(), factory.getFiltersInfo());
+        List<Item<R>> items = Functions.map(factory.listResources(listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<R>, R>() {
             @Override
             public Item<R> call(R resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

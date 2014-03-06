@@ -9,6 +9,7 @@ import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.glassfish.jersey.server.ParamException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.xml.sax.SAXException;
 
@@ -86,6 +87,17 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
             status = Response.Status.FORBIDDEN;
             }
+        } else if (e instanceof InvalidArgumentException) {
+            logger.log(Level.WARNING, "InvalidArgumentException error processing management request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            final InvalidArgumentException ex = (InvalidArgumentException) e;
+            errorResponse.setDetail("Invalid value for argument" + (ex.getArgumentName() != null ? " '" + ex.getArgumentName() + "'" : "") + ". " + ex.getMessage());
+            status = Response.Status.BAD_REQUEST;
+        } else if (e instanceof ParamException.QueryParamException) {
+            logger.log(Level.WARNING, "QueryParamException error processing management request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            final ParamException.QueryParamException ex = (ParamException.QueryParamException) e;
+            errorResponse.setDetail("Invalid value for query parameter '" + ex.getParameterName() + "'. " + (ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage()));
+            errorResponse.setType("InvalidQueryParam");
+            status = Response.Status.BAD_REQUEST;
         } else if ( e instanceof WebApplicationException) {
             logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
             final WebApplicationException ex = (WebApplicationException)e;

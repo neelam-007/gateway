@@ -53,14 +53,9 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
     }
 
     @Override
-    public ItemsList<AssertionSecurityZoneMO> listResources(final int offset, final int count, final String sort, final String order)
-    {
-        final String sortKey = factory.getSortKey(sort);
-        if(sort != null && sortKey == null) {
-            throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
-        }
-
-        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(factory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
+    public ItemsList<AssertionSecurityZoneMO> listResources(final ListRequestParameters listRequestParameters) {
+        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, factory.getSortKeysMap(), factory.getFiltersInfo());
+        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
             @Override
             public Item<AssertionSecurityZoneMO> call(AssertionSecurityZoneMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

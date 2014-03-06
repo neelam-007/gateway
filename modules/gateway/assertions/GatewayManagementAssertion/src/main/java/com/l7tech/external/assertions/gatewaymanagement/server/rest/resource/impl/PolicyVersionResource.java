@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyVersionRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ListingResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ReadingResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyVersionTransformer;
 import com.l7tech.gateway.api.*;
@@ -57,13 +57,9 @@ public class PolicyVersionResource implements ListingResource<PolicyVersionMO>, 
     }
 
     @Override
-    public ItemsList<PolicyVersionMO> listResources(final int offset, final int count, final String sort, final String order) {
-        final String sortKey = policyVersionRestResourceFactory.getSortKey(sort);
-        if (sort != null && sortKey == null) {
-            throw new IllegalArgumentException("Invalid sort. Cannot sort by: " + sort);
-        }
-
-        List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listResources(policyId, offset, count, sortKey, RestEntityResourceUtils.convertOrder(order), RestEntityResourceUtils.createFiltersMap(policyVersionRestResourceFactory.getFiltersInfo(), uriInfo.getQueryParameters())), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
+    public ItemsList<PolicyVersionMO> listResources(final ListRequestParameters listRequestParameters) {
+        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, policyVersionRestResourceFactory.getSortKeysMap(), policyVersionRestResourceFactory.getFiltersInfo());
+        List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listResources(policyId, listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
             @Override
             public Item<PolicyVersionMO> call(PolicyVersionMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
