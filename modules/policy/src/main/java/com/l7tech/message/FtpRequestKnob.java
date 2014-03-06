@@ -1,7 +1,5 @@
 package com.l7tech.message;
 
-import com.l7tech.common.ftp.FtpCommand;
-
 import java.net.PasswordAuthentication;
 
 /**

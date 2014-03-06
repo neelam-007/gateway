@@ -45,6 +45,7 @@ public enum FtpCommand {
     public String getDescription() {
         return description;
     }
+
     public boolean isArgumentAccepted() {
         return argumentAccepted;
     }

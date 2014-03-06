@@ -31,8 +31,8 @@ public class SsgFtpServerContext implements FtpServerContext {
     private final CommandFactory commandFactory;
     private final ConnectionConfig connectionConfig;
     private final FtpRequestProcessor requestProcessor;
+    private final UserManager userManager;
 
-    private final UserManager userManager = new FtpUserManager();
     private final FtpStatistics statistics = new DefaultFtpStatistics();
     private final FtpletContainer ftpletContainer = new DefaultFtpletContainer();
     private final FileSystemFactory fileSystemManager = new VirtualFileSystemManager();
@@ -47,10 +47,12 @@ public class SsgFtpServerContext implements FtpServerContext {
 
     public SsgFtpServerContext(@NotNull CommandFactory commandFactory,
                                @NotNull ConnectionConfig connectionConfig,
-                               @NotNull FtpRequestProcessor requestProcessor) {
+                               @NotNull FtpRequestProcessor requestProcessor,
+                               @NotNull UserManager userManager) {
         this.commandFactory = commandFactory;
         this.connectionConfig = connectionConfig;
         this.requestProcessor = requestProcessor;
+        this.userManager = userManager;
     }
 
     @Override
@@ -144,7 +146,7 @@ public class SsgFtpServerContext implements FtpServerContext {
                 if(maxLogins > 0) {
                     maxThreads = maxLogins;
                 } else {
-                    maxThreads = 16;
+                    maxThreads = 10;
                 }
             }
 

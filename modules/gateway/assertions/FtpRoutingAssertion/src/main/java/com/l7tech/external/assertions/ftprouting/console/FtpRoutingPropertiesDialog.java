@@ -69,19 +69,23 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     private static final int PORT_RANGE_START = 1;
     private static final int PORT_RANGE_END = 65535;
-    public static final FtpCommand[] COMMANDS = new FtpCommand[]{
+
+    private static final FtpCommand[] COMMANDS = new FtpCommand[] {
             APPE,
             STOR,
             RETR,
             DELE,
             LIST,
             MLSD,
-            MLST,
             NLST,
+            MLST,
+            MDTM,
+            SIZE,
+            PWD,
+            CWD,
+            CDUP,
             MKD,
             RMD,
-            MDTM,
-            SIZE
     };
 
     private JPanel _mainPanel;

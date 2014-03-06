@@ -9,6 +9,7 @@ import com.l7tech.util.InetAddressUtil;
 import org.apache.ftpserver.*;
 import org.apache.ftpserver.command.CommandFactory;
 import org.apache.ftpserver.ftplet.Ftplet;
+import org.apache.ftpserver.ftplet.UserManager;
 import org.apache.ftpserver.impl.DefaultFtpServer;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.ListenerFactory;
@@ -19,18 +20,25 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class SsgFtpServerFactory {
-    private static final int IDLE_TIMEOUT_DEFAULT = 60;
-    private static final int MAX_LOGINS_DEFAULT = 10;
-    private static final int MAX_THREADS_DEFAULT = 10;
-
     private static final String SECURE_LISTENER_NAME = "secure";
     private static final String DEFAULT_LISTENER_NAME = "default";
     private static final String DEFAULT_FTPLET_NAME = "default";
 
-    // TODO: these settings should be definable per-connector
-    private static final String CP_FTP_MAX_CONNECTIONS = "ftp.connection.max";
-    private static final String CP_FTP_MAX_LOGINS = "ftp.connection.max_login";
-    private static final String CP_FTP_IDLE_TIMEOUT = "ftp.connection.idle_timeout";
+    private static final String LISTEN_PROP_SESSION_IDLE_TIMEOUT = "ftpSessionIdleTimeout"; // defines both the listener idle timeout and user maximum idle time
+    private static final String LISTEN_PROP_MAX_REQUEST_PROCESSING_THREADS = "ftpMaxRequestProcessingThreads";
+    private static final String LISTEN_PROP_ANONYMOUS_LOGINS_ENABLED = "ftpAnonymousLoginsEnabled";
+    private static final String LISTEN_PROP_MAX_ANONYMOUS_LOGINS = "ftpMaxAnonymousLogins";
+    private static final String LISTEN_PROP_MAX_CONCURRENT_LOGINS = "ftpMaxConcurrentLogins";
+    private static final String LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS = "ftpUserMaxConcurrentLogins";
+    private static final String LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP = "ftpUserMaxConcurrentLoginsPerIp";
+
+    private static final String CLUSTER_PROP_SESSION_IDLE_TIMEOUT = "ftp.sessionIdleTimeout";
+    private static final String CLUSTER_PROP_MAX_REQUEST_PROCESSING_THREADS = "ftp.maxRequestProcessingThreads";
+    private static final String CLUSTER_PROP_ANONYMOUS_LOGINS_ENABLED = "ftp.anonymousLoginsEnabled";
+    private static final String CLUSTER_PROP_MAX_ANONYMOUS_LOGINS = "ftp.maxAnonymousLogins";
+    private static final String CLUSTER_PROP_MAX_CONCURRENT_LOGINS = "ftp.maxConcurrentLogins";
+    private static final String CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS = "ftp.userMaxConcurrentLogins";
+    private static final String CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP = "ftp.userMaxConcurrentLoginsPerIp";
 
     @Autowired
     private FtpSslFactory ftpSslFactory;
@@ -54,11 +62,14 @@ public class SsgFtpServerFactory {
     private SsgFtpServerContext createServerContext(SsgConnector connector) throws ListenerException {
         CommandFactory commandFactory = createCommandFactory(connector);
 
-        ConnectionConfig connectionConfig = createConnectionConfig();
+        ConnectionConfig connectionConfig = createConnectionConfig(connector);
 
         FtpRequestProcessor requestProcessor = createRequestProcessor(connector, connectionConfig);
 
-        SsgFtpServerContext context = new SsgFtpServerContext(commandFactory, connectionConfig, requestProcessor);
+        UserManager userManager = createUserManager(connector);
+
+        SsgFtpServerContext context =
+                new SsgFtpServerContext(commandFactory, connectionConfig, requestProcessor, userManager);
 
         Listener listener = createListener(connector);
 
@@ -83,39 +94,33 @@ public class SsgFtpServerFactory {
      *
      * @return a new ConnectionConfig
      */
-    private ConnectionConfig createConnectionConfig() throws ListenerException {
+    private ConnectionConfig createConnectionConfig(SsgConnector connector) throws ListenerException {
+        boolean anonymousLoginEnabled;
+
+        String anonymousLoginEnabledProperty = connector.getProperty(LISTEN_PROP_ANONYMOUS_LOGINS_ENABLED);
+
+        if (null != anonymousLoginEnabledProperty) {
+            anonymousLoginEnabled = Boolean.parseBoolean(anonymousLoginEnabledProperty);
+        } else {
+            anonymousLoginEnabled =
+                    Boolean.parseBoolean(getDefaultConfigurationClusterProperty(CLUSTER_PROP_ANONYMOUS_LOGINS_ENABLED));
+        }
+
+        int maxAnonymousLogins = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_MAX_ANONYMOUS_LOGINS, CLUSTER_PROP_MAX_ANONYMOUS_LOGINS);
+
+        int maxLogins = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_MAX_CONCURRENT_LOGINS, CLUSTER_PROP_MAX_CONCURRENT_LOGINS);
+
+        int maxThreads = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_MAX_REQUEST_PROCESSING_THREADS, CLUSTER_PROP_MAX_REQUEST_PROCESSING_THREADS);
+
         ConnectionConfigFactory factory = new ConnectionConfigFactory();
 
-        int maxLogins = MAX_LOGINS_DEFAULT;
-        int maxThreads = MAX_THREADS_DEFAULT;
-
-        try {
-            String maxLoginsProperty = clusterPropertyManager.getProperty(CP_FTP_MAX_LOGINS);
-
-            if (null != maxLoginsProperty) {
-                maxLogins = toInt(maxLoginsProperty, "Max logins");
-            }
-        } catch (FindException e) {
-            // ignore
-        }
-
-        try {
-            String maxConnectionsProperty = clusterPropertyManager.getProperty(CP_FTP_MAX_CONNECTIONS);
-
-            if (null != maxConnectionsProperty) {
-                maxThreads = toInt(maxConnectionsProperty, "Max connections");
-            }
-        } catch (FindException e) {
-            // ignore
-        }
-
+        factory.setAnonymousLoginEnabled(anonymousLoginEnabled);
+        factory.setMaxAnonymousLogins(maxAnonymousLogins);
         factory.setMaxLogins(maxLogins);
         factory.setMaxThreads(maxThreads);
-        factory.setMaxAnonymousLogins(maxLogins);
-
-        // factory default values that we don't currently have any settings for
-//        factory.setMaxLoginFailures(maxLoginFailures); // 3
-//        factory.setLoginFailureDelay(loginFailureDelay); // 500
 
         return factory.createConnectionConfig();
     }
@@ -126,8 +131,27 @@ public class SsgFtpServerFactory {
      * @return the new FtpRequestProcessor
      * @throws ListenerException on invalid overridden content type specified in SsgConnector
      */
-    private FtpRequestProcessor createRequestProcessor(SsgConnector connector, ConnectionConfig connectionConfig) throws ListenerException {
+    private FtpRequestProcessor createRequestProcessor(SsgConnector connector,
+                                                       ConnectionConfig connectionConfig) throws ListenerException {
         return ftpRequestProcessorFactory.create(connector, connectionConfig);
+    }
+
+    /**
+     * Creates a new FtpUserManager based on the factory SsgConnector settings.
+     *
+     * @return the new FtpUserManager
+     */
+    private UserManager createUserManager(SsgConnector connector) throws ListenerException {
+        int userMaxConcurrentLogins = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS, CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS);
+
+        int userMaxConcurrentLoginsPerIP = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP, CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP);
+
+        int idleTimeout = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_SESSION_IDLE_TIMEOUT, CLUSTER_PROP_SESSION_IDLE_TIMEOUT);
+
+        return new FtpUserManager(userMaxConcurrentLogins, userMaxConcurrentLoginsPerIP, idleTimeout);
     }
 
     /**
@@ -138,22 +162,14 @@ public class SsgFtpServerFactory {
     private Listener createListener(SsgConnector connector) throws ListenerException {
         ListenerFactory factory = new ListenerFactory();
 
-        int idleTimeout = IDLE_TIMEOUT_DEFAULT;
-
-        try {
-            String idleTimeoutProperty = clusterPropertyManager.getProperty(CP_FTP_IDLE_TIMEOUT);
-
-            if (null != idleTimeoutProperty) {
-                idleTimeout = toInt(idleTimeoutProperty, "Default idle timeout");
-            }
-        } catch (FindException e) {
-            // ignore
-        }
+        int idleTimeout = getIntegerConfigurationProperty(connector,
+                LISTEN_PROP_SESSION_IDLE_TIMEOUT, CLUSTER_PROP_SESSION_IDLE_TIMEOUT);
 
         factory.setIdleTimeout(idleTimeout);
         factory.setPort(connector.getPort());
 
-        String address = connectorManager.translateBindAddress(connector.getProperty(SsgConnector.PROP_BIND_ADDRESS), connector.getPort());
+        String address = connectorManager.translateBindAddress(
+                connector.getProperty(SsgConnector.PROP_BIND_ADDRESS), connector.getPort());
 
         if (null == address) {
             address = InetAddressUtil.isUseIpv6() ? "::" : "0.0.0.0";
@@ -184,14 +200,15 @@ public class SsgFtpServerFactory {
      * @throws ListenerException
      */
     private DataConnectionConfiguration createDataConnectionConfiguration(SsgConnector connector,
-                                                                          SslConfiguration sslConfiguration) throws ListenerException {
+                                                                          SslConfiguration sslConfiguration)
+            throws ListenerException {
+        int portStart = toInt("FTP port range start", connector.getProperty(SsgConnector.PROP_PORT_RANGE_START));
+        int portEnd = toInt("FTP port range count", connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT)) +
+                portStart - 1;
+
         DataConnectionConfigurationFactory factory = new DataConnectionConfigurationFactory();
 
         factory.setActiveEnabled(false); // SSG default - active data connections are unsupported
-
-        int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");
-        int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count") - 1;
-
         factory.setPassivePorts(portStart + "-" + portEnd);
         factory.setImplicitSsl(null != sslConfiguration);
         factory.setSslConfiguration(sslConfiguration);
@@ -212,11 +229,41 @@ public class SsgFtpServerFactory {
         return ssgFtpletFactory.create();
     }
 
-    private int toInt(String str, String name) throws ListenerException {
+    /**
+     * Helper to get the integer value of a connector configuration property, or the default value for that property
+     * from a cluster property in the case there is no overriding property defined for the connector.
+     *
+     * @throws ListenerException if a property value is not formatted correctly, or if the default cluster property
+     * does not exist
+     */
+    private int getIntegerConfigurationProperty(SsgConnector connector, String connectorProperty,
+                                                String clusterProperty) throws ListenerException {
+        int value;
+
+        String connectorPropertyValue = connector.getProperty(connectorProperty);
+
+        if (null != connectorPropertyValue) {
+            value = toInt(connectorProperty, connectorPropertyValue);
+        } else {
+            value = toInt(clusterProperty, getDefaultConfigurationClusterProperty(clusterProperty));
+        }
+
+        return value;
+    }
+
+    private String getDefaultConfigurationClusterProperty(String property) throws ListenerException {
         try {
-            return Integer.parseInt(str);
+            return clusterPropertyManager.getProperty(property);
+        } catch (FindException e) {
+            throw new ListenerException("Failed to find default configuration property: " + property, e);
+        }
+    }
+
+    private int toInt(String name, String stringValue) throws ListenerException {
+        try {
+            return Integer.parseInt(stringValue);
         } catch (NumberFormatException e) {
-            throw new ListenerException("Invalid parameter: " + name + ": " + str, e);
+            throw new ListenerException("Invalid value for parameter '" + name + "': " + stringValue, e);
         }
     }
 }

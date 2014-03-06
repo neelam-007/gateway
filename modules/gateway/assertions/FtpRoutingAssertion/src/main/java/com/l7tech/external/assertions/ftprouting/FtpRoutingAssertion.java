@@ -42,16 +42,19 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
 
     // ServerConfig property names and cluster property names for our dynamically-registered cluster properties
-    public static final String SC_MAX_CONC = "ftpGlobalMaxConcurrency";
-    private static final String CP_MAX_CONC = "ftp.globalMaxConcurrency";
+    public static final String SC_MAX_CONC = "ftpGlobalMaxDownloadConcurrency";
+    private static final String CP_MAX_CONC = "ftp.globalMaxDownloadConcurrency";
 
-    public static final String SC_CORE_CONC = "ftpGlobalCoreConcurrency";
-    private static final String CP_CORE_CONC = "ftp.globalCoreConcurrency";
+    public static final String SC_CORE_CONC = "ftpGlobalMinDownloadConcurrency";
+    private static final String CP_CORE_CONC = "ftp.globalMinDownloadConcurrency";
 
-    public static final String SC_MAX_QUEUE = "ftpGlobalMaxWorkQueue";
-    private static final String CP_MAX_QUEUE = "ftp.globalMaxWorkQueue";
+    public static final String SC_MAX_QUEUE = "ftpGlobalMaxDownloadQueue";
+    private static final String CP_MAX_QUEUE = "ftp.globalMaxDownloadQueue";
 
-    public static final String CP_BINDING_TIMEOUT = "ftp.identityBindingTimeout";
+    // default values of cluster properties
+    public static final int MAX_CONC_DEFAULT = 64;
+    public static final int MIN_CONC_DEFAULT = 32;
+    public static final int MAX_QUEUE_DEFAULT = 64;
 
     public static final int DEFAULT_FTP_PORT = 21;
     public static final int DEFAULT_FTPS_IMPLICIT_PORT = 990;
@@ -391,28 +394,23 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         Map<String, String[]> props = new HashMap<>();
 
         props.put(CP_MAX_CONC, new String[] {
-                "Maximum number of threads that can be used in the thread pool.  " +
+                "Maximum number of FTP downloads that may be executed concurrently by Route via FTP(S) assertions.  " +
                         "This is a global limit across all such assertions. (default=64)",
                 "64"
         });
 
         props.put(CP_CORE_CONC, new String[] {
-                "Core number of threads that can be used in the thread pool.  " +
+                "Core number of FTP downloads that may be executed concurrently by Route via FTP(S) assertions.  " +
                         "This is a soft limit that may be temporarily exceeded if necessary. " +
                         "This is a global limit across all such assertions. (default=32)",
                 "32"
         });
 
         props.put(CP_MAX_QUEUE, new String[] {
-                "Maximum number of working threads in the thread pool.  " +
+                "Maximum number of FTP downloads that may be waiting to execute concurrently.  " +
+                        "When this limit is reached downloads will be run serially until the system catches up. " +
                         "This is a global limit across all such assertions. (default=64)",
                 "64"
-        });
-
-        props.put(CP_BINDING_TIMEOUT, new String[] {
-                "Time interval during which if ftp connection is not used, will terminate.  " +
-                        "Time out interval for ftp connection. (default=30000)",
-                "30000"
         });
 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);

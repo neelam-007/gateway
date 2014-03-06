@@ -33,12 +33,19 @@ class FtpUserManager implements UserManager {
 
     private static final String USER_ANONYMOUS = "anonymous";
 
-    private static final List<Authority> PERMISSIONS =
-            Collections.unmodifiableList(
-                    Arrays.asList(new ConcurrentLoginPermission(10, 10),
-                            new TransferRatePermission(0, 0),
-                            new WritePermission("/"))
-            );
+    private final int maxIdleTime;
+
+    private final List<Authority> PERMISSIONS;
+
+    public FtpUserManager(int maxConcurrentLogins, int maxConcurrentLoginsPerIP, int maxIdleTime) {
+        this.maxIdleTime = maxIdleTime;
+
+        PERMISSIONS = Collections.unmodifiableList(
+                Arrays.asList(new ConcurrentLoginPermission(maxConcurrentLogins, maxConcurrentLoginsPerIP),
+                        new TransferRatePermission(0, 0),
+                        new WritePermission("/"))
+        );
+    }
 
     /**
      * Process anonymous or username/password authentication.
@@ -134,7 +141,7 @@ class FtpUserManager implements UserManager {
         baseUser.setName(login);
         baseUser.setPassword(password);
         baseUser.setHomeDirectory("/");
-        baseUser.setMaxIdleTime(60);
+        baseUser.setMaxIdleTime(maxIdleTime);
         baseUser.setAuthorities(PERMISSIONS);
         return baseUser;
     }

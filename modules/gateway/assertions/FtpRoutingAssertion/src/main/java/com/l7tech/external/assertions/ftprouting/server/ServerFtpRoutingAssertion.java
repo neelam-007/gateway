@@ -59,24 +59,26 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private static final Object assertionExecutorInitLock = new Object();
     private static volatile ExecutorService assertionExecutor;
 
-    private final X509TrustManager _trustManager;
-    private final HostnameVerifier _hostnameVerifier;
-    private final DefaultKey _keyFinder;
+    private final X509TrustManager trustManager;
+    private final HostnameVerifier hostnameVerifier;
+    private final DefaultKey keyFinder;
     private final String[] variablesUsed;
 
     private StashManagerFactory stashManagerFactory;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext);
-        _trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
-        _hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-        _keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
+
+        trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
+        hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
         stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        this.variablesUsed = assertion.getVariablesUsed();
-        Config config = applicationContext.getBean("serverConfig", ServerConfig.class);
+
+        variablesUsed = assertion.getVariablesUsed();
+
         // Initialize the executor if necessary
         if (assertionExecutor == null)
-            initializeAssertionExecutor(config);
+            initializeAssertionExecutor(applicationContext);
     }
 
     @Override
@@ -344,7 +346,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     }
 
     private FtpReply routeUpload(final FtpClientWrapper ftpClient, final InputStream is, final FtpCommand ftpCommand,
-                                 final String filename) throws FtpRoutingException, IOException {
+                                 final String filename) throws FtpRoutingException {
         final FtpReplyListener replyListener = new FtpReplyListener();
 
         try {
@@ -627,10 +629,17 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private static void initializeAssertionExecutor(Config config) {
-        int globalMaxConcurrency = config.getIntProperty(FtpRoutingAssertion.SC_MAX_CONC, 64);
-        int globalCoreConcurrency = config.getIntProperty(FtpRoutingAssertion.SC_CORE_CONC, 32);
-        int globalMaxWorkQueue = config.getIntProperty(FtpRoutingAssertion.SC_MAX_QUEUE, 64);
+    private static void initializeAssertionExecutor(ApplicationContext applicationContext) {
+        Config config = applicationContext == null
+                ? ConfigFactory.getCachedConfig()
+                : applicationContext.getBean("serverConfig", ServerConfig.class);
+
+        int globalMaxConcurrency =
+                config.getIntProperty(FtpRoutingAssertion.SC_MAX_CONC, FtpRoutingAssertion.MAX_CONC_DEFAULT);
+        int globalCoreConcurrency =
+                config.getIntProperty(FtpRoutingAssertion.SC_CORE_CONC, FtpRoutingAssertion.MIN_CONC_DEFAULT);
+        int globalMaxWorkQueue =
+                config.getIntProperty(FtpRoutingAssertion.SC_MAX_QUEUE, FtpRoutingAssertion.MAX_QUEUE_DEFAULT);
         
         synchronized (assertionExecutorInitLock) {
             if (assertionExecutor == null) {
@@ -728,7 +737,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         } else {
             config.setSecurity(security);
 
-            assert(!assertion.isVerifyServerCert() || _trustManager != null);
+            assert(!assertion.isVerifyServerCert() || trustManager != null);
             assert(!assertion.isUseClientCert() ||
                     (null != assertion.getClientCertKeystoreId() && null != assertion.getClientCertKeyAlias()));
 
@@ -737,8 +746,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
             if (assertion.isVerifyServerCert()) {
                 config.setVerifyServerCert(true);
-                trustManager = _trustManager;
-                hostnameVerifier = _hostnameVerifier;
+                trustManager = this.trustManager;
+                hostnameVerifier = this.hostnameVerifier;
             }
 
             DefaultKey keyFinder = null;
@@ -747,7 +756,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 config.setUseClientCert(true);
                 config.setClientCertId(assertion.getClientCertKeystoreId());
                 config.setClientCertAlias(assertion.getClientCertKeyAlias());
-                keyFinder = _keyFinder;
+                keyFinder = this.keyFinder;
             }
 
             Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);

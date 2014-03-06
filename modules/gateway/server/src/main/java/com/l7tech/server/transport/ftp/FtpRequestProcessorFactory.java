@@ -63,7 +63,7 @@ public class FtpRequestProcessorFactory {
         }
 
         // this executor handles upload tasks, with a maximum pool size equal to the maximum number of connections
-        ExecutorService transferTaskExecutor = new ThreadPoolExecutor(0, connectionConfig.getMaxThreads(),
+        ExecutorService transferTaskExecutor = new ThreadPoolExecutor(1, connectionConfig.getMaxThreads(),
                 5L * 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(connectionConfig.getMaxThreads()),
                 new ThreadPoolExecutor.AbortPolicy());
