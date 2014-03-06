@@ -87,7 +87,7 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         initSpinner(maxPasswordLengthSpinner,getResourceString("maxlength.label"), IdentityProviderLimits.MIN_PASSWORD_LENGTH.getValue(), IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
         maxPasswordLengthSpinner.setValue(IdentityProviderLimits.MIN_PASSWORD_LENGTH.getValue());
         initSpinner(repeatFrequencySpinner,getResourceString("repeatfrequency.label"),1,50,inputValidator);
-        initSpinner(passwordExpirySpinner,getResourceString("password.expire.label"),1,365,inputValidator);
+        initSpinner(passwordExpirySpinner,getResourceString("password.expire.label"),1,365*5,inputValidator);
         initSpinner(upperCaseSpinner,getResourceString("upperchars.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
         initSpinner(lowerCaseSpinner,getResourceString("lowerchars.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
         initSpinner(numberSpinner,getResourceString("numbers.label"),1,IdentityProviderLimits.MAX_PASSWORD_LENGTH.getValue(),inputValidator);
