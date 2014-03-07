@@ -43,19 +43,26 @@ public interface BundleResolver {
      *
      * @param bundleId bundle identifier
      * @param bundleItem item in the bundle, Folder.xml, Policy.xml or Service.xml
+     * @param subFolder sub folder to look for the bundle item
      * @param allowMissing true if no exception should be thrown if the item is missing. Provided as a convenience
      * @return Document representing the gateway management enumeration for the specific item
      * @throws UnknownBundleException if the bundle item or bundle is not known and allowMissing is false.
      */
     @Nullable
-    Document getBundleItem(@NotNull final String bundleId, @NotNull final BundleItem bundleItem, final boolean allowMissing)
+    Document getBundleItem(@NotNull final String bundleId, @NotNull String subFolder, @NotNull final BundleItem bundleItem, final boolean allowMissing)
             throws UnknownBundleException, BundleResolverException, InvalidBundleException;
 
     /**
-     * Set the installation prefix.
-     * @param installationPrefix installation prefix
+     * Get a Document representing the bundle item from the specified bundle with id bundleId
+     *
+     * @param bundleId bundle identifier
+     * @param bundleItem item in the bundle, Folder.xml, Policy.xml or Service.xml
+     * @param allowMissing true if no exception should be thrown if the item is missing. Provided as a convenience
+     * @return Document representing the gateway management enumeration for the specific item
+     * @throws UnknownBundleException if the bundle item or bundle is not known and allowMissing is false.
      */
-    public void setInstallationPrefix(@Nullable String installationPrefix);
+    Document getBundleItem(@NotNull final String bundleId, @NotNull final BundleItem bundleItem, final boolean allowMissing)
+            throws UnknownBundleException, BundleResolverException, InvalidBundleException;
 
     public static class UnknownBundleException extends Exception{
         public UnknownBundleException(String message) {

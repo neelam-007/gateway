@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="deca3d4c-b5a2-40e8-89e5-b7ba930e5d10" id="7a5f0678f60be245a7ad76a684c63dd6" version="2">
+        <l7:PolicyDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" guid="deca3d4c-b5a2-40e8-89e5-b7ba930e5d10" id="7a5f0678f60be245a7ad76a684c63dd6" version="2">
+            <l7:Name>simpleEncapsulatedAssertionFragment</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PGVuY2Fwc3VsYXRlZEFzc2VydGlvbj4ke2luU2ltcGxlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnR9PC9lbmNhcHN1bGF0ZWRBc3NlcnRpb24+"/>
+            <L7p:VariableToSet stringValue="outSimpleEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="912d9fac-e790-4a1d-b7a1-0239f2aead08"/>
+        </L7p:Include>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+</enumeration>

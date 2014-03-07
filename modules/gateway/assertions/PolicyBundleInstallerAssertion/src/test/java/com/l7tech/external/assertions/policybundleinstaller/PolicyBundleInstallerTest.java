@@ -64,7 +64,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testServiceXpathExpression() throws Exception {
-        final BundleResolver resolver = getBundleResolver();
+        final BundleResolver resolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
         // OAuth_1_0
         final Document oAuth_1_0 = resolver.getBundleItem("4e321ca1-83a0-4df5-8216-c2d2bb36067d", SERVICE, false);
         ElementCursor cursor = new DomElementCursor(oAuth_1_0);
@@ -74,19 +74,18 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
         final XpathResult xpath1 = cursor.getXpathResult(new XpathExpression(xpath, GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
         final XpathResultIterator iterator = xpath1.getNodeSet().getIterator();
         while (iterator.hasNext()) {
-            System.out.println(XmlUtil.nodeToFormattedString(iterator.nextElementAsCursor().asDomElement()));
+            XmlUtil.nodeToFormattedString(iterator.nextElementAsCursor().asDomElement());
+            // System.out.println(XmlUtil.nodeToFormattedString(iterator.nextElementAsCursor().asDomElement()));
         }
     }
 
     @Test
     public void testDryInstallationWithConflicts() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final BundleInfo bundleInfo = new BundleInfo(OAUTH_TEST_BUNDLE_ID, "1.0", "Bundle with JDBC references", "Desc");
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         bundleInfo.addJdbcReference("OAuth");
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                null, null, bundleResolver, true);
+                bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
@@ -167,13 +166,11 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testDryInstallationWithNoConflicts() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final BundleInfo bundleInfo = new BundleInfo(OAUTH_TEST_BUNDLE_ID, "1.0", "Bundle with JDBC references", "Desc");
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         bundleInfo.addJdbcReference("OAuth");
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                null, null, bundleResolver, true);
+                bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
@@ -219,13 +216,11 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
     @Test
     @BugNumber(13586)
     public void testRequestDeniedForAdminUser() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final BundleInfo bundleInfo = new BundleInfo(OAUTH_TEST_BUNDLE_ID, "1.0", "Any bundle will do", "Desc");
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         bundleInfo.addJdbcReference("OAuth");
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                null, null, bundleResolver, true);
+                bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
 
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
@@ -256,7 +251,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
             fail("Access denied exception should be thrown");
         } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse e) {
             // pass
-            // validate that hte denied request was set and is non empty
+            // validate that the denied request was set and is non empty
             assertNotNull(e.getDeniedRequest());
             assertFalse(e.getDeniedRequest().trim().isEmpty());
         }

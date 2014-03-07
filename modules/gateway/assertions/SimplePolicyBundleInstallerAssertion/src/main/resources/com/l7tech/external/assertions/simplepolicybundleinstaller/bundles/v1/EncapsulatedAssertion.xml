@@ -1,35 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <enumeration>
-    <l7:EncapsulatedAssertion xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="7a5f0678f60be245a7ad76a684c63e2e" version="1">
-        <l7:Name>Simple Encapsulated Assertion</l7:Name>
-        <l7:Guid>506589b0-eba5-4b3f-81b5-be7809817623</l7:Guid>
-        <l7:PolicyReference id="7a5f0678f60be245a7ad76a684c63dd6" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
-        <l7:EncapsulatedArguments>
-            <l7:EncapsulatedAssertionArgument>
-                <l7:Ordinal>1</l7:Ordinal>
-                <l7:ArgumentName>inSimpleEncapsulatedAssertionFragment</l7:ArgumentName>
-                <l7:ArgumentType>string</l7:ArgumentType>
-                <l7:GuiPrompt>false</l7:GuiPrompt>
-            </l7:EncapsulatedAssertionArgument>
-        </l7:EncapsulatedArguments>
-        <l7:EncapsulatedResults>
-            <l7:EncapsulatedAssertionResult>
-                <l7:ResultName>outSimpleEncapsulatedAssertionFragment</l7:ResultName>
-                <l7:ResultType>string</l7:ResultType>
-            </l7:EncapsulatedAssertionResult>
-        </l7:EncapsulatedResults>
-        <l7:Properties>
-            <l7:Property key="paletteFolder">
-                <l7:StringValue>routing</l7:StringValue>
-            </l7:Property>
-            <l7:Property key="description">
-                <l7:StringValue>A simple encapsulated assertion</l7:StringValue>
-            </l7:Property>
-            <l7:Property key="policyGuid">
-                <l7:StringValue>deca3d4c-b5a2-40e8-89e5-b7ba930e5d10</l7:StringValue>
-            </l7:Property>
-        </l7:Properties>
-    </l7:EncapsulatedAssertion>
     <l7:EncapsulatedAssertion xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="271ebd21129d4c0d46b848e0fc4dbc5d" version="1">
         <l7:Name>Simple Composite Encapsulated Assertion</l7:Name>
         <l7:Guid>75062052-9f23-4be2-b7fc-c3caad51620d</l7:Guid>

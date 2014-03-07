@@ -8,25 +8,21 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.wsman.PolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.BundleResolverImpl;
+import com.l7tech.server.policy.bundle.BundleUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
 
 public abstract class PolicyBundleInstallerTestBase {
     protected final static String TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles";
     protected final static String OAUTH_TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles/oauthtest";
-    protected final static String OAUTH_TEST_BUNDLE_ID = "4e321ca1-83a0-4df5-8216-c2d2bb36067d";
     protected final static String SIMPLE_TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles/simpletest";
-    protected final static String SIMPLE_TEST_BUNDLE_ID = "33b16742-d62d-4095-8f8d-4db707e9ad51";
 
     /**
      * This is a canned response useful for faking a create ID - don't use to verify types, message ids etc
@@ -164,6 +160,39 @@ public abstract class PolicyBundleInstallerTestBase {
 
     protected int nextOid = 1000000;
 
+    private static List<Pair<BundleInfo, String>> allTestBundleInfoPairList;
+    private List<Pair<BundleInfo, String>> getAllTestBundleInfoPairList() throws BundleResolver.InvalidBundleException {
+        if (allTestBundleInfoPairList == null) {
+            // read bundles from the file system once
+            allTestBundleInfoPairList = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
+        }
+        return allTestBundleInfoPairList;
+    }
+
+    protected BundleInfo getBundleInfo(@NotNull final String testBundleBaseName) throws BundleResolver.InvalidBundleException {
+        for (Pair<BundleInfo, String> bundleInfoPair : getAllTestBundleInfoPairList()) {
+            if (testBundleBaseName.equals(bundleInfoPair.right)) {
+                return new BundleInfo(bundleInfoPair.left);
+            }
+        }
+        return null;
+    }
+
+    protected BundleResolver getBundleResolver(@NotNull final String testBundleBaseName) throws BundleResolver.InvalidBundleException {
+        return new BundleResolverImpl(getBundleInfoPairList(testBundleBaseName), getClass());
+    }
+
+    private List<Pair<BundleInfo, String>> getBundleInfoPairList (@NotNull final String testBundleBaseName) throws BundleResolver.InvalidBundleException {
+        for (Pair<BundleInfo, String> bundleInfoPair : getAllTestBundleInfoPairList()) {
+            if (testBundleBaseName.equals(bundleInfoPair.right)) {
+                List<Pair<BundleInfo, String>> bundleInfoPairList = new ArrayList<>(1);
+                bundleInfoPairList.add(new Pair<>(new BundleInfo(bundleInfoPair.left), bundleInfoPair.right));
+                return bundleInfoPairList;
+            }
+        }
+        return null;
+    }
+
     protected Functions.Nullary<Boolean> getCancelledCallback(final PolicyBundleEvent bundleEvent) {
         return new Functions.Nullary<Boolean>() {
             @Override
@@ -173,67 +202,13 @@ public abstract class PolicyBundleInstallerTestBase {
         };
     }
 
-    @NotNull
-    protected BundleResolver getBundleResolver(final String bundleBaseName, final String bundleId){
-        final Map<String, Map<String, Document>> bundleToItemAndDocMap = new HashMap<>();
-        bundleToItemAndDocMap.put(bundleId, getItemsToDocs(bundleBaseName));
-
-        return new BundleResolver() {
-            @Override
-            public Document getBundleItem(@NotNull String bundleId, @NotNull BundleItem bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException {
-                final Map<String, Document> itemToDocMap = bundleToItemAndDocMap.get(bundleId);
-                return itemToDocMap.get(bundleItem.getFileName());
-            }
-
-            @NotNull
-            @Override
-            public List<BundleInfo> getResultList() {
-                return Arrays.asList(new BundleInfo(bundleId, "1.0", "Name", "Desc"));
-            }
-
-            @Override
-            public void setInstallationPrefix(@Nullable String installationPrefix) {
-                // do nothing
-            }
-        };
-    }
-
-    @NotNull
-    protected BundleResolver getBundleResolver(){
-        return getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME, OAUTH_TEST_BUNDLE_ID);
-    }
-
-    private Document getDocumentFromResource(String resource) {
-        final URL resourceUrl = getClass().getResource(resource);
-        final byte[] bytes;
-        try {
-            bytes = IOUtils.slurpUrl(resourceUrl);
-            return XmlUtil.parse(new ByteArrayInputStream(bytes));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Map<String, Document> getItemsToDocs(final String bundleBaseName) {
-        final Map<String, Document> itemsToDocs = new HashMap<>();
-
-        itemsToDocs.put("Folder.xml", getDocumentFromResource(bundleBaseName + "/Folder.xml"));
-        itemsToDocs.put("Service.xml", getDocumentFromResource(bundleBaseName + "/Service.xml"));
-        itemsToDocs.put("TrustedCertificate.xml", getDocumentFromResource(bundleBaseName + "/TrustedCertificate.xml"));
-        itemsToDocs.put("Assertion.xml", getDocumentFromResource(bundleBaseName + "/Assertion.xml"));
-        itemsToDocs.put("Policy.xml", getDocumentFromResource(bundleBaseName + "/Policy.xml"));
-        itemsToDocs.put("EncapsulatedAssertion.xml", getDocumentFromResource(bundleBaseName + "/EncapsulatedAssertion.xml"));
-
-        return itemsToDocs;
-    }
-
     protected Map<String, Goid> getFolderIds() {
         // fake the folder ids
         return new HashMap<String, Goid>(){
             @Override
             public Goid get(Object key) {
                 try{
-                    return Goid.parseGoid(key.toString());
+                    return Goid.parseGoid(key.toString().replace("-", ""));
                 } catch(IllegalArgumentException e) {
                     return new Goid(0, Long.valueOf(key.toString()));
                 }
@@ -263,7 +238,7 @@ public abstract class PolicyBundleInstallerTestBase {
 
     protected Pair<AssertionStatus, Document> cannedIdResponse(Document requestXml) {
         try {
-            System.out.println(XmlUtil.nodeToFormattedString(requestXml));
+            // System.out.println(XmlUtil.nodeToFormattedString(requestXml));
             final String format = MessageFormat.format(CANNED_CREATE_ID_RESPONSE_TEMPLATE, String.valueOf(new Goid(0,nextOid++)));
             final Document parse = XmlUtil.parse(format);
             return new Pair<>(AssertionStatus.NONE, parse);
@@ -284,6 +259,4 @@ public abstract class PolicyBundleInstallerTestBase {
         final Message responseMsg = context.getResponse();
         responseMsg.initialize(response);
     }
-
-
 }

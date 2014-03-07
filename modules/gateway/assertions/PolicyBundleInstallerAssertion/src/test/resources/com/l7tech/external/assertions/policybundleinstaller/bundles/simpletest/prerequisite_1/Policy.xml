@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" guid="03d4c9e8-5719-4a6e-8d15-e6033ae7e3d5" id="e539bed0c2bf4bd04474e14c54c01ebf" version="1">
+        <l7:PolicyDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" guid="03d4c9e8-5719-4a6e-8d15-e6033ae7e3d5" id="e539bed0c2bf4bd04474e14c54c01ebf" version="1">
+            <l7:Name>simpleNestedIncludedPolicyFragment</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+            <l7:Properties>
+                <l7:Property key="revision">
+                    <l7:LongValue>19</l7:LongValue>
+                </l7:Property>
+                <l7:Property key="soap">
+                    <l7:BooleanValue>false</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PHNpbXBsZU5lc3RlZEluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+JHtyZXF1ZXN0Lm1haW5wYXJ0fTwvc2ltcGxlTmVzdGVkSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4="/>
+            <L7p:VariableToSet stringValue="simpleNestedIncludedPolicyFragmentVariable"/>
+        </L7p:SetVariable>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+    <l7:Policy xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"  guid="912d9fac-e790-4a1d-b7a1-0239f2aead08" id="2bc5185b635409430276e94d2123ca04" version="1">
+        <l7:PolicyDetail folderId="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" guid="912d9fac-e790-4a1d-b7a1-0239f2aead08" id="2bc5185b635409430276e94d2123ca04" version="1">
+            <l7:Name>simpleIncludedPolicyFragment</l7:Name>
+            <l7:PolicyType>Include</l7:PolicyType>
+        </l7:PolicyDetail>
+        <l7:Resources>
+            <l7:ResourceSet tag="policy">
+                <l7:Resource type="policy"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PHNpbXBsZUluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+JHtyZXF1ZXN0Lm1haW5wYXJ0fTwvc2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4="/>
+            <L7p:VariableToSet stringValue="simpleIncludedPolicyFragmentVariable"/>
+        </L7p:SetVariable>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="03d4c9e8-5719-4a6e-8d15-e6033ae7e3d5"/>
+        </L7p:Include>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+            </l7:ResourceSet>
+        </l7:Resources>
+    </l7:Policy>
+</enumeration>

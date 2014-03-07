@@ -6,13 +6,9 @@ import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstalle
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.BundleResolver;
-import com.l7tech.server.policy.bundle.BundleUtils;
-import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -44,14 +40,14 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
      */
     @Test
     public void testJdbcReferencesUpdatedCorrectly() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleResolver bundleResolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
 
         final boolean[] invoked = new boolean[1];
         final Map<String, Boolean> servicesFound = new HashMap<>();
         final Map<String, Set<String>> jdbcPerService = new HashMap<>();
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc"),
+                getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME),
                 null, null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
@@ -98,10 +94,10 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
                         final Element serviceElement = xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement();
                         final String id = serviceElement.getAttribute("id");
                         servicesFound.put(id, true);
-                        System.out.println("Testing service: " + id);
+                        // System.out.println("Testing service: " + id);
                         try {
                             final Element policyResourceElement = GatewayManagementDocumentUtilities.getPolicyResourceElement(serviceElement, "Service not important", id);
-//                            System.out.println(XmlUtil.nodeToFormattedString(policyResourceElement));
+                            // System.out.println(XmlUtil.nodeToFormattedString(policyResourceElement));
                             final Set<String> jdbcConnsFound = BundleUtils.searchForJdbcReferences(policyResourceElement, "Service", id);
                             jdbcPerService.put(id, jdbcConnsFound);
 

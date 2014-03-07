@@ -1,6 +1,7 @@
 package com.l7tech.policy.bundle;
 
 import com.l7tech.util.ValidationUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
@@ -13,11 +14,34 @@ import java.util.*;
  */
 public class BundleInfo implements Serializable {
 
-    public BundleInfo(String id, String version, String name, String description) {
+    public BundleInfo(final @NotNull String id, final @NotNull String version, final @NotNull String name, final @NotNull String description) {
         this.id = id;
         this.version = version;
         this.name = name;
         this.description = description;
+        this.prerequisiteFolders = new String[0];
+    }
+
+    public BundleInfo(final @NotNull String id, final @NotNull String version, final @NotNull String name, final @NotNull String description, final @NotNull String prerequisiteFolders) {
+        this.id = id;
+        this.version = version;
+        this.name = name;
+        this.description = description;
+
+        if ("".equals(prerequisiteFolders)) {
+            this.prerequisiteFolders = new String[0];
+        } else {
+            this.prerequisiteFolders = prerequisiteFolders.split(",");
+        }
+    }
+
+    public BundleInfo(final @NotNull BundleInfo bundleInfo) {
+        this.id = bundleInfo.id;
+        this.version = bundleInfo.version;
+        this.name = bundleInfo.name;
+        this.description = bundleInfo.description;
+        this.jdbcConnectionReferences.addAll(bundleInfo.getJdbcConnectionReferences());
+        this.prerequisiteFolders = Arrays.copyOf(bundleInfo.prerequisiteFolders, bundleInfo.prerequisiteFolders.length);
     }
 
     public String getId() {
@@ -44,6 +68,10 @@ public class BundleInfo implements Serializable {
         return Collections.unmodifiableSet(jdbcConnectionReferences);
     }
 
+    public String[] getPrerequisiteFolders() {
+        return prerequisiteFolders;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -54,6 +82,7 @@ public class BundleInfo implements Serializable {
         if (!description.equals(that.description)) return false;
         if (!id.equals(that.id)) return false;
         if (!jdbcConnectionReferences.equals(that.jdbcConnectionReferences)) return false;
+        if (!Arrays.equals(prerequisiteFolders, that.prerequisiteFolders)) return false;
         if (!name.equals(that.name)) return false;
         if (!version.equals(that.version)) return false;
 
@@ -67,6 +96,7 @@ public class BundleInfo implements Serializable {
         result = 31 * result + name.hashCode();
         result = 31 * result + description.hashCode();
         result = 31 * result + jdbcConnectionReferences.hashCode();
+        result = 31 * result + Arrays.hashCode(prerequisiteFolders);
         return result;
     }
 
@@ -78,6 +108,7 @@ public class BundleInfo implements Serializable {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", jdbcConnectionReferences=" + jdbcConnectionReferences +
+                ", prerequisiteFolders=" + Arrays.toString(prerequisiteFolders) +
                 '}';
     }
 
@@ -113,6 +144,6 @@ public class BundleInfo implements Serializable {
     private final String version;
     private final String name;
     private final String description;
-    private final Set<String> jdbcConnectionReferences = new HashSet<String>();
-
+    private final Set<String> jdbcConnectionReferences = new HashSet<>();
+    private final String[] prerequisiteFolders;
 }

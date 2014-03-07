@@ -22,7 +22,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
@@ -35,9 +34,8 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
      */
     @Test
     public void testInstallFolders_NoneExist() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
+        final BundleResolver bundleResolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
@@ -59,9 +57,9 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
-        for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
+        // for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
+        //     System.out.println(entry.getKey() + ": " + entry.getValue());
+        // }
     }
 
     /**
@@ -73,9 +71,8 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
     public void testInstallFolders_AllExist() throws Exception {
         final Map<String, Integer> nameToIdMap = new HashMap<>();
 
-        final BundleResolver bundleResolver = getBundleResolver();
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);    // OAuth_1_0
+        final BundleResolver bundleResolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);    // OAuth_1_0
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
@@ -86,7 +83,7 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                 try {
                     final String requestXml = XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly());
                     if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create")) {
-                        System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.parse(requestXml)));
+                        // System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.parse(requestXml)));
                         setResponse(context, alreadyExistsResponse);
                         return AssertionStatus.NONE;
                     } else {
@@ -107,8 +104,9 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                             nameToIdMap.put(name, idToUse);
                         }
 
-                        final Goid folderIdGoid = Goid.parseGoid(folderId);
-                        System.out.println("Requesting lookup for folder: " + folderIdGoid + ": " + requestXml);
+                        Goid.parseGoid(folderId);
+                        // final Goid folderIdGoid = Goid.parseGoid(folderId);
+                        // System.out.println("Requesting lookup for folder: " + folderIdGoid + ": " + requestXml);
                         final String response = MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, String.valueOf(new Goid(0,idToUse)));
                         setResponse(context, response);
                         return AssertionStatus.NONE;
@@ -123,8 +121,8 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
         assertNotNull(oldToNewMap);
         assertFalse(oldToNewMap.isEmpty());
 
-        for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-        }
+        // for (Map.Entry<String, Goid> entry : oldToNewMap.entrySet()) {
+        //     System.out.println(entry.getKey() + ": " + entry.getValue());
+        // }
     }
 }

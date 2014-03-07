@@ -26,7 +26,6 @@ import org.xml.sax.SAXException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,23 +114,35 @@ public class PolicyInstaller extends BaseInstaller {
         return policyIdsNames;
     }
 
-    public Map<String, String> install(@NotNull final Map<String, Goid> oldToNewFolderIds,
-                                       @NotNull final Map<String, String> oldToNewPolicyIds) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
-        checkInterrupted();
+    public void install(@NotNull final Map<String, Goid> oldToNewFolderIds,
+                        @NotNull final Map<String, String> oldToNewPolicyIds,
+                        @NotNull final Map<String, String> oldToNewPolicyGuids) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), POLICY, true);
-        final Map<String, String> contextOldPolicyGuidsToNewGuids;
+        install(policyBundle, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
+    }
+
+    public void install(@NotNull final String subFolder,
+                        @NotNull final Map<String, Goid> oldToNewFolderIds,
+                        @NotNull final Map<String, String> oldToNewPolicyIds,
+                        @NotNull final Map<String, String> oldToNewPolicyGuids) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
+        final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, POLICY, true);
+        install(policyBundle, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
+    }
+
+    private void install(@Nullable final Document policyBundle,
+                        @NotNull final Map<String, Goid> oldToNewFolderIds,
+                        @NotNull final Map<String, String> oldToNewPolicyIds,
+                        @NotNull final Map<String, String> oldToNewPolicyGuids) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
+        checkInterrupted();
         if (policyBundle == null) {
             logger.info("No policies to install for bundle " + context.getBundleInfo());
-            contextOldPolicyGuidsToNewGuids = Collections.emptyMap();
         } else {
             try {
-                contextOldPolicyGuidsToNewGuids = installPolicies(oldToNewFolderIds, oldToNewPolicyIds, policyBundle);
+                installPolicies(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids, policyBundle);
             } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
                 throw new InstallationException(e);
             }
         }
-
-        return contextOldPolicyGuidsToNewGuids;
     }
 
     protected void updatePolicyDoc(final Element entityDetailElmReadOnly,
@@ -181,6 +192,9 @@ public class PolicyInstaller extends BaseInstaller {
      *                              we need the actual folder id that the policy will be published into. This is a map of
      *                              the folder id contained in the enumeration document for a policy mapped to the actual
      *                              folder id on the target system which represents the same logical folder.
+     * @param oldToNewPolicyIds     old to new policy IDs
+     * @param oldToNewPolicyGuids   map of the policy's guid from the gateway mgmt enumeration document to it's actual
+     *                              guid once published. This avoids attempting to publish the same policy more than once.
      * @param policyMgmtEnumeration the gateway mgmt enumeration containing all policy elements too publish.
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse
      *
@@ -191,9 +205,10 @@ public class PolicyInstaller extends BaseInstaller {
      * @throws InterruptedException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
      */
-    private Map<String, String> installPolicies(@NotNull final Map<String, Goid> oldToNewFolderIds,
-                                                @NotNull final Map<String, String> oldToNewPolicyIds,
-                                                @NotNull final Document policyMgmtEnumeration)
+    private void installPolicies(@NotNull final Map<String, Goid> oldToNewFolderIds,
+                                 @NotNull final Map<String, String> oldToNewPolicyIds,
+                                 @NotNull final Map<String, String> oldToNewPolicyGuids,
+                                 @NotNull final Document policyMgmtEnumeration)
             throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             PreBundleSavePolicyCallback.PolicyUpdateException,
             InvalidBundleException,
@@ -214,22 +229,20 @@ public class PolicyInstaller extends BaseInstaller {
             allPolicyElms.put(guid, policyElm);
         }
 
-        final Map<String, String> oldGuidsToNewGuids = new HashMap<>(policyElmsSize);
         // fyi: circular policy includes are not supported via the Policy Manager - assume they will not be found
         for (Element policyElm : enumPolicyElms) {
             // recursive call if policy includes an include
-            getOrCreatePolicy(policyElm, oldGuidsToNewGuids, oldToNewFolderIds, oldToNewPolicyIds, allPolicyElms, guidToName);
+            getOrCreatePolicy(policyElm, oldToNewPolicyGuids, oldToNewFolderIds, oldToNewPolicyIds, allPolicyElms, guidToName);
         }
-
-        return oldGuidsToNewGuids;
     }
 
     /**
      *
      * @param enumPolicyElmReadOnly read only access to the Policy Gateay Mgmt element
-     * @param oldGuidsToNewGuids    map of the policy's guid from the gateway mgmt enumeration document to it's actual
+     * @param oldToNewPolicyGuids    map of the policy's guid from the gateway mgmt enumeration document to it's actual
      *                              guid once published. This avoids attempting to publish the same policy more than once.
      * @param oldToNewFolderIds old to new folder IDs
+     * @param oldToNewPolicyIds old to new policy IDs
      * @param allPolicyElms oldToNewFolderIds
      * @param guidToName GUID to Name
      * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
@@ -239,7 +252,7 @@ public class PolicyInstaller extends BaseInstaller {
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
      */
     private void getOrCreatePolicy(@NotNull final Element enumPolicyElmReadOnly,
-                                   @NotNull final Map<String, String> oldGuidsToNewGuids,
+                                   @NotNull final Map<String, String> oldToNewPolicyGuids,
                                    @NotNull final Map<String, Goid> oldToNewFolderIds,
                                    @NotNull final Map<String, String> oldToNewPolicyIds,
                                    @NotNull final Map<String, Element> allPolicyElms,
@@ -253,7 +266,7 @@ public class PolicyInstaller extends BaseInstaller {
         final String policyId = enumPolicyElmReadOnly.getAttribute("id");
         final String policyGuid = enumPolicyElmReadOnly.getAttribute("guid");
 
-        if (oldGuidsToNewGuids.containsKey(policyGuid)) {
+        if (oldToNewPolicyGuids.containsKey(policyGuid)) {
             // already created
             logger.finest("Policy with GUID '" + policyGuid + "' already created.");
             return;
@@ -277,19 +290,26 @@ public class PolicyInstaller extends BaseInstaller {
         final List<Element> policyIncludes = PolicyUtils.getPolicyIncludes(policyDocWriteEl);
         for (Element policyIncludeElm : policyIncludes) {
             final String policyInclude = policyIncludeElm.getAttribute("stringValue");
-            if (!allPolicyElms.containsKey(policyInclude)) {
+            if (oldToNewPolicyGuids.containsKey(policyInclude)) {
+                // already created
+                logger.finest("Policy with GUID '" + policyGuid + "' already created.");
+            } else if (!allPolicyElms.containsKey(policyInclude)) {
                 throw new InvalidBundleException("Policy with guid " + policyInclude + " was not included in bundle "
                         + context.getBundleInfo().getName() + "#{" + context.getBundleInfo().getId() + "}");
+            } else {
+                getOrCreatePolicy(allPolicyElms.get(policyInclude), oldToNewPolicyGuids, oldToNewFolderIds, oldToNewPolicyIds, allPolicyElms, guidToName);
             }
-            getOrCreatePolicy(allPolicyElms.get(policyInclude), oldGuidsToNewGuids, oldToNewFolderIds, oldToNewPolicyIds, allPolicyElms, guidToName);
         }
 
         checkInterrupted();
 
+        // update any encapsulated assertions in this policy
+        EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocWriteEl, context.getInstallationPrefix());
+
         final Element policyDetailElmReadOnly = getPolicyDetailElement(enumPolicyElmReadOnly);
         // get or create
         // Create a new document and modify it
-        updatePolicyDoc(policyDetailElmReadOnly, "Policy", oldGuidsToNewGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes, context);
+        updatePolicyDoc(policyDetailElmReadOnly, "Policy", oldToNewPolicyGuids, policyGuid, policyResourceElmWritable, policyDocWriteEl, policyIncludes, context);
 
         final Element policyDetailWritable = getPolicyDetailElement(enumPolicyElmWritable);
         final String folderId = policyDetailWritable.getAttribute("folderId");
@@ -342,7 +362,7 @@ public class PolicyInstaller extends BaseInstaller {
         }
 
         oldToNewPolicyIds.put(policyId, idToUse);
-        oldGuidsToNewGuids.put(policyGuid, guidToUse);
+        oldToNewPolicyGuids.put(policyGuid, guidToUse);
     }
 
     @Nullable

@@ -85,13 +85,13 @@ public class PolicyBundleInstaller {
 
         logger.fine("Conflict checking bundle: " + context.getBundleInfo().getId());
 
+        assertionInstaller.dryRunInstall(dryRunEvent);
         final Map<String, String> conflictingPolicyIdsNames = new HashMap<>();
         final Map<String, String> policyIdsNames =  policyInstaller.dryRunInstall(dryRunEvent, conflictingPolicyIdsNames);
         encapsulatedAssertionInstaller.dryRunInstall(dryRunEvent, policyIdsNames, conflictingPolicyIdsNames);
         serviceInstaller.dryRunInstall(dryRunEvent);
         trustedCertificateInstaller.dryRunInstall(dryRunEvent);
         jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
-        assertionInstaller.dryRunInstall(dryRunEvent);
 
         logger.fine("Finished conflict checking bundle: " + context.getBundleInfo());
     }
@@ -110,10 +110,18 @@ public class PolicyBundleInstaller {
             AccessDeniedManagementResponse {
 
         logger.info("Installing bundle: " + context.getBundleInfo().getId());
-
         final Map<String, Goid> oldToNewFolderIds = folderInstaller.install();
+
         final Map<String, String> oldToNewPolicyIds = new HashMap<>();
-        final Map<String, String> oldToNewPolicyGuids = policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds);
+        final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
+
+        // install from prerequisites first
+        for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
+            policyInstaller.install(prerequisiteFolder, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
+            encapsulatedAssertionInstaller.install(prerequisiteFolder, oldToNewPolicyIds);
+        }
+
+        policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
         encapsulatedAssertionInstaller.install(oldToNewPolicyIds);
         serviceInstaller.install(oldToNewFolderIds, oldToNewPolicyGuids, policyInstaller);
         trustedCertificateInstaller.install();

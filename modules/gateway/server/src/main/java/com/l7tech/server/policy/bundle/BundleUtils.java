@@ -30,7 +30,6 @@ import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
  * Utilities related to processing Bundle related documents e.g. BundleInfo.xml
  */
 public class BundleUtils {
-
     public static final String NS_BUNDLE = "http://ns.l7tech.com/2012/09/policy-bundle";
     public static final String L7_NS_POLICY = "http://www.layer7tech.com/ws/policy";
     public static final String L7_NS_GW_MGMT = "http://ns.l7tech.com/2010/04/gateway-management";
@@ -147,65 +146,19 @@ public class BundleUtils {
             throw new InvalidBundleException("Invalid bundle declaration. Id, Name and Description must all be non empty");
         }
 
-        return new BundleInfo(bundleId, version, bundleName, bundleDesc);
-    }
-
-    /**
-     * Get a jar file representing the resouces available at resourceBaseName
-     *
-     * @param callingClass class whose class loader should be used.
-     * @param resourceBaseName directory resource
-     * @return JarFile if found
-     * @throws java.io.IOException if the JAR resource cannot be opened.
-     */
-    @Nullable
-    public static JarFile getJarFileForResource(Class callingClass, String resourceBaseName) throws IOException {
-        JarFile returnFile = null;
-        final URL resource = callingClass.getResource(resourceBaseName);
-        if (resource != null) {
-            final URLConnection urlConnection = resource.openConnection();
-            if (urlConnection instanceof JarURLConnection) {
-                JarURLConnection jarURLConnection = (JarURLConnection) resource.openConnection();
-                returnFile = jarURLConnection.getJarFile();
-            }
+        // prerequisite folders are optional
+        final Element prerequisiteFoldersEl;
+        String bundlePrerequisiteFolders = "";
+        try {
+            prerequisiteFoldersEl = XmlUtil.findExactlyOneChildElementByName(bundleInfoDoc.getDocumentElement(), NS_BUNDLE, "Prerequisite_Folders");
+            bundlePrerequisiteFolders = DomUtils.getTextValue(prerequisiteFoldersEl, true);
+        } catch (MissingRequiredElementException e) {
+            logger.fine("BundleInfo Prerequisite_Folders tag is empty.");
+        } catch (TooManyChildElementsException e) {
+            throw new InvalidBundleException(e);
         }
 
-        return returnFile;
-    }
-
-    /**
-     * Get all JarEntry objects representing directories under bundleResourceBaseName
-     *
-     * Each JarEntry returned is a bundle directory which contains the contents of a bundle.
-     *
-     * @param bundleResourceBaseName the base name of the resource directory to search for bundle directories within.
-     *                               The value must beginw with a '/' and end with a '/'
-     *                               e.g. /com/l7tech/external/assertions/oauthinstaller/bundles/
-     * @return List of all JarEntry objects found.
-     */
-    @NotNull
-    public static List<JarEntry> findAllBundleEntries(@NotNull final JarFile jarFile,
-                                                      @NotNull final String bundleResourceBaseName) throws InvalidBundleException {
-
-        final List<JarEntry> allBundleEntries = new ArrayList<>();
-        final Enumeration<JarEntry> entries = jarFile.entries();
-
-        while (entries.hasMoreElements()) {
-            final JarEntry jarEntry = entries.nextElement();
-
-            final String jarEntryName = jarEntry.getName();
-            final String resourceName = bundleResourceBaseName.substring(1);
-            if (jarEntryName.startsWith(resourceName) && jarEntry.isDirectory()) {
-                // must be one level down
-                if (jarEntryName.indexOf("/", resourceName.length() + 1) == jarEntryName.length() - 1) {
-                    // we have found a directory which is a direct child of the bundle folder
-                    logger.fine("Found bundle folder: " + jarEntryName);
-                    allBundleEntries.add(jarEntry);
-                }
-            }
-        }
-
-        return allBundleEntries;
+        return new BundleInfo(bundleId, version, bundleName, bundleDesc, bundlePrerequisiteFolders);
     }
 
     /**
@@ -311,12 +264,6 @@ public class BundleUtils {
         return returnList;
     }
 
-
-    @NotNull
-    public static String getPolicyGuid(Element policyElm) {
-        return policyElm.getAttribute("guid");
-    }
-
     // - PRIVATE
     private static final Logger logger = Logger.getLogger(BundleUtils.class.getName());
 
@@ -324,4 +271,66 @@ public class BundleUtils {
         return serviceElm.getAttribute("id");
     }
 
+    @NotNull
+    private static String getPolicyGuid(Element policyElm) {
+        return policyElm.getAttribute("guid");
+    }
+
+    /**
+     * Get a jar file representing the resouces available at resourceBaseName
+     *
+     * @param callingClass class whose class loader should be used.
+     * @param resourceBaseName directory resource
+     * @return JarFile if found
+     * @throws java.io.IOException if the JAR resource cannot be opened.
+     */
+    @Nullable
+    private static JarFile getJarFileForResource(Class callingClass, String resourceBaseName) throws IOException {
+        JarFile returnFile = null;
+        final URL resource = callingClass.getResource(resourceBaseName);
+        if (resource != null) {
+            final URLConnection urlConnection = resource.openConnection();
+            if (urlConnection instanceof JarURLConnection) {
+                JarURLConnection jarURLConnection = (JarURLConnection) resource.openConnection();
+                returnFile = jarURLConnection.getJarFile();
+            }
+        }
+
+        return returnFile;
+    }
+
+    /**
+     * Get all JarEntry objects representing directories under bundleResourceBaseName
+     *
+     * Each JarEntry returned is a bundle directory which contains the contents of a bundle.
+     *
+     * @param bundleResourceBaseName the base name of the resource directory to search for bundle directories within.
+     *                               The value must begin with a '/' and end with a '/'
+     *                               e.g. /com/l7tech/external/assertions/oauthinstaller/bundles/
+     * @return List of all JarEntry objects found.
+     */
+    @NotNull
+    private static List<JarEntry> findAllBundleEntries(@NotNull final JarFile jarFile,
+                                                       @NotNull final String bundleResourceBaseName) throws InvalidBundleException {
+
+        final List<JarEntry> allBundleEntries = new ArrayList<>();
+        final Enumeration<JarEntry> entries = jarFile.entries();
+
+        while (entries.hasMoreElements()) {
+            final JarEntry jarEntry = entries.nextElement();
+
+            final String jarEntryName = jarEntry.getName();
+            final String resourceName = bundleResourceBaseName.substring(1);
+            if (jarEntryName.startsWith(resourceName) && jarEntry.isDirectory()) {
+                // must be one level down
+                if (jarEntryName.indexOf("/", resourceName.length() + 1) == jarEntryName.length() - 1) {
+                    // we have found a directory which is a direct child of the bundle folder
+                    logger.fine("Found bundle folder: " + jarEntryName);
+                    allBundleEntries.add(jarEntry);
+                }
+            }
+        }
+
+        return allBundleEntries;
+    }
 }

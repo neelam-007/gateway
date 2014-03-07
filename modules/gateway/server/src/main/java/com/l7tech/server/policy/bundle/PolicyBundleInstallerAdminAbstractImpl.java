@@ -448,8 +448,6 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             appEventPublisher.publishEvent(startedEvent);
 
             try {
-                bundleResolver.setInstallationPrefix(prefixToUse);
-
                 final Set<String> processedComponents = new HashSet<>();
                 //iterate through all the bundle names to install
                 outer:
@@ -459,8 +457,8 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                         break;
                     }
 
-                    final List<BundleInfo> resultList1 = bundleResolver.getResultList();
-                    for (BundleInfo bundleInfo : resultList1) {
+                    final List<BundleInfo> resultList = bundleResolver.getResultList();
+                    for (BundleInfo bundleInfo : resultList) {
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(

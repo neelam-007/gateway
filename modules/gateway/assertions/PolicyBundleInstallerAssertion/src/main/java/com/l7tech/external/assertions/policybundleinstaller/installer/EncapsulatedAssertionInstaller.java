@@ -107,8 +107,19 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
 
     public void install(@NotNull Map<String, String> oldToNewPolicyId)
             throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
-        checkInterrupted();
         final Document encapsulatedAssertionBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), ENCAPSULATED_ASSERTION, true);
+        install(encapsulatedAssertionBundle, oldToNewPolicyId);
+    }
+
+    public void install(@NotNull final String subFolder, @NotNull Map<String, String> oldToNewPolicyId)
+            throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        final Document encapsulatedAssertionBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, ENCAPSULATED_ASSERTION, true);
+        install(encapsulatedAssertionBundle, oldToNewPolicyId);
+    }
+
+    public void install(@Nullable final Document encapsulatedAssertionBundle, @NotNull Map<String, String> oldToNewPolicyId)
+            throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        checkInterrupted();
         if(encapsulatedAssertionBundle == null) {
             logger.info("No encapsulated assertions to install for bundle " + context.getBundleInfo());
         } else {

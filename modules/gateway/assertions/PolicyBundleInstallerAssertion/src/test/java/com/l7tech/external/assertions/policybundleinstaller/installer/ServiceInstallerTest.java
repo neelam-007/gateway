@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
@@ -41,10 +40,9 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testInstallServices() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
-        final BundleInfo bundleInfo = resultList.get(0);
+        final BundleResolver bundleResolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
         //OAuth_1_0
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
 
@@ -68,11 +66,10 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testServicesUriPrefixedInstallation() throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
+        final BundleResolver bundleResolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
         final Map<String, String> serviceIdToUri = new HashMap<>();
-        final List<BundleInfo> resultList = bundleResolver.getResultList();
         //OAuth_1_0
-        final BundleInfo bundleInfo = resultList.get(0);
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         final String prefix = "version1a";
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
@@ -107,7 +104,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                             }
 
                             serviceIdToUri.put(serviceId, url);
-                            System.out.println("Found url: " + url);
+                            // System.out.println("Found url: " + url);
                         } catch (XPathExpressionException | InvalidXpathException e) {
                             throw new RuntimeException(e);
                         }

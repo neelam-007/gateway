@@ -10,10 +10,7 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.BundleResolver;
-import com.l7tech.server.policy.bundle.BundleUtils;
-import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.*;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -30,12 +27,12 @@ import org.w3c.dom.Element;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -129,12 +126,8 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void testAllPolicyBundlesInstall() throws Exception {
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
-        for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            if (OAUTH_TEST_BUNDLE_BASE_NAME.equals(bundleInfo.right)) {
-                installPoliciesTest(bundleInfo.left, null);
-            }
-        }
+        installPoliciesTest(getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME), getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), null);
+        installPoliciesTest(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME), null);
     }
 
     /**
@@ -149,14 +142,62 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
      *
      */
     private void installPoliciesTest(final @NotNull BundleInfo bundleInfo,
-                                    final @Nullable String installationPrefix) throws Exception {
-        final Map<String, String> nameToPreviousGuid = new HashMap<>();
-
-        final BundleResolver bundleResolver = getBundleResolver();
+                                     final @NotNull BundleResolver bundleResolver,
+                                     final @Nullable String installationPrefix) throws Exception {
+        final Map<String, String> oldToNewPolicyIds = new HashMap<>();
+        final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, getCancelledCallback(installEvent));
 
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
+        bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds, oldToNewPolicyGuids);
+
+        final Document policyFromBundleDoc = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), POLICY, false);
+        verifyPolicyInstalled(policyFromBundleDoc, oldToNewPolicyGuids);
+    }
+
+    /**
+     * Test that an installation prefix is appended to each saved policy.
+     * @throws Exception
+     */
+    @Test
+    public void testPolicyNamePrefixedInstallation() throws Exception {
+        installPoliciesTest(getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME), getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), "Version 1 - ");
+    }
+
+    /**
+     * Test that each prerequisite installation is executed.
+     * @throws Exception
+     */
+    @Test
+    public void testPrerequisiteFolderInstallation() throws Exception {
+        final Map<String, String> oldToNewPolicyIds = new HashMap<>();
+        final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
+        final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
+        final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, getCancelledCallback(installEvent));
+
+        // install from prerequisite folders
+        for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
+            bundleInstaller.getPolicyInstaller().install(prerequisiteFolder, getFolderIds(), oldToNewPolicyIds, oldToNewPolicyGuids);
+
+            final Document policyFromBundleDoc = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), prerequisiteFolder, POLICY, false);
+            verifyPolicyInstalled(policyFromBundleDoc, oldToNewPolicyGuids);
+        }
+
+        bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds, oldToNewPolicyGuids);
+
+        final Document policyFromBundleDoc = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), POLICY, false);
+        verifyPolicyInstalled(policyFromBundleDoc, oldToNewPolicyGuids);
+
+        // validate all Encapsulated Assertions were found and all name and GUID were prefixed correctly
+        assertEquals("Incorrect number of Policies created", 4, oldToNewPolicyGuids.size());
+        assertEquals("Incorrect number of Policies created", 4, oldToNewPolicyGuids.size());
+    }
+
+    private GatewayManagementInvoker stubGatewayManagementInvoker(final String installationPrefix) {
+        return new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
                 try {
@@ -170,89 +211,64 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
                             assert policyEntityEl != null;
                             final Element policyDetailElm = GatewayManagementDocumentUtilities.getPolicyDetailElement(policyEntityEl);
                             final String policyName = GatewayManagementDocumentUtilities.getEntityName(policyDetailElm);
-                            System.out.println("Policy name: " + policyName);
+                            // System.out.println("Policy name: " + policyName);
                             assertTrue("Policy name was not prefixed", policyName.startsWith(installationPrefix));
                         }
 
                         final Pair<AssertionStatus, Document> documentPair = cannedIdResponse(enumPolicyDocument);
                         setResponse(context, documentPair.right);
-                        return AssertionStatus.NONE;
                     } else if (requestXml.contains(POLICIES_SET_VERSION_COMMENT_ACTION)) {
                         setResponse(context, CANNED_SET_VERSION_COMMENT_RESPONSE);
-                        return AssertionStatus.NONE;
                     } else {
 
                         // Create a new GUID for each policy. Return the same GUID for the same include
 
                         ElementCursor cursor = new DomElementCursor(enumPolicyDocument);
-                        System.out.println(requestXml);
+                        // System.out.println(requestXml);
                         final XpathResult xpathResult = cursor.getXpathResult(
                                 new XpathExpression(
                                         "//wsman:Selector[@Name='name']",
                                         GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
                         final String name = DomUtils.getTextValue(xpathResult.getNodeSet().getIterator().nextElementAsCursor().asDomElement(), true);
-                        final String guidToUse = nameToPreviousGuid.containsKey(name)
-                                ? nameToPreviousGuid.get(name) : UUID.randomUUID().toString();
+                        final String guidToUse = UUID.randomUUID().toString();
 
                         final String response = MessageFormat.format(CANNED_GET_POLICY_RESPONSE, guidToUse, name);
                         setResponse(context, response);
-                        return AssertionStatus.NONE;
                     }
+
+                    return AssertionStatus.NONE;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        };
+    }
 
-        final Document policyFromBundleDoc = bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, false);
+
+    private void verifyPolicyInstalled(final Document policyFromBundleDoc, final Map<String, String> oldToNewPolicyGuids) throws Exception {
+        // record all policy names mapped to the canned GUID, stub old to new policy ids
+
         ElementCursor cursor = new DomElementCursor(policyFromBundleDoc);
-        final XpathResult xpathResult = cursor.getXpathResult(
-                new XpathExpression(
-                        "//l7:PolicyDetail",
-                        GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
-
-
+        final XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("//l7:PolicyDetail", GatewayManagementDocumentUtilities.getNamespaceMap()).compile());
         final XpathResultIterator iterator = xpathResult.getNodeSet().getIterator();
         if (!iterator.hasNext()) {
             fail("Incorrect test configuration");
         }
-
-        // record all policy names mapped to the canned GUID
         final Map<String, String> policyNameToGuid = new HashMap<>();
         while (iterator.hasNext()) {
             final ElementCursor elementCursor = iterator.nextElementAsCursor();
             final Element policyDetailElm = elementCursor.asDomElement();
             final String guid = policyDetailElm.getAttribute("guid");
-            final String name = DomUtils.getTextValue(
-                    XmlUtil.findExactlyOneChildElementByName(policyDetailElm, BundleUtils.L7_NS_GW_MGMT, "Name"), true);
+            final String name = DomUtils.getTextValue(XmlUtil.findExactlyOneChildElementByName(policyDetailElm, BundleUtils.L7_NS_GW_MGMT, "Name"), true);
 
             policyNameToGuid.put(name, guid);
         }
-
-        final Map<String, String> oldToNewPolicyIds = new HashMap<>();
-        final Map<String, String> oldGuidToNewGuidMap = bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds);
 
         // verify that each known policy name was installed
         for (Map.Entry<String, String> bundlePolicy : policyNameToGuid.entrySet()) {
             // confirm it was installed
             assertTrue("Policy " + bundlePolicy.getKey() + " and guid " + bundlePolicy.getValue() + " was not installed.",
-                    oldGuidToNewGuidMap.containsKey(bundlePolicy.getValue()));
+                    oldToNewPolicyGuids.containsKey(bundlePolicy.getValue()));
         }
-
-    }
-
-    /**
-     * That that an installation prefix is appended to each saved policy.
-     * @throws Exception
-     */
-    @Test
-    public void testPolicyNamePrefixedInstallation() throws Exception {
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), TEST_BUNDLE_BASE_NAME);
-        for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
-            if (OAUTH_TEST_BUNDLE_BASE_NAME.equals(bundleInfo.right)) {
-                installPoliciesTest(bundleInfo.left, "Version 1 - ");
-            }
-        }
-
     }
 }

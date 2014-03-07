@@ -7,10 +7,8 @@ import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstalle
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -25,12 +23,10 @@ import static org.junit.Assert.fail;
 public class AssertionInstallerTest extends PolicyBundleInstallerTestBase {
     @Test
     public void testCheckingAssertionExistenceRequired () throws Exception {
-        final BundleResolver bundleResolver = getBundleResolver();
-        final BundleInfo bundleInfo = new BundleInfo("4e321ca1-83a0-4df5-8216-c2d2bb36067d", "1.0", "Bundle with JDBC references", "Desc");
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                bundleInfo,
-                null, null, bundleResolver, false);
+                getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME),
+                null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), false);
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
