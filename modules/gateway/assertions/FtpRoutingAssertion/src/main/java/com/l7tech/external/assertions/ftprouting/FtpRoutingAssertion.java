@@ -62,6 +62,9 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Timeout (in milliseconds) when opening connection to FTP server. */
     public static final int DEFAULT_TIMEOUT = 10000;
 
+    // reference to the context requestId which was used pre-Icefish to auto-generate filename arguments for uploads
+    private static final String REQUEST_ID_VARIABLE = "${requestId}";
+
     private FtpSecurity _security;
 
     private boolean _verifyServerCert;
@@ -195,6 +198,20 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setDirectory(String directory) {
         _directory = directory;
+    }
+
+    @Deprecated // property replaced by "arguments"
+    @SuppressWarnings("UnusedDeclaration")
+    public void setFileNamePattern(String fileNamePattern) {
+        arguments = fileNamePattern;
+    }
+
+    @Deprecated // auto-generate file name option replaced by setting "arguments" to equivalent
+    @SuppressWarnings("UnusedDeclaration")
+    public void setFileNameSource(FtpFileNameSource fileNameSource) {
+        if (FtpFileNameSource.AUTO == fileNameSource) {
+            arguments = REQUEST_ID_VARIABLE;
+        }
     }
 
     public String getHostName() {
@@ -424,6 +441,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new WspEnumTypeMapping(FtpSecurity.class, "security"),
+            new WspEnumTypeMapping(FtpFileNameSource.class, "fileNameSource"),
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource"),
             new Java5EnumTypeMapping(FtpCommand.class, "ftpCommand")
         )));

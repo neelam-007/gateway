@@ -20,9 +20,8 @@ public final class FtpFileNameSource implements Serializable {
 
     public static final FtpFileNameSource AUTO = new FtpFileNameSource("auto", "auto-generated");
     public static final FtpFileNameSource PATTERN = new FtpFileNameSource("pattern", "user-specified pattern");
-    public static final FtpFileNameSource ARGUMENT = new FtpFileNameSource("argument", "user-specified pattern");
 
-    private static final FtpFileNameSource[] _values = new FtpFileNameSource[] {AUTO, PATTERN, ARGUMENT};
+    private static final FtpFileNameSource[] _values = new FtpFileNameSource[] {AUTO, PATTERN};
 
     /** String representation used in XML serialization.
         Must be unique. Must not change for backward compatibility. */
@@ -41,6 +40,7 @@ public final class FtpFileNameSource implements Serializable {
         return _wspName;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public String getPrintName() {
         return _printName;
     }
@@ -53,6 +53,7 @@ public final class FtpFileNameSource implements Serializable {
         return _values.clone();
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
             public Object stringToObject(String s) throws IllegalArgumentException {
