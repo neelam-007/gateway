@@ -37,6 +37,69 @@ public class MimeBodyTest {
         assertEquals( 0L, mm.getFirstPart().getContentLength()); // size now known
     }
 
+    @Test
+    public void testEmptyMultiPartMessage() throws Exception {
+        try{
+            MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
+            mm.getEntireMessageBodyLength(); // force entire body to be read
+        }catch (IOException e){
+            // exception expected
+            assertEquals("Message MIME type is multipart/related, but no initial boundary found", e.getMessage());
+            return ;
+        }
+        fail("Did not receive expected IOException");
+    }
+
+    @Test
+    public void testEmptyPart() throws Exception {
+        System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "true");
+        ConfigFactory.clearCachedConfig();
+        MimeBody.loadLaxEmptyMutipart();
+
+        try{
+            MimeBody mm = makeMessage("----=Part_-763936460.407197826076299",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
+        } catch (IOException e){
+            // exception expected
+            assertEquals("Multipart stream ended before a terminating boundary was encountered", e.getMessage());
+            return ;
+
+        } finally {
+            // full clean up of internal state of MimeBody
+            System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
+            ConfigFactory.clearCachedConfig();
+            MimeBody.loadLaxEmptyMutipart();
+        }
+        fail("Did not receive expected IOException");
+
+    }
+
+    @Test
+    public void testEmptyMultiPartMessageLaxParsing() throws Exception {
+
+        System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "true");
+        ConfigFactory.clearCachedConfig();
+        MimeBody.loadLaxEmptyMutipart();
+
+        try{
+            MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
+            assertEquals( -1L, mm.getFirstPart().getContentLength()); // size of part not yet known
+            long len = mm.getEntireMessageBodyLength(); // force entire body to be read
+            assertEquals( 0L, len);
+            assertEquals( 0L, mm.getFirstPart().getContentLength()); // size now known
+            assertEquals( "multipart", mm.getFirstPart().getContentType().getType());
+            assertEquals( "related", mm.getFirstPart().getContentType().getSubtype());
+            assertEquals( 1L, mm.getNumPartsKnown()); // no other parts
+
+        } finally {
+            // full clean up of internal state of MimeBody
+            System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
+            ConfigFactory.clearCachedConfig();
+            MimeBody.loadLaxEmptyMutipart();
+        }
+    }
+
+
+
     /**
      * We strictly match the start parameter to the Content-ID by default. This can be turned off but only via a system
      * property. This test ensures that the default case is still valid e.g. do not match

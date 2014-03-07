@@ -475,12 +475,7 @@ public class MimeBoundaryTerminatedInputStreamTest {
                 new MimeBoundaryTerminatedInputStream(boundary.getBytes(), is, 4096);
 
         ByteArrayOutputStream got = new ByteArrayOutputStream();
-        try {
-            IOUtils.copyStream(mbtis, got);
-            fail("Did not receive expected IOException reading preamble with no CRLF before initial boundary");
-        } catch (IOException e) {
-            log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
-        }
+        IOUtils.copyStream(mbtis, got);
     }
 
     @Test

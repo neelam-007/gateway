@@ -39,12 +39,16 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
     private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
+    private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", false );
 
     /**
      * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage
      */
     static void loadLaxStartParam(){
         ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
+    }
+    static void loadLaxEmptyMutipart(){
+        ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", false );
     }
 
 
@@ -57,8 +61,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
     private final Map partInfosByCid = new HashMap(); // our PartInfo-by-cid lookup.
 
-    private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
-    private final byte[] boundary; // multipart crlfBoundary bytes including initial dashes but not including trailing CRLF; or null if singlepart.
+    private String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
+    private byte[] boundary; // multipart crlfBoundary bytes including initial dashes but not including trailing CRLF; or null if singlepart.
 
     private boolean streamValidatedOnly = false; // flag for filtering parts based on validation flag
     private boolean moreParts = true; // assume there are more parts until we find the end of the stream
@@ -114,17 +118,53 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
                 this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream);
                 readInitialBoundary();
-                readNextPartHeaders();
-                firstPart = (PartInfoImpl)partInfos.get(0);
-                if (start != null && !(
-                                start.equals(firstPart.getContentId(false)) ||
-                                (ALLOW_LAX_START_PARAM_MATCH && start.equals(firstPart.getContentId(true))) )
-                        ) {
-                    throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
-                }
+                if(!moreParts && ALLOW_LAX_EMPTY_MUTLIPART){
+                    // Is multi part with no content. Read as single-part message.  Configure first and only part.
+                    moreParts = true;
+                    boundaryStr = null;
+                    boundary = null;
+                    if (firstPartMaxBytes > 0)
+                        this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes);
+                    final MimeHeaders outerHeaders = new MimeHeaders();
+                    outerHeaders.add(outerContentType);
+                    final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
+                        @Override
+                        public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+                            InputStream stashedStream = preparePartInputStream();
+                            if (stashedStream != null)
+                                return stashedStream;
 
-                if (firstPartMaxBytes > 0)
-                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes + this.mainInputStream.getBytesRead());
+                            InputStream is = MimeBody.this.mainInputStream;
+                            moreParts = false;
+                            onBodyRead();
+
+                            // We are ready to return an InputStream.
+                            // Do we need to stash the data first?
+                            if (destroyAsRead) {
+                                // No -- allow caller to consume it.
+                                return is;
+                            }
+
+                            // Yes -- stash it first, then recall it.
+                            return stashAndRecall(is);
+                        }
+                    };
+                    partInfos.add(mainPartInfo);
+                    firstPart = mainPartInfo;
+                }else{
+                    readNextPartHeaders();
+                    firstPart = (PartInfoImpl)partInfos.get(0);
+                    if (start != null && !(
+                                    firstPart.getHeaders().size() < 1 ||
+                                    start.equals(firstPart.getContentId(false)) ||
+                                    (ALLOW_LAX_START_PARAM_MATCH && start.equals(firstPart.getContentId(true))) )
+                            ) {
+                        throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
+                    }
+
+                    if (firstPartMaxBytes > 0)
+                        this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes + this.mainInputStream.getBytesRead());
+                }
             } else {
                 // Single-part message.  Configure first and only part accordingly.
                 boundaryStr = null;
@@ -263,7 +303,6 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         }
         if (preamble.isLastPartProcessed()) {
             moreParts = false;  // just in case
-            throw new IOException("Multipart message had zero parts");
         }
     }
 

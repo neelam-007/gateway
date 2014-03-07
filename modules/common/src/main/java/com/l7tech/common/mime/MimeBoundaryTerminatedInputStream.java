@@ -147,8 +147,11 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
         // Are we in mid-match of the boundary?
         if (boundMatchBytes > 0) {
             int got = in.read(b, off, len);
-            if (got < 1)
-                throw new IOException("Multipart stream ended before a terminating boundary was encountered");
+            if (got < 1){
+                atEof = true;
+                lastPartProcessed = true;
+                return 0;
+            }
 
             // See if match continues
             int boundRemainder = crlfBoundary.length - boundMatchBytes;
@@ -190,8 +193,9 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
 
         // Read the next block
         int got = in.read(b, off, len);
-        if (got < 1)
-            throw new IOException("Multipart stream ended before a terminating boundary was encountered");
+        if (got < 1){
+                throw new IOException("Multipart stream ended before a terminating boundary was encountered");
+        }
 
         int match = ArrayUtils.matchSubarrayOrPrefix(b, off, got, crlfBoundary, 0);
         if (match < 0) {
