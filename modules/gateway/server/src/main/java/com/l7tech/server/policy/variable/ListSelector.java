@@ -30,8 +30,8 @@ public class ListSelector implements ExpandVariables.Selector<List> {
                 return new Selection(context.get(index), process(remainingName));
             }
         } catch ( NumberFormatException nfe ) {
-            String msg = handler.handleBadVariable( "Unable to process list selector '"+indexText+"'." );
-            if ( strict ) throw new IllegalArgumentException(msg);
+            // If the list selector cannot be parsed as a integer it will be parsed as another selector somewhere else,
+            // thus we swallow the exception.
         }
 
         return null;
