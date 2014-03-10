@@ -64,7 +64,7 @@ public class SsgFtpServerFactoryTest {
     }
 
     private FtpServer getFtpServer() throws ListenerException {
-        // TODO jwilliams: work out integration of Mockito and spring
+        // TODO jwilliams: work out integration of Mockito and Spring with MockFtpServer
 
         return null;
     }
