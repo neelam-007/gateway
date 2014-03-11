@@ -1,9 +1,12 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.message.Header;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HttpCookiesKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -20,6 +23,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.w3c.dom.Document;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -101,12 +105,19 @@ public class SoapMessageProcessingServletTest {
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final HeadersKnob headersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getRequest().getHeadersKnob();
                 final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
-                assertEquals(1, headerNames.size());
+                assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size() + 1, headerNames.size());
                 assertTrue(headerNames.contains("foo"));
                 assertEquals(1, headersKnob.getHeaderValues("foo").length);
                 assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
                 for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
-                    assertFalse(headerNames.contains(headerNotToForward));
+                    assertTrue(headerNames.contains(headerNotToForward));
+                }
+                for (final Header header : headersKnob.getHeaders()) {
+                    if (!header.getKey().equals("foo")) {
+                        assertFalse(header.isPassThrough());
+                    } else {
+                        assertTrue(header.isPassThrough());
+                    }
                 }
                 return AssertionStatus.NONE;
             }
@@ -127,13 +138,19 @@ public class SoapMessageProcessingServletTest {
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final HeadersKnob headersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getRequest().getHeadersKnob();
                 final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
-                assertEquals(1, headerNames.size());
+                assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size() + 1, headerNames.size());
                 assertTrue(headerNames.contains("foo"));
                 assertEquals(1, headersKnob.getHeaderValues("foo").length);
                 assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
                 for (final String headerNotToForward : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
-                    assertFalse(headerNames.contains(headerNotToForward));
-                    assertFalse(headerNames.contains(headerNotToForward.toUpperCase()));
+                    assertTrue(headerNames.contains(headerNotToForward.toUpperCase()));
+                }
+                for (final Header header : headersKnob.getHeaders()) {
+                    if (!header.getKey().equals("foo")) {
+                        assertFalse(header.isPassThrough());
+                    } else {
+                        assertTrue(header.isPassThrough());
+                    }
                 }
                 return AssertionStatus.NONE;
             }
@@ -150,6 +167,7 @@ public class SoapMessageProcessingServletTest {
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 final HeadersKnob responseHeadersKnob = ((PolicyEnforcementContext) invocationOnMock.getArguments()[0]).getResponse().getHeadersKnob();
                 responseHeadersKnob.addHeader("foo", "bar");
+                responseHeadersKnob.addHeader("doNotPassThrough", "doNotPassThrough", false);
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
@@ -330,6 +348,26 @@ public class SoapMessageProcessingServletTest {
         assertEquals("foo", cookies[0].getName());
         assertEquals("bar", cookies[0].getValue());
         assertEquals("invalidSetCookieHeaderValue", response.getHeader("Set-Cookie"));
+    }
+
+    @Test
+    public void noResponseContentTypeHeaderUsesOuterContentType() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final Document emptyDocument = XmlUtil.createEmptyDocument();
+                context.getResponse().initialize(emptyDocument, ContentTypeHeader.XML_DEFAULT);
+                assertFalse(context.getResponse().getHeadersKnob().containsHeader("Content-Type"));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        assertEquals(ContentTypeHeader.XML_DEFAULT.getFullValue(), response.getContentType());
     }
 
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {

@@ -93,7 +93,13 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             }
         } else {
             // must match value in order to remove
-            for (final String headerName : headersKnob.getHeaderNames()) {
+            final String[] headerNames;
+            if (assertion.isEvaluateNameAsExpression()) {
+                headerNames = headersKnob.getHeaderNames(true, false);
+            } else {
+                headerNames = headersKnob.getHeaderNames(true, true);
+            }
+            for (final String headerName : headerNames) {
                 if ((!assertion.isEvaluateNameAsExpression() && assertionHeaderName.equalsIgnoreCase(headerName)) ||
                         Pattern.compile(assertionHeaderName).matcher(headerName).matches()) {
                     // name matches
@@ -102,22 +108,22 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                             // multivalued
                             final String[] subValues = StringUtils.split(headerValue, HeadersKnobSupport.VALUE_SEPARATOR);
                             for (final String subValue : subValues) {
-                                removeByValue(headersKnob, assertionHeaderValue, headerName, subValue.trim(), context);
+                                removeByValue(headersKnob, assertionHeaderValue, headerName, subValue.trim());
                             }
                         }
-                        removeByValue(headersKnob, assertionHeaderValue, headerName, headerValue, context);
+                        removeByValue(headersKnob, assertionHeaderValue, headerName, headerValue);
                     }
                 }
             }
         }
     }
 
-    private void removeByValue(final HeadersKnob headersKnob, final String valueToMatch, final String headerName, final String headerValue, final PolicyEnforcementContext context) {
+    private void removeByValue(final HeadersKnob headersKnob, final String valueToMatch, final String headerName, final String headerValue) {
         if ((!assertion.isEvaluateValueExpression() && valueToMatch.equalsIgnoreCase(headerValue)) ||
                 (assertion.isEvaluateValueExpression() && Pattern.compile(valueToMatch).matcher(headerValue).matches())) {
             // value matches
             // when using an expression, we must match case
-            headersKnob.removeHeader(headerName, headerValue, true);
+            headersKnob.removeHeader(headerName, headerValue, assertion.isEvaluateNameAsExpression());
             logAndAudit(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE, headerName, headerValue);
         }
     }

@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +59,7 @@ public class HttpForwardingRuleEnforcer {
         }
 
         // do not modify original headers knob
-        final HeadersKnob copy = copyHeadersKnob(sourceMessage.getHeadersKnob());
+        final HeadersKnob copy = copyAndFilterNonPassThroughHeaders(sourceMessage.getHeadersKnob());
         final Set<String> ruleHeaderNames = new HashSet<>();
         if (!rules.isForwardAll()) {
             // set custom values
@@ -99,14 +98,10 @@ public class HttpForwardingRuleEnforcer {
         writeHeaders(copy, httpRequestParams, sourceMessage, targetDomain, auditor, rules.isForwardAll() || ruleHeaderNames.contains("cookie"));
     }
 
-    private static HeadersKnob copyHeadersKnob(final HeadersKnob toCopy) {
+    private static HeadersKnob copyAndFilterNonPassThroughHeaders(final HeadersKnob toCopy) {
         final HeadersKnob copy = new HeadersKnobSupport();
-        if (toCopy != null) {
-            for (final Pair<String, Object> header : toCopy.getHeaders()) {
-                copy.addHeader(header.getKey(), header.getValue());
-            }
-        } else {
-            logger.log(Level.WARNING, "HeadersKnob is missing from request.");
+        for (final Header header : toCopy.getHeaders(false)) {
+            copy.addHeader(header.getKey(), header.getValue(), header.isPassThrough());
         }
         return copy;
     }
@@ -141,16 +136,13 @@ public class HttpForwardingRuleEnforcer {
                                              final Audit auditor,
                                              @Nullable Map<String,?> vars,
                                              @Nullable final String[] varNames ) {
-        final HeadersKnob copy = sourceMessage.getHeadersKnob();
+        final HeadersKnob copy = copyAndFilterNonPassThroughHeaders(sourceMessage.getHeadersKnob());
 
         if (rules.isForwardAll()) {
             String[] headerNames = copy.getHeaderNames();
             boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
             for ( final String headerName : headerNames ) {
-                if (headerShouldBeIgnored(headerName)) {
-                    // some headers should just be ignored cause they are not 'application headers'
-                    logger.fine("not passing through " + headerName);
-                } else if ((headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) || headerName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) && !cookieAlreadyHandled) {
+                if ((headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) || headerName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) && !cookieAlreadyHandled) {
                     // cookies are handled separately by the ServerBRA
                 }  else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION) && !cookieAlreadyHandled) {
                     // the bridge has it's own handling for soap action
@@ -279,13 +271,14 @@ public class HttpForwardingRuleEnforcer {
         if (rules.isForwardAll()) {
             final HttpHeader[] headers = hh.getHeaders().toArray();
             for ( final HttpHeader h : headers ) {
-                if (headerShouldBeIgnored(h.getName())) {
-                    logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
-                } else if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(h.getName().toLowerCase())) {
-                    // special cookie handling happen
-                    // s outside this class by the ServerBRA
+                if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(h.getName().toLowerCase())) {
+                    // special cookie handling happens outside this class by the ServerBRA
                 } else {
-                    targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
+                    final boolean passThrough = !headerShouldBeIgnored(h.getName());
+                    if (!passThrough) {
+                        logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
+                    }
+                    targetForResponseHeaders.setHeader(h.getName(), h.getFullValue(), passThrough);
                 }
             }
         } else {
@@ -345,14 +338,14 @@ public class HttpForwardingRuleEnforcer {
         if (rules.isForwardAll()) {
             final boolean logFine = logger.isLoggable(Level.FINE);
             for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
-                if (!passThroughSpecialHeaders && headerShouldBeIgnored(headerFromResponse.getName())) {
-                    if (logFine) {
-                        logger.fine("ignoring header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
-                    }
-                } else if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
+                if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
                     // special cookie handling happens outside this loop (see below)
                 } else {
-                    targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue());
+                    final boolean passThrough = passThroughSpecialHeaders || !headerShouldBeIgnored(headerFromResponse.getName());
+                    if (!passThrough && logFine) {
+                        logger.fine("Adding non-passThrough header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
+                    }
+                    targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), passThrough);
                 }
             }
             passIncomingCookies = true;

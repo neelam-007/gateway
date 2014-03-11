@@ -218,6 +218,36 @@ public class HttpCookiesKnobImplTest {
         assertTrue(cookiesKnob.getCookies().isEmpty());
     }
 
+    @Test
+    public void containsCookie() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test");
+        cookiesKnob.addCookie(cookie);
+        assertTrue(cookiesKnob.containsCookie("foo", "localhost", "/"));
+    }
+
+    @Test
+    public void containsCookieNullDomain() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", null, 60, true, "test");
+        cookiesKnob.addCookie(cookie);
+        assertTrue(cookiesKnob.containsCookie("foo", null, "/"));
+    }
+
+    @Test
+    public void containsCookieNullPath() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, null, "localhost", 60, true, "test");
+        cookiesKnob.addCookie(cookie);
+        assertTrue(cookiesKnob.containsCookie("foo", "localhost", null));
+    }
+
+    @Test
+    public void doesNotContainCookie() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test");
+        cookiesKnob.addCookie(cookie);
+        assertFalse(cookiesKnob.containsCookie("test", null, null));
+        assertFalse(cookiesKnob.containsCookie("foo", "localhost", null));
+        assertFalse(cookiesKnob.containsCookie("foo", null, "/"));
+    }
+
     private boolean containsCookie(final Set<HttpCookie> toSearch, final HttpCookie toFind) {
         return containsCookie(toSearch, toFind, true);
     }

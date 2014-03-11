@@ -2,8 +2,10 @@ package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -54,6 +56,18 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
             }
         }
         return cookies;
+    }
+
+    @Override
+    public boolean containsCookie(@NotNull final String name, @Nullable final String domain, @Nullable final String path) {
+        boolean found = false;
+        for (final HttpCookie cookie : getCookies()) {
+            if (name.equals(cookie.getCookieName()) && ObjectUtils.equals(domain, cookie.getDomain()) && ObjectUtils.equals(path, cookie.getPath())) {
+                found = true;
+                break;
+            }
+        }
+        return found;
     }
 
     /**

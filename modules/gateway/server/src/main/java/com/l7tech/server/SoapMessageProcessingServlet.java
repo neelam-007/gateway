@@ -189,8 +189,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response,  true);
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
-        initCookies(hrequest.getCookies(), context);
-
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
         AssertionStatus status;
@@ -199,7 +197,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
-            ServletUtils.loadHeaders(hrequest, request.getHeadersKnob());
+            ServletUtils.loadHeadersAndCookies(hrequest, request);
 
             final Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {
@@ -242,7 +240,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // Send response headers
             final Set<HttpCookie> cookies = getCookiesToPropagate(context, reqKnob);
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
-            respKnob.beginResponse(getNonSetCookieHeaders(responseHeaders), cookies);
+            respKnob.beginResponse(getPassThroughHeaders(responseHeaders), cookies);
 
             int routeStat = respKnob.getStatus();
             if (routeStat < 1) {
@@ -275,8 +273,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                String[] ct = responseHeaders.getHeaderValues(HEADER_CONTENT_TYPE);
-                if (ct == null || ct.length <= 0) {
+                final Collection<Header> ct = responseHeaders.getHeaders(HEADER_CONTENT_TYPE, false);
+                if (ct == null || ct.isEmpty()) {
                     final ContentTypeHeader mimeKnobCt = responseMimeKnob.getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
                     hresponse.setContentType(toset);
@@ -384,23 +382,23 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     /**
-     * @return a collection of headers that are not valid set-cookie headers.
+     * @return a collection of headers should be passed through to the response.
      */
-    private Collection<Pair<String, Object>> getNonSetCookieHeaders(final HeadersKnob headersKnob) {
-        final List<Pair<String, Object>> nonSetCookieHeaders = new ArrayList<>();
-        for (final Pair<String, Object> header : headersKnob.getHeaders()) {
+    private Collection<Pair<String, Object>> getPassThroughHeaders(final HeadersKnob headersKnob) {
+        final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
+        for (final Header header : headersKnob.getHeaders(false)) {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
-                nonSetCookieHeaders.add(header);
+                passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
             } else if (header.getValue() instanceof String) {
                 try {
                     new HttpCookie((String)header.getValue());
                 } catch (final HttpCookie.IllegalFormatException e) {
                     // it's an invalid set-cookie header, so treat it as a regular header.
-                    nonSetCookieHeaders.add(header);
+                    passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
                 }
             }
         }
-        return nonSetCookieHeaders;
+        return passThroughHeaders;
     }
 
     /**
@@ -464,18 +462,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         SoapFaultLevel faultLevelInfo = context.getFaultlevel();
         if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
         return faultLevelInfo;
-    }
-
-    private void initCookies(Cookie[] cookies, PolicyEnforcementContext context) {
-        if(cookies!=null) {
-            final Message request = context.getRequest();
-            for (Cookie cookie : cookies) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Adding request cookie to context; name='" + cookie.getName() + "'.");
-                }
-                request.getHttpCookiesKnob().addCookie(CookieUtils.fromServletCookie(cookie, false));
-            }
-        }
     }
 
     private Set<HttpCookie> getCookiesToPropagate(PolicyEnforcementContext context, HttpRequestKnob reqKnob) {

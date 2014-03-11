@@ -531,8 +531,11 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         final String responseBody = printResponseDetails(response);
         assertEquals(200, response.getStatus());
         final Map<String, Collection<String>> headers = parseHeaders(responseBody);
-        // non-application response headers not included by message selector
-        assertEquals(1, headers.size());
+        assertEquals(6, headers.size());
+        assertTrue(headers.containsKey("Date"));
+        assertTrue(headers.containsKey("Content-Length"));
+        assertHeaderValues(headers, "Content-Type", "text/plain");
+        assertHeaderValues(headers, "Server", APACHE_SERVER);
         // header set after route has priority over header in response
         assertHeaderValues(headers, "foo", "afterRouteFoo");
     }
@@ -590,9 +593,12 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         final String responseBody = printResponseDetails(response);
         assertEquals(200, response.getStatus());
         final List<String> headers = Arrays.asList(StringUtils.split(responseBody, ", "));
-        // non-application response headers not included by message selector
-        assertEquals(1, headers.size());
+        assertEquals(5, headers.size());
         assertTrue(headers.contains("foo"));
+        assertTrue(headers.contains("Server"));
+        assertTrue(headers.contains("Content-Type"));
+        assertTrue(headers.contains("Content-Length"));
+        assertTrue(headers.contains("Date"));
     }
 
     @Test

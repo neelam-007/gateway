@@ -1,11 +1,11 @@
 package com.l7tech.message;
 
-import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -20,8 +20,13 @@ public class HeadersKnobSupportTest {
 
     @Test
     public void addHeader() {
-        knob.addHeader("1", "one");
-        assertEquals(1, knob.getHeaderValues("1").length);
+        knob.addHeader("1", "one", false);
+        final Collection<Header> headers = knob.getHeaders();
+        assertEquals(1, headers.size());
+        final Header header = headers.iterator().next();
+        assertEquals("1", header.getKey());
+        assertEquals("one", header.getValue());
+        assertFalse(header.isPassThrough());
     }
 
     @Test
@@ -56,10 +61,13 @@ public class HeadersKnobSupportTest {
 
     @Test
     public void setHeader() {
-        knob.setHeader("1", "one");
-        final String[] values = knob.getHeaderValues("1");
-        assertEquals(1, values.length);
-        assertEquals("one", values[0]);
+        knob.setHeader("1", "one", false);
+        final Collection<Header> headers = knob.getHeaders();
+        assertEquals(1, headers.size());
+        final Header header = headers.iterator().next();
+        assertEquals("1", header.getKey());
+        assertEquals("one", header.getValue());
+        assertFalse(header.isPassThrough());
     }
 
     @Test
@@ -100,11 +108,24 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
+    public void getHeaderValuesFilterNonPassThrough() {
+        knob.addHeader("1", "one");
+        knob.addHeader("1", "anotherOne");
+        knob.addHeader("1", "anotherAnotherOne", false);
+        final String[] values = knob.getHeaderValues("1", false);
+        assertEquals(2, values.length);
+        assertEquals("one", values[0]);
+        assertEquals("anotherOne", values[1]);
+    }
+
+    @Test
     public void getHeaderValuesCaseInsensitive() {
         knob.addHeader("foo", "bar");
+        knob.addHeader("FOO", "BAR");
         final String[] values = knob.getHeaderValues("FOO");
-        assertEquals(1, values.length);
+        assertEquals(2, values.length);
         assertEquals("bar", values[0]);
+        assertEquals("BAR", values[1]);
     }
 
     @Test
@@ -134,16 +155,29 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
-    public void getHeaderNamesDuplicate() {
+    public void getHeaderNamesIgnoresCase() {
+        knob.addHeader("foo", "lowerCase");
+        knob.addHeader("FOO", "upperCase");
         knob.addHeader("1", "one");
         knob.addHeader("1", "anotherOne");
-        final String[] names = knob.getHeaderNames();
-        assertEquals(1, names.length);
-        assertEquals("1", names[0]);
+        final List<String> names = Arrays.asList(knob.getHeaderNames());
+        assertEquals(2, names.size());
+        assertTrue(names.contains("foo"));
+        assertTrue(names.contains("1"));
+    }
+
+    @Test
+    public void getHeaderNamesFilterNonPassThrough() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("1", "one", false);
+        final List<String> names = Arrays.asList(knob.getHeaderNames(false, true));
+        assertEquals(1, names.size());
+        assertTrue(names.contains("foo"));
     }
 
     @Test
     public void containsHeaderTrue() {
+        knob.addHeader("foo", "bar");
         knob.addHeader("1", "one");
         assertTrue(knob.containsHeader("1"));
     }
@@ -230,16 +264,32 @@ public class HeadersKnobSupportTest {
     @Test
     public void getHeaders() {
         knob.addHeader("foo", "bar");
-        final Collection<Pair<String, Object>> headers = knob.getHeaders();
-        assertEquals(1, headers.size());
-        final Pair<String, Object> header = headers.iterator().next();
-        assertEquals("foo", header.getKey());
-        assertEquals("bar", header.getValue());
+        knob.addHeader("FOO", "BAR", false);
+        final Collection<Header> headers = knob.getHeaders();
+        assertEquals(2, headers.size());
+        final Iterator<Header> iterator = headers.iterator();
+        final Header header1 = iterator.next();
+        assertEquals("foo", header1.getKey());
+        assertEquals("bar", header1.getValue());
+        final Header header2 = iterator.next();
+        assertEquals("FOO", header2.getKey());
+        assertEquals("BAR", header2.getValue());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void getHeadersUnmodifiable() {
-        knob.getHeaders().add(new Pair<String, Object>("key", "value"));
+        knob.getHeaders().add(new Header("key", "value"));
+    }
+
+    @Test
+    public void getHeadersFilterNonPassThrough() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("FOO", "BAR", false);
+        final Collection<Header> headers = knob.getHeaders(false);
+        assertEquals(1, headers.size());
+        final Header header = headers.iterator().next();
+        assertEquals("foo", header.getKey());
+        assertEquals("bar", header.getValue());
     }
 
     @Test
@@ -248,6 +298,35 @@ public class HeadersKnobSupportTest {
         knob.removeHeader("Foo", true);
         assertEquals(1, knob.getHeaderValues("foo").length);
         assertEquals("bar", knob.getHeaderValues("foo")[0]);
+    }
+
+    @Test
+    public void getHeadersByName() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("FOO", "BAR", false);
+        knob.addHeader("notFoo", "notFoo");
+        final Collection<Header> headers = knob.getHeaders("foo");
+        assertEquals(2, headers.size());
+        final Iterator<Header> iterator = headers.iterator();
+        final Header first = iterator.next();
+        assertEquals("foo", first.getKey());
+        assertEquals("bar", first.getValue());
+        assertTrue(first.isPassThrough());
+        final Header second = iterator.next();
+        assertEquals("FOO", second.getKey());
+        assertEquals("BAR", second.getValue());
+        assertFalse(second.isPassThrough());
+    }
+
+    @Test
+    public void getHeadersByNameFilterNonPassThrough() {
+        knob.addHeader("foo", "bar");
+        knob.addHeader("doNotPass", "doNotPass", false);
+        final Collection<Header> headers = knob.getHeaders("foo", false);
+        assertEquals(1, headers.size());
+        final Header header = headers.iterator().next();
+        assertEquals("foo", header.getKey());
+        assertEquals("bar", header.getValue());
     }
 
     @Test

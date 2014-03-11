@@ -435,9 +435,6 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(secondHeadersRouted, "connection", KEEP_ALIVE);
     }
 
-    /**
-     * request.http.allheadervalues only looks at incoming request headers.
-     */
     @Test
     public void requestAllHeaderValuesContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -457,15 +454,15 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
         final Map<String, Collection<String>> headers = parseHeaders(responseBody);
-        assertHeaderValues(headers, "foo", "originalFoo");
-        assertFalse(headers.containsKey("addedbyassertion"));
-        assertFalse(headers.containsKey("addedByAssertion"));
+        assertEquals(6, headers.size());
+        assertHeaderValues(headers, "connection", "Keep-Alive");
+        assertHeaderValues(headers, "host", BASE_URL + ":8080");
+        assertHeaderValues(headers, "user-agent", APACHE_USER_AGENT);
+        assertHeaderValues(headers, "foo", "assertionFoo");
+        assertHeaderValues(headers, "addedByAssertion", "addedByAssertionValue");
         assertHeaderValues(headers, "setonoriginalrequest", "setOnOriginalRequestValue");
     }
 
-    /**
-     * request.http.headernames only looks at incoming request headers.
-     */
     @Test
     public void requestHeaderNamesContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -485,15 +482,15 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
         final List<String> headerNames = Arrays.asList(StringUtils.split(responseBody, ", "));
+        assertEquals(6, headerNames.size());
+        assertTrue(headerNames.contains("connection"));
+        assertTrue(headerNames.contains("host"));
+        assertTrue(headerNames.contains("user-agent"));
         assertTrue(headerNames.contains("foo"));
         assertTrue(headerNames.contains("setonoriginalrequest"));
-        assertFalse(headerNames.contains("addedByAssertion"));
-        assertFalse(headerNames.contains("addedbyassertion"));
+        assertTrue(headerNames.contains("addedByAssertion"));
     }
 
-    /**
-     * request.http.header.headerName looks beyond incoming request headers if there is no header with that name on the incoming request.
-     */
     @Test
     public void requestHeaderValuesByNameContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -513,7 +510,8 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertEquals(200, response.getStatus());
         final String responseBody = printResponseDetails(response);
         final Map<String, Collection<String>> headers = parseHeaders(responseBody);
-        assertHeaderValues(headers, "foo", "originalFoo");
+        assertEquals(3, headers.size());
+        assertHeaderValues(headers, "foo", "assertionFoo");
         assertHeaderValues(headers, "addedByAssertion", "addedByAssertionValue");
         assertHeaderValues(headers, "setOnOriginalRequest", "setOnOriginalRequestValue");
     }

@@ -37,13 +37,11 @@ import com.l7tech.server.transport.http.SslClientHostnameVerifier;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.Config;
 import com.l7tech.util.IOUtils;
 import org.apache.http.pool.PoolStats;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -67,11 +65,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -90,7 +84,7 @@ public class ServerHttpRoutingAssertionTest {
     private GenericHttpResponse mockHttpResponse;
 
     @Before
-    public void setup() throws Exception  {
+    public void setup() throws Exception {
         when(mockApplicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class)).thenReturn(mockClientFactory);
         when(mockClientFactory.createHttpClient(anyInt(), anyInt(), anyInt(), anyInt(), anyObject())).thenReturn(mockClient);
         when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(mockHttpRequest);
@@ -309,7 +303,9 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
-        assertEquals(0, pec.getResponse().getHeadersKnob().getHeaderValues("content-encoding").length);
+        final Collection<Header> contentEncodingHeaders = pec.getResponse().getHeadersKnob().getHeaders("content-encoding");
+        assertEquals(1, contentEncodingHeaders.size());
+        assertFalse(contentEncodingHeaders.iterator().next().isPassThrough());
     }
 
     @Test
@@ -387,7 +383,7 @@ public class ServerHttpRoutingAssertionTest {
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
-        
+
         final String expectedResponse = "<bar/>";
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
@@ -439,10 +435,10 @@ public class ServerHttpRoutingAssertionTest {
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
-                return mockClient.new MockGenericHttpRequest(){
+                return mockClient.new MockGenericHttpRequest() {
                     @Override
                     public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
-                        for (String[] parameter: parameters) {
+                        for (String[] parameter : parameters) {
                             actualParameters.put(parameter[0], parameter[1]);
                         }
                     }
@@ -498,10 +494,10 @@ public class ServerHttpRoutingAssertionTest {
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
-                return mockClient.new MockGenericHttpRequest(){
+                return mockClient.new MockGenericHttpRequest() {
                     @Override
                     public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
-                        for (String[] parameter: parameters) {
+                        for (String[] parameter : parameters) {
                             actualParameters.put(parameter[0], parameter[1]);
                         }
                     }
@@ -537,10 +533,10 @@ public class ServerHttpRoutingAssertionTest {
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
-                return mockClient.new MockGenericHttpRequest(){
+                return mockClient.new MockGenericHttpRequest() {
                     @Override
                     public void addParameters(List<String[]> parameters) throws IllegalArgumentException, IllegalStateException {
-                        for (String[] parameter: parameters) {
+                        for (String[] parameter : parameters) {
                             actualParameters.put(parameter[0], parameter[1]);
                         }
                     }
@@ -608,8 +604,8 @@ public class ServerHttpRoutingAssertionTest {
         hra.setHttpMethodAsString("MyCustomMethodName");
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
-        final HttpMethod[] sawMethod = { null };
-        final String[] sawMethodStr = { null };
+        final HttpMethod[] sawMethod = {null};
+        final String[] sawMethodStr = {null};
         PolicyEnforcementContext pec = createTestPolicyEnforcementContext(200, hra, appContext, new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
@@ -626,11 +622,11 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals("MyCustomMethodName", sawMethodStr[0]);
     }
 
-    private PolicyEnforcementContext createTestPolicyEnforcementContext( int status, HttpRoutingAssertion hra, ApplicationContext appContext) {
+    private PolicyEnforcementContext createTestPolicyEnforcementContext(int status, HttpRoutingAssertion hra, ApplicationContext appContext) {
         return createTestPolicyEnforcementContext(status, hra, appContext, null);
     }
 
-    private PolicyEnforcementContext createTestPolicyEnforcementContext( int status, HttpRoutingAssertion hra, ApplicationContext appContext, MockGenericHttpClient.CreateRequestListener createRequestListener) {
+    private PolicyEnforcementContext createTestPolicyEnforcementContext(int status, HttpRoutingAssertion hra, ApplicationContext appContext, MockGenericHttpClient.CreateRequestListener createRequestListener) {
         // Configure to combine passthrough auth with pass through all application headers
         hra.setPassthroughHttpAuthentication(true);
         hra.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
@@ -651,7 +647,7 @@ public class ServerHttpRoutingAssertionTest {
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
 
-        final GenericHttpHeader[] genericHttpHeaders= {new GenericHttpHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "NTLM")};
+        final GenericHttpHeader[] genericHttpHeaders = {new GenericHttpHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "NTLM")};
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(genericHttpHeaders);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(status, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
         mockClient.setCreateRequestListener(createRequestListener);
@@ -705,7 +701,7 @@ public class ServerHttpRoutingAssertionTest {
 
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(true);
-            assertion.setProtectedServiceUrl("http://localhost:" +httpServer.getPort() );
+            assertion.setProtectedServiceUrl("http://localhost:" + httpServer.getPort());
 
             ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
 
@@ -805,7 +801,7 @@ public class ServerHttpRoutingAssertionTest {
 
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(true);
-            assertion.setProtectedServiceUrl("http://localhost:" +httpServer.getPort());
+            assertion.setProtectedServiceUrl("http://localhost:" + httpServer.getPort());
             ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
 
             //First Request
@@ -816,7 +812,7 @@ public class ServerHttpRoutingAssertionTest {
             assertEquals(AssertionStatus.AUTH_REQUIRED, result);
             peCtx.close();
 
-             //Another request
+            //Another request
             final int connectionID2 = r.nextInt();
             requestKnob = new HttpRequestKnobStub(headers) {
                 @Override
@@ -869,14 +865,14 @@ public class ServerHttpRoutingAssertionTest {
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
-        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED, (long)data.length, data);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED, (long) data.length, data);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         final ByteArrayOutputStream expectedResult = new ByteArrayOutputStream();
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
-                return mockClient.new MockGenericHttpRequest(){
+                return mockClient.new MockGenericHttpRequest() {
                     @Override
                     public void setInputStreamFactory(final InputStreamFactory isf) {
                         try {
@@ -920,7 +916,7 @@ public class ServerHttpRoutingAssertionTest {
         KeyStore keyStore = TestDocuments.getMockSSLServerKeyStore();
 
         final String alias = keyStore.aliases().nextElement();
-        final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
+        final PrivateKey key = (PrivateKey) keyStore.getKey(alias, "7layer]".toCharArray());
         final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
 
         final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry(PersistentEntity.DEFAULT_GOID, "alias", chain, key));
@@ -1032,10 +1028,10 @@ public class ServerHttpRoutingAssertionTest {
         KeyStore keyStore = TestDocuments.getMockSSLServerKeyStore();
 
         final String alias = keyStore.aliases().nextElement();
-        final PrivateKey key = (PrivateKey)keyStore.getKey(alias, "7layer]".toCharArray());
+        final PrivateKey key = (PrivateKey) keyStore.getKey(alias, "7layer]".toCharArray());
         final X509Certificate[] chain = TestDocuments.toX509Certificate(keyStore.getCertificateChain(alias));
 
-        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry( PersistentEntity.DEFAULT_GOID, "alias", chain, key));
+        final DefaultKey defaultKey = new TestDefaultKey(new SsgKeyEntry(PersistentEntity.DEFAULT_GOID, "alias", chain, key));
 
         TestTrustedCertManager trustedCertManager = new TestTrustedCertManager(defaultKey);
         TrustedCertServicesImpl trustedCertServices = new TrustedCertServicesImpl(trustedCertManager);
@@ -1094,10 +1090,15 @@ public class ServerHttpRoutingAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, assertionStatus);
         final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
-        System.out.println(responseHeadersKnob.getHeaders());
-        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
+        assertEquals(3, responseHeadersKnob.getHeaderNames().length);
         final String[] fooValues = responseHeadersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("bar", fooValues[0]);
+        final String[] contentTypeValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE);
+        assertEquals(1, contentTypeValues.length);
+        assertEquals("text/plain", contentTypeValues[0]);
+        final String[] contentEncodingValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_ENCODING);
+        assertEquals(1, contentEncodingValues.length);
+        assertEquals(HttpConstants.ENCODING_UTF8, contentEncodingValues[0]);
     }
 }

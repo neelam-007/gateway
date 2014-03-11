@@ -270,7 +270,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setHeaderValue("bar");
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] values = headersKnob.getHeaderValues("foo");
         assertEquals(1, values.length);
         assertEquals("bar", values[0]);
@@ -285,7 +285,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setRemoveExisting(true);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] values = headersKnob.getHeaderValues("foo");
         assertEquals(1, values.length);
         assertEquals("newFoo", values[0]);
@@ -300,7 +300,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setRemoveExisting(false);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final List<String> values = Arrays.asList(headersKnob.getHeaderValues("foo"));
         assertEquals(2, values.size());
         assertTrue(values.contains("originalFoo"));
@@ -340,7 +340,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertEquals(0, headersKnob.getHeaderNames(true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME));
     }
 
@@ -353,7 +353,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertEquals(0, headersKnob.getHeaderNames(true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME));
     }
 
@@ -366,7 +366,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("bar2", fooValues[0]);
@@ -382,7 +382,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("bar", fooValues[0]);
@@ -399,7 +399,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("bar", fooValues[0]);
@@ -414,7 +414,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("bar2", fooValues[0]);
@@ -428,7 +428,7 @@ public class ServerAddHeaderAssertionTest {
         ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         assertEquals("bar", headersKnob.getHeaderValues("foo")[0]);
         assertFalse(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME));
     }
@@ -451,7 +451,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(2, headersKnob.getHeaderNames().length);
+        assertEquals(2, headersKnob.getHeaderNames(true, false).length);
         final String[] upperCaseFooValues = headersKnob.getHeaderValues("Foo");
         assertEquals(1, upperCaseFooValues.length);
         assertEquals("caseNoMatch", upperCaseFooValues[0]);
@@ -469,7 +469,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertEquals(0, headersKnob.getHeaderNames(true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME));
     }
 
@@ -487,7 +487,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(2, headersKnob.getHeaderNames().length);
+        assertEquals(2, headersKnob.getHeaderNames(true, false).length);
         final List<String> fooValues = Arrays.asList(headersKnob.getHeaderValues("foo"));
         assertEquals(2, fooValues.size());
         assertTrue(fooValues.contains("valNoMatch"));
@@ -508,7 +508,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(2, headersKnob.getHeaderNames().length);
+        assertEquals(2, headersKnob.getHeaderNames(true, false).length);
         final String[] fooValues = headersKnob.getHeaderValues("foo");
         assertEquals(1, fooValues.length);
         assertEquals("Bar(caseNoMatch),valNoMatch", fooValues[0]);
@@ -531,7 +531,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames());
+        final List<String> headerNames = Arrays.asList(headersKnob.getHeaderNames(true, true));
         assertEquals(3, headerNames.size());
         assertTrue(headerNames.contains("foo"));
         assertTrue(headerNames.contains("Foo"));
@@ -554,7 +554,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(1, headersKnob.getHeaderNames().length);
+        assertEquals(1, headersKnob.getHeaderNames(true, false).length);
         final String[] vals = headersKnob.getHeaderValues(STARTS_WITH_F);
         assertEquals(1, vals.length);
         assertEquals(STARTS_WITH_B, vals[0]);
@@ -567,7 +567,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertEquals(0, headersKnob.getHeaderNames(true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_HEADER_NAME));
     }
 
@@ -579,7 +579,7 @@ public class ServerAddHeaderAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(pec));
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
-        assertEquals(0, headersKnob.getHeaderNames().length);
+        assertEquals(0, headersKnob.getHeaderNames(true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_HEADER_NAME));
     }
 

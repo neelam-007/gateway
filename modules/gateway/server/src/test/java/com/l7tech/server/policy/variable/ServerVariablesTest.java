@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
@@ -500,12 +501,12 @@ public class ServerVariablesTest {
         PolicyEnforcementContext context = contextHttp();
 
         expandAndCheck(context, "${request.http.headernames}",
-                HttpConstants.HEADER_CONTENT_TYPE + ", " + HttpConstants.HEADER_CONNECTION + ", " + HttpConstants.HEADER_COOKIE);
-
-        expandAndCheck(context, "${request.http.allheadervalues[0]}",
-                HttpConstants.HEADER_CONTENT_TYPE + ':' + ContentTypeHeader.XML_DEFAULT.getFullValue());
+                HttpConstants.HEADER_CONNECTION + ", " + HttpConstants.HEADER_CONTENT_TYPE + ", " + HttpConstants.HEADER_COOKIE);
 
         expandAndCheck(context, "${request.http.allheadervalues[1]}",
+                HttpConstants.HEADER_CONTENT_TYPE + ':' + ContentTypeHeader.XML_DEFAULT.getFullValue());
+
+        expandAndCheck(context, "${request.http.allheadervalues[0]}",
                 HttpConstants.HEADER_CONNECTION + ':' + ContentTypeHeader.XML_DEFAULT.getFullValue() + ", " + ContentTypeHeader.TEXT_DEFAULT.getFullValue());
 
 
@@ -1207,14 +1208,16 @@ public class ServerVariablesTest {
         mockRequest.setParameter("single", "1");
         mockRequest.setParameter("multi", new String[]{"1", "2", "3", "4", "5"});
         mockRequest.setQueryString("single=1&multi=1&multi=2&multi=3&multi=4&multi=5");
-
-
         mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
         mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         mockRequest.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
-
-
         context.getRequest().attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        final HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
+        headersKnob.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
+        headersKnob.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
 
         return context;
     }

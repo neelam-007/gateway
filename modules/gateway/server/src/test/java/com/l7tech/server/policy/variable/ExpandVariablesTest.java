@@ -1129,6 +1129,9 @@ public class ExpandVariablesTest {
         params.put("foo", new String[] { "bar" });
         params.put("BaZ", new String[] { "quux", "xyzzy"});
         foo.attachHttpRequestKnob(new HttpRequestKnobAdapter("/foo", params, new MimeHeaders(headers)));
+        foo.getHeadersKnob().addHeader("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT.getFullValue());
+        foo.getHeadersKnob().addHeader("magic", "foo");
+        foo.getHeadersKnob().addHeader("magic", "bar");
         return foo;
     }
 

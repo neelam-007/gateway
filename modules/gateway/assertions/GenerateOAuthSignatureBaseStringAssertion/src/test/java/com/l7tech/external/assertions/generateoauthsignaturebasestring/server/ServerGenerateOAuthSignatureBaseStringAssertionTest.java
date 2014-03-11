@@ -110,7 +110,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
     @Test
     public void authorizationHeaderRequestToken() throws Exception {
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -121,13 +121,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(GET, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
     @Test
     public void authorizationHeaderRequestTokenPostNoContentType() throws Exception {
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         request.setMethod(POST);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
@@ -139,13 +139,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
     @Test
     public void authorizationHeaderRequestTokenUnrecognizedContentType() throws Exception {
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         request.setMethod(POST);
         request.setContentType("unrecognized");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
@@ -158,13 +158,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(POST, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
     @Test
     public void authorizationHeaderAuthorizedRequestToken() throws Exception {
-        setParamsForAuthRequestToken(request, true, false);
+        setParamsForAuthRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -175,12 +175,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(GET, AUTHORIZED_REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(AUTHORIZED_REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertAuthRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
     }
 
     @Test
     public void authorizationHeaderAccessToken() throws Exception {
-        setParamsForAccessToken(request, true, false);
+        setParamsForAccessToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -191,13 +191,13 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(GET, ACCESS_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(ACCESS_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertAccessTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_VERIFIER);
     }
 
     @Test
     public void messageTargetRequestToken() throws Exception {
-        setParamsForRequestToken(request, false, true);
+        setParamsForRequestToken(request, requestMessage, false, true);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -217,7 +217,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
     @Test
     public void messageTargetAuthorizedRequestToken() throws Exception {
-        setParamsForAuthRequestToken(request, false, true);
+        setParamsForAuthRequestToken(request, requestMessage, false, true);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -237,7 +237,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
     @Test
     public void messageTargetAccessToken() throws Exception {
-        setParamsForAccessToken(request, false, true);
+        setParamsForAccessToken(request, requestMessage, false, true);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -296,11 +296,12 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_callback=\"" + CALLBACK + "\"," +
                 "oauth_signature=\"asdf\"," +
                 "oauth_version=\"1.0\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         request.setMethod(HTTP_METHOD);
         request.setServerName(SERVER_NAME);
         request.setRequestURI("/photos?z=last&a=first&p=middle");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
 
@@ -312,7 +313,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
     @Test
     public void paramDetectedMoreThanOnce() throws Exception {
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         // this is the 2nd time that the consumer key has been set
@@ -353,7 +354,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     @Test
     @BugNumber(13108)
     public void paramDetectedMoreThanOnceButEqual() throws Exception {
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("oauth_consumer_key=" + CONSUMER_KEY);
@@ -416,7 +417,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     @Test
     public void doNotUseAuthorizationHeader() throws Exception {
         setParamsForRequestToken(assertion);
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUseAuthorizationHeader(false);
         assertion.setQueryString("${request.url}");
@@ -432,7 +433,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     @Test
     public void doNotUseMessageTarget() throws Exception {
         setParamsForRequestToken(assertion);
-        setParamsForRequestToken(request, false, true);
+        setParamsForRequestToken(request, requestMessage, false, true);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUseMessageTarget(false);
         assertion.setQueryString("${request.url}");
@@ -650,7 +651,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     @Test
     public void nullAuthorizationHeader() throws Exception {
         setParamsForRequestToken(assertion);
-        setParamsForRequestToken(request, true, false);
+        setParamsForRequestToken(request, requestMessage, true, false);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setQueryString("${request.url}");
         assertion.setAuthorizationHeader(null);
@@ -1016,7 +1017,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
     @Test
     public void encodedQueryParam() throws Exception {
-        setParamsForRequestToken(request, false, true);
+        setParamsForRequestToken(request, requestMessage, false, true);
         request.setQueryString("Query=Layer%207%20Oauth");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
@@ -1193,7 +1194,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         request.setContent(body.getBytes());
         request.addHeader("Content-Type", "application/x-www-form-urlencoded");
         request.setMethod("POST");
-        request.addHeader("Authorization", "Basic QWxhZGluOnNlc2FtIG9wZW4=");
+        requestMessage.getHeadersKnob().addHeader("Authorization", "Basic QWxhZGluOnNlc2FtIG9wZW4=");
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1221,7 +1222,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_nonce=\"" + NONCE + "\"," +
                 "oauth_callback=\"" + CALLBACK + "\"," +
                 "oauth_version=\"" + VERSION + "\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1232,7 +1233,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(buildExpectedString(GET, REQUEST_TOKEN, false), (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
@@ -1362,7 +1363,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_callback=\"" + CALLBACK + "\"," +
                 "oauth_version=\"" + VERSION + "\"," +
                 "oauth_unrecognized=\"okay\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1377,7 +1378,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
         assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
         assertRequestTokenVariables();
-        assertEquals(request.getHeader("Authorization"), policyContext.getVariable("oauth." + AUTH_HEADER));
+        assertEquals(requestMessage.getHeadersKnob().getHeaderValues("Authorization")[0], policyContext.getVariable("oauth." + AUTH_HEADER));
         assertContextVariablesDoNotExist("oauth." + OAUTH_TOKEN, "oauth." + OAUTH_VERIFIER);
     }
 
@@ -1409,7 +1410,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_nonce=\"" + NONCE + "\"," +
                 "oauth_callback=\"\"," +
                 "oauth_version=\"" + VERSION + "\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1435,7 +1436,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_nonce=\"" + NONCE + "\"," +
                 "oauth_callback=\"oob\"," +
                 "oauth_version=\"" + VERSION + "\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1461,7 +1462,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                 "oauth_nonce=\"" + NONCE + "\"," +
                 "oauth_callback=\"oob\"," +
                 "oauth_version=\"" + VERSION + "\"";
-        request.addHeader("Authorization", authorizationHeader);
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
         assertion.setUsageMode(UsageMode.SERVER);
         assertion.setQueryString("${request.url}");
@@ -1529,7 +1530,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     /**
      * Sets auth header and/or request body params for a request token.
      */
-    private void setParamsForRequestToken(final MockHttpServletRequest request, final boolean authHeader, final boolean requestBody) {
+    private void setParamsForRequestToken(final MockHttpServletRequest request, final Message requestMessage, final boolean authHeader, final boolean requestBody) {
         request.setServerName(SERVER_NAME);
         request.setRequestURI("/photos");
         request.setQueryString(QUERY_STRING);
@@ -1553,7 +1554,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                     "oauth_nonce=\"" + NONCE + "\"," +
                     "oauth_callback=\"" + CALLBACK + "\"," +
                     "oauth_version=\"" + VERSION + "\"";
-            request.addHeader("Authorization", authorizationHeader);
+            requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         }
     }
 
@@ -1572,7 +1573,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     /**
      * Sets auth header and/or request body params for an authenticated request token.
      */
-    private void setParamsForAuthRequestToken(final MockHttpServletRequest request, final boolean authHeader, final boolean requestBody) {
+    private void setParamsForAuthRequestToken(final MockHttpServletRequest request, final Message requestMessage, final boolean authHeader, final boolean requestBody) {
         request.setMethod(HTTP_METHOD);
         request.setServerName(SERVER_NAME);
         request.setRequestURI("/photos");
@@ -1598,7 +1599,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                     "oauth_token=\"" + TOKEN + "\"," +
                     "oauth_verifier=\"" + VERIFIER + "\"," +
                     "oauth_version=\"" + VERSION + "\"";
-            request.addHeader("Authorization", authorizationHeader);
+            requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         }
     }
 
@@ -1616,7 +1617,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     /**
      * Sets auth header and/or request body params for an access token.
      */
-    private void setParamsForAccessToken(final MockHttpServletRequest request, final boolean authHeader, final boolean requestBody) {
+    private void setParamsForAccessToken(final MockHttpServletRequest request, final Message requestMessage, final boolean authHeader, final boolean requestBody) {
         request.setMethod(HTTP_METHOD);
         request.setServerName(SERVER_NAME);
         request.setRequestURI("/photos" + FILE_QUERY_STRING);
@@ -1639,7 +1640,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
                     "oauth_nonce=\"" + NONCE + "\"," +
                     "oauth_token=\"" + TOKEN + "\"," +
                     "oauth_version=\"" + VERSION + "\"";
-            request.addHeader("Authorization", authorizationHeader);
+            requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader);
         }
     }
 

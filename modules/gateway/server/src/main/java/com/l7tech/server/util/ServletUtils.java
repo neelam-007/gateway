@@ -1,9 +1,13 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.http.CookieUtils;
 import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.HttpCookiesKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import org.jetbrains.annotations.NotNull;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -28,40 +32,53 @@ public class ServletUtils {
             logger.fine("No client cert in that request.");
             return null;
         } else if (param instanceof Object[]) {
-            Object[] maybeCerts = (Object[])param;
+            Object[] maybeCerts = (Object[]) param;
             if (maybeCerts[0] instanceof X509Certificate) {
-                return (X509Certificate)maybeCerts[0];
+                return (X509Certificate) maybeCerts[0];
             } else {
                 logger.info("Non-X.509 Certificate found in client certificate chain: " + maybeCerts[0].getClass().getName());
                 return null;
             }
         } else if (param instanceof X509Certificate) {
             logger.fine("Found X.509 certificate in request");
-            return (X509Certificate)param;
+            return (X509Certificate) param;
         }
 
-        logger.info("Cert param present but type not suppoted " + param.getClass().getName());
+        logger.info("Cert param present but type not supported " + param.getClass().getName());
         return null;
     }
 
     /**
-     * Loads a HeadersKnob with headers from request, filtering a specific set of 'non-application' headers.
+     * Loads a HeadersKnob with headers and cookies from the request, filtering a specific set of 'non-application' headers.
      *
-     * @param sourceRequest     the HttpServletRequest which is a source of headers.
-     * @param targetHeadersKnob the HeadersKnob to load with headers from the request.
+     * @param sourceRequest the HttpServletRequest which is a source of headers.
+     * @param message       the Message to load with headers from the request.
      * @see {@link com.l7tech.policy.assertion.HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
      */
-    public static void loadHeaders(@NotNull final HttpServletRequest sourceRequest, @NotNull final HeadersKnob targetHeadersKnob) {
+    public static void loadHeadersAndCookies(@NotNull final HttpServletRequest sourceRequest, @NotNull final Message message) {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
         final Enumeration headerNames = sourceRequest.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             final String headerName = (String) headerNames.nextElement();
-            if (!HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase())) {
-                final Enumeration headerValues = sourceRequest.getHeaders(headerName);
-                while (headerValues.hasMoreElements()) {
-                    targetHeadersKnob.addHeader(headerName, headerValues.nextElement());
-                }
-            } else {
+            final boolean passThrough = !HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(headerName.toLowerCase());
+            if (!passThrough) {
                 logger.log(Level.FINEST, "Filtering request header " + headerName);
+            }
+            final Enumeration headerValues = sourceRequest.getHeaders(headerName);
+            while (headerValues.hasMoreElements()) {
+                headersKnob.addHeader(headerName, headerValues.nextElement(), passThrough);
+            }
+        }
+        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
+        final Cookie[] cookies = sourceRequest.getCookies();
+        if (cookies != null) {
+            for (final Cookie cookie : cookies) {
+                if (!cookiesKnob.containsCookie(cookie.getName(), cookie.getDomain(), cookie.getPath())) {
+                    cookiesKnob.addCookie(CookieUtils.fromServletCookie(cookie, false));
+                } else{
+                    // may have been added by header processing
+                    logger.log(Level.FINEST, "Cookie " + cookie + " already exists in message " + message);
+                }
             }
         }
     }

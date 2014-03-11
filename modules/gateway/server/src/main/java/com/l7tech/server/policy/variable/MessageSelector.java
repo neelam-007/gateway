@@ -142,7 +142,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
 
     private static final List<Class<? extends HasHeaders>> httpHeaderHaverKnobClasses =
-            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HeadersKnob.class, HttpInboundResponseKnob.class);
+            Collections.<Class<? extends HasHeaders>>singletonList(HeadersKnob.class);
 
     private static final List<Class<? extends HasHeaders>> jmsHeaderHaverKnobClasses = Arrays.<Class<? extends HasHeaders>>asList(JmsKnob.class);
 
@@ -670,24 +670,16 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
 
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
-            boolean sawHeaderHaver = false;
             for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
                 HasHeaders hrk = context.getKnob(headerKnob);
                 if (hrk != null) {
-                    sawHeaderHaver = true;
                     String[] headers = hrk.getHeaderNames();
                     return new Selection(headers);
                 }
             }
-             if (sawHeaderHaver) {
-                String msg = handler.handleBadVariable("Headers are empty");
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
-            } else {
-                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
-            }
+            final String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
         }
     };
 
@@ -704,11 +696,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
 
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
-            boolean sawHeaderHaver = false;
             for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
                 HasHeaders hrk = context.getKnob(headerKnob);
                 if (hrk != null) {
-                    sawHeaderHaver = true;
                     String[] headers = hrk.getHeaderNames();
                     ArrayList <String> values = new ArrayList<String>();
                     final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
@@ -722,15 +712,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                     return new Selection(values.toArray());
                 }
             }
-             if (sawHeaderHaver) {
-                String msg = handler.handleBadVariable( "Headers are empty");
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
-            } else {
-                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
-            }
+            String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
         }
     }
 

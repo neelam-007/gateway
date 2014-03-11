@@ -1,6 +1,5 @@
 package com.l7tech.message;
 
-import com.l7tech.util.Pair;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -19,33 +18,33 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public String[] getHeaderValues(@NotNull final String name) {
-        final Collection<String> valuesAsString = new ArrayList<>();
-        for (final Pair<String, Object> header : headers) {
-            if (header.getKey().equalsIgnoreCase(name)) {
-                valuesAsString.add(header.getValue() == null ? null : header.getValue().toString());
-            }
-        }
-        return valuesAsString.toArray(new String[valuesAsString.size()]);
+        return getHeaderValues(name, true);
     }
 
     @Override
     public String[] getHeaderNames() {
-        final Collection<String> names = new HashSet<>();
-        for (final Pair<String, Object> header : headers) {
-            names.add(header.getKey());
-        }
-        return names.toArray(new String[names.size()]);
+        return getHeaderNames(true, false);
     }
 
     @Override
     public void setHeader(@NotNull final String name, @Nullable final Object value) {
+        setHeader(name, value, true);
+    }
+
+    @Override
+    public void setHeader(@NotNull String name, @Nullable Object value, boolean passThrough) {
         removeHeader(name);
-        addHeader(name, value);
+        addHeader(name, value, passThrough);
     }
 
     @Override
     public void addHeader(@NotNull final String name, @Nullable final Object value) {
-        headers.add(new Pair(name, value));
+        addHeader(name, value, true);
+    }
+
+    @Override
+    public void addHeader(@NotNull String name, @Nullable Object value, boolean passThrough) {
+        headers.add(new Header(name, value, passThrough));
     }
 
     @Override
@@ -55,8 +54,8 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public void removeHeader(@NotNull String name, boolean caseSensitive) {
-        final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
-        for (final Pair<String, Object> header : headers) {
+        final Collection<Header> toRemove = new ArrayList<>();
+        for (final Header header : headers) {
             if (nameMatches(name, caseSensitive, header.getKey())) {
                 toRemove.add(header);
             }
@@ -74,9 +73,9 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public void removeHeader(@NotNull String name, @Nullable Object value, boolean caseSensitive) {
-        final Collection<Pair<String, Object>> toRemove = new ArrayList<>();
-        final Collection<Pair<String, Object>> replacements = new ArrayList<>();
-        for (final Pair<String, Object> header : headers) {
+        final Collection<Header> toRemove = new ArrayList<>();
+        final Collection<Header> replacements = new ArrayList<>();
+        for (final Header header : headers) {
             if ((nameMatches(name, caseSensitive, header.getKey()))) {
                 if (header.getValue() instanceof String && ((String) header.getValue()).contains(VALUE_SEPARATOR)) {
                     // handle comma-separated multiple values
@@ -92,7 +91,7 @@ public class HeadersKnobSupport implements HeadersKnob {
                     }
                     subValues.removeAll(subValuesToRemove);
                     toRemove.add(header);
-                    replacements.add(new Pair<String, Object>(header.getKey(), StringUtils.join(subValues, VALUE_SEPARATOR)));
+                    replacements.add(new Header(header.getKey(), StringUtils.join(subValues, VALUE_SEPARATOR)));
                 } else if (ObjectUtils.equals(value, header.getValue())) {
                     toRemove.add(header);
                 }
@@ -107,7 +106,7 @@ public class HeadersKnobSupport implements HeadersKnob {
 
     @Override
     public boolean containsHeader(@NotNull final String name) {
-        for (final Pair<String, Object> header : headers) {
+        for (final Header header : headers) {
             if (header.getKey().equalsIgnoreCase(name)) {
                 return true;
             }
@@ -116,8 +115,63 @@ public class HeadersKnobSupport implements HeadersKnob {
     }
 
     @Override
-    public Collection<Pair<String, Object>> getHeaders() {
-        return Collections.unmodifiableCollection(headers);
+    public Collection<Header> getHeaders() {
+        return getHeaders(true);
+    }
+
+    @Override
+    public Collection<Header> getHeaders(final boolean includeNonPassThrough) {
+        final Collection<Header> ret;
+        if (includeNonPassThrough) {
+            ret = Collections.unmodifiableCollection(headers);
+        } else {
+            final Collection<Header> passThroughHeaders = new ArrayList<>();
+            for (final Header header : headers) {
+                if (header.isPassThrough()) {
+                    passThroughHeaders.add(header);
+                }
+            }
+            ret = Collections.unmodifiableCollection(passThroughHeaders);
+        }
+        return ret;
+    }
+
+    @Override
+    public Collection<Header> getHeaders(@NotNull final String name) {
+        return getHeaders(name, true);
+    }
+
+    @Override
+    public Collection<Header> getHeaders(@NotNull final String name, final boolean includeNonPassThrough) {
+        final Collection<Header> ret = new ArrayList<>();
+        for (final Header header : headers) {
+            if (header.getKey().equalsIgnoreCase(name) && (header.isPassThrough() || includeNonPassThrough)) {
+                ret.add(header);
+            }
+        }
+        return Collections.unmodifiableCollection(ret);
+    }
+
+    @Override
+    public String[] getHeaderValues(@NotNull final String name, final boolean includeNonPassThrough) {
+        final Collection<String> valuesAsString = new ArrayList<>();
+        for (final Header header : headers) {
+            if (header.getKey().equalsIgnoreCase(name) && (header.isPassThrough() || includeNonPassThrough)) {
+                valuesAsString.add(header.getValue() == null ? null : header.getValue().toString());
+            }
+        }
+        return valuesAsString.toArray(new String[valuesAsString.size()]);
+    }
+
+    @Override
+    public String[] getHeaderNames(final boolean includeNonPassThrough, final boolean caseSensitive) {
+        final Collection<String> names = caseSensitive ? new TreeSet<String>() : new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (final Header header : headers) {
+            if (header.isPassThrough() || includeNonPassThrough) {
+                names.add(header.getKey());
+            }
+        }
+        return names.toArray(new String[names.size()]);
     }
 
     private boolean nameMatches(final String toMatch, final boolean caseSensitive, final String headerName) {
@@ -125,6 +179,6 @@ public class HeadersKnobSupport implements HeadersKnob {
                 (caseSensitive && headerName.equals(toMatch));
     }
 
-    private Collection<Pair<String, Object>> headers = new ArrayList<>();
+    private Collection<Header> headers = new ArrayList<>();
     private static final Logger logger = Logger.getLogger(HeadersKnobSupport.class.getName());
 }

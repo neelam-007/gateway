@@ -84,6 +84,17 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
+    public void forwardAllRequestHeadersFiltersNonPassThroughHeaders() throws Exception {
+        request.getHeadersKnob().addHeader("foo", "bar", true);
+        request.getHeadersKnob().addHeader("doNotPassThrough", "doNotPassThrough", false);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        final List<HttpHeader> extraHeaders = requestParams.getExtraHeaders();
+        assertEquals(1, extraHeaders.size());
+        assertEquals("foo", extraHeaders.get(0).getName());
+        assertEquals("bar", extraHeaders.get(0).getFullValue());
+    }
+
+    @Test
     public void forwardAllRequestHeadersMultipleWithSameName() throws Exception {
         request.getHeadersKnob().addHeader("foo", "bar");
         request.getHeadersKnob().addHeader("foo", "bar2");
@@ -244,6 +255,20 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
+    public void requestRuleWithCustomValueOverridesNonPassThroughHeader() throws Exception {
+        // originally the header is set to not be passed through
+        request.getHeadersKnob().addHeader("foo", "doNotPassThrough", false);
+        // however adding a custom value for the header should take precedence
+        rules.add(new HttpPassthroughRule("foo", true, "custom"));
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("foo", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("custom", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    @Test
     public void requestRuleWithContextVariableCustomValue() throws Exception {
         vars.put("custom", "customValue");
         rules.add(new HttpPassthroughRule("foo", true, "${custom}"));
@@ -289,6 +314,16 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals(1, requestParams.getExtraHeaders().size());
         assertEquals("foo", requestParams.getExtraHeaders().get(0).getName());
         assertEquals("bar", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    @Test
+    public void requestRuleWithOriginalValueDoNotPassThrough() throws Exception {
+        rules.add(new HttpPassthroughRule("foo", false, null));
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        request.getHeadersKnob().addHeader("foo", "doNotPassThrough", false);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(0, requestParams.getExtraHeaders().size());
     }
 
     @Test
@@ -395,7 +430,11 @@ public class HttpForwardingRuleEnforcerJavaTest {
             responseHeaders.add(new GenericHttpHeader(specialHeader, "testValue"));
         }
         HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, false, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        final Collection<Header> headers = responseHeadersKnob.getHeaders();
+        assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), headers.size());
+        for (final Header header : headers) {
+            assertFalse(header.isPassThrough());
+        }
     }
 
     @Test

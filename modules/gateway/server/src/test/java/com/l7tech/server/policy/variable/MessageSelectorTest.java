@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.management.config.monitoring.Header;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -213,20 +212,13 @@ public class MessageSelectorTest {
         assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser.1}", vars, audit));
         assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser.login}", vars, audit));
 
-        List<HttpHeader> headers = new ArrayList<HttpHeader>();
-        HttpHeader h1 = new GenericHttpHeader(new Header("h1", "h1value"));
-        HttpHeader h12 = new GenericHttpHeader(new Header("h1", "h12value"));
-        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
-        headers.add(h1);
-        headers.add(h12);
-        headers.add(h2);
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("h1", "h1value");
+        headersKnob.addHeader("h1", "h12value");
+        headersKnob.addHeader("h2", "h2value");
 
-        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
-
-        message.attachHttpRequestKnob(rk);
-
-        assertEquals("h1, h1, h2", ExpandVariables.process("${request.http.headernames}", vars, audit));
-        assertEquals("h1:h1value, h12value, h1:h1value, h12value, h2:h2value", ExpandVariables.process("${request.http.allheaderValues}", vars, audit));
+        assertEquals("h1, h2", ExpandVariables.process("${request.http.headernames}", vars, audit));
+        assertEquals("h1:h1value, h12value, h2:h2value", ExpandVariables.process("${request.http.allheaderValues}", vars, audit));
         assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1}", vars, audit));
 
     }
@@ -256,21 +248,14 @@ public class MessageSelectorTest {
 
         assertEquals(Integer.toString(ac.getAllAuthenticationResults().size()), ExpandVariables.process("${request.authenticateddns.length}", vars, audit));
 
-        List<HttpHeader> headers = new ArrayList<HttpHeader>();
-        HttpHeader h1 = new GenericHttpHeader(new Header("h1", "h1value"));
-        HttpHeader h12 = new GenericHttpHeader(new Header("h1", "h12value"));
-        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
-        headers.add(h1);
-        headers.add(h12);
-        headers.add(h2);
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("h1", "h1value");
+        headersKnob.addHeader("h1", "h12value");
+        headersKnob.addHeader("h2", "h2value");
 
-        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
-
-        message.attachHttpRequestKnob(rk);
-
-        assertEquals(Integer.toString(headers.size()), ExpandVariables.process("${request.http.headernames.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${request.http.headernames.length}", vars, audit));
         assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
-        assertEquals(Integer.toString(headers.size()), ExpandVariables.process("${request.http.allheaderValues.length}", vars, audit));
+        assertEquals("2", ExpandVariables.process("${request.http.allheaderValues.length}", vars, audit));
 
     }
 
@@ -281,17 +266,10 @@ public class MessageSelectorTest {
             put("request", message);
         }};
 
-        List<HttpHeader> headers = new ArrayList<HttpHeader>();
-        HttpHeader h1 = new GenericHttpHeader(new Header("h1.length", "h1value"));
-        HttpHeader h12 = new GenericHttpHeader(new Header("h1.length", "h12value"));
-        HttpHeader h2 = new GenericHttpHeader(new Header("h2", "h2value"));
-        headers.add(h1);
-        headers.add(h12);
-        headers.add(h2);
-
-        HttpRequestKnobStub rk = new HttpRequestKnobStub(headers);
-
-        message.attachHttpRequestKnob(rk);
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("h1.length", "h1value");
+        headersKnob.addHeader("h1.length", "h12value");
+        headersKnob.addHeader("h2", "h2value");
 
         assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
         assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length.length}", vars, audit));
@@ -354,16 +332,16 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectHeaderFromRequestKnobBeforeHeadersKnob() {
+    public void selectHeaderDoesNotLookAtRequestKnob() {
         message.attachHttpRequestKnob(new HttpRequestKnobStub(Collections.<HttpHeader>singletonList(new GenericHttpHeader("test", "requestKnobValue"))));
         message.getHeadersKnob().addHeader("test", "headersKnobValue");
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("requestKnobValue", selectedValue);
+        assertEquals("headersKnobValue", selectedValue);
     }
 
     @Test
-    public void selectHeaderFromHeadersKnobBeforeInboundResponseKnob() {
+    public void selectHeaderDoesNotLookAtInboundResponseKnob() {
         final HttpInboundResponseFacet facet = new HttpInboundResponseFacet();
         facet.setHeaderSource(new HttpHeadersHaver() {
             @Override
@@ -376,6 +354,274 @@ public class MessageSelectorTest {
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("onHeadersKnob", selectedValue);
+    }
+
+    @Test
+    public void selectAllHeaderValues() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("1", "first");
+        // non-passthrough headers should be included
+        headersKnob.addHeader("2", "second", false);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(2, headers.size());
+        assertTrue(headers.contains("1:first"));
+        assertTrue(headers.contains("2:second"));
+    }
+
+    @Test
+    public void selectAllHeaderValuesDuplicate() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("3", "third");
+        headersKnob.addHeader("3", "anotherThird");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(1, headers.size());
+        assertTrue(headers.contains("3:third, anotherThird"));
+    }
+
+    @Test
+    public void selectAllHeaderValuesCaseInsensitive() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("testcase", "lower");
+        headersKnob.addHeader("TESTCASE", "UPPER");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(1, headers.size());
+        assertTrue(headers.contains("testcase:lower, UPPER"));
+    }
+
+    @Test
+    public void selectAllHeaderValuesNone() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+
+        final Object[] selectedValue = ((Object[]) selector.select(null, message, "http.allheadervalues", handler, false).getSelectedValue());
+        assertTrue(selectedValue.length == 0);
+    }
+
+    @Test
+    public void selectAllHeaderValuesNoneStrict() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+
+        final Object[] selectedValue = ((Object[]) selector.select(null, message, "http.allheadervalues", handler, true).getSelectedValue());
+        assertTrue(selectedValue.length == 0);
+    }
+
+    @Test
+    public void selectAllHeaderValuesNoHeadersKnob() {
+        assertNull(selector.select(null, message, "http.allheadervalues", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectAllHeaderValuesNoHeadersKnobStrict() {
+        try {
+            selector.select(null, message, "http.allheadervalues", handler, true);
+            fail("Expected IllegalArgumentException due to no headers knob");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.allheadervalues in com.l7tech.message.Message", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectHeaderNames() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("1", "first");
+        // non-passthrough headers should be included
+        headersKnob.addHeader("2", "second", false);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(2, headers.size());
+        assertTrue(headers.contains("1"));
+        assertTrue(headers.contains("2"));
+    }
+
+    @Test
+    public void selectHeaderNamesDuplicate() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("3", "third");
+        headersKnob.addHeader("3", "anotherThird");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(1, headers.size());
+        assertTrue(headers.contains("3"));
+    }
+
+    @Test
+    public void selectHeaderNamesCaseInsensitive() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("foo", "bar");
+        headersKnob.addHeader("FOO", "BAR");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
+        final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
+        assertEquals(1, headers.size());
+        assertTrue(headers.contains("foo"));
+    }
+
+    @Test
+    public void selectHeaderNamesNoHeadersKnob() {
+        assertNull(selector.select(null, message, "http.headernames", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectHeaderNamesNoHeadersKnobStrict() {
+        try {
+            selector.select(null, message, "http.headernames", handler, true);
+            fail("Expected IllegalArgumentException due to no headers knob");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.headernames in com.l7tech.message.Message", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectHeadersByNameSingle() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        // non-passthrough headers should be included
+        headersKnob.addHeader("1", "first", false);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.1", handler, false);
+        assertEquals("first", selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectHeadersByNameMultiple() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("foo", "bar");
+        headersKnob.addHeader("foo", "anotherBar");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.foo", handler, false);
+        // returns the first only
+        assertEquals("bar", selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectHeadersByNameCaseInsensitive() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("FOO", "BAR");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.foo", handler, false);
+        // returns the first only
+        assertEquals("BAR", selection.getSelectedValue());
+    }
+
+    @Test
+    public void selectHeadersByNameNone() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+
+        assertNull(selector.select(null, message, "http.header.doesnotexist", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectHeadersByNameNoneStrict() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+        try {
+            selector.select(null, message, "http.header.doesnotexist", handler, true);
+            fail("Expected IllegalArgumentException due to header not found");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: doesnotexist header was empty", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectHeadersByNameNoHeadersKnob() {
+        assertNull(selector.select(null, message, "http.header.doesnotexist", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectHeadersByNameNoHeadersKnobStrict() {
+        try {
+            selector.select(null, message, "http.header.doesnotexist", handler, true);
+            fail("Expected IllegalArgumentException due to no headers knob");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.header.doesnotexist in com.l7tech.message.Message", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectHeaderValuesByNameSingle() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        // non-passthrough headers should be included
+        headersKnob.addHeader("1", "first", false);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.1", handler, false);
+        final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
+        assertEquals(1, values.size());
+        assertTrue(values.contains("first"));
+    }
+
+    @Test
+    public void selectHeaderValuesByNameMultiple() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("foo", "bar");
+        headersKnob.addHeader("foo", "anotherBar");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.foo", handler, false);
+        final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
+        assertEquals(2, values.size());
+        assertTrue(values.contains("bar"));
+        assertTrue(values.contains("anotherBar"));
+    }
+
+    @Test
+    public void selectHeaderValuesByNameCaseInsensitive() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("FOO", "BAR");
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.foo", handler, false);
+        final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
+        assertEquals(1, values.size());
+        assertTrue(values.contains("BAR"));
+    }
+
+    @Test
+    public void selectHeaderValuesByNameNone() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+
+        assertNull(selector.select(null, message, "http.headervalues.foo", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectHeaderValuesByNameNoneStrict() {
+        // make sure there is a headers knob
+        message.getHeadersKnob();
+
+        try {
+            selector.select(null, message, "http.headervalues.foo", handler, true);
+            fail("Expected IllegalArgumentException due to header not found");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: foo header was empty", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void selectHeaderValuesByNameNoHeadersKnob() {
+        assertNull(selector.select(null, message, "http.headervalues.foo", handler, false));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void selectHeaderValuesByNameNoHeadersKnobStrict() {
+        try {
+            selector.select(null, message, "http.headervalues.foo", handler, true);
+            fail("Expected IllegalArgumentException due to header not found");
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Unsupported variable: http.headervalues.foo in com.l7tech.message.Message", e.getMessage());
+            throw e;
+        }
     }
 
     @Test
@@ -489,7 +735,7 @@ public class MessageSelectorTest {
         assertNull(selector.select(null, message, "http.cookies.", handler, false));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void selectCookieByNameNoneStrict() {
         message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
         try {
@@ -535,7 +781,7 @@ public class MessageSelectorTest {
         assertNull(selector.select(null, message, "http.cookievalues.", handler, false));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void selectCookieValueByNameNoneStrict() {
         message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
         try {
