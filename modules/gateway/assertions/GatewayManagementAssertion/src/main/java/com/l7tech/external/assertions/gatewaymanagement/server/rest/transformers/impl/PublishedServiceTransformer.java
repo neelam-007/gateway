@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
-import com.l7tech.common.io.ResourceDocument;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
@@ -9,6 +8,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.util.Pair;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +16,7 @@ import javax.inject.Inject;
 import java.util.Collection;
 
 @Component
-public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer<ServiceMO, PublishedService, ServiceResourceFactory> {
+public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer<ServiceMO, PublishedService,ServiceHeader, ServiceResourceFactory> {
 
     @Override
     @Inject

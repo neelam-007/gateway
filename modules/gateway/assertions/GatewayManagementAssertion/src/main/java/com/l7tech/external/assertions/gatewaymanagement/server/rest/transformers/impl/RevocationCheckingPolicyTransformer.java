@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.RevocationCheckingPolicyMO;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class RevocationCheckingPolicyTransformer extends APIResourceWsmanBaseTransformer<RevocationCheckingPolicyMO, RevocationCheckPolicy, RevocationCheckingPolicyResourceFactory> {
+public class RevocationCheckingPolicyTransformer extends APIResourceWsmanBaseTransformer<RevocationCheckingPolicyMO, RevocationCheckPolicy,EntityHeader, RevocationCheckingPolicyResourceFactory> {
 
     @Override
     @Inject

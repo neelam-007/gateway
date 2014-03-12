@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class FolderTransformer extends APIResourceWsmanBaseTransformer<FolderMO, Folder, FolderResourceFactory> {
+public class FolderTransformer extends APIResourceWsmanBaseTransformer<FolderMO, Folder,FolderHeader, FolderResourceFactory> {
 
     @Override
     @Inject

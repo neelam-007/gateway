@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
+import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.util.CollectionUtils;
@@ -108,7 +109,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public String doInTransaction( final TransactionStatus transactionStatus ) {
                 try {
-                    Policy newPolicy = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final Policy newPolicy = newPolicyContainer.getEntity();
                     newPolicy.setVersion(0);
                     //generate a new Guid if none is set.
                     if(newPolicy.getGuid() == null) {
@@ -159,7 +161,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public Object doInTransaction( final TransactionStatus transactionStatus ) {
                 try {
-                    Policy newPolicy = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final Policy newPolicy = newPolicyContainer.getEntity();
                     policyManager.update(newPolicy);
                     policyVersionManager.checkpointPolicy(newPolicy, active, comment, false);
 

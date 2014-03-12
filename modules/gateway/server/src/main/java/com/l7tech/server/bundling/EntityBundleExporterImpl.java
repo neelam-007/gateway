@@ -1,5 +1,7 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -81,7 +83,24 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             }
         }
 
-        return new EntityBundle(entities, mappings);
+        List<EntityContainer> entityContainers = Functions.map(entities, new Functions.UnaryThrows<EntityContainer, Entity,FindException>(){
+
+            @Override
+            public EntityContainer call(Entity entity) throws FindException {
+                if(entity instanceof JmsEndpoint){
+                    final JmsEndpoint endpoint = (JmsEndpoint)entity;
+                    Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(),EntityType.JMS_CONNECTION, null, null));
+                    if(connection == null)
+                        throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
+                    return new JmsContainer(endpoint,(JmsConnection)connection);
+                }
+                if(entity instanceof PersistentEntity){
+                    return new PersistentEntityContainer((PersistentEntity)entity);
+                }
+                return new EntityContainer(entity);
+            }
+        });
+        return new EntityBundle(entityContainers, mappings);
     }
 
     /**

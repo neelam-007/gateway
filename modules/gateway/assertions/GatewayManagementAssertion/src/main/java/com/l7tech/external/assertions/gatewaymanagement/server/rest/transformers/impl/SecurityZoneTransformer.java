@@ -5,13 +5,14 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.SecurityZoneMO;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SecurityZone;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class SecurityZoneTransformer extends APIResourceWsmanBaseTransformer<SecurityZoneMO, SecurityZone, SecurityZoneResourceFactory> {
+public class SecurityZoneTransformer extends APIResourceWsmanBaseTransformer<SecurityZoneMO, SecurityZone, EntityHeader, SecurityZoneResourceFactory> {
 
     @Override
     @Inject

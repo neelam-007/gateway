@@ -222,7 +222,6 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
 
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-            logger.log(Level.INFO, response.toString());
             assertOkResponse(response);
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));

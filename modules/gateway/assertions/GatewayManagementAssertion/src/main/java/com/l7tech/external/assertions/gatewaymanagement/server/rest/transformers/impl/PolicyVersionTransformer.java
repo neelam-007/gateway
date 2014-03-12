@@ -6,16 +6,15 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyVersionMO;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.bundling.PersistentEntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @Component
 public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO, PolicyVersion> {
@@ -43,12 +42,13 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
     }
 
     @Override
-    public PolicyVersion convertFromMO(PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(policyVersionMO, true);
+    public PersistentEntityContainer<PolicyVersion> convertFromMO(PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(policyVersionMO,true);
     }
 
     @Override
-    public PolicyVersion convertFromMO(PolicyVersionMO policyVersionMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public PersistentEntityContainer<PolicyVersion> convertFromMO(PolicyVersionMO policyVersionMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+
         PolicyVersion policyVersion = new PolicyVersion();
         policyVersion.setActive(policyVersionMO.isActive());
         policyVersion.setName(policyVersionMO.getComment());
@@ -65,7 +65,7 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
         policyVersion.setTime(policyVersionMO.getTime());
         policyVersion.setOrdinal(policyVersionMO.getOrdinal());
         policyVersion.setXml(policyVersionMO.getXml());
-        return policyVersion;
+        return new PersistentEntityContainer<>(policyVersion);
     }
 
     @Override

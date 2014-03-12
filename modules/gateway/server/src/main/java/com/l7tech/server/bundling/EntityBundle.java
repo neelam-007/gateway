@@ -10,21 +10,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This is an entity bundle used for migrating entities betreen gateways.
+ * This is an entity bundle used for migrating entities between gateways.
  */
 public class EntityBundle {
     // The list of mappings for the entities
     private final List<EntityMappingInstructions> mappingInstructions;
     //the entities map. It is used to store the entities and quickly retrieve them by their ids.
-    private final Map<String, Entity> idEntityMap;
+    private final Map<String, EntityContainer> idEntityMap;
 
-    public EntityBundle(Collection<Entity> entities, List<EntityMappingInstructions> mappingInstructions) {
+    public EntityBundle(Collection<EntityContainer> entities, List<EntityMappingInstructions> mappingInstructions) {
         this.mappingInstructions = mappingInstructions;
 
         //build entity map so that entities can be quickly retrieved.
-        idEntityMap = Functions.toMap(entities, new Functions.Unary<Pair<String, Entity>, Entity>() {
+        idEntityMap = Functions.toMap(entities, new Functions.Unary<Pair<String, EntityContainer>, EntityContainer>() {
             @Override
-            public Pair<String, Entity> call(Entity entity) {
+            public Pair<String, EntityContainer> call(EntityContainer entity) {
                 return new Pair<>(entity.getId(), entity);
             }
         });
@@ -35,7 +35,7 @@ public class EntityBundle {
      *
      * @return The entities in the bundle
      */
-    public Collection<Entity> getEntities() {
+    public Collection<EntityContainer> getEntities() {
         return idEntityMap.values();
     }
 
@@ -54,7 +54,7 @@ public class EntityBundle {
      * @param id The id of the entity to return
      * @return The entity in the bundle with the given id or null if there is no such entity with that id in the bundle
      */
-    public Entity getEntity(@NotNull final String id) {
+    public EntityContainer getEntity(@NotNull final String id) {
         return idEntityMap.get(id);
     }
 }

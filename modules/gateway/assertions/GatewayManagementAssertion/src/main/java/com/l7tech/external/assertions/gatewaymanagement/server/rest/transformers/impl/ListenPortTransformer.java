@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ListenPortMO;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class ListenPortTransformer extends APIResourceWsmanBaseTransformer<ListenPortMO, SsgConnector, ListenPortResourceFactory> {
+public class ListenPortTransformer extends APIResourceWsmanBaseTransformer<ListenPortMO, SsgConnector, EntityHeader, ListenPortResourceFactory> {
 
     @Override
     @Inject

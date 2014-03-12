@@ -5,13 +5,14 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransformer<EncapsulatedAssertionMO, EncapsulatedAssertionConfig, EncapsulatedAssertionResourceFactory> {
+public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransformer<EncapsulatedAssertionMO, EncapsulatedAssertionConfig, GuidEntityHeader,EncapsulatedAssertionResourceFactory> {
 
     @Override
     @Inject

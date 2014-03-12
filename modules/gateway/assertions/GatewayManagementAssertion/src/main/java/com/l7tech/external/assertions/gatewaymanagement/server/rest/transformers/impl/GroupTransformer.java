@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -38,12 +39,12 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
     }
 
     @Override
-    public Group convertFromMO(GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(groupMO, true);
+    public EntityContainer<Group> convertFromMO(GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(groupMO,true);
     }
 
     @Override
-    public Group convertFromMO(GroupMO groupMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<Group> convertFromMO(GroupMO groupMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         GroupBean group = new GroupBean();
         group.setUniqueIdentifier(groupMO.getId());
 
@@ -58,7 +59,7 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
         group.setProviderId(identityProviderGoid);
         group.setName(groupMO.getName());
         group.setDescription(groupMO.getDescription());
-        return group;
+        return new EntityContainer<Group>(group);
     }
 
     @Override

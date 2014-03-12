@@ -132,11 +132,6 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
         assertOkDeleteResponse(response);
-
-        // check target environment's  policy/activce connector and password contents
-        response = getTargetEnvironment().processRequest("policies/" , HttpMethod.GET, null, "");
-        response = getTargetEnvironment().processRequest("activeConnectors/", HttpMethod.GET, null, "");
-        response = getTargetEnvironment().processRequest("passwords/" , HttpMethod.GET, null, "");
     }
 
     @Test

@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class IdentityProviderTransformer extends APIResourceWsmanBaseTransformer<IdentityProviderMO, IdentityProviderConfig, IdentityProviderResourceFactory> {
+public class IdentityProviderTransformer extends APIResourceWsmanBaseTransformer<IdentityProviderMO, IdentityProviderConfig,EntityHeader, IdentityProviderResourceFactory> {
 
     @Override
     @Inject

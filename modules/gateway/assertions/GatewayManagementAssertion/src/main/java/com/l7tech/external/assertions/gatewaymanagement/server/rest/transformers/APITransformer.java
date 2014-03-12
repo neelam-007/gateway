@@ -3,7 +3,9 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.server.bundling.EntityContainer;
 import org.jetbrains.annotations.NotNull;
+
 
 /**
  * This transformer is used to transform between a gateway object and a Managed object and from a managed object to an
@@ -40,7 +42,7 @@ public interface APITransformer<M, E> {
      * @param m The api object to convert
      * @return Returns the gateway object represented by the given api object.
      */
-    public E convertFromMO(M m) throws ResourceFactory.InvalidResourceException;
+    public EntityContainer<E> convertFromMO(M m) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to its equivalent gateway object.
@@ -54,7 +56,7 @@ public interface APITransformer<M, E> {
      *               dummy reference object
      * @return Returns the gateway object represented by the given api object.
      */
-    public E convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException;
+    public EntityContainer<E> convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to its equivalent gateway entity header.

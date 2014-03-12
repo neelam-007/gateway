@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<JDBCConnectionMO, JdbcConnection, JDBCConnectionResourceFactory> {
+public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<JDBCConnectionMO, JdbcConnection, EntityHeader, JDBCConnectionResourceFactory> {
 
     @Override
     @Inject

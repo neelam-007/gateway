@@ -80,14 +80,17 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 for (EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     //Get the entity that this mapping is for
-                    Entity entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId());
+                    EntityContainer entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId());
                     if (entity == null) {
                         throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
                     }
-
+                    if ( !(entity.getEntity() instanceof Entity)){
+                        throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
+                    }
+                    final Entity baseEntity = (Entity)entity.getEntity();
                     //Find an existing entity to map it to.
                     //TODO: move this into the try block?
-                    final Entity existingEntity = locateExistingEntity(mapping, entity);
+                    final Entity existingEntity = locateExistingEntity(mapping,baseEntity);
                     try {
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
@@ -111,12 +114,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, false);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, true);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -138,7 +141,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity.
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, true);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, null);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -186,11 +189,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     /**
      * This will create or update an entity.
      *
-     * @param entity          The entity to create or update
+     * @param entityContainer The entity to create or update, includes dependent entities
      * @param id              The id of the entity to create or update
      * @param mapping         The mapping instructions for the entity to create or update
      * @param resourceMapping The existing mappings that have been performed
-     * @param create          True if the entity should be created false if it should be updated
+     * @param existingEntity  The existing entity for update, null for create
      * @return The entity header of the entity that was created or updated.
      * @throws ObjectModelException
      * @throws CannotReplaceDependenciesException
@@ -198,25 +201,30 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws ConstraintViolationException
      */
     @NotNull
-    private EntityHeader createOrUpdateResource(@NotNull final Entity entity, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final boolean create) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    private EntityHeader createOrUpdateResource(@NotNull final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         //validate that the id is not null if create is false
-        if (!create && id == null) {
+        if (existingEntity != null && id == null) {
             throw new IllegalArgumentException("Must specify an id when updating an existing entity.");
+        }
+        if (!(entityContainer instanceof PersistentEntityContainer)) {
+            throw new IllegalArgumentException("Cannot update or save a non persisted entity.");
         }
 
         //validate the entity. This should check the entity annotations and see if it contains valid data.
-        validate(entity);
+        validate((PersistentEntityContainer)entityContainer);
+
+        final PersistentEntity baseEntity = (PersistentEntity)entityContainer.getEntity();
 
         //create the original entity header
-        EntityHeader originalHeader = EntityHeaderUtils.fromEntity(entity);
+        EntityHeader originalHeader = EntityHeaderUtils.fromEntity(baseEntity);
 
         //if it is a mapping by name and the mapped name is set it should be preserved here. Or if the mapped GUID is set it should be preserved.
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {
             switch (mapping.getTargetMapping().getType()) {
                 case NAME:
-                    if (entity instanceof NamedEntityImp) {
+                    if (baseEntity instanceof NamedEntityImp) {
                         //TODO: consider moving setName into NameEntity interface
-                        ((NamedEntityImp) entity).setName(mapping.getTargetMapping().getTargetID());
+                        ((NamedEntityImp) baseEntity).setName(mapping.getTargetMapping().getTargetID());
                     }
                     break;
                 case GUID:
@@ -228,7 +236,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         }
 
         //replace dependencies in the entity
-        dependencyAnalyzer.replaceDependencies(entity, resourceMapping);
+        dependencyAnalyzer.replaceDependencies(baseEntity, resourceMapping);
+
+        //create/save dependent entities
+        createOrUpdateDependentEntities((PersistentEntityContainer)entityContainer,existingEntity);
 
         // Create the managed object within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers.
@@ -240,16 +251,16 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Goid importedID;
                 try {
                     try {
-                        if (create) {
+                        if (existingEntity == null) {
                             if (id == null) {
-                                importedID = (Goid) entityCrud.save(entity);
+                                importedID = (Goid) entityCrud.save(baseEntity);
                             } else {
-                                entityCrud.save(id, entity);
+                                entityCrud.save(id, baseEntity);
                                 importedID = id;
                             }
                         } else {
-                            ((PersistentEntity) entity).setGoid(id);
-                            entityCrud.update(entity);
+                            baseEntity.setGoid(id);
+                            entityCrud.update(baseEntity);
                             importedID = id;
                         }
                     } catch (SaveException | UpdateException e) {
@@ -259,7 +270,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     transactionStatus.flush();
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-                    return Either.left(new ObjectModelException("Error attempting to save or update " + entity.getClass(), e));
+                    return Either.left(new ObjectModelException("Error attempting to save or update " + baseEntity.getClass(), e));
                 }
                 return Either.right(importedID);
             }
@@ -268,7 +279,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         Eithers.extract(idOrException);
 
         //create the target entity header
-        EntityHeader targetHeader = EntityHeaderUtils.fromEntity(entity);
+        EntityHeader targetHeader = EntityHeaderUtils.fromEntity(baseEntity);
 
         //add the header mapping if it has change any ids
         if (!headersMatch(originalHeader, targetHeader)) {
@@ -277,30 +288,50 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return targetHeader;
     }
 
+    private void createOrUpdateDependentEntities(PersistentEntityContainer entityContainer, final Entity existingEntity) throws ObjectModelException {
+        if(entityContainer instanceof JmsContainer){
+            JmsContainer jmsContainer = ((JmsContainer) entityContainer);
+            if(existingEntity == null ){
+                entityCrud.save(jmsContainer.getJmsConnection().getGoid(),jmsContainer.getJmsConnection());
+                jmsContainer.getEntity().setConnectionGoid(jmsContainer.getJmsConnection().getGoid());
+            }else{
+                if(existingEntity instanceof JmsEndpoint){
+                    JmsEndpoint existingEndpoint = (JmsEndpoint)existingEntity;
+                    jmsContainer.getJmsConnection().setGoid(existingEndpoint.getConnectionGoid());
+                    entityCrud.update(jmsContainer.getJmsConnection());
+                    jmsContainer.getJmsEndpoint().setConnectionGoid(existingEndpoint.getConnectionGoid());
+                }
+            }
+        }
+    }
+
     /**
      * This will validate the entity using annotations that if has declared on it fields and methods.
      *
-     * @param entity The entity to validate
+     * @param entityContainer The entity to validate
      * @throws ConstraintViolationException This is thrown if the entity is invalid.
      */
-    private void validate(@NotNull Entity entity) throws ConstraintViolationException {
+    private void validate(@NotNull PersistentEntityContainer entityContainer) throws ConstraintViolationException {
         //get any special validation groups for this entity.
-        final Class[] groupClasses = getValidationGroups(entity);
 
-        //validate the entity
-        final Set<ConstraintViolation<Entity>> violations = validator.validate(entity, groupClasses);
-        if (!violations.isEmpty()) {
-            //the entity is invalid. Create a nice exception message.
-            final StringBuilder validationReport = new StringBuilder("Invalid Value: ");
-            boolean first = true;
-            for (final ConstraintViolation<Entity> violation : violations) {
-                if (!first) validationReport.append('\n');
-                first = false;
-                validationReport.append(violation.getPropertyPath().toString());
-                validationReport.append(' ');
-                validationReport.append(violation.getMessage());
+
+        for(Object entity: entityContainer.getEntities()){
+            final Class[] groupClasses = getValidationGroups(entity);
+            //validate the entity
+            final Set<ConstraintViolation<Entity>> violations = validator.validate((Entity)entity, groupClasses);
+            if (!violations.isEmpty()) {
+                //the entity is invalid. Create a nice exception message.
+                final StringBuilder validationReport = new StringBuilder("Invalid Value: ");
+                boolean first = true;
+                for (final ConstraintViolation<Entity> violation : violations) {
+                    if (!first) validationReport.append('\n');
+                    first = false;
+                    validationReport.append(violation.getPropertyPath().toString());
+                    validationReport.append(' ');
+                    validationReport.append(violation.getMessage());
+                }
+                throw new ConstraintViolationException(validationReport.toString());
             }
-            throw new ConstraintViolationException(validationReport.toString());
         }
     }
 

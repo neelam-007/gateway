@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class EmailListenerTransformer extends APIResourceWsmanBaseTransformer<EmailListenerMO, EmailListener, EmailListenerResourceFactory> {
+public class EmailListenerTransformer extends APIResourceWsmanBaseTransformer<EmailListenerMO, EmailListener, EntityHeader, EmailListenerResourceFactory> {
 
     @Override
     @Inject

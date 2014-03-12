@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class HttpConfigurationTransformer extends APIResourceWsmanBaseTransformer<HttpConfigurationMO, HttpConfiguration, HttpConfigurationResourceFactory> {
+public class HttpConfigurationTransformer extends APIResourceWsmanBaseTransformer<HttpConfigurationMO, HttpConfiguration, EntityHeader, HttpConfigurationResourceFactory> {
 
     @Override
     @Inject

@@ -1,14 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.EntityManagerResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.bundling.PersistentEntityContainer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <E> The Entity that that MO transforms into
  * @param <F> The wsman resource factory that can transform the MO
  */
-public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E extends Entity, F extends ResourceFactory<M,E>> implements APITransformer<M, E> {
+public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E extends PersistentEntity, EH extends EntityHeader, F extends EntityManagerResourceFactory<M,E, EH>> implements APITransformer<M, E> {
 
     /**
      * The wiseman resource factory
@@ -45,23 +46,24 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
     }
 
     @Override
-    public E convertFromMO(M m) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(m, true);
+    public PersistentEntityContainer<E> convertFromMO(M m) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(m,true);
     }
 
     @Override
-    public E convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException {
-        E entity = factory.fromResource(m, strict);
-        if(entity instanceof PersistentEntity && m.getId() != null){
+    public PersistentEntityContainer<E> convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException {
+
+        E entity = factory.fromResourceAsBag(m,strict).getEntity();
+        if(entity!=null && m.getId() != null){
             //set the entity id as it is not always set
-            ((PersistentEntity)entity).setGoid(Goid.parseGoid(m.getId()));
+            entity.setGoid(Goid.parseGoid(m.getId()));
         }
-        return entity;
+        return new PersistentEntityContainer<E>(entity);
     }
 
     @Override
     public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException {
-        return EntityHeaderUtils.fromEntity(convertFromMO(m, false));
+        return EntityHeaderUtils.fromEntity(convertFromMO(m).getEntity());
     }
 
     @Override

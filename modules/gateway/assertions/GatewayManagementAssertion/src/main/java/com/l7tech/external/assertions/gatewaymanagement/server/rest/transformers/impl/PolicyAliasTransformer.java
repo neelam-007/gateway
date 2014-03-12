@@ -7,13 +7,14 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.objectmodel.AliasHeader;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<PolicyAliasMO, PolicyAlias, PolicyAliasResourceFactory> {
+public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<PolicyAliasMO, PolicyAlias, AliasHeader<Policy>, PolicyAliasResourceFactory> {
 
     @Override
     @Inject

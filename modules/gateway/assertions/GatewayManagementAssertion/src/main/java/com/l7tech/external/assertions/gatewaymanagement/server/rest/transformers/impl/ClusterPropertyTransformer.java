@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.ClusterPropertyMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class ClusterPropertyTransformer extends APIResourceWsmanBaseTransformer<ClusterPropertyMO, ClusterProperty, ClusterPropertyResourceFactory> {
+public class ClusterPropertyTransformer extends APIResourceWsmanBaseTransformer<ClusterPropertyMO, ClusterProperty, EntityHeader, ClusterPropertyResourceFactory> {
 
     @Override
     @Inject

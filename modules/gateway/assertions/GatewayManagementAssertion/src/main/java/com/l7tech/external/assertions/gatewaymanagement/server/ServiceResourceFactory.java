@@ -251,11 +251,11 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
     }
 
     @Override
-    protected EntityBag<PublishedService> fromResourceAsBag( final Object resource ) throws InvalidResourceException {
+    public EntityBag<PublishedService> fromResourceAsBag( final Object resource ) throws InvalidResourceException {
         return fromResourceAsBag(resource, true);
     }
 
-    protected EntityBag<PublishedService> fromResourceAsBag( final Object resource, boolean strict ) throws InvalidResourceException {
+    public EntityBag<PublishedService> fromResourceAsBag( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof ServiceMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected service");
 

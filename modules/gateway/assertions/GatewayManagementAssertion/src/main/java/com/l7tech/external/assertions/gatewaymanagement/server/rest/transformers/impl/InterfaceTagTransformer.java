@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.server.bundling.EntityContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -38,14 +39,13 @@ public class InterfaceTagTransformer implements APITransformer<InterfaceTagMO, I
     }
 
     @Override
-    public InterfaceTag convertFromMO(InterfaceTagMO m) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(m, true);
+    public EntityContainer<InterfaceTag> convertFromMO(InterfaceTagMO interfaceTagMO) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(interfaceTagMO,true);
     }
 
     @Override
-    public InterfaceTag convertFromMO(InterfaceTagMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
-        //strict can be ignored here as interface tag does not depend on other entities.
-        return factory.internalFromResource(m).left;
+    public EntityContainer<InterfaceTag> convertFromMO(InterfaceTagMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
+        return new EntityContainer<>(factory.internalFromResource(m).left);
     }
 
     @Override

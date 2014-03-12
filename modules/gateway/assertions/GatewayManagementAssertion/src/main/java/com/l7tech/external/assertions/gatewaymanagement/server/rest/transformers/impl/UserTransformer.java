@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -39,12 +40,12 @@ public class UserTransformer implements APITransformer<UserMO, User> {
     }
 
     @Override
-    public User convertFromMO(UserMO userMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(userMO, true);
+    public EntityContainer<User> convertFromMO(UserMO userMO) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(userMO,true);
     }
 
     @Override
-    public User convertFromMO(UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<User> convertFromMO(UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());
@@ -64,7 +65,7 @@ public class UserTransformer implements APITransformer<UserMO, User> {
         user.setEmail(userMO.getEmail());
         user.setDepartment(userMO.getDepartment());
         user.setSubjectDn(userMO.getSubjectDn());
-        return user;
+        return new EntityContainer<User>(user);
     }
 
     @Override

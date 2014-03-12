@@ -126,7 +126,7 @@ public class UserRestResourceFactory {
 
         try {
             UserManager userManager = retrieveUserManager(providerId);
-            User newUser = userTransformer.convertFromMO(resource);
+            User newUser = userTransformer.convertFromMO(resource).getEntity();
             if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
 
             if(userManager instanceof InternalUserManager && newUser instanceof  InternalUser){
@@ -189,7 +189,7 @@ public class UserRestResourceFactory {
 
         try {
             UserManager userManager = retrieveUserManager(providerId);
-            User newUser = userTransformer.convertFromMO(resource);
+            User newUser = userTransformer.convertFromMO(resource).getEntity();
             if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
             if (newUser instanceof InternalUser){
 

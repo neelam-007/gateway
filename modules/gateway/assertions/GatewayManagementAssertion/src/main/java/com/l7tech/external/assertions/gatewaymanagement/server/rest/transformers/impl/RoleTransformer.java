@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.RbacRoleMO;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class RoleTransformer extends APIResourceWsmanBaseTransformer<RbacRoleMO, Role, RbacRoleResourceFactory> {
+public class RoleTransformer extends APIResourceWsmanBaseTransformer<RbacRoleMO, Role,EntityHeader, RbacRoleResourceFactory> {
 
     @Override
     @Inject

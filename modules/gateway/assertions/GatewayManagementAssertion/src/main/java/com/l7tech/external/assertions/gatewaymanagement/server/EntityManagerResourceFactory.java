@@ -28,7 +28,7 @@ import static com.l7tech.util.Option.optional;
  * Custom methods should call <code>checkPermitted</code> or <code>accessFilter</code>
  * to enforce access controls.</p>
  */
-abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
+public abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH extends EntityHeader> extends ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
 
     //- PUBLIC
 
@@ -354,8 +354,11 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @return The entity
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException If the resource cannot be converted
      */
-    protected EntityBag<E> fromResourceAsBag( Object resource ) throws InvalidResourceException {
-       return new EntityBag<>( fromResource( resource, true ) );
+    public EntityBag<E> fromResourceAsBag( Object resource ) throws InvalidResourceException {
+       return fromResourceAsBag( resource, true );
+    }
+    public EntityBag<E> fromResourceAsBag( Object resource, boolean strict ) throws InvalidResourceException {
+        return new EntityBag<>( fromResource( resource, strict ) );
     }
 
     /**
@@ -820,7 +823,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         return (T) object;
     }
 
-    protected static class EntityBag<BE extends PersistentEntity> implements Iterable<PersistentEntity> {
+    public static class EntityBag<BE extends PersistentEntity> implements Iterable<PersistentEntity> {
         private final BE entity;
 
         protected EntityBag( final BE entity ) {
@@ -830,7 +833,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         /**
          * Access the primary entity.
          */
-        protected BE getEntity() {
+        public BE getEntity() {
             return entity;
         }
 

@@ -1,17 +1,22 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.JMSDestinationMO;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.bundling.JmsContainer;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Iterator;
 
 @Component
-public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<JMSDestinationMO, JmsEndpoint, JMSDestinationResourceFactory> {
+public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<JMSDestinationMO, JmsEndpoint, JmsEndpointHeader, JMSDestinationResourceFactory> {
 
     @Override
     @Inject
@@ -24,5 +29,19 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
         return new ItemBuilder<JMSDestinationMO>(m.getJmsDestinationDetail().getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
+    }
+
+    @Override
+    public JmsContainer convertFromMO(JMSDestinationMO jmsDestinationMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+        Iterator<PersistentEntity> entities =  factory.fromResourceAsBag(jmsDestinationMO).iterator();
+        JmsContainer container = new JmsContainer((JmsEndpoint)entities.next(),(JmsConnection)entities.next());
+
+        container.getJmsEndpoint().setConnectionGoid(container.getJmsConnection().getGoid());
+
+        if(container.getEntity()!=null && jmsDestinationMO.getId() != null){
+            //set the entity id as it is not always set
+            container.getJmsEndpoint().setGoid(Goid.parseGoid(jmsDestinationMO.getId()));
+        }
+        return container;
     }
 }

@@ -6,12 +6,13 @@ import com.l7tech.gateway.api.GenericEntityMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class GenericEntityTransformer extends APIResourceWsmanBaseTransformer<GenericEntityMO, GenericEntity, GenericEntityResourceFactory> {
+public class GenericEntityTransformer extends APIResourceWsmanBaseTransformer<GenericEntityMO, GenericEntity, GenericEntityHeader,GenericEntityResourceFactory> {
 
     @Override
     @Inject

@@ -7,12 +7,14 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.server.bundling.PersistentEntityContainer;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
-public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO, Policy, PolicyResourceFactory> {
+public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO, Policy, PolicyHeader, PolicyResourceFactory> {
 
     @Override
     @Inject
@@ -28,12 +30,12 @@ public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO,
     }
 
     @Override
-    public Policy convertFromMO(PolicyMO policyMO, boolean strict) throws ResourceFactory.InvalidResourceException {
-        Policy policy = super.convertFromMO(policyMO, strict);
+    public PersistentEntityContainer<Policy> convertFromMO(PolicyMO policyMO,boolean strict) throws ResourceFactory.InvalidResourceException {
+        PersistentEntityContainer<Policy> entityBag = super.convertFromMO(policyMO,strict);
         //preserve the policy guid if it is set.
         if(policyMO.getGuid() != null) {
-            policy.setGuid(policyMO.getGuid());
+            entityBag.getEntity().setGuid(policyMO.getGuid());
         }
-        return policy;
+        return entityBag;
     }
 }

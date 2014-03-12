@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 
 @Component
-public class DocumentTransformer extends APIResourceWsmanBaseTransformer<ResourceDocumentMO, ResourceEntry, DocumentResourceFactory> {
+public class DocumentTransformer extends APIResourceWsmanBaseTransformer<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader, DocumentResourceFactory> {
 
     @Override
     @Inject
