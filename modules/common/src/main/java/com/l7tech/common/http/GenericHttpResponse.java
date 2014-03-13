@@ -76,7 +76,7 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
      *
      * The following charsets are known to fail to be recognized by this method. They are still supported,
      * but only if the proper encoding was specified in the Content-type header.
-     * <b>JIS_X0212-1990, x-IBM834, x-IBM930, x-JIS0208, x-MacDingbat, x-MacSymbol</b>
+     * <b>JIS_X0212-1990, IBM290, x-IBM300, x-IBM834, x-IBM930, x-JIS0208, x-MacDingbat, x-MacSymbol</b>
      * @param bytes The byte array to examine
      * @return The charset encoding if it could be determined, or null
      */

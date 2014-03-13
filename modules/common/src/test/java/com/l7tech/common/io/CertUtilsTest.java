@@ -5,6 +5,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -521,18 +522,30 @@ public class CertUtilsTest {
     public void testSANWithPropertiesName() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(BUG_13337_WITH_SAN);
         List<Pair<String, String>> attrs = CertUtils.getCertProperties(certificate);
-        String expected = "URL=http://petrov.ca/\n" +
+        //SSG-8286 - The order of the returned values changed in JDK 1.7.0_u51.
+        // These only appear to be used for display so their order is not required.
+        // Making sure all properties are found.
+        Collection<String> expectedSANProperties = Arrays.asList(("URL=http://petrov.ca/\n" +
                 "IP Address=192.168.0.2\n" +
                 "IP Address=192.168.0.1\n" +
                 "DNS Name=petrov.ca\n" +
                 "RFC822 Name=stoyan.petrov@gmail.com\n" +
                 "Directory Name=1.2.840.113549.1.9.1=stoyan@petrov.ca,cn=fish,ou=petrovs,o=fish corp.,c=bg\n" +
-                "DNS Name=yahoo.com\n";
+                "DNS Name=yahoo.com\n").split("\n"));
+        boolean found = false;
         for (Pair<String, String> pair: attrs) {
             if (pair.getKey().equals(CertUtils.CERT_PROP_SAN)) {
-                assertEquals(expected, pair.getValue());
+                found = true;
+                Assert.assertNotNull("SAN properties must not be null", pair.getValue());
+                String[] foundProperties = pair.getValue().split("\n");
+                Assert.assertEquals("The number of expected properties is not equal to the number of found properties.", expectedSANProperties.size(), foundProperties.length);
+                for(String property : foundProperties) {
+                    Assert.assertTrue("Found unexpected SAN property: " + property, expectedSANProperties.contains(property));
+                }
             }
         }
+
+        Assert.assertTrue("Could not find SAN property", found);
     }
 
     @Test

@@ -1,9 +1,6 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-
-import static org.junit.Assert.*;
-
 import com.l7tech.test.BugNumber;
 import org.junit.Test;
 
@@ -12,6 +9,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests the code that guesses the character encoding of XML files that are retrieved through
@@ -294,6 +294,8 @@ public class GenericHttpClientXmlDecodingTest {
         // The following charsets cannot be determined by examining the bytes
         HashSet<String> unsupportedEncodings = new HashSet<String>();
         unsupportedEncodings.add("JIS_X0212-1990");
+        unsupportedEncodings.add("IBM290");
+        unsupportedEncodings.add("x-IBM300");
         unsupportedEncodings.add("x-IBM834");
         unsupportedEncodings.add("x-IBM930");
         unsupportedEncodings.add("x-JIS0208");
@@ -315,7 +317,7 @@ public class GenericHttpClientXmlDecodingTest {
             }
             GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(bytes);
             assertNotNull("Guessed result for " + charsetName, guessedEncodingResult);
-            assertNotNull("Guessed result encoding for " + charsetName, guessedEncodingResult.encoding);
+            assertNotNull("Could not guess encoding for " + charsetName + ". Charset may have been newly added.", guessedEncodingResult.encoding);
             String decodedMessage = new String(bytes, guessedEncodingResult.bytesToSkip, bytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
             assertEquals("Big message (charset = " + charsetName + ")", msg, decodedMessage);
 
