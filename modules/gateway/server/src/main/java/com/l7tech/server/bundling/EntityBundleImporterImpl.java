@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -182,6 +183,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return false;
             }
         }
+
+        if (header1 instanceof ResourceEntryHeader) {
+            if (!(header2 instanceof ResourceEntryHeader) || !StringUtils.equals(((ResourceEntryHeader) header1).getUri(), ((ResourceEntryHeader) header2).getUri())) {
+                return false;
+            }
+        }
+
         return header1.equals(header2)
                 && StringUtils.equals(header1.getName(), header2.getName());
     }

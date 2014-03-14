@@ -2,6 +2,7 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
@@ -9,7 +10,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -19,6 +19,8 @@ import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -183,5 +185,27 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 }
             }
         }
+
+        if (assertion instanceof UsesResourceInfo) {
+            AssertionResourceInfo assertionResourceInfo = ((UsesResourceInfo) assertion).getResourceInfo();
+            if (assertionResourceInfo != null && assertionResourceInfo.getType().equals(AssertionResourceType.GLOBAL_RESOURCE)) {
+                final String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
+                Object found = CollectionUtils.find(replacementMap.keySet(),new Predicate() {
+                    @Override
+                    public boolean evaluate(Object o) {
+                        return o instanceof ResourceEntryHeader && ((ResourceEntryHeader)o).getUri().equals(uri);
+                    }
+                });
+                if(found!=null){
+                    GlobalResourceInfo newResourceInfo = new GlobalResourceInfo();
+                    EntityHeader replace = replacementMap.get(found);
+                    if(replace instanceof ResourceEntryHeader){
+                        newResourceInfo.setId(((ResourceEntryHeader)replace).getUri());
+                        ((UsesResourceInfo) assertion).setResourceInfo(newResourceInfo);
+                    }
+                }
+            }
+        }
+
     }
 }
