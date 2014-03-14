@@ -966,7 +966,8 @@ public abstract class Assertion implements Cloneable, Serializable {
         public final static String LEFT_COMMENT = "LEFT.COMMENT";
         public final static String RIGHT_COMMENT = "RIGHT.COMMENT";
 
-        private Map<String, String> properties = new HashMap<>();
+        //Must use a tree map as this serializes in a consistent way. See SSG-8286
+        private Map<String, String> properties = new TreeMap<>();
 
         public Comment() {
         }
@@ -996,7 +997,9 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         public void setProperties(Map<String, String> properties) {
-            this.properties = properties;
+            //The map must always be a tree map so that it can serialize consistently. SSG-8286
+            //If the given map is not a tree map create a new tree map from the map.
+            this.properties = TreeMap.class.equals(properties.getClass()) ? properties : new TreeMap<>(properties);
         }
 
         /**

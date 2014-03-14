@@ -197,8 +197,8 @@ public class WspWriterTest {
         fos.write(knownStr.getBytes());
         fos.close();
 
-        //These are no longer equal as the jdk does not consistently serialize hashmap anymore
-        //assertEquals("Policy with all assertions",knownStr, gotXml);
+        //These does differ if the custom assertion does not serialize in a consistent way. See note above test method. SSG-8286
+        assertEquals("Policy with all assertions",knownStr, gotXml);
         log.info("Output matched expected XML.");
 
         // Test validation with WS-Policy schema

@@ -11,20 +11,21 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.CustomAssertionHolder.CUSTOM_ASSERTION;
-
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 public class CustomAssertionHolderTest {
     private static final String DESC = "My Custom Assertion Description";
@@ -32,8 +33,9 @@ public class CustomAssertionHolderTest {
     private static final String CUSTOM_ASSERTION_LEFT_COMMENT = "Custom Assertion Left Comment";
     private static final String CUSTOM_ASSERTION_RIGHT_COMMENT = "Custom Assertion Left Comment";
 
+    // This map must be a tree map in order for the custom assertion to consistently serialize
     @SuppressWarnings("serial")
-    private static final Map TEST_CA_MAP_ELEMENTS = new HashMap<String, Integer>() {
+    private static final Map TEST_CA_MAP_ELEMENTS = new TreeMap<String, Integer>() {
         {
             put("one", 1);
             put("two", 2);
@@ -368,8 +370,8 @@ public class CustomAssertionHolderTest {
         assertNotNull("Read policy is not NULL", readPolicy);
         assertTrue("Read policy is of type ExactlyOneAssertion", readPolicy instanceof ExactlyOneAssertion);
         final String readPolicyString = WspWriter.getPolicyXml(readPolicy);
-        //These are no longer equal as the jdk does not consistently serialize hashmap anymore
-        //assertEquals("Both policies XMLs are the same", initialPolicyString, readPolicyString);
+        //These does differ if the custom assertion does not serialize in a consistent way. For example it contains a hashmap. SSG-8286
+        assertEquals("Both policies XMLs are the same", initialPolicyString, readPolicyString);
 
         final ExactlyOneAssertion eoaRead = (ExactlyOneAssertion)readPolicy;
         assertSame("Read policy number of children is 1", eoaRead.getChildren().size(), 1);
