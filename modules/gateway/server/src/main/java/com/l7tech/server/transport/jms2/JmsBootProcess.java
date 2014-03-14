@@ -343,6 +343,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
                     connectionChecker.notifyUpdate(connection.getGoid(), connection.getVersion());
 
                 JmsEndpointConfig newEndpointCfg = new JmsEndpointConfig(connection, updatedEndpoint, jmsPropertyMapper, getApplicationContext());
+                newEndpointCfg.setEvictOnExpired(false);//the inbound endpoint should not be removed due to inactivity timeout
                 newListener = jmsEndpointListenerFactory.createListener(newEndpointCfg);
                 newListener.start();
                 synchronized(listenerLock) {

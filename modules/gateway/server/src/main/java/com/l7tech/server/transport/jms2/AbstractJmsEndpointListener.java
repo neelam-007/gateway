@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  *
  * @author: vchan
  */
-public abstract class AbstractJmsEndpointListener implements JmsEndpointListener {
+public abstract class AbstractJmsEndpointListener implements JmsEndpointListener, ExceptionListener {
 
     private final Logger _logger;
     protected static final int DEFAULT_RECEIVER = 1;
@@ -274,19 +274,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         _failureQueue = null;
 
         // close the Jms connection artifacts
-        if ( _jmsBag != null ) {
-            // this will close the session and cause rollback if transacted
-            try {
-                // return the jms bag
-                resourceManager.returnJmsBag(_jmsBag);
-                for (JmsBag jmsBag: receivers) {
-                    resourceManager.returnJmsBag(jmsBag);
-                }
-            } catch (JmsRuntimeException e) {
-                handleCleanupError("Return Jms Session", e);
-            }
-            _jmsBag = null;
-        }
+        closeJmsConnection();
         resourceManager.invalidate(_endpointCfg);
 
         _started = false;
@@ -330,6 +318,28 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         if (PROPERTY_ERROR_SLEEP.equals(evt.getPropertyName())) {
             String stringValue = (String) evt.getNewValue();
             setErrorSleepTime(stringValue);
+        }
+    }
+
+    @Override
+    public void onException(JMSException e){
+        closeJmsConnection();
+    }
+
+    protected void closeJmsConnection() {
+        // close the Jms connection artifacts
+        if ( _jmsBag != null ) {
+            // this will close the session and cause rollback if transacted
+            try {
+                // return the jms bag
+                resourceManager.returnJmsBag(_jmsBag);
+                for (JmsBag jmsBag: receivers) {
+                    resourceManager.returnJmsBag(jmsBag);
+                }
+            } catch (JmsRuntimeException re) {
+                handleCleanupError("Return Jms Session", re);
+            }
+            _jmsBag = null;
         }
     }
 
@@ -420,7 +430,12 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                 JmsBag jmsBag = resourceManager.borrowJmsBag(_endpointCfg);
                 jmsBag.getMessageConsumer().setMessageListener(new JmsTask(_endpointCfg, jmsBag ));
                 receivers.add(jmsBag);
+                //register connection listener
+                if(jmsBag.getConnection() != null){
+                    jmsBag.getConnection().setExceptionListener(AbstractJmsEndpointListener.this);
+                }
             }
+
         }
 
         /**
@@ -433,7 +448,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_START, identify());
 
             try {
-                Message jmsMessage;
                 while ( !isStop() ) {
                     try {
 
