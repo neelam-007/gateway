@@ -19,6 +19,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @noinspection unchecked
  */
 public class BufferPool {
+    public static final String PROP_ENABLE_BUFFER_POOL = "com.l7tech.util.BufferPool.enabled";
+    public static final String PROP_ENABLE_HUGE_POOL = "com.l7tech.util.BufferPool.hugePool.enabled";
+
+    static final boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, true );
+    static final boolean ENABLE_HUGE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_HUGE_POOL, true );
+
     static final int MIN_BUFFER_SIZE = 1024;
     static final int HUGE_THRESHOLD = 1024 * 1024;
 
@@ -78,8 +84,7 @@ public class BufferPool {
                     if (len >= wantSize && len <= maxSize)
                         return bytes;
 
-                    // Put it back for someone else to use
-                    returnBuffer(bytes);
+                    // Discard the unneeded-at-this-time too-big huge buffer, so it doesn't hang around in the pool (SSG-8091)
                 }
                 // That ref was reclaimed by the GC; try the next one
             }
@@ -147,6 +152,8 @@ public class BufferPool {
      * @return true if the returned buffer was accepted by a buffer pool.  False if the buffer was discarded (too small or too big, or too many buffers of that size class already pooled)
      */
     public static boolean returnBuffer(byte[] buffer) {
+        if ( !ENABLE_BUFFER_POOL )
+            return false;
         if (buffer == null || buffer.length < MIN_BUFFER_SIZE)
             return false;
         final int size = buffer.length;
@@ -190,6 +197,8 @@ public class BufferPool {
      * @return true if the buffer was accepted by the hugePool.  false if the buffer was discarded (too small or too big, or too many huge buffers already)
      */
     private static boolean returnHugeBuffer(byte[] buffer) {
+        if ( !ENABLE_HUGE_POOL )
+            return false;
         final int size = buffer.length;
         if (size < HUGE_THRESHOLD)
             throw new IllegalArgumentException("size must be greater than 1mb");
