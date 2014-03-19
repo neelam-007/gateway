@@ -115,10 +115,6 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         response = getSourceEnvironment().processRequest("jmsDestinations/" + jmsItem.getId(), HttpMethod.DELETE, null, "");
         assertOkDeleteResponse(response);
-
-        // check target environment's  contents
-        response = getTargetEnvironment().processRequest("policies/" , HttpMethod.GET, null, "");
-        response = getTargetEnvironment().processRequest("jmsDestinations/", HttpMethod.GET, null, "");
     }
 
     @Test
@@ -140,7 +136,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
         Mapping jmsMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
@@ -148,7 +144,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
         Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -202,67 +198,72 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Item<JMSDestinationMO> jmsCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         jmsMO.setId(jmsCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the cert to the existing one
-        bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
-        Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-        Assert.assertNotSame(jmsMapping.getSrcId(), jmsMapping.getTargetId());
-        Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
+            Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
+            Assert.assertNotSame(jmsMapping.getSrcId(), jmsMapping.getTargetId());
+            Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO certDependency = policyDependencies.get(0);
-        Assert.assertNotNull(certDependency);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getDependentObject().getType());
-        Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), certDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsMO.getId(), certDependency.getDependentObject().getId());
+            DependencyMO certDependency = policyDependencies.get(0);
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getDependentObject().getType());
+            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), certDependency.getDependentObject().getName());
+            Assert.assertEquals(jmsMO.getId(), certDependency.getDependentObject().getId());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -290,7 +291,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
         Mapping jmsMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.AlwaysCreateNew, jmsMapping.getAction());
@@ -299,7 +300,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertNotSame(jmsMapping.getSrcId(), jmsMapping.getTargetId());
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -359,66 +360,71 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Item<JMSDestinationMO> jmsCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         jmsMO.setId(jmsCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the cert to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrUpdate);
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrUpdate);
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 2, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
-        Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-        Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
+            Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
+            Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), mqDependency.getDependentObject().getType());
-        Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsItem.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), mqDependency.getDependentObject().getType());
+            Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(jmsItem.getId(), mqDependency.getDependentObject().getId());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -460,61 +466,67 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
         bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+        try{
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
-        Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-        Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
+            Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
+            Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
 
-        // check jms object, associated jms connection is updated and not creating a new one.
-        response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsMO.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
-        Item<JMSDestinationMO> jmsUpdated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        Assert.assertEquals(JMSConnection.JMSProviderType.TIBCO_EMS, jmsUpdated.getContent().getJmsConnection().getProviderType());
-        Assert.assertNotSame(jmsItem.getContent().getJmsConnection().getId(), jmsUpdated.getContent().getJmsConnection().getId());
+            // check jms object, associated jms connection is updated and not creating a new one.
+            response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsMO.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+            Item<JMSDestinationMO> jmsUpdated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(JMSConnection.JMSProviderType.TIBCO_EMS, jmsUpdated.getContent().getJmsConnection().getProviderType());
+            Assert.assertNotSame(jmsItem.getContent().getJmsConnection().getId(), jmsUpdated.getContent().getJmsConnection().getId());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+
     }
 
     @Test
@@ -542,66 +554,71 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Item<JMSDestinationMO> jmsCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         jmsMO.setId(jmsCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the cert to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
-        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
-        bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
+            bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
-        Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-        Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
+            Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
+            Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 }

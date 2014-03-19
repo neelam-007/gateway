@@ -90,7 +90,7 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
         Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
@@ -98,7 +98,7 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
         Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
         Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
 
-        Mapping folderMapping = mappings.getContent().getMappings().get(1);
+        Mapping folderMapping = mappings.getContent().getMappings().get(2);
         Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
@@ -121,57 +121,62 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         Item securityZoneItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/folder/" + folderItem.getId(), "includeRequestFolder=true", HttpMethod.GET, null, "");
-        logger.log(Level.INFO, response.toString());
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/folder/" + folderItem.getId(), "includeRequestFolder=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        //map the securityZone to the one created above.
-        bundleItem.getContent().getMappings().get(0).setTargetId(securityZoneItemTarget.getId());
+            //map the securityZone to the one created above.
+            bundleItem.getContent().getMappings().get(0).setTargetId(securityZoneItemTarget.getId());
 
-        Assert.assertEquals("The bundle should have 2 items. A security zone and folder", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 2 items. A security zone and folder", 2, bundleItem.getContent().getReferences().size());
 
-        //import the bundle
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 2 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneMapping.getTargetId());
 
-        Mapping folderMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
-        Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
-        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+            Mapping folderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
+            Assert.assertEquals(folderItem.getId(), folderMapping.getSrcId());
+            Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        validate(mappings);
+            validate(mappings);
 
-        response = getTargetEnvironment().processRequest("folders/" + folderMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("folders/" + folderMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> folderCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> folderDependencies = folderCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> folderCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> folderDependencies = folderCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(1, folderDependencies.size());
+            Assert.assertNotNull(folderDependencies);
+            Assert.assertEquals(1, folderDependencies.size());
 
-        DependencyMO securityZoneDependency = folderDependencies.get(0);
-        Assert.assertNotNull(securityZoneDependency);
-        Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
-        Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+            DependencyMO securityZoneDependency = folderDependencies.get(0);
+            Assert.assertNotNull(securityZoneDependency);
+            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+        }finally{
+            response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -207,19 +212,18 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         policyItem.setContent(policyMO);
+
+        //create securityZone;
+        SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
+        securityZoneMO.setName("MySecurityZoneTarget");
+        securityZoneMO.setDescription("MySecurityZone description");
+        securityZoneMO.setPermittedEntityTypes(CollectionUtils.list(EntityType.ANY.toString()));
+        response = getTargetEnvironment().processRequest("securityZones", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(securityZoneMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item securityZoneItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         try {
-
-            //create securityZone;
-            SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
-            securityZoneMO.setName("MySecurityZoneTarget");
-            securityZoneMO.setDescription("MySecurityZone description");
-            securityZoneMO.setPermittedEntityTypes(CollectionUtils.list(EntityType.ANY.toString()));
-            response = getTargetEnvironment().processRequest("securityZones", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(securityZoneMO)));
-
-            assertOkCreatedResponse(response);
-
-            Item securityZoneItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -240,7 +244,7 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
             Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
@@ -248,7 +252,7 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
             Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
             Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(1);
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -272,8 +276,12 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
             Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
 
         } finally {
+            response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
             response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
+
         }
     }
 }

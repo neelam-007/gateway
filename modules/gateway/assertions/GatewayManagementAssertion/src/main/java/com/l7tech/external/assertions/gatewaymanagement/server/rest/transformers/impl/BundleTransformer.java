@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibl
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.bundling.*;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -58,20 +56,23 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
         for (final EntityMappingInstructions entityMappingInstruction : entityBundle.getMappingInstructions()) {
+            EntityContainer entityResource = entityBundle.getEntity(entityMappingInstruction.getSourceEntityHeader().getStrId());
+            if( entityResource != null){
+                //Get the transformer for the entity so that it can be converted.
+                APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityMappingInstruction.getSourceEntityHeader().getType().toString());
 
-            //Get the transformer for the entity so that it can be converted.
-            APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityMappingInstruction.getSourceEntityHeader().getType().toString());
-
-            //get the MO from the entity
-            Object mo = transformer.convertToMO(entityBundle.getEntity(entityMappingInstruction.getSourceEntityHeader().getStrId()).getEntity());
-            //create an item from the mo
-            Item<?> item = transformer.convertToItem(mo);
-            //add the item to the bundle items list
-            items.add(item);
+                //get the MO from the entity
+                Object mo = transformer.convertToMO(entityResource.getEntity());
+                //create an item from the mo
+                Item<?> item = transformer.convertToItem(mo);
+                //add the item to the bundle items list
+                items.add(item);
+            }
 
             //convert the mapping
             mappings.add(convertEntityMappingInstructionsToMapping(entityMappingInstruction));
         }
+
         Bundle bundle = ManagedObjectFactory.createBundle();
         bundle.setReferences(items);
         bundle.setMappings(mappings);
@@ -204,10 +205,10 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         mapping.setSrcId(entityMappingInstructions.getSourceEntityHeader().getStrId());
         mapping.setAction(convertAction(entityMappingInstructions.getMappingAction()));
         if (entityMappingInstructions.shouldFailOnNew()) {
-            mapping.addProperty(FailOnNew, Boolean.TRUE.toString());
+            mapping.addProperty(FailOnNew, Boolean.TRUE);
         }
         if (entityMappingInstructions.shouldFailOnExisting()) {
-            mapping.addProperty(FailOnExisting, Boolean.TRUE.toString());
+            mapping.addProperty(FailOnExisting, Boolean.TRUE);
         }
         if (entityMappingInstructions.getTargetMapping() != null) {
             switch (entityMappingInstructions.getTargetMapping().getType()) {
@@ -265,9 +266,16 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The entity mapping instruction for the given mapping and entity
      */
     @NotNull
-    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull Mapping mapping, @NotNull EntityContainer entity) {
+    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull Mapping mapping, EntityContainer entity) {
         //Create the source header from the entity
-        EntityHeader sourceHeader = EntityHeaderUtils.fromEntity((Entity)entity.getEntity());
+        EntityHeader sourceHeader;
+        if(entity == null ) {
+            // reference mappings have no referenced entity
+            sourceHeader = new EntityHeader(Goid.parseGoid(mapping.getSrcId()),EntityType.valueOf(mapping.getType()),null,null);
+        }
+        else {
+            sourceHeader = EntityHeaderUtils.fromEntity((Entity)entity.getEntity());
+        }
         final EntityMappingInstructions.TargetMapping targetMapping;
         if (mapping.getProperties() != null && "name".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, (String) mapping.getProperties().get(MapTo));

@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -106,7 +107,7 @@ public abstract class MigrationTestBase {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
         for (Mapping mapping : reverseMappingsList) {
-            if(mapping.getErrorType() == null && !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId()))){
+            if(mapping.getErrorType() == null && !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId())) && mapping.getActionTaken()== Mapping.ActionTaken.CreatedNew){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.DELETE, null, "");

@@ -143,6 +143,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         Assert.assertEquals("The bundle should have 3 items. A policy, active connection and secure password", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. Root folder,a policy, active connection and secure password", 4, bundleItem.getContent().getMappings().size());
 
         //change the secure password MO to contain a password.
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
@@ -156,7 +157,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -171,7 +172,14 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
         Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -179,7 +187,6 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
         validate(mappings);
-
     }
 
 
@@ -203,71 +210,84 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 mappings. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        validate(mappings);
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("activeConnectors/"+ mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -289,74 +309,87 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the mq connector to the existing one
+            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        validate(mappings);
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally {
+            response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -379,40 +412,37 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        // create cleanup mapping info
-        Mapping mapping = ManagedObjectFactory.createMapping();
-        mapping.setTargetUri("/restman/1.0/activeConnectors/"+activeConnectorMO.getId());
-        mapping.setTargetId(activeConnectorMO.getId());
-        Mappings mappings = ManagedObjectFactory.createMappings(CollectionUtils.list(mapping));
-        mappingsToClean = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
-                .setContent(mappings)
-                .build()
-        ;
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the mq connector to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        logger.info(response.toString());
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            logger.info(response.toString());
 
-        // import fail
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(409, response.getStatus());
-        Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
-        assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+            // import fail
+            assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+            assertEquals(409, response.getStatus());
+            Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
+            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+        }finally {
+            response = getTargetEnvironment().processRequest("activeConnectors/" + mqCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -425,6 +455,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
         //update the bundle mapping to map the mq connector to the existing one
         bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
@@ -443,7 +474,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -458,7 +489,14 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
         Assert.assertEquals(mqNativeItem.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -510,74 +548,87 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder, a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the mq connector to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(mqNativeItem.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        validate(mappings);
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(mqNativeItem.getId(), mqDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally {
+            response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -599,75 +650,88 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-        bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the mq connector to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
+            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        validate(mappings);
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally {
+            response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -689,76 +753,89 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<ActiveConnectorMO> mqCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         activeConnectorMO.setId(mqCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the mq connector to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrExisting);
-        bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", activeConnectorMO.getName()).map());
-        bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the mq connector to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", activeConnectorMO.getName()).map());
+            bundleItem.getContent().getMappings().get(1).setTargetId(activeConnectorMO.getId());
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(activeConnectorMO.getId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        validate(mappings);
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally {
+            response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -778,79 +855,92 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         passwordMO.setId(passwordCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, active connector and secure password", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. Root folder,a policy, active connector and secure password", 4, bundleItem.getContent().getMappings().size());
 
-        //update the bundle mapping to map the password to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
-        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
-        bundleItem.getContent().getMappings().get(0).setTargetId(passwordMO.getId());
-        //change the secure password MO to contain a password.
-        ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            //update the bundle mapping to map the password to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            bundleItem.getContent().getMappings().get(0).setTargetId(passwordMO.getId());
+            //change the secure password MO to contain a password.
+            ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
-        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
-        Assert.assertEquals(passwordMO.getId(), passwordMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
+            Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMO.getId(), passwordMapping.getTargetId());
 
-        Mapping mqMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
-        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
-        Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
+            Mapping mqMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
+            Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+            Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        logger.log(Level.INFO, policyXml);
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            logger.log(Level.INFO, policyXml);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(1, mqDependency.getDependencies().size());
-        DependencyMO passwordDependency = mqDependency.getDependencies().get(0);
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        Assert.assertEquals(passwordMO.getName(), passwordDependency.getDependentObject().getName());
-        Assert.assertEquals(passwordMO.getId(), passwordDependency.getDependentObject().getId());
+            DependencyMO mqDependency = policyDependencies.get(0);
+            Assert.assertNotNull(mqDependency);
+            Assert.assertEquals(1, mqDependency.getDependencies().size());
+            DependencyMO passwordDependency = mqDependency.getDependencies().get(0);
 
-        validate(mappings);
+            Assert.assertEquals(passwordMO.getName(), passwordDependency.getDependentObject().getName());
+            Assert.assertEquals(passwordMO.getId(), passwordDependency.getDependentObject().getId());
+
+            validate(mappings);
+        }finally {
+            response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test

@@ -82,13 +82,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 for (EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     //Get the entity that this mapping is for
                     EntityContainer entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId());
-                    if (entity == null) {
-                        throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
-                    }
-                    if ( !(entity.getEntity() instanceof Entity)){
-                        throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
-                    }
-                    final Entity baseEntity = (Entity)entity.getEntity();
+                    final Entity baseEntity = entity == null? null: (Entity)entity.getEntity();
                     //Find an existing entity to map it to.
                     //TODO: move this into the try block?
                     final Entity existingEntity = locateExistingEntity(mapping,baseEntity);
@@ -209,7 +203,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws ConstraintViolationException
      */
     @NotNull
-    private EntityHeader createOrUpdateResource(@NotNull final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    private EntityHeader createOrUpdateResource(@Nullable final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+        if (entityContainer == null) {
+            throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
+        }
+        if ( !(entityContainer.getEntity() instanceof Entity)){
+            throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
+        }
+
         //validate that the id is not null if create is false
         if (existingEntity != null && id == null) {
             throw new IllegalArgumentException("Must specify an id when updating an existing entity.");
@@ -375,7 +376,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * this entity to.
      */
     @Nullable
-    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, @NotNull final Entity entity) {
+    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, final Entity entity) {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         final TransactionTemplate tt = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         tt.setReadOnly(true);

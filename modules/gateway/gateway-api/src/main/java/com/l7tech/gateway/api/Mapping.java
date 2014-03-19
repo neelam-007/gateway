@@ -175,7 +175,7 @@ public class Mapping {
      * @param key The property key to use
      * @param value The value of the property to add
      */
-    public void addProperty(@NotNull String key, String value) {
+    public void addProperty(@NotNull String key, Object value) {
         if(properties == null) {
             properties = new HashMap<>();
         }

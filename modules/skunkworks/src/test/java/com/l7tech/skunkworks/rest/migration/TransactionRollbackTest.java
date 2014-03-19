@@ -131,7 +131,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -145,7 +145,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
         Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -179,7 +179,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
 
         //make it so that the policy is asserted to exist
-        bundleItem.getContent().getMappings().get(2).setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("FailOnNew", true).map());
+        bundleItem.getContent().getMappings().get(3).setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("FailOnNew", true).map());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -190,7 +190,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -205,7 +205,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
         Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ErrorType.TargetNotFound, policyMapping.getErrorType());
@@ -243,7 +243,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
@@ -258,7 +258,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
         Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());

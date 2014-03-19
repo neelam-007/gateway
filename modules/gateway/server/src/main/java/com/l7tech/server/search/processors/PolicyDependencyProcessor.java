@@ -3,9 +3,12 @@ package com.l7tech.server.search.processors;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -33,6 +36,9 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
 
     @Inject
     private SecurityZoneManager securityZoneManager;
+
+    @Inject
+    private FolderManager folderManager;
 
     /**
      * Finds the dependencies in a policy by looking at the assertions contained in the policy
@@ -88,6 +94,7 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
 
     @Override
     public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+        super.replaceDependencies(policy,replacementMap,finder);
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
@@ -123,5 +130,19 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
                 policy.setSecurityZone(securityZone);
             }
         }
+
+
+//        // replace parent folder
+//
+//        final EntityHeader srcFolderHeader = EntityHeaderUtils.fromEntity(policy.getFolder());
+//        EntityHeader folderHeaderToUse = replacementMap.get(srcFolderHeader);
+//        if(folderHeaderToUse != null) {
+//            try {
+//                Folder folder = folderManager.findByHeader(folderHeaderToUse);
+//                policy.setFolder(folder);
+//            } catch (FindException e) {
+//                throw new CannotRetrieveDependenciesException(folderHeaderToUse.getName(), Folder.class, policy.getClass(), "Cannot find folder", e);
+//            }
+//        }
     }
 }

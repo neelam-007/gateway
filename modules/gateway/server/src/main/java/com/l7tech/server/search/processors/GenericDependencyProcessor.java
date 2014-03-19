@@ -4,11 +4,14 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -360,8 +363,9 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                 header = replacementMap.get(headerKey);
             }
         }
+
         //check by name
-        if (header == null) {
+        if (header == null && dependentHeader.getName()!=null) {
             EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
                 @Override
                 public Boolean call(EntityHeader entityHeader) {
@@ -395,6 +399,12 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             }
             try {
                 switch (annotation.methodReturnType()) {
+                    case GOID:
+                        //Check if the goids are different. There is no point in replacing if the goids are the same
+                        if (!header.getGoid().equals(currentEntityHeader.getGoid())) {
+                            setterMethod.invoke(object, header.getGoid());
+                        }
+                        break;
                     case NAME:
                         //Check if the names are different. There is no point in replacing if the names are the same
                         if (!StringUtils.equals(header.getName(), currentEntityHeader.getName())) {

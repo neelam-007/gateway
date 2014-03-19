@@ -180,7 +180,9 @@ public class BundleResource {
         //Add all the source uri's to the mappings
         for(Mapping mapping : bundle.getMappings()){
             URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
-            mapping.setSrcUri(urlAccessible.getUrl(itemMap.get(mapping.getSrcId()).getContent()));
+            if(itemMap.containsKey(mapping.getSrcId())){
+                mapping.setSrcUri(urlAccessible.getUrl(itemMap.get(mapping.getSrcId()).getContent()));
+            }
         }
         return bundle;
     }

@@ -145,6 +145,21 @@ public class EntityMappingInstructions {
     }
 
     /**
+     * Is the same mapping if it maps the same resource
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EntityMappingInstructions instruction = (EntityMappingInstructions)o;
+
+        if (!sourceEntityHeader.equals(instruction.sourceEntityHeader)) return false;
+
+        return true;
+    }
+
+    /**
      * The targetMapping that identifies how to map this entity. Defaults to null. If it is null the entity id will be
      * used to map the entity. If it is not null the Target mapping type and id will be used to map the entity
      *

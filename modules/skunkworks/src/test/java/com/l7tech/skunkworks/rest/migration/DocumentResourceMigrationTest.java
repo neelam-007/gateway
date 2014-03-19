@@ -149,7 +149,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
@@ -164,7 +164,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
         Assert.assertEquals(docMapping.getSrcId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -194,69 +194,74 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //import the bundle
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
 
-        Mapping docMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, docMapping.getActionTaken());
-        Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
-        Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
+            Mapping docMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, docMapping.getActionTaken());
+            Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
-        Assert.assertNotNull(docDependency);
-        Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
-        Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
-        Assert.assertNull(docDependency.getDependencies());
+            DependencyMO docDependency = policyDependencies.get(0);
+            Assert.assertNotNull(docDependency);
+            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertNull(docDependency.getDependencies());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE,null,"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -278,73 +283,78 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the resource to the existing one
-        bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
+            //update the bundle mapping to map the resource to the existing one
+            bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
 
-        Mapping docMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, docMapping.getActionTaken());
-        Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
-        Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
+            Mapping docMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, docMapping.getActionTaken());
+            Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
-        Assert.assertNotNull(docDependency);
-        Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
-        Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
-        Assert.assertNull(docDependency.getDependencies());
+            DependencyMO docDependency = policyDependencies.get(0);
+            Assert.assertNotNull(docDependency);
+            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertNull(docDependency.getDependencies());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE,null,"");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -367,38 +377,34 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        // create cleanup mapping info
-        Mapping mapping = ManagedObjectFactory.createMapping();
-        mapping.setTargetUri("/restman/1.0/resources/"+resourceDocumentMO.getId());
-        mapping.setTargetId(resourceDocumentMO.getId());
-        Mappings mappings = ManagedObjectFactory.createMappings(CollectionUtils.list(mapping));
-        mappingsToClean = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
-                .setContent(mappings)
-                .build()
-        ;
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the resource to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
+            //update the bundle mapping to map the resource to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.AlwaysCreateNew);
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        logger.info(response.toString());
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            logger.info(response.toString());
 
-        // import fail
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(409, response.getStatus());
-        Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
-        assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+            // import fail
+            assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+            assertEquals(409, response.getStatus());
+            Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
+            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+        }finally{
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -426,7 +432,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
         Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
@@ -441,7 +447,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
         Assert.assertEquals(resourceDocItem.getId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -493,74 +499,79 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the resource to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-        bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            //update the bundle mapping to map the resource to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
+            bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
 
-        Mapping docMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, docMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, docMapping.getActionTaken());
-        Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
-        Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
+            Mapping docMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, docMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, docMapping.getActionTaken());
+            Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
-        Assert.assertNotNull(docDependency);
-        Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
-        Assert.assertEquals(resourceDocItem.getId(), docDependency.getDependentObject().getId());
-        Assert.assertEquals(1, docDependency.getDependencies().size());
+            DependencyMO docDependency = policyDependencies.get(0);
+            Assert.assertNotNull(docDependency);
+            Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
+            Assert.assertEquals(resourceDocItem.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(1, docDependency.getDependencies().size());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -582,75 +593,80 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the resource to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
-        bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
-        bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            //update the bundle mapping to map the resource to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
+            bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
+            bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneMapping.getSrcId(), securityZoneMapping.getTargetId());
 
-        Mapping docMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrUpdate, docMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, docMapping.getActionTaken());
-        Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
-        Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
+            Mapping docMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, docMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, docMapping.getActionTaken());
+            Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
+            Assert.assertEquals(resourceDocumentMO.getId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
-        Assert.assertNotNull(docDependency);
-        Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
-        Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
-        Assert.assertEquals(1, docDependency.getDependencies().size());
+            DependencyMO docDependency = policyDependencies.get(0);
+            Assert.assertNotNull(docDependency);
+            Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(1, docDependency.getDependencies().size());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 
     @Test
@@ -672,20 +688,20 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
-
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
-
-        //update the bundle mapping to map the resource to the existing one
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrExisting);
-        bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", resourceDocumentMO.getResource().getSourceUrl()).map());
-        bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
-
         try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+
+            //update the bundle mapping to map the resource to the existing one
+            bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(1).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", resourceDocumentMO.getResource().getSourceUrl()).map());
+            bundleItem.getContent().getMappings().get(1).setTargetId(resourceDocumentMO.getId());
+
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -699,6 +715,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").equals("Entity Does Not Exists"));
         }finally {
             response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE, null,"");
+            assertOkDeleteResponse(response);
         }
     }
 
@@ -716,76 +733,81 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<SecurityZoneMO> securityZoneCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         securityZoneMO.setId(securityZoneCreated.getId());
 
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 items. A policy, resource document and security zone", 3, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the security zone to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
-        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
-        bundleItem.getContent().getMappings().get(0).setTargetId(securityZoneMO.getId());
+            //update the bundle mapping to map the security zone to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            bundleItem.getContent().getMappings().get(0).setTargetId(securityZoneMO.getId());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        assertOkResponse(response);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        mappingsToClean = mappings;
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
 
-        //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, securityZoneMapping.getActionTaken());
-        Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
-        Assert.assertEquals(securityZoneMO.getId(), securityZoneMapping.getTargetId());
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping securityZoneMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securityZoneMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, securityZoneMapping.getActionTaken());
+            Assert.assertEquals(securityZoneItem.getId(), securityZoneMapping.getSrcId());
+            Assert.assertEquals(securityZoneMO.getId(), securityZoneMapping.getTargetId());
 
-        Mapping docMapping = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, docMapping.getActionTaken());
-        Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
-        Assert.assertEquals(docMapping.getSrcId(), docMapping.getTargetId());
+            Mapping docMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.RESOURCE_ENTRY.toString(), docMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, docMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, docMapping.getActionTaken());
+            Assert.assertEquals(resourceDocItem.getId(), docMapping.getSrcId());
+            Assert.assertEquals(docMapping.getSrcId(), docMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
-        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
-        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
 
-        logger.log(Level.INFO, policyXml);
+            logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
-        Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
-        Assert.assertNotNull(docDependency);
-        Assert.assertEquals(1, docDependency.getDependencies().size());
-        DependencyMO zoneDependency = docDependency.getDependencies().get(0);
+            DependencyMO docDependency = policyDependencies.get(0);
+            Assert.assertNotNull(docDependency);
+            Assert.assertEquals(1, docDependency.getDependencies().size());
+            DependencyMO zoneDependency = docDependency.getDependencies().get(0);
 
-        Assert.assertEquals(securityZoneMO.getName(), zoneDependency.getDependentObject().getName());
-        Assert.assertEquals(securityZoneMO.getId(), zoneDependency.getDependentObject().getId());
+            Assert.assertEquals(securityZoneMO.getName(), zoneDependency.getDependentObject().getName());
+            Assert.assertEquals(securityZoneMO.getId(), zoneDependency.getDependentObject().getId());
 
-        validate(mappings);
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("securityZones/" + securityZoneCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
     }
 }

@@ -42,6 +42,8 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
     }
 
     private Pair<Response.StatusType,ErrorResponse> handleOperationException( final Throwable e ) {
+        logger.log(Level.FINEST,"",e);
+        e.printStackTrace();
         Response.StatusType status = Response.Status.INTERNAL_SERVER_ERROR;
         ErrorResponse errorResponse = ManagedObjectFactory.createErrorResponse();
         errorResponse.setDetail(ExceptionUtils.getMessageWithCause(e));
