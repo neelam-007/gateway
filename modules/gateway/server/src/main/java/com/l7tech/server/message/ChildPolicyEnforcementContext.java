@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -125,6 +126,11 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
         } else {
             return context.getVariable(name);
         }
+    }
+
+    @Override
+    public Map<String, Object> getAllVariables() {
+        return context.getAllVariables();
     }
 
     @Override
@@ -244,6 +250,16 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     @Override
     public void setPolicyExecutionAttempted( final boolean attempted ) {
         context.setPolicyExecutionAttempted( attempted );
+    }
+
+    @Override
+    public DebugContext getDebugContext() {
+        return context.getDebugContext();
+    }
+
+    @Override
+    public void setDebugContext(DebugContext debugContext) {
+        context.setDebugContext( debugContext );
     }
 
     @Override

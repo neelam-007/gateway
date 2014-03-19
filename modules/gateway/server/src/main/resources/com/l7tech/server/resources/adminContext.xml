@@ -505,5 +505,10 @@
 
     </bean>
 
+    <!-- Policy debug admin impl -->
+    <bean id="debugAdmin" class="com.l7tech.server.stepdebug.DebugAdminImpl">
+
+    </bean>
+
 
 </beans>

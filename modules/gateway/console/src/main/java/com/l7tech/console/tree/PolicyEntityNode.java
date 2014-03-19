@@ -102,6 +102,9 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
+        if (getEntityHeader().getPolicyType().equals(PolicyType.GLOBAL_FRAGMENT)) {
+            actions.add(new PolicyStepDebugAction(this));
+        }
         if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
             try {
                 EncapsulatedAssertionConfig config;

@@ -43,6 +43,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.stepdebug.DebugManager;
 import com.l7tech.server.trace.TracePolicyEvaluator;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -58,6 +59,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.xml.sax.SAXException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
@@ -103,6 +106,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
+
+    @Inject
+    @Named("debugManager")
+    private DebugManager debugManager;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -482,6 +489,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        if (this.debugManager == null) {
+            throw new IllegalArgumentException("Debug Manager is required");
+        }
+
         this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
 
@@ -546,6 +557,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // used
                     processMessageCompletedPolicy( true );
                 }
+
+                debugManager.onMessageFinished(context);
             }
 
             return status;
@@ -584,6 +597,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             context.setPolicyExecutionAttempted(true);
             if (context.getService().isTracingEnabled())
                 maybeEnableTracing();
+
+            debugManager.onMessageArrived(context, context.getService().getGoid());
             status = serverPolicy.checkRequest(context);
 
             // Execute deferred actions for request, then response
@@ -1058,11 +1073,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 handle = policyCache.getServerPolicy( guid );
                 if ( handle != null ) {
                     pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( context );
+                    debugManager.onMessageArrived(pec, handle.getPolicyMetadata().getPolicyHeader().getGoid());
                     result = handle.checkRequest( pec );
                 } else {
                     result = AssertionStatus.NONE;
                 }
             } finally {
+                if (pec != null) {
+                    debugManager.onMessageFinished(pec);
+                }
                 ResourceUtils.closeQuietly( pec );
                 ResourceUtils.closeQuietly( handle );
             }

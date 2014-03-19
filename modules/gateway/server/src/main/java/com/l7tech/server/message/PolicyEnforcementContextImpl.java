@@ -26,6 +26,7 @@ import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeSource;
@@ -86,6 +87,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private String savedRequestL7aMessageId;
     private Deque<Integer> assertionOrdinalPath = null; // null by default, rather than an empty LinkedList, so we don't pay for it unless at least one Include is used
     private AssertionTraceListener traceListener = null;
+    private DebugContext debugContext = null;
     private PolicyMetadata policyMetadata = null;
     private PolicyMetadata servicePolicyMetadata = null;
     private @Nullable AuditContext auditContext;
@@ -364,6 +366,11 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         return value;
     }
 
+    @Override
+    public Map<String, Object> getAllVariables() {
+        return Collections.unmodifiableMap(variables);
+    }
+
     /**
      * Get the value of a context variable, with name resolution
      *
@@ -539,6 +546,10 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void assertionStarting( final ServerAssertion assertion ) {
         currentAssertion = assertion;
+
+        if (debugContext != null) {
+            debugContext.onStartAssertion(this, currentAssertion);
+        }
     }
 
     /**
@@ -694,6 +705,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setPolicyExecutionAttempted(boolean policyTried) {
         this.policyExecutionAttempted = policyTried;
+    }
+
+    @Override
+    public DebugContext getDebugContext() {
+        return debugContext;
+    }
+
+    @Override
+    public void setDebugContext(DebugContext debugContext) {
+        this.debugContext = debugContext;
     }
 
     @Override

@@ -141,4 +141,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin"/>
     </bean>
 
+    <bean name="/DebugAdmin" parent="httpInvokerParent">
+        <property name="service" ref="debugAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
+    </bean>
+
 </beans>

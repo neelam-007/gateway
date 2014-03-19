@@ -15,6 +15,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
@@ -204,6 +205,13 @@ public interface PolicyEnforcementContext extends Closeable {
      * @throws NoSuchVariableException  if no value is set for the specified variable
      */
     Object getVariable(String name) throws NoSuchVariableException;
+
+    /**
+     * Get all none built-in context variables.
+     *
+     * @return A map containing none built-in context variable names and values.
+     */
+    Map<String, Object> getAllVariables();
 
     /**
      * Get variables Map for named variables in a new mutable case-insensitive map.
@@ -457,6 +465,20 @@ public interface PolicyEnforcementContext extends Closeable {
      * @param attempted true when the MessageProcessor gets as far as calling checkRequest() for this context.
      */
     void setPolicyExecutionAttempted(boolean attempted);
+
+    /**
+     * Returns the debug context.
+     *
+     * @return the debug context, or null.
+     */
+    @Nullable DebugContext getDebugContext();
+
+    /**
+     * Sets the debug context.
+     *
+     * @param debugContext the debug context. Can be null.
+     */
+    void setDebugContext(@Nullable DebugContext debugContext);
 
     /**
      * Record an AuditContext that is/was associated with the processing of this PolicyEnforcementContext.

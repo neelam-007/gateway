@@ -2321,6 +2321,10 @@
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
+    <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerImpl">
+        <constructor-arg ref="auditFactory"/>
+    </bean>
+
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="ssgKeyStoreManager"/>

@@ -17,6 +17,7 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
@@ -248,6 +249,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
         }
 
         return value;
+    }
+
+    @Override
+    public Map<String, Object> getAllVariables() {
+        return delegate.getAllVariables();
     }
 
     @Override
@@ -495,6 +501,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void setPolicyExecutionAttempted( final boolean attempted ) {
         delegate.setPolicyExecutionAttempted( attempted );
+    }
+
+    @Override
+    public DebugContext getDebugContext() {
+        return delegate.getDebugContext();
+    }
+
+    @Override
+    public void setDebugContext(DebugContext debugContext) {
+        delegate.setDebugContext(debugContext);
     }
 
     @Override

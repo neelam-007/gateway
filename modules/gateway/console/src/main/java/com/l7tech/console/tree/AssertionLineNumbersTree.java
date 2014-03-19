@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.gui.util.ImageCache;
 
 import javax.swing.*;
@@ -22,9 +21,9 @@ public class AssertionLineNumbersTree extends JTree {
     public final static String BLANK_ICON_FILE_NAME = "com/l7tech/console/resources/Transparent16x1.png";
     public final static boolean DEFAULT_VISIBILITY = false;
 
-    private PolicyTree policyTree;
+    private JTree policyTree;
 
-    public AssertionLineNumbersTree( final PolicyTree policyTree ) {
+    public AssertionLineNumbersTree( final JTree policyTree ) {
         this.policyTree = policyTree;
         initialize();
         registerPolicyTree();

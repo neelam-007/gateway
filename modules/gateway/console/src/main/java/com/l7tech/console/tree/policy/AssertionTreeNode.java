@@ -666,7 +666,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return null;
     }
 
-    static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
+    public static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
         AbstractTreeNode parent = (AbstractTreeNode) treeNode.getParent();
         List<Integer> ordinalList = new ArrayList<Integer>();
         ordinalList.add(treeNode.asAssertion().getOrdinal());

@@ -700,5 +700,8 @@
 
     <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerStub"/>
 
+    <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerStub">
+        <constructor-arg ref="auditFactory"/>
+    </bean>
 
 </beans>
