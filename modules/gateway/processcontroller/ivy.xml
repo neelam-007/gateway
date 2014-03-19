@@ -30,10 +30,10 @@
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
 
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.5" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.6" force="true" conf="core"/>
         <dependency org="org.snmp4j" name="snmp4j" rev="1.11.3" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
 
@@ -59,6 +59,6 @@
 
         <override org="org.mortbay.jetty" module="jetty" matcher="exact" rev="6.1.26"/>
 
-        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.5"/>
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.6"/>
     </dependencies>
 </ivy-module>

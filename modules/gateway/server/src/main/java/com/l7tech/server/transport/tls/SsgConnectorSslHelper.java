@@ -456,11 +456,15 @@ public class SsgConnectorSslHelper {
         };
     }
 
+    public String[] getEnabledCiphers() {
+        return enabledCiphers;
+    }
+
     //
     // Private
     //
 
-    private static SSLContext createSslContext(SsgConnector ssgConnector, Set<String> desiredTlsVersions) throws ListenerException, NoSuchProviderException, NoSuchAlgorithmException {
+    private static SSLContext createSslContext(SsgConnector ssgConnector, Set<String> desiredTlsVersions) throws NoSuchProviderException, NoSuchAlgorithmException {
 
         String tlsProtocol = getTlsProtocol(ssgConnector);
         String customTlsProvider = ssgConnector.getProperty(SsgConnector.PROP_TLS_PROTOCOL_PROVIDER);

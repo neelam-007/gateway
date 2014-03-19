@@ -3,15 +3,16 @@ package com.l7tech.server.transport.ftp;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.*;
 
-import org.apache.ftpserver.ftplet.FileObject;
+import org.apache.ftpserver.ftplet.FtpFile;
 
 /**
  * Represents a virtual file or directory.
  *
  * @author Steve Jones
  */
-class VirtualFileObject implements FileObject {
+class VirtualFileObject implements FtpFile {
     private static final long date = System.currentTimeMillis();
 
     private final boolean file;
@@ -22,47 +23,63 @@ class VirtualFileObject implements FileObject {
         this.path = path;
     }
 
+    @Override
     public InputStream createInputStream(long offset) throws IOException {
         throw new IOException();
     }
 
+    @Override
     public OutputStream createOutputStream(long offset) throws IOException {
         throw new IOException();
     }
 
-    public FileObject[] listFiles() {
-        return new FileObject[0];
+    @Override
+    public List<FtpFile> listFiles() {
+        return new ArrayList<>(0);
     }
 
+    @Override
     public boolean delete() {
         return true;
     }
 
+    @Override
     public boolean doesExist() {
         return !file;
     }
 
-    public String getFullName() {
+    @Override
+    public String getAbsolutePath() {
         return path;
     }
 
+    @Override
     public String getGroupName() {
         return "gateway";
     }
 
+    @Override
     public long getLastModified() {
         return date;
     }
 
+    @Override
+    public boolean setLastModified(long date) {
+        return true;
+    }
+
+    @Override
     public int getLinkCount() {
         return 1;
     }
 
+    @Override
     public String getOwnerName() {
         return "gateway";
     }
 
-    public String getShortName() {
+    @Override
+    public String getName() {
         String name = path;
 
         if (name.indexOf('/') > -1) {
@@ -72,40 +89,49 @@ class VirtualFileObject implements FileObject {
         return name;
     }
 
+    @Override
     public long getSize() {
         return file ? 0 : 4096;
     }
 
-    public boolean hasDeletePermission() {
+    @Override
+    public boolean isReadable() {
         return true;
     }
 
-    public boolean hasReadPermission() {
+    @Override
+    public boolean isWritable() {
         return true;
     }
 
-    public boolean hasWritePermission() {
+    @Override
+    public boolean isRemovable() {
         return true;
     }
 
+    @Override
     public boolean isDirectory() {
         // Always return true to allow removal of directories
         return true;
     }
 
+    @Override
     public boolean isFile() {
         return file && doesExist();
     }
 
+    @Override
     public boolean isHidden() {
         return true;
     }
 
+    @Override
     public boolean mkdir() {
         return true;
     }
 
-    public boolean move(FileObject destination) {
+    @Override
+    public boolean move(FtpFile destination) {
         return false;
     }
 }

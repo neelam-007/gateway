@@ -1,5 +1,8 @@
 package com.l7tech.server.transport.ftp;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -9,12 +12,12 @@ import org.apache.ftpserver.ftplet.User;
 import org.apache.ftpserver.ftplet.Authentication;
 import org.apache.ftpserver.ftplet.AuthenticationFailedException;
 import org.apache.ftpserver.ftplet.Authority;
-import org.apache.ftpserver.usermanager.BaseUser;
 import org.apache.ftpserver.usermanager.AnonymousAuthentication;
 import org.apache.ftpserver.usermanager.UsernamePasswordAuthentication;
-import org.apache.ftpserver.usermanager.ConcurrentLoginPermission;
-import org.apache.ftpserver.usermanager.TransferRatePermission;
-import org.apache.ftpserver.usermanager.WritePermission;
+import org.apache.ftpserver.usermanager.impl.BaseUser;
+import org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission;
+import org.apache.ftpserver.usermanager.impl.TransferRatePermission;
+import org.apache.ftpserver.usermanager.impl.WritePermission;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -30,10 +33,18 @@ class FtpUserManager implements UserManager {
 
     private static final String USER_ANONYMOUS = "anonymous";
 
-    private final FtpServerManager ftpServerManager;
+    private final int maxIdleTime;
 
-    public FtpUserManager(FtpServerManager ftpServerManager) {
-        this.ftpServerManager = ftpServerManager;
+    private final List<Authority> PERMISSIONS;
+
+    public FtpUserManager(int maxConcurrentLogins, int maxConcurrentLoginsPerIP, int maxIdleTime) {
+        this.maxIdleTime = maxIdleTime;
+
+        PERMISSIONS = Collections.unmodifiableList(
+                Arrays.asList(new ConcurrentLoginPermission(maxConcurrentLogins, maxConcurrentLoginsPerIP),
+                        new TransferRatePermission(0, 0),
+                        new WritePermission("/"))
+        );
     }
 
     /**
@@ -46,28 +57,20 @@ class FtpUserManager implements UserManager {
     public User authenticate(Authentication authentication) throws AuthenticationFailedException {
         User user;
 
-        if (!ftpServerManager.isLicensed()) {
-            if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Failing authentication, FTP server not licensed.");
-            throw new AuthenticationFailedException("Authentication failed (FTP server not licensed).");
-        }
-
         // check input
         if (authentication instanceof AnonymousAuthentication) {
             user = buildUser(USER_ANONYMOUS, null);
 
-            if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, "Authenticated anonymous user.");
+            logger.log(Level.FINE, "Authenticated anonymous user.");
         } else if (authentication instanceof UsernamePasswordAuthentication) {
             UsernamePasswordAuthentication upAuthentication = (UsernamePasswordAuthentication) authentication;
             String login = upAuthentication.getUsername();
             String password = upAuthentication.getPassword();
 
-            if((login != null) && (password != null)) {
+            if ((login != null) && (password != null)) {
                 user = buildUser(login, password);
 
-                if (logger.isLoggable(Level.FINE))
-                    logger.log(Level.FINE, "Authenticated user ''{0}''.", login);
+                logger.log(Level.FINE, "Authenticated user ''{0}''.", login);
             } else {
                 throw new AuthenticationFailedException("Authentication failed (no credentials).");
             }
@@ -83,22 +86,19 @@ class FtpUserManager implements UserManager {
     }
 
     public boolean doesExist(final String login) throws FtpException {
-        if (logger.isLoggable(Level.FINER))
-            logger.log(Level.FINER, "User exists ''{0}''.", login);
+        logger.log(Level.FINER, "User exists ''{0}''.", login);
 
         return true;
     }
 
     public String getAdminName() throws FtpException {
-        if (logger.isLoggable(Level.FINER))
-            logger.log(Level.FINER, "Administrator name requested.");
+        logger.log(Level.FINER, "Administrator name requested.");
 
         return null;
     }
 
     public String[] getAllUserNames() throws FtpException {
-        if (logger.isLoggable(Level.FINER))
-            logger.log(Level.FINER, "Username list requested.");
+        logger.log(Level.FINER, "Username list requested.");
 
         return null;
     }
@@ -109,13 +109,11 @@ class FtpUserManager implements UserManager {
         if (USER_ANONYMOUS.equals(login)) {
             user = buildUser(USER_ANONYMOUS, null);
 
-            if (logger.isLoggable(Level.FINER))
-                logger.log(Level.FINER, "Getting anonymous user.");
+            logger.log(Level.FINER, "Getting anonymous user.");
         } else if (login != null) {
             user = buildUser(login, null);
 
-            if (logger.isLoggable(Level.FINER))
-                logger.log(Level.FINER, "Getting user ''{0}''.", login);
+            logger.log(Level.FINER, "Getting user ''{0}''.", login);
         }
 
         if (user == null)
@@ -125,25 +123,13 @@ class FtpUserManager implements UserManager {
     }
 
     public boolean isAdmin(final String login) throws FtpException {
-        if (logger.isLoggable(Level.FINER))
-            logger.log(Level.FINER, "User is not administrator ''{0}''.", login);
+        logger.log(Level.FINER, "User is not administrator ''{0}''.", login);
 
         return false;
     }
 
     public void save(final User user) throws FtpException {
         throw new FtpException("Save not supported.");
-    }
-
-    /**
-     * Create generic user permissions.
-     */
-    private Authority[] getPermissions() {
-        return new Authority[] {
-                new ConcurrentLoginPermission(10, 10),
-                new TransferRatePermission(0, 0),
-                new WritePermission("/"),
-        };
     }
 
     /**
@@ -155,8 +141,8 @@ class FtpUserManager implements UserManager {
         baseUser.setName(login);
         baseUser.setPassword(password);
         baseUser.setHomeDirectory("/");
-        baseUser.setMaxIdleTime(60);
-        baseUser.setAuthorities(getPermissions());
+        baseUser.setMaxIdleTime(maxIdleTime);
+        baseUser.setAuthorities(PERMISSIONS);
         return baseUser;
     }
 }

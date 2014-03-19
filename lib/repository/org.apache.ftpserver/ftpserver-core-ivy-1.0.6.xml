@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0">
+<ivy-module version="2.0">
 	<info organisation="org.apache.ftpserver"
 		module="ftpserver-core"
-		revision="1.0-543677-20070601"
+		revision="1.0.6"
 		status="release"
-		publication="20080707125908"
+		publication="20131001113811"
 		default="true"
 	/>
 	<configurations>

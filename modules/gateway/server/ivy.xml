@@ -79,13 +79,12 @@
         <dependency org="org.javassist" name="javassist" rev="3.16.1-GA" force="true" conf="core"/>
         <dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
-        <dependency org="org.apache.mina" name="mina-core" rev="1.1.7" force="true" conf="core"/>
-        <dependency org="org.apache.mina" name="mina-filter-ssl" rev="1.1.7" force="true" conf="core"/>
+        <dependency org="org.apache.mina" name="mina-core" rev="2.0.7" force="true" conf="core"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.20" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.5" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.6" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-jdbc" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-orm" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context-support" rev="3.0.7.RELEASE" force="true" conf="core"/>
@@ -93,8 +92,8 @@
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-web-servlet" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.aspectj" name="aspectjweaver" rev="1.6.12" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
-        <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
-                    conf="core"/>
+        <dependency org="org.apache.ftpserver" name="ftplet-api" rev="1.0.6" force="true" conf="core"/>
+        <dependency org="org.apache.ftpserver" name="ftpserver-core" rev="1.0.6" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.35" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="catalina" rev="6.0.35-l7p1" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35-l7p1" force="true" conf="core"/>
@@ -137,7 +136,7 @@
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 
-        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.5"/>
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.6"/>
         <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p3"/>
     </dependencies>
 </ivy-module>

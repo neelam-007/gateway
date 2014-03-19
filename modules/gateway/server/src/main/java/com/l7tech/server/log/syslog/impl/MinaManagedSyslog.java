@@ -6,16 +6,20 @@ import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.log.syslog.SyslogSeverity;
 import com.l7tech.util.Functions;
-import org.apache.mina.common.*;
-import org.apache.mina.transport.socket.nio.DatagramConnector;
-import org.apache.mina.transport.socket.nio.SocketConnector;
-import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
+import org.apache.mina.core.future.ConnectFuture;
+import org.apache.mina.core.future.IoFuture;
+import org.apache.mina.core.future.IoFutureListener;
+import org.apache.mina.core.future.WriteFuture;
+import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.transport.socket.nio.NioDatagramConnector;
+import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
+import org.apache.mina.util.ExceptionMonitor;
 
 import java.net.SocketAddress;
 import java.nio.channels.UnresolvedAddressException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +49,6 @@ public class MinaManagedSyslog extends ManagedSyslog {
      */
     public MinaManagedSyslog(final SyslogProtocol protocol, final SocketAddress[] addresses,
                              final String sslKeystoreAlias, final Goid sslKeystoreId) {
-        this.protocol = protocol;
         this.syslogAddresses = addresses;
         this.sslKeystoreAlias = sslKeystoreAlias;
         this.sslKeystoreId = sslKeystoreId;
@@ -127,10 +130,11 @@ public class MinaManagedSyslog extends ManagedSyslog {
         // this handler to ensure that errors during logging can never cause
         // logging.
         //
-        ExceptionMonitor.setInstance(new ExceptionMonitor(){
+        ExceptionMonitor.setInstance(new ExceptionMonitor() {
             // Called for exceptions on interrupted, IOException on close, etc.
             @Override
-            public void exceptionCaught(Throwable cause) {}
+            public void exceptionCaught(Throwable cause) {
+            }
         });
     }
 
@@ -139,12 +143,10 @@ public class MinaManagedSyslog extends ManagedSyslog {
     private static final long DEFAULT_RECONNECT_SLEEP = 1000L;
     private static final long MAX_RECONNECT_SLEEP = 60000L;
 
-    private final BlockingQueue<FormattedSyslogMessage> messageQueue = new ArrayBlockingQueue<FormattedSyslogMessage>(QUEUE_CAPACITY);
+    private final BlockingQueue<FormattedSyslogMessage> messageQueue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final MessageSender sender;
     private boolean initialized = false;
 
-    /** The protocol used to comaumunicate with the syslog */
-    private SyslogProtocol protocol;
     /** The SSL keystore - used for client auth only */
     private String sslKeystoreAlias;
     /** The SSL keystore id - used for client auth only */
@@ -204,15 +206,15 @@ public class MinaManagedSyslog extends ManagedSyslog {
      */
     private class MessageSender implements Runnable {
         private final BlockingQueue<FormattedSyslogMessage> messageQueue;
-        private final List<SyslogMessage> dropList = new ArrayList<SyslogMessage>(DROP_BATCH_SIZE);
+        private final List<SyslogMessage> dropList = new ArrayList<>(DROP_BATCH_SIZE);
         private final SyslogProtocol protocol;
         private final SocketAddress[] addressList;
         private IoConnector connector;
         private MinaSyslogHandler handler;
         private final AtomicBoolean run = new AtomicBoolean(true);
         private final AtomicBoolean reconnect = new AtomicBoolean(true);
-        private final AtomicReference<IoSession> sessionRef = new AtomicReference<IoSession>();
-        private final AtomicReference<SyslogConnectionListener> listener = new AtomicReference<SyslogConnectionListener>();
+        private final AtomicReference<IoSession> sessionRef = new AtomicReference<>();
+        private final AtomicReference<SyslogConnectionListener> listener = new AtomicReference<>();
         private final boolean isSSL;
 
         /** Index for the currently running syslog in the syslogAddresses list **/
@@ -239,32 +241,36 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if (isSSL) {
 
                 if (SyslogSslClientSupport.isInitialized()) {
-                    this.handler = new MinaSecureSyslogHandler(callback, getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
-                    this.connector = new SocketConnector();
-                    MinaSecureSyslogHandler.class.cast(this.handler).setupConnectorForSSL(this.connector);
+                    handler = new MinaSecureSyslogHandler(callback, getCurrentSessionCallback(), sslKeystoreAlias, sslKeystoreId);
+                    connector = new NioSocketConnector();
+                    MinaSecureSyslogHandler.class.cast(handler).setupConnectorForSSL(connector);
+                    connector.setHandler(handler);
+                    connector.setConnectTimeoutMillis(30000L);
                 }
 
             } else {
-
-                this.handler = new MinaSyslogHandler(callback);
+                handler = new MinaSyslogHandler(callback);
 
                 // create TCP or UDP connector
                 switch ( protocol ) {
                     case TCP:
-                        this.connector = new SocketConnector();
+                        connector = new NioSocketConnector();
                         break;
                     case SSL:
                         // won't happen -- covered by the isSSL check
                         break;
                     case UDP:
-                        this.connector = new DatagramConnector();
+                        connector = new NioDatagramConnector();
                         break;
                     case VM:
-                        this.connector = new VmPipeConnector();
+                        connector = new VmPipeConnector();
                         break;
                     default:
                         throw new IllegalArgumentException("invalid protocol " + protocol);
                 }
+
+                connector.setHandler(handler);
+                connector.setConnectTimeoutMillis(30000L);
             }
         }
 
@@ -275,7 +281,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
         /**
          * Get a string representation of this sender, this should contain
-         * info to allow the threads to be identified. 
+         * info to allow the threads to be identified.
          */
         @Override
         public String toString() {
@@ -307,7 +313,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
         }
 
         /**
-         * Check if stopped or stopping 
+         * Check if stopped or stopping
          */
         private boolean isRunning() {
             return run.get();
@@ -316,8 +322,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
         /**
          * Set/clear the active session.
          *
-         * If set to null an attempt is made to reconnect to the
-         * server. 
+         * If set to null an attempt is made to reconnect to the server.
          */
         private void setSession(final IoSession session, final String sessionId) {
 
@@ -427,19 +432,16 @@ public class MinaManagedSyslog extends ManagedSyslog {
             // reset flag
             reconnect.set( false );
 
-            // build connector config
-            SocketConnectorConfig config = new SocketConnectorConfig();
-            config.setConnectTimeout(30);
-            config.setThreadModel(ThreadModel.MANUAL);
+            // set timeout period
+            connector.setConnectTimeoutMillis(30000L);
 
             // start connect operation
             try {
                 final String senderStr = toString();
-                final ConnectFuture connectFuture = connector.connect( getAddress(), handler, config );
+                final ConnectFuture connectFuture = connector.connect(getAddress());
 
                 // only perform this for non-SSL
                 connectFuture.addListener(new IoFutureListener() {
-                    int reconnects = 0;
                     public void operationComplete(IoFuture future) {
                         if ( !connectFuture.isConnected() ) {
                             logger.log(Level.WARNING, "Syslog connection attempt failed (" + senderStr + ")" );
@@ -461,16 +463,20 @@ public class MinaManagedSyslog extends ManagedSyslog {
         private void connectSSL() {
 
             if (sessionRef.get() != null) {
-                sessionRef.get().close();
+                sessionRef.get().close(true);
             }
 
             if (connector == null) {
                 if (SyslogSslClientSupport.isInitialized()) {
                     MinaSecureSyslogHandler sslHandler =
-                            new MinaSecureSyslogHandler(getCallback(), getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
+                            new MinaSecureSyslogHandler(getCallback(), getCurrentSessionCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.handler = sslHandler;
-                    this.connector = new SocketConnector();
+                    this.connector = new NioSocketConnector();
                     sslHandler.setupConnectorForSSL(this.connector);
+                    this.connector.setHandler(handler);
+
+                    // set timeout period
+                    connector.setConnectTimeoutMillis(30000L);
                 } else {
                     return;
                 }
@@ -479,21 +485,15 @@ public class MinaManagedSyslog extends ManagedSyslog {
             // reset flag
             reconnect.set( false );
 
-            // build connector config
-            SocketConnectorConfig config = new SocketConnectorConfig();
-            config.setConnectTimeout(30);
-            config.setThreadModel(ThreadModel.MANUAL);
-
             // start connect operation
             try {
                 final long connStart = System.currentTimeMillis();
 
                 final String senderStr = toString();
-                final ConnectFuture connectFuture = connector.connect( getAddress(), handler, config );
+                final ConnectFuture connectFuture = connector.connect(getAddress());
 
                 // only perform this for non-SSL
                 connectFuture.addListener(new IoFutureListener() {
-                    int reconnects = 0;
                     public void operationComplete(IoFuture future) {
                         if ( !connectFuture.isConnected() ) {
                             logger.log(Level.WARNING, "Syslog SSL connection attempt failed (" + senderStr + ")" );
@@ -503,26 +503,41 @@ public class MinaManagedSyslog extends ManagedSyslog {
                 });
 
                 // for SSL, we will wait for the connection to complete before moving on
-                connectFuture.join(1000L);
+                connectFuture.awaitUninterruptibly(1000L);
 
-                if (logger.isLoggable(Level.FINE) && connectFuture.isReady()) {
-                    StringBuffer sb = new StringBuffer("Connection complete, ttc=");
+                if (logger.isLoggable(Level.FINE) && connectFuture.isDone()) {
+                    StringBuilder sb = new StringBuilder("Connection complete, ttc=");
                     sb.append(System.currentTimeMillis() - connStart).append("\n");
 
                     IoSession sess = connectFuture.getSession();
                     sb.append("SessionCreate: ").append(sess.getCreationTime()).append("\n");
                     sb.append("Connected: ").append(sess.isConnected()).append("\n");
                     sb.append("isClosing: ").append(sess.isClosing()).append("\n");
-                    sb.append("Transport: ").append(sess.getTransportType()).append("\n");
+                    sb.append("Transport: ").append(sess.getTransportMetadata().getName()).append("\n");
                     sb.append("SSLSession: ").append(((MinaSecureSyslogHandler) handler).getSSLSession(sess)).append("\n");
                     sb.append("SocketAddress: ").append(getAddress()).append("\n");
-                    sb.append("Sessions for address: ").append(connector.getManagedSessions(getAddress()));
+                    sb.append("Sessions for address: ").append(getManagedSessionsByAddress(getAddress()));
                     logger.fine(sb.toString());
                 }
             } catch (UnresolvedAddressException uae) {
                 fireDisconnected(); // needed for audit since no session is ever created
                 flagReconnectAfterDelay();
             }
+        }
+
+        private Set<IoSession> getManagedSessionsByAddress(SocketAddress address) {
+            // N.B. managedSessions is an UnmodifiableMap of a ConcurrentHashMap so it's thread safe
+            Map<Long, IoSession> managedSessions = connector.getManagedSessions();
+
+            Set<IoSession> sessionsForAddress = new HashSet<>();
+
+            for (IoSession session : managedSessions.values()) {
+                if (session.getRemoteAddress().equals(address)) {
+                    sessionsForAddress.add(session);
+                }
+            }
+
+            return sessionsForAddress;
         }
 
         /**
@@ -554,7 +569,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
                                 // For SSL, we check the writeFuture to ensure the message was written out successfully
                                 if (isSSL && initialWrite) {
-                                    writeFuture.join(1000L);
+                                    writeFuture.awaitUninterruptibly(1000L);
                                     if (writeFuture.isWritten()) {
                                         // all fine
                                         initialWrite = false;
@@ -591,7 +606,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                 } else {
                     IoSession session = sessionRef.get();
                     if ( session != null ) {
-                        session.close();
+                        session.close(true);
                     }
                 }
             }
@@ -639,21 +654,21 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if ( message != null ) {
                 String formattedMessage =
                         formatMessage(message.getFormat(),
-                                      message.getFacility(),
-                                      message.getSeverity(),
-                                      message.getPriority(),
-                                      message.getHost(),
-                                      message.getProcess(),
-                                      message.getThreadId(),
-                                      message.getTime(),
-                                      message.getMessage());
+                                message.getFacility(),
+                                message.getSeverity(),
+                                message.getPriority(),
+                                message.getHost(),
+                                message.getProcess(),
+                                message.getThreadId(),
+                                message.getTime(),
+                                message.getMessage());
 
                 // create text message with encoding info
                 return new MinaSyslogTextEncoder.TextMessage(
-                                message.getFormat().getCharset(),
-                                message.getFormat().getDelimiter(),
-                                message.getFormat().getMaxLength(),
-                                formattedMessage);
+                        message.getFormat().getCharset(),
+                        message.getFormat().getDelimiter(),
+                        message.getFormat().getMaxLength(),
+                        formattedMessage);
             }
             return null;
         }
@@ -663,6 +678,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
          */
         private void fireConnected() {
             SyslogConnectionListener listener = this.listener.get();
+
             if ( listener != null && SyslogProtocol.UDP != protocol ) {
                 listener.notifyConnected(getAddress());
             }
@@ -673,6 +689,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
          */
         private void fireDisconnected() {
             SyslogConnectionListener listener = this.listener.get();
+
             if ( listener != null && SyslogProtocol.UDP != protocol  ) {
                 listener.notifyDisconnected(getAddress());
             }
@@ -707,7 +724,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
          *
          * @return the callback function to be passed into the SyslogHandler
          */
-        private Functions.Unary<Boolean, IoSession> getCurrentySessionCallback() {
+        private Functions.Unary<Boolean, IoSession> getCurrentSessionCallback() {
 
             return new Functions.Unary<Boolean, IoSession>() {
                 public Boolean call(final IoSession session) {

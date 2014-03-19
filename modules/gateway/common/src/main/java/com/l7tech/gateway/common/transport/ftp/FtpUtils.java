@@ -54,7 +54,7 @@ public class FtpUtils {
     public static Ftp newFtpClient(FtpClientConfig config) throws FtpException {
         if(config == null) throw new NullPointerException("config cannot be null");
         if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
-            throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
+            throw new IllegalStateException("Cannot create FTP connection if credentials are not specified.");
 
         final Ftp ftp = new Ftp(config.getHost(), config.getUser(), config.getPass(), config.getPort());
         if (config.getDebugStream() != null) {

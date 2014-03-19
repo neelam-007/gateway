@@ -128,6 +128,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JPanel builtinServicesPanel;
     private ByteLimitPanel requestByteLimitPanel;
     private SecurityZoneWidget zoneControl;
+    private JRadioButton extendedSupportRadioButton;
+    private JRadioButton uploadOnlySupportRadioButton;
     private boolean readOnly;
 
     private SsgConnector connector;
@@ -449,14 +451,43 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 }
                 try {
                     int count = Integer.parseInt(portRangeCountField.getText());
-                    if (start + count > 65535)
-                        return "Port Range Start plus Port Range Count cannot exceed 65535";
+                    if ((start + count - 1) > 65535)
+                        return "Port Range end cannot exceed 65535";
                     return null;
                 } catch (NumberFormatException nfe) {
                     return "Port Range Count must be a number from 1 to 65535";
                 }
             }
         });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String err = null;
+
+                if (isFtpProto(getSelectedProtocol()) &&
+                        !uploadOnlySupportRadioButton.isSelected() && !extendedSupportRadioButton.isSelected()) {
+                    err = "An FTP Command Handling option must be selected.";
+                }
+
+                return err;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(extendedSupportRadioButton) {
+            @Override
+            public String getValidationError() {
+                String err = null;
+
+                if (extendedSupportRadioButton.isSelected() && !hardwiredServiceCheckBox.isSelected()) {
+                    err = "An FTP(S) port must be directly associated with a valid published service " +
+                            "to support the extended command set.";
+                }
+
+                return err;
+            }
+        });
+
         inputValidator.addRule(new InputValidator.ComponentValidationRule(privateKeyComboBox) {
             @Override
             public String getValidationError() {
@@ -796,6 +827,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         tabbedPane.setEnabledAt(TAB_FTP, isFtp);
         portRangeStartField.setEnabled(!readOnly && isFtp);  // disable controls InputValidator will ignore them when not relevant
         portRangeCountField.setEnabled(!readOnly && isFtp);
+        uploadOnlySupportRadioButton.setEnabled(!readOnly && isFtp);
+        extendedSupportRadioButton.setEnabled(!readOnly && isFtp);
 
         if (!isSsl) cipherSuiteList.clearSelection();
         cipherSuiteList.setEnabled(!readOnly && isSsl);
@@ -1257,13 +1290,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         portRangeStartField.setText(prs == null ? "" : prs);
         String prc = connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT);
         portRangeCountField.setText(prc == null ? "" : prc);
+        boolean supportExtendedCommandSet =
+                connector.getBooleanProperty(SsgConnector.PROP_SUPPORT_EXTENDED_FTP_COMMANDS);
+        uploadOnlySupportRadioButton.setSelected(!supportExtendedCommandSet);
+        extendedSupportRadioButton.setSelected(supportExtendedCommandSet);
 
         // SSL-specific properties
         cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_TLS_CIPHERLIST));
         clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
         selectPrivateKey(connector.getKeystoreGoid(), connector.getKeyAlias());
 
-        List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
+        List<String> propNames = new ArrayList<>(connector.getPropertyNames());
 
         // Don't show properties that are already exposed via specialized controls
         propNames.remove(SsgConnector.PROP_BIND_ADDRESS);
@@ -1271,6 +1308,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_TLS_PROTOCOLS);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
+        propNames.remove(SsgConnector.PROP_SUPPORT_EXTENDED_FTP_COMMANDS);
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
         propNames.remove(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         propNames.remove(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
@@ -1356,6 +1394,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String rangeCount = portRangeCountField.getText().trim();
         connector.putProperty(SsgConnector.PROP_PORT_RANGE_START, isFtp ? rangeStart : null);
         connector.putProperty(SsgConnector.PROP_PORT_RANGE_COUNT, isFtp ? rangeCount : null);
+        connector.putProperty(SsgConnector.PROP_SUPPORT_EXTENDED_FTP_COMMANDS,
+                isFtp ? String.valueOf(extendedSupportRadioButton.isSelected()) : String.valueOf(false));
 
         // SSL-specific properties
         boolean isSsl = isSslProto(proto);

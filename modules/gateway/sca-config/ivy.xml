@@ -17,10 +17,10 @@
         <dependency name="layer7-gateway-config" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-sca-common" rev="latest.integration" conf="core"/>
 
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.5" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.5" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.6" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.6" force="true" conf="core"/>
 
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

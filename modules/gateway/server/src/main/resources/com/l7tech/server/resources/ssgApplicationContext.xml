@@ -1889,20 +1889,21 @@
         <property name="defaultKey" ref="defaultKey"/>
     </bean>
 
+    <bean id="ftpletFactory" class="com.l7tech.server.transport.ftp.SsgFtpletFactory"/>
+
+    <bean id="ftpSslFactory" class="com.l7tech.server.transport.ftp.FtpSslFactory"/>
+
+    <bean id="ftpRequestProcessorFactory" class="com.l7tech.server.transport.ftp.FtpRequestProcessorFactory"/>
+
+    <bean id="ftpServerFactory" class="com.l7tech.server.transport.ftp.SsgFtpServerFactory"/>
+
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="gatewayState"/>
-        <constructor-arg ref="messageProcessor"/>
-        <constructor-arg ref="soapFaultManager"/>
-        <constructor-arg ref="stashManagerFactory"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="messageProcessingEventChannel"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
-        <constructor-arg ref="clusterPropertyManager"/>
-        <constructor-arg ref="serviceManager"/>
     </bean>
 
     <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">

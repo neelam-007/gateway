@@ -1,13 +1,12 @@
 package com.l7tech.external.assertions.ftprouting.server;
 
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -19,29 +18,30 @@ import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.*;
-import com.l7tech.xml.xpath.*;
 import org.apache.ftpserver.ftplet.*;
-import org.apache.ftpserver.usermanager.BaseUser;
-import org.apache.ftpserver.usermanager.ConcurrentLoginPermission;
-import org.apache.ftpserver.usermanager.TransferRatePermission;
-import org.apache.ftpserver.usermanager.WritePermission;
+import org.apache.ftpserver.usermanager.impl.BaseUser;
+import org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission;
+import org.apache.ftpserver.usermanager.impl.TransferRatePermission;
+import org.apache.ftpserver.usermanager.impl.WritePermission;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockftpserver.fake.FakeFtpServer;
 import org.mockftpserver.fake.UserAccount;
 import org.mockftpserver.fake.filesystem.*;
-import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -50,9 +50,6 @@ import static org.junit.Assert.assertEquals;
  * @author jwilliams
  */
 public class ServerFtpRoutingAssertionTest {
-    // XPath expressions
-    private static final String RAW_NODE_XPATH = "//raw";
-
     // FTP server settings
     private static final int SERVER_CONTROL_PORT = 22221;
 
@@ -72,11 +69,16 @@ public class ServerFtpRoutingAssertionTest {
     private static final String USER_ACCOUNT_NAME = "jdoe";
     private static final String USER_ACCOUNT_PASSWORD = "password";
 
+    private static final List<Authority> USER_AUTHORITIES =
+            Arrays.asList(new ConcurrentLoginPermission(10, 10),
+                    new TransferRatePermission(0, 0),
+                    new WritePermission("/"));
+
     // other settings
     private final FtpFileDetails LOG_FILE_DETAILS = new FtpFileDetails(FS_LOG_TXT_FILE, FS_LOG_DIR,
-            readResourceAsString(RES_LOG_TXT_FILE_NAME), ContentTypeHeader.TEXT_DEFAULT.toString(), Charsets.UTF8);
+            readResourceAsString(RES_LOG_TXT_FILE_NAME), Charsets.UTF8);
     private final FtpFileDetails XML_FILE_DETAILS = new FtpFileDetails(FS_DATA_XML_FILE, FS_DATA_DIR,
-            readResourceAsString(RES_DATA_XML_FILE_NAME), ContentTypeHeader.XML_DEFAULT.toString(), Charsets.UTF8);
+            readResourceAsString(RES_DATA_XML_FILE_NAME), Charsets.UTF8);
 
     private final InetAddress LOCALHOST = InetAddress.getLocalHost();
 
@@ -114,9 +116,9 @@ public class ServerFtpRoutingAssertionTest {
     }
 
     @Test
-    public void testAcct() throws Exception {
+    public void testPWD_Success() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_ACCT;
+        FtpCommand testCommand = FtpCommand.PWD;
 
         // set up file system
         addFile(fakeFtpServer.getFileSystem(), testFile);
@@ -124,9 +126,9 @@ public class ServerFtpRoutingAssertionTest {
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
+        assertion.setArguments(testFile.getName());
         assertion.setDirectory(testFile.getDirectory());
-        assertion.setDownloadedContentType(ContentTypeHeader.XML_DEFAULT.toString());
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
 
@@ -140,28 +142,133 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
 
-        String responseContent =
-                new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
-
-        assertEquals("230 ACCT completed for jdoe.", responseContent.trim());
+        validateFtpResponseKnob(context, 257, "\"" + testFile.getDirectory() + "\"");
     }
 
     @Test
-    public void testList() throws Exception {
+    public void testACCT_FailOnUnrecognizedCommand() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_LIST;
+        String testCommand = "ACCT";
+
+        // set up file system
+        addFile(fakeFtpServer.getFileSystem(), testFile);
+
+        // create assertion
+        FtpRoutingAssertion assertion = createAssertion();
+
+        assertion.setCommandFromVariable(true);
+        assertion.setFtpCommandVariable(testCommand);
+        assertion.setDirectory(testFile.getDirectory());
+        assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
+        assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer(assertion);
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
+
+        // run server assertion
+        AssertionStatus status = null;
+
+        try {
+            serverAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            status = e.getAssertionStatus();
+        }
+
+        assertEquals(AssertionStatus.SERVER_ERROR, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_SUCH_VARIABLE_WARNING));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
+        assertNull(context.getResponse().getKnob(FtpResponseKnob.class));
+    }
+
+    @Test
+    public void testNullFtpCommand_Fail() throws Exception {
+        FtpFileDetails testFile = LOG_FILE_DETAILS;
+
+        // set up file system
+        addFile(fakeFtpServer.getFileSystem(), testFile);
+
+        // create assertion
+        FtpRoutingAssertion assertion = createAssertion();
+
+        assertion.setFtpCommand(null);
+        assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
+        assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer(assertion);
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
+
+        // run server assertion
+        AssertionStatus status;
+
+        try {
+            status = serverAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            status = e.getAssertionStatus();
+        }
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_NO_COMMAND));
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
+        assertNull(context.getResponse().getKnob(FtpResponseKnob.class));
+    }
+
+    /**
+     * This test corresponds to handling an upload request with a pre-Icefish policy (i.e. no command set, but
+     * argument provided). The default command "STOR" should be assumed and the assertion should succeed.
+     */
+    @Test
+    public void testNoCommand_ArgumentProvided_Success() throws Exception {
+        FtpFileDetails testFile = LOG_FILE_DETAILS;
+
+        // set up file system
+        addDirectory(fakeFtpServer.getFileSystem(), testFile);
+
+        // create assertion, don't set an FTP command (use default of STOR)
+        FtpRoutingAssertion assertion = createAssertion();
+
+        fillFileSettings(assertion, testFile);
+
+        assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
+        assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer(assertion);
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(testFile);
+
+        // run server assertion
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
+        assertEquals(getFileSystemEntryContent(testFile), testFile.getContent());
+
+        validateFtpResponseKnob(context, 226, "Created file " + testFile.getName() + ".");
+    }
+
+    @Test
+    public void testLIST_Success() throws Exception {
+        FtpFileDetails testFile = LOG_FILE_DETAILS;
+        FtpCommand testCommand = FtpCommand.LIST;
 
         // set up file system
         FileEntry testFileEntry = addFile(fakeFtpServer.getFileSystem(), testFile);
-        String listItem = new UnixDirectoryListingFormatter().format(testFileEntry);
+        String listItem = new UnixDirectoryListingFormatter().format(testFileEntry) + "\r\n";
 
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
         assertion.setDirectory(testFile.getDirectory());
-        assertion.setDownloadedContentType(ContentTypeHeader.XML_DEFAULT.toString());
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
 
@@ -175,21 +282,20 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
 
         String responseContent =
                 new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
 
-        List<Element> elementList =
-                XpathUtil.findElements(XmlUtil.parse(responseContent).getDocumentElement(), RAW_NODE_XPATH, null);
+        assertEquals(listItem, responseContent);
 
-        assertEquals(1, elementList.size());
-        assertEquals(listItem, elementList.get(0).getTextContent());
+        validateFtpResponseKnob(context, 226, "Closing data connection. Requested file action successful.");
     }
 
     @Test
-    public void testGetLogFile() throws Exception {
+    public void testRETR_LogFile_Success() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_GET;
+        FtpCommand testCommand = FtpCommand.RETR;
 
         // set up file system
         addFile(fakeFtpServer.getFileSystem(), testFile);
@@ -197,9 +303,9 @@ public class ServerFtpRoutingAssertionTest {
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
 
-        setPattern(assertion, testFile);
+        fillFileSettings(assertion, testFile);
 
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
@@ -214,17 +320,20 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
 
         String responseContent =
                 new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
 
         assertEquals(testFile.getContent(), responseContent);
+
+        validateFtpResponseKnob(context, 150, null);
     }
 
     @Test
-    public void testGetXmlFile() throws Exception {
+    public void testRETR_XmlFile_Success() throws Exception {
         FtpFileDetails testFile = XML_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_GET;
+        FtpCommand testCommand = FtpCommand.RETR;
 
         // set up file system
         addFile(fakeFtpServer.getFileSystem(), testFile);
@@ -232,9 +341,9 @@ public class ServerFtpRoutingAssertionTest {
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
 
-        setPattern(assertion, testFile);
+        fillFileSettings(assertion, testFile);
 
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
@@ -249,17 +358,20 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
 
         String responseContent =
                 new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()));
 
         assertEquals(testFile.getContent(), responseContent);
+
+        validateFtpResponseKnob(context, 150, null);
     }
 
     @Test
-    public void testPutLogFile() throws Exception {
+    public void testSTOR_LogFile_Success() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_PUT;
+        FtpCommand testCommand = FtpCommand.STOR;
 
         // set up file system
         addDirectory(fakeFtpServer.getFileSystem(), testFile);
@@ -267,9 +379,9 @@ public class ServerFtpRoutingAssertionTest {
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
 
-        setPattern(assertion, testFile);
+        fillFileSettings(assertion, testFile);
 
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
@@ -284,13 +396,16 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
         assertEquals(getFileSystemEntryContent(testFile), testFile.getContent());
+
+        validateFtpResponseKnob(context, 226, "Created file " + testFile.getName() + ".");
     }
 
     @Test
-    public void testPutXmlFile() throws Exception {
+    public void testSTOR_XmlFile_Success() throws Exception {
         FtpFileDetails testFile = XML_FILE_DETAILS;
-        FtpMethod testMethod = FtpMethod.FTP_PUT;
+        FtpCommand testCommand = FtpCommand.STOR;
 
         // set up file system
         addDirectory(fakeFtpServer.getFileSystem(), testFile);
@@ -298,9 +413,9 @@ public class ServerFtpRoutingAssertionTest {
         // create assertion
         FtpRoutingAssertion assertion = createAssertion();
 
-        assertion.setFtpMethod(testMethod);
+        assertion.setFtpCommand(testCommand);
 
-        setPattern(assertion, testFile);
+        fillFileSettings(assertion, testFile);
 
         assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
         assertion.setCredentialsSource(FtpCredentialsSource.PASS_THRU);
@@ -315,8 +430,28 @@ public class ServerFtpRoutingAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED));
         assertEquals(getFileSystemEntryContent(testFile), testFile.getContent());
+
+        validateFtpResponseKnob(context, 226, "Created file " + testFile.getName() + ".");
     }
+
+    //----------- VALIDATION -------
+
+    private void validateFtpResponseKnob(PolicyEnforcementContext context, int code, @Nullable String data) {
+        FtpResponseKnob ftpResponseKnob = context.getResponse().getKnob(FtpResponseKnob.class);
+
+        assertNotNull(ftpResponseKnob);
+        assertEquals(code, ftpResponseKnob.getReplyCode());
+
+        if (null == ftpResponseKnob.getReplyText()) {   // null is valid and indicates the reply is unset
+            assertEquals(data, ftpResponseKnob.getReplyText());
+        } else {
+            assertEquals(data, ftpResponseKnob.getReplyText().trim());
+        }
+    }
+
+    //----------- SETUP -----------=
 
     private String getFileSystemEntryContent(FtpFileDetails fileDetails) throws IOException {
         FileSystem fileSystem = fakeFtpServer.getFileSystem();
@@ -324,25 +459,21 @@ public class ServerFtpRoutingAssertionTest {
         return new String(IOUtils.slurpStream(fileEntry.createInputStream()), fileDetails.getCharset());
     }
 
-    private void setPattern(FtpRoutingAssertion assertion, FtpFileDetails file) {
-        assertion.setFileNameSource(FtpFileNameSource.ARGUMENT);
+    private void fillFileSettings(FtpRoutingAssertion assertion, FtpFileDetails file) {
         assertion.setArguments(file.getName());
         assertion.setDirectory(file.getDirectory());
-        assertion.setDownloadedContentType(file.getContentType());
     }
 
     private class FtpFileDetails {
         private final String name;
         private final String directory;
-        private final String contentType;
         private final String content;
         private final Charset charset;
 
-        public FtpFileDetails(String fileName, String directory, String content, String contentType, Charset charset) {
+        public FtpFileDetails(String fileName, String directory, String content, Charset charset) {
             this.name = fileName;
             this.directory = directory;
             this.content = content;
-            this.contentType = contentType;
             this.charset = charset;
         }
 
@@ -356,10 +487,6 @@ public class ServerFtpRoutingAssertionTest {
 
         public String getContent() {
             return content;
-        }
-
-        public String getContentType() {
-            return contentType;
         }
 
         public Charset getCharset() {
@@ -414,7 +541,7 @@ public class ServerFtpRoutingAssertionTest {
                 ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(fileContents.getBytes()), Message.getMaxBytes());
 
         // attach knob to request representing org.apache.ftpserver.ftplet.FtpSession information
-        request.attachFtpKnob(
+        request.attachFtpRequestKnob(
                 new FtpRequestKnob() {
                     @Override
                     public int getLocalPort() {
@@ -452,8 +579,13 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public String getFile() {
-                        return file;
+                    public String getCommand() {
+                        return null;
+                    }
+
+                    @Override
+                    public String getArgument() {
+                        return null;
                     }
 
                     @Override
@@ -523,7 +655,7 @@ public class ServerFtpRoutingAssertionTest {
         request.initialize(createStashManager(),
                 ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(new byte[0]), Message.getMaxBytes());
 
-        request.attachFtpKnob(
+        request.attachFtpRequestKnob(
                 new FtpRequestKnob() {
                     @Override
                     public int getLocalPort() {
@@ -561,8 +693,13 @@ public class ServerFtpRoutingAssertionTest {
                     }
 
                     @Override
-                    public String getFile() {
-                        return file;
+                    public String getCommand() {
+                        return null;
+                    }
+
+                    @Override
+                    public String getArgument() {
+                        return null;
                     }
 
                     @Override
@@ -673,11 +810,7 @@ public class ServerFtpRoutingAssertionTest {
         user.setPassword(password);
         user.setHomeDirectory("/");
         user.setMaxIdleTime(60);
-        user.setAuthorities(new Authority[]{
-                new ConcurrentLoginPermission(10, 10),
-                new TransferRatePermission(0, 0),
-                new WritePermission("/"),
-        });
+        user.setAuthorities(USER_AUTHORITIES);
 
         return user;
     }

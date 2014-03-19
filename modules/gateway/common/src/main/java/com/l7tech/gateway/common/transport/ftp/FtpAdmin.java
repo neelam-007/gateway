@@ -7,7 +7,6 @@ package com.l7tech.gateway.common.transport.ftp;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +46,7 @@ public interface FtpAdmin {
                         int port,
                         String userName,
                         String password,
+                        Goid passwordGoid,
                         boolean useClientCert,
                         @Nullable Goid clientCertKeystoreId,
                         String clientCertKeyAlias,

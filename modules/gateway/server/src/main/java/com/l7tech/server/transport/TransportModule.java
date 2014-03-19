@@ -263,9 +263,7 @@ public abstract class TransportModule extends LifecycleBean {
             return c.getKeystoreGoid() == null ? defaultKey.getSslInfo() : defaultKey.lookupKeyByKeyAlias(c.getKeyAlias(), c.getKeystoreGoid());
         } catch (IOException e) {
             throw new ListenerException("No default SSL key is currently available: " + ExceptionUtils.getMessage(e), e);
-        } catch (KeyStoreException e) {
-            throw new ListenerException("Unable to access private key for connector: " + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
+        } catch (KeyStoreException | FindException e) {
             throw new ListenerException("Unable to access private key for connector: " + ExceptionUtils.getMessage(e), e);
         }
     }

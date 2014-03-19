@@ -27,7 +27,7 @@ public class ServerFtpCredentialAssertionTest {
 
         // add knob
         if (addFtpKnob) {
-            request.attachFtpKnob(new FtpRequestKnob(){
+            request.attachFtpRequestKnob(new FtpRequestKnob() {
                 @Override
                 public PasswordAuthentication getCredentials() {
                     PasswordAuthentication passwordAuthentication = null;
@@ -38,42 +38,57 @@ public class ServerFtpCredentialAssertionTest {
 
                     return passwordAuthentication;
                 }
+
                 @Override
-                public String getFile() {
+                public String getArgument() {
                     return null;
                 }
+
+                @Override
+                public String getCommand() {
+                    return null;
+                }
+
                 @Override
                 public String getPath() {
                     return null;
                 }
+
                 @Override
                 public String getRequestUri() {
                     return "";
                 }
+
                 @Override
                 public String getRequestUrl() {
                     return null;
                 }
+
                 @Override
                 public boolean isSecure() {
                     return false;
                 }
+
                 @Override
                 public boolean isUnique() {
                     return false;
                 }
+
                 @Override
                 public int getLocalPort() {
                     return 0;
                 }
+
                 @Override
                 public int getLocalListenerPort() {
                     return 0;
                 }
+
                 @Override
                 public String getRemoteAddress() {
                     return null;
                 }
+
                 @Override
                 public String getRemoteHost() {
                     return null;

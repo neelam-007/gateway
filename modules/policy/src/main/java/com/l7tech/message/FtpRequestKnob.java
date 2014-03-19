@@ -6,22 +6,30 @@ import java.net.PasswordAuthentication;
  * Information about a request that arrived over FTP.
  *
  * @author Steve Jones
+ * @author Jamie Williams - jamie.williams2@ca.com
  */
 public interface FtpRequestKnob extends TcpKnob, UriKnob {
 
     /**
-     * The path of the file being uploaded.
+     * The raw FTP command.
      *
-     * @return the file path
+     * @return the FTP command
      */
-    String getPath();
+    String getCommand();
 
     /**
-     * The name of the file being uploaded.
+     * The argument string for the command.
      *
-     * @return the file name
+     * @return the argument string, or null if none given
      */
-    String getFile();
+    String getArgument();
+
+    /**
+     * The current working directory of the FTP session.
+     *
+     * @return the working directory
+     */
+    String getPath();
 
     /**
      * The (constructed) URL for this request (e.g. ftps://gateway:2121/ssg/soap/file.xml).
@@ -33,10 +41,13 @@ public interface FtpRequestKnob extends TcpKnob, UriKnob {
     String getRequestUrl();
 
     /**
-     * True for STOU, false for STOR
+     * True for STOU, false for any other command.
      *
-     * @return true if storing with a unique file name
+     * DEPRECATED: Use {@link #getCommand()} to determine if the command is STOU.
+     *
+     * @return true iff command is STOU
      */
+    @Deprecated
     boolean isUnique();
 
     /**

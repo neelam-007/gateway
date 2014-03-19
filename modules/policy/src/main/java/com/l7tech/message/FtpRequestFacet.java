@@ -4,16 +4,16 @@ package com.l7tech.message;
  * @author Steve Jones, $Author: $
  * @version $Revision: $
  */
-public class FtpFacet extends MessageFacet {
+public class FtpRequestFacet extends MessageFacet {
 
     //- PUBLIC
 
     /**
      *
      */
-    public FtpFacet(final Message message,
-                    final MessageFacet delegate,
-                    final FtpRequestKnob ftpRequestKnob) {
+    public FtpRequestFacet(final Message message,
+                           final MessageFacet delegate,
+                           final FtpRequestKnob ftpRequestKnob) {
         super(message, delegate);
         this.ftpRequestKnob = ftpRequestKnob;
     }

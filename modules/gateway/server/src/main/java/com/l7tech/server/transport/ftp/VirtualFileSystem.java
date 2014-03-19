@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import org.apache.ftpserver.ftplet.FileSystemView;
 import org.apache.ftpserver.ftplet.FtpException;
-import org.apache.ftpserver.ftplet.FileObject;
+import org.apache.ftpserver.ftplet.FtpFile;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -22,9 +22,8 @@ class VirtualFileSystem implements FileSystemView {
      */
     private String currentPath;
 
-    private String changedDirectory;
-
-    public boolean changeDirectory(String dir) throws FtpException {
+    @Override
+    public boolean changeWorkingDirectory(String dir) throws FtpException {
         boolean changed = false;                                      
 
         if (dir != null) {
@@ -45,64 +44,27 @@ class VirtualFileSystem implements FileSystemView {
         return changed;
     }
 
+    @Override
     public boolean isRandomAccessible() throws FtpException {
         return false;
     }
 
-    public FileObject getCurrentDirectory() throws FtpException {
-        return buildDirectoryFileObject(buildCurrentPath());
+    public FtpFile getWorkingDirectory() throws FtpException {
+        return buildDirectoryFtpFile(buildCurrentPath());
     }
 
-    public String getChangedDirectory() throws FtpException {
-        if (this.changedDirectory == null || this.changedDirectory.isEmpty()) {
-            return "/";
-        } else if (!this.changedDirectory.startsWith("/")) {
-            return  "/" +  this.changedDirectory;
-        } else {
-            return this.changedDirectory;
-        }
-    }
-
-    public void setChangedDirectory(String changedDirectory) throws FtpException {
-        if (changedDirectory.endsWith("/") && !changedDirectory.equals("/")){
-            this.changedDirectory = changedDirectory.substring(0, changedDirectory.lastIndexOf("/"));
-        } else {
-            this.changedDirectory = changedDirectory;
-        }
-    }
-
-    public String getParentDirectory() {
-        if (this.changedDirectory != null )
-            return this.changedDirectory.contains("/") ? this.changedDirectory.substring(0, this.changedDirectory.lastIndexOf("/")) : "/";
-        else
-            return "/";
-    }
-
-    public void setCombinedChangedDirectory (String changedDirectory) throws FtpException {
-        if (this.changedDirectory == null){
-            this.changedDirectory = changedDirectory;
-        } else {
-            if (this.changedDirectory.equals("/")) {
-                this.changedDirectory = "/" + changedDirectory;
-            } else if (changedDirectory.startsWith("/") || this.changedDirectory.endsWith("/")){
-                this.changedDirectory = this.changedDirectory + changedDirectory;
-            } else {
-                this.changedDirectory = this.changedDirectory + "/" + changedDirectory;
-            }
-        }
-    }
-
-    public FileObject getFileObject(String file) throws FtpException {
-        FileObject fileObject;
+    @Override
+    public FtpFile getFile(String file) throws FtpException {
+        FtpFile fileObject;
 
         switch (file) {
             case ".":
             case "./":
-                fileObject = buildDirectoryFileObject(buildCurrentPath());
+                fileObject = buildDirectoryFtpFile(buildCurrentPath());
                 break;
             case "..":
             case "../":
-                fileObject = buildDirectoryFileObject(combinePaths(buildCurrentPath(), ".."));
+                fileObject = buildDirectoryFtpFile(combinePaths(buildCurrentPath(), ".."));
                 break;
             default:
                 fileObject = buildFileObject(buildCurrentPath(), file);
@@ -112,10 +74,12 @@ class VirtualFileSystem implements FileSystemView {
         return fileObject;
     }
 
-    public FileObject getHomeDirectory() throws FtpException {
-        return buildDirectoryFileObject("/");
+    @Override
+    public FtpFile getHomeDirectory() throws FtpException {
+        return buildDirectoryFtpFile("/");
     }
 
+    @Override
     public void dispose() {
     }
 
@@ -203,11 +167,11 @@ class VirtualFileSystem implements FileSystemView {
         return normalized;
     }
 
-    private FileObject buildFileObject(final String path, final String file) {
+    private FtpFile buildFileObject(final String path, final String file) {
         return new VirtualFileObject(true, combinePaths(path, file));
     }
 
-    private FileObject buildDirectoryFileObject(final String path) {
+    private FtpFile buildDirectoryFtpFile(final String path) {
         return new VirtualFileObject(false, path);
     }
 }

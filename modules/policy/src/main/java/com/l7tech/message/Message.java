@@ -9,7 +9,6 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -619,16 +618,28 @@ public final class Message implements Closeable {
     }
 
     /**
-     * Configure this Message as an FTP Message.  This attaches an FTP STOR command to this
-     * Message.  A Message may have at most one FTP knob.
+     * Configure this Message as an FTP Request Message. A Message may have at most one FTP Request Knob.
      *
      * @param ftpRequestKnob source of FTP data.  May not be null.
      * @throws IllegalStateException if this Message is already configured as an FTP Message
      */
-    public void attachFtpKnob(FtpRequestKnob ftpRequestKnob) throws IllegalStateException {
+    public void attachFtpRequestKnob(FtpRequestKnob ftpRequestKnob) throws IllegalStateException {
         if (getKnob(FtpRequestKnob.class) != null)
-            throw new IllegalStateException("This Message is already configured as an FTP Message");
-        rootFacet = new FtpFacet(this, rootFacet, ftpRequestKnob);
+            throw new IllegalStateException("This Message is already configured as an FTP Request Message");
+        rootFacet = new FtpRequestFacet(this, rootFacet, ftpRequestKnob);
+        invalidateCachedKnobs();
+    }
+
+    /**
+     * Configure this Message as an FTP Response Message. A Message may have at most one FTP Response Knob.
+     *
+     * @param ftpResponseKnob source of FTP data.  May not be null.
+     * @throws IllegalStateException if this Message is already configured as an FTP Message
+     */
+    public void attachFtpResponseKnob(FtpResponseKnob ftpResponseKnob) throws IllegalStateException {
+        if (getKnob(FtpResponseKnob.class) != null)
+            throw new IllegalStateException("This Message is already configured as an FTP Response Message");
+        rootFacet = new FtpResponseFacet(this, rootFacet, ftpResponseKnob);
         invalidateCachedKnobs();
     }
 

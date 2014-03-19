@@ -6,10 +6,10 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.apache.mina.common.IdleStatus;
-import org.apache.mina.common.IoConnector;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.ssl.SslFilter;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 /**
  * SSL extension to the Mina Syslog IoHandler implementation.
  *
- * @author: vchan
+ * @author vchan
  */
 public class MinaSecureSyslogHandler extends MinaSyslogHandler {
 
@@ -36,7 +36,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     private static final int IDLE_TIME = 60 * 2; // seconds
 
     /** SSL filter */
-    private SSLFilter SSL_FILTER;
+    private SslFilter SSL_FILTER;
     /** SSL with client auth keystore alias (optional) */
     private String sslKeystoreAlias;
     /** SSL with client auth keystore id (optional) */
@@ -66,8 +66,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
         if (SSL_FILTER == null) {
             this.sslKeystoreAlias = sslKeystoreAlias;
             this.sslKeystoreId = sslKeystoreId;
-            
-            SSLFilter filter = new SSLFilter( getSSLContext() );
+
+            SslFilter filter = new SslFilter( getSSLContext() );
             filter.setUseClientMode(true);
             SSL_FILTER = filter;
         }
@@ -110,10 +110,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
             ctx.init(km, new TrustManager[] { tm }, null);
             return ctx;
 
-        } catch (NoSuchAlgorithmException nex) {
-            logger.log(Level.WARNING, "Unable to instantiate SSLContext for Secure Syslog: {0}", ExceptionUtils.getMessage(nex));
-        } catch (KeyManagementException kex) {
-            logger.log(Level.WARNING, "Unable to instantiate SSLContext for Secure Syslog: {0}", ExceptionUtils.getMessage(kex));
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            logger.log(Level.WARNING, "Unable to instantiate SSLContext for Secure Syslog: {0}", ExceptionUtils.getMessage(e));
         }
         return null;
     }
@@ -139,7 +137,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     public void sessionOpened(IoSession session) throws Exception {
         this.sessionOpened = (session.isConnected() && !session.isClosing());
         // set the idle time
-        session.setIdleTime(IdleStatus.WRITER_IDLE, IDLE_TIME);
+        session.getConfig().setIdleTime(IdleStatus.WRITER_IDLE, IDLE_TIME);
         super.sessionOpened(session);
     }
 
@@ -172,8 +170,10 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
 //            sb.append("Written Req: ").append(ioSession.getWrittenWriteRequests()).append("\n");
 //            sb.append("written Msg: ").append(ioSession.getWrittenMessages());
 //            System.out.println(sb.toString());
-            ioSession.close();
+
+            ioSession.close(true);
         }
+
         super.sessionIdle(ioSession, idleStatus);
     }
 
@@ -181,8 +181,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     public boolean verifySession(IoSession session) {
         boolean check = super.verifySession(session);
         if (check) {
-            if (SSL_FILTER.isSSLStarted(session) && sessionOpened) {
-                return (SSL_FILTER.getSSLSession(session) != null);
+            if (SSL_FILTER.isSslStarted(session) && sessionOpened) {
+                return (SSL_FILTER.getSslSession(session) != null);
             }
         }
         return false;
@@ -192,6 +192,6 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
      * This method is only used for debug purposes
      */
     SSLSession getSSLSession(IoSession session) {
-        return SSL_FILTER.getSSLSession(session);
+        return SSL_FILTER.getSslSession(session);
     }
 }

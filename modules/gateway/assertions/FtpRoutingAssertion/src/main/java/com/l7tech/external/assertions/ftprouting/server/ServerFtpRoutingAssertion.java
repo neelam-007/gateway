@@ -2,57 +2,43 @@ package com.l7tech.external.assertions.ftprouting.server;
 
 import com.jscape.inet.ftp.*;
 import com.jscape.inet.ftps.Ftps;
+import com.l7tech.common.ftp.FtpCommand;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.server.transport.ftp.FtpListUtil;
-import com.l7tech.gateway.common.transport.ftp.FtpMethod;
 import com.l7tech.util.*;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
 import com.l7tech.server.DefaultKey;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.HostnameVerifier;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.message.Message.getMaxBytes;
+import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 
@@ -67,155 +53,192 @@ import static com.l7tech.util.ExceptionUtils.getMessage;
 public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRoutingAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
+    // 150 - File status okay; about to open data connection
+    private static final int REPLY_CODE_150 = 150;
+
     private static final Object assertionExecutorInitLock = new Object();
     private static volatile ExecutorService assertionExecutor;
 
-    private final X509TrustManager _trustManager;
-    private final HostnameVerifier _hostnameVerifier;
-    private final DefaultKey _keyFinder;
+    private final X509TrustManager trustManager;
+    private final HostnameVerifier hostnameVerifier;
+    private final DefaultKey keyFinder;
     private final String[] variablesUsed;
 
     private StashManagerFactory stashManagerFactory;
-    private FtpConnectionPoolManager ftpConnectionPoolManager;
-    private FtpsConnectionPoolManager ftpsConnectionPoolManager;
-    private int ftpConnectionIdleTime;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext);
-        _trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
-        _hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-        _keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
+
+        trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
+        hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
         stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
-        this.variablesUsed = assertion.getVariablesUsed();
-        Config config = applicationContext.getBean("serverConfig", ServerConfig.class);
+
+        variablesUsed = assertion.getVariablesUsed();
+
         // Initialize the executor if necessary
         if (assertionExecutor == null)
-            initializeAssertionExecutor(config);
-        ftpConnectionIdleTime = config.getIntProperty(ClusterProperty.asServerConfigPropertyName(FtpRoutingAssertion.CP_BINDING_TIMEOUT),
-                ConnectionPoolManager.DEFAULT_BINDING_TIMEOUT);
+            initializeAssertionExecutor(applicationContext);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Message request;
-
-        try {
-            request = context.getTargetMessage(assertion.get_requestTarget());
-        } catch (NoSuchVariableException e) {
-            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
-        }
-
-        final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
-
-        if (mimeKnob == null) {
-            // Uninitialized request
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
-            return AssertionStatus.BAD_REQUEST;
-        }
+        Message sourceTarget = getSourceMessage(context);
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
-        try {
-            handleProcessedSecurityHeader(request);
-        } catch(SAXException se) {
-            logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+        if (null != sourceTarget) {
+            try {
+                handleProcessedSecurityHeader(sourceTarget);
+            } catch (SAXException se) {
+                logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+            }
         }
 
         final VariableExpander variableExpander = getVariableExpander(context);
 
-        String userName = null;
-        String password = null;
+        Pair<String, String> usernamePasswordPair = getCredentials(context, variableExpander);
 
-        if (assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
-            final LoginCredentials credentials = context.getDefaultAuthenticationContext().getLastCredentials();
+        String arguments = getArguments(variableExpander);
 
-            if (credentials != null) {
-                userName = credentials.getName();
-                password = new String(credentials.getCredentials());
-            }
+        FtpCommand ftpCommand = getFtpCommand(context);
 
-            if (userName == null) {
-                logAndAudit(AssertionMessages.FTP_ROUTING_PASSTHRU_NO_USERNAME);
-                return AssertionStatus.FAILED;
-            }
-        } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
-            userName = getUserName(variableExpander);
+        final FtpClientWrapper ftpClient;
 
-            try {
-                password = getPassword(variableExpander);
-            } catch (FindException e) {
-                logAndAudit(AssertionMessages.FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD, e.getMessage());
-                return AssertionStatus.FAILED;
-            }
+        // get ftp(s) client
+        try {
+            ftpClient = createFtpClient(usernamePasswordPair.left, usernamePasswordPair.right,
+                    variableExpander, assertion.getSecurity());
+        } catch (FtpException e) {
+            logAndAudit(FTP_ROUTING_CONNECTION_ERROR,
+                    new String[] {e.getMessage()}, getDebugException(e));
+            return AssertionStatus.FAILED;
         }
 
-        String arguments = null;
-
-        if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            // Cannot use STOU because
-            // {@link com.jscape.inet.ftp.Ftp.uploadUnique(InputStream, String)}
-            // sends a parameter as filename seed, which causes IIS to respond
-            // with "500 'STOU seed': Invalid number of parameters".
-            // This was reported (2007-05-07) to JSCAPE, who said they will add
-            // a method to control STOU parameter.
-            arguments = context.getRequestId().toString();
-        } else if (assertion.getFileNameSource() == FtpFileNameSource.ARGUMENT) {
-            arguments = variableExpander.expandVariables(assertion.getArguments());
-        }
-
-        FtpMethod ftpMethod;
-
-        if (assertion.getOtherCommand()) {
-            String ftpMethodOtherCommand = expandVariables(context, assertion.getFtpMethodOtherCommand());
-            ftpMethod = (FtpMethod) FtpMethod.getEnumTranslator().stringToObject(ftpMethodOtherCommand);
-        } else {
-            ftpMethod = assertion.getFtpMethod();
-        }
+        FtpReply ftpReply;
 
         try {
-            FtpRequestKnob ftpRequest = request.getKnob(FtpRequestKnob.class);
-            ClientIdentity identity;
+            switch (ftpCommand) {
+                case APPE:
+                case STOU:
+                case STOR:
+                    final InputStream messageBodyStream;
 
-            if (ftpRequest != null) {
-                identity = new ClientIdentity(ftpRequest.getCredentials().getUserName(), ftpRequest.getRemoteHost(),
-                        ftpRequest.getRemotePort(), ftpRequest.getPath());
+                    if (sourceTarget == null) {
+                        // Uninitialized request
+                        logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+
+                    final MimeKnob mimeKnob = sourceTarget.getKnob(MimeKnob.class);
+
+                    if (mimeKnob == null) {
+                        // Uninitialized request
+                        logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+
+                    try {
+                        messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
+                    } catch (NoSuchPartException e) {
+                        logAndAudit(NO_SUCH_PART,
+                                new String[] {assertion.getRequestTarget().getTargetName(), e.getWhatWasMissing()},
+                                ExceptionUtils.getDebugException(e));
+
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+
+                    ftpReply = routeUpload(ftpClient, messageBodyStream, ftpCommand, arguments);
+
+                    break;
+                case RETR:
+                    ftpReply = routeDownload(ftpClient, arguments);
+                    break;
+                default:
+                    ftpReply = routeOtherCommand(ftpClient, ftpCommand, arguments);
+            }
+        } catch (IOException e) {
+            logAndAudit(FTP_ROUTING_ERROR,
+                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.SERVER_ERROR;
+        } catch (FtpRoutingException e) {
+            // if there was a reply it must be evaluated to decide the assertion result
+            ftpReply = e.getFtpReply();
+
+            if (ftpReply.isNoReply()) {
+                // no reply to evaluate so log the error, then fail immediately
+                logAndAudit(FTP_ROUTING_FAILED_NO_REPLY,
+                        new String[] {
+                                ftpReply.getLastCommand(),
+                                null != e.getMessage()
+                                        ? e.getMessage()
+                                        : ExceptionUtils.getMessage(e.getCause())
+                        },
+                        ExceptionUtils.getDebugException(e));
+
+                return AssertionStatus.FAILED;
             } else {
-                final HttpServletRequestKnob httpServletRequestKnob =
-                        context.getRequest().getKnob(HttpServletRequestKnob.class);
-
-                URL url = httpServletRequestKnob.getRequestURL();
-                String host = url.getHost();
-                int port = url.getPort();
-                String path = url.getPath();
-                identity = new ClientIdentity(userName, host, port, path);
+                // just log the error, then let the reply be evaluated
+                logAndAudit(FTP_ROUTING_ERROR,
+                        new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
             }
-
-            final InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
-            final long bodyContentLength = mimeKnob.getContentLength();
-            final FtpSecurity security = assertion.getSecurity();
-
-            if (security == FtpSecurity.FTP_UNSECURED) {
-                ftpConnectionPoolManager = getFtpConnectionPoolManager();
-                doFtp(context, variableExpander, ftpConnectionPoolManager, identity, userName, password,
-                        messageBodyStream, ftpMethod, bodyContentLength, arguments);
-            } else if (security == FtpSecurity.FTPS_EXPLICIT) {
-                ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
-                doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, true, userName, password,
-                        messageBodyStream, ftpMethod, bodyContentLength, arguments);
-            } else if (security == FtpSecurity.FTPS_IMPLICIT) {
-                ftpsConnectionPoolManager = getFtpsConnectionPoolManager();
-                doFtps(context, variableExpander, ftpsConnectionPoolManager, identity, false, userName, password,
-                        messageBodyStream, ftpMethod, bodyContentLength, arguments);
-            }
-
-            return AssertionStatus.NONE;
-        } catch (NoSuchPartException e) {
-            throw new CausedIOException("Unable to get request body.", e);
-        } catch (FtpException e) {
-            logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, getHostName(variableExpander), e.getMessage());
-            return AssertionStatus.FAILED;
-        } catch (InterruptedException | ExecutionException | NoSuchVariableException e) {
-            return AssertionStatus.FAILED;
         }
+
+        AssertionStatus status = AssertionStatus.NONE;
+
+        if (ftpReply.isPositiveCompletion() || ftpReply.isDownloadStarted()) {
+            // completed successfully, or a download task is running in the background
+            createResponseMessage(context, ftpReply);
+
+            logAndAudit(FTP_ROUTING_SUCCEEDED);
+        } else if (ftpReply.isTransientError()) {
+            if (FtpRoutingAssertion.FAIL_ON_TRANSIENT != assertion.getFailureMode()) {
+                // succeed
+                createResponseMessage(context, ftpReply);
+
+                logAndAudit(FTP_ROUTING_SUCCEEDED_TRANSIENT_FAILURE,
+                        ftpReply.getLastCommand(), Integer.toString(ftpReply.getReplyCode()));
+            } else {
+                // fail
+                logAndAudit(FTP_ROUTING_FAILED_TRANSIENT_FAILURE,
+                        ftpReply.getLastCommand(), Integer.toString(ftpReply.getReplyCode()));
+                status = AssertionStatus.FAILED;
+            }
+        } else if (ftpReply.isPermanentError()) {
+            if (FtpRoutingAssertion.FAIL_ON_NO_REPLY == assertion.getFailureMode()) {
+                // succeed
+                createResponseMessage(context, ftpReply);
+
+                logAndAudit(FTP_ROUTING_SUCCEEDED_PERMANENT_FAILURE,
+                        ftpReply.getLastCommand(), Integer.toString(ftpReply.getReplyCode()));
+            } else {
+                // fail
+                logAndAudit(FTP_ROUTING_FAILED_PERMANENT_FAILURE,
+                        ftpReply.getLastCommand(), Integer.toString(ftpReply.getReplyCode()));
+                status = AssertionStatus.FAILED;
+            }
+        } else {
+            // unsupported reply, or indication of an incomplete operation
+            logAndAudit(FTP_ROUTING_FAILED_INVALID_REPLY,
+                    ftpReply.getLastCommand(), Integer.toString(ftpReply.getReplyCode()));
+            status = AssertionStatus.SERVER_ERROR;
+        }
+
+        return status;
+    }
+
+    private Message getSourceMessage(PolicyEnforcementContext context) {
+        Message request = null;
+
+        try {
+            if (null != assertion.getRequestTarget()) {
+                request = context.getTargetMessage(assertion.getRequestTarget());
+            }
+        } catch (NoSuchVariableException e) {
+            logAndAudit(MESSAGE_TARGET_ERROR, e.getVariable(), getMessage(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
+
+        return request;
     }
 
     private String getHostName(final VariableExpander variableExpander) {
@@ -230,8 +253,88 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
+    private FtpCommand getFtpCommand(PolicyEnforcementContext context) {
+        FtpCommand ftpCommand;
+
+        if (assertion.isCommandFromVariable()) {
+            final Object value;
+            String ftpCommandString;
+
+            try {
+                value = context.getVariable(assertion.getFtpCommandVariable());
+            } catch (NoSuchVariableException e) {
+                logAndAudit(NO_SUCH_VARIABLE_WARNING, assertion.getFtpCommandVariable());
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+            }
+
+            if (value instanceof String) {
+                ftpCommandString = (String) value;
+
+                if (ftpCommandString.trim().isEmpty()) {
+                    // no command specified in variable
+                    logAndAudit(FTP_ROUTING_NO_COMMAND);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+                }
+
+                try {
+                    ftpCommand = FtpCommand.valueOf(ftpCommandString);
+                } catch (IllegalArgumentException e) {
+                    // command from variable was unrecognized/unsupported - cannot perform routing
+                    logAndAudit(FTP_ROUTING_UNSUPPORTED_COMMAND, ftpCommandString);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+                }
+            } else {
+                logAndAudit(EXCEPTION_WARNING_WITH_MORE_INFO,
+                        "Unsupported FTP command variable type of " + value.getClass().getName());
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+            }
+        } else if (null != assertion.getFtpCommand()) {
+            ftpCommand = assertion.getFtpCommand();
+        } else {
+            // no command specified - should not be possible under normal properties dialog use
+            logAndAudit(FTP_ROUTING_NO_COMMAND);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return ftpCommand;
+    }
+
     private String getDirectory(final VariableExpander variableExpander) {
         return variableExpander.expandVariables(assertion.getDirectory());
+    }
+
+    private Pair<String, String> getCredentials(PolicyEnforcementContext context, VariableExpander variableExpander) {
+        String userName = null;
+        String password = null;
+
+        if (assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
+            final LoginCredentials credentials = context.getDefaultAuthenticationContext().getLastCredentials();
+
+            if (credentials != null) {
+                userName = credentials.getName();
+                password = new String(credentials.getCredentials());
+            }
+
+            if (userName == null) {
+                logAndAudit(FTP_ROUTING_PASSTHRU_NO_USERNAME);
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
+            userName = getUserName(variableExpander);
+
+            try {
+                password = getPassword(variableExpander);
+            } catch (FindException e) {
+                logAndAudit(FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD, e.getMessage());
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        }
+
+        return new Pair<>(userName, password);
+    }
+
+    private String getArguments(VariableExpander variableExpander) {
+        return variableExpander.expandVariables(assertion.getArguments());
     }
 
     private String getUserName(final VariableExpander variableExpander) {
@@ -248,185 +351,251 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private void doFtp(PolicyEnforcementContext context,
-                      final VariableExpander variableExpander,
-                      FtpConnectionPoolManager ftpConnectionManager,
-                      Object identity,
-                      String userName,
-                      String password,
-                      InputStream is,
-                      FtpMethod ftpMethod,
-                      long count,
-                      String arguments)
-            throws FtpException, IOException, InterruptedException, ExecutionException, NoSuchVariableException {
-
-        String hostName = getHostName(variableExpander);
-        String directory = getDirectory(variableExpander);
-
-        assert(hostName != null);
-        assert(userName != null);
-        assert(password != null);
-        assert(directory != null);
-
-        FtpClientConfig config = FtpClientUtils.newConfig(hostName);
-        config.setPort(getPort(variableExpander)).setUser(userName).setPass(password).
-                setDirectory(directory).setTimeout(assertion.getTimeout());
-
-        ftpConnectionManager.setId(identity);
-        ftpConnectionManager.bind();
+    private FtpReply routeUpload(final FtpClientWrapper ftpClient, final InputStream is, final FtpCommand ftpCommand,
+                                 final String filename) throws FtpRoutingException {
+        final FtpReplyListener replyListener = new FtpReplyListener();
 
         try {
-            Ftp ftp = ftpConnectionManager.getConnection(config);
-            ftpConnectionManager.setBoundFtp(identity, ftp, true);
+            ftpClient.addFtpListener(replyListener);
 
-            final FtpMethod.FtpMethodEnum ftpMethodEnum = ftpMethod.getFtpMethodEnum();
-
-            switch (ftpMethodEnum) {
-                case FTP_APPE:
-                case FTP_STOU:
-                case FTP_PUT:
-                    upload(ftp, is, count, ftpMethod.getFtpMethodEnum(), arguments);
+            switch (ftpCommand) {
+                case STOR:
+                case STOU: // due to library limitations, STOU commands are routed as though they were STOR commands
+                    ftpClient.upload(is, filename);
                     break;
-                case FTP_GET:
-                    download(context, config, ftp, arguments);
+                case APPE:
+                    ftpClient.upload(is, filename, true);
                     break;
                 default:
-                    command(context, config, ftp, ftpMethod, arguments);
+                    // command not supported/implemented - cannot perform upload routing
+                    logAndAudit(FTP_ROUTING_UNSUPPORTED_COMMAND, ftpCommand.toString());
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
             }
-        } catch (FtpException ex) {
-            is = new ByteArrayInputStream(ex.getMessage().getBytes());
+        } catch (FtpException e) {
+            throw new FtpRoutingException("Failed to process upload to '" + filename +
+                    "': " + e.getMessage(), e, replyListener.getFtpReply());
+        } finally {
+            ftpClient.removeFtpListener(replyListener);
 
-            final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
-            response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, getMaxBytes());
-
-            throw new FtpException(ex.getMessage());
+            // disconnect from remote FTP server
+            ftpClient.disconnect();
         }
+
+        return replyListener.getFtpReply();
     }
 
-    private void doFtps(PolicyEnforcementContext context,
-                        final VariableExpander variableExpander,
-                        FtpsConnectionPoolManager ftpsConnectionManager,
-                        Object identity,
-                        boolean isExplicit,
-                        String userName,
-                        String password,
-                        InputStream is,
-                        FtpMethod ftpMethod,
-                        long count,
-                        String arguments)
-            throws FtpException, IOException, InterruptedException, ExecutionException, NoSuchVariableException {
+    private FtpReply routeDownload(final FtpClientWrapper ftpClient, final String fileToDownload) throws IOException, FtpRoutingException {
+        // used to wait for download to start
+        final CountDownLatch startSignal = new CountDownLatch(1);
 
-        boolean verifyServerCert = assertion.isVerifyServerCert();
-        String hostName = getHostName(variableExpander);
-        boolean useClientCert = assertion.isUseClientCert();
-        Goid clientCertKeystoreId = assertion.getClientCertKeystoreId();
-        String clientCertKeyAlias = assertion.getClientCertKeyAlias();
-        String directory = getDirectory(variableExpander);
+        // holds any exceptions that may be thrown attempting to start the download
+        final AtomicReference<FtpException> downloadException = new AtomicReference<>(null);
 
-        assert(!verifyServerCert || _trustManager != null);
-        assert(hostName != null);
-        assert(userName != null);
-        assert(password != null);
-        assert(!useClientCert || (null != clientCertKeystoreId && null != clientCertKeyAlias));
-        assert(directory != null);
+        // hold the details of the reply to the download command if one was returned
+        final AtomicReference<FtpReply> downloadReply = new AtomicReference<>(null);
 
-        FtpClientConfig config = FtpClientUtils.newConfig(hostName);
-        config.setPort(getPort(variableExpander)).setUser(userName).setPass(password).setDirectory(directory).
-                setTimeout(assertion.getTimeout()).setSecurity(isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
+        // input stream that will be connected to the FTP download output stream
+        final PipedInputStream pis = new PipedInputStream();
 
-        X509TrustManager trustManager = null;
-        HostnameVerifier hostnameVerifier = null;
-        if (verifyServerCert) {
-            config.setVerifyServerCert(true);
-            trustManager = _trustManager;
-            hostnameVerifier = _hostnameVerifier;
-        }
+        // FTP download output stream
+        final PipedOutputStream pos = new PipedOutputStream(pis);
 
-        DefaultKey keyFinder = null;
-        if (useClientCert) {
-            config.setUseClientCert(true).setClientCertId(clientCertKeystoreId).setClientCertAlias(clientCertKeyAlias);
-            keyFinder = _keyFinder;
-        }
+        // start download task - it will run in the background after this assertion completes until the entire file has been received
+        startFtpDownloadTask(pos, new Runnable() {
+            @Override
+            public void run() {
+                final FtpReplyListener replyListener = new FtpReplyListener() {
+                    @Override
+                    public void responseReceived(FtpResponseEvent ftpResponseEvent) {
+                        super.responseReceived(ftpResponseEvent);
 
-        ftpsConnectionManager.setId(identity, trustManager, hostnameVerifier);
-        ftpsConnectionManager.bind(trustManager, hostnameVerifier);
+                        if (getLastReplyCode() == REPLY_CODE_150) {
+                            // data connection being opened
+                            startSignal.countDown();
+                        }
+                    }
+                };
 
-        try {
-            Ftps ftps = ftpsConnectionManager.getConnection(config, keyFinder, trustManager, hostnameVerifier);
+                ftpClient.addFtpListener(replyListener);
 
-            ftpsConnectionManager.setBoundFtp(identity, ftps, true);
-
-            final FtpMethod.FtpMethodEnum ftpMethodEnum = ftpMethod.getFtpMethodEnum();
-
-            switch (ftpMethodEnum) {
-                case FTP_APPE:
-                case FTP_STOU:
-                case FTP_PUT:
-                    upload(ftps, is, count, arguments, ftpMethodEnum);
-                    break;
-                case FTP_GET:
-                    download(context, config, ftps, arguments);
-                    break;
-                default:
-                    command(context, config, ftps, ftpMethod, arguments);
-            }
-
-        } catch (FtpException ex) {
-            is = new ByteArrayInputStream(ex.getMessage().getBytes());
-
-            final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
-            response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, getMaxBytes());
-
-            throw new FtpException(ex.getMessage());
-        }
-    }
-
-    private void download(final PolicyEnforcementContext context,
-                          final FtpClientConfig config,
-                          final Object connection,
-                          final String fileToDownload)
-            throws IOException, InterruptedException, ExecutionException, NoSuchVariableException {
-            final Map<String,?> variables = context.getVariableMap(variablesUsed, getAudit());
-            // response byte limit
-            long byteLimit = getMaxBytes();
-            if (assertion.getResponseByteLimit() != null) {
-                String byteLimitStr = ExpandVariables.process(assertion.getResponseByteLimit(), variables, getAudit());
                 try {
-                    byteLimit = Long.parseLong(byteLimitStr);
-                } catch (NumberFormatException e) {
-                    logger.log(Level.WARNING, "Used default response byte limit: " + byteLimit + ".  " + getMessage(e),
-                            getDebugException(e));
+                    ftpClient.download(pos, fileToDownload);
+                } catch (FtpException e) {
+                    logger.log(Level.WARNING, "FtpException thrown during download: " + e.getMessage());
+
+                    // save the exception thrown trying to download the file
+                    downloadException.set(e);
+                } finally {
+                    // remove the ftp reply listener
+                    ftpClient.removeFtpListener(replyListener);
+
+                    // disconnect from remote FTP server
+                    ftpClient.disconnect();
+
+                    // save the FTP reply details
+                    FtpReply ftpErrorResult = replyListener.getFtpReply();
+                    ftpErrorResult.setDataStream(pis);
+                    downloadReply.set(ftpErrorResult);
+
+                    // call countdown in case it hasn't been called already
+                    startSignal.countDown();
                 }
             }
-            logger.log(Level.FINE, "Response byte limit: " + byteLimit + ".");
-            final PipedInputStream pis = new PipedInputStream();
-            final PipedOutputStream pos = new PipedOutputStream(pis);
-            // start download task
-            final Future<Void> future = startFtpDownloadTask(config, connection, fileToDownload, pos);
-            final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
-            response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), pis, byteLimit);
-            // force all message parts to be initialized, it is by default lazy
-            logger.log(Level.FINER, "Reading FTP(S) response.");
-            response.getMimeKnob().getContentLength();
-            logger.log(Level.FINER, "Read FTP(S) response.");
-            future.get();
+        });
+
+        // wait until the download operation has started
+        try {
+            startSignal.await();
+        } catch (InterruptedException e) {
+            throw new CausedIOException("Interrupted waiting for download to begin.", e);
+        }
+
+        // the reply details should have been set in the case of an error or very fast completion
+        FtpReply ftpResult = downloadReply.get();
+
+        // check if there was any error starting the download
+        FtpException exceptionThrown = downloadException.get();
+
+        if (exceptionThrown != null) {
+            throw new FtpRoutingException("Failed to retrieve '" + fileToDownload +
+                    "': " + exceptionThrown.getMessage(), exceptionThrown, ftpResult);
+        }
+
+        // if a download is ongoing then we should not expect the reply details to have been set
+        if (null == ftpResult) {
+            // create an FtpReply for the RETR command with reply code indicating data connection has been opened
+            ftpResult = new FtpReply(REPLY_CODE_150, null, FtpCommand.RETR.toString());
+            ftpResult.setDataStream(pis);
+        }
+
+        return ftpResult;
     }
 
-    private void command(final PolicyEnforcementContext context,
-                         final FtpClientConfig config,
-                         final Object connection,
-                         final FtpMethod ftpMethod,
-                         final String arguments)
-            throws IOException, InterruptedException, ExecutionException, FtpException, NoSuchVariableException {
+    private FtpReply routeOtherCommand(final FtpClientWrapper ftpClient,
+                                       final FtpCommand ftpCommand, final String arguments)
+            throws FtpRoutingException, CausedIOException {
+        InputStream is = null;
+
+        final FtpReplyListener replyListener = new FtpReplyListener();
+
+        try {
+            ftpClient.addFtpListener(replyListener);
+
+            switch (ftpCommand) {
+                case DELE:
+                    ftpClient.deleteFile(arguments);
+                    break;
+                case MKD:
+                    ftpClient.makeDir(arguments);
+                    break;
+                case RMD:
+                    ftpClient.deleteDir(arguments, false); // don't recursively delete directory contents
+                    break;
+                case NOOP:
+                    ftpClient.noop();
+                    break;
+                case CWD:
+                    ftpClient.setDir(arguments);
+                    break;
+                case CDUP:
+                    ftpClient.setDirUp();
+                    break;
+                case PWD:
+                    ftpClient.getDir();
+                    break;
+                case SIZE:
+                    ftpClient.getFilesize(arguments);
+                    break;
+                case MDTM:
+                    ftpClient.getFileTimestamp(arguments);
+                    break;
+                case MLST:
+                    ftpClient.getMachineFileListing(arguments);
+                    break;
+                case MLSD:
+                    Enumeration machineDirListingEnum = ftpClient.getMachineDirListing(arguments);
+                    is = new ByteArrayInputStream(createRawListing(machineDirListingEnum).getBytes());
+                    break;
+                case LIST:
+                    Enumeration dirListingEnum;
+
+                    if (null == arguments || arguments.isEmpty()) {
+                        dirListingEnum = ftpClient.getDirListing();
+                    } else {
+                        dirListingEnum = ftpClient.getDirListing(arguments);
+                    }
+
+                    is = new ByteArrayInputStream(createRawListing(dirListingEnum).getBytes());
+                    break;
+                case NLST:
+                    Enumeration fileNames;
+
+                    if (null == arguments || arguments.isEmpty()) {
+                        fileNames = ftpClient.getNameListing();
+                    } else {
+                        fileNames = ftpClient.getNameListing(arguments);
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+
+                    while (fileNames.hasMoreElements()) {
+                        String file = (String) fileNames.nextElement();
+                        sb.append(file);
+                        sb.append("\r\n");
+                    }
+
+                    is = new ByteArrayInputStream(sb.toString().getBytes());
+                    break;
+                default:
+                    // command not supported/implemented - cannot perform routing
+                    logAndAudit(FTP_ROUTING_UNSUPPORTED_COMMAND, ftpCommand.toString());
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+
+            // if successful, get the FtpReply
+            FtpReply ftpResult = replyListener.getFtpReply();
+            ftpResult.setDataStream(is);
+
+            return ftpResult;
+        } catch (FtpException e) {
+            throw new FtpRoutingException(e.getMessage(), e, replyListener.getFtpReply());
+        } finally {
+            ftpClient.removeFtpListener(replyListener);
+
+            // disconnect from remote FTP server
+            ftpClient.disconnect();
+        }
+    }
+
+    private Message createResponseMessage(PolicyEnforcementContext context, FtpReply ftpResult) throws IOException {
+        final Message response;
+
+        try {
+            response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
+
+        InputStream dataStream = null == ftpResult.getDataStream()
+                ? new ByteArrayInputStream(new byte[0])
+                : ftpResult.getDataStream();
+
+        response.initialize(stashManagerFactory.createStashManager(),
+                ContentTypeHeader.OCTET_STREAM_DEFAULT, dataStream, getResponseByteLimit(context));
+
+        response.attachFtpResponseKnob(buildFtpResponseKnob(ftpResult));
+
+        return response;
+    }
+
+    private long getResponseByteLimit(PolicyEnforcementContext context) {
         final Map<String,?> variables = context.getVariableMap(variablesUsed, getAudit());
 
-        // response byte limit
-        long byteLimit = getMaxBytes();
+        long byteLimit = Message.getMaxBytes();
+
         if (assertion.getResponseByteLimit() != null) {
             String byteLimitStr = ExpandVariables.process(assertion.getResponseByteLimit(), variables, getAudit());
+
             try {
                 byteLimit = Long.parseLong(byteLimitStr);
             } catch (NumberFormatException e) {
@@ -435,192 +604,48 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
         }
 
-        logger.log(Level.FINE, "Response byte limit: " + byteLimit + ".");
-
-        InputStream is = null;
-
-        if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
-            Ftp ftp = (Ftp) connection;
-            if (FtpListUtil.isInputStreamCommand(ftpMethod)) {
-                is = inputStreamFtp(ftp, arguments, ftpMethod);
-            } else {
-                is = issueFtpCommand(ftp, ftpMethod, arguments);
-            }
-        } else if (FtpSecurity.FTPS_EXPLICIT == config.getSecurity() || FtpSecurity.FTPS_IMPLICIT == config.getSecurity()) {
-            Ftps ftps = (Ftps) connection;
-            if (FtpListUtil.isInputStreamCommand(ftpMethod)) {
-                is = inputStreamFtps(ftps, arguments, ftpMethod);
-            } else {
-                is = issueFtpsCommand(ftps, ftpMethod, arguments);
-            }
-        }
-
-        final Message response = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
-
-        if (is != null){
-            response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), is, byteLimit);
-        } else {
-            response.initialize(stashManagerFactory.createStashManager(),
-                    ContentTypeHeader.create(assertion.getDownloadedContentType()), new ByteArrayInputStream(new byte[0]), byteLimit);
-        }
-
-        // force all message parts to be initialized, it is by default lazy
-        logger.log(Level.FINER, "Reading FTP(S) response.");
-        response.getMimeKnob().getContentLength();
-        logger.log(Level.FINER, "Read FTP(S) response.");
+        return byteLimit;
     }
-
-    private static InputStream issueFtpCommand(final Ftp ftp,
-                                               final FtpMethod ftpMethod,
-                                               final String arguments) throws FtpException {
-        String response;
-        final FtpListener listener = new FtpListener();
-        ftp.addFtpListener(listener);
-
-        switch (ftpMethod.getFtpMethodEnum()) {
-            case FTP_DELE:
-                ftp.deleteFile(arguments);
-                response = "250 File deleted successfully";
-                break;
-            case FTP_MKD:
-                ftp.makeDir(arguments);
-                response = "\"/" + arguments + "\" created successfully";
-                break;
-            case FTP_RMD:
-                ftp.deleteDir(arguments, true);
-                response = "250 Directory deleted successfully";
-                break;
-            case FTP_NOOP:
-                ftp.noop();
-                response = "200 OK";
-                break;
-            case FTP_CWD:
-                if (arguments.startsWith("/")){
-                    response = "250 CWD successful. " + arguments + " is current directory/service.";
-                }
-                else {
-                    response = ftp.issueCommand(ftpMethod.getWspName() + " " + arguments);
-                    listener.responseReceived(new FtpResponseEvent(ftp, response));
-                }
-                break;
-            case FTP_LOGIN:
-                response = "Logged on";
-                break;
-            default:
-                response = ftp.issueCommand(ftpMethod.getWspName() + " " + arguments);
-                listener.responseReceived(new FtpResponseEvent(ftp, response));
-        }
-
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        }
-
-        return new ByteArrayInputStream(response.getBytes());
-    }
-
-    private static InputStream issueFtpsCommand(final Ftps ftps,
-                                                final FtpMethod ftpMethod,
-                                                final String arguments) throws FtpException {
-        String response;
-        final FtpListener listener = new FtpListener();
-        ftps.addFtpListener(listener);
-
-        switch(ftpMethod.getFtpMethodEnum()) {
-            case FTP_DELE:
-                ftps.deleteFile(arguments);
-                response = "250 File deleted successfully";
-                break;
-            case FTP_MKD:
-                ftps.makeDir(arguments);
-                response = "\"/" + arguments + "\" created successfully";
-                break;
-            case FTP_RMD:
-                ftps.deleteDir(arguments, true);
-                response = "250 Directory deleted successfully";
-                break;
-            case FTP_NOOP:
-                ftps.noop();
-                response = "200 OK";
-                break;
-            case FTP_CWD:
-                if (arguments.startsWith("/")){
-                    response = "250 CWD successful. " + arguments + " is current directory/service.";
-                }
-                else {
-                    response = ftps.issueCommand(ftpMethod.getWspName() + " " + arguments);
-                    listener.responseReceived(new FtpResponseEvent(ftps, response));
-                }
-                break;
-            case FTP_LOGIN:
-                response = "Logged on";
-                break;
-            default:
-                response = ftps.issueCommand(ftpMethod.getWspName() + " " + arguments);
-                listener.responseReceived(new FtpResponseEvent(ftps, response));
-
-        }
-
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        }
-
-        return new ByteArrayInputStream(response.getBytes());
-    }
-
 
     /*
-     * Download the given file on a new thread.
+     * Download the given file on a new thread using the ExecutorService.
      */
-    private Future<Void> startFtpDownloadTask(final FtpClientConfig config,
-                                              final Object connection,
-                                              final String fileToDownload,
-                                              final PipedOutputStream pos) throws IOException {
-
+    private void startFtpDownloadTask(final PipedOutputStream pos, final Runnable downloadFunction)
+            throws CausedIOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
 
-        final Future<Void> future = assertionExecutor.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws IOException {
+        assertionExecutor.submit(new Runnable() {
+            public void run() {
                 try {
                     startedSignal.countDown();
-                    try {
-                        if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
-                             Ftp ftp = (Ftp) connection;
-                             ftp.download(pos, fileToDownload);
-                        } else if (FtpSecurity.FTPS_EXPLICIT == config.getSecurity() || FtpSecurity.FTPS_IMPLICIT == config.getSecurity()) {
-                            final Ftps ftps = (Ftps) connection;
-                            ftps.download(pos, fileToDownload);
-                        }
-                    } catch (FtpException e) {
-                        logger.log(Level.WARNING, "Unable to download the file: " + fileToDownload + getMessage(e),
-                                getDebugException(e));
-                        throw new CausedIOException("Ftp exception during download.", e);
-                    }
-
+                    downloadFunction.run();
                 } finally {
                     ResourceUtils.closeQuietly(pos);
                     startedSignal.countDown();
                 }
-
-                return null;
             }
         });
 
+        // wait until processing has started before continuing
         try {
             startedSignal.await();
-        } catch(InterruptedException ie) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new CausedIOException("Interrupted waiting for download.", ie);
+            throw new CausedIOException("Interrupted waiting for download task to begin execution.", e);
         }
-
-        return future;
     }
 
-    private static void initializeAssertionExecutor(Config config) {
-        int globalMaxConcurrency = config.getIntProperty(FtpRoutingAssertion.SC_MAX_CONC, 64);
-        int globalCoreConcurrency = config.getIntProperty(FtpRoutingAssertion.SC_CORE_CONC, 32);
-        int globalMaxWorkQueue = config.getIntProperty(FtpRoutingAssertion.SC_MAX_QUEUE, 64);
+    private static void initializeAssertionExecutor(ApplicationContext applicationContext) {
+        Config config = applicationContext == null
+                ? ConfigFactory.getCachedConfig()
+                : applicationContext.getBean("serverConfig", ServerConfig.class);
+
+        int globalMaxConcurrency =
+                config.getIntProperty(FtpRoutingAssertion.SC_MAX_CONC, FtpRoutingAssertion.MAX_CONC_DEFAULT);
+        int globalCoreConcurrency =
+                config.getIntProperty(FtpRoutingAssertion.SC_CORE_CONC, FtpRoutingAssertion.MIN_CONC_DEFAULT);
+        int globalMaxWorkQueue =
+                config.getIntProperty(FtpRoutingAssertion.SC_MAX_QUEUE, FtpRoutingAssertion.MAX_QUEUE_DEFAULT);
         
         synchronized (assertionExecutorInitLock) {
             if (assertionExecutor == null) {
@@ -654,288 +679,21 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private static InputStream inputStreamFtp(final Ftp ftp,
-                                              final String arguments,
-                                              final FtpMethod ftpMethod) throws FtpException {
-        InputStream is = null;
+    /**
+     * Returns a StringBuilder of CRLF-separated raw listing lines for each FtpFile in the enumeration.
+     * There doesn't seem to be a way to get the original raw response from the server, unfortunately, so we have to
+     * reconstruct it.
+     */
+    private static String createRawListing(Enumeration ftpFiles) {
+        StringBuilder sb = new StringBuilder();
 
-        final FtpListener listener = new FtpListener();
-        ftp.addFtpListener(listener);
-        
-        switch (ftpMethod.getFtpMethodEnum()) {
-            case FTP_MLSD:
-            case FTP_LIST:
-                List<FtpFile> fileList = new ArrayList<>();
-                Enumeration fileEnum = ftp.getDirListing();
-
-                while (fileEnum.hasMoreElements()) {
-                    FtpFile file = (FtpFile) fileEnum.nextElement();
-                    fileList.add(file);
-                }
-
-                //Build XML as a String
-                Document doc = createXml(fileList);
-                String files = getStringFromDoc(doc);
-                is = new ByteArrayInputStream(files.getBytes());
-                break;
-            case FTP_MDTM:
-                Date lastModifiedTime = ftp.getFileTimestamp(arguments);
-                long time = lastModifiedTime.getTime();
-                is = new ByteArrayInputStream(String.valueOf(time).getBytes());
-                break;
-            case FTP_NLST:
-                StringBuilder sb = new StringBuilder();
-                Enumeration fileNames = ftp.getNameListing();
-
-                while (fileNames.hasMoreElements()) {
-                    String file = (String) fileNames.nextElement();
-                    sb.append(file);
-                    sb.append("\r\n");
-                }
-
-                is = new ByteArrayInputStream(sb.toString().getBytes());
-                break;
-            case FTP_SIZE:
-                long fileSize = ftp.getFilesize(arguments);
-                is = new ByteArrayInputStream(Long.toString(fileSize).getBytes());
-                break;
-            case FTP_USER:
-                String userName = ftp.getUsername();
-                is = new ByteArrayInputStream(userName.getBytes());
-                break;
-            case FTP_PASS:
-                String password = ftp.getPassword();
-                is = new ByteArrayInputStream(password.getBytes());
-                break;
-            default:
-                String response = ftp.issueCommand(ftpMethod.getWspName());
-                listener.responseReceived(new FtpResponseEvent(ftp, response));
-                is = new ByteArrayInputStream(response.getBytes());
-            case FTP_GET:
-                break;
-            case FTP_PUT:
-                break;
-            case FTP_DELE:
-                break;
-            case FTP_ABOR:
-                break;
-            case FTP_ACCT:
-                break;
-            case FTP_ADAT:
-                break;
-            case FTP_ALLO:
-                break;
-            case FTP_APPE:
-                break;
-            case FTP_AUTH:
-                break;
-            case FTP_CCC:
-                break;
-            case FTP_CDUP:
-                break;
-            case FTP_CONF:
-                break;
-            case FTP_CWD:
-                break;
-            case FTP_ENC:
-                break;
-            case FTP_EPRT:
-                break;
-            case FTP_EPSV:
-                break;
-            case FTP_FEAT:
-                break;
-            case FTP_HELP:
-                break;
-            case FTP_LANG:
-                break;
-            case FTP_MIC:
-                break;
-            case FTP_MKD:
-                break;
-            case FTP_MLST:
-                break;
-            case FTP_MODE:
-                break;
-            case FTP_NOOP:
-                break;
-            case FTP_OPTS:
-                break;
-            case FTP_PASV:
-                break;
-            case FTP_PBSZ:
-                break;
-            case FTP_PORT:
-                break;
-            case FTP_PROT:
-                break;
-            case FTP_PWD:
-                break;
-            case FTP_QUIT:
-                break;
-            case FTP_REIN:
-                break;
-            case FTP_RMD:
-                break;
-            case FTP_RNFR:
-                break;
-            case FTP_RNTO:
-                break;
-            case FTP_SITE:
-                break;
-            case FTP_STAT:
-                break;
-            case FTP_STOU:
-                break;
-            case FTP_STRU:
-                break;
-            case FTP_SYST:
-                break;
-            case FTP_TYPE:
-                break;
-            case FTP_LOGIN:
-                break;
+        while (ftpFiles.hasMoreElements()) {
+            FtpFile file = (FtpFile) ftpFiles.nextElement();
+            sb.append(file.getLine());
+            sb.append("\r\n");
         }
 
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        }
-
-        return is;
-    }
-
-    private static InputStream inputStreamFtps(final Ftps ftps,
-                                               final String arguments,
-                                               final FtpMethod ftpMethod) throws FtpException {
-        InputStream is;
-
-        final FtpListener listener = new FtpListener();
-        ftps.addFtpListener(listener);
-        
-        switch (ftpMethod.getFtpMethodEnum()) {
-            case FTP_MLSD:
-            case FTP_LIST:
-                List<FtpFile> fileList = new ArrayList<>();
-                Enumeration fileEnum = ftps.getDirListing();
-
-                while (fileEnum.hasMoreElements())  {
-                    FtpFile file = (FtpFile) fileEnum.nextElement();
-                    fileList.add(file);
-                }
-
-                //Build XML as a String
-                Document doc = createXml(fileList);
-                String files = getStringFromDoc(doc);
-                is = new ByteArrayInputStream(files.getBytes());
-                break;
-            case FTP_MDTM:
-                Date lastModifiedTime = ftps.getFileTimestamp(arguments);
-                long time = lastModifiedTime.getTime();
-                is =  new ByteArrayInputStream(String.valueOf(time).getBytes());
-                break;
-            case FTP_NLST:
-                StringBuilder sb = new StringBuilder();
-                Enumeration fileNames = ftps.getNameListing();
-
-                while (fileNames.hasMoreElements())  {
-                    String file = (String) fileNames.nextElement();
-                    sb.append(file);
-                    sb.append("\r\n");
-                }
-
-                is = new ByteArrayInputStream(sb.toString().getBytes());
-                break;
-            case FTP_SIZE:
-                long fileSize = ftps.getFilesize(arguments);
-                is =  new ByteArrayInputStream(Long.toString(fileSize).getBytes());
-                break;
-            case FTP_USER:
-                String userName = ftps.getUsername();
-                is =  new ByteArrayInputStream(userName.getBytes());
-                break;
-            case FTP_PASS:
-                String password = ftps.getPassword();
-                is =  new ByteArrayInputStream(password.getBytes());
-                break;
-            default:
-                String response = ftps.issueCommand(ftpMethod.getWspName());
-                listener.responseReceived(new FtpResponseEvent(ftps, response));
-                is = new ByteArrayInputStream(response.getBytes());
-        }
-
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        }
-
-        return is;
-    }
-
-    private void upload(final Ftps ftps,
-                        final InputStream is,
-                        final long count,
-                        final String filename,
-                        final FtpMethod.FtpMethodEnum ftpMethod) throws FtpException {
-
-
-        final FtpUtils.FtpUploadSizeListener listener = new FtpUtils.FtpUploadSizeListener();
-        ftps.addFtpListener(listener);
-
-        switch (ftpMethod){
-            case FTP_PUT:
-                ftps.upload(is, filename);
-                break;
-            case FTP_APPE:
-                ftps.upload(is, filename, true);
-                break;
-            case FTP_STOU:
-                ftps.uploadUnique(is, filename);
-                break;
-            default:
-                ftps.upload(is, filename);
-        }
-
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        } else if (listener.getSize() < count) {
-            throw new FtpException("File '" + filename + "' upload truncated to " + listener.getSize() + " bytes.");
-        }
-    }
-
-    private void upload(final Ftp ftp,
-                        final InputStream is,
-                        final long count,
-                        final FtpMethod.FtpMethodEnum ftpMethod,
-                        final String filename)
-            throws FtpException {
-
-        final FtpUtils.FtpUploadSizeListener listener = new FtpUtils.FtpUploadSizeListener();
-
-        ftp.addFtpListener(listener);
-        switch (ftpMethod){
-            case FTP_PUT:
-                ftp.upload(is, filename);
-                break;
-            case FTP_APPE:
-                ftp.upload(is, filename, true);
-                break;
-            case FTP_STOU:
-                ftp.uploadUnique(is, filename);
-                break;
-            default:
-                ftp.upload(is, filename);
-        }
-
-        if (listener.isError()) {
-            throw new FtpException(listener.getError());
-        } else if (listener.getSize() < count) {
-            throw new FtpException("File '" + filename + "' upload truncated to " + listener.getSize() + " bytes.");
-        }
-    }
-
-    private String expandVariables(PolicyEnforcementContext context, String pattern) {
-        final String[] variablesUsed = Syntax.getReferencedNames(pattern);
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
-        return ExpandVariables.process(pattern, vars, getAudit());
+        return sb.toString();
     }
 
     /*
@@ -948,233 +706,509 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         assertionExecutor.shutdownNow();
     }
 
-    public static String getStringFromDoc(Document doc) {
-        DOMImplementationLS domImplementation = (DOMImplementationLS) doc.getImplementation();
-        LSSerializer lsSerializer = domImplementation.createLSSerializer();
-        return lsSerializer.writeToString(doc);
+    private static FtpResponseKnob buildFtpResponseKnob(final FtpReply ftpReply) {
+        return new FtpResponseKnob() {
+            @Override
+            public int getReplyCode() {
+                return ftpReply.getReplyCode();
+            }
+
+            @Override
+            public String getReplyText() {
+                return ftpReply.getReplyText();
+            }
+        };
+    }
+
+    public FtpClientWrapper createFtpClient(String userName, String password, VariableExpander variableExpander,
+                                            FtpSecurity security) throws FtpException {
+        //------COMMON------
+
+        String hostName = getHostName(variableExpander);
+        String directory = getDirectory(variableExpander);
+
+        assert(hostName != null);
+        assert(userName != null);
+        assert(password != null);
+        assert(directory != null);
+
+        FtpClientConfig config = FtpClientUtils.newConfig(hostName);
+        config.setPort(getPort(variableExpander)).setUser(userName).setPass(password).setDirectory(directory)
+                .setTimeout(assertion.getTimeout());
+
+        if (FtpSecurity.FTP_UNSECURED == security) {
+            final Ftp ftp = FtpUtils.newFtpClient(config);
+
+            return buildFtpClient(ftp);
+        } else {
+            config.setSecurity(security);
+
+            assert(!assertion.isVerifyServerCert() || trustManager != null);
+            assert(!assertion.isUseClientCert() ||
+                    (null != assertion.getClientCertKeystoreId() && null != assertion.getClientCertKeyAlias()));
+
+            X509TrustManager trustManager = null;
+            HostnameVerifier hostnameVerifier = null;
+
+            if (assertion.isVerifyServerCert()) {
+                config.setVerifyServerCert(true);
+                trustManager = this.trustManager;
+                hostnameVerifier = this.hostnameVerifier;
+            }
+
+            DefaultKey keyFinder = null;
+
+            if (assertion.isUseClientCert()) {
+                config.setUseClientCert(true);
+                config.setClientCertId(assertion.getClientCertKeystoreId());
+                config.setClientCertAlias(assertion.getClientCertKeyAlias());
+                keyFinder = this.keyFinder;
+            }
+
+            Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager, hostnameVerifier);
+
+            return buildFtpsClient(ftps);
+        }
+    }
+
+    private FtpClientWrapper buildFtpsClient(final Ftps ftps) {
+        return new FtpClientWrapper() {
+            @Override
+            public void addFtpListener(FtpListener listener) {
+                ftps.addFtpListener(listener);
+            }
+
+            @Override
+            public void removeFtpListener(FtpListener listener) {
+                ftps.removeFtpListener(listener);
+            }
+
+            @Override
+            public void makeDir(String remoteDir) throws FtpException {
+                ftps.makeDir(remoteDir);
+            }
+
+            @Override
+            public void deleteDir(String remoteDir, boolean b) throws FtpException {
+                ftps.deleteDir(remoteDir, b);
+            }
+
+            @Override
+            public void deleteFile(String remoteFile) throws FtpException {
+                ftps.deleteFile(remoteFile);
+            }
+
+            @Override
+            public void download(OutputStream outputStream, String remoteFile) throws FtpException {
+                ftps.download(outputStream, remoteFile);
+            }
+
+            @Override
+            public String getDir() throws FtpException {
+                return ftps.getDir();
+            }
+
+            @Override
+            public Enumeration getDirListing() throws FtpException {
+                return ftps.getDirListing();
+            }
+
+            @Override
+            public Enumeration getDirListing(String filter) throws FtpException {
+                return ftps.getDirListing(filter);
+            }
+
+            @Override
+            public Enumeration getMachineDirListing(String remoteDir) throws FtpException {
+                return ftps.getMachineDirListing(remoteDir);
+            }
+
+            @Override
+            public FtpFile getMachineFileListing(String remoteFile) throws FtpException {
+                return ftps.getMachineFileListing(remoteFile);
+            }
+
+            @Override
+            public Enumeration getNameListing() throws FtpException {
+                return ftps.getNameListing();
+            }
+
+            @Override
+            public Enumeration getNameListing(String filter) throws FtpException {
+                return ftps.getNameListing(filter);
+            }
+
+            @Override
+            public long getFilesize(String remoteFile) throws FtpException {
+                return ftps.getFilesize(remoteFile);
+            }
+
+            @Override
+            public Date getFileTimestamp(String remoteFile) throws FtpException {
+                return ftps.getFileTimestamp(remoteFile);
+            }
+
+            @Override
+            public void noop() throws FtpException {
+                ftps.noop();
+            }
+
+            @Override
+            public void setDir(String remoteDir) throws FtpException {
+                ftps.setDir(remoteDir);
+            }
+
+            @Override
+            public void setDirUp() throws FtpException {
+                ftps.setDirUp();
+            }
+
+            @Override
+            public void upload(InputStream inputStream, String remoteFile) throws FtpException {
+                ftps.upload(inputStream, remoteFile);
+            }
+
+            @Override
+            public void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException {
+                ftps.upload(inputStream, remoteFile, append);
+            }
+
+            @Override
+            public void disconnect() {
+                ftps.disconnect();
+            }
+        };
+    }
+
+    private FtpClientWrapper buildFtpClient(final Ftp ftp) {
+        return new FtpClientWrapper() {
+            @Override
+            public void addFtpListener(FtpListener listener) {
+                ftp.addFtpListener(listener);
+            }
+
+            @Override
+            public void removeFtpListener(FtpListener listener) {
+                ftp.removeFtpListener(listener);
+            }
+
+            @Override
+            public void makeDir(String remoteDir) throws FtpException {
+                ftp.makeDir(remoteDir);
+            }
+
+            @Override
+            public void deleteDir(String remoteDir, boolean b) throws FtpException {
+                ftp.deleteDir(remoteDir, b);
+            }
+
+            @Override
+            public void deleteFile(String remoteFile) throws FtpException {
+                ftp.deleteFile(remoteFile);
+            }
+
+            @Override
+            public void download(OutputStream outputStream, String remoteFile) throws FtpException {
+                ftp.download(outputStream, remoteFile);
+            }
+
+            @Override
+            public String getDir() throws FtpException {
+                return ftp.getDir();
+            }
+
+            @Override
+            public Enumeration getDirListing() throws FtpException {
+                return ftp.getDirListing();
+            }
+
+            @Override
+            public Enumeration getDirListing(String filter) throws FtpException {
+                return ftp.getDirListing(filter);
+            }
+
+            @Override
+            public Enumeration getMachineDirListing(String remoteDir) throws FtpException {
+                return ftp.getMachineDirListing(remoteDir);
+            }
+
+            @Override
+            public FtpFile getMachineFileListing(String remoteFile) throws FtpException {
+                return ftp.getMachineFileListing(remoteFile);
+            }
+
+            @Override
+            public Enumeration getNameListing() throws FtpException {
+                return ftp.getNameListing();
+            }
+
+            @Override
+            public Enumeration getNameListing(String filter) throws FtpException {
+                return ftp.getNameListing(filter);
+            }
+
+            @Override
+            public long getFilesize(String remoteFile) throws FtpException {
+                return ftp.getFilesize(remoteFile);
+            }
+
+            @Override
+            public Date getFileTimestamp(String remoteFile) throws FtpException {
+                return ftp.getFileTimestamp(remoteFile);
+            }
+
+            @Override
+            public void noop() throws FtpException {
+                ftp.noop();
+            }
+
+            @Override
+            public void setDir(String remoteDir) throws FtpException {
+                ftp.setDir(remoteDir);
+            }
+
+            @Override
+            public void setDirUp() throws FtpException {
+                ftp.setDirUp();
+            }
+
+            @Override
+            public void upload(InputStream inputStream, String remoteFile) throws FtpException {
+                ftp.upload(inputStream, remoteFile);
+            }
+
+            @Override
+            public void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException {
+                ftp.upload(inputStream, remoteFile, append);
+            }
+
+            @Override
+            public void disconnect() {
+                ftp.disconnect();
+            }
+        };
     }
 
     /**
-     * A function to convert a list of Files to a Document
-     * @param fileList the list of files to convert to a document
-     * @return a Document with the file list structure
+     * Represents a problem executing the routed remote operation.
+     * Used to wrap any exceptions thrown from the JSCAPE FTP library.
      */
-    public static Document createXml(List<FtpFile> fileList) {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        DocumentBuilder parser;
+    private static class FtpRoutingException extends Exception {
+        private FtpReply ftpReply;
 
-        try {
-            parser = factory.newDocumentBuilder();
-        } catch (ParserConfigurationException pce) {
-            return null;
+        public FtpRoutingException(String message, FtpException cause, FtpReply ftpResult) {
+            super(message, cause);
+            this.ftpReply = ftpResult;
         }
 
-        Document doc = parser.newDocument();
-        Element fileListElement = doc.createElement("fileList");
-        doc.appendChild(fileListElement);
+        public FtpReply getFtpReply() {
+            return ftpReply;
+        }
+    }
 
-        for (FtpFile f : fileList) {
-            Element name = doc.createElement("name");
-            Element size = doc.createElement("size");
-            Element owner = doc.createElement("owner");
-            Element permission = doc.createElement("permission");
-            Element date = doc.createElement("date");
-            Element time = doc.createElement("time");
-            Element raw = doc.createElement("raw");
+    private static interface FtpClientWrapper {
 
-            if (f.isDirectory()){
-                Element dir = doc.createElement("dir");
-                fileListElement.appendChild(dir);
-                dir.appendChild(name);
-                name.setTextContent(f.getFilename());
-                dir.appendChild(size);
-                size.setTextContent(Long.valueOf(f.getFilesize()).toString());
-                dir.appendChild(owner);
-                owner.setTextContent(f.getOwner());
-                dir.appendChild(permission);
-                permission.setTextContent(f.getPermission());
-                dir.appendChild(date);
-                date.setTextContent(f.getDate());
-                dir.appendChild(time);
-                time.setTextContent(f.getTime());
-                dir.appendChild(raw);
-                raw.setTextContent(f.toString());
-            } else {
-                Element file = doc.createElement("file");
-                fileListElement.appendChild(file);
-                file.appendChild(name);
-                name.setTextContent(f.getFilename());
-                file.appendChild(size);
-                size.setTextContent(Long.valueOf(f.getFilesize()).toString());
-                file.appendChild(owner);
-                owner.setTextContent(f.getOwner());
-                file.appendChild(permission);
-                permission.setTextContent(f.getPermission());
-                file.appendChild(date);
-                date.setTextContent(f.getDate());
-                file.appendChild(time);
-                time.setTextContent(f.getTime());
-                file.appendChild(raw);
-                raw.setTextContent(f.toString());
+        public void addFtpListener(FtpListener listener);
+
+        public void removeFtpListener(FtpListener listener);
+
+        /**
+         * MKD
+         */
+        public void makeDir(String remoteDir) throws FtpException;
+
+        /**
+         * RMD
+         */
+        public void deleteDir(String remoteDir, boolean b) throws FtpException;
+
+        /**
+         * DELE
+         */
+        public void deleteFile(String remoteFile) throws FtpException;
+
+        /**
+         * RETR
+         */
+        public void download(OutputStream outputStream, String remoteFile) throws FtpException;
+
+        /**
+         * PWD
+         */
+        public String getDir() throws FtpException;
+
+        /**
+         * LIST
+         */
+        public Enumeration getDirListing() throws FtpException;
+
+        public Enumeration getDirListing(String filter) throws FtpException;
+
+        /**
+         * MLSD
+         */
+        public Enumeration getMachineDirListing(String remoteDir) throws FtpException;
+
+        /**
+         * MLST
+         */
+        public FtpFile getMachineFileListing(String remoteFile) throws FtpException;
+
+        /**
+         * NLST
+         */
+        public Enumeration getNameListing() throws FtpException;
+
+        public Enumeration getNameListing(String filter) throws FtpException;
+
+        /**
+         * SIZE
+         */
+        public long getFilesize(String remoteFile) throws FtpException;
+
+        /**
+         * MDTM
+         */
+        public Date getFileTimestamp(String remoteFile) throws FtpException;
+
+        /**
+         * NOOP
+         */
+        public void noop() throws FtpException;
+
+        /**
+         * CWD
+         */
+        public void setDir(String remoteDir) throws FtpException;
+
+        /**
+         * CDUP
+         */
+        public void setDirUp() throws FtpException;
+
+        /**
+         * STOR
+         */
+        public void upload(InputStream inputStream, String remoteFile) throws FtpException;
+
+        /**
+         * APPE
+         */
+        public void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException;
+
+        public void disconnect();
+    }
+
+    private static class FtpReplyListener extends FtpAdapter {
+        ReentrantLock lock = new ReentrantLock();
+
+        private int lastReplyCode;
+        private String lastReplyText;
+        private String lastCommand;
+
+        public FtpReplyListener() {
+            super();
+        }
+
+        public FtpReply getFtpReply() {
+            lock.lock();
+
+            try {
+                return new FtpReply(lastReplyCode, lastReplyText, lastCommand);
+            } finally {
+                lock.unlock();
             }
         }
 
-        return doc;
-    }
-
-    private FtpConnectionPoolManager getFtpConnectionPoolManager() {
-        FtpConnectionPoolManager ftpConnectionPoolManager = this.ftpConnectionPoolManager;
-
-        if (ftpConnectionPoolManager == null) {
-            ftpConnectionPoolManager = new FtpConnectionPoolManager();
-            ftpConnectionPoolManager.setBindingTimeout(ftpConnectionIdleTime);
+        public int getLastReplyCode() {
+            return lastReplyCode;
         }
 
-        return ftpConnectionPoolManager;
-    }
+        @Override
+        public void commandSent(FtpCommandEvent ftpCommandEvent) {
+            lock.lock();
 
-    private FtpsConnectionPoolManager getFtpsConnectionPoolManager() {
-        FtpsConnectionPoolManager ftpsConnectionPoolManager = this.ftpsConnectionPoolManager;
-
-        if (ftpsConnectionPoolManager == null) {
-            ftpsConnectionPoolManager = new FtpsConnectionPoolManager();
-            ftpsConnectionPoolManager.setBindingTimeout(ftpConnectionIdleTime);
-        }
-
-        return ftpsConnectionPoolManager;
-    }
-
-    private static final class FtpListener extends FtpAdapter {
-        private static final String CODE_CONN_OPEN_START_TRANS = "125";
-        private static final String CODE_FILE_STATUS_OK_DATA_OPEN = "150";
-        private static final String CODE_FILE_ACTION_NOT_TAKEN = "450";
-        private static final String CODE_FILE_ACTION_ABORT_ERROR = "451";
-        private static final String CODE_FILE_ACTION_NO_SPACE = "452";
-        private static final String CODE_FILE_NOT_FOUND = "550";
-        private static final String CODE_FILE_SYNTAX_ERROR = "501";
-        private static final String CODE_FILE_COMMAND_NOT_IMPLEMENTED = "502";
-
-        private String error;
-
-        public boolean isError() {
-            return error != null;
-        }
-
-        public String getError() {
-            return error;
+            try {
+                lastCommand = ftpCommandEvent.getCommand();
+                lastReplyCode = 0;
+                lastReplyText = null;
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
         public void responseReceived(final FtpResponseEvent ftpResponseEvent) {
-            final String response = ftpResponseEvent.getResponse();
-            if (response.startsWith(CODE_CONN_OPEN_START_TRANS) ||
-                            response.startsWith(CODE_FILE_STATUS_OK_DATA_OPEN)) {
-                error = null;
-            } else if (response.startsWith(CODE_FILE_ACTION_NOT_TAKEN) ||
-                       response.startsWith(CODE_FILE_ACTION_ABORT_ERROR) ||
-                       response.startsWith(CODE_FILE_ACTION_NO_SPACE) ||
-                       response.startsWith(CODE_FILE_NOT_FOUND) ||
-                       response.startsWith(CODE_FILE_SYNTAX_ERROR) ||
-                       response.startsWith(CODE_FILE_COMMAND_NOT_IMPLEMENTED)) {
-                error = response;
+            lock.lock();
+
+            try {
+                lastReplyCode = Integer.parseInt(ftpResponseEvent.getResponse().substring(0, 3));
+                lastReplyText = ftpResponseEvent.getResponse().substring(3);
+            } catch (StringIndexOutOfBoundsException | NumberFormatException e) {
+                lastReplyCode = 0; // should never happen
+                lastReplyText = null;
+            } finally {
+                lock.unlock();
             }
         }
     }
 
-    private class ClientIdentity {
+    private static class FtpReply {
+        private final int replyCode;
+        private final String replyText;
+        private final String lastCommand;
 
-        private String clientUser;
-        private String clientServer;
-        private int clientPort;
-        private String clientPath;
-        private volatile String cachedToString;
+        private InputStream dataStream;
 
-        public ClientIdentity (String clientUser, String clientServer, int clientPort, String clientPath) {
-           this.clientUser = clientUser;
-           this.clientServer = clientServer;
-           this.clientPort = clientPort;
-           this.clientPath = clientPath;
+        public FtpReply(int replyCode, String replyText, String lastCommand) {
+            this.lastCommand = lastCommand;
+            this.replyCode = replyCode;
+            this.replyText = replyText;
         }
 
-        public void setClientUser(String clientUser) {
-            this.clientUser = clientUser;
+        public int getReplyCode() {
+            return replyCode;
         }
 
-        public String getClientUser() {
-            return this.clientUser;
+        public String getReplyText() {
+            return replyText;
         }
 
-        public void setClientServer(String clientServer) {
-            this.clientServer = clientServer;
+        public String getLastCommand() {
+            return lastCommand;
         }
 
-        public String getClientServer() {
-            return this.clientServer;
+        public void setDataStream(InputStream dataStream) {
+            this.dataStream = dataStream;
         }
 
-        public void setClientPort(int clientPort) {
-            this.clientPort = clientPort;
+        public InputStream getDataStream() {
+            return dataStream;
         }
 
-        public int getClientPort() {
-            return this.clientPort;
+        public boolean isNoReply() {
+            return 0 == replyCode;
         }
 
-        public void setClientPath(String clientPath) {
-            this.clientPath = clientPath;
+        public boolean isPositiveCompletion() {
+            return replyCode >= 200 && replyCode < 300;
         }
 
-        public String getClientPath() {
-            return this.clientPath;
+        public boolean isTransientError() {
+            return replyCode >= 400 && replyCode < 500;
         }
 
-        @Override
-        public int hashCode() {
-            int result;
-            result = (clientUser != null ? clientUser.hashCode() : 0);
-            result = 31 * result + (clientServer != null ? clientServer.hashCode() : 0);
-            result = 31 * result + clientPort;
-            result = 31 * result + (clientPath != null ? clientPath.hashCode() : 0);
-            return result;
+        public boolean isPermanentError() {
+            return replyCode >= 500 && replyCode < 600;
         }
 
-        @SuppressWarnings({"RedundantIfStatement"})
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final ClientIdentity that = (ClientIdentity) o;
-
-            if (clientUser != null ? !clientUser.equals(that.clientUser) : that.clientUser != null) return false;
-            if (clientServer != null ? !clientServer.equals(that.clientServer) : that.clientServer != null) return false;
-            if (String.valueOf(clientPort) != null ? !String.valueOf(clientPort).equals(String.valueOf(that.clientPort)) : String.valueOf(that.clientPort) != null) return false;
-            if (clientPath != null ? !clientPath.equals(that.clientPath) : that.clientPath != null) return false;
-
-            return true;
+        public boolean isDownloadStarted() {
+            return FtpCommand.RETR.toString().equals(lastCommand) && REPLY_CODE_150 == replyCode && null != dataStream;
         }
 
         @Override
         public String toString() {
-            if (cachedToString == null) {
-                StringBuilder sb = new StringBuilder("<ClientIdentity user=\"");
-                sb.append(clientUser);
-                sb.append("\" ");
-                sb.append("server=\"");
-                sb.append(clientServer);
-                sb.append("\" ");
-                sb.append("port=\"");
-                sb.append(clientPort);
-                sb.append("\" ");
-                sb.append("path=\"");
-                sb.append(clientPath);
-                sb.append("\"/>");
-
-                cachedToString = sb.toString();
-            }
-
-            return cachedToString;
+            return lastCommand + ": " + replyCode + " " + replyText;
         }
     }
 }

@@ -58,6 +58,7 @@ public class FtpAdminImpl implements FtpAdmin {
                                int port,
                                String userName,
                                String password,
+                               Goid passwordGoid,
                                boolean useClientCert,
                                @Nullable Goid clientCertKeystoreId,
                                String clientCertKeyAlias,
@@ -68,14 +69,21 @@ public class FtpAdminImpl implements FtpAdmin {
 
         config.setSecurity(!isFtps ? FtpSecurity.FTP_UNSECURED :
                                       isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
+
+        String expandedPassword;
+
         try {
-            password = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), password);
+            if (null == passwordGoid) {
+                expandedPassword = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), password);
+            } else {
+                expandedPassword = ServerVariables.getSecurePasswordByGoid(new LoggingAudit(logger), passwordGoid);
+            }
         } catch (FindException e) {
             final String msg = "Unable to look up secure password reference: " + ExceptionUtils.getMessage(e);
             throw (FtpTestException) new FtpTestException(msg, msg).initCause(e);
         }
 
-        config.setPort(port).setUser(userName).setPass(password).setDirectory(directory).setTimeout(timeout);
+        config.setPort(port).setUser(userName).setPass(expandedPassword).setDirectory(directory).setTimeout(timeout);
 
         X509TrustManager trustManager = null;
 
