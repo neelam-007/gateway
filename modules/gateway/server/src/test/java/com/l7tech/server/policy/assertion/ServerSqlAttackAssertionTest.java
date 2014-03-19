@@ -1014,20 +1014,6 @@ public class ServerSqlAttackAssertionTest {
         return context;
     }
 
-    private AssertionStatus runTestOnContextVariable(String variableName, String variableValue, String... protections)
-            throws IOException, PolicyAssertionException, SAXException {
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, true, protections);
-        assertion.setOtherTargetMessageVariable(variableName);
-
-        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
-
-        final PolicyEnforcementContext context = createPolicyEnforcementContext(TargetMessageType.OTHER, null);
-
-
-
-        return serverAssertion.checkRequest(context);
-    }
-
     private Message createMessageFromXmlResource(String resource) throws IOException, SAXException {
         return new Message(XmlUtil.parse(getClass().getResourceAsStream(resource)));
     }

@@ -8,11 +8,9 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -25,10 +23,8 @@ import java.util.regex.Pattern;
 public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAssertion<SqlAttackAssertion> {
     private static final EnumSet<HttpMethod> putAndPost = EnumSet.of(HttpMethod.POST, HttpMethod.PUT);
 
-    public ServerSqlAttackAssertion(SqlAttackAssertion assertion) throws PolicyAssertionException {
+    public ServerSqlAttackAssertion(SqlAttackAssertion assertion) {
         super(assertion);
-
-        validateAssertion(assertion);
     }
 
     @Override
@@ -167,25 +163,6 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         }
 
         return protectionViolated;
-    }
-
-    private void validateAssertion(final SqlAttackAssertion assertion) throws PolicyAssertionException {
-        if(!assertion.isIncludeUrl() && !assertion.isIncludeBody()) {
-            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. No part of the message selected to be scanned.");
-        }
-
-        if(assertion.getTarget() == TargetMessageType.RESPONSE && assertion.isIncludeUrl()) {
-            throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Response message.");
-        }
-
-        if(assertion.getTarget() == TargetMessageType.OTHER) {
-            if(assertion.isIncludeUrl()) {
-                throw new PolicyAssertionException(assertion, "The assertion is misconfigured. URL cannot be checked for Context Variable.");
-            } else if (null == assertion.getOtherTargetMessageVariable() ||
-                    assertion.getOtherTargetMessageVariable().trim().isEmpty()) {
-                throw new PolicyAssertionException(assertion, "The assertion is misconfigured. No target Context Variable set.");
-            }
-        }
     }
 
     private void logAndAudit(String where, StringBuilder evidence, String protectionViolated) {
