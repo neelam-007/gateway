@@ -1,14 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -20,17 +17,7 @@ import javax.inject.Inject;
 @Component
 public class SecurePasswordAPIResourceFactory extends WsmanBaseResourceFactory<StoredPasswordMO, SecurePasswordResourceFactory> {
 
-    public SecurePasswordAPIResourceFactory() {
-        super(
-                CollectionUtils.MapBuilder.<String, String>builder()
-                        .put("id", "id")
-                        .put("name", "name")
-                        .map(),
-                CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-                        .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-                        .put("type", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("type", RestResourceFactoryUtils.stringConvert))
-                        .map());
-    }
+    public SecurePasswordAPIResourceFactory() {}
 
     @NotNull
     @Override

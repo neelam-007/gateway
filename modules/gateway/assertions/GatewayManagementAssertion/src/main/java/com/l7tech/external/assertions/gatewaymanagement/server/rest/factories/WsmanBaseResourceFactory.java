@@ -5,8 +5,6 @@ import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,19 +24,12 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      * The wiseman resource factory
      */
     protected F factory;
-    private Map<String, String> sortKeys;
-    private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters;
 
     /**
      * Creates a new wsman based resource factory. This is a resource factory that used the wiseman resources to perform
      * its work.
-     *
-     * @param sortKeys The sort keys that can be used to sort the resources.
-     * @param filters  The filters that can be used to filter out resources.
      */
-    public WsmanBaseResourceFactory(Map<String, String> sortKeys, Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters) {
-        this.sortKeys = sortKeys;
-        this.filters = filters;
+    public WsmanBaseResourceFactory() {
     }
 
     /**
@@ -127,19 +118,9 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public Map<String, String> getSortKeysMap() {
-        return sortKeys;
-    }
-
-    @Override
-    public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
-        return filters;
-    }
-
-    @Override
     public Mapping buildMapping(@NotNull R resource, @Nullable Mapping.Action defaultAction, @Nullable String defaultMapBy) {
         Mapping mapping = ManagedObjectFactory.createMapping();
-        mapping.setType(getResourceType().toString());
+        mapping.setType(getResourceType());
         mapping.setAction(defaultAction);
         mapping.setSrcId(resource.getId());
         mapping.setReferencePath(getReferencePath(resource.getId()));

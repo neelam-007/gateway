@@ -18,6 +18,7 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is the base resource factory for a rest entity. It supports all crud operations:
@@ -32,7 +33,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & TemplateFactory<R>, T extends APITransformer<R, ?>> implements CreatingResource<R>, ReadingResource<R>, UpdatingResource<R>, DeletingResource, ListingResource<R>, TemplatingResource<R>, URLAccessible<R> {
+public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & TemplateFactory<R>, T extends APITransformer<R, ?>> implements URLAccessible<R> {
     public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     /**
@@ -76,10 +77,8 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
         return factory.getResourceType();
     }
 
-    @Override
-    public ItemsList<R> listResources(final ListRequestParameters listRequestParameters) {
-        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, factory.getSortKeysMap(), factory.getFiltersInfo());
-        List<Item<R>> items = Functions.map(factory.listResources(listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<R>, R>() {
+    public ItemsList<R> listResources(final int offset, final int count, final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
+        List<Item<R>> items = Functions.map(factory.listResources(offset, count, sort, asc, filters), new Functions.Unary<Item<R>, R>() {
             @Override
             public Item<R> call(R resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -139,7 +138,6 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
         );
     }
 
-    @Override
     public Item<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
         return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -148,17 +146,15 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    @Override
     public Item<R> getResourceTemplate() {
         R resource = factory.getResourceTemplate();
-        return new ItemBuilder<R>(getResourceType() + " Template", getResourceType().toString())
+        return new ItemBuilder<R>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", getUrlString("template")))
                 .addLinks(getRelatedLinks(resource))
                 .setContent(resource)
                 .build();
     }
 
-    @Override
     public Response createResource(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
@@ -172,7 +168,6 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    @Override
     public Response updateResource(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         boolean resourceExists = factory.resourceExists(id);
         final Response.ResponseBuilder responseBuilder;
@@ -191,7 +186,6 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build()).build();
     }
 
-    @Override
     public void deleteResource(String id) throws ResourceFactory.ResourceNotFoundException {
         factory.deleteResource(id);
     }

@@ -2,14 +2,11 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.AssertionSecurityZoneResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.AssertionSecurityZoneMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -24,16 +21,6 @@ import java.util.Map;
 public class AssertionSecurityZoneAPIResourceFactory extends WsmanBaseResourceFactory<AssertionSecurityZoneMO, AssertionSecurityZoneResourceFactory> {
 
     public AssertionSecurityZoneAPIResourceFactory() {
-        super(
-                CollectionUtils.MapBuilder.<String, String>builder()
-                        .put("id", "id")
-                        .put("name", "name")
-                        .put("securityZone.id", "securityZone.id")
-                        .map(),
-                CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-                        .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-                        .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
-                        .map());
     }
 
     @NotNull

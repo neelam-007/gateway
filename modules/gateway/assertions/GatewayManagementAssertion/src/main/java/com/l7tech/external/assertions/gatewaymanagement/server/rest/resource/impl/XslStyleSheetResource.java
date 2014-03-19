@@ -28,6 +28,11 @@ public class XslStyleSheetResource {
 
     public static final String DefaultStyleSheetPath = StyleSheetBasePath + "/defaultStyleSheet.xsl";
 
+    /**
+     * The xsl style sheet
+     *
+     * @return The xsl style sheet
+     */
     @Path("defaultStyleSheet.xsl")
     @GET
     @Produces({"text/xsl"})

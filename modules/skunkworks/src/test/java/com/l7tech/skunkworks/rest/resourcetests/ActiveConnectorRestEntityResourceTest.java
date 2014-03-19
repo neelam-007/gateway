@@ -267,8 +267,8 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
                 .put("enabled=true", Arrays.asList(activeConnectors.get(0).getId(), activeConnectors.get(2).getId()))
                 .put("type=MqNative", Arrays.asList(activeConnectors.get(0).getId(), activeConnectors.get(2).getId()))
                 .put("type=SFTP", Arrays.asList(activeConnectors.get(1).getId()))
-                .put("hardwiredServiceGoid=" + new Goid(123, 123).toString(), Arrays.asList(activeConnectors.get(0).getId()))
-                .put("hardwiredServiceGoid", Arrays.asList(activeConnectors.get(2).getId()))
+                .put("hardwiredServiceId=" + new Goid(123, 123).toString(), Arrays.asList(activeConnectors.get(0).getId()))
+                .put("hardwiredServiceId", Arrays.asList(activeConnectors.get(2).getId()))
                 .put("name=" + URLEncoder.encode(activeConnectors.get(0).getName()) + "&name=" + URLEncoder.encode(activeConnectors.get(1).getName()) + "&sort=name&order=desc", Arrays.asList(activeConnectors.get(1).getId(), activeConnectors.get(0).getId()))
                 .map();
     }

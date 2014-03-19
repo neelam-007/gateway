@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -21,9 +20,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -46,19 +43,7 @@ import java.util.UUID;
 @Component
 public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceMO, ServiceResourceFactory> {
 
-    public ServiceAPIResourceFactory() {
-        super(
-                CollectionUtils.MapBuilder.<String, String>builder()
-                        .put("id", "id")
-                        .put("name", "name").put("parentFolder.id", "parentFolder.id").map(),
-                CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-                        .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-                        .put("guid", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("guid", RestResourceFactoryUtils.stringConvert))
-                        .put("soap", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("soap", RestResourceFactoryUtils.booleanConvert))
-                        .put("parentFolder.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("folder.id", RestResourceFactoryUtils.goidConvert))
-                        .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
-                        .map());
-    }
+    public ServiceAPIResourceFactory() {}
 
     @NotNull
     @Override

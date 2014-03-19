@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGateway
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
 import com.l7tech.gateway.api.*;
@@ -29,10 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * This resource is used to export and import bundles for migration. Do not make this a @Provider the will make allow
+/*
+ * Do not make this a @Provider the will make allow
  * @queryParam on fields. This will be added to the rest application using the application context. See
  * /com/l7tech/external/assertions/gatewaymanagement/server/gatewayManagementContext.xml:restAgent
+ */
+
+/**
+ * This resource is used to export and import bundles for migration.
  */
 @Path(BundleResource.Version_URI + "bundle")
 @RequestScoped
@@ -58,31 +63,44 @@ public class BundleResource {
     @Context
     private ContainerRequest containerRequest;
 
-    @QueryParam("defaultAction")
-    @DefaultValue("NewOrExisting")
-    private Mapping.Action defaultAction;
-    @QueryParam("defaultMapBy")
-    @DefaultValue("id")
-    private String defaultMapBy;
-    @QueryParam("includeRequestFolder")
-    @DefaultValue("false")
-    private boolean includeRequestFolder;
-    @QueryParam("exportGatewayRestManagementService")
-    @DefaultValue("false")
-    private boolean exportGatewayRestManagementService;
-
     public BundleResource() {
     }
 
-    @GET
-    public Item exportBundle() throws FindException, ResourceFactory.ResourceNotFoundException, IOException {
+    /**
+     * This method is not Implemented yet. This is meant to return a bundle of the full gateway.
+     *
+     * @return The bundle of the full gateway
+     */
+    //@GET
+    public Item exportGateway() {
         //TODO: need a way to export the entire gateway as a bundle
         return new ItemBuilder<Bundle>("Bundle", "BUNDLE").build();
     }
 
+    /**
+     * Returns the for the given resource type. The resource type is either a policy, service, or folder
+     *
+     * @param resourceType                       The resource type. Either folder, service or policy
+     * @param id                                 The id of the resource to bundle
+     * @param defaultAction                      The default bundling action. By default this is NewOrExisting
+     * @param defaultMapBy                       The default map by action.
+     * @param includeRequestFolder               For a folder export, specifies whether to include the folder in the
+     *                                           bundle or just its contents.
+     * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
+     *                                           default.
+     * @return The bundle for the resource
+     * @throws IOException
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws FindException
+     */
     @GET
     @Path("{resourceType}/{id}")
-    public Item<Bundle> exportBundle(@PathParam("resourceType") String resourceType, @PathParam("id") String id) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<Bundle> exportBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
+                                     @PathParam("id") Goid id,
+                                     @QueryParam("defaultAction") @DefaultValue("NewOrExisting") Mapping.Action defaultAction,
+                                     @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
+                                     @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
+                                     @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
         final EntityType entityType;
         switch (resourceType) {
             case "folder":
@@ -98,24 +116,20 @@ public class BundleResource {
                 throw new IllegalArgumentException("Illegal resourceType. Can only generate bundles for folders, policies, or resources.");
         }
 
-        EntityHeader header = new EntityHeader(Goid.parseGoid(id), entityType, null, null);
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, defaultAction, defaultMapBy, header)))
+        EntityHeader header = new EntityHeader(id, entityType, null, null);
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, defaultAction, defaultMapBy, exportGatewayRestManagementService, header)))
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
 
-    @POST
-    public Item<Bundle> exportBundle(List<Item> references) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
-        List<EntityHeader> headers = new ArrayList<>(references.size());
-        for (Item item : references) {
-            headers.add(new EntityHeader(item.getId(), EntityType.valueOf(item.getType()), null, null));
-        }
-        return new ItemBuilder<Bundle>("Bundle", "BUNDLE")
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(createBundle(includeRequestFolder, defaultAction, defaultMapBy, headers.toArray(new EntityHeader[headers.size()])))
-                .build();
-    }
-
+    /**
+     * This will import the bundle.
+     *
+     * @param test   If true the bundle import will be tested no changes will be made to the gateway.,
+     * @param bundle The bundle to import
+     * @return The mappings performed during the bundle import
+     * @throws ResourceFactory.InvalidResourceException
+     */
     @PUT
     public Response importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) throws ResourceFactory.InvalidResourceException {
         List<Mapping> mappings = bundleImporter.importBundle(bundle, test);
@@ -143,16 +157,17 @@ public class BundleResource {
 
     /**
      * Creates a bundle from the entity headers given
+     *
      * @param includeRequestFolder true to include the request folder
-     * @param defaultAction The default mapping action to take
-     * @param defaultMapBy The default map by property
-     * @param headers The header to bundle a bundle for
+     * @param defaultAction        The default mapping action to take
+     * @param defaultMapBy         The default map by property
+     * @param headers              The header to bundle a bundle for
      * @return The bundle from the headers
      * @throws FindException
      */
     @SuppressWarnings("unchecked")
     @NotNull
-    private Bundle createBundle(boolean includeRequestFolder, @NotNull final Mapping.Action defaultAction, @NotNull final String defaultMapBy, @NotNull final EntityHeader... headers) throws FindException {
+    private Bundle createBundle(boolean includeRequestFolder, @NotNull final Mapping.Action defaultAction, @NotNull final String defaultMapBy, boolean exportGatewayRestManagementService, @NotNull final EntityHeader... headers) throws FindException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeRequestFolderOption, String.valueOf(includeRequestFolder));
@@ -178,7 +193,7 @@ public class BundleResource {
             }
         });
         //Add all the source uri's to the mappings
-        for(Mapping mapping : bundle.getMappings()){
+        for (Mapping mapping : bundle.getMappings()) {
             URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
             if(itemMap.containsKey(mapping.getSrcId())){
                 mapping.setSrcUri(urlAccessible.getUrl(itemMap.get(mapping.getSrcId()).getContent()));

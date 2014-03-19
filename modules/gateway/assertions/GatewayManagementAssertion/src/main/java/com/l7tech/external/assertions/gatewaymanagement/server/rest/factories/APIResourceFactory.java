@@ -2,8 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Mapping;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,25 +78,6 @@ public interface APIResourceFactory<R> {
      * @return The list of resources matching the given parameters
      */
     List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sortKey, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters);
-
-
-    /**
-     * Returns the sort keys map for this factory.
-     *
-     * @return The sort keys map for this factory.
-     */
-    Map<String, String> getSortKeysMap();
-
-    /**
-     * Returns filter info for the given filter. The filter info is a Pair of filter name (the one to pass to the
-     * manager) and the value converter, a unary function that take in a String to convert to the correct type needed by
-     * the manager.
-     * <p/>
-     * Null is returned if no such filter is available
-     *
-     * @return The filter info or null if no filter is available for the given fileter name.
-     */
-    Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo();
 
     /**
      * This will delete a resource with the given id.

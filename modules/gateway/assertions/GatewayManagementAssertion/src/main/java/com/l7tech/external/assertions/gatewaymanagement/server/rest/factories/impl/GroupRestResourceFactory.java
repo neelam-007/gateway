@@ -1,15 +1,14 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GroupTransformer;
 import com.l7tech.gateway.api.GroupMO;
-import com.l7tech.identity.*;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -29,20 +28,6 @@ public class GroupRestResourceFactory {
 
     @Inject
     private GroupTransformer transformer;
-
-    private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
-            .put("name", "name").map();
-    private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-            .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-            .map();
-
-    public Map<String, String> getSortKeysMap() {
-        return sortKeys;
-    }
-
-    public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
-        return filters;
-    }
 
     public List<GroupMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {

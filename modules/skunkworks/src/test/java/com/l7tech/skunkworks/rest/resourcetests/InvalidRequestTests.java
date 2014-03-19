@@ -28,7 +28,7 @@ public class InvalidRequestTests extends RestEntityTestBase {
         Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400 , response.getStatus());
+        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         //test the valid cases
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=0", HttpMethod.GET, null, null);
@@ -54,10 +54,10 @@ public class InvalidRequestTests extends RestEntityTestBase {
         Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400 , response.getStatus());
+        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400 , response.getStatus());
+        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         //test the valid cases
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=500", HttpMethod.GET, null, null);
@@ -137,6 +137,9 @@ public class InvalidRequestTests extends RestEntityTestBase {
         Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "userCreated=nottrue", HttpMethod.GET, null, null);
+        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
+
+        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "usercreated=nottrue", HttpMethod.GET, null, null);
         Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
 
         //test the valid cases

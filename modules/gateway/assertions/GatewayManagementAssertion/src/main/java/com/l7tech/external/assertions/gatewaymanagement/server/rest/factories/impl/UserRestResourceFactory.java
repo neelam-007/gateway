@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.UserMO;
 import com.l7tech.identity.*;
@@ -17,9 +16,7 @@ import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -56,21 +53,6 @@ public class UserRestResourceFactory {
 
     @Inject
     private LogonInfoManager logonManager;
-
-    private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
-            .put("id", "id")
-            .put("login", "login").map();
-    private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-            .put("login", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("login", RestResourceFactoryUtils.stringConvert))
-            .map();
-
-    public Map<String, String> getSortKeysMap() {
-        return sortKeys;
-    }
-
-    public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
-        return filters;
-    }
 
     public List<UserMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {

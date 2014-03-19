@@ -1,14 +1,17 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import java.util.*;
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -18,7 +21,7 @@ public class ParameterValidationUtils {
     // This is used to validate annotated beans
     private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
     //These are the query parameters that a list request can always have
-    private static final Collection<String> constantListQueryParams = Arrays.asList("offset", "count", "sort", "order");
+    public static final Collection<String> defaultListQueryParams = Arrays.asList("offset", "count", "sort", "order");
 
 
     /**
@@ -44,58 +47,54 @@ public class ParameterValidationUtils {
         }
     }
 
+    //TODO: refactor this and merge with below method
+    public static void validateNoOtherQueryParamsNoDefaults(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
+        for (final String param : queryParameters.keySet()) {
+            if (!validParams.contains(param)) {
+                throw new InvalidArgumentException("Unknown filter parameter '" + param + "'. Expected one of: " + validParams.toString());
+            }
+        }
+    }
+
+    //TODO: refactor this and merge with above method
+    public static void validateNoOtherQueryParams(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
+        for (final String param : queryParameters.keySet()) {
+            if (!defaultListQueryParams.contains(param) && !validParams.contains(param)) {
+                throw new InvalidArgumentException("Unknown filter parameter '" + param + "'. Expected one of: " + validParams.toString());
+            }
+        }
+    }
+
     /**
-     * Validates list request parameters.
+     * Converts the order string to the ascending boolean. This returns null if the order is null. true if the order is
+     * 'asc' false otherwise.
      *
-     * @param listRequestParameters The list request bean
-     * @param sortKeysMap           The map of sort keys
-     * @param filtersInfo           The filters info map
+     * @param order The order string. It is assumed that it will either be null, 'asc', or 'desc'
+     * @return the ascending boolean. It is null if the given order is null, true if the order is 'asc' and false
+     * otherwise
      */
-    public static void validateListRequestParameters(@NotNull final ListingResource.ListRequestParameters listRequestParameters, @NotNull final Map<String, String> sortKeysMap, @NotNull final Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filtersInfo) {
-        //Use the validator to validate the object
-        ParameterValidationUtils.validate(listRequestParameters);
+    @Nullable
+    public static Boolean convertSortOrder(@Nullable final String order) {
+        return order == null ? null : "asc".equals(order);
+    }
 
-        //check if the sort value is a valid sort value.
-        if (listRequestParameters.getSortKey() != null) {
-            final String sort = sortKeysMap.get(listRequestParameters.getSortKey());
-            if (sort != null) {
-                //sets the sort key to use.
-                listRequestParameters.setSort(sort);
-            } else {
-                throw new InvalidArgumentException("sort", "Cannot sort by: '" + listRequestParameters.getSortKey() + "'. Must be one of: " + sortKeysMap.values());
-            }
+    /**
+     * This will validate the the offset and count are valid. The offset must be 0 or greater. The count must be 1 or
+     * greater and 500 or less. The sum of the count and offset must be less than Integer.MAX_VALUE (otherwise hibernate
+     * will throw an exception)
+     *
+     * @param offset The offset to validate
+     * @param count  The count to validate
+     */
+    public static void validateOffsetCount(@NotNull final Integer offset, @NotNull final Integer count) {
+        if (offset < 0) {
+            throw new InvalidArgumentException("offset", "The offset should be greater than or equal to zero");
         }
-
-
-        final Map<String, List<Object>> filtersMap = new HashMap<>();
-        //validate the filters
-        if (listRequestParameters.getQueryParameters() != null && !listRequestParameters.getQueryParameters().isEmpty()) {
-            //iterate through all the query parameters
-            for (final Map.Entry<String, List<String>> queryParam : listRequestParameters.getQueryParameters().entrySet()) {
-                //Get the filter info for this query parameter
-                final Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>> filterInfo = filtersInfo.get(queryParam.getKey());
-                if (filterInfo != null) {
-                    // if this is a valid filter key then build the filter value map
-                    final List<Object> filterValues = new ArrayList<>();
-                    for (final String paramValue : queryParam.getValue()) {
-                        try {
-                            //parse and add the filter to the filter values map
-                            filterValues.add(filterInfo.getValue().call(paramValue));
-                        } catch (IllegalArgumentException e) {
-                            //This is thrown if there was an error parsing the filter value. In this case throw an error
-                            throw new InvalidArgumentException(queryParam.getKey(), "Invalid filter value: '" + paramValue + "'.");
-                        }
-                    }
-                    //add the parsed filter values to the filters map
-                    filtersMap.put(filterInfo.getKey(), filterValues);
-                } else if (!constantListQueryParams.contains(queryParam.getKey())) {
-                    //if the query parameter is not a filter key or one of the other used query parameters then throw an error.
-                    //If we do not do this a user may think that a filter is applied but it actually does nothing
-                    throw new InvalidArgumentException("Cannot filter by: '" + queryParam.getKey() + "'. Must be one of: " + filtersInfo.keySet().toString());
-                }
-            }
+        if (count < 1 || count > 500) {
+            throw new InvalidArgumentException("count", "The count should be greater than or equal to one and less than or equal to 500");
         }
-        //set the filters map on the list request object
-        listRequestParameters.setFiltersMap(filtersMap);
+        if ((long) offset + count > Integer.MAX_VALUE) {
+            throw new InvalidArgumentException("offset and count", "The sum of the count and offset must be less then or equal to " + Integer.MAX_VALUE);
+        }
     }
 }

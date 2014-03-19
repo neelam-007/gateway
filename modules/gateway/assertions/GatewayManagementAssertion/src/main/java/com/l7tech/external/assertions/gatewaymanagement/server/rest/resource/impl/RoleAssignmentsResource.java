@@ -24,13 +24,27 @@ public class RoleAssignmentsResource {
         this.roleId = roleId;
     }
 
+    /**
+     * Adds role assignments.
+     *
+     * @param addAssignmentsContext The role assignments to add.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
     @PUT
     public void createAssignment(AddAssignmentsContext addAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.addAssignments(roleId, addAssignmentsContext);
     }
 
+    /**
+     * Removes role assignments
+     *
+     * @param removeAssignmentsContext The assignments to remove
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
     @DELETE
-    public void deleteAssignment( RemoveAssignmentsContext removeAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void deleteAssignment(RemoveAssignmentsContext removeAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.removeAssignments(roleId, removeAssignmentsContext);
     }
 }

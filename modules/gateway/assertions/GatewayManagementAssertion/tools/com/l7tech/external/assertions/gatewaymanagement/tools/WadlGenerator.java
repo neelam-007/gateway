@@ -46,10 +46,11 @@ public class WadlGenerator {
                 }
             }
         }
+        classes.add(WadlGeneratorResource.class.getName());
 
         RestAgent restAgent = buildRestAgent(classes);
 
-        RestResponse response = restAgent.handleRequest(URI.create(""), URI.create("application.wadl"), "GET", null, new EmptyInputStream(), null, null);
+        RestResponse response = restAgent.handleRequest(URI.create(""), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, null);
 
         File wadlFile = new File(args[0] + "/restAPI.wadl");
 

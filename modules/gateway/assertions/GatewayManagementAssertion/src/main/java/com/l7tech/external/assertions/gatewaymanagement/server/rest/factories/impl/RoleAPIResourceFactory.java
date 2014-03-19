@@ -2,15 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.RbacRoleResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -25,16 +22,7 @@ import java.util.Arrays;
 @Component
 public class RoleAPIResourceFactory extends WsmanBaseResourceFactory<RbacRoleMO, RbacRoleResourceFactory> {
 
-    public RoleAPIResourceFactory() {
-        super(
-                CollectionUtils.MapBuilder.<String, String>builder()
-                        .put("id", "id")
-                        .put("name", "name").map(),
-                CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-                        .put("name", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-                        .put("userCreated", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("userCreated", RestResourceFactoryUtils.booleanConvert))
-                        .map());
-    }
+    public RoleAPIResourceFactory() {}
 
     @NotNull
     @Override

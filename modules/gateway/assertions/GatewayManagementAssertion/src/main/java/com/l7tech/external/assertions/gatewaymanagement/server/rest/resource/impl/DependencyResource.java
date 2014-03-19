@@ -58,6 +58,13 @@ public class DependencyResource {
         this.entityHeader = entityHeader;
     }
 
+    /**
+     * Returns the dependency analysis for the resource
+     *
+     * @param returnType The way to return the dependency information. Either as a tree or a list.
+     * @return The dependencies of this entity.
+     * @throws FindException
+     */
     @GET
     public Item get(@QueryParam("returnType") @DefaultValue("Tree") ReturnType returnType) throws FindException {
         if (entityHeader == null) {

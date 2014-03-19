@@ -5,32 +5,28 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * This resource handles user operations.
- *
  */
-@Path("users")
-public class UserResource implements ListingResource<UserMO>, ReadingResource<UserMO>, CreatingResource<UserMO>, DeletingResource,UpdatingResource<UserMO>,URLAccessible<UserMO> {
+@Path(RestEntityResource.RestEntityResource_version_URI + "users")
+public class UserResource implements URLAccessible<UserMO> {
 
     @SpringBean
     private UserRestResourceFactory userRestResourceFactory;
@@ -53,10 +49,49 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
         this.providerId = providerId;
     }
 
-    @Override
-    public ItemsList<UserMO> listResources(final ListRequestParameters listRequestParameters) {
-        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, userRestResourceFactory.getSortKeysMap(), userRestResourceFactory.getFiltersInfo());
-        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, listRequestParameters.getOffset(), listRequestParameters.getCount(), listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<UserMO>, UserMO>() {
+    /**
+     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
+     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
+     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
+     * ascending or descending order. Other params given will be used as search values. Examples:
+     * <p/>
+     * /restman/services?name=MyService
+     * <p/>
+     * Returns services with name = "MyService"
+     * <p/>
+     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
+     * <p/>
+     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
+     * <p/>
+     * If a parameter is not a valid search value it will be ignored.
+     *
+     * @param offset The offset to start the listing from
+     * @param count  The offset ot start the listing from
+     * @param sort   the key to sort the list by.
+     * @param order  the order to sort the list. true for ascending, false for descending. null implies ascending
+     * @param logins The login filter
+     * @return A list of entities. If the list is empty then no entities were found.
+     */
+    @SuppressWarnings("unchecked")
+    @GET
+    @Produces(MediaType.APPLICATION_XML)
+    //This xml header allows the list to be explorable when viewed in a browser
+    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public ItemsList<UserMO> listResources(
+            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
+            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
+            @QueryParam("sort") @ChoiceParam({"id", "login"}) String sort,
+            @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
+            @QueryParam("login") List<String> logins) {
+        ParameterValidationUtils.validateOffsetCount(offset, count);
+        Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("login"));
+
+        CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
+        if (logins != null && !logins.isEmpty()) {
+            filters.put("login", (List) logins);
+        }
+        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, offset, count, sort, ascendingSort, filters.map()), new Functions.Unary<Item<UserMO>, UserMO>() {
             @Override
             public Item<UserMO> call(UserMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -69,18 +104,18 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
                 .build();
     }
 
-    @Override
-    public Item<UserMO> getResource(String id)  throws ResourceFactory.ResourceNotFoundException, FindException {
-        UserMO user = userRestResourceFactory.getResource(providerId, id);
-        return new ItemBuilder<>(transformer.convertToItem(user))
-                .addLink(getLink(user))
-                .addLinks(getRelatedLinks(user))
-                .build();
-    }
-
-    @Override
+    /**
+     * Creates a new entity
+     *
+     * @param resource The entity to create
+     * @return a reference to the newly created entity
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @POST
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response createResource(UserMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String id = userRestResourceFactory.createResource(providerId,resource);
+        String id = userRestResourceFactory.createResource(providerId, resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
         final URI uri = ub.build();
         return Response.created(uri).entity(new ItemBuilder<>(
@@ -92,9 +127,37 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
                 .build();
     }
 
-    @Override
-    public Response updateResource(UserMO resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        boolean resourceExists = userRestResourceFactory.resourceExists(providerId,id);
+    /**
+     * This implements the GET method to retrieve an entity by a given id.
+     *
+     * @param id The identity of the entity to select
+     * @return The selected entity.
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    @GET
+    @Path("{id}")
+    public Item<UserMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+        UserMO user = userRestResourceFactory.getResource(providerId, id);
+        return new ItemBuilder<>(transformer.convertToItem(user))
+                .addLink(getLink(user))
+                .addLinks(getRelatedLinks(user))
+                .build();
+    }
+
+    /**
+     * Updates an existing entity
+     *
+     * @param resource The updated entity
+     * @param id       The id of the entity to update
+     * @return a reference to the newly updated entity.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @PUT
+    @Path("{id}")
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public Response updateResource(UserMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        boolean resourceExists = userRestResourceFactory.resourceExists(providerId, id);
         final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {
             userRestResourceFactory.updateResource(providerId, id, resource);
@@ -111,21 +174,38 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
                 .build()).build();
     }
 
+    /**
+     * Change this users password
+     *
+     * @param id       The id of the user
+     * @param password The new password
+     * @return The user that the password was changed for.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     * @throws FindException
+     */
     @PUT
     @Path("{id}/changePassword")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response changePassword(@PathParam("id") String id,String password) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
+    public Response changePassword(@PathParam("id") String id, String password) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
         userRestResourceFactory.changePassword(providerId, id, password);
-        UserMO user = userRestResourceFactory.getResource(providerId,id);
+        UserMO user = userRestResourceFactory.getResource(providerId, id);
         return Response.ok(new ItemBuilder<>(transformer.convertToItem(user))
                 .addLink(getLink(user))
                 .addLinks(getRelatedLinks(user))
                 .build()).build();
     }
 
-    @Override
-    public void deleteResource(String id) throws ResourceFactory.ResourceNotFoundException {
-        userRestResourceFactory.deleteResource(providerId,id);
+    /**
+     * Deletes an existing active connector.
+     *
+     * @param id The id of the active connector to delete.
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    @DELETE
+    @Path("{id}")
+    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        userRestResourceFactory.deleteResource(providerId, id);
     }
 
     @NotNull
@@ -163,7 +243,7 @@ public class UserResource implements ListingResource<UserMO>, ReadingResource<Us
 
     public String getUrlString(@Nullable String id) {
         UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
-        if(id != null) {
+        if (id != null) {
             uriBuilder.path(id);
         }
         return uriBuilder.build().toString();

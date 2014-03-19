@@ -1,15 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceDocumentMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -21,18 +18,7 @@ import javax.inject.Inject;
 @Component
 public class DocumentAPIResourceFactory extends WsmanBaseResourceFactory<ResourceDocumentMO, DocumentResourceFactory> {
 
-    public DocumentAPIResourceFactory() {
-        super(
-                CollectionUtils.MapBuilder.<String, String>builder()
-                        .put("id", "id")
-                        .put("uri", "uri").map(),
-                CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-                        .put("uri", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("uri", RestResourceFactoryUtils.stringConvert))
-                        .put("description", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("description", RestResourceFactoryUtils.stringConvert))
-                        .put("type", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("type", RestResourceFactoryUtils.stringConvert))
-                        .put("securityZone.id", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("securityZone.id", RestResourceFactoryUtils.goidConvert))
-                        .map());
-    }
+    public DocumentAPIResourceFactory() { }
 
     @NotNull
     @Override

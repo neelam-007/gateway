@@ -6,18 +6,18 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.im
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.AssertionSecurityZoneTransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.List;
  */
 @Provider
 @Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
-public class AssertionSecurityZoneResource implements UpdatingResource<AssertionSecurityZoneMO>, ReadingResource<AssertionSecurityZoneMO>, ListingResource<AssertionSecurityZoneMO>, TemplatingResource<AssertionSecurityZoneMO>, URLAccessible<AssertionSecurityZoneMO> {
+public class AssertionSecurityZoneResource implements URLAccessible<AssertionSecurityZoneMO> {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
     protected static final String activeConnectors_URI = "assertionSecurityZones";
@@ -48,14 +48,54 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
 
     @NotNull
     @Override
-    public String getResourceType(){
+    public String getResourceType() {
         return EntityType.ASSERTION_ACCESS.toString();
     }
 
-    @Override
-    public ItemsList<AssertionSecurityZoneMO> listResources(final ListRequestParameters listRequestParameters) {
-        ParameterValidationUtils.validateListRequestParameters(listRequestParameters, factory.getSortKeysMap(), factory.getFiltersInfo());
-        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(listRequestParameters.getSort(), listRequestParameters.getOrder(), listRequestParameters.getFiltersMap()), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
+    /**
+     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
+     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
+     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
+     * ascending or descending order. Other params given will be used as search values. Examples:
+     * <p/>
+     * /restman/services?name=MyService
+     * <p/>
+     * Returns services with name = "MyService"
+     * <p/>
+     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
+     * <p/>
+     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
+     * <p/>
+     * If a parameter is not a valid search value it will be ignored.
+     *
+     * @param sort            the key to sort the list by.
+     * @param order           the order to sort the list. true for ascending, false for descending. null implies
+     *                        ascending
+     * @param names           The name filter
+     * @param securityZoneIds the securityzone id filter
+     * @return A list of entities. If the list is empty then no entities were found.
+     */
+    @SuppressWarnings("unchecked")
+    @GET
+    @Produces(MediaType.APPLICATION_XML)
+    //This xml header allows the list to be explorable when viewed in a browser
+    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public ItemsList<AssertionSecurityZoneMO> listResources(
+            @QueryParam("sort") @ChoiceParam({"id", "name", "securityZone.id"}) String sort,
+            @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
+            @QueryParam("name") List<String> names,
+            @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
+        Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
+        ParameterValidationUtils.validateNoOtherQueryParamsNoDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "securityZone.id"));
+
+        CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
+        if (names != null && !names.isEmpty()) {
+            filters.put("name", (List) names);
+        }
+        if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
+            filters.put("securityZone.id", (List) securityZoneIds);
+        }
+        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(sort, ascendingSort, filters.map()), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
             @Override
             public Item<AssertionSecurityZoneMO> call(AssertionSecurityZoneMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -70,15 +110,15 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given name.
+     * Returns the assertion security zone for the assertion with the given name.
      *
-     * @param name The name of the entity to select
-     * @return The selected entity.
+     * @param name The name of the assertion
+     * @return The Assertion security zone for the assertion
      * @throws ResourceFactory.ResourceNotFoundException
-     *
      */
-    @Override
-    public Item<AssertionSecurityZoneMO> getResource(String name) throws ResourceFactory.ResourceNotFoundException {
+    @GET
+    @Path("{name}")
+    public Item<AssertionSecurityZoneMO> getResource(@PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
         return new ItemBuilder<>(transformer.convertToItem(resource))
                 .addLink(getLink(resource))
@@ -86,29 +126,36 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
                 .build();
     }
 
-    @Override
+
+    /**
+     * This will return a template, example entity that can be used as a base to updating an assertion security zone.
+     *
+     * @return The template entity.
+     */
+    @GET
+    @Path("template")
     public Item<AssertionSecurityZoneMO> getResourceTemplate() {
         AssertionSecurityZoneMO resource = factory.getResourceTemplate();
-        return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType().toString())
+        return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .addLinks(getRelatedLinks(resource))
                 .setContent(resource)
                 .build();
 
     }
+
     /**
-     * Updates an existing entity
+     * Updates an assertion security zone
      *
-     * @param resource The updated entity
-     * @param name       The name of the entity to update
+     * @param resource The updated assertion security zone
+     * @param name     The name of the assertion to update the security zone of.
      * @return a reference to the newly updated entity.
      * @throws ResourceFactory.ResourceNotFoundException
-     *
      * @throws ResourceFactory.InvalidResourceException
-     *
      */
-    @Override
-    public Response updateResource(AssertionSecurityZoneMO resource, String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    @PUT
+    @Path("{name}")
+    public Response updateResource(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
         return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(updatedResource))
                 .addLink(getLink(resource))
@@ -145,12 +192,13 @@ public class AssertionSecurityZoneResource implements UpdatingResource<Assertion
 
     /**
      * Returns the Url of this resource with the given id
+     *
      * @param id The id of the resource. Leave it blank to get the resource listing url
      * @return The url of the resource
      */
     private String getUrlString(@Nullable String id) {
         UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
-        if(id != null) {
+        if (id != null) {
             uriBuilder.path(id);
         }
         return uriBuilder.build().toString();

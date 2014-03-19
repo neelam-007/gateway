@@ -9,9 +9,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -32,23 +30,6 @@ public class PolicyVersionRestResourceFactory {
 
     @Inject
     private PolicyVersionManager policyVersionManager;
-
-    private Map<String, String> sortKeys = CollectionUtils.MapBuilder.<String, String>builder()
-            .put("id", "id")
-            .put("version", "ordinal").map();
-    private Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> filters = CollectionUtils.MapBuilder.<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>>builder()
-            .put("version", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("ordinal", RestResourceFactoryUtils.longConvert))
-            .put("active", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("active", RestResourceFactoryUtils.booleanConvert))
-            .put("comment", new Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>("name", RestResourceFactoryUtils.stringConvert))
-            .map();
-
-    public Map<String, String> getSortKeysMap() {
-        return sortKeys;
-    }
-
-    public Map<String, Pair<String, Functions.UnaryThrows<?, String, IllegalArgumentException>>> getFiltersInfo() {
-        return filters;
-    }
 
     public List<PolicyVersionMO> listResources(@NotNull String policyId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
