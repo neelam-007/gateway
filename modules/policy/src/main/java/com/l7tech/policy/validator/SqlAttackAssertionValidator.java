@@ -25,7 +25,7 @@ public class SqlAttackAssertionValidator implements AssertionValidator {
         }
 
         if (sqlAttackAssertion.isIncludeUrl() && sqlAttackAssertion.getTarget() != TargetMessageType.REQUEST) {
-            result.addError(new PolicyValidatorResult.Error(sqlAttackAssertion,
+            result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
                     "URL cannot be checked if the message is not targeted to Request.", null));
         }
 
