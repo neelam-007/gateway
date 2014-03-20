@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.DocumentAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.NotEmpty;
@@ -10,6 +11,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.ResourceDocumentMO;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -20,6 +22,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -111,7 +114,7 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("uri") List<String> uris,
             @QueryParam("description") List<String> descriptions,
-            @QueryParam("type") List<String> types,
+            @QueryParam("type") @ChoiceParam({"dtd", "xmlschema"}) List<String> types,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
@@ -125,13 +128,30 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
             filters.put("description", (List) descriptions);
         }
         if (types != null && !types.isEmpty()) {
-            filters.put("type", (List) types);
+            filters.put("type", (List) convertTypes(types));
         }
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
         return super.listResources(offset, count, sort, ascendingSort,
                 filters.map());
+    }
+
+    private List<ResourceType> convertTypes(List<String> types) {
+        List<ResourceType> resourceTypes = new ArrayList<>(types.size());
+        for(String typeString : types){
+            switch(typeString){
+                case "dtd":
+                    resourceTypes.add(ResourceType.DTD);
+                    break;
+                case "xmlschema":
+                    resourceTypes.add(ResourceType.XML_SCHEMA);
+                    break;
+                default:
+                    throw new InvalidArgumentException("type", "Type is expected to be either 'dtd' or 'xsd'");
+            }
+        }
+        return resourceTypes;
     }
 
     /**

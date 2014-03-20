@@ -39,6 +39,7 @@ public class DocumentAPIResourceFactory extends WsmanBaseResourceFactory<Resourc
         Resource resource = ManagedObjectFactory.createResource();
         resource.setId("TemplateId");
         resource.setContent("TemplateContent");
+        resource.setType("dtd");
         docMO.setResource(resource);
         return docMO;
 
