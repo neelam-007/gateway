@@ -219,6 +219,10 @@
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
+    <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerImpl">
+        <constructor-arg ref="auditFactory"/>
+    </bean>
+
     <bean id="resourceEntryManager" class="com.l7tech.server.globalresources.ResourceEntryManagerImpl"
           parent="hibernateBean">
     </bean>
