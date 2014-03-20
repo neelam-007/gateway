@@ -30,7 +30,6 @@ public class WadlResource {
     @GET
     @Produces({"application/vnd.sun.wadl+xml"})
     public StreamingOutput getWadl() {
-        System.out.println(WadlResource.this.getClass().getResource("/").getFile());
         return new StreamingOutput() {
             public void write(OutputStream output) throws IOException {
                 IOUtils.copyStream(WadlResource.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/restAPI.wadl"), output);

@@ -31,7 +31,6 @@ public class SchemaResource {
     @GET
     @Produces({"application/xml"})
     public StreamingOutput getStyleSheet() {
-        System.out.println(SchemaResource.this.getClass().getResource("/").getFile());
         return new StreamingOutput() {
             public void write(OutputStream output) throws IOException {
                 IOUtils.copyStream(SchemaResource.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/serviceTemplate/gateway-management.xsd"), output);
