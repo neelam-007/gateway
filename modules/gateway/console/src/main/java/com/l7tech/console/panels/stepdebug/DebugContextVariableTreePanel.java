@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.stepdebug;
 
+import com.l7tech.console.panels.EditableSearchComboBox;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
 import com.l7tech.gui.util.ImageCache;
@@ -12,10 +13,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.event.*;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * A panel that contains context variables tree, user context variable combo box, and add button.
@@ -39,6 +37,7 @@ public class DebugContextVariableTreePanel extends JPanel {
 
     @SuppressWarnings("unused")
     private JPanel mainForm;
+    private EditableSearchComboBox<DefaultMutableTreeNode> contextVariableSearchComboBox;
     private JTree contextVariablesTree;
     private JComboBox<String> contextVariableComboBox;
     private JButton addContextVariableButton;
@@ -124,11 +123,14 @@ public class DebugContextVariableTreePanel extends JPanel {
 
         // Update tree
         //
+        List<DefaultMutableTreeNode> searchableNodes = new LinkedList<>();
         root.removeAllChildren();
         for (DebugContextVariableData contextVariable : contextVariables) {
             DefaultMutableTreeNode node = new DefaultMutableTreeNode(contextVariable);
-            this.addChildrenContextVariables(node, contextVariable);
+            List<DefaultMutableTreeNode> childrenNodes = this.addChildrenContextVariables(node, contextVariable);
             root.add(node);
+            searchableNodes.add(node);
+            searchableNodes.addAll(childrenNodes);
         }
         model.reload(root);
 
@@ -150,6 +152,10 @@ public class DebugContextVariableTreePanel extends JPanel {
                 contextVariablesTree.setSelectionPath(new TreePath(node.getPath()));
             }
         }
+
+        // Updates items in the context variable search combo box.
+        //
+        contextVariableSearchComboBox.updateSearchableItems(searchableNodes);
     }
 
     /**
@@ -215,13 +221,21 @@ public class DebugContextVariableTreePanel extends JPanel {
         }
     }
 
-
-    private void addChildrenContextVariables(DefaultMutableTreeNode node, DebugContextVariableData contextVariable) {
+    /**
+     * Add children nodes, if any, to the specified node.
+     * Returns a list of all children nodes added.
+     */
+    private List<DefaultMutableTreeNode> addChildrenContextVariables(DefaultMutableTreeNode node, DebugContextVariableData contextVariable) {
+        List<DefaultMutableTreeNode> childrenNodes = new LinkedList<>();
         for (DebugContextVariableData child : contextVariable.getChildren()) {
             DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(child);
-            this.addChildrenContextVariables(childNode, child);
+            List<DefaultMutableTreeNode> subChildrenNodes = this.addChildrenContextVariables(childNode, child);
             node.add(childNode);
+            childrenNodes.add(childNode);
+            childrenNodes.addAll(subChildrenNodes);
         }
+
+        return childrenNodes;
     }
 
     private void onRemoveUserContextVariable() {
@@ -236,5 +250,50 @@ public class DebugContextVariableTreePanel extends JPanel {
             DebugContextVariableData data = (DebugContextVariableData) treeNode.getUserObject();
             policyStepDebugDialog.removeUserContextVariable(data.getName());
         }
+    }
+
+    private void createUIComponents() {
+        // Create and initialize context variable search combo box.
+        //
+        EditableSearchComboBox.Filter filter = new EditableSearchComboBox.Filter() {
+            @Override
+            public boolean accept(Object obj) {
+                if (obj == null) {
+                    return false;
+                }
+
+                if (!(obj instanceof DefaultMutableTreeNode)) {
+                    return false;
+                }
+
+                String filterText = this.getFilterText().toLowerCase();
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
+                DebugContextVariableData data = (DebugContextVariableData) node.getUserObject();
+                return data.getName().startsWith(filterText);
+            }
+        };
+
+        contextVariableSearchComboBox = new EditableSearchComboBox<DefaultMutableTreeNode>(filter) {};
+        contextVariableSearchComboBox.setComparator(new Comparator<DefaultMutableTreeNode>() {
+            @Override
+            public int compare(DefaultMutableTreeNode o1, DefaultMutableTreeNode o2) {
+                return (o1.toString().compareToIgnoreCase(o2.toString()));
+            }
+        });
+
+        contextVariableSearchComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) contextVariableSearchComboBox.getSelectedItem();
+                if (node == null) {
+                    return;
+                }
+
+                TreePath treePath = new TreePath(node.getPath());
+                contextVariablesTree.setSelectionPath(treePath);
+                contextVariablesTree.makeVisible(treePath);
+                contextVariablesTree.scrollPathToVisible(treePath);
+            }
+        });
     }
 }

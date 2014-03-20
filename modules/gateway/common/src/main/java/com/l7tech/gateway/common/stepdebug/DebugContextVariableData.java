@@ -147,7 +147,7 @@ public class DebugContextVariableData implements Serializable, Comparable<DebugC
     }
 
     @Override
-    public int compareTo(DebugContextVariableData o) {
+    public int compareTo(@NotNull DebugContextVariableData o) {
         int result;
 
         // Compare fields that uniquely identify the debug context variable.

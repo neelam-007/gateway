@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainForm" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="500" height="521"/>
+      <xy x="20" y="20" width="824" height="624"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -11,12 +11,13 @@
       <splitpane id="c5475" binding="splitPane">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <preferred-size width="800" height="600"/>
+            <minimum-size width="800" height="600"/>
+            <preferred-size width="200" height="200"/>
           </grid>
         </constraints>
         <properties>
           <continuousLayout value="false"/>
-          <dividerLocation value="250"/>
+          <dividerLocation value="225"/>
           <orientation value="0"/>
         </properties>
         <border type="none"/>
@@ -29,7 +30,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="e2709" layout-manager="GridLayoutManager" row-count="10" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="e2709" layout-manager="GridLayoutManager" row-count="11" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -63,7 +64,7 @@
                   </component>
                   <component id="e5cd3" class="javax.swing.JButton" binding="closeButton" default-binding="true">
                     <constraints>
-                      <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="Close"/>
@@ -71,7 +72,7 @@
                   </component>
                   <vspacer id="6c9a9">
                     <constraints>
-                      <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                      <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                         <preferred-size width="11" height="23"/>
                       </grid>
                     </constraints>
@@ -102,10 +103,10 @@
                   </component>
                   <component id="fab9f" class="javax.swing.JButton" binding="removeAllBreakpointsButton" default-binding="true">
                     <constraints>
-                      <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="&lt;html&gt;Remove All&lt;br&gt;Breakpoints&lt;html&gt;"/>
+                      <text value="Remove All Breakpoints"/>
                     </properties>
                   </component>
                   <vspacer id="4aa1a">
@@ -113,6 +114,14 @@
                       <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                     </constraints>
                   </vspacer>
+                  <component id="e949b" class="javax.swing.JButton" binding="toggleBreakpointButton" default-binding="true">
+                    <constraints>
+                      <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Toggle Breakpoint"/>
+                    </properties>
+                  </component>
                 </children>
               </grid>
               <nested-form id="e830" form-file="com/l7tech/console/panels/stepdebug/DebugContextVariableTreePanel.form" binding="contextVariableTreePanel" custom-create="true">

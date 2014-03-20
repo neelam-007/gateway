@@ -17,9 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -59,7 +62,10 @@ public class DebugPolicyTreePanel extends JPanel {
     private Action toggleBreakpointMenuAction = new AbstractAction("Toggle Breakpoint", TOGGLE_BREAKPOINT_ICON) {
         @Override
         public void actionPerformed(ActionEvent e) {
-            policyStepDebugDialog.onToggleBreakpoint((AssertionTreeNode) policyTree.getLastSelectedPathComponent());
+            AssertionTreeNode node = (AssertionTreeNode) policyTree.getLastSelectedPathComponent();
+            if (node != null) {
+                policyStepDebugDialog.onToggleBreakpoint(node);
+            }
         }
     };
 
@@ -178,6 +184,40 @@ public class DebugPolicyTreePanel extends JPanel {
                 policyTree.setModel(model);
                 policyTree.setCellRenderer(new DebugPolicyTreeCellRenderer(policyStepDebugDialog));
                 policyTree.addMouseListener(policyTreePopUpMenuListener);
+
+                // Configure "Toggle Breakpoint" and "Remove All Breakpoints" buttons.
+                //
+                final JButton toggleBreakpointButton = policyStepDebugDialog.getToggleBreakpointButton();
+                toggleBreakpointButton.setEnabled(false);
+
+                policyTree.addTreeSelectionListener(new TreeSelectionListener() {
+                    @Override
+                    public void valueChanged(TreeSelectionEvent e) {
+                        AssertionTreeNode node = (AssertionTreeNode) policyTree.getLastSelectedPathComponent();
+                        if (node != null) {
+                            toggleBreakpointButton.setEnabled(PolicyStepDebugDialog.isBreakpointAllowed(node.asAssertion()));
+                        } else {
+                            toggleBreakpointButton.setEnabled(false);
+                        }
+                    }
+                });
+
+                toggleBreakpointButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        AssertionTreeNode node = (AssertionTreeNode) policyTree.getLastSelectedPathComponent();
+                        if (node != null) {
+                            policyStepDebugDialog.onToggleBreakpoint(node);
+                        }
+                    }
+                });
+
+                policyStepDebugDialog.getRemoveAllBreakpointsButton().addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        policyStepDebugDialog.onRemoveAllBreakpoints();
+                    }
+                });
 
                 isSuccessful = true;
             } catch (IOException e) {

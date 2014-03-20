@@ -40,6 +40,7 @@ public class PolicyStepDebugDialog extends JDialog {
     private JButton stepIntoButton;
     private JButton stepOutButton;
     private JButton resumeButton;
+    private JButton toggleBreakpointButton;
     private JButton removeAllBreakpointsButton;
     private JButton closeButton;
 
@@ -68,7 +69,7 @@ public class PolicyStepDebugDialog extends JDialog {
      * @param policy the policy to debug
      */
     public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Goid entityGoid, @NotNull Policy policy) {
-        super(owner, "Service Debugger", true);
+        super(owner, "Service Debugger", false);
 
         Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
         if (option.isSome()) {
@@ -139,6 +140,14 @@ public class PolicyStepDebugDialog extends JDialog {
         debugAdmin.addUserContextVariable(debugResult.getTaskId(), name);
     }
 
+    JButton getRemoveAllBreakpointsButton() {
+        return removeAllBreakpointsButton;
+    }
+
+    JButton getToggleBreakpointButton() {
+        return toggleBreakpointButton;
+    }
+
     @Override
     public void dispose() {
         if (this.refreshTimer != null) {
@@ -202,13 +211,6 @@ public class PolicyStepDebugDialog extends JDialog {
             }
         });
 
-        removeAllBreakpointsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onRemoveAllBreakpoints();
-            }
-        });
-
         closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -228,12 +230,12 @@ public class PolicyStepDebugDialog extends JDialog {
         // IMPORTANT: Remove key binding for F2 key in JTree components, prior to adding new key bindings.
         // There are JTree components in policyTreePanel and contextVariableTreePanel.
         //
-        Utilities.setButtonAccelerator(this, startButton, KeyEvent.VK_F1);
-        Utilities.setButtonAccelerator(this, stopButton, KeyStroke.getKeyStroke(KeyEvent.VK_F1, InputEvent.SHIFT_MASK));
-        Utilities.setButtonAccelerator(this, stepIntoButton, KeyEvent.VK_F2);
-        Utilities.setButtonAccelerator(this, stepOverButton, KeyEvent.VK_F3);
-        Utilities.setButtonAccelerator(this, stepOutButton, KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_MASK));
-        Utilities.setButtonAccelerator(this, resumeButton, KeyEvent.VK_F4);
+        this.addButtonShortCutKey(startButton, KeyEvent.VK_F1, 0);
+        this.addButtonShortCutKey(stopButton, KeyEvent.VK_F1, InputEvent.SHIFT_MASK);
+        this.addButtonShortCutKey(stepIntoButton, KeyEvent.VK_F2, 0);
+        this.addButtonShortCutKey(stepOverButton, KeyEvent.VK_F3, 0);
+        this.addButtonShortCutKey(stepOutButton, KeyEvent.VK_F3, InputEvent.SHIFT_MASK);
+        this.addButtonShortCutKey(resumeButton, KeyEvent.VK_F4, 0);
 
         if (isSuccessful) {
             this.onInit();
@@ -385,6 +387,7 @@ public class PolicyStepDebugDialog extends JDialog {
         stepIntoButton.setEnabled(false);
         stepOutButton.setEnabled(false);
         resumeButton.setEnabled(false);
+        toggleBreakpointButton.setEnabled(false);
         removeAllBreakpointsButton.setEnabled(false);
         contextVariableTreePanel.disableComponents();
     }
@@ -392,5 +395,15 @@ public class PolicyStepDebugDialog extends JDialog {
     private void createUIComponents() {
         policyTreePanel = new DebugPolicyTreePanel(this);
         contextVariableTreePanel = new DebugContextVariableTreePanel(this);
+    }
+
+    private void addButtonShortCutKey(JButton button, int keyCode, int modifiers) {
+        if (modifiers == 0) {
+            Utilities.setButtonAccelerator(this, button, keyCode);
+            button.setToolTipText(KeyEvent.getKeyText(keyCode));
+        } else {
+            Utilities.setButtonAccelerator(this, button, KeyStroke.getKeyStroke(keyCode, modifiers));
+            button.setToolTipText(KeyEvent.getKeyModifiersText(modifiers) + " + " + KeyEvent.getKeyText(keyCode));
+        }
     }
 }
