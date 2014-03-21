@@ -78,14 +78,14 @@
         <constructor-arg index="18" ref="securePasswordManager" />
     </bean>
 
+    <bean id="securityFilter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="rbacAdvice"/>
+        <property name="targetMethod" value="getSecurityFilter"/>
+    </bean>
+
     <bean id="resourceFactoryParent" abstract="true">
         <constructor-arg index="0" ref="rbacServices"/>
-        <constructor-arg index="1">
-            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                <property name="targetObject" ref="rbacAdvice"/>
-                <property name="targetMethod" value="getSecurityFilter"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg index="1" ref="securityFilter"/>
         <constructor-arg index="2" ref="transactionManager"/>
     </bean>
 
@@ -287,4 +287,5 @@
     <bean id="apiUtilityLocator" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocatorImpl" />
     <bean id="bundleImporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter" />
     <bean id="bundleExporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter" />
+    <bean id="rbacAccessService" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService" />
 </beans>

@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
@@ -57,6 +58,9 @@ public class BundleResource {
     @SpringBean
     private URLAccessibleLocator urlAccessibleLocator;
 
+    @SpringBean
+    private RbacAccessService rbacAccessService;
+
     @Context
     private UriInfo uriInfo;
 
@@ -73,6 +77,7 @@ public class BundleResource {
      */
     //@GET
     public Item exportGateway() {
+        rbacAccessService.validateFullAdministrator();
         //TODO: need a way to export the entire gateway as a bundle
         return new ItemBuilder<Bundle>("Bundle", "BUNDLE").build();
     }
@@ -101,6 +106,7 @@ public class BundleResource {
                                      @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
                                      @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
                                      @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+        rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
             case "folder":
@@ -132,6 +138,7 @@ public class BundleResource {
      */
     @PUT
     public Response importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) throws ResourceFactory.InvalidResourceException {
+        rbacAccessService.validateFullAdministrator();
         List<Mapping> mappings = bundleImporter.importBundle(bundle, test);
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))

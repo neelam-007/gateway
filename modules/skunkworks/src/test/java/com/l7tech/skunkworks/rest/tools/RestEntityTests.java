@@ -2,16 +2,24 @@ package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.UserManager;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ConfiguredSessionFactoryBean;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
@@ -25,6 +33,18 @@ import java.util.logging.Logger;
 
 public abstract class RestEntityTests<E extends PersistentEntity, M extends ManagedObject> extends RestEntityTestBase implements RestEntityResourceUtil<E, M> {
     private static final Logger logger = Logger.getLogger(RestEntityTests.class.getName());
+    private static IdentityProviderFactory identityProviderFactory;
+    private static IdentityProvider provider;
+    private static UserManager userManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        RestEntityTestBase.beforeClass();
+
+        identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
+        provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
+        userManager = provider.getUserManager();
+    }
 
     @Test
     public void testGet() throws Exception {
@@ -81,6 +101,35 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         }
     }
 
+    private final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
+
+    @Test
+    public void testGetUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+        try {
+            List<String> entitiesExpected = getRetrievableEntityIDs();
+
+            for (String id : entitiesExpected) {
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.GET, null, "", user);
+                logger.log(Level.FINE, response.toString());
+
+                Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+                Assert.assertEquals(401, response.getStatus());
+            }
+        } finally {
+            userManager.delete(user);
+        }
+    }
+
+    private InternalUser createUnprivilegedUser() throws com.l7tech.objectmodel.SaveException {
+        InternalUser user = new InternalUser();
+        user.setName("Unprivileged");
+        user.setLogin("unprivilegedUser");
+        user.setHashedPassword(passwordHasher.hashPassword("password".getBytes()));
+        userManager.save(user, null);
+        return user;
+    }
+
     @Test
     public void testCreateEntity() throws Exception {
         List<M> entitiesToCreate = getCreatableManagedObjects();
@@ -128,6 +177,25 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
     }
 
     @Test
+    public void testCreateEntityUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+        try {
+            List<M> entitiesToCreate = getCreatableManagedObjects();
+
+            for (M mo : entitiesToCreate) {
+                mo.setId(null);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), null, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                logger.log(Level.FINE, response.toString());
+
+                Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+                Assert.assertEquals(401, response.getStatus());
+            }
+        } finally {
+            userManager.delete(user);
+        }
+    }
+
+    @Test
     public void testCreateWithIdEntity() throws Exception {
         List<M> entitiesToCreate = getCreatableManagedObjects();
 
@@ -155,6 +223,24 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
 
             Assert.assertNull(item.getContent());
             verifyEntity(mo.getId(), mo);
+        }
+    }
+
+    @Test
+    public void testCreateWithIdEntityUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+        try {
+            List<M> entitiesToCreate = getCreatableManagedObjects();
+
+            for (M mo : entitiesToCreate) {
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                logger.log(Level.FINE, response.toString());
+
+                Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+                Assert.assertEquals(401, response.getStatus());
+            }
+        } finally {
+            userManager.delete(user);
         }
     }
 
@@ -204,6 +290,24 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
     }
 
     @Test
+    public void testUpdateEntityUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+        try {
+            List<M> entitiesToCreate = getUpdateableManagedObjects();
+
+            for (M mo : entitiesToCreate) {
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                logger.log(Level.FINE, response.toString());
+
+                Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+                Assert.assertEquals(401, response.getStatus());
+            }
+        } finally {
+            userManager.delete(user);
+        }
+    }
+
+    @Test
     public void testDeleteEntity() throws Exception {
         List<String> entitiesIDsToDelete = getDeleteableManagedObjectIDs();
 
@@ -216,6 +320,24 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Assert.assertEquals("Expected empty response body", "", response.getBody());
 
             verifyEntity(id, null);
+        }
+    }
+
+    @Test
+    public void testDeleteEntityUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+        try {
+            List<String> entitiesIDsToDelete = getDeleteableManagedObjectIDs();
+
+            for (String id : entitiesIDsToDelete) {
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.DELETE, null, "", user);
+                logger.log(Level.FINE, response.toString());
+
+                Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+                Assert.assertEquals(401, response.getStatus());
+            }
+        } finally {
+            userManager.delete(user);
         }
     }
 
@@ -292,6 +414,15 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc&count=1&offset=1", HttpMethod.GET, null, "");
                 testList("sort=id&order=desc&count=1&offset=1", response, reverseList.subList(1, 2));
+
+                //test unprivileged
+                InternalUser user = createUnprivilegedUser();
+                try {
+                    response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
+                    testList("", response, Collections.<String>emptyList());
+                } finally {
+                    userManager.delete(user);
+                }
             }
         }
     }

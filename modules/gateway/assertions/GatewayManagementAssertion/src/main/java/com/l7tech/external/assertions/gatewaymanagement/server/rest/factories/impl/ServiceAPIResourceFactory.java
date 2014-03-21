@@ -3,13 +3,13 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServiceDetail;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.*;
@@ -20,7 +20,6 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -34,7 +33,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.UUID;
 
 /**
  * This was created: 11/18/13 as 4:30 PM
@@ -92,6 +90,9 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
     @Inject
     private RbacServices rbacServices;
 
+    @Inject
+    private RbacAccessService rbacAccessService;
+
     @Override
     public String createResource(@NotNull ServiceMO resource) throws ResourceFactory.InvalidResourceException {
         return createResource(resource, null);
@@ -118,6 +119,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     Pair<PublishedService, Collection<ServiceDocument>> newServiceEntity = factory.fromResource(resource);
                     PublishedService newService = newServiceEntity.left;
                     newService.setVersion(0);
+                    rbacAccessService.validatePermitted(newService, OperationType.CREATE);
+
                     beforeCreate(newService);
 
                     Goid id = serviceManager.save(newService);
@@ -143,12 +146,14 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
         final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(serviceGoid);
         for (final ServiceDocument serviceDocument : existingServiceDocuments) {
+            rbacAccessService.validatePermitted(serviceDocument, OperationType.DELETE);
             serviceDocumentManager.delete(serviceDocument);
         }
 
         for (final ServiceDocument serviceDocument : serviceDocuments) {
             serviceDocument.setGoid(ServiceDocument.DEFAULT_GOID);
             serviceDocument.setServiceId(serviceGoid);
+            rbacAccessService.validatePermitted(serviceDocument, OperationType.CREATE);
             serviceDocumentManager.save(serviceDocument);
         }
     }
@@ -165,6 +170,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     PublishedService newService = newServiceEntity.getEntity();
 
                     newService.setVersion(0);
+                    rbacAccessService.validatePermitted(newService, OperationType.CREATE);
+
                     beforeCreate(newService);
 
                     serviceManager.save(Goid.parseGoid(id), newService);
@@ -215,6 +222,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
                     PublishedService newService = newServiceEntity.getEntity();
                     PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
+                    if(oldService != null)
+                        rbacAccessService.validatePermitted(oldService, OperationType.UPDATE);
 
                     newService.setGoid(Goid.parseGoid(id));
                     newService.setFolder(checkMovePermitted(oldService.getFolder(), newService.getFolder()));
@@ -251,32 +260,20 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             // consistent with FolderAdmin permissions
 
 
-            checkPermitted(OperationType.UPDATE, newFolder);
+            rbacAccessService.validatePermitted(newFolder, OperationType.UPDATE);
             if (oldFolder != null)
-                checkPermitted(OperationType.UPDATE, oldFolder);
+                rbacAccessService.validatePermitted(oldFolder, OperationType.UPDATE);
             result = newFolder;
         }
 
         return result;
     }
 
-    private void checkPermitted(OperationType operation, Entity entity) {
-        EntityType entityType = EntityType.findTypeByEntity(entity.getClass());
-        try {
-            if (!rbacServices.isPermittedForEntity(JaasUtils.getCurrentUser(), entity, operation, null)) {
-                throw new PermissionDeniedException(operation, entityType);
-            }
-        } catch (FindException e) {
-            throw (PermissionDeniedException) new PermissionDeniedException(operation, entityType, "Error in permission check.").initCause(e);
-
-        }
-    }
-
     public String getPolicyIdForService(String id) throws ResourceFactory.ResourceNotFoundException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
             if(service !=null){
-                checkPermitted(OperationType.READ, service);
+                rbacAccessService.validatePermitted(service, OperationType.READ);
                 return service.getPolicy().getId();
             }
             return null;

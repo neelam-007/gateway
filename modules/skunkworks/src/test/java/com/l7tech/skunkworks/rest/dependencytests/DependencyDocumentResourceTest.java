@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
@@ -63,7 +62,7 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

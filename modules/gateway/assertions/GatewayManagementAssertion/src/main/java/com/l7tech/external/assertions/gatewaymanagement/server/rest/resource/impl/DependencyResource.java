@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
@@ -41,6 +42,9 @@ public class DependencyResource {
     @SpringBean
     private APIUtilityLocator apiUtilityLocator;
 
+    @SpringBean
+    private RbacAccessService rbacAccessService;
+
     @Context
     private UriInfo uriInfo;
 
@@ -67,6 +71,7 @@ public class DependencyResource {
      */
     @GET
     public Item get(@QueryParam("returnType") @DefaultValue("Tree") ReturnType returnType) throws FindException {
+        rbacAccessService.validateFullAdministrator();
         if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }

@@ -11,7 +11,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -135,7 +134,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

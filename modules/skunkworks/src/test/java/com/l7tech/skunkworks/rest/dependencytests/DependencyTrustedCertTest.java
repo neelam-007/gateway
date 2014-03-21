@@ -7,7 +7,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -82,7 +81,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

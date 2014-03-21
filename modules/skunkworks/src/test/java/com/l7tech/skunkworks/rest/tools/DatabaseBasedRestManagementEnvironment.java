@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -134,6 +135,14 @@ public class DatabaseBasedRestManagementEnvironment {
     }
 
     public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body) throws Exception {
+        // fake user authentication
+        UserBean admin = new UserBean("admin");
+        admin.setUniqueIdentifier(new Goid(0, 3).toString());
+        admin.setProviderId(new Goid(0, -2));
+        return processRequest(uri, queryString, method, contentType, body, admin);
+    }
+
+    public RestResponse processRequest(@NotNull String uri, @Nullable String queryString, @NotNull HttpMethod method, @Nullable String contentType, @Nullable String body, @NotNull User user) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body == null ? new byte[0] : body.getBytes("utf-8"));
@@ -166,13 +175,9 @@ public class DatabaseBasedRestManagementEnvironment {
         try {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-            // fake user authentication
-            UserBean admin = new UserBean("admin");
-            admin.setUniqueIdentifier(new Goid(0, 3).toString());
-            admin.setProviderId(new Goid(0, -2));
             context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(
-                    admin,
-                    new HttpBasicToken("admin", "".toCharArray()), null, false)
+                    user,
+                    new HttpBasicToken(user.getLogin(), "".toCharArray()), null, false)
             );
 
             final PublishedService service = new PublishedService();

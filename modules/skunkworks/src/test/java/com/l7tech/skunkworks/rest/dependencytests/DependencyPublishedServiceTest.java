@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
@@ -103,7 +102,7 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

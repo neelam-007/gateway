@@ -1,7 +1,6 @@
 package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +15,7 @@ public abstract class RestEntityTestBase {
     private static DatabaseBasedRestManagementEnvironment databaseBasedRestManagementEnvironment;
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         //need to only start this on a nightly build
         if(!IgnoreOnDaily.isDaily() && databaseBasedRestManagementEnvironment == null){
             databaseBasedRestManagementEnvironment = new DatabaseBasedRestManagementEnvironment();

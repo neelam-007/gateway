@@ -57,7 +57,7 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             status = Response.Status.NOT_FOUND;
         } else if ( e instanceof ResourceFactory.InvalidResourceException ) {
             status = Response.Status.BAD_REQUEST;
-        } else if ( e instanceof PermissionDeniedException ) {
+        } else if ( e instanceof PermissionDeniedException || e instanceof InsufficientPermissionsException ) {
             String userId = JaasUtils.getCurrentUser()==null ? "<unauthenticated>" : JaasUtils.getCurrentUser().getLogin();
             logMessage = ExceptionUtils.getMessage(e) + ", for user '"+userId+"'.";
             status = Response.Status.UNAUTHORIZED;

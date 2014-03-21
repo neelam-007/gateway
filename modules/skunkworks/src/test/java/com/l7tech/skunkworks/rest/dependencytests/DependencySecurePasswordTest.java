@@ -1,10 +1,11 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
@@ -12,7 +13,10 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.logging.Logger;
 
@@ -64,7 +68,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

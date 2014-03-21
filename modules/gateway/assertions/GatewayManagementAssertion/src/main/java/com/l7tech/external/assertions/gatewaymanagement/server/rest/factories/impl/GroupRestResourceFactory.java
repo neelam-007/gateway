@@ -1,8 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GroupTransformer;
 import com.l7tech.gateway.api.GroupMO;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,10 +32,13 @@ public class GroupRestResourceFactory {
     @Inject
     private GroupTransformer transformer;
 
+    @Inject
+    private RbacAccessService rbacAccessService;
+
     public List<GroupMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
             GroupManager groupManager = retrieveGroupManager(providerId);
-            EntityHeaderSet<IdentityHeader> groups = new EntityHeaderSet<IdentityHeader>();
+            List<IdentityHeader> groups = new ArrayList<>();
             if(filters.containsKey("name")){
                 for(Object name: filters.get("name")){
                     groups.addAll(groupManager.search(name.toString()));
@@ -40,6 +46,8 @@ public class GroupRestResourceFactory {
             }else{
                 groups.addAll(groupManager.findAllHeaders());
             }
+            groups = rbacAccessService.accessFilter(groups, EntityType.GROUP, OperationType.READ, null);
+
             return Functions.map(groups, new Functions.Unary<GroupMO, IdentityHeader>() {
                 @Override
                 public GroupMO call(IdentityHeader idHeader) {
@@ -60,6 +68,7 @@ public class GroupRestResourceFactory {
         if(group== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + name);
         }
+        rbacAccessService.validatePermitted(group, OperationType.READ);
         return transformer.convertToMO(group);
     }
 

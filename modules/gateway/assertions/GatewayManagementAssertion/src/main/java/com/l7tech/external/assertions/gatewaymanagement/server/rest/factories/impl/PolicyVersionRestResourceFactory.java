@@ -1,9 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyVersionMO;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -31,11 +34,16 @@ public class PolicyVersionRestResourceFactory {
     @Inject
     private PolicyVersionManager policyVersionManager;
 
+    @Inject
+    private RbacAccessService rbacAccessService;
+
     public List<PolicyVersionMO> listResources(@NotNull String policyId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
             HashMap<String, List<Object>> filtersWithPolicyGoid = new HashMap<>(filters);
             filtersWithPolicyGoid.put("policyGoid", Arrays.<Object>asList(RestResourceFactoryUtils.goidConvert.call(policyId)));
             List<PolicyVersion> policyVersions = policyVersionManager.findPagedMatching(offset, count, sort, order, filtersWithPolicyGoid);
+            policyVersions = rbacAccessService.accessFilter(policyVersions, EntityType.POLICY_VERSION, OperationType.READ, null);
+
             return Functions.map(policyVersions, new Functions.Unary<PolicyVersionMO, PolicyVersion>() {
                 @Override
                 public PolicyVersionMO call(PolicyVersion policyVersion) {
@@ -51,21 +59,27 @@ public class PolicyVersionRestResourceFactory {
     }
 
     public PolicyVersionMO getResource(@NotNull String policyId, @NotNull String id) throws FindException {
-        return buildMO(policyVersionManager.findPolicyVersionForPolicy(Goid.parseGoid(policyId),Long.parseLong(id)));
+        PolicyVersion policyVersion = policyVersionManager.findPolicyVersionForPolicy(Goid.parseGoid(policyId), Long.parseLong(id));
+        rbacAccessService.validatePermitted(policyVersion, OperationType.READ);
+        return buildMO(policyVersion);
     }
 
     public PolicyVersionMO getActiveVersion(String policyId) throws FindException {
-        return buildMO(policyVersionManager.findActiveVersionForPolicy(Goid.parseGoid(policyId)));
+        PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(Goid.parseGoid(policyId));
+        rbacAccessService.validatePermitted(policyVersion, OperationType.READ);
+        return buildMO(policyVersion);
     }
 
     public void updateComment(@NotNull String policyId, @NotNull String id, @Nullable String comment) throws FindException, UpdateException {
         PolicyVersion policyVersion = policyVersionManager.findPolicyVersionForPolicy(Goid.parseGoid(policyId), Long.parseLong(id));
+        rbacAccessService.validatePermitted(policyVersion, OperationType.UPDATE);
         policyVersion.setName(comment);
         policyVersionManager.update(policyVersion);
     }
 
     public void updateActiveComment(String policyId, String comment) throws FindException, UpdateException {
         PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(Goid.parseGoid(policyId));
+        rbacAccessService.validatePermitted(policyVersion, OperationType.UPDATE);
         policyVersion.setName(comment);
         policyVersionManager.update(policyVersion);
     }

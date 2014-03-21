@@ -5,7 +5,6 @@ import com.l7tech.gateway.api.DependencyTreeMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -47,7 +46,7 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

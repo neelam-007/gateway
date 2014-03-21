@@ -1,11 +1,12 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -84,7 +85,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

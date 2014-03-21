@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
@@ -125,7 +124,7 @@ public class DependencyJmsTest extends DependencyTestBase{
 
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

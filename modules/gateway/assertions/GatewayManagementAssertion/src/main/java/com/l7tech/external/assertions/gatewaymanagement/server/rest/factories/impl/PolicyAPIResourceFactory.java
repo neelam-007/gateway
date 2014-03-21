@@ -2,11 +2,13 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -38,6 +40,9 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
 
     @Inject
     private PlatformTransactionManager transactionManager;
+
+    @Inject
+    private RbacAccessService rbacAccessService;
 
     public PolicyAPIResourceFactory() {}
 
@@ -95,6 +100,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                 try {
                     final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
                     final Policy newPolicy = newPolicyContainer.getEntity();
+                    rbacAccessService.validatePermitted(newPolicy, OperationType.CREATE);
                     newPolicy.setVersion(0);
                     //generate a new Guid if none is set.
                     if(newPolicy.getGuid() == null) {
@@ -147,6 +153,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                 try {
                     final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
                     final Policy newPolicy = newPolicyContainer.getEntity();
+                    rbacAccessService.validatePermitted(newPolicy, OperationType.UPDATE);
                     policyManager.update(newPolicy);
                     policyVersionManager.checkpointPolicy(newPolicy, active, comment, false);
 

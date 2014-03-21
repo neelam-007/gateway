@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.PrivateKeyAdminHelper;
 import com.l7tech.server.security.keystore.SsgKeyStore;
@@ -108,7 +107,7 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

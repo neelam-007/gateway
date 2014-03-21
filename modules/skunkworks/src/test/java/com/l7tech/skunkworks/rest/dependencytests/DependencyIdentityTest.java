@@ -1,6 +1,8 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -10,7 +12,6 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
@@ -18,7 +19,10 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.logging.Logger;
 
@@ -100,7 +104,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
     }
 
     @BeforeClass
-    public static void beforeClass() throws PolicyAssertionException, IllegalAccessException, InstantiationException {
+    public static void beforeClass() throws Exception {
         DependencyTestBase.beforeClass();
     }
 

@@ -3,8 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.UserMO;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
@@ -24,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -54,10 +57,13 @@ public class UserRestResourceFactory {
     @Inject
     private LogonInfoManager logonManager;
 
+    @Inject
+    private RbacAccessService rbacAccessService;
+
     public List<UserMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
             UserManager userManager  = retrieveUserManager(providerId);
-            EntityHeaderSet<IdentityHeader> users = new EntityHeaderSet<IdentityHeader>();
+            List<IdentityHeader> users = new ArrayList<>();
             if(filters.containsKey("login")){
                 for(Object login: filters.get("login")){
                     users.add(userManager.userToHeader(userManager.findByLogin(login.toString())));
@@ -69,6 +75,7 @@ public class UserRestResourceFactory {
             }else{
                 users.addAll(userManager.findAllHeaders());
             }
+            users = rbacAccessService.accessFilter(users, EntityType.USER, OperationType.READ, null);
             return Functions.map(users, new Functions.Unary<UserMO, IdentityHeader>() {
                 @Override
                 public UserMO call(IdentityHeader userHeader) {
@@ -89,6 +96,7 @@ public class UserRestResourceFactory {
         if(user== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + login);
         }
+        rbacAccessService.validatePermitted(user, OperationType.READ);
         return userTransformer.convertToMO(user);
     }
 
@@ -110,6 +118,7 @@ public class UserRestResourceFactory {
             UserManager userManager = retrieveUserManager(providerId);
             User newUser = userTransformer.convertFromMO(resource).getEntity();
             if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
+            rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
 
             if(userManager instanceof InternalUserManager && newUser instanceof  InternalUser){
                 checkPasswordCompliance((InternalUserManager)userManager,(InternalUser)newUser,resource.getPassword());
@@ -180,6 +189,7 @@ public class UserRestResourceFactory {
                 }
 
                 final InternalUser originalUser = (InternalUser) userManager.findByPrimaryKey(id);
+                rbacAccessService.validatePermitted(originalUser, OperationType.UPDATE);
 
                 // update user
                 final InternalUser newInternalUser = (InternalUser) newUser;
@@ -214,6 +224,7 @@ public class UserRestResourceFactory {
         try {
             UserManager userManager = retrieveUserManager(providerId);
             User user = userManager.findByPrimaryKey(id);
+            rbacAccessService.validatePermitted(user, OperationType.DELETE);
 
             if (user.equals(JaasUtils.getCurrentUser()))
                 throw new DeleteException("The currently used user cannot be deleted");
@@ -238,6 +249,7 @@ public class UserRestResourceFactory {
             {//limit session connected internal user scope
                 //were ignoring the incoming entity, were just using it for rbac and a container for it's id and provider id
                 final InternalUser internalUser = userManager.findByPrimaryKey(id);
+                rbacAccessService.validatePermitted(internalUser, OperationType.UPDATE);
                 disconnectedUser.copyFrom(internalUser);
                 disconnectedUser.setVersion(internalUser.getVersion());
             }
