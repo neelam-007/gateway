@@ -41,9 +41,12 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
     public static void beforeClass() throws Exception {
         RestEntityTestBase.beforeClass();
 
-        identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
-        provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
-        userManager = provider.getUserManager();
+        //This will be null on daily builds
+        if(getDatabaseBasedRestManagementEnvironment() != null){
+            identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
+            provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
+            userManager = provider.getUserManager();
+        }
     }
 
     @Test
