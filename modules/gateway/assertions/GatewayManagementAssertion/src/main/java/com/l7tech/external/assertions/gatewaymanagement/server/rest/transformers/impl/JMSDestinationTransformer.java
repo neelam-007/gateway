@@ -33,7 +33,7 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
 
     @Override
     public JmsContainer convertFromMO(JMSDestinationMO jmsDestinationMO, boolean strict) throws ResourceFactory.InvalidResourceException {
-        Iterator<PersistentEntity> entities =  factory.fromResourceAsBag(jmsDestinationMO).iterator();
+        Iterator<PersistentEntity> entities =  factory.fromResourceAsBag(jmsDestinationMO,strict).iterator();
         JmsContainer container = new JmsContainer((JmsEndpoint)entities.next(),(JmsConnection)entities.next());
 
         container.getJmsEndpoint().setConnectionGoid(container.getJmsConnection().getGoid());

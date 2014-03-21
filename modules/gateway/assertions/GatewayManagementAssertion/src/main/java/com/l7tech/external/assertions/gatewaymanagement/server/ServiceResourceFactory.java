@@ -241,8 +241,13 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         return new Pair<PublishedService,Collection<ServiceDocument>>(bag.getPublishedService(),bag.getServiceDocuments());
     }
 
-    public ServiceMO asResource(Pair<PublishedService,Collection<ServiceDocument>> serviceEntity) {
-        return asResource(new ServiceResourceFactory.ServiceEntityBag(serviceEntity.left, serviceEntity.right));
+    @Override
+    public ServiceMO asResource(PublishedService entity) {
+        try {
+            return asResource(loadEntityBag(entity));
+        } catch (ObjectModelException e) {
+            return null;
+        }
     }
 
     @Override

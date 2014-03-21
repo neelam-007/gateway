@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
+import com.l7tech.server.bundling.PublishedServiceContainer;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceDocumentManager;
@@ -160,15 +161,15 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             @Override
             public Object doInTransaction(final TransactionStatus transactionStatus) {
                 try {
-                    Pair<PublishedService, Collection<ServiceDocument>> newServiceEntity = serviceTransformer.convertToEntity(resource);
-                    PublishedService newService = newServiceEntity.left;
+                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
+                    PublishedService newService = newServiceEntity.getEntity();
 
                     newService.setVersion(0);
                     beforeCreate(newService);
 
                     serviceManager.save(Goid.parseGoid(id), newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
-                    saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.right);
+                    saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
 
                     return null;
 
@@ -192,19 +193,6 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
         } catch (ResourceFactory.InvalidResourceException e) {
             throw new SaveException(e);
         }
-
-        service.setInternal(false);
-
-        if (policy != null) {
-            if (policy.getGuid() == null) {
-                UUID guid = UUID.randomUUID();
-                policy.setGuid(guid.toString());
-            }
-
-            if (policy.getName() == null) {
-                policy.setName(service.generatePolicyName());
-            }
-        }
     }
 
     private void validateCreateResource(@Nullable String id, ServiceMO resource) {
@@ -224,8 +212,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             @Override
             public Object doInTransaction(final TransactionStatus transactionStatus) {
                 try {
-                    Pair<PublishedService, Collection<ServiceDocument>> newServiceEntity = serviceTransformer.convertToEntity(resource);
-                    PublishedService newService = newServiceEntity.left;
+                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
+                    PublishedService newService = newServiceEntity.getEntity();
                     PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
 
                     newService.setGoid(Goid.parseGoid(id));
@@ -236,9 +224,9 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     serviceManager.update(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), active, comment, false);
-                    saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.right);
+                    saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
 
-                    return factory.asResource(newServiceEntity);
+                    return factory.asResource(newServiceEntity.getEntity());
 
                 } catch (ResourceFactory.InvalidResourceException e) {
                     transactionStatus.setRollbackOnly();

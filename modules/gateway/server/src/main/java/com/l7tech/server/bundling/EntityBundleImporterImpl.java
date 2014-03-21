@@ -2,6 +2,7 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
@@ -248,7 +249,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         dependencyAnalyzer.replaceDependencies(baseEntity, resourceMapping);
 
         //create/save dependent entities
-        createOrUpdateDependentEntities((PersistentEntityContainer)entityContainer,existingEntity);
+        beforeCreateOrUpdateEntities((PersistentEntityContainer) entityContainer, existingEntity, baseEntity);
 
         // Create the managed object within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers.
@@ -269,6 +270,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         } else {
                             baseEntity.setGoid(id);
+                            baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
                             entityCrud.update(baseEntity);
                             importedID = id;
                         }
@@ -287,6 +289,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         //throw the exception if there was one attempting to save the entity.
         Eithers.extract(idOrException);
 
+        afterCreateOrUpdateEntities(entityContainer,baseEntity, existingEntity);
+
         //create the target entity header
         EntityHeader targetHeader = EntityHeaderUtils.fromEntity(baseEntity);
 
@@ -297,7 +301,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return targetHeader;
     }
 
-    private void createOrUpdateDependentEntities(PersistentEntityContainer entityContainer, final Entity existingEntity) throws ObjectModelException {
+    private void beforeCreateOrUpdateEntities(PersistentEntityContainer entityContainer, final Entity existingEntity, final PersistentEntity baseEntity) throws ObjectModelException {
         if(entityContainer instanceof JmsContainer){
             JmsContainer jmsContainer = ((JmsContainer) entityContainer);
             if(existingEntity == null ){
@@ -310,6 +314,34 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     entityCrud.update(jmsContainer.getJmsConnection());
                     jmsContainer.getJmsEndpoint().setConnectionGoid(existingEndpoint.getConnectionGoid());
                 }
+            }
+        }else if(entityContainer instanceof PublishedServiceContainer){
+            if(existingEntity!=null){
+                ((PublishedService)baseEntity).getPolicy().setGuid(((PublishedService)existingEntity).getPolicy().getGuid());
+                ((PublishedService)baseEntity).getPolicy().setGoid(((PublishedService)existingEntity).getPolicy().getGoid());
+                ((PublishedService)baseEntity).getPolicy().setVersion(((PublishedService)existingEntity).getPolicy().getVersion());
+            }
+        }
+    }
+
+    private void afterCreateOrUpdateEntities(EntityContainer entityContainer, final PersistentEntity baseEntity, final Entity existingEntity) throws ObjectModelException {
+        if(entityContainer instanceof PublishedServiceContainer){
+            PublishedServiceContainer publishedServiceContainer = ((PublishedServiceContainer) entityContainer);
+
+            if(existingEntity != null){
+                EntityHeaderSet<EntityHeader> serviceDocs = entityCrud.findAll(ServiceDocument.class);
+                for ( final EntityHeader serviceDocHeader : serviceDocs ) {
+                    ServiceDocument serviceDocument = (ServiceDocument)entityCrud.find(serviceDocHeader);
+                    if(serviceDocument != null && serviceDocument.getServiceId().equals(baseEntity.getGoid())){
+                        entityCrud.delete(serviceDocument);
+                    }
+                }
+            }
+
+            for ( final ServiceDocument serviceDocument : publishedServiceContainer.getServiceDocuments() ) {
+                serviceDocument.setGoid( ServiceDocument.DEFAULT_GOID );
+                serviceDocument.setServiceId(baseEntity.getGoid());
+                entityCrud.save(serviceDocument);
             }
         }
     }

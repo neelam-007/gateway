@@ -122,7 +122,7 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
     }
 
     @Override
-    public EntityBag<JmsEndpoint> fromResourceAsBag( final Object resource ) throws InvalidResourceException {
+    public EntityBag<JmsEndpoint> fromResourceAsBag( final Object resource, boolean strict ) throws InvalidResourceException {
         if ( !(resource instanceof JMSDestinationMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected jms destination");
 
@@ -182,7 +182,7 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         }
 
         // handleSecurityZone
-        doSecurityZoneFromResource( jmsDestination, jmsEndpoint, true );
+        doSecurityZoneFromResource( jmsDestination, jmsEndpoint, strict );
         jmsConnection.setSecurityZone( jmsEndpoint.getSecurityZone() );
 
         return new JmsEntityBag( jmsEndpoint, jmsConnection );
