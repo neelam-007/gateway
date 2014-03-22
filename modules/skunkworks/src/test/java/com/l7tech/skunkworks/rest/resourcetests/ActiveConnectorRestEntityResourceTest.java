@@ -145,7 +145,7 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
         builder.put(activeConnector, new Functions.BinaryVoid<ActiveConnectorMO, RestResponse>() {
             @Override
             public void call(ActiveConnectorMO activeConnectorMO, RestResponse restResponse) {
-                Assert.assertEquals(403, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 
@@ -171,7 +171,7 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
         builder.put(activeConnector, new Functions.BinaryVoid<ActiveConnectorMO, RestResponse>() {
             @Override
             public void call(ActiveConnectorMO activeConnectorMO, RestResponse restResponse) {
-                Assert.assertEquals(405, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 

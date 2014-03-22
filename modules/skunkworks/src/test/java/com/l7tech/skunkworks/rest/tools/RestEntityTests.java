@@ -283,7 +283,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         Map<M,Functions.BinaryVoid<M,RestResponse>> entitiesToCreate = getUnUpdateableManagedObjects();
 
         for (M mo : entitiesToCreate.keySet()) {
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
             logger.log(Level.FINE, response.toString());
 
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());

@@ -43,7 +43,6 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
 
     private Pair<Response.StatusType,ErrorResponse> handleOperationException( final Throwable e ) {
         logger.log(Level.FINEST,"",e);
-        e.printStackTrace();
         Response.StatusType status = Response.Status.INTERNAL_SERVER_ERROR;
         ErrorResponse errorResponse = ManagedObjectFactory.createErrorResponse();
         errorResponse.setDetail(ExceptionUtils.getMessageWithCause(e));
@@ -67,7 +66,7 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             if ( ExceptionUtils.causedBy(e, DuplicateObjectException.class) ) {
                 final DuplicateObjectException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateObjectException.class );
                 errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
-                status = Response.Status.FORBIDDEN;
+                status = Response.Status.BAD_REQUEST;
             } else if ( ExceptionUtils.causedBy( e, StaleUpdateException.class) ) {
                 final StaleUpdateException cause = ExceptionUtils.getCauseIfCausedBy( e, StaleUpdateException.class );
                 errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));

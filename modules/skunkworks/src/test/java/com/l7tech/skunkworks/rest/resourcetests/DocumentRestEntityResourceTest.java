@@ -128,7 +128,7 @@ public class DocumentRestEntityResourceTest extends RestEntityTests<ResourceEntr
         builder.put(resourceDocumentMO, new Functions.BinaryVoid<ResourceDocumentMO, RestResponse>() {
             @Override
             public void call(ResourceDocumentMO resourceDocumentMO, RestResponse restResponse) {
-                Assert.assertEquals(403, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 

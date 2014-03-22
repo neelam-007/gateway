@@ -1,10 +1,12 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.security.rbac.RbacAttribute;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
@@ -28,5 +30,13 @@ public class CustomKeyValueStore extends NamedEntityImp {
 
     public final void setValue(byte[] value) {
         this.value = value;
+    }
+
+    @RbacAttribute
+    @Size(max = 128)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
     }
 }

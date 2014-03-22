@@ -194,7 +194,7 @@ public class EmailListenerRestEntityResourceTest extends RestEntityTests<EmailLi
         builder.put(emailListenerMO, new Functions.BinaryVoid<EmailListenerMO, RestResponse>() {
             @Override
             public void call(EmailListenerMO activeConnectorMO, RestResponse restResponse) {
-                Assert.assertEquals(403, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 

@@ -107,7 +107,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
             @QueryParam("key") List<String> keys) {
         ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("key"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (keys != null && !keys.isEmpty()) {

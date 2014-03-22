@@ -112,7 +112,7 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
         builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
             @Override
             public void call(RbacRoleMO roleMO, RestResponse restResponse) {
-                Assert.assertEquals(403, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 
@@ -126,14 +126,14 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
         Role role = this.roles.get(0);
         RbacRoleMO roleMO = ManagedObjectFactory.createRbacRoleMO();
         roleMO.setId(role.getId());
-        roleMO.setName("My Role Updated");
+        roleMO.setName(this.roles.get(1).getName());
         roleMO.setDescription(roleMO.getName() + " Description");
-        roleMO.setUserCreated(false);
+        roleMO.setUserCreated(true);
 
         builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
             @Override
             public void call(RbacRoleMO roleMO, RestResponse restResponse) {
-                Assert.assertEquals(405, restResponse.getStatus());
+                Assert.assertEquals(400, restResponse.getStatus());
             }
         });
 

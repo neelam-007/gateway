@@ -22,7 +22,7 @@ public class CustomKeyValueStoreTransformer extends APIResourceWsmanBaseTransfor
 
     @Override
     public Item<CustomKeyValueStoreMO> convertToItem(CustomKeyValueStoreMO m) {
-        return new ItemBuilder<CustomKeyValueStoreMO>(m.getStoreName(), m.getId(), factory.getType().name())
+        return new ItemBuilder<CustomKeyValueStoreMO>(m.getKey(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }
