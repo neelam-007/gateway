@@ -13,6 +13,7 @@ import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
@@ -24,15 +25,13 @@ import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.TypedReference;
-import com.l7tech.policy.wsp.WspSensitive;
-import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.NamespaceMigratable;
@@ -71,7 +70,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
-    static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
+    private static final Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
+    private static final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
     public static final String POLICYNAME_PROPERTY = "policy.name";
     public static final String TAB_TITLE_CHANGE_PROPERTY = "tabTitle.change";
@@ -96,7 +96,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public static final String POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "caseSensitive";
     public static final String POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "showDisabled";
     public static final String POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES = POLICY_TAB_PROPERTY_PREFIX + SEARCH_PROPERTY_PREFIX + "includeProperties";
-    public static final String POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY = POLICY_TAB_PROPERTY_PREFIX + "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+    public static final String POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_LOCATION = POLICY_TAB_PROPERTY_PREFIX + "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
 
     public static final String[] ALL_POLICY_TAB_PROPERTIES = new String[] {
         POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
@@ -105,7 +105,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE,
         POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED,
         POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES,
-        POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY
+        POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_LOCATION
     };
 
     private static final String PROP_PREFIX = "com.l7tech.console";
@@ -136,7 +136,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private ImportPolicyFromFileAction importPolicyAction;
     private PolicyEditorSubject subject;
     private String subjectName;
-    private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final boolean enableUddi;
     private final PolicyValidator policyValidator;
     private final PolicyAdmin policyAdmin;
@@ -215,21 +214,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
         }
-    }
-
-    /**
-     * Sets the name of the component to the specified string. The
-     * method is overriden to support/fire property events
-     * 
-     * @param name the string that is to be this
-     *             component's name
-     * @see #getName()
-     */
-    @Override
-    public void setName(String name) {
-        String oldName = getName();
-        super.setName(name);
-        this.firePropertyChange("name", oldName, name);
     }
 
     public PolicyTree getPolicyTree() {
@@ -452,7 +436,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         };
 
         searchForm.addCloseLabelListener(listener);
-        boolean showSearch = Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_SEARCH_SHOW, SearchForm.SHOW, "true"));
+        boolean showSearch = Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_SEARCH_SHOW,
+            SearchForm.SHOW, "true", getPolicyGoid(), getVersionNumber()));
         if (!showSearch) {
             searchForm.hidePanel();
         }
@@ -625,8 +610,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
           new PropertyChangeListener() {
               @Override
               public void propertyChange(PropertyChangeEvent evt) {
-                  int l = splitPane.getDividerLocation();
-                  updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
+                  int dividerLocation = splitPane.getDividerLocation();
+                  updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_LOCATION, Integer.toString(dividerLocation));
               }
           });
         
@@ -638,7 +623,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if (!messagePane.isShowing()) return;
                 }
                 try {
-                    String s = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, MESSAGE_AREA_DIVIDER_KEY, null);
+                    String s = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_LOCATION,
+                        MESSAGE_AREA_DIVIDER_KEY, null, getPolicyGoid(), getVersionNumber());
                     if (s != null) {
                         int l = Integer.parseInt(s);
                         splitPane.setDividerLocation(l);
@@ -661,7 +647,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
         policyTree.getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
         policyTreePane = new NumberedPolicyTreePane(policyTree);
-        policyTreePane.setNumbersVisible(Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, SHOW_ASSERTION_NUMBERS, "false")));
+        policyTreePane.setNumbersVisible(Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
+            SHOW_ASSERTION_NUMBERS, "false", getPolicyGoid(), getVersionNumber())));
         return policyTreePane;
     }
 
@@ -712,13 +699,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /** updates the policy name, tab name etc */
     public void updateHeadings() {
         String displayName = getDisplayName();
-        setName(displayName);
-        getSplitPane().setName(displayName);
+        setName(displayName);  // Keep this line since the component name will be used in TabTitleComponentPanel to initialize the name of a tabTitleLabel.
         topComponents.getCurrentWorkspace().updateTabTitle(this, displayName);
     }
 
     public void updateAssertions( final AssertionTreeNode atn ) {
-        PolicyTreeUtils.updateAssertions( atn, new HashMap<Goid,String>() );
+        PolicyTreeUtils.updateAssertions(atn, new HashMap<Goid, String>());
     }
 
     private AssertionTreeNode getCurrentRoot() {
@@ -770,6 +756,36 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         });
+    }
+
+    /**
+     * Refresh the policy editor panel including the policy xml.
+     * Note: this method is very similar with the above renderPolicy() method.
+     *
+     * @throws FindException thrown when policy version cannot be found.
+     * @throws IOException thrown when WspReader cannot parse policy xml.
+     */
+    public void refreshPolicyEditorPanel() throws FindException, IOException {
+        // Get the refreshed policy assertion
+        final PolicyVersion fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(getPolicyGoid(), getVersionNumber());
+        final Assertion newPolicy = WspReader.getDefault().parsePermissively(fullPolicyVersion.getXml(), WspReader.INCLUDE_DISABLED);
+
+        // Get the refresh entity node (ServiceNode or PolicyNode) in the ServicesAndPoliciesTree, associated with the policy editor panel.
+        final String entityNodeGoidString = ((OrganizationHeader) getPolicyNode().getUserObject()).getStrId();
+        final RootNode rootNode = ((ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME)).getRootNode();
+        final EntityWithPolicyNode refreshedEntityNode = (EntityWithPolicyNode) rootNode.getNodeForEntity(Goid.parseGoid(entityNodeGoidString));
+        refreshedEntityNode.addPropertyChangeListener(policyPropertyChangeListener); // Since the policy entity node is changed after refresh
+
+        // Create a new policy tree mode based on a new policy assertion
+        PolicyTreeModel policyTreeModel = PolicyTreeModel.policyModel(newPolicy);
+        policyTreeModel.addTreeModelListener(policyTreeModellistener);               // Since the policy tree model is changed after refresh
+        policyTreeModel.addTreeModelListener(treeModelListener);                     // Since the policy tree model is changed after refresh
+        policyTree.setModel(policyTreeModel);
+
+        AssertionTreeNode newRootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
+        rootAssertion = newRootAssertion;
+        ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(refreshedEntityNode));
+        updateAssertions(newRootAssertion);
     }
 
     /**
@@ -1854,6 +1870,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
             final PolicyToolBar pt = topComponents.getPolicyToolBar();
             pt.disableAll();
+            pt.unregisterPolicyTree(PolicyEditorPanel.this.getPolicyTree());
             TopComponents.getInstance().firePolicyEditDone();
         }
     }
@@ -2208,7 +2225,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
 
                 private boolean isShowing(){
-                    final String showState = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, SHOW_COMMENTS, null);
+                    final String showState = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS,
+                        SHOW_COMMENTS, null, getPolicyGoid(), getVersionNumber());
                     return Boolean.parseBoolean(showState);
                 }
             };
@@ -2382,7 +2400,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private void copyAllPolicyTabPropertiesBasedOnUI() {
         updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(showCmtsButtons.get(0).getText().equals("Hide Comments")));
         updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(policyTreePane.isNumbersVisible()));
-        updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_KEY, Integer.toString(splitPane.getDividerLocation()));
+        updatePolicyTabProperty(POLICY_TAB_PROPERTY_MESSAGE_AREA_DIVIDER_LOCATION, Integer.toString(splitPane.getDividerLocation()));
 
         if (searchForm != null) {
             searchForm.copyAllSearchPropertiesBasedOnUI();
@@ -2390,10 +2408,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * Delete the settings of the current policy tab from all policy tab properties. The settings of other policy tabs remains unchanged.
-     * For example, policy_tab_prop_1=policy_goid_1(X#
+     * Remove the settings of the current policy tab from policy tab properties. The settings of other policy tabs remains unchanged.
      */
-    public void deletePolicyTabSettingsFromAllPolicyTabProperties() {
+    public void removePolicyTabSettingsFromPolicyTabProperties() {
         final String policyGoid = getPolicyGoid().toString();
 
         String propValue;
@@ -2470,11 +2487,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      *                    new property and deprecated property use different value format, to keep backward compatibility,
      *                    somehow we need to retrieve property values of deprecated properties from ssg.properties.
      *                    Set it as null if a deprecated property is not applicable.
+     * @param policyGoid: the GOID of a policy, with policyVerNum together to find the property value
+     * @param policyVerNum: the ordinal number of a policy, with policyGoid together to find the property value
      *
      * @return a tab setting extracted from the property value of the policy tab property with property name, propName.
      *
      */
-    public String getTabSettingFromPolicyTabProperty(String propName, String deprecatedPropName, String defaultValue) {
+    public static String getTabSettingFromPolicyTabProperty(String propName, String deprecatedPropName, String defaultValue,
+                                                            Goid policyGoid, long policyVerNum) {
         if (propName == null) {
             if (deprecatedPropName == null) {
                 throw new IllegalArgumentException("No property name provided.");
@@ -2488,11 +2508,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             String propValue = preferences.getString(propName);
             if (propValue != null) {
-                final String policyGoid = getPolicyGoid().toString(); // + "#" + getVersionNumber() + "#";
-                final String policyVerNum = String.valueOf(getVersionNumber());
-
                 // The policy goid found means there is a tab setting for the particular policy version
-                final int goidIdx = propValue.indexOf(policyGoid);
+                final int goidIdx = propValue.indexOf(policyGoid.toString());
                 if (goidIdx >= 0) {
                     final int leftDelimiter = propValue.indexOf("(", goidIdx);
                     final int rightDelimiter = propValue.indexOf(")", goidIdx);
@@ -2511,7 +2528,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         if (result == null || result.length != 2) {
                             throw new RuntimeException("The property '" + propName + "' has an invalid formatted property value.");
                         }
-                        if (result[0].equals(policyVerNum)) {
+                        if (result[0].equals(String.valueOf(policyVerNum))) {
                             return result[1];
                         }
                     }

@@ -2,6 +2,10 @@ package com.l7tech.console.panels.stepdebug;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyVersion;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -25,6 +29,7 @@ public class DebugPolicyTreeCellRenderer extends PolicyTreeCellRenderer{
         this.policyStepDebugDialog = policyStepDebugDialog;
         this.defaultBackgroundSelectionColor = this.getBackgroundSelectionColor();
         this.defaultBackgroundNoneSelectionColor = this.getBackgroundNonSelectionColor();
+        setPolicyVersion(policyStepDebugDialog);
     }
 
     @Override
@@ -50,5 +55,21 @@ public class DebugPolicyTreeCellRenderer extends PolicyTreeCellRenderer{
         }
 
         return this;
+    }
+
+    /**
+     * Set policy version for this renderer for displaying tree node name with comments or not.
+     * @param policyStepDebugDialog: this dialog will provide a Policy object
+     */
+    private void setPolicyVersion(@NotNull PolicyStepDebugDialog policyStepDebugDialog) {
+        Policy policy = policyStepDebugDialog.getPolicy();
+        if (policy == null) return;
+
+        try {
+            PolicyVersion activePolicyVersion = Registry.getDefault().getPolicyAdmin().findActivePolicyVersionForPolicy(policy.getGoid());
+            setPolicyVersion(activePolicyVersion);
+        } catch (FindException e) {
+            // Do nothing here
+        }
     }
 }

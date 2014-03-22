@@ -354,9 +354,9 @@ public class MultiplePolicyTabsTest {
         assertEquals("Currently there is one tab in workspace now", 1, tabbedPane.getTabCount());
         assertEquals("The left tab is the first policy tab.", "Policy 1", ((PolicyEditorPanel) tabbedPane.getComponentAt(0)).getPolicyNode().getPolicy().getName());
 
-        workSpacePanel.setReopenPolicyEditorPanel(new Functions.BinaryVoidThrows<PolicyEditorPanel, Long, FindException>() {
+        workSpacePanel.setReopenPolicyEditorPanel(new Functions.UnaryVoidThrows<PolicyEditorPanel, FindException>() {
             @Override
-            public void call(PolicyEditorPanel pep, Long versionOrdinal) throws FindException {
+            public void call(PolicyEditorPanel pep) throws FindException {
                 try {
                     workSpacePanel.setComponent(pep);
                 } catch (ActionVetoException e) {

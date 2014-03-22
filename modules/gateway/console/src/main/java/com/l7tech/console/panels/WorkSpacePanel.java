@@ -20,8 +20,11 @@ import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 import com.sun.java.swing.plaf.windows.WindowsTabbedPaneUI;
 
 import javax.swing.*;
@@ -37,19 +40,21 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EventListener;
+import java.io.IOException;
+import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * <CODE>WorkSpacePanel</CODE> represents the main editing panel
  * for elements such as policies.
  */
 public class WorkSpacePanel extends JPanel {
-    static public final String NAME = "workspace.panel";
-    static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
+    public static final String NAME = "workspace.panel";
+    public static final String PROPERTY_LAST_OPENED_POLICY_TABS = "last.opened.policy.tabs";
+
+    private static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
     private final List<TabTitleComponentPanel> closedTabs = new ArrayList<>();  // Track all closed policy tabs in their closing order
     private final List<TabTitleComponentPanel> openedTabs = new ArrayList<>();  // Track all opened policy tabs in their opening order
     private final TabbedPane tabbedPane = new TabbedPane();
@@ -142,12 +147,28 @@ public class WorkSpacePanel extends JPanel {
         final TabTitleComponentPanel newTabCompPanel = new TabTitleComponentPanel(jc);
         tabbedPane.setTabComponentAt(index, newTabCompPanel); // Add a table title render object
         tabbedPane.setToolTipTextAt(index, jc.getName());
+
+        if (jc instanceof PolicyEditorPanel) {
+            // Save the copies of active and version for this policy editor panel, because active and version got
+            // from subject are not guaranteed to be correct due to multiple policy versions opened.
+            ((PolicyEditorPanel) jc).setOverrideVersionActive(((PolicyEditorPanel) jc).isVersionActive());
+            ((PolicyEditorPanel) jc).setOverrideVersionNumber(((PolicyEditorPanel) jc).getVersionNumber());
+        }
+
+        // If foundAndRemoved object is not null, it means that the associated PolicyEditorPanel has been added back to
+        // the workspace (see the above lines), so closedTabs should remove the foundAndRemoved object because it was
+        // added back by the above line: tabbedPane.removeExistingComponent(jc).
+        if (foundAndRemoved != null) {
+            closedTabs.remove(foundAndRemoved);
+        }
+
+        // Add newTabCompPanel into the least-recently-used list
+        openedTabs.add(newTabCompPanel);
+
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (tabbedPane.indexOfComponent(jc) < 0) {
-                    return;
-                }
+                if (tabbedPane.indexOfComponent(jc) < 0)  return;
 
                 tabbedPane.setSelectedComponent(jc);
 
@@ -162,30 +183,6 @@ public class WorkSpacePanel extends JPanel {
                             "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
                             "Open Policy Tab Error", JOptionPane.ERROR_MESSAGE, null);
                     }
-                }
-            }
-        });
-
-        // If foundAndRemoved object is not null, it means that the associated PolicyEditorPanel has been added back to
-        // the workspace (see the above lines), so closedTabs should remove the foundAndRemoved object because it was
-        // added back by the above line: tabbedPane.removeExistingComponent(jc).
-        if (foundAndRemoved != null) {
-            closedTabs.remove(foundAndRemoved);
-        }
-
-        // Add newTabCompPanel into the least-recently-used list
-        openedTabs.add(newTabCompPanel);
-
-        jc.addPropertyChangeListener(new PropertyChangeListener() {
-            /**
-             * This method gets called when a bound property is changed.
-             *
-             * @param evt A PropertyChangeEvent object describing the event source
-             *            and the property that has changed.
-             */
-            public void propertyChange(PropertyChangeEvent evt) {
-                if ("name".equals(evt.getPropertyName())) {
-                    tabbedPane.setTitleAt(tabbedPane.getSelectedIndex(), (String) evt.getNewValue());
                 }
             }
         });
@@ -263,8 +260,6 @@ public class WorkSpacePanel extends JPanel {
         private JLabel tabTitleLabel;   // tab display name
         private JButton tabCloseButton; // button to close the tab
         private JComponent component;   // a PolicyEditorPanel or HomePanel object
-        private long version;           // to preserve policy/service version number for this tab
-        private boolean active;         // to preserve policy active status
 
         TabTitleComponentPanel(final JComponent component) {
             super(new FlowLayout(FlowLayout.LEFT, 0, 2));
@@ -293,22 +288,6 @@ public class WorkSpacePanel extends JPanel {
             return component;
         }
 
-        long getVersion() {
-            return version;
-        }
-
-        void setVersion(long version) {
-            this.version = version;
-        }
-
-        public boolean isActive() {
-            return active;
-        }
-
-        public void setActive(boolean active) {
-            this.active = active;
-        }
-
         private void initializeComponents() {
             // Add a tab label to display tab title
             tabTitleLabel = new JLabel(component.getName());
@@ -332,11 +311,6 @@ public class WorkSpacePanel extends JPanel {
 
             // This method should be called after tabTitleLabel and tabCloseButton are initialized.
             validateTabTitleLength(component.getName());
-
-            if (component instanceof PolicyEditorPanel) {
-                version = ((PolicyEditorPanel) component).getVersionNumber();
-                active = ((PolicyEditorPanel) component).isVersionActive();
-            }
         }
 
         /**
@@ -428,6 +402,214 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
+     * Update policy tabs information such as saving last opened tabs and validating policy tab properties.
+     */
+    public void updatePolicyTabsInformationIntoProperties() {
+        saveLastOpenedPolicyTabs();
+        validatePolicyTabProperties();
+    }
+
+    /**
+     * Save policy goid and policy version number of all last opened policies into the property, "last.opened.policy.tabs".
+     * So when the policy manager starts next time, these recorded policies will be loaded into the workspace.
+     */
+    private void saveLastOpenedPolicyTabs() {
+        final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+        if (preferences == null) return;
+
+        final JComponent selectedComponent = getComponent();
+        final Map<String, String> tokenVersionMap = new Hashtable<>();
+        Component component;
+        String goidToken, version;
+        boolean homePageExisting = false;
+
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            component = tabbedPane.getComponentAt(i);
+
+            // The selected component will be processed at last
+            if (component == selectedComponent) continue;
+
+            if (component instanceof HomePagePanel) {
+                homePageExisting = true;
+            } else if (component instanceof PolicyEditorPanel) {
+                goidToken = ((OrganizationHeader) ((PolicyEditorPanel)component).getPolicyNode().getUserObject()).getStrId() + "#" + ((PolicyEditorPanel) component).getPolicyGoid().toString();
+                version = String.valueOf(((PolicyEditorPanel) component).getVersionNumber());
+
+                if (tokenVersionMap.keySet().contains(goidToken)) {
+                    version = tokenVersionMap.get(goidToken) + "#" + version;
+                }
+
+                tokenVersionMap.put(goidToken, version);
+            }
+        }
+
+        final StringBuilder sb = new StringBuilder();
+
+        if (homePageExisting) {
+            sb.append(HomePagePanel.HOME_PAGE_NAME);
+        }
+
+        String versionsToBeAdded = null;
+
+        if (! tokenVersionMap.isEmpty()) {
+            for (String token: tokenVersionMap.keySet()) {
+                // Don't add these tabs, which have the same policy goid as the select component's policy goid,
+                // but record their version numbers and process them later on.
+                if (selectedComponent != null) {
+                    String selectedComptGoidToken = null;
+                    if (selectedComponent instanceof HomePagePanel) {
+                        selectedComptGoidToken = HomePagePanel.HOME_PAGE_NAME;
+                    } else if (selectedComponent instanceof PolicyEditorPanel) {
+                        selectedComptGoidToken = ((OrganizationHeader) ((PolicyEditorPanel)selectedComponent).getPolicyNode().getUserObject()).getStrId() + "#" + ((PolicyEditorPanel) selectedComponent).getPolicyGoid().toString();
+                    }
+                    if (token.equals(selectedComptGoidToken)) {
+                        versionsToBeAdded = tokenVersionMap.get(token);
+                        continue;
+                    }
+                }
+
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(token).append('#').append(tokenVersionMap.get(token));
+            }
+        }
+
+        // Finally process the selected component
+        if (selectedComponent != null) {
+            if (sb.length() > 0) sb.append(", ");
+
+            if (selectedComponent instanceof HomePagePanel) {
+                sb.append(HomePagePanel.HOME_PAGE_NAME);
+            } else {
+                String selectedComptGoidToken = ((OrganizationHeader) ((PolicyEditorPanel)selectedComponent).getPolicyNode().getUserObject()).getStrId() + "#" + ((PolicyEditorPanel) selectedComponent).getPolicyGoid().toString();
+                String selectedComptVersion = String.valueOf(((PolicyEditorPanel) selectedComponent).getVersionNumber());
+
+                sb.append(selectedComptGoidToken).append('#').append(versionsToBeAdded == null? "" : versionsToBeAdded + "#").append(selectedComptVersion);
+            }
+        }
+
+        if (sb.length() == 0) {
+            preferences.remove(PROPERTY_LAST_OPENED_POLICY_TABS);
+        } else {
+            preferences.putProperty(PROPERTY_LAST_OPENED_POLICY_TABS, sb.toString());
+        }
+
+        try {
+            preferences.store();
+        } catch ( IOException e ) {
+            log.warning("Unable to store preferences " + ExceptionUtils.getMessage(e));
+        }
+    }
+
+    /**
+     * Validate all policy tab properties, since some policy versions are stale, do not exist, or have invalid format.
+     * If these cases occur, remove these policy tab settings from the policy tab properties.
+     */
+    private void validatePolicyTabProperties() {
+        final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+        if (preferences == null) return;
+
+        final Map<String, Boolean> validationCache = new Hashtable<>();
+
+        for (String propName: PolicyEditorPanel.ALL_POLICY_TAB_PROPERTIES) {
+            // If no such property found, then check a next property
+            String propValue = preferences.getString(propName);
+            if (propValue == null) {
+                continue;
+            }
+
+            StringBuilder updatedPropValueSB = new StringBuilder();
+            String[] valueTokens = Pattern.compile("\\s*\\),\\s*").split(propValue);
+
+            for (String token: valueTokens) {
+                int delimiterIdx = token.indexOf('(');
+                if (delimiterIdx == -1 || token.length() == delimiterIdx + 1) {
+                    log.fine("The property '" + propName + "' has an invalid formatted property value, so its policy tab settings is removed from '" + propName + "'.");
+                    continue;
+                }
+
+                String policyGoid = token.substring(0, delimiterIdx);
+                // Check if the policy goid has been validated or not.  If so, do not validate it again.
+                boolean validPolicy;
+                if (validationCache.containsKey(policyGoid)) {
+                    validPolicy = validationCache.get(policyGoid);
+                } else {
+                    validPolicy = true;
+                    try {
+                        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(Goid.parseGoid(policyGoid));
+                        if (policy == null) validPolicy = false;
+                    } catch (FindException e) {
+                        validPolicy = false;
+                    }
+                    validationCache.put(policyGoid, validPolicy);
+                }
+                if (! validPolicy) continue;
+
+                String restPart = token.substring(delimiterIdx + 1);
+                StringBuilder updatedVersionAndValueSB = new StringBuilder();
+                String[] versionAndValueTokens = TextUtils.CSV_STRING_SPLIT_PATTERN.split(restPart);
+
+                for (String versionAndValueToken: versionAndValueTokens) {
+                    String[] versionAndValue = Pattern.compile("\\s*#\\s*").split(versionAndValueToken);
+                    if (versionAndValue.length != 2) {
+                        log.fine("The property '" + propName + "' has an invalid formatted property value, so its policy tab settings is removed from '" + propName + "'.");
+                        continue;
+                    }
+
+                    String versionOrdinal = versionAndValue[0];
+                    String settingValue = versionAndValue[1];
+                    // Validate policy version number
+                    try {
+                        Long.parseLong(versionOrdinal);
+                    } catch (NumberFormatException e) {
+                        log.fine("The property '" + propName + "' has an invalid policy version number, '" + versionOrdinal + "', so its policy tab settings is removed from '" + propName + "'.");
+                        continue;
+                    }
+                    // Validate policy goid and policy version number.  However, check if the policy version has been validated already.
+                    String versionUniqueKey = policyGoid + '#' + versionOrdinal;
+                    boolean validPolicyVersion;
+                    if (validationCache.containsKey(versionUniqueKey)) {
+                        validPolicyVersion = validationCache.get(versionUniqueKey);
+                    } else {
+                        validPolicyVersion = true;
+                        try {
+                            PolicyVersion policyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(Goid.parseGoid(policyGoid), Long.parseLong(versionOrdinal));
+                            if (policyVersion == null) {
+                                log.fine("The policy (goid=" + policyGoid + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
+                                validPolicyVersion = false;
+                            }
+                        } catch (FindException e) {
+                            log.fine("The policy (goid=" + policyGoid + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                            validPolicyVersion = false;
+                        }
+                        validationCache.put(versionUniqueKey, validPolicyVersion);
+                    }
+                    if (! validPolicyVersion) continue;
+
+                    // At this moment, policyGoid and verionOrdinal are good, then add the version and version back to the string builder
+                    if (updatedVersionAndValueSB.length() > 0) updatedVersionAndValueSB.append(", ");
+                    updatedVersionAndValueSB.append(versionOrdinal).append('#').append(settingValue);
+                }
+                if (updatedVersionAndValueSB.length() == 0) continue;
+
+                if (updatedPropValueSB.length() > 0) updatedPropValueSB.append(", ");
+                updatedPropValueSB.append(policyGoid).append('(').append(updatedVersionAndValueSB.toString()).append(')');
+            }
+
+            if (updatedPropValueSB.length() == 0) {
+                preferences.remove(propName);
+            } else if (! updatedPropValueSB.equals(propValue)) {
+                preferences.putProperty(propName, updatedPropValueSB.toString());
+            }
+
+            try {
+                preferences.store();
+            } catch ( IOException e ) {
+                log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
+            }
+        }
+    }
+
+    /**
      * Remove the active component that the workspace.
      * The {@link JComponent#getName() } sets the tab name.
      */
@@ -465,70 +647,45 @@ public class WorkSpacePanel extends JPanel {
      */
     public Collection<Refreshable> refreshWorkspace() {
         final Collection<Refreshable> alreadyRefreshed = new ArrayList<>();
-        Component selectedComponent = getComponent();
 
-        for (int i = tabbedPane.getTabCount() - 1; i >= 0; i--) {
-            final Component component = tabbedPane.getComponentAt(i);
-            final TabTitleComponentPanel tabComponent = (TabTitleComponentPanel) tabbedPane.getTabComponentAt(i);
+        for  (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            Component component = tabbedPane.getComponentAt(i);
 
             if (component instanceof PolicyEditorPanel) {
-                // Remove the out-dated tab first
-                tabbedPane.removeTabAt(i);
-                // Add the tab back
                 try {
-                    reopenPolicyEditorPanel.call((PolicyEditorPanel) component, tabComponent.getVersion());
+                    ((PolicyEditorPanel) component).refreshPolicyEditorPanel();
+
+                    // After refresh policy, the policy tree is refreshed too, so add it into the refresh list
+                    alreadyRefreshed.add(((PolicyEditorPanel) component).getPolicyTree());
                 } catch (FindException e) {
                     // Report error, but still continue other tabs refresh
                     DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                        "Cannot retrieve the policy, '" + tabComponent.getTabTitle() + "'.",
+                        "Cannot retrieve the policy, '" + component.getName() + "'.",
                         "Refresh Error", JOptionPane.WARNING_MESSAGE, null);
-                    continue;
-                }
-
-                // Get a refreshed policy tree and add it into the list for return
-                PolicyTree policyTree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
-                alreadyRefreshed.add(policyTree);
-
-                // Update closeTabs and openedTabs lists, since tabbedPane.removeTabAt(i) changed these two lists.
-                closedTabs.remove(tabComponent);
-                openedTabs.add((TabTitleComponentPanel) tabbedPane.getTabComponentAt(tabbedPane.getTabCount() - 1));
-
-                // Update the selected component
-                if (component == selectedComponent) {
-                    selectedComponent = tabbedPane.getComponentAt(tabbedPane.getTabCount() - 1);
+                } catch (IOException e) {
+                    // Report error, but still continue other tabs refresh
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                        "Cannot parse the policy, '" + component.getName() + "'.",
+                        "Refresh Error", JOptionPane.WARNING_MESSAGE, null);
                 }
             }
         }
 
-        // Set the previous selected panel to be selected
-        final Component componentToBeSelected = selectedComponent;
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                if (componentToBeSelected instanceof HomePagePanel) {
-                    tabbedPane.setSelectedIndex(0);
-                } else if (componentToBeSelected instanceof PolicyEditorPanel) {
-                    tabbedPane.setSelectedComponent(componentToBeSelected);
-                }
-            }
-        });
-
         return alreadyRefreshed;
     }
 
-    private Functions.BinaryVoidThrows<PolicyEditorPanel, Long, FindException> reopenPolicyEditorPanel = new Functions.BinaryVoidThrows<PolicyEditorPanel, Long, FindException>() {
+    private Functions.UnaryVoidThrows<PolicyEditorPanel, FindException> reopenPolicyEditorPanel = new Functions.UnaryVoidThrows<PolicyEditorPanel, FindException>() {
         /**
-         * Reopen a PolicyEditorPanel for a particular policy version
+         * Reopen a PolicyEditorPanel for a particular policy version, which may be updated by other manners (e.g., other policy managers)
          *
          * @param pep: the policy editor panel to be refreshed
-         * @param versionOrdinal: the policy version ordinal
-         *
          * @throws FindException: thrown if the policy version or the refreshed policy cannot be retrieved.
          */
         @Override
-        public void call(final PolicyEditorPanel pep, final Long versionOrdinal) throws FindException {
+        public void call(final PolicyEditorPanel pep) throws FindException {
             // Get the full policy version, which contains policy xml for the version specified by "versionOrdinal".
             final Goid policyGoid = pep.getPolicyGoid();
+            final Long versionOrdinal = pep.getVersionNumber();
             final PolicyVersion fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(policyGoid, versionOrdinal);
 
             if (fullPolicyVersion == null) {
@@ -540,15 +697,12 @@ public class WorkSpacePanel extends JPanel {
             final RootNode rootNode = ((ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME)).getRootNode();
             final EntityWithPolicyNode refreshedEntityNode = (EntityWithPolicyNode) rootNode.getNodeForEntity(Goid.parseGoid(entityNodeGoidString));
 
-            // Reset the policy xml, i.e. update the policy
-            refreshedEntityNode.getPolicy().setXml(fullPolicyVersion.getXml());
-
             // Invoke EditPolicyAction to update the policy editor panel.
             new EditPolicyAction(refreshedEntityNode, true, fullPolicyVersion).invoke();
         }
     };
 
-    public void setReopenPolicyEditorPanel(final Functions.BinaryVoidThrows<PolicyEditorPanel, Long, FindException> reopenPolicyEditorPanel) {
+    public void setReopenPolicyEditorPanel(final Functions.UnaryVoidThrows<PolicyEditorPanel, FindException> reopenPolicyEditorPanel) {
         this.reopenPolicyEditorPanel = reopenPolicyEditorPanel;
     }
 
@@ -822,7 +976,7 @@ public class WorkSpacePanel extends JPanel {
                 return null; // nothing removed
             }
 
-            final Goid policyNodeGoid = ((PolicyEditorPanel) jc).getPolicyGoid();
+            final Goid policyGoid = ((PolicyEditorPanel) jc).getPolicyGoid();
             final long version = ((PolicyEditorPanel) jc).getVersionNumber();
 
             for (int i = 0; i < getTabCount(); i++) {
@@ -830,9 +984,9 @@ public class WorkSpacePanel extends JPanel {
 
                 if (component instanceof PolicyEditorPanel) {
                     final Goid tempPolicyGoid = ((PolicyEditorPanel) component).getPolicyGoid();
-                    final long tempVersion = ((TabTitleComponentPanel)getTabComponentAt(i)).getVersion();
+                    final long tempVersion = ((PolicyEditorPanel) component).getVersionNumber();
 
-                    if (Goid.equals(policyNodeGoid, tempPolicyGoid)) {
+                    if (Goid.equals(policyGoid, tempPolicyGoid)) {
                         if (version == tempVersion) {
                             TabTitleComponentPanel tabTitleCompPanel = (TabTitleComponentPanel) getTabComponentAt(i);
                             removeTabAt(i);
@@ -988,7 +1142,7 @@ public class WorkSpacePanel extends JPanel {
                     if (component instanceof HomePagePanel) {
                         new HomeAction().actionPerformed(null);
                     } else if (component instanceof PolicyEditorPanel) {
-                        reopenPolicyEditorPanel.call((PolicyEditorPanel) component, lastClosedTabTitleComponentPanel.getVersion());
+                        reopenPolicyEditorPanel.call((PolicyEditorPanel) component);
                     }  else {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                             "The reopened policy tab type is not recognized.",
@@ -1027,40 +1181,37 @@ public class WorkSpacePanel extends JPanel {
      */
     public void updateTabsVersionNumAndActiveStatus(boolean prevActiveStatus, boolean newActiveStatus) {
         final JComponent selectedComponent = getComponent();
+        if (! (selectedComponent instanceof PolicyEditorPanel)) return;
 
-        if (selectedComponent instanceof PolicyEditorPanel) {
-            final EntityWithPolicyNode policyNode = ((PolicyEditorPanel) selectedComponent).getPolicyNode();
-            final long version = ((PolicyEditorPanel) selectedComponent).getVersionNumber();
-            final boolean active = ((PolicyEditorPanel) selectedComponent).isVersionActive();
+        final Goid selectedPolicyGoid = ((PolicyEditorPanel) selectedComponent).getPolicyGoid();
+        final long selectedVersion = ((PolicyEditorPanel) selectedComponent).getVersionNumber();
 
-            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                final Component component = tabbedPane.getComponentAt(i);
-                if (component instanceof PolicyEditorPanel) {
-                    final EntityWithPolicyNode tempEntityNode = ((PolicyEditorPanel) component).getPolicyNode();
-                    final long tempVersion = ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).getVersion();
-                    final boolean tempActive = ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).isActive();
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            final Component component = tabbedPane.getComponentAt(i);
+            if (! (component instanceof PolicyEditorPanel)) continue;
 
-                    if (selectedComponent == component) {
-                        // If it is the selected component, update "version" and "active" in its TabTitleComponentPanel object
-                        // just in case its version has been changed.
-                        ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setVersion(version);
-                        ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setActive(active);
-                    } else if  (policyNode == tempEntityNode && version != tempVersion) {
-                        // Update the active status to be inactive, depending on the flags, prevActiveStatus and newActiveStatus
-                        if ((prevActiveStatus != newActiveStatus) && newActiveStatus) {
-                            ((PolicyEditorPanel) component).setOverrideVersionActive(false);
-                            ((TabTitleComponentPanel)tabbedPane.getTabComponentAt(i)).setActive(false);
-                        } else {
-                            // Otherwise, keep other tabs' active status unchanged (since selectedComponent and component share the same latest PolicyEditorSubject object).
-                            ((PolicyEditorPanel) component).setOverrideVersionActive(tempActive);
-                        }
-                        // Keep other tabs' version unchanged
-                        ((PolicyEditorPanel) component).setOverrideVersionNumber(tempVersion);
+            final Goid policyGoid = ((PolicyEditorPanel) component).getPolicyGoid();
+            final long version = ((PolicyEditorPanel) component).getVersionNumber();
+            final boolean isActive = ((PolicyEditorPanel) component).isVersionActive();
 
-                        // Redraw tab title
-                        ((PolicyEditorPanel) component).updateHeadings();
-                    }
+            if (selectedComponent == component) {
+                // If it is the selected component, update "version" and "active" in its TabTitleComponentPanel object
+                // just in case its version has been changed.
+                ((PolicyEditorPanel) component).setOverrideVersionActive(isActive);
+                ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
+            } else if  (Goid.equals(selectedPolicyGoid, policyGoid) && selectedVersion != version) {
+                // Update the active status to be inactive, depending on the flags, prevActiveStatus and newActiveStatus
+                if ((prevActiveStatus != newActiveStatus) && newActiveStatus) {
+                    ((PolicyEditorPanel) component).setOverrideVersionActive(false);
+                } else {
+                    // Otherwise, keep other tabs' active status unchanged (since selectedComponent and component share the same latest PolicyEditorSubject object).
+                    ((PolicyEditorPanel) component).setOverrideVersionActive(isActive);
                 }
+                // Keep other tabs' version unchanged
+                ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
+
+                // Redraw tab title
+                ((PolicyEditorPanel) component).updateHeadings();
             }
         }
     }
@@ -1116,7 +1267,7 @@ public class WorkSpacePanel extends JPanel {
             component = tabbedPane.getComponentAt(i);
 
             if (component instanceof PolicyEditorPanel && ((PolicyEditorPanel) component).getPolicyGoid().equals(policyGoid)) {
-                ((PolicyEditorPanel) component).deletePolicyTabSettingsFromAllPolicyTabProperties();
+                ((PolicyEditorPanel) component).removePolicyTabSettingsFromPolicyTabProperties();
             }
         }
     }

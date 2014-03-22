@@ -169,19 +169,14 @@ public class PolicyRevisionsDialog extends JDialog {
     }
 
     private void doEdit(ActionEvent evt) {
-        try {
-            Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
-            if (info == null)
-                return;
-            PolicyVersion version = info.right;
-            policyNode.clearCachedEntities();
-            policyNode.getPolicy().setXml(version.getXml());
-            EditPolicyAction editAction = new EditPolicyAction(policyNode, true, version);
-            dispose();
-            editAction.actionPerformed(evt);
-        } catch (FindException e) {
-            showErrorMessage("Unable to Edit Version", "Unable to start a new edit from this version: " + ExceptionUtils.getMessage(e), e);
-        }
+        Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
+        if (info == null)
+            return;
+        PolicyVersion version = info.right;
+        policyNode.clearCachedEntities();
+        EditPolicyAction editAction = new EditPolicyAction(policyNode, true, version);
+        dispose();
+        editAction.actionPerformed(evt);
     }
 
     private void doSetActive(ActionEvent evt) {
@@ -345,6 +340,7 @@ public class PolicyRevisionsDialog extends JDialog {
             AssertionTreeNode assTreeNode = (AssertionTreeNode)model.getRoot();
             PolicyTreeUtils.updateAssertions( assTreeNode, identityProviderNameMap );
             policyTree.setModel(model);
+            policyTreeCellRenderer.setPolicyVersion(version.right);
             policyTree.setCellRenderer(policyTreeCellRenderer);
             Utilities.expandTree(policyTree);
         } catch (IOException e1) {

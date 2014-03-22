@@ -28,6 +28,7 @@ import java.util.List;
  * @author mike
  */
 public class HomePagePanel extends JPanel {
+    public static final String HOME_PAGE_NAME = "Home";
     private static final ClassLoader cl = HomePagePanel.class.getClassLoader();
     private JLabel topTopLabel;
     private JLabel footerLabel;
@@ -50,7 +51,7 @@ public class HomePagePanel extends JPanel {
         add(rootPanel, BorderLayout.CENTER);
         rootPanel.setBackground(Color.WHITE);
         scrollPanel.setBackground(Color.WHITE);
-        setName("Home");
+        setName(HOME_PAGE_NAME);
 
         ClassLoader cl = getClass().getClassLoader();
         pageBanner = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/PageBanner.png"));

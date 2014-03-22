@@ -150,18 +150,21 @@ public class SearchForm {
         };
         caseSensitiveCheckBox.addActionListener(checkBoxListener);
         caseSensitiveCheckBox.setMnemonic(KeyEvent.VK_C);
-        if (Boolean.parseBoolean(policyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE, CHECK_CASE_SENSITIVE, "false"))) {
+        if (Boolean.parseBoolean(PolicyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_CASE_SENSITIVE,
+            CHECK_CASE_SENSITIVE, "false", policyEditorPanel.getPolicyGoid(), policyEditorPanel.getVersionNumber()))) {
             caseSensitiveCheckBox.setSelected(true);
         }
 
         includePropertiesCheckBox.setMnemonic(KeyEvent.VK_P);
         includePropertiesCheckBox.addActionListener(checkBoxListener);
-        if (Boolean.parseBoolean(policyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES, CHECK_INCULDE_PROPERTIES, "true"))) {
+        if (Boolean.parseBoolean(PolicyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_INCLUDE_PROPERTIES,
+            CHECK_INCULDE_PROPERTIES, "true", policyEditorPanel.getPolicyGoid(), policyEditorPanel.getVersionNumber()))) {
             includePropertiesCheckBox.setSelected(true);
         }
 
         showDisabledCheckBox.addActionListener(checkBoxListener);
-        if (Boolean.parseBoolean(policyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED, CHECK_SHOW_DISABLED, "true"))) {
+        if (Boolean.parseBoolean(PolicyEditorPanel.getTabSettingFromPolicyTabProperty(PolicyEditorPanel.POLICY_TAB_PROPERTY_SEARCH_SHOW_DISABLED,
+            CHECK_SHOW_DISABLED, "true", policyEditorPanel.getPolicyGoid(), policyEditorPanel.getVersionNumber()))) {
             showDisabledCheckBox.setSelected(true);
         }
     }

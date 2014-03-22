@@ -375,8 +375,6 @@ public class PreferencesDialog extends JDialog {
 
             tabbedPane.setTabLayoutPolicy(currentTabLayout);
 
-            // Reset the selection to let the selected component be visible in the policy editor
-            tabbedPane.setSelectedIndex(-1);
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -387,6 +385,8 @@ public class PreferencesDialog extends JDialog {
                         }
                     }
 
+                    // Set the last displayed tab as selected.
+                    tabbedPane.setSelectedIndex(-1);
                     tabbedPane.setSelectedComponent(selectedComponent);
                 }
             });

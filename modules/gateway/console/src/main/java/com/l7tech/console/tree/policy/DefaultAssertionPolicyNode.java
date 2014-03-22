@@ -7,6 +7,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.util.Functions;
@@ -75,10 +76,39 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             return displayText;
         }
 
-        final boolean shown = Boolean.parseBoolean(pep.getTabSettingFromPolicyTabProperty(
-            PolicyEditorPanel.POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, PolicyEditorPanel.SHOW_COMMENTS, "false"));
+        final boolean shown = Boolean.parseBoolean(PolicyEditorPanel.getTabSettingFromPolicyTabProperty(
+            PolicyEditorPanel.POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, PolicyEditorPanel.SHOW_COMMENTS,
+            "false", pep.getPolicyGoid(), pep.getVersionNumber()));
         if(!shown) return displayText;
 
+        return processComments(assertion, displayText);
+    }
+
+    /**
+     * Add a comment to the display text for an assertion. If the assertion has no text then nothing is added
+     * If the property of the policy version is configured not to show comments, then displayText will not
+     * be modified
+     * @param assertion Assertion to modify the display text for
+     * @param displayText String the text which represents the assertion parameter
+     * @param policyVersion The policy version is used to retrieve the property of showing comments.
+     * @return the updated displayText, which may have had a comment added to the start or end
+     */
+    public static String addCommentToDisplayTextByPolicyVersion(Assertion assertion, String displayText, PolicyVersion policyVersion){
+        final boolean shown = Boolean.parseBoolean(PolicyEditorPanel.getTabSettingFromPolicyTabProperty(
+            PolicyEditorPanel.POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, PolicyEditorPanel.SHOW_COMMENTS,
+            "false", policyVersion.getPolicyGoid(), policyVersion.getOrdinal()));
+        if(!shown) return displayText;
+
+        return processComments(assertion, displayText);
+    }
+
+    /**
+     * Add comments into display text if assertion comments are available.
+     * @param assertion: an assertion to be displayed with comments
+     * @param displayText: a text to be add comments
+     * @return a assertion name with assertion comments if the assertion set comments.
+     */
+    private static String processComments(Assertion assertion, String displayText) {
         Assertion.Comment comment = assertion.getAssertionComment();
 
         if(comment == null) return displayText;

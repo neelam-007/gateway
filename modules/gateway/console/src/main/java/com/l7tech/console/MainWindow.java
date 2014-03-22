@@ -38,8 +38,11 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -78,6 +81,7 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 
 /**
@@ -1327,11 +1331,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                     /**
                      * Invoked when an action occurs.
                      *
-                     * @param event the event that occured
+                     * @param event the event that occurred
                      */
                     @Override
                     public void actionPerformed(ActionEvent event) {
                         try {
+                            if (isConnected()) {
+                                getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
+                            }
                             getWorkSpacePanel().clearWorkspace(); // vetoable
 
                             // Must disable actions first, since doing so may attempt to make admin calls
@@ -1552,7 +1559,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                         // No matter what, always refresh all policy editor panels
                         final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                        cw.refreshWorkspace();
+                        alreadyRefreshed.addAll(cw.refreshWorkspace());
 
                         final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                         final Component c = kbm.getFocusOwner();
@@ -3245,6 +3252,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void exitMenuEventHandler() {
         if (isConnected()) {
             try {
+                getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
                 getWorkSpacePanel().clearWorkspace(); // vetoable
                 disconnectFromGateway();
             } catch (ActionVetoException e) {
@@ -3538,6 +3546,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                             setText("inactivity timeout expired; disconnecting...");
 
                     try {
+                        getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
                         getWorkSpacePanel().clearWorkspace();  // vetoable
                         MainWindow.this.disconnectFromGateway();
                         SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
@@ -3977,7 +3986,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     try {
                         initializeWorkspace();
                         toggleConnectedMenus(true);
-                        getHomeAction().actionPerformed(null);
+                        loadPolicyTabsIntoWorkspace();
                         MainWindow.this.
                                 setInactivitiyTimeout(timeout);
                         MainWindow.this.fireConnected();
@@ -4036,6 +4045,79 @@ public class MainWindow extends JFrame implements SheetHolder {
         public void onAuthFailure() {
         }
     };
+
+    /**
+     * Load all previously last opened policies into the workspace.  One tab is created for one policy version.
+     * Note: any non-existing or invalid policy entity node goid, policy goid, and policy version number will
+     * discard that policy tab to load into the workspace.  The warning message will be logged.
+     */
+    private void loadPolicyTabsIntoWorkspace() {
+        final String tabsProp = preferences.getString(WorkSpacePanel.PROPERTY_LAST_OPENED_POLICY_TABS);
+        // If no such property exist in preferences, open a Home Page
+        if (tabsProp == null) {
+            getHomeAction().actionPerformed(null);
+            return;
+        }
+
+        final RootNode rootNode = ((ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME)).getRootNode();
+        final String tabTokens[] = TextUtils.CSV_STRING_SPLIT_PATTERN.split(tabsProp);
+
+        // In the property, the last selected policy tab is always saved into the last position of the property value.
+        // So when the last tabToken is processed, the corresponding component is the right one and will be selected via setComponent(...) in PolicyEditorPanel.
+        for (String tabToken: tabTokens) {
+            if (tabToken.equals(HomePagePanel.HOME_PAGE_NAME)) {
+                getHomeAction().actionPerformed(null);
+            } else {
+                String[] tabInfo = Pattern.compile("\\s*#\\s*").split(tabToken);
+                if (tabInfo.length < 3) throw new IllegalArgumentException("The format of " + WorkSpacePanel.PROPERTY_LAST_OPENED_POLICY_TABS + " is invalid.");
+
+                // Find the policy entity node, which policy versions are associated with.
+                // But check if the policy entity node exists or not first.
+                String policyNodeEntityGoid = tabInfo[0];
+                EntityWithPolicyNode entityWithPolicyNode;
+                try {
+                    entityWithPolicyNode = (EntityWithPolicyNode) rootNode.getNodeForEntity(Goid.parseGoid(policyNodeEntityGoid));
+                } catch (Exception e) {
+                    log.warning("The policy entity node (goid=" + policyNodeEntityGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                    continue;
+                }
+
+                // Check if the policy goid is valid to match a policy or not.
+                String policyGoid = tabInfo[1];
+                try {
+                    Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(Goid.parseGoid(policyGoid));
+                    if (policy == null) {
+                        log.warning("The policy (goid=" + policyGoid + ") does not exist, so the policy editor workspace cannot open a tab for it.");
+                        continue;
+                    }
+                } catch (FindException e) {
+                    log.warning("The policy (goid=" + policyGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                    continue;
+                }
+
+                // Find the policy version and open it
+                for (int i = 2; i < tabInfo.length; i++) {
+                    String versionOrdinal = tabInfo[i];
+
+                    // Find the policy version
+                    PolicyVersion fullPolicyVersion;
+                    try {
+                        fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(Goid.parseGoid(policyGoid), Long.parseLong(versionOrdinal));
+                        if (fullPolicyVersion == null) {
+                            log.warning("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") does not exist, so the policy editor workspace cannot open a tab for it.");
+                            continue;
+                        }
+                    } catch (FindException e) {
+                        log.warning("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                        continue;
+                    }
+
+                    // Open the policy version into the workspace
+                    new EditPolicyAction(entityWithPolicyNode, true, fullPolicyVersion).invoke();
+                }
+            }
+        }
+    }
 
     /**
      * Looks for missing primary license, license invalidity, and license expiration. Creates warning
@@ -4284,12 +4366,12 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public void showNoPrivilegesErrorMessage() {
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "The requested action could not be performed because the applet is running\n" +
-                        "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
-                        "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
-                        "this signed applet and then reload the page.",
-                "Disallowed by browser settings",
-                JOptionPane.WARNING_MESSAGE, null);
+            "The requested action could not be performed because the applet is running\n" +
+                "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
+                "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
+                "this signed applet and then reload the page.",
+            "Disallowed by browser settings",
+            JOptionPane.WARNING_MESSAGE, null);
     }
 
     @Override

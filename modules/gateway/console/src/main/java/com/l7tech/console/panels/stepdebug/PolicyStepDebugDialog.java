@@ -148,6 +148,10 @@ public class PolicyStepDebugDialog extends JDialog {
         return toggleBreakpointButton;
     }
 
+    public Policy getPolicy() {
+        return policy;
+    }
+
     @Override
     public void dispose() {
         if (this.refreshTimer != null) {

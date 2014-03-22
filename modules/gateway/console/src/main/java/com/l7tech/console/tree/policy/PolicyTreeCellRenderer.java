@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.gui.util.ImageCache;
@@ -26,6 +27,10 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
 
     private boolean validated = true;
     private boolean enabled = true;
+
+    // The policy version will be used to get policy goid and policy version number to find a property determining if showing assertion comments.
+    private PolicyVersion policyVersion;
+
     /**
      * default constructor
      */
@@ -34,6 +39,10 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         boldFont = l.getFont().deriveFont(Font.BOLD);
         plainFont = l.getFont().deriveFont(Font.PLAIN);
         italicFont = l.getFont().deriveFont(Font.ITALIC);
+    }
+
+    public void setPolicyVersion(PolicyVersion policyVersion) {
+        this.policyVersion = policyVersion;
     }
 
     /**
@@ -51,7 +60,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         this.setBackgroundNonSelectionColor(tree.getBackground());
         if (!(value instanceof AssertionTreeNode)) return this;
         AssertionTreeNode node = ((AssertionTreeNode)value);
-        setText(node.getName());
+        setText(getNodeName(node));
         validated = node.getValidatorMessages().isEmpty();
         enabled = isIncluded(node)? node.asAssertion().isEnabled(): node.isAssertionEnabled();
         setToolTipText(node.getTooltipText());
@@ -79,6 +88,23 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         if (!enabled) {
             Image image = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/RedCrossSign16.gif")).getImage();
             g.drawImage(image, 0, 0, null);
+        }
+    }
+
+    /**
+     * Get the node name, which contains assertion comments depending on a property of showing comments or not.
+     * If policyVersion is defined, then the property will be retrieved by the policy version.  Otherwise, the
+     * property will be retrieved by a policy editor panel, which has a policy version information.
+     *
+     * @param node: the tree node whose name will be generated.
+     * @return the node name
+     */
+    private String getNodeName(AssertionTreeNode node) {
+        if (policyVersion != null) {
+            String nameFromMetaWithDecoration = DefaultAssertionPolicyNode.getNameFromMeta(node.asAssertion(), true, false);
+            return DefaultAssertionPolicyNode.addCommentToDisplayTextByPolicyVersion(node.asAssertion(), nameFromMetaWithDecoration, policyVersion);
+        } else {
+            return node.getName();
         }
     }
 

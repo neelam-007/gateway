@@ -132,6 +132,7 @@ public class EditPolicyAction extends NodeAction {
                 if (policyVersion != null) {
                     policy.setVersionOrdinal(policyVersion.getOrdinal());
                     policy.setVersionActive(policyVersion.isActive());
+                    policy.setXml(policyVersion.getXml());
                 }
             } catch (IOException e) {
                 log.log(Level.SEVERE, "cannot get service or policy", e);
