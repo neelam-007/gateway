@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * bean.
  * <p/>
  * After properties are set call {@link #init()} to initialize the rest handler. Once the handler has been initialized
- * you can handle requests by calling {@link #handleRequest(java.net.URI, java.net.URI, String, String, java.io.InputStream, javax.ws.rs.core.SecurityContext, java.util.Map)}
+ * you can handle requests by calling {@link #handleRequest(java.lang.String, java.net.URI, java.net.URI, String, String, java.io.InputStream, javax.ws.rs.core.SecurityContext, java.util.Map)}
  */
 public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(RestAgentImpl.class.getName());
@@ -113,6 +113,7 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
     /**
      * Handles the rest request.
      *
+     * @param requesterHost   This is the host address of the requester. It is used for audit messages
      * @param baseUri         This is the base uri of the server. This should include the host name, and port. For
      *                        example: 'https://restman-demo.l7tech.com:8443/rest/1.0/'
      * @param uri             The uri of the request. This should be the full uri of the request. Including the base Uri
@@ -121,18 +122,19 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
      * @param contentType     The request content type
      * @param body            The request body stream
      * @param securityContext The security context that this call is made in. The principle user should be set.
+     * @param properties      These are properties that will be set in the Jersey request.
      * @return The response returned from processing the request.
      * @throws PrivilegedActionException
      * @throws RequestProcessingException
      */
     @Override
-    public RestResponse handleRequest(@NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
+    public RestResponse handleRequest(@Nullable final String requesterHost, @NotNull URI baseUri, @NotNull URI uri, @NotNull String httpMethod, @Nullable String contentType, @NotNull InputStream body, @Nullable SecurityContext securityContext, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
         if (handler == null) {
             throw new RequestProcessingException("The Rest handler has not yet been initialized. Cannot process requests until it have been.");
         }
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream(BUFFER_SIZE);
-        ContainerResponse response = handler.handle(baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
+        ContainerResponse response = handler.handle(requesterHost, baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
         final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
         return new RestResponse(bin, response.getMediaType() != null ? response.getMediaType().toString() : null, response.getStatus(), response.getHeaders());
     }

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.rest;
 
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -22,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the rest handler. It converts request message information and context into something that Jersey can
@@ -30,6 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Victor Kazakov
  */
 public class RestHandler {
+    private static final Logger logger = Logger.getLogger(RestHandler.class.getName());
+
     private ApplicationHandler appHandler;
 
     /**
@@ -44,6 +49,7 @@ public class RestHandler {
     /**
      * Handle a rest request. This will delegate to Jersey to perform service resolution and parameter marshaling
      *
+     * @param requesterHost   This is the host address of the requester. It is used for audit messages
      * @param baseUri         This is the base uri of the server. This should include the host name, and port. For
      *                        example: 'https://restman-demo.l7tech.com:8443/rest/1.0/'
      * @param uri             The uri of the request. This should be the full uri of the request. Including the base Uri
@@ -52,11 +58,12 @@ public class RestHandler {
      * @param contentType     The content type of the request body
      * @param body            The request body input stream
      * @param securityContext The security context that this call is made in. The principle user should be set.
+     * @param properties      These are properties that will be set in the Jersey request.
      * @return Returns a container response containing the jersey response.
      * @throws PrivilegedActionException
      * @throws RequestProcessingException
      */
-    public ContainerResponse handle(@NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, @Nullable final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
+    public ContainerResponse handle(@Nullable final String requesterHost, @NotNull final URI baseUri, @NotNull final URI uri, @NotNull final String httpMethod, @Nullable final String contentType, @NotNull final InputStream body, @Nullable final SecurityContext securityContext, @NotNull final OutputStream responseOutputStream, @Nullable Map<String,Object> properties) throws PrivilegedActionException, RequestProcessingException {
         // Build the Jersey Container Request
         final ContainerRequest request = new ContainerRequest(baseUri, URI.create(baseUri.toString() + uri.toString()), httpMethod, securityContext, properties == null ? new MapPropertiesDelegate() : new MapPropertiesDelegate(properties));
         //Set the content type header.
@@ -76,12 +83,18 @@ public class RestHandler {
         Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
-                //Get jersey to process the request.
-                try {
-                    futureReference.set(appHandler.apply(request, responseOutputStream));
-                } catch (WebApplicationException e) {
-                    e.printStackTrace();
-                }
+                //Run with connection into sets connection info so that it can be properly audited.
+                RemoteUtils.runWithConnectionInfo(requesterHost, null, new Runnable() {
+                    @Override
+                    public void run() {
+                        //Get jersey to process the request.
+                        try {
+                            futureReference.set(appHandler.apply(request, responseOutputStream));
+                        } catch (WebApplicationException e) {
+                            logger.log(Level.WARNING, "Exception processing rest request. Message: " + e.getMessage(), e);
+                        }
+                    }
+                });
                 return null;
             }
         });

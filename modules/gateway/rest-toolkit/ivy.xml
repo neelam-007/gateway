@@ -13,6 +13,7 @@
     </publications>
     <dependencies>
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
 
         <dependency org="org.springframework" name="spring-context" rev="3.0.7.RELEASE" force="true" conf="core"/>
 

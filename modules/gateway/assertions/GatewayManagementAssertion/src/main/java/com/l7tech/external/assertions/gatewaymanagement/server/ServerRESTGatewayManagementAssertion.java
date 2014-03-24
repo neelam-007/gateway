@@ -110,7 +110,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             };
-            RestResponse managementResponse = restAgent.handleRequest(baseUri, uri, action.getProtocolName(), message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE), message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map());
+            RestResponse managementResponse = restAgent.handleRequest(message.getHttpRequestKnob().getRemoteHost(), baseUri, uri, action.getProtocolName(), message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE), message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map());
             response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
