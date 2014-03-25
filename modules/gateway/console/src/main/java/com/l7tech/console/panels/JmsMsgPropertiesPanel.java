@@ -39,6 +39,7 @@ public class JmsMsgPropertiesPanel extends JPanel{
 
     public JmsMsgPropertiesPanel(JDialog owner) {
         this.owner = owner;
+        passThroughAllRadioButton.setSelected(true);//default setting
         passThroughAllRadioButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

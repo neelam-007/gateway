@@ -26,7 +26,6 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -90,7 +89,16 @@ public class JmsEndpoint extends ZoneableNamedEntityImp implements Serializable 
         setRequestMaxSize(other.getRequestMaxSize());
         setSecurityZone(other.getSecurityZone());
         setPassthroughMessageRules(other.isPassthroughMessageRules());
-        setJmsEndpointMessagePropertyRules(other.getJmsEndpointMessagePropertyRules());
+        setJmsEndpointMessagePropertyRules(copyJmsEnpointMessagePropertyRules(other));
+    }
+
+    private Set<JmsEndpointMessagePropertyRule> copyJmsEnpointMessagePropertyRules(JmsEndpoint other) {
+        Set<JmsEndpointMessagePropertyRule> ruleSet = new LinkedHashSet<>();
+        for(JmsEndpointMessagePropertyRule rule : other.getJmsEndpointMessagePropertyRules()) {
+            JmsEndpointMessagePropertyRule newRule = rule.copy(this);
+            ruleSet.add(newRule);
+        }
+        return ruleSet;
     }
 
     /**

@@ -14,10 +14,7 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
 import com.l7tech.util.ExceptionUtils;
@@ -1494,6 +1491,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
             Goid goid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
             newConnection.setGoid(goid);
             newEndpoint.setConnectionGoid(newConnection.getGoid());
+            if(newEndpoint.getGoid().equals(Goid.DEFAULT_GOID)) {
+                if(newEndpoint.getJmsEndpointMessagePropertyRules() != null && !newEndpoint.getJmsEndpointMessagePropertyRules().isEmpty()) {
+                    saveEndpointWithMessagePropertyRules(newEndpoint);
+                }
+            }
             goid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
             newEndpoint.setGoid(goid);
 
@@ -1520,6 +1522,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 throw new RuntimeException("Unable to save changes to this JMS Destination", e);
             }
         }
+    }
+
+    private void saveEndpointWithMessagePropertyRules(JmsEndpoint newEndpoint) throws SaveException, VersionException {
+        Set<JmsEndpointMessagePropertyRule> ruleSet = newEndpoint.getJmsEndpointMessagePropertyRules();
+        newEndpoint.setJmsEndpointMessagePropertyRules(null);
+        Goid goid = Registry.getDefault().getJmsManager().saveEndpoint(newEndpoint);
+        newEndpoint.setGoid(goid);
+        for(JmsEndpointMessagePropertyRule rule : ruleSet) {
+            rule.setJmsEndpoint(newEndpoint);
+        }
+        newEndpoint.setJmsEndpointMessagePropertyRules(ruleSet);
     }
 
     private void onCancel() {
