@@ -148,7 +148,7 @@ public class PolicyStepDebugDialog extends JDialog {
         return toggleBreakpointButton;
     }
 
-    public Policy getPolicy() {
+    Policy getPolicy() {
         return policy;
     }
 

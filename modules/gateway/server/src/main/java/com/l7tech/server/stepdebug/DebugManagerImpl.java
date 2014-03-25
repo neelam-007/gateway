@@ -73,8 +73,8 @@ public class DebugManagerImpl implements DebugManager {
 
     @Override
     public void stopDebug(@NotNull String taskId) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        if (!debugContext.getDebugState().equals(DebugState.STOPPED)) {
+        DebugContext debugContext = this.getDebugContext(taskId);
+        if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
             audit.logAndAudit(
                 SystemMessages.SERVICE_DEBUGGER_STOP,
                 debugContext.getPolicyType().isServicePolicy() ? "service" : "policy",

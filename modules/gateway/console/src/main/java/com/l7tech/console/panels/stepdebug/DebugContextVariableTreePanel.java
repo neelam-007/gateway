@@ -269,7 +269,7 @@ public class DebugContextVariableTreePanel extends JPanel {
                 String filterText = this.getFilterText().toLowerCase();
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
                 DebugContextVariableData data = (DebugContextVariableData) node.getUserObject();
-                return data.getName().startsWith(filterText);
+                return data.getName().toLowerCase().startsWith(filterText);
             }
         };
 
@@ -277,7 +277,7 @@ public class DebugContextVariableTreePanel extends JPanel {
         contextVariableSearchComboBox.setComparator(new Comparator<DefaultMutableTreeNode>() {
             @Override
             public int compare(DefaultMutableTreeNode o1, DefaultMutableTreeNode o2) {
-                return (o1.toString().compareToIgnoreCase(o2.toString()));
+                return ((DebugContextVariableData) o1.getUserObject()).compareTo((DebugContextVariableData) o2.getUserObject());
             }
         });
 
