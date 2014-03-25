@@ -2,7 +2,7 @@ package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
@@ -36,8 +36,8 @@ import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- *
- */
+*
+*/
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyPrivateKeyTest extends DependencyTestBase {
     private static final Logger logger = Logger.getLogger(DependencyPrivateKeyTest.class.getName());
@@ -144,34 +144,32 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep = dependencyAnalysisMO.getDependencies().get(0);
-                Item mqItem = dep.getDependentObject();
+                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
 
-                assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqItem.getType());
-                assertEquals(activeConnector.getId(), mqItem.getId());
-                assertEquals(activeConnector.getName(), mqItem.getName());
+                DependencyMO mqDep = getDependency(dependencyAnalysisMO,EntityType.SSG_ACTIVE_CONNECTOR);
+                assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqDep.getType());
+                assertEquals(activeConnector.getId(), mqDep.getId());
+                assertEquals(activeConnector.getName(), mqDep.getName());
+                assertNotNull("Missing dependency:" + defaultKeystoreId.toString() + ":" + keyAlias, getDependency(mqDep.getDependencies(), defaultKeystoreId.toString() + ":" + keyAlias));
 
-                assertEquals(1, dep.getDependencies().size());
-                DependencyMO keyDep = getDependency(dep.getDependencies(),EntityType.SSG_KEY_ENTRY);
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getId());
+                assertEquals(keyAlias, keyDep.getName());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(keyDep.getDependencies(), securityZone.getId()));
 
-                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getDependentObject().getType());
-                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getDependentObject().getId());
-                assertEquals(keyAlias, keyDep.getDependentObject().getName());
 
-                assertEquals(1, keyDep.getDependencies().size());
-                DependencyMO zoneDep = keyDep.getDependencies().get(0);
-
-                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getDependentObject().getType());
-                assertEquals(securityZone.getId(), zoneDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), zoneDep.getDependentObject().getName());
+                DependencyMO zoneDep = getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
+                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
+                assertEquals(securityZone.getId(), zoneDep.getId());
+                assertEquals(securityZone.getName(), zoneDep.getName());
             }
         });
     }

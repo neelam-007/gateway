@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
@@ -120,19 +120,25 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
     @Test
     public void serviceTest() throws Exception {
 
-        TestDependency( "services/", service.getId() ,new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestDependency( "services/", service.getId() ,new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO securityZonedep = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getDependentObject().getType());
-                assertEquals(securityZone.getId(), securityZonedep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), securityZonedep.getDependentObject().getName());
+                DependencyMO securityZonedep =  getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
+                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getType());
+                assertEquals(securityZone.getId(), securityZonedep.getId());
+                assertEquals(securityZone.getName(), securityZonedep.getName());
+
+                DependencyMO serviceDep =  getDependency(dependencyAnalysisMO,EntityType.SERVICE);
+                assertEquals(EntityType.SERVICE.toString(), serviceDep.getType());
+                assertEquals(service.getId(), serviceDep.getId());
+                assertEquals(service.getName(), serviceDep.getName());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(serviceDep.getDependencies(), securityZone.getId()));
             }
         });
     }
@@ -141,35 +147,35 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
     @Test
     public void folderServiceAliasTest() throws Exception {
 
-        TestDependency( "folders/", folder.getId() ,new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestDependency( "folders/", folder.getId() ,new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(5, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO serviceAliasDep = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasDep.getDependentObject().getType());
-                assertEquals(serviceAlias.getId(), serviceAliasDep.getDependentObject().getId());
-                assertEquals(service.getId(), serviceAliasDep.getDependentObject().getName());
+                DependencyMO serviceAliasDep = getDependency(dependencyAnalysisMO,EntityType.SERVICE_ALIAS);
+                assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasDep.getType());
+                assertEquals(serviceAlias.getId(), serviceAliasDep.getId());
+                assertEquals(service.getId(), serviceAliasDep.getName());
+                assertNotNull("Missing dependency:" + securityZone1.getId(), getDependency(serviceAliasDep.getDependencies(), securityZone1.getId()));
 
                 // verify security zone dependency
-                assertEquals(2,serviceAliasDep.getDependencies().size());
-                DependencyMO securityZoneDep  =  getDependency(serviceAliasDep.getDependencies(),EntityType.SECURITY_ZONE);
-                assertEquals(securityZone1.getId(), securityZoneDep.getDependentObject().getId());
-                assertEquals(securityZone1.getName(), securityZoneDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getDependentObject().getType());
-
+                DependencyMO securityZoneDep  =  getDependency(dependencyAnalysisMO.getDependencies(),securityZone1.getId());
+                assertNotNull("Dependency not found:" + securityZone1.getName(), securityZoneDep);
+                assertEquals(securityZone1.getId(), securityZoneDep.getId());
+                assertEquals(securityZone1.getName(), securityZoneDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getType());
 
                 // verify service dependency
-                DependencyMO serviceDep  = getDependency(serviceAliasDep.getDependencies(),EntityType.SERVICE);
-                assertEquals(service.getId(), serviceDep.getDependentObject().getId());
-                assertEquals(service.getName(), serviceDep.getDependentObject().getName());
-                assertEquals(EntityType.SERVICE.toString(), serviceDep.getDependentObject().getType());
+                DependencyMO serviceDep  = getDependency(dependencyAnalysisMO,EntityType.SERVICE);
+                assertEquals(service.getId(), serviceDep.getId());
+                assertEquals(service.getName(), serviceDep.getName());
+                assertEquals(EntityType.SERVICE.toString(), serviceDep.getType());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(serviceDep.getDependencies(), securityZone.getId()));
             }
         });
     }
-
 }

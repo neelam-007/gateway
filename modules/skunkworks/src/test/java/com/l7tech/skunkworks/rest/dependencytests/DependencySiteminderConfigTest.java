@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
@@ -105,33 +105,31 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>() {
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep = dependencyAnalysisMO.getDependencies().get(0);
-                Item mqItem = dep.getDependentObject();
+                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
 
-                assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), mqItem.getType());
-                assertEquals(siteMinderConfiguration.getId(), mqItem.getId());
-                assertEquals(siteMinderConfiguration.getName(), mqItem.getName());
+                DependencyMO siteminderDep = getDependency(dependencyAnalysisMO,EntityType.SITEMINDER_CONFIGURATION);
+                assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), siteminderDep.getType());
+                assertEquals(siteMinderConfiguration.getId(), siteminderDep.getId());
+                assertEquals(siteMinderConfiguration.getName(), siteminderDep.getName());
+                assertNotNull( "Missing dependency:"+securePassword.getId(), getDependency(siteminderDep.getDependencies(),securePassword.getId()));
+                assertNotNull( "Missing dependency:"+securityZone.getId(), getDependency(siteminderDep.getDependencies(),securityZone.getId()));
 
-                assertEquals(2, dep.getDependencies().size());
-                DependencyMO keyDep = getDependency(dep.getDependencies(),EntityType.SECURE_PASSWORD);
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SECURE_PASSWORD);
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), keyDep.getType());
+                assertEquals(securePassword.getId(), keyDep.getId());
+                assertEquals(securePassword.getName(), keyDep.getName());
 
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), keyDep.getDependentObject().getType());
-                assertEquals(securePassword.getId(), keyDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), keyDep.getDependentObject().getName());
-
-                DependencyMO zoneDep = getDependency(dep.getDependencies(), EntityType.SECURITY_ZONE);
-
-                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getDependentObject().getType());
-                assertEquals(securityZone.getId(), zoneDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), zoneDep.getDependentObject().getName());
+                DependencyMO zoneDep = getDependency(dependencyAnalysisMO, EntityType.SECURITY_ZONE);
+                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
+                assertEquals(securityZone.getId(), zoneDep.getId());
+                assertEquals(securityZone.getName(), zoneDep.getName());
             }
         });
     }

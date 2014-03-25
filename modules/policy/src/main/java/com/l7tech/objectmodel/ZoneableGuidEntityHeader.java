@@ -16,6 +16,10 @@ public class ZoneableGuidEntityHeader extends GuidEntityHeader implements HasSec
         super(id, type, name, description, version);
     }
 
+    public ZoneableGuidEntityHeader(){
+        super();
+    }
+
     @Nullable
     @Override
     public Goid getSecurityZoneId() {

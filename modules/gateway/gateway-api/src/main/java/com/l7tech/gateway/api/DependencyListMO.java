@@ -13,6 +13,6 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement(name = "DependencyList")
 @XmlType(propOrder = {"options", "searchObjectItem", "dependencies"})
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class DependencyListMO extends DependencyResults<Item> {
+public class DependencyListMO extends DependencyResults<DependencyMO> {
     protected DependencyListMO(){}
 }

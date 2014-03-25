@@ -2,7 +2,7 @@ package com.l7tech.server.encass;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.ZoneableGuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityManagerStub;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  *
  */
-public class EncapsulatedAssertionConfigManagerStub extends EntityManagerStub<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
+public class EncapsulatedAssertionConfigManagerStub extends EntityManagerStub<EncapsulatedAssertionConfig,ZoneableGuidEntityHeader> implements EncapsulatedAssertionConfigManager {
 
     public EncapsulatedAssertionConfigManagerStub(EncapsulatedAssertionConfig... configs) {
         super(configs);

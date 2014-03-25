@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -90,30 +91,31 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),resourceEntry);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
 
                 // verify security zone dependency
+                DependencyMO passwordDep  = dependencyAnalysisMO.getDependencies().get(0);
+                assertEquals(securityZone.getId(), passwordDep.getId());
+                assertEquals(securityZone.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getType());
+                assertNull(passwordDep.getDependencies());
+
+                // verify document resource dependency
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(1);
+                assertEquals(resourceEntry.getId(), dep.getId());
+                assertEquals(resourceEntry.getUri(), dep.getName());
+                assertEquals(EntityType.RESOURCE_ENTRY.toString(), dep.getType());
                 assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securityZone.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getDependentObject().getType());
+                assertEquals(securityZone.getId(),dep.getDependencies().get(0).getId());
+
             }
         });
     }
 
-   
-    void verifyItem(Item item, ResourceEntry resourceEntry){
-        assertEquals(resourceEntry.getId(), item.getId());
-        assertEquals(resourceEntry.getUri(), item.getName());
-        assertEquals(EntityType.RESOURCE_ENTRY.toString(), item.getType());
-    }
 }

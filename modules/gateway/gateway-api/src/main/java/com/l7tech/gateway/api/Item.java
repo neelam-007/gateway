@@ -45,7 +45,6 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = StoredPasswordMO.class),
             @XmlElementRef(type = SecurityZoneMO.class),
             @XmlElementRef(type = ServiceAliasMO.class),
-            @XmlElementRef(type = DependencyTreeMO.class),
             @XmlElementRef(type = DependencyListMO.class),
             @XmlElementRef(type = Mappings.class),
             @XmlElementRef(type = ItemsList.class),

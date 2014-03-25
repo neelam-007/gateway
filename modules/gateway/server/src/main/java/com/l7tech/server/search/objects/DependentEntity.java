@@ -27,6 +27,11 @@ public class DependentEntity extends DependentObject {
         this.entityHeader = entityHeader;
     }
 
+    public DependentEntity(final DependentEntity object) {
+        super(object);
+        this.entityHeader = object.entityHeader;
+    }
+
     private static Dependency.DependencyType dependencyTypeFromEntityType(EntityType entityType) {
         switch(entityType){
             case POLICY: return Dependency.DependencyType.POLICY;

@@ -6,7 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.ZoneableGuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -110,7 +110,7 @@ public class EncapsulatedAssertionRestServerGatewayManagementAssertionTest exten
             policyManager.delete(policy.getGoid());
         }
 
-        Collection<GuidEntityHeader> entities = new ArrayList<>(encassManager.findAllHeaders());
+        Collection<ZoneableGuidEntityHeader> entities = new ArrayList<>(encassManager.findAllHeaders());
         for (EntityHeader entity : entities) {
             encassManager.delete(entity.getGoid());
         }

@@ -661,7 +661,6 @@ public class ManagedObjectFactory {
                 RbacRoleAssignmentMO.class,
                 RbacRolePermissionMO.class,
                 RbacRolePredicateMO.class,
-                DependencyTreeMO.class,
                 DependencyListMO.class,
                 DependencyMO.class,
                 Item.class,
@@ -670,10 +669,6 @@ public class ManagedObjectFactory {
                 Link.class,
                 PolicyVersionMO.class
         };
-    }
-
-    public static DependencyTreeMO createDependencyTreeMO() {
-        return new DependencyTreeMO();
     }
 
     public static DependencyListMO createDependencyListMO() {

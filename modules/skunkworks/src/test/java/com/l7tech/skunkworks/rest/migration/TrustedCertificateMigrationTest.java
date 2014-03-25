@@ -141,17 +141,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO certDependency = policyDependencies.get(0);
+        DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
         Assert.assertNotNull(certDependency);
-        Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-        Assert.assertEquals(trustedCertItem.getName(), certDependency.getDependentObject().getName());
-        Assert.assertEquals(trustedCertItem.getId(), certDependency.getDependentObject().getId());
+        Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+        Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+        Assert.assertEquals(trustedCertItem.getId(), certDependency.getId());
 
 
         validate(mappings);
@@ -219,17 +219,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -302,17 +302,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -336,29 +336,28 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         trustedCertificateMO.setId(certCreated.getId());
 
         try{
-        //get the bundle
-        response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
-        assertOkResponse(response);
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals("The bundle should have 2 items. A policy and trusted certificate", 2, bundleItem.getContent().getReferences().size());
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and trusted certificate", 2, bundleItem.getContent().getReferences().size());
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.AlwaysCreateNew);
 
-        //update the bundle mapping to map the cert to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.AlwaysCreateNew);
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            logger.info(response.toString());
 
-        //import the bundle
-        logger.log(Level.INFO, objectToString(bundleItem.getContent()));
-        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
-                objectToString(bundleItem.getContent()));
-        logger.info(response.toString());
-
-        // import fail
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(409, response.getStatus());
-        Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(0).getErrorType());
-        assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(0).<String>getProperty("ErrorMessage").contains("must be unique"));
+            // import fail
+            assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+            assertEquals(409, response.getStatus());
+            Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(0).getErrorType());
+            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(0).<String>getProperty("ErrorMessage").contains("must be unique"));
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
@@ -417,16 +416,16 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(trustedCertItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(trustedCertItem.getId(), mqDependency.getDependentObject().getId());
+        DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
+        Assert.assertNotNull(certDependency);
+        Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+        Assert.assertEquals(trustedCertItem.getId(), certDependency.getId());
 
         validate(mappings);
     }
@@ -494,17 +493,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), mqDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertItem.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertItem.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -575,16 +574,16 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(trustedCertItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -656,16 +655,16 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(trustedCertificateMO.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -763,17 +762,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency =getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -906,17 +905,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1048,17 +1047,17 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{

@@ -179,7 +179,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
             UsesEntities usesEntities = (UsesEntities) assertion;
             EntityHeader[] entitiesUsed = usesEntities.getEntitiesUsed();
             for (EntityHeader entityUsed : entitiesUsed) {
-                EntityHeader newEntity = replacementMap.get(entityUsed);
+                EntityHeader newEntity = findMappedHeader(replacementMap,entityUsed);
                 if (newEntity != null) {
                     usesEntities.replaceEntity(entityUsed, newEntity);
                 }
@@ -198,7 +198,7 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
                 });
                 if(found!=null){
                     GlobalResourceInfo newResourceInfo = new GlobalResourceInfo();
-                    EntityHeader replace = replacementMap.get(found);
+                    EntityHeader replace = findMappedHeader(replacementMap,(EntityHeader)found);
                     if(replace instanceof ResourceEntryHeader){
                         newResourceInfo.setId(((ResourceEntryHeader)replace).getUri());
                         ((UsesResourceInfo) assertion).setResourceInfo(newResourceInfo);

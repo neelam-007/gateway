@@ -272,16 +272,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO mqDependency = policyDependencies.get(0);
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getId());
 
             validate(mappings);
         }finally{
@@ -374,16 +374,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO mqDependency = policyDependencies.get(0);
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getId());
 
             validate(mappings);
         }finally {
@@ -514,16 +514,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(3, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
+        DependencyMO mqDependency = getDependency(policyDependencies,mqNativeItem.getId());
         Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(mqNativeItem.getId(), mqDependency.getDependentObject().getId());
+        Assert.assertEquals(mqNativeItem.getName(), mqDependency.getName());
+        Assert.assertEquals(mqNativeItem.getId(), mqDependency.getId());
 
         validate(mappings);
     }
@@ -613,16 +613,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
+            DependencyMO mqDependency = getDependency(policyDependencies, mqNativeItem.getId());
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(mqNativeItem.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getName());
+            Assert.assertEquals(mqNativeItem.getId(), mqDependency.getId());
 
             validate(mappings);
         }finally {
@@ -716,16 +716,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
+            DependencyMO mqDependency = getDependency(policyDependencies, activeConnectorMO.getId());
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertEquals(mqNativeItem.getName(), mqDependency.getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getId());
 
             validate(mappings);
         }finally {
@@ -820,16 +820,16 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO mqDependency = policyDependencies.get(0);
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getDependentObject().getId());
+            Assert.assertEquals(activeConnectorMO.getName(), mqDependency.getName());
+            Assert.assertEquals(activeConnectorMO.getId(), mqDependency.getId());
 
             validate(mappings);
         }finally {
@@ -922,19 +922,19 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
+            DependencyMO mqDependency = getDependency(policyDependencies, mqNativeItem.getId());
             Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(1, mqDependency.getDependencies().size());
-            DependencyMO passwordDependency = mqDependency.getDependencies().get(0);
 
-            Assert.assertEquals(passwordMO.getName(), passwordDependency.getDependentObject().getName());
-            Assert.assertEquals(passwordMO.getId(), passwordDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies, passwordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(passwordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(passwordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally {

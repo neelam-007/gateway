@@ -4,6 +4,9 @@ import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This was created: 6/10/13 as 11:29 AM
  *
@@ -12,10 +15,17 @@ import org.jetbrains.annotations.Nullable;
 public abstract class DependentObject {
     private final String name;
     private Dependency.DependencyType dependencyType;
+    private List<DependentObject> dependencies = new ArrayList<>();
 
     public DependentObject(@Nullable String name, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType) {
         this.name = name;
         this.dependencyType = dependencyType;
+    }
+
+    public DependentObject(final DependentObject object) {
+        this.name = object.name;
+        this.dependencyType = object.dependencyType;
+        this.dependencies.addAll(object.dependencies);
     }
 
     /**
@@ -32,6 +42,20 @@ public abstract class DependentObject {
     public Dependency.DependencyType getDependencyType() {
         return dependencyType;
     }
+
+    @NotNull
+    public List<DependentObject> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<DependentObject> dependencies) {
+        this.dependencies = dependencies;
+    }
+
+    public void addDependency(DependentObject dependency){
+        dependencies.add(dependency);
+    }
+
 
     @Override
     public boolean equals(Object o) {

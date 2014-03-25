@@ -254,17 +254,17 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         response = getTargetEnvironment().processRequest("folders/"+folderMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(1, folderDependencies.size());
+        Assert.assertEquals(2, folderDependencies.size());
 
-        DependencyMO policyDependency = folderDependencies.get(0);
+        DependencyMO policyDependency = getDependency(folderDependencies,policyItem.getId());
         Assert.assertNotNull(policyDependency);
         Assert.assertNull(policyDependency.getDependencies());
-        Assert.assertEquals(policyItem.getName(), policyDependency.getDependentObject().getName());
-        Assert.assertEquals(EntityType.POLICY.toString(), policyDependency.getDependentObject().getType());
+        Assert.assertEquals(policyItem.getName(), policyDependency.getName());
+        Assert.assertEquals(EntityType.POLICY.toString(), policyDependency.getType());
 
         validate(mappings);
     }
@@ -323,21 +323,21 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         response = getTargetEnvironment().processRequest("folders/"+parentFolderMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(1, folderDependencies.size());
+        Assert.assertEquals(3, folderDependencies.size());
 
-        DependencyMO childFolderDependency = folderDependencies.get(0);
+        DependencyMO childFolderDependency = getDependency(folderDependencies,targetChild1FolderItem.getId());
         Assert.assertNotNull(childFolderDependency);
         Assert.assertNotNull(childFolderDependency.getDependencies());
 
-        DependencyMO policyDependency = childFolderDependency.getDependencies().get(0);
+        DependencyMO policyDependency = getDependency(folderDependencies,policyItem.getId());
         Assert.assertNotNull(policyDependency);
         Assert.assertNull(policyDependency.getDependencies());
-        Assert.assertEquals(policyItem.getName(), policyDependency.getDependentObject().getName());
-        Assert.assertEquals(EntityType.POLICY.toString(), policyDependency.getDependentObject().getType());
+        Assert.assertEquals(policyItem.getName(), policyDependency.getName());
+        Assert.assertEquals(EntityType.POLICY.toString(), policyDependency.getType());
 
         validate(mappings);
     }
@@ -415,7 +415,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         assertOkResponse(response);
 
         Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<Item> folderDependencies = dependencies.getContent().getDependencies();
+        List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
         Assert.assertEquals(5, folderDependencies.size());
@@ -496,7 +496,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         assertOkResponse(response);
 
         Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<Item> folderDependencies = dependencies.getContent().getDependencies();
+        List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
         Assert.assertEquals(7, folderDependencies.size());
@@ -589,7 +589,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             assertOkResponse(response);
 
             Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<Item> folderDependencies = dependencies.getContent().getDependencies();
+            List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
             Assert.assertEquals(7, folderDependencies.size());
@@ -727,7 +727,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             assertOkResponse(response);
 
             Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<Item> folderDependencies = dependencies.getContent().getDependencies();
+            List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
             Assert.assertEquals(7, folderDependencies.size());

@@ -9,7 +9,7 @@ import java.util.Collection;
 /**
  * Entity manager for EncapsulatedAssertionConfig.
  */
-public interface EncapsulatedAssertionConfigManager extends EntityManager<EncapsulatedAssertionConfig,GuidEntityHeader>,GuidBasedEntityManager<EncapsulatedAssertionConfig> {
+public interface EncapsulatedAssertionConfigManager extends EntityManager<EncapsulatedAssertionConfig,ZoneableGuidEntityHeader>,GuidBasedEntityManager<EncapsulatedAssertionConfig> {
     /**
      * Find all active/enabled encapsulated assertion configs that reference the specified policy OID as the
      * backing policy.

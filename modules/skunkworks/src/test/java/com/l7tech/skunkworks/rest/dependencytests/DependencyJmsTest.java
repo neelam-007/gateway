@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -162,22 +162,23 @@ public class DependencyJmsTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jmsEndpoint);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
+                verifyItem(dep,jmsEndpoint);
+                assertNotNull("Missing dependency:" + securePassword.getId(), getDependency(dep.getDependencies(), securePassword.getId()));
 
                 // verify secure password dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
@@ -202,22 +203,23 @@ public class DependencyJmsTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jmsEndpoint1);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
+                verifyItem(dep,jmsEndpoint1);
+                assertNotNull("Missing dependency:" + securePassword.getId(), getDependency(dep.getDependencies(), securePassword.getId()));
 
                 // verify secure password dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
@@ -248,34 +250,35 @@ public class DependencyJmsTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = getDependency(dependencyAnalysisMO.getDependencies(),EntityType.JMS_ENDPOINT);
-                verifyItem(dep.getDependentObject(), jmsEndpointTemplate);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(4,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.JMS_ENDPOINT);
+                verifyItem(dep, jmsEndpointTemplate);
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(dep.getDependencies(), securityZone.getId()));
 
                 // verify secure password dependency
-                DependencyMO passwordDep  =  getDependency(dependencyAnalysisMO.getDependencies(),EntityType.SECURE_PASSWORD);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  =  getDependency(dependencyAnalysisMO,EntityType.SECURE_PASSWORD);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
 
 
                 // verify security zone dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO securityZoneDep  = dep.getDependencies().get(0);
-                assertEquals(securityZone.getId(), securityZoneDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), securityZoneDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getDependentObject().getType());
+                DependencyMO securityZoneDep  = getDependency(dependencyAnalysisMO, EntityType.SECURITY_ZONE);
+                assertEquals(securityZone.getId(), securityZoneDep.getId());
+                assertEquals(securityZone.getName(), securityZoneDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getType());
             }
         });
     }
 
-    protected void verifyItem(Item item, JmsEndpoint endpoint){
+    protected void verifyItem(DependencyMO item, JmsEndpoint endpoint){
         assertEquals(endpoint.getId(), item.getId());
         assertEquals(endpoint.getName(), item.getName());
         assertEquals(EntityType.JMS_ENDPOINT.toString(), item.getType());

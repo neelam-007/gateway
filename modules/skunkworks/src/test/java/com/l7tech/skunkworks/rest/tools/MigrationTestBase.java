@@ -1,16 +1,16 @@
 package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamResult;
@@ -129,7 +129,7 @@ public abstract class MigrationTestBase {
 
     protected void validate(Item<Mappings> mappings) throws Exception {
         for (Mapping mapping : mappings.getContent().getMappings()) {
-            if(mapping.getErrorType() == null){
+            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
@@ -147,5 +147,23 @@ public abstract class MigrationTestBase {
         final StreamResult result = new StreamResult(bout);
         MarshallingUtils.marshal(object, result, false);
         return bout.toString();
+    }
+
+    protected DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
+        return (DependencyMO) CollectionUtils.find(dependencies, new Predicate() {
+            @Override
+            public boolean evaluate(Object o) {
+                return ((DependencyMO) o).getId().equals(id);
+            }
+        });
+    }
+
+    protected DependencyMO getDependency(List<DependencyMO> dependencies, final EntityType type){
+        return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
+            @Override
+            public boolean evaluate(Object o) {
+                return ((DependencyMO)o).getType().equals(type.toString());
+            }
+        });
     }
 }

@@ -16,6 +16,11 @@ public class DependentAssertion extends DependentObject {
         this.descriptiveName = descriptiveName;
     }
 
+    public DependentAssertion(DependentAssertion object) {
+        super(object);
+        this.descriptiveName = object.descriptiveName;
+    }
+
     public String getDescriptiveName() {
         return descriptiveName;
     }

@@ -70,7 +70,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         Assert.assertEquals(204, response.getStatus());
     }
 
-    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyTreeMO>> verify) throws Exception{
+    protected void TestPolicyDependency(String policyXml, Functions.UnaryVoid<Item<DependencyListMO>> verify) throws Exception{
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -105,12 +105,12 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
 
         //  verify
         final StreamSource source = new StreamSource(new StringReader(depResponse.getBody()));
-        Item<DependencyTreeMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        Item<DependencyListMO> item = MarshallingUtils.unmarshal(Item.class, source);
         verify.call(item);
 
     }
 
-    protected void TestDependency(String resourceURI, String id, Functions.UnaryVoid<Item<DependencyTreeMO>> verify) throws Exception{
+    protected void TestDependency(String resourceURI, String id, Functions.UnaryVoid<Item<DependencyListMO>> verify) throws Exception{
 
          //  get dependency
         RestResponse depResponse = getDatabaseBasedRestManagementEnvironment().processRequest( resourceURI + id + "/dependencies", HttpMethod.GET, null, "");
@@ -118,15 +118,24 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
 
         //  verify
         final StreamSource source = new StreamSource(new StringReader(depResponse.getBody()));
-        Item<DependencyTreeMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        Item<DependencyListMO> item = MarshallingUtils.unmarshal(Item.class, source);
         verify.call(item);
     }
 
-    protected DependencyMO getDependency(List<DependencyMO> dependencies, final EntityType type){
+    protected DependencyMO getDependency(DependencyListMO dependencies, final EntityType type){
+        return (DependencyMO)CollectionUtils.find(dependencies.getDependencies(), new Predicate() {
+            @Override
+            public boolean evaluate(Object o) {
+                return ((DependencyMO)o).getType().equals(type.toString());
+            }
+        });
+    }
+
+    protected DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
         return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
             @Override
             public boolean evaluate(Object o) {
-                return ((DependencyMO)o).getDependentObject().getType().equals(type.toString());
+                return ((DependencyMO)o).getId().equals(id);
             }
         });
     }

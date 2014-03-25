@@ -29,7 +29,7 @@ import static com.l7tech.util.Eithers.*;
  *
  */
 @ResourceFactory.ResourceType(type=EncapsulatedAssertionMO.class)
-public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,GuidEntityHeader> {
+public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntityManagerResourceFactory<EncapsulatedAssertionMO, EncapsulatedAssertionConfig,ZoneableGuidEntityHeader> {
 
     //- PUBLIC
 

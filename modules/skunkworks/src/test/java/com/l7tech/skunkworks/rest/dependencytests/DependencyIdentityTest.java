@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.identity.GroupManager;
@@ -131,18 +131,18 @@ public class DependencyIdentityTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(internalProviderId, dep.getDependentObject().getId());
-                assertEquals("Internal Identity Provider", dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                assertEquals(internalProviderId, dep.getId());
+                assertEquals("Internal Identity Provider", dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
             }
         });
     }
@@ -165,24 +165,29 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO idDep  = getDependency(dependencyAnalysisMO.getDependencies(), EntityType.ID_PROVIDER_CONFIG);
-                assertEquals(internalProviderId, idDep.getDependentObject().getId());
-                assertEquals("Internal Identity Provider", idDep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertEquals(internalProviderId, idDep.getId());
+                assertEquals("Internal Identity Provider", idDep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getType());
 
                 // verify admin user dependency
-                DependencyMO adminDep  = getDependency(dependencyAnalysisMO.getDependencies(), EntityType.USER);
-                assertEquals(new Goid(0,3).toString(), adminDep.getDependentObject().getId());
-                assertEquals("admin", adminDep.getDependentObject().getName());
-                assertEquals(EntityType.USER.toString(), adminDep.getDependentObject().getType());
+                DependencyMO adminDep  = getDependency(dependencyAnalysisMO, EntityType.USER);
+                assertEquals(new Goid(0,3).toString(), adminDep.getId());
+                assertEquals("admin", adminDep.getName());
+                assertEquals(EntityType.USER.toString(), adminDep.getType());
+
+                // verify policy dependency
+                DependencyMO policyDep  = getDependency(dependencyAnalysisMO, EntityType.POLICY);
+                assertNotNull("Missing dependency:" + new Goid(0,3).toString(), getDependency(policyDep.getDependencies(), new Goid(0,3).toString()));
+                assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
             }
         });
     }
@@ -203,24 +208,31 @@ public class DependencyIdentityTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO idDep  = getDependency(dependencyAnalysisMO.getDependencies(), EntityType.ID_PROVIDER_CONFIG);
-                assertEquals(internalProviderId, idDep.getDependentObject().getId());
-                assertEquals("Internal Identity Provider", idDep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(idDep);
+                assertEquals(internalProviderId, idDep.getId());
+                assertEquals("Internal Identity Provider", idDep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getType());
 
                 // verify admin user dependency
-                DependencyMO adminDep  = getDependency(dependencyAnalysisMO.getDependencies(), EntityType.GROUP);
-                assertEquals(internalGroup.getId(), adminDep.getDependentObject().getId());
-                assertEquals(internalGroup.getName(), adminDep.getDependentObject().getName());
-                assertEquals(EntityType.GROUP.toString(), adminDep.getDependentObject().getType());
+                DependencyMO adminDep = getDependency(dependencyAnalysisMO, EntityType.GROUP);
+                assertNotNull(adminDep);
+                assertEquals(internalGroup.getId(), adminDep.getId());
+                assertEquals(internalGroup.getName(), adminDep.getName());
+                assertEquals(EntityType.GROUP.toString(), adminDep.getType());
+
+                // verify policy dependency
+                DependencyMO policyDep  = getDependency(dependencyAnalysisMO, EntityType.POLICY);
+                assertNotNull("Missing dependency:" + internalGroup.getId(), getDependency(policyDep.getDependencies(), internalGroup.getId()));
+                assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
             }
         });
     }
@@ -238,25 +250,27 @@ public class DependencyIdentityTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(ldap.getId(), dep.getDependentObject().getId());
-                assertEquals(ldap.getName(), dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(dep);
+                assertEquals(ldap.getId(), dep.getId());
+                assertEquals(ldap.getName(), dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
+                assertNotNull("Missing dependency:" + securePassword.getId(), getDependency(dep.getDependencies(), securePassword.getId()));
 
                 // verify password dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertNotNull(passwordDep);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
@@ -274,26 +288,27 @@ public class DependencyIdentityTest extends DependencyTestBase {
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(ldapNtlmPassword.getId(), dep.getDependentObject().getId());
-                assertEquals(ldapNtlmPassword.getName(), dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(dep);
+                assertEquals(ldapNtlmPassword.getId(), dep.getId());
+                assertEquals(ldapNtlmPassword.getName(), dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
+                assertNotNull("Missing dependency:" + securePassword.getId(), getDependency(dep.getDependencies(), securePassword.getId()));
 
                 // verify password dependency
-                assertNotNull("Password dependency not found", dep.getDependencies());
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertNotNull(passwordDep);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
@@ -337,18 +352,18 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(internalProviderId, dep.getDependentObject().getId());
-                assertEquals("Internal Identity Provider", dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                assertEquals(internalProviderId, dep.getId());
+                assertEquals("Internal Identity Provider", dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
             }
         });
     }
@@ -379,25 +394,28 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(ldap.getId(), dep.getDependentObject().getId());
-                assertEquals(ldap.getName(), dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(dep);
+                assertEquals(ldap.getId(), dep.getId());
+                assertEquals(ldap.getName(), dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
+                assertEquals(1,dep.getDependencies().size());
+                assertEquals(securePassword.getId(),dep.getDependencies().get(0).getId());
 
                 // verify password dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertNotNull(passwordDep);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
@@ -416,28 +434,28 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(ldapNtlmPassword.getId(), dep.getDependentObject().getId());
-                assertEquals(ldapNtlmPassword.getName(), dep.getDependentObject().getName());
-                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getDependentObject().getType());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(dep);
+                assertEquals(ldapNtlmPassword.getId(), dep.getId());
+                assertEquals(ldapNtlmPassword.getName(), dep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
+                assertNotNull("Missing dependency:" + securePassword.getId(), getDependency(dep.getDependencies(), securePassword.getId()));
 
                 // verify password dependency
-                assertNotNull("Password dependency not found", dep.getDependencies());
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertNotNull(passwordDep);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
-
 }

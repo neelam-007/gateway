@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
@@ -97,15 +97,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
 
             }
         });
@@ -128,22 +128,23 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePasswordZoned);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO.getDependencies(),securePasswordZoned.getId());
+                assertNotNull("Missing dependency:" + securePasswordZoned.getId(),dep);
+                verifyItem(dep,securePasswordZoned);
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(dep.getDependencies(), securityZone.getId()));
 
                 // verify security zone dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securityZone.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
+                assertEquals(securityZone.getId(), passwordDep.getId());
+                assertEquals(securityZone.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getType());
 
             }
         });
@@ -174,15 +175,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -228,15 +229,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -282,15 +283,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -338,15 +339,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -372,15 +373,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -407,15 +408,15 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -433,16 +434,16 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -461,10 +462,10 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
-                assertNull(dependencyItem.getContent().getDependencies());
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNull(getDependency(dependencyItem.getContent(),EntityType.SECURE_PASSWORD));
             }
         });
     }
@@ -489,16 +490,16 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -518,16 +519,16 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
@@ -548,21 +549,21 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),securePassword);
+                verifyItem(dep,securePassword);
             }
         });
     }
 
-    protected void verifyItem(Item item, SecurePassword secPassword ){
+    protected void verifyItem(DependencyMO item, SecurePassword secPassword ){
         assertEquals(secPassword.getId(), item.getId());
         assertEquals(secPassword.getName(), item.getName());
         assertEquals(EntityType.SECURE_PASSWORD.toString(), item.getType());

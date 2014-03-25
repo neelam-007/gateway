@@ -35,8 +35,8 @@ import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- *
- */
+*
+*/
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DependencyPolicyTest extends DependencyTestBase {
     private static final Logger logger = Logger.getLogger(DependencyPolicyTest.class.getName());
@@ -65,8 +65,8 @@ public class DependencyPolicyTest extends DependencyTestBase {
 //            - folder
 //                - policy ( includes policy 2, in securityZone)
 //                - folder2
-//                    - policy2  ( in securityZone2)
-//                    - policyAlias
+//                    - policy2  ( in securityZone1)
+//                    - policyAlias ( in securityZone1)
 
         //create security zone
         securityZone.setName("Test security zone");
@@ -100,8 +100,8 @@ public class DependencyPolicyTest extends DependencyTestBase {
 
         policy2.setXml(policyXml2);
         policy2.setGuid(UUID.randomUUID().toString());
-        policy.setFolder(folder2);
-        policy.setSecurityZone(securityZone1);
+        policy2.setFolder(folder2);
+        policy2.setSecurityZone(securityZone1);
         policyManager.save(policy2);
         policyGoids.add(policy2.getGoid());
 
@@ -253,24 +253,32 @@ public class DependencyPolicyTest extends DependencyTestBase {
     @Test
     public void policyTest() throws Exception {
 
-        TestDependency("policies/", policy.getId(), new Functions.UnaryVoid<Item<DependencyTreeMO>>() {
+        TestDependency("policies/", policy.getId(), new Functions.UnaryVoid<Item<DependencyListMO>>() {
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO securityZonedep = getDependency(dependencyAnalysisMO.getDependencies(),EntityType.SECURITY_ZONE);
-                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getDependentObject().getType());
-                assertEquals(securityZone.getId(), securityZonedep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), securityZonedep.getDependentObject().getName());
+                DependencyMO policydep = getDependency(dependencyAnalysisMO.getDependencies(),policy.getId());
+                assertEquals(EntityType.POLICY.toString(), policydep.getType());
+                assertEquals(policy.getId(), policydep.getId());
+                assertEquals(policy.getName(), policydep.getName());
+                assertNotNull( "Missing dependency:"+securityZone.getId(), getDependency(policydep.getDependencies(),securityZone.getId()));
+                assertNotNull( "Missing dependency:"+policy2.getId(), getDependency(policydep.getDependencies(),policy2.getId()));
 
-                DependencyMO includePolicydep = getDependency(dependencyAnalysisMO.getDependencies(),EntityType.POLICY);
-                assertEquals(EntityType.POLICY.toString(), includePolicydep.getDependentObject().getType());
-                assertEquals(policy2.getId(), includePolicydep.getDependentObject().getId());
-                assertEquals(policy2.getName(), includePolicydep.getDependentObject().getName());
+                DependencyMO securityZonedep = getDependency(dependencyAnalysisMO.getDependencies(),securityZone.getId());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getType());
+                assertEquals(securityZone.getId(), securityZonedep.getId());
+                assertEquals(securityZone.getName(), securityZonedep.getName());
+
+                DependencyMO includePolicydep = getDependency(dependencyAnalysisMO.getDependencies(),policy2.getId());
+                assertEquals(EntityType.POLICY.toString(), includePolicydep.getType());
+                assertEquals(policy2.getId(), includePolicydep.getId());
+                assertEquals(policy2.getName(), includePolicydep.getName());
+                assertNotNull( "Missing dependency:"+securityZone1.getId(), getDependency(includePolicydep.getDependencies(),securityZone1.getId()));
             }
         });
     }
@@ -279,35 +287,38 @@ public class DependencyPolicyTest extends DependencyTestBase {
     @Test
     public void folderServiceAliasTest() throws Exception {
 
-        TestDependency("folders/", folder2.getId(), new Functions.UnaryVoid<Item<DependencyTreeMO>>() {
+        TestDependency("folders/", folder2.getId(), new Functions.UnaryVoid<Item<DependencyListMO>>() {
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(6, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO policyAliasDep = dependencyAnalysisMO.getDependencies().get(0);
-                assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasDep.getDependentObject().getType());
-                assertEquals(policyAlias.getId(), policyAliasDep.getDependentObject().getId());
-                assertEquals(policy.getId(), policyAliasDep.getDependentObject().getName());
+                DependencyMO policyAliasDep = getDependency(dependencyAnalysisMO, EntityType.POLICY_ALIAS);
+                assertNotNull(policyAliasDep);
+                assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasDep.getType());
+                assertEquals(policyAlias.getId(), policyAliasDep.getId());
+                assertEquals(policy.getId(), policyAliasDep.getName());
 
                 // verify security zone dependency
-                assertEquals(2, policyAliasDep.getDependencies().size());
-                DependencyMO securityZoneDep = getDependency(policyAliasDep.getDependencies(), EntityType.SECURITY_ZONE);
-                assertEquals(securityZone1.getId(), securityZoneDep.getDependentObject().getId());
-                assertEquals(securityZone1.getName(), securityZoneDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getDependentObject().getType());
+                DependencyMO securityZoneDep = getDependency(dependencyAnalysisMO.getDependencies(), securityZone1.getId());
+                assertNotNull(securityZoneDep);
+                assertEquals(securityZone1.getId(), securityZoneDep.getId());
+                assertEquals(securityZone1.getName(), securityZoneDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getType());
 
 
                 // verify policy dependency
-                DependencyMO policydep = getDependency(policyAliasDep.getDependencies(),EntityType.POLICY);
-                assertEquals(EntityType.POLICY.toString(), policydep.getDependentObject().getType());
-                assertEquals(policy.getId(), policydep.getDependentObject().getId());
-                assertEquals(policy.getName(), policydep.getDependentObject().getName());
+                DependencyMO policydep = getDependency(dependencyAnalysisMO.getDependencies(),policy.getId());
+                assertNotNull(policydep);
+                assertEquals(EntityType.POLICY.toString(), policydep.getType());
+                assertEquals(policy.getId(), policydep.getId());
+                assertEquals(policy.getName(), policydep.getName());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(policydep.getDependencies(), securityZone.getId()));
+                assertNotNull("Missing dependency:" + policy2.getId(), getDependency(policydep.getDependencies(), policy2.getId()));
             }
         });
     }
-
 }

@@ -8,9 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.search.objects.*;
 import com.l7tech.server.search.processors.DependencyFinder;
 
 import javax.inject.Inject;
@@ -94,32 +92,50 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     public List<DependentObject> buildFlatDependencyList(List<DependencySearchResults> dependencySearchResults) {
         List<DependentObject> dependentObjects = new ArrayList<>();
         for (DependencySearchResults dependencySearchResult : dependencySearchResults) {
-            buildDependentObjectsList(dependentObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies());
+            buildDependentObjectsList(dependentObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(),new ArrayList<DependentObject>());
         }
         return dependentObjects;
     }
 
-    private void buildDependentObjectsList(List<DependentObject> dependentObjects, final DependentObject dependent, List<Dependency> dependencies) {
+    private void buildDependentObjectsList(List<DependentObject> dependentObjects, final DependentObject dependent, List<Dependency> dependencies, List<DependentObject> processed ) {
+        // check circular dependency
+        if(processed.contains(dependent)){
+            return;
+        }
+        processed.add(dependent);
+
         if (dependent != null && com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
             //if it is a folder we still need to put security zone dependencies first.
             for (Dependency dependency : dependencies) {
                 if(com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependency.getDependent().getDependencyType())) {
-                    buildDependentObjectsList(dependentObjects, dependency.getDependent(), dependency.getDependencies());
+                    buildDependentObjectsList(dependentObjects, dependency.getDependent(), dependency.getDependencies(),processed);
                 }
             }
-            buildDependentObjectsList(dependentObjects, dependent);
+            buildDependentObjectsList(dependentObjects, dependent, dependencies);
         }
         for (Dependency dependency : dependencies) {
-            buildDependentObjectsList(dependentObjects, dependency.getDependent(), dependency.getDependencies());
+            buildDependentObjectsList(dependentObjects, dependency.getDependent(), dependency.getDependencies(),processed);
         }
         if (dependent != null && !com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
-            buildDependentObjectsList(dependentObjects, dependent);
+            buildDependentObjectsList(dependentObjects, dependent, dependencies);
         }
     }
 
-    private void buildDependentObjectsList(List<DependentObject> dependentObjects, final DependentObject dependent) {
+    private void buildDependentObjectsList(List<DependentObject> dependentObjects, final DependentObject dependent,final List<Dependency> dependencies) {
         if (!dependentObjects.contains(dependent)) {
             dependentObjects.add(dependent);
+        }
+        final DependentObject current = dependentObjects.get(dependentObjects.indexOf(dependent));
+        for(Dependency dep: dependencies){
+            if (dep.getDependent() instanceof DependentAssertion) {
+                DependentAssertion assDep = new DependentAssertion((DependentAssertion)dep.getDependent());
+                assDep.setDependencies(Collections.EMPTY_LIST);
+                current.addDependency(assDep);
+            } else if (dep.getDependent() instanceof DependentEntity) {
+                DependentEntity entityDep = new DependentEntity((DependentEntity)dep.getDependent());
+                entityDep.setDependencies(Collections.EMPTY_LIST);
+                current.addDependency(entityDep);
+            }
         }
     }
 

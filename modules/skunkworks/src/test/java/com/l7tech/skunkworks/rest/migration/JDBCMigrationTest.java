@@ -25,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This will test migration using the rest api from one gateway to another.
- */
+* This will test migration using the rest api from one gateway to another.
+*/
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(JDBCMigrationTest.class.getName());
@@ -294,16 +294,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies().get(0).getDependencies();
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(1, jdbcDependencies.size());
+            Assert.assertEquals(3, jdbcDependencies.size());
 
-            DependencyMO passwordDependency = jdbcDependencies.get(0);
+            DependencyMO passwordDependency = getDependency(jdbcDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(securePasswordItem.getContent().getName(), passwordDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getDependentObject().getId());
+            Assert.assertEquals(securePasswordItem.getContent().getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -378,16 +378,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies().get(0).getDependencies();
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(1, jdbcDependencies.size());
+            Assert.assertEquals(3, jdbcDependencies.size());
 
-            DependencyMO passwordDependency = jdbcDependencies.get(0);
+            DependencyMO passwordDependency = getDependency(jdbcDependencies, EntityType.SECURE_PASSWORD);
             Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(securePasswordItem.getContent().getName(), passwordDependency.getDependentObject().getName());
-            Assert.assertNotSame(storedPasswordMO.getId(), passwordDependency.getDependentObject().getId());
+            Assert.assertEquals(securePasswordItem.getContent().getName(), passwordDependency.getName());
+            Assert.assertNotSame(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         } finally {
@@ -642,19 +642,19 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies().get(0).getDependencies();
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(1, jdbcDependencies.size());
+            Assert.assertEquals(3, jdbcDependencies.size());
 
-            DependencyMO passwordDependency = jdbcDependencies.get(0);
+            DependencyMO passwordDependency = getDependency(jdbcDependencies, storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getDependentObject().getId());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -793,16 +793,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies().get(0).getDependencies();
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(1, jdbcDependencies.size());
+            Assert.assertEquals(3, jdbcDependencies.size());
 
-            DependencyMO passwordDependency = jdbcDependencies.get(0);
+            DependencyMO passwordDependency = getDependency(jdbcDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getDependentObject().getId());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1007,13 +1007,13 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies().get(0).getDependencies();
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(1, jdbcDependencies.size());
+            Assert.assertEquals(3, jdbcDependencies.size());
 
-            DependencyMO passwordDependency = jdbcDependencies.get(0);
+            DependencyMO passwordDependency = getDependency(jdbcDependencies,securePasswordItem.getId());
             Assert.assertNotNull(passwordDependency);
 
             validate(mappings);
@@ -1095,15 +1095,15 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
 
             validate(mappings);
         }finally{
@@ -1185,15 +1185,15 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionItem.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
 
             validate(mappings);
         }finally{
@@ -1277,16 +1277,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
-            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getDependentObject().getId());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
+            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1371,16 +1371,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
-            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getDependentObject().getId());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
+            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1465,16 +1465,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
-            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getDependentObject().getId());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
+            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1557,16 +1557,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
-            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getDependentObject().getId());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
+            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getId());
 
             validate(mappings);
         }finally{
@@ -1650,16 +1650,16 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO jdbcDependency = policyDependencies.get(0);
+            DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionItem.getId());
             Assert.assertNotNull(jdbcDependency);
-            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getDependentObject().getName());
-            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getDependentObject().getId());
+            Assert.assertEquals(jdbcConnectionMO.getName(), jdbcDependency.getName());
+            Assert.assertEquals(jdbcConnectionMO.getId(), jdbcDependency.getId());
 
             validate(mappings);
         }finally{

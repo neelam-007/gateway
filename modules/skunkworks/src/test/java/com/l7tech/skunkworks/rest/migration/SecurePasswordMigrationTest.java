@@ -36,7 +36,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
     private static final Logger logger = Logger.getLogger(SecurePasswordMigrationTest.class.getName());
 
     private Item<PolicyMO> policyItem;
-    private Item<StoredPasswordMO> securePasswordItem;    
+    private Item<StoredPasswordMO> securePasswordItem;
     private Item<Mappings> mappingsToClean;
 
     @Before
@@ -55,7 +55,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
 
         securePasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         securePasswordItem.setContent(storedPasswordMO);
-        
+
         //create policy;
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -162,17 +162,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO certDependency = policyDependencies.get(0);
-        Assert.assertNotNull(certDependency);
-        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), certDependency.getDependentObject().getType());
-        Assert.assertEquals(securePasswordItem.getName(), certDependency.getDependentObject().getName());
-        Assert.assertEquals(securePasswordItem.getId(), certDependency.getDependentObject().getId());
+        DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
+        Assert.assertNotNull(passwordDependency);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+        Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+        Assert.assertEquals(securePasswordItem.getId(), passwordDependency.getId());
 
         validate(mappings);
     }
@@ -243,17 +243,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
-            Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(storedPasswordMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), certDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally {
@@ -332,17 +332,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
-            Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(storedPasswordMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), certDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally {
@@ -388,13 +388,14 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                     objectToString(bundleItem.getContent()));
             logger.info(response.toString());
-    
+
             // import fail
             assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
             assertEquals(409, response.getStatus());
             Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(0).getErrorType());
             assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(0).<String>getProperty("ErrorMessage").contains("must be unique"));
+            
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
             assertOkDeleteResponse(response);
@@ -456,16 +457,16 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(securePasswordItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(securePasswordItem.getId(), mqDependency.getDependentObject().getId());
+        DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
+        Assert.assertNotNull(passwordDependency);
+        Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+        Assert.assertEquals(securePasswordItem.getId(), passwordDependency.getId());
 
         validate(mappings);
     }
@@ -539,17 +540,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), mqDependency.getDependentObject().getType());
-            Assert.assertEquals(securePasswordItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(securePasswordItem.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+            Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+            Assert.assertEquals(securePasswordItem.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -627,16 +628,16 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(securePasswordItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -715,16 +716,16 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(storedPasswordMO.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -837,17 +838,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
-            Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(storedPasswordMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), certDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{
@@ -961,17 +962,17 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
-            Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(storedPasswordMO.getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(storedPasswordMO.getId(), certDependency.getDependentObject().getId());
+            DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
+            Assert.assertNotNull(passwordDependency);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);
         }finally{

@@ -348,7 +348,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
      * @return The mapped entity header
      */
     @Nullable
-    private EntityHeader findMappedHeader(Map<EntityHeader, EntityHeader> replacementMap, final EntityHeader dependentHeader) {
+    protected EntityHeader findMappedHeader(Map<EntityHeader, EntityHeader> replacementMap, final EntityHeader dependentHeader) {
         EntityHeader header = replacementMap.get(dependentHeader);
         // check by GUID
         if (header == null && dependentHeader instanceof GuidEntityHeader) {

@@ -2,7 +2,7 @@ package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityType;
@@ -108,15 +108,16 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(), trustedCert);
+                verifyItem(dep, trustedCert);
             }
         });
     }
@@ -136,15 +137,16 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(), trustedCert);
+                verifyItem(dep, trustedCert);
             }
         });
     }
@@ -195,15 +197,16 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(), trustedCert);
+                verifyItem(dep, trustedCert);
             }
         });
     }
@@ -252,19 +255,20 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(), trustedCert);
+                verifyItem(dep, trustedCert);
             }
         });
     }
-    protected void verifyItem(Item item, TrustedCert trustedCert){
+    protected void verifyItem(DependencyMO item, TrustedCert trustedCert){
         assertEquals(trustedCert.getId(), item.getId());
         assertEquals(trustedCert.getName(), item.getName());
         assertEquals(EntityType.TRUSTED_CERT.toString(), item.getType());
@@ -285,31 +289,30 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(), trustedCertWithRevocationPolicy);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(4,dependencyAnalysisMO.getDependencies().size());
 
+                DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.TRUSTED_CERT);
+                verifyItem(dep, trustedCertWithRevocationPolicy);
+                assertNotNull("Missing dependency:" + revocationCheckPolicy.getId(), getDependency(dep.getDependencies(), revocationCheckPolicy.getId()));
 
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO revDep  = dep.getDependencies().get(0);
+                DependencyMO revDep  = getDependency(dependencyAnalysisMO,EntityType.REVOCATION_CHECK_POLICY);
+                assertNotNull("Missing dependency:" + revocationCheckPolicy.getId(),revDep);
+                assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), revDep.getType());
+                assertEquals(revocationCheckPolicy.getId(), revDep.getId());
+                assertEquals(revocationCheckPolicy.getName(), revDep.getName());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(revDep.getDependencies(), securityZone.getId()));
 
-                assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), revDep.getDependentObject().getType());
-                assertEquals(revocationCheckPolicy.getId(), revDep.getDependentObject().getId());
-                assertEquals(revocationCheckPolicy.getName(), revDep.getDependentObject().getName());
-
-
-                assertEquals(1,revDep.getDependencies().size());
-                DependencyMO zoneDep  = revDep.getDependencies().get(0);
-
-                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getDependentObject().getType());
-                assertEquals(securityZone.getId(), zoneDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), zoneDep.getDependentObject().getName());
+                DependencyMO zoneDep  = getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
+                assertNotNull("Missing dependency:" + securityZone.getId(),zoneDep);
+                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
+                assertEquals(securityZone.getId(), zoneDep.getId());
+                assertEquals(securityZone.getName(), zoneDep.getName());
 
             }
         });

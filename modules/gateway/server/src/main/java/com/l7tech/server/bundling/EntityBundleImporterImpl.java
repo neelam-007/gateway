@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -220,9 +221,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             throw new IllegalArgumentException("Cannot update or save a non persisted entity.");
         }
 
-        //validate the entity. This should check the entity annotations and see if it contains valid data.
-        validate((PersistentEntityContainer)entityContainer);
-
         final PersistentEntity baseEntity = (PersistentEntity)entityContainer.getEntity();
 
         //create the original entity header
@@ -250,6 +248,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
         //create/save dependent entities
         beforeCreateOrUpdateEntities((PersistentEntityContainer) entityContainer, existingEntity, baseEntity);
+
+        //validate the entity. This should check the entity annotations and see if it contains valid data.
+        validate((PersistentEntityContainer)entityContainer);
 
         // Create the managed object within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers.
@@ -321,6 +322,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 ((PublishedService)baseEntity).getPolicy().setGoid(((PublishedService)existingEntity).getPolicy().getGoid());
                 ((PublishedService)baseEntity).getPolicy().setVersion(((PublishedService)existingEntity).getPolicy().getVersion());
             }
+        }else if(baseEntity instanceof EncapsulatedAssertionConfig){
+            EncapsulatedAssertionConfig encassConfig = ((EncapsulatedAssertionConfig)baseEntity);
+            Goid policyGoid = ((EncapsulatedAssertionConfig) baseEntity).getPolicy().getGoid();
+            Entity policyFound = entityCrud.find(new EntityHeader(policyGoid, EntityType.POLICY,null,null));
+            encassConfig.setPolicy((Policy)policyFound);
         }
     }
 

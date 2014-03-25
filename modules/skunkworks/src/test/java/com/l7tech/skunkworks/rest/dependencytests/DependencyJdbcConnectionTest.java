@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -114,22 +114,24 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jdbcConnection);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JDBC_CONNECTION);
+                assertEquals(jdbcConnection.getId(), dep.getId());
+                assertEquals(jdbcConnection.getName(), dep.getName());
+                assertEquals(EntityType.JDBC_CONNECTION.toString(), dep.getType());
+                assertNotNull( "Missing dependency:"+securityZone.getId(), getDependency(dep.getDependencies(),securityZone.getId()));
 
                 // verify security zone dependency
-                assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securityZone.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securityZone.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURITY_ZONE);
+                assertEquals(securityZone.getId(), passwordDep.getId());
+                assertEquals(securityZone.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURITY_ZONE.toString(), passwordDep.getType());
             }
         });
     }
@@ -148,30 +150,28 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
-                
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),jdbcConnectionPassword);
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JDBC_CONNECTION);
+                assertEquals(jdbcConnectionPassword.getId(), dep.getId());
+                assertEquals(jdbcConnectionPassword.getName(), dep.getName());
+                assertEquals(EntityType.JDBC_CONNECTION.toString(), dep.getType());
+                assertNotNull( "Missing dependency:"+securePassword.getId(), getDependency(dep.getDependencies(),securePassword.getId()));
 
                 // verify password dependency
                 assertEquals(1,dep.getDependencies().size());
-                DependencyMO passwordDep  = dep.getDependencies().get(0);
-                assertEquals(securePassword.getId(), passwordDep.getDependentObject().getId());
-                assertEquals(securePassword.getName(), passwordDep.getDependentObject().getName());
-                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getDependentObject().getType());
+                DependencyMO passwordDep  = getDependency(dependencyAnalysisMO, EntityType.SECURE_PASSWORD);
+                assertEquals(securePassword.getId(), passwordDep.getId());
+                assertEquals(securePassword.getName(), passwordDep.getName());
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
             }
         });
     }
 
-    protected void verifyItem(Item item, JdbcConnection jdbcConnectionItem){
-        assertEquals(jdbcConnectionItem.getId(), item.getId());
-        assertEquals(jdbcConnectionItem.getName(), item.getName());
-        assertEquals(EntityType.JDBC_CONNECTION.toString(), item.getType());
-    }
 }

@@ -29,8 +29,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * This will test migration using the rest api from one gateway to another.
- */
+* This will test migration using the rest api from one gateway to another.
+*/
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(DocumentResourceMigrationTest.class.getName());
@@ -245,16 +245,16 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO docDependency = policyDependencies.get(0);
+            DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
-            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
-            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getId());
             Assert.assertNull(docDependency.getDependencies());
 
             validate(mappings);
@@ -338,16 +338,16 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO docDependency = policyDependencies.get(0);
+            DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
-            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getDependentObject().getName());
-            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getId());
             Assert.assertNull(docDependency.getDependencies());
 
             validate(mappings);
@@ -465,16 +465,16 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(3, policyDependencies.size());
 
-        DependencyMO docDependency = policyDependencies.get(0);
+        DependencyMO docDependency = getDependency(policyDependencies, resourceDocItem.getId());
         Assert.assertNotNull(docDependency);
-        Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
-        Assert.assertEquals(resourceDocItem.getId(), docDependency.getDependentObject().getId());
+        Assert.assertEquals(resourceDocItem.getName(), docDependency.getName());
+        Assert.assertEquals(resourceDocItem.getId(), docDependency.getId());
 
         validate(mappings);
     }
@@ -555,16 +555,16 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO docDependency = policyDependencies.get(0);
+            DependencyMO docDependency = getDependency(policyDependencies, resourceDocItem.getId());
             Assert.assertNotNull(docDependency);
-            Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
-            Assert.assertEquals(resourceDocItem.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(resourceDocItem.getName(), docDependency.getName());
+            Assert.assertEquals(resourceDocItem.getId(), docDependency.getId());
             Assert.assertEquals(1, docDependency.getDependencies().size());
 
             validate(mappings);
@@ -650,16 +650,16 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO docDependency = policyDependencies.get(0);
+            DependencyMO docDependency = getDependency(policyDependencies, resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
-            Assert.assertEquals(resourceDocItem.getName(), docDependency.getDependentObject().getName());
-            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getDependentObject().getId());
+            Assert.assertEquals(resourceDocItem.getName(), docDependency.getName());
+            Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getId());
             Assert.assertEquals(1, docDependency.getDependencies().size());
 
             validate(mappings);
@@ -790,19 +790,18 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(3, policyDependencies.size());
 
-            DependencyMO docDependency = policyDependencies.get(0);
+            DependencyMO docDependency = getDependency(policyDependencies,resourceDocItem.getId());
             Assert.assertNotNull(docDependency);
-            Assert.assertEquals(1, docDependency.getDependencies().size());
-            DependencyMO zoneDependency = docDependency.getDependencies().get(0);
 
-            Assert.assertEquals(securityZoneMO.getName(), zoneDependency.getDependentObject().getName());
-            Assert.assertEquals(securityZoneMO.getId(), zoneDependency.getDependentObject().getId());
+            DependencyMO zoneDependency = getDependency(policyDependencies, securityZoneMO.getId());
+            Assert.assertEquals(securityZoneMO.getName(), zoneDependency.getName());
+            Assert.assertEquals(securityZoneMO.getId(), zoneDependency.getId());
 
             validate(mappings);
         }finally{

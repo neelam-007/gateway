@@ -17,7 +17,7 @@ import java.util.Collection;
 /**
  * Entity manager for {@link EncapsulatedAssertionConfig}.
  */
-public class EncapsulatedAssertionConfigManagerImpl extends HibernateEntityManager<EncapsulatedAssertionConfig,GuidEntityHeader> implements EncapsulatedAssertionConfigManager {
+public class EncapsulatedAssertionConfigManagerImpl extends HibernateEntityManager<EncapsulatedAssertionConfig, ZoneableGuidEntityHeader> implements EncapsulatedAssertionConfigManager {
 
     private static final String HQL_FIND_ENCASS_CONFIGS_REFERENCING_POLICY_GOID =
         "from encapsulated_assertion" +

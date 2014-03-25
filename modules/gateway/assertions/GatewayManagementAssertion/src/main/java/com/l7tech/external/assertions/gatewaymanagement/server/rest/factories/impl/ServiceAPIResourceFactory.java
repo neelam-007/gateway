@@ -116,8 +116,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             @Override
             public String doInTransaction(final TransactionStatus transactionStatus) {
                 try {
-                    Pair<PublishedService, Collection<ServiceDocument>> newServiceEntity = factory.fromResource(resource);
-                    PublishedService newService = newServiceEntity.left;
+                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource,true);
+                    PublishedService newService = newServiceEntity.getEntity();
                     newService.setVersion(0);
                     rbacAccessService.validatePermitted(newService, OperationType.CREATE);
 
@@ -125,7 +125,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     Goid id = serviceManager.save(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
-                    saveServiceDocuments(id, newServiceEntity.right);
+                    saveServiceDocuments(id, newServiceEntity.getServiceDocuments());
 
                     resource.setId(id.toString());
                     return id.toString();
@@ -235,7 +235,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), active, comment, false);
                     saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
 
-                    return factory.asResource(newServiceEntity.getEntity());
+                    return serviceTransformer.convertToMO(newServiceEntity.getEntity());
 
                 } catch (ResourceFactory.InvalidResourceException e) {
                     transactionStatus.setRollbackOnly();

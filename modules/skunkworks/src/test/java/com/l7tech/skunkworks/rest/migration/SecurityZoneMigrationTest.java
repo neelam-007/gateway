@@ -24,8 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
-    private static final Logger logger = Logger.getLogger(MigrateSecurityZoneTest.class.getName());
+public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
+    private static final Logger logger = Logger.getLogger(SecurityZoneMigrationTest.class.getName());
     private Item<SecurityZoneMO> securityZoneItem;
 
     private Item<Mappings> mappingsToClean;
@@ -163,16 +163,16 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
             response = getTargetEnvironment().processRequest("folders/" + folderMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> folderCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> folderCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> folderDependencies = folderCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
-            Assert.assertEquals(1, folderDependencies.size());
+            Assert.assertEquals(2, folderDependencies.size());
 
-            DependencyMO securityZoneDependency = folderDependencies.get(0);
+            DependencyMO securityZoneDependency = getDependency(folderDependencies,securityZoneItemTarget.getId());
             Assert.assertNotNull(securityZoneDependency);
-            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
-            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getName());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getId());
         }finally{
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
@@ -264,16 +264,16 @@ public class MigrateSecurityZoneTest extends com.l7tech.skunkworks.rest.tools.Mi
             response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO securityZoneDependency = policyDependencies.get(0);
+            DependencyMO securityZoneDependency = getDependency(policyDependencies,securityZoneItemTarget.getId());
             Assert.assertNotNull(securityZoneDependency);
-            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getDependentObject().getName());
-            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getDependentObject().getId());
+            Assert.assertEquals(securityZoneMO.getName(), securityZoneDependency.getName());
+            Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getId());
 
         } finally {
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");

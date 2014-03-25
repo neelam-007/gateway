@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyTreeMO;
+import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.EntityType;
@@ -70,16 +70,16 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
+            public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyTreeMO dependencyAnalysisMO = dependencyItem.getContent();
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep.getDependentObject(),clusterProperty);
+                verifyItem(dep,clusterProperty);
             }
         });
     }
@@ -97,16 +97,16 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyTreeMO>>(){
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 
             @Override
-            public void call(Item<DependencyTreeMO> dependencyItem) {
-                assertNull(dependencyItem.getContent().getDependencies());
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNull(getDependency(dependencyItem.getContent(),EntityType.CLUSTER_PROPERTY));
             }
         });
     }
 
-    protected void verifyItem(Item item, ClusterProperty clusterProperty){
+    protected void verifyItem(DependencyMO item, ClusterProperty clusterProperty){
         assertEquals(EntityType.CLUSTER_PROPERTY.toString(), item.getType());
         assertEquals(clusterProperty.getId(), item.getId());
         assertEquals(clusterProperty.getName(), item.getName());

@@ -1,9 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.GuidEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
@@ -26,7 +23,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDesignTime, UsesVariables, SetsVariables {
 
-    private GuidEntityHeader configHeader = new GuidEntityHeader();
+    private ZoneableGuidEntityHeader configHeader = new ZoneableGuidEntityHeader();
     private Map<String,String> parameters = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
 
     private transient DefaultAssertionMetadata meta = null;
@@ -54,7 +51,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
         //noinspection unchecked
         copy.parameters = (Map<String, String>) ((TreeMap<String, String>)parameters).clone();
-        copy.configHeader = new GuidEntityHeader(configHeader.getGoid(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), configHeader.getDescription());
+        copy.configHeader = new ZoneableGuidEntityHeader(configHeader.getStrId(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), configHeader.getDescription(), configHeader.getVersion());
         copy.configHeader.setGuid(configHeader.getGuid());
         copy.encapsulatedAssertionConfig = encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getCopy();
         copy.meta = null;
@@ -86,10 +83,12 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             configHeader.setGoid(EncapsulatedAssertionConfig.DEFAULT_GOID);
             configHeader.setGuid(null);
             configHeader.setName(null);
+            configHeader.setVersion(null);
         } else {
             configHeader.setGoid(config.getGoid());
             configHeader.setGuid(config.getGuid());
             configHeader.setName(config.getName());
+            configHeader.setVersion(config.getVersion());
         }
         meta = null; // Force metadata to be rebuilt
     }
@@ -215,7 +214,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     }
 
     private GuidEntityHeader makeConfigHeader() {
-        GuidEntityHeader ret = new GuidEntityHeader(configHeader.getGoid().toString(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), null);
+        ZoneableGuidEntityHeader ret = new ZoneableGuidEntityHeader(configHeader.getGoid().toString(), EntityType.ENCAPSULATED_ASSERTION, configHeader.getName(), null, configHeader.getVersion());
         ret.setGuid(configHeader.getGuid());
         return ret;
     }
@@ -234,6 +233,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             configHeader.setGoid(newEntityHeader.getGoid());
             configHeader.setGuid(newGuid);
             configHeader.setName(newEntityHeader.getName());
+            configHeader.setVersion(newEntityHeader.getVersion());
         }
     }
 

@@ -152,20 +152,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
         // verify dependencies
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO certDependency = policyDependencies.get(0);
+        DependencyMO certDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(certDependency);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getDependentObject().getType());
-        Assert.assertEquals(jmsItem.getName(), certDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsItem.getId(), certDependency.getDependentObject().getId());
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getType());
+        Assert.assertEquals(jmsItem.getName(), certDependency.getName());
+        Assert.assertEquals(jmsItem.getId(), certDependency.getId());
 
 
         validate(mappings);
@@ -244,20 +244,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO certDependency = policyDependencies.get(0);
+            DependencyMO certDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getDependentObject().getType());
-            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), certDependency.getDependentObject().getName());
-            Assert.assertEquals(jmsMO.getId(), certDependency.getDependentObject().getId());
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getType());
+            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), certDependency.getName());
+            Assert.assertEquals(jmsMO.getId(), certDependency.getId());
 
             validate(mappings);
         }finally{
@@ -315,19 +315,19 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
-        Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        DependencyMO mqDependency = policyDependencies.get(0);
-        Assert.assertNotNull(mqDependency);
-        Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
-        Assert.assertEquals(jmsItem.getId(), mqDependency.getDependentObject().getId());
+        DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
+        Assert.assertNotNull(jmsDependency);
+        Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
+        Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
 
         validate(mappings);
     }
@@ -405,20 +405,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), mqDependency.getDependentObject().getType());
-            Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(jmsItem.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
+            Assert.assertNotNull(jmsDependency);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
+            Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
+            Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
 
             validate(mappings);
         }finally{
@@ -500,19 +500,19 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(jmsItem.getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
+            Assert.assertNotNull(jmsDependency);
+            Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
+            Assert.assertEquals(jmsMO.getId(), jmsDependency.getId());
 
             // check jms object, associated jms connection is updated and not creating a new one.
             response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsMO.getId(), HttpMethod.GET, null, "");
@@ -601,19 +601,19 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
-            Item<DependencyTreeMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO mqDependency = policyDependencies.get(0);
-            Assert.assertNotNull(mqDependency);
-            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), mqDependency.getDependentObject().getName());
-            Assert.assertEquals(jmsMO.getId(), mqDependency.getDependentObject().getId());
+            DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
+            Assert.assertNotNull(jmsDependency);
+            Assert.assertEquals(jmsMO.getJmsDestinationDetail().getName(), jmsDependency.getName());
+            Assert.assertEquals(jmsMO.getId(), jmsDependency.getId());
 
             validate(mappings);
         }finally{
