@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.external.assertions.mqnative.MqNativeExternalReferenceFactory;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.message.HeadersKnob;
@@ -21,6 +22,7 @@ import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -145,11 +147,27 @@ public class MqNativeModuleLoadListener {
                     }
                     //add the ssl key used if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
-                        // todo replace private key dependency
                         String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
                         String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
-                        throw new NotImplementedException();
+                        SsgKeyEntryId replacementKey = findReplacementSslKey (keyStoreId, keyAlias, replacementMap);
+                        if(replacementKey != null){
+                            activeConnector.setProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, replacementKey.getKeystoreId().toString());
+                            activeConnector.setProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS, replacementKey.getAlias());
+                        }
                     }
+                }
+
+                // returns keystore and alias
+                private SsgKeyEntryId findReplacementSslKey(String keyStoreId, String keyAlias, @NotNull Map<EntityHeader, EntityHeader> replacementMap) {
+                    final String keyId = keyStoreId + ":" + keyAlias;
+                    for(EntityHeader srcHeader:  replacementMap.keySet()){
+                        if(srcHeader.getType().equals(EntityType.SSG_KEY_ENTRY) && srcHeader.getStrId().equalsIgnoreCase(keyId)){
+                            String targetID = replacementMap.get(srcHeader).getStrId();
+                            return new SsgKeyEntryId(targetID);
+                        }
+                    }
+                    // nothing to replace
+                    return null;
                 }
 
                 private String findReplacementPasswordId(String srcId, @NotNull Map<EntityHeader, EntityHeader> replacementMap) {

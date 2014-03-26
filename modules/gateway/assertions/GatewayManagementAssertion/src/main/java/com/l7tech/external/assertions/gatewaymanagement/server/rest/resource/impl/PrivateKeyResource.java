@@ -64,14 +64,17 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * Creates a new entity
      *
      * @param resource The entity to create
+     * @param id The identity of the entity to create in the form of [keystore id]:[alias]
      * @return a reference to the newly created entity
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
+    @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(PrivateKeyCreationContext resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        PrivateKeyMO mo = factory.createPrivateKey(resource);
+    public Response createResource(PrivateKeyCreationContext resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+
+        PrivateKeyMO mo = factory.createPrivateKey(resource, id);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(mo.getId());
         final URI uri = ub.build();
         return Response.created(uri).entity(new ItemBuilder<>(

@@ -63,7 +63,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTestBase {
 
         service.setName("Service1");
         service.setRoutingUri("/test");
-        service.setPolicy(new Policy(PolicyType.INCLUDE_FRAGMENT, "Service1 Policy", POLICY, false));
+        service.getPolicy().setXml(POLICY);
         service.setFolder(rootFolder);
         service.setSoap(false);
         service.getPolicy().setGuid(UUID.randomUUID().toString());

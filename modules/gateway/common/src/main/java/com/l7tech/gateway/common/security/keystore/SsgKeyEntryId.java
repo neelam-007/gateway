@@ -57,4 +57,18 @@ public class SsgKeyEntryId {
     public static SsgKeyEntryId fromString(String keyId) throws IllegalArgumentException {
         return new SsgKeyEntryId(keyId);
     }
+
+    /**
+     * @return the keystore id
+     */
+    public Goid getKeystoreId() {
+        return keystoreId;
+    }
+
+    /**
+     * @return the alias
+     */
+    public String getAlias() {
+        return alias;
+    }
 }

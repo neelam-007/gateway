@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
@@ -55,6 +56,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         final List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
 
         final ArrayList<Entity> entities = new ArrayList<>();
+        final ArrayList<EntityContainer> entityContainers = new ArrayList<>();
         final ArrayList<EntityMappingInstructions> mappings = new ArrayList<>();
 
         for (final DependentObject dependentObject : dependentObjects) {
@@ -77,47 +79,63 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 final Entity entity = entityCrud.find(((DependentEntity) dependentObject).getEntityHeader());
                 entities.add(entity);
 
-                if(entity instanceof HasFolder){
-                    // include parent folder mapping if not already in mapping.
-                    final Entity parentFolder = ((HasFolder)entity).getFolder();
-                    EntityMappingInstructions folderMapping = new EntityMappingInstructions(
-                            EntityHeaderUtils.fromEntity(parentFolder),
-                            null,
-                            EntityMappingInstructions.MappingAction.NewOrExisting,
-                            true,
-                            false);
-                    if(!mappings.contains(folderMapping)) mappings.add(folderMapping);
-                }
-
-                //create the default mapping instructions
-                EntityMappingInstructions mapping = mappingInstructionsBuilder.createDefaultMapping(((DependentEntity) dependentObject).getEntityHeader(),
-                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
-                        EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
-
-                //add the mapping
-
-                mappings.add(mapping);
+                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject, entity);
+                addEntities(entity, entityContainers);
             }
         }
 
-        List<EntityContainer> entityContainers = Functions.map(entities, new Functions.UnaryThrows<EntityContainer, Entity,FindException>(){
-
-            @Override
-            public EntityContainer call(Entity entity) throws FindException {
-                if(entity instanceof JmsEndpoint){
-                    final JmsEndpoint endpoint = (JmsEndpoint)entity;
-                    Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(),EntityType.JMS_CONNECTION, null, null));
-                    if(connection == null)
-                        throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
-                    return new JmsContainer(endpoint,(JmsConnection)connection);
-                }
-                if(entity instanceof PersistentEntity){
-                    return new PersistentEntityContainer((PersistentEntity)entity);
-                }
-                return new EntityContainer(entity);
-            }
-        });
         return new EntityBundle(entityContainers, mappings);
+    }
+
+    private void addEntities(Entity entity, List<EntityContainer> entityContainers) throws FindException {
+        if(entity instanceof JmsEndpoint){
+            final JmsEndpoint endpoint = (JmsEndpoint)entity;
+            Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(),EntityType.JMS_CONNECTION, null, null));
+            if(connection == null)
+                throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
+            entityContainers.add(new JmsContainer(endpoint,(JmsConnection)connection));
+        }else if(entity instanceof PersistentEntity){
+            entityContainers.add( new PersistentEntityContainer((PersistentEntity)entity));
+        }else if(entity instanceof SsgKeyEntry){
+            // not include private key entity info in bundle
+            return;
+        }else{
+            entityContainers.add( new EntityContainer(entity));
+        }
+    }
+
+    private void addMapping(Properties bundleExportProperties, ArrayList<EntityMappingInstructions> mappings, DependentEntity dependentObject, Entity entity) {
+        if(entity instanceof HasFolder){
+            // include parent folder mapping if not already in mapping.
+            final Entity parentFolder = ((HasFolder)entity).getFolder();
+            EntityMappingInstructions folderMapping = new EntityMappingInstructions(
+                    EntityHeaderUtils.fromEntity(parentFolder),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+            if(!mappings.contains(folderMapping)) mappings.add(folderMapping);
+        }
+
+        final EntityMappingInstructions mapping;
+        if(entity instanceof SsgKeyEntry){
+            // map only for private keys
+            mapping = new EntityMappingInstructions(
+                    ((DependentEntity) dependentObject).getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+        }else{
+            //create the default mapping instructions
+            mapping = mappingInstructionsBuilder.createDefaultMapping(((DependentEntity) dependentObject).getEntityHeader(),
+                EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
+        }
+
+        //add the mapping
+
+        mappings.add(mapping);
     }
 
     /**

@@ -41,8 +41,8 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
 
     }
 
-    public PrivateKeyMO createPrivateKey(PrivateKeyCreationContext resource) throws ResourceFactory.InvalidResourceSelectors, ResourceFactory.InvalidResourceException {
-        return factory.createPrivateKey(null,resource);
+    public PrivateKeyMO createPrivateKey(PrivateKeyCreationContext resource, String id) throws ResourceFactory.InvalidResourceSelectors, ResourceFactory.InvalidResourceException {
+        return factory.createPrivateKey(CollectionUtils.<String, String>mapBuilder().put("id", id).map(),resource);
     }
 
     public PrivateKeyExportResult exportResource(String id, String password, String exportAlias) throws ResourceFactory.ResourceNotFoundException {

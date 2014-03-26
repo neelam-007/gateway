@@ -205,7 +205,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws ConstraintViolationException
      */
     @NotNull
-    private EntityHeader createOrUpdateResource(@Nullable final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    private EntityHeader createOrUpdateResource( final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         if (entityContainer == null) {
             throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
         }
@@ -429,7 +429,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             switch (mapping.getTargetMapping().getType()) {
                                 case ID: {
                                     //use the source ID if the target ID is null.
-                                    final Goid targetID = mapping.getTargetMapping().getTargetID() == null ? mapping.getSourceEntityHeader().getGoid() : Goid.parseGoid(mapping.getTargetMapping().getTargetID());
+                                    final String targetID = mapping.getTargetMapping().getTargetID() == null ? mapping.getSourceEntityHeader().getStrId() : mapping.getTargetMapping().getTargetID();
                                     //Find the entity by its id
                                     resource = entityCrud.find(EntityHeaderUtils.getEntityClass(mapping.getSourceEntityHeader()), targetID);
                                     break;
@@ -463,7 +463,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         } else {
                             //find the entity by the id in the source header
-                            resource = entityCrud.find(EntityHeaderUtils.getEntityClass(mapping.getSourceEntityHeader()), mapping.getSourceEntityHeader().getGoid());
+                            resource = entityCrud.find(EntityHeaderUtils.getEntityClass(mapping.getSourceEntityHeader()), mapping.getSourceEntityHeader().getStrId());
                         }
                         return resource;
                     } catch (FindException e) {

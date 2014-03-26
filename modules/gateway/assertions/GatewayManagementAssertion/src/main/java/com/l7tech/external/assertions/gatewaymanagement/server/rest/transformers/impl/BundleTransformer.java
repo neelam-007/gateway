@@ -271,7 +271,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         EntityHeader sourceHeader;
         if(entity == null ) {
             // reference mappings have no referenced entity
-            sourceHeader = new EntityHeader(Goid.parseGoid(mapping.getSrcId()),EntityType.valueOf(mapping.getType()),null,null);
+            sourceHeader = new EntityHeader(mapping.getSrcId(),EntityType.valueOf(mapping.getType()),null,null);
         }
         else {
             sourceHeader = EntityHeaderUtils.fromEntity((Entity)entity.getEntity());
