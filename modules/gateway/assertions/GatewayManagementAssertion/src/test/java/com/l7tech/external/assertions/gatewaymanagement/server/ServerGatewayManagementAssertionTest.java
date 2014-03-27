@@ -52,6 +52,7 @@ import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.globalresources.HttpConfigurationManagerStub;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.*;
+import com.l7tech.server.identity.cert.ClientCertManagerStub;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
@@ -5408,6 +5409,7 @@ public class ServerGatewayManagementAssertionTest {
 
         applicationContext.getBeanFactory().registerSingleton("entityBundleImporter", new EntityBundleImporterStub());
         applicationContext.getBeanFactory().registerSingleton("entityBundleExporter", new EntityBundleExporterStub());
+        applicationContext.getBeanFactory().registerSingleton("clientCertManager", new ClientCertManagerStub() );
 
         applicationContext.refresh();
 

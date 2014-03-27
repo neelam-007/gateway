@@ -33,6 +33,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerStub;
 import com.l7tech.server.identity.TestIdentityProviderConfigManager;
+import com.l7tech.server.identity.cert.ClientCertManagerStub;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
@@ -162,6 +163,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton( "roleManager", roleManager );
         applicationContext.getBeanFactory().registerSingleton("genericEntityManager",new GenericEntityManagerStub() );
         applicationContext.getBeanFactory().registerSingleton("customKeyValueStoreManager", new CustomKeyValueStoreManagerStub() );
+        applicationContext.getBeanFactory().registerSingleton("clientCertManager", new ClientCertManagerStub() );
 
         final SecurityZone securityZone1 = new SecurityZone();
         securityZone1.setGoid(new Goid(0,2));

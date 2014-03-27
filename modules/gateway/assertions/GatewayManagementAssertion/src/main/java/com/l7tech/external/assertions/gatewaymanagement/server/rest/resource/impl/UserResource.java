@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.UserRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CertificateTransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.Link;
@@ -10,6 +11,7 @@ import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
@@ -19,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,10 +38,13 @@ public class UserResource implements URLAccessible<UserMO> {
     @SpringBean
     private UserTransformer transformer;
 
+    @SpringBean
+    private CertificateTransformer certTransformer;
+
     @Context
     private UriInfo uriInfo;
 
-    //The provider id to manage version for.
+    //The provider id to manage users for.
     private String providerId;
 
     /**
@@ -197,15 +204,64 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing user
      *
-     * @param id The id of the active connector to delete.
+     * @param id The id of the user to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
     @Path("{id}")
     public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         userRestResourceFactory.deleteResource(providerId, id);
+    }
+
+    /**
+     * Set this user's certificate
+     *
+     * @param id       The id of the user
+     * @param certificateId The trusted certificate id
+     * @return The certificate set to
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     * @throws FindException
+     */
+    @PUT
+    @Path("{id}/certificate")
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public Response setCertificate(@PathParam("id") String id, String certificateId) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        X509Certificate cert  = userRestResourceFactory.setCertificate(providerId, id, certificateId);
+        return Response.ok(certTransformer.getCertData(cert)).build();
+    }
+
+
+    /**
+     * Gets the user's certificate
+     * @param id    The id of the user
+     * @return The certificate
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     * @throws ObjectModelException
+     */
+    @GET
+    @Path("{id}/certificate")
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public Response getCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        X509Certificate cert  = userRestResourceFactory.getCertificate(providerId, id);
+        return Response.ok(certTransformer.getCertData(cert)).build();
+    }
+
+    /**
+     * Removes the certificate from the user
+     * @param id    The id of the user
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     * @throws ObjectModelException
+     */
+    @DELETE
+    @Path("{id}/certificate")
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public void changeCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        userRestResourceFactory.revokeCertificate(providerId, id);
     }
 
     @NotNull

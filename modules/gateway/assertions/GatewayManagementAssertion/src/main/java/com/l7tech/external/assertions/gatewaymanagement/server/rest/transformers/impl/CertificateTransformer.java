@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APIResourceWsmanBaseTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.TrustedCertificateMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.security.cert.TrustedCert;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.security.cert.X509Certificate;
 
 @Component
 public class CertificateTransformer extends APIResourceWsmanBaseTransformer<TrustedCertificateMO, TrustedCert,EntityHeader, CertificateResourceFactory> {
@@ -26,4 +26,13 @@ public class CertificateTransformer extends APIResourceWsmanBaseTransformer<Trus
                 .setContent(m)
                 .build();
     }
+
+    public CertificateData getCertData(X509Certificate cert){
+        try {
+            return ManagedObjectFactory.createCertificateData(cert);
+        } catch (ManagedObjectFactory.FactoryException e) {
+            throw new ResourceFactory.ResourceAccessException(e);
+        }
+    }
+
 }

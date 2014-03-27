@@ -4,13 +4,19 @@ import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CertificateTransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
+import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.UserMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.bundling.PersistentEntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
@@ -26,6 +32,8 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +57,9 @@ public class UserRestResourceFactory {
     private TrustedEsmUserManager trustedEsmUserManager;
 
     @Inject
+    private TrustedCertManager trustedCertManager;
+
+    @Inject
     private PasswordEnforcerManager passwordEnforcerManager;
 
     @Inject
@@ -59,6 +70,9 @@ public class UserRestResourceFactory {
 
     @Inject
     private RbacAccessService rbacAccessService;
+
+    @Inject
+    private ClientCertManager clientCertManager;
 
     public List<UserMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
         try {
@@ -92,12 +106,17 @@ public class UserRestResourceFactory {
     }
 
     public UserMO getResource(@NotNull String providerId, @NotNull String login) throws FindException, ResourceFactory.ResourceNotFoundException {
+        User user = getUser(providerId, login);
+        return userTransformer.convertToMO(user);
+    }
+
+    private User getUser(String providerId, String login) throws FindException, ResourceFactory.ResourceNotFoundException {
         User user = retrieveUserManager(providerId).findByPrimaryKey(login);
         if(user== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + login);
         }
         rbacAccessService.validatePermitted(user, OperationType.READ);
-        return userTransformer.convertToMO(user);
+        return user;
     }
 
     private UserManager retrieveUserManager(String providerId) throws FindException {
@@ -308,5 +327,30 @@ public class UserRestResourceFactory {
         } catch (UpdateException e) {
             throw new UpdateException("No logon info for '" + user.getLogin() + "'", e);
         }
+    }
+
+    public X509Certificate setCertificate(String providerId, String id, String certificateId) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
+        User user = getUser(providerId,id);
+        TrustedCert cert =  trustedCertManager.findByPrimaryKey(Goid.parseGoid(certificateId));
+        if(cert == null){
+            throw new ResourceFactory.ResourceNotFoundException("Certificate not found: " + id);
+        }
+        rbacAccessService.validatePermitted(cert, OperationType.READ);
+        clientCertManager.recordNewUserCert(user, cert.getCertificate(), false);
+        return (X509Certificate) clientCertManager.getUserCert(user);
+    }
+
+    public void revokeCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException{
+        User user = getUser(providerId, id);
+        clientCertManager.revokeUserCert(user);
+    }
+
+    public X509Certificate getCertificate(String providerId, String id)throws ResourceFactory.ResourceNotFoundException, ObjectModelException {
+        User user = getUser(providerId, id);
+        Certificate userCert = clientCertManager.getUserCert(user);
+        if(userCert == null){
+            throw new ResourceFactory.ResourceNotFoundException("User certificate not found: " + id);
+        }
+        return (X509Certificate) userCert;
     }
 }
