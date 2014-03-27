@@ -11,6 +11,7 @@ import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Either;
 import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
@@ -59,9 +60,9 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      * @return The policyVersion resource for handling policy version requests.
      * @throws ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/versions")
+    @Path("{id}/" + PolicyVersionResource.VERSIONS_URI)
     public PolicyVersionResource versions(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return resourceContext.initResource(new PolicyVersionResource(id));
+        return resourceContext.initResource(new PolicyVersionResource(Either.<String, String>right(id)));
     }
 
     /**

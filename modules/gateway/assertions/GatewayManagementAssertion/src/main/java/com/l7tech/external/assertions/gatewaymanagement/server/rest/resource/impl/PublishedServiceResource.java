@@ -11,6 +11,7 @@ import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Either;
 import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
@@ -53,19 +54,15 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * Shows the policy versions
+     * Shows the service versions
      *
-     * @param id The policy id
+     * @param id The service id
      * @return The policyVersion resource for handling policy version requests.
      * @throws ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/versions")
+    @Path("{id}/" + PolicyVersionResource.VERSIONS_URI)
     public PolicyVersionResource versions(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        String policyId = factory.getPolicyIdForService(id);
-        if (policyId != null) {
-            return resourceContext.initResource(new PolicyVersionResource(policyId));
-        }
-        throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+        return resourceContext.initResource(new PolicyVersionResource(Either.<String, String>left(id)));
     }
 
     /**

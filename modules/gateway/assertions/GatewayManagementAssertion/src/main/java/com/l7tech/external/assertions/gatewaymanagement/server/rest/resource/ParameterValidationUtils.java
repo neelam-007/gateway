@@ -4,48 +4,18 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.I
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 
 /**
  * These are rest resource parameter utilities
  */
 public class ParameterValidationUtils {
-    // This is used to validate annotated beans
-    private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
     //These are the query parameters that a list request can always have
     public static final Collection<String> defaultListQueryParams = Arrays.asList("offset", "count", "sort", "order");
-
-
-    /**
-     * This will validate the entity using annotations that if has declared on it fields and methods.
-     *
-     * @throws InvalidArgumentException This is thrown if the entity is invalid.
-     */
-    public static <O> void validate(@NotNull O obj) {
-        //validate the entity
-        final Set<ConstraintViolation<O>> violations = validator.validate(obj);
-        if (!violations.isEmpty()) {
-            //the entity is invalid. Create a nice exception message.
-            final StringBuilder validationReport = new StringBuilder("Invalid Value: ");
-            boolean first = true;
-            for (final ConstraintViolation<O> violation : violations) {
-                if (!first) validationReport.append('\n');
-                first = false;
-                validationReport.append(violation.getPropertyPath().toString());
-                validationReport.append(" - ");
-                validationReport.append(violation.getMessage());
-            }
-            throw new InvalidArgumentException(validationReport.toString());
-        }
-    }
 
     //TODO: refactor this and merge with below method
     public static void validateNoOtherQueryParamsNoDefaults(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {

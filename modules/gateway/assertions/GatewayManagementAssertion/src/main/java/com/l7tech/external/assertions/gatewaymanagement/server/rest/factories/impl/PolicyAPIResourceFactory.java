@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -10,14 +11,17 @@ import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +32,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -165,6 +170,34 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                 } catch ( ObjectModelException ome ) {
                     transactionStatus.setRollbackOnly();
                     throw new ResourceFactory.ResourceAccessException("Unable to save policy version when updating policy.", ome);
+                }
+            }
+        });
+    }
+
+    /**
+     * This will find if a policy exists and if the currently authenticated user has the operationType access to this
+     * policy. This will throw an exception if the policy doesn't exist or the user does not have access to the policy.
+     *
+     * @param id            The id of the policy.
+     * @param operationType The operation type that the current user needs to have permissions for on this policy
+     * @throws ResourceFactory.ResourceNotFoundException
+     *                      This is thrown if the policy cannot be found
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InsufficientPermissionsException
+     *                      This is thrown if the user does not have sufficient permissions to access the policy
+     */
+    public void validateExistsAndHasAccess(@NotNull final String id, @NotNull final OperationType operationType, @NotNull final Collection<PolicyType> policyTypes) throws ResourceFactory.ResourceNotFoundException {
+        RestResourceFactoryUtils.transactional(transactionManager, true, new Functions.NullaryVoidThrows<ResourceFactory.ResourceNotFoundException>() {
+            @Override
+            public void call() throws ResourceFactory.ResourceNotFoundException {
+                try {
+                    Policy policy = policyManager.findByPrimaryKey(Goid.parseGoid(id));
+                    if (policy == null || !policyTypes.contains(policy.getType())) {
+                        throw new ResourceFactory.ResourceNotFoundException("Could not find policy with id: " + id);
+                    }
+                    rbacAccessService.validatePermitted(policy, operationType);
+                } catch (FindException e) {
+                    throw new ResourceFactory.ResourceNotFoundException("Could not find policy with id: " + id, e);
                 }
             }
         });

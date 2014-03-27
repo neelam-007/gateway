@@ -3,6 +3,9 @@ package com.l7tech.policy;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Transient;
+import javax.validation.constraints.Size;
+
 /**
  * Represents a revision of some policy XML.
  * This is used only by the SSM GUI to provide a versioning service to admins.
@@ -77,6 +80,13 @@ public class PolicyVersion extends NamedEntityImp {
 
     public void setOrdinal(long ordinal) {
         this.ordinal = ordinal;
+    }
+
+    @Size(max = 255)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
     }
 
     public String toString() {

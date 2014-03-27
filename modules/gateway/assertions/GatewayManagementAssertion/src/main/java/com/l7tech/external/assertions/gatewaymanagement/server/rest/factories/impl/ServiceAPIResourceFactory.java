@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -21,7 +22,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * This was created: 11/18/13 as 4:30 PM
@@ -200,6 +202,12 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
         } catch (ResourceFactory.InvalidResourceException e) {
             throw new SaveException(e);
         }
+
+        //need to set the policy GUID if this is not set creating a new service will fail
+        if ( policy.getGuid() == null ) {
+            UUID guid = UUID.randomUUID();
+            policy.setGuid(guid.toString());
+        }
     }
 
     private void validateCreateResource(@Nullable String id, ServiceMO resource) {
@@ -280,5 +288,33 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
         } catch (FindException e) {
             throw new ResourceFactory.ResourceNotFoundException(ExceptionUtils.getMessage(e),e);
         }
+    }
+
+    /**
+     * This will find if a service exists and if the currently authenticated user has the operationType access to this
+     * service. This will throw an exception if the service doesn't exist or the user does not have access to the service.
+     *
+     * @param id            The id of the service.
+     * @param operationType The operation type that the current user needs to have permissions for on this service
+     * @throws ResourceFactory.ResourceNotFoundException
+     *                      This is thrown if the service cannot be found
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InsufficientPermissionsException
+     *                      This is thrown if the user does not have sufficient permissions to access the service
+     */
+    public void validateExistsAndHasAccess(@NotNull final String id, @NotNull final OperationType operationType) throws ResourceFactory.ResourceNotFoundException {
+        RestResourceFactoryUtils.transactional(transactionManager, true, new Functions.NullaryVoidThrows<ResourceFactory.ResourceNotFoundException>() {
+            @Override
+            public void call() throws ResourceFactory.ResourceNotFoundException {
+                try {
+                    PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
+                    if (service == null) {
+                        throw new ResourceFactory.ResourceNotFoundException("Could not find service with id: " + id);
+                    }
+                    rbacAccessService.validatePermitted(service, operationType);
+                } catch (FindException e) {
+                    throw new ResourceFactory.ResourceNotFoundException("Could not find service with id: " + id, e);
+                }
+            }
+        });
     }
 }
