@@ -10,6 +10,7 @@ import com.l7tech.util.Functions;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.hibernate.jdbc.Work;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -500,33 +501,32 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Override
-    public void save(Goid id, ET entity) throws SaveException {
+    public void save(@NotNull final Goid id, @NotNull final ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1}) with id {2}", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString(), id.toString() });
         if(GoidRange.RESERVED_RANGE.isInRange(id)) {
             throw new SaveException("Cannot save an entity with an id in the reserved range. ID: " + id);
         }
         try {
             try {
-                ET other = findByPrimaryKey(id);
+                final ET other = findByPrimaryKey(id);
                 if(other != null) throw new DuplicateObjectException("Other entity exists with the given id: " + id);
             } catch (FindException e) {
                 //do nothing. This means that there is no other entity with the same goid.
             }
-            if (getUniqueType() != UniqueType.NONE) {
-                final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
-                List others;
-                try {
-                    others = findMatching(constraints);
-                } catch (FindException e) {
-                    throw new SaveException("Couldn't find previous version(s) to check uniqueness", e);
-                }
 
-                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));
+            //tell the entity to preserve its id
+            final boolean preserveId = PersistentEntityUtil.preserveId(entity);
+            if (!preserveId) {
+                throw new SaveException("Cannot save an entity with a specific ID. Was unable to preserve the entity ID for entity: " + entity.getClass().getSimpleName());
             }
-
-            PersistentEntityUtil.preserveId(entity);
+            //set the entity id
             entity.setGoid(id);
-            getHibernateTemplate().save(entity);
+            //delegate to the save entity method.
+            final Goid savedID = save(entity);
+            //validate that the ID returned by the above save call equals the one given
+            if (!id.equals(savedID)) {
+                throw new SaveException("Error saving entity with a specific ID. The save method saved with a different id. Expected: " + id + " used " + savedID + ". Entity: " + entity.getClass().getSimpleName());
+            }
         } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
