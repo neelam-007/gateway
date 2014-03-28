@@ -852,7 +852,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 assertion.setHttpMethodAsString(null);
             } else {
                 assertion.setHttpMethod(HttpMethod.OTHER);
-                assertion.setHttpMethodAsString((String) selectedItem);
+                assertion.setHttpMethodAsString(((String) selectedItem).trim());
             }
         } else {
             assertion.setHttpMethod(null);
