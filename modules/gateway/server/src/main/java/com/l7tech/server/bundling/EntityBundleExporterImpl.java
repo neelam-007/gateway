@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -94,6 +95,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             if(connection == null)
                 throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint,(JmsConnection)connection));
+        }else if (entity instanceof RevocationCheckPolicy){
+            // not include revocation check policy in bundle
+            return;
         }else if(entity instanceof PersistentEntity){
             entityContainers.add( new PersistentEntityContainer((PersistentEntity)entity));
         }else if(entity instanceof SsgKeyEntry){
@@ -120,6 +124,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         final EntityMappingInstructions mapping;
         if(entity instanceof SsgKeyEntry){
             // map only for private keys
+            mapping = new EntityMappingInstructions(
+                    ((DependentEntity) dependentObject).getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+        }else if(entity instanceof RevocationCheckPolicy){
+            // map only for revocation check policy
             mapping = new EntityMappingInstructions(
                     ((DependentEntity) dependentObject).getEntityHeader(),
                     null,

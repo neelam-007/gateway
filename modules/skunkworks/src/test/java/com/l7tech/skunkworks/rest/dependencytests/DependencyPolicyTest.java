@@ -25,10 +25,7 @@ import org.junit.*;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -151,50 +148,49 @@ public class DependencyPolicyTest extends DependencyTestBase {
     @Test
     public void policyVersionTest() throws Exception {
 
-        RestResponse versionCheck = processRequest("policies/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
-        logger.info("versions" + versionCheck.toString());
+        //create policy
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("Source Policy");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AuditDetailAssertion>\n" +
+                "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
+                "        </L7p:AuditDetailAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>");
 
-        // get
-        RestResponse responseGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
-        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
-        final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
-        PolicyMO entityGot = (PolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
-        entityGot.setSecurityZoneId(null);
-        getDatabaseBasedRestManagementEnvironment().processRequest( "policies/" + policy.getId() , HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
+        String comment = "0123456789";
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "policies/" + "?versionComment="+comment+"&active=false", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),  XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(201, response.getStatus());
+        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
+        response = processRequest("policies/" + policyCreated.getId() + "/versions/", HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(200, response.getStatus());
+        ItemsList versions = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        assertEquals(1,versions.getContent().size());
+        Item<PolicyVersionMO> version = (Item)versions.getContent().get(0);
+        assertEquals(comment, version.getContent().getComment());
 
-
-        responseGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
-        Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
-        entityGot = (PolicyMO) MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(responseGet.getBody()))).getContent();
-        final String newPolicyXML =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        <L7p:AuditDetailAssertion>\n" +
-                        "            <L7p:Detail stringValue=\"new policy\"/>\n" +
-                        "        </L7p:AuditDetailAssertion>\n" +
-                        "    </wsp:All>\n" +
-                        "</wsp:Policy>";
-        final List<ResourceSet> resourceSets = new ArrayList<ResourceSet>();
-        entityGot.setResourceSets( resourceSets );
-        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
-        resourceSets.add( resourceSet );
-        resourceSet.setTag( "policy" );
-        final Resource resource = ManagedObjectFactory.createResource();
-        resourceSet.setResources( Collections.singletonList(resource) );
-        resource.setType( "policy" );
-        resource.setContent( newPolicyXML );
-
-        String comment = "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "policies/" + policy.getId() + "?versionComment="+comment+"&active=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
-        logger.info("update response" + response.toString());
-
-        RestResponse updateGet = processRequest("policies/" + policy.getId(), HttpMethod.GET, null, "");
-        logger.info("check updated" + updateGet.toString());
-
-        RestResponse versionsGet = processRequest("policies/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
-        logger.info("check versions" + versionsGet.toString());
+        // clean up
+        response = getDatabaseBasedRestManagementEnvironment().processRequest( "policies/"+ policyCreated.getId(), HttpMethod.DELETE, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
     }
 
     @Test
@@ -243,11 +239,24 @@ public class DependencyPolicyTest extends DependencyTestBase {
                         "        </l7:ResourceSet>\n" +
                         "    </l7:Resources>\n" +
                         "</l7:Service>";
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "services/" + policy.getId() + "?versionComment=newComment&active=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),  serviceMOxml);
-        logger.info("update response" + response.toString());
 
-        RestResponse versionsGet = processRequest("services/" + policy.getId() + "/versions/", HttpMethod.GET, null, "");
-        logger.info("check versions" + versionsGet.toString());
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest( "services/" + "?versionComment=newComment&active=false", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),  serviceMOxml);
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(201, response.getStatus());
+        Item<ServiceMO> serviceCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        response = processRequest("services/" + serviceCreated.getId() + "/versions/", HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(200, response.getStatus());
+        ItemsList versions = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        assertEquals(1,versions.getContent().size());
+        Item<PolicyVersionMO> version = (Item)versions.getContent().get(0);
+        assertEquals("newComment", version.getContent().getComment());
+
+        // clean up
+        response = getDatabaseBasedRestManagementEnvironment().processRequest( "services/"+ serviceCreated.getId(), HttpMethod.DELETE, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
     }
 
     @Test
