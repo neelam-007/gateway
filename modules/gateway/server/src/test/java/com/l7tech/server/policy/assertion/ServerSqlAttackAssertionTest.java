@@ -9,11 +9,7 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
@@ -21,6 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
@@ -52,6 +49,10 @@ public class ServerSqlAttackAssertionTest {
     private static final String ORA_SQL = "OraSql";
     private static final String UNRECOGNIZED_PATTERN = "ThisPatternShouldNotExist";
 
+    // URL components
+    private static final String BENIGN_URL_PATH = "/path/to/resource";
+    private static final String BENIGN_URL_QUERY_STRING = "var1=val1&var2=val2";
+
     // message resources
     private static final String VALID_SOAP_REQUEST = "ValidListProductsRequestSOAPMessage.xml";
     private static final String VALID_SOAP_RESPONSE = "ValidEchoResponseSOAPMessage.xml";
@@ -72,30 +73,12 @@ public class ServerSqlAttackAssertionTest {
     private static final String STANDARD_SQL_ATTACK_RESPONSE_MESSAGE =
             "SqlAttack_StandardSql_CdataHashMark_EchoResponseSOAPMessage.xml";
 
-    // policy xml
-    private static final String POLICY_XML =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <wsp:All wsp:Usage=\"Required\">\n" +
-            "        <L7p:SqlAttackProtection>\n" +
-            "            <L7p:IncludeBody booleanValue=\"false\"/>\n" +
-            "            <L7p:IncludeUrl booleanValue=\"true\"/>\n" +
-            "            <L7p:Protections stringSetValue=\"included\">\n" +
-            "                <L7p:item stringValue=\"MsSql\"/>\n" +
-            "                <L7p:item stringValue=\"SqlMetaText\"/>\n" +
-            "                <L7p:item stringValue=\"OraSql\"/>\n" +
-            "                <L7p:item stringValue=\"SqlMeta\"/>\n" +
-            "            </L7p:Protections>\n" +
-            "        </L7p:SqlAttackProtection>\n" +
-            "    </wsp:All>\n" +
-            "</wsp:Policy>\n";
-
     private StashManager stashManager;
     private TestAudit testAudit;
     private SecurityManager originalSecurityManager;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         StashManagerFactory factory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory");
         stashManager = factory.createStashManager();
@@ -110,26 +93,6 @@ public class ServerSqlAttackAssertionTest {
         System.setSecurityManager(originalSecurityManager);
     }
 
-    // Serialization tests
-
-    /**
-     * Read policy as xml to create assertion, create xml from the assertion, compare the original and new policy xml
-     * @throws IOException
-     */
-    @Test
-    public void testSerialization() throws IOException {
-        AssertionRegistry assertionRegistry = new AssertionRegistry();
-        assertionRegistry.registerAssertion(SqlAttackAssertion.class);
-        WspConstants.setTypeMappingFinder(assertionRegistry);
-        Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
-
-        String policyXmlString = WspWriter.getPolicyXml(ass);
-
-        System.out.println(policyXmlString + "\n\n");
-        System.out.println(POLICY_XML + "\n\n");
-        assertEquals(POLICY_XML, policyXmlString);
-    }
-
     // Message body tests
 
     /**
@@ -140,8 +103,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_ValidSOAPRequest_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, VALID_SOAP_REQUEST, META, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -152,8 +117,32 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_ValidSOAPResponse_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.RESPONSE, VALID_SOAP_RESPONSE, META, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
+    }
+
+    /**
+     * Empty request message target, test against all protection types, should pass without issue.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_EmptyBodyInRequestTarget_AssertionStatusNone() throws Exception {
+        SqlAttackAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, META, META_TEXT, ORA_SQL, MS_SQL);
+        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
+
+        Message request = createRequest(HttpMethod.POST, null, null, "", ContentTypeHeader.TEXT_DEFAULT);
+
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, createResponse());
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -164,8 +153,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveDoubleDashInNamespaceCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_DOUBLE_DASH, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -176,8 +167,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveDoubleDashInNamespaceMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_DOUBLE_DASH, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -188,8 +181,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveHashMarkInNamespaceCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_HASH_MARK, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -200,8 +195,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveHashMarkInNamespaceMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_HASH_MARK, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -212,8 +209,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveSingleQuoteInNamespaceCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_SINGLE_QUOTE, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -224,8 +223,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveSingleQuoteInNamespaceMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, INVASIVE_SQL_SINGLE_QUOTE, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -238,8 +239,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.OTHER,
                         STANDARD_SQL_CDATA_DOUBLE_DASH, META);
+
         assertEquals(AssertionStatus.FALSIFIED, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -250,8 +253,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardDoubleDashInCDATACaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_DOUBLE_DASH, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -262,8 +267,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardDoubleDashInCDATACaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_DOUBLE_DASH, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -275,8 +282,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_CDATA_DOUBLE_DASH, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -287,8 +296,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardHashMarkInCDATACaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_HASH_MARK, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -299,8 +310,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardHashMarkInCDATACaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_HASH_MARK, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -312,8 +325,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_CDATA_HASH_MARK, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -324,8 +339,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardSingleQuoteInCDATACaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_SINGLE_QUOTE, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -336,8 +353,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardSingleQuoteInCDATACaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_CDATA_SINGLE_QUOTE, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -349,8 +368,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_CDATA_SINGLE_QUOTE, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -361,8 +382,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardDoubleDashInElementCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_DOUBLE_DASH, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -373,8 +396,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardDoubleDashInElementCaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_DOUBLE_DASH, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -386,8 +411,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_ELEMENT_DOUBLE_DASH, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -398,8 +425,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardHashMarkInElementCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_HASH_MARK, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -410,8 +439,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardHashMarkInElementCaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_HASH_MARK, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -423,8 +454,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_ELEMENT_HASH_MARK, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -435,8 +468,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardSingleQuoteInElementCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_SINGLE_QUOTE, META);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -447,8 +482,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardSingleQuoteInElementCaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, STANDARD_SQL_ELEMENT_SINGLE_QUOTE, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -460,8 +497,10 @@ public class ServerSqlAttackAssertionTest {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST,
                         STANDARD_SQL_ELEMENT_SINGLE_QUOTE, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -472,8 +511,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_MSSQLServerExecSPExploitCaughtByMSSQL_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, MS_SQL_EXPLOIT_EXEC_SP, MS_SQL);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -484,8 +525,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_MSSQLServerExecSPExploitMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, MS_SQL_EXPLOIT_EXEC_SP, META, META_TEXT, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -496,8 +539,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_MSSQLServerExecXPExploitCaughtByMSSQL_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, MS_SQL_EXPLOIT_EXEC_XP, MS_SQL);
+
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -508,8 +553,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_MSSQLServerExecXPExploitMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, MS_SQL_EXPLOIT_EXEC_XP, META, META_TEXT, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -522,7 +569,8 @@ public class ServerSqlAttackAssertionTest {
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_BFILENAME, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -533,8 +581,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_OracleBfilenameExploitMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_BFILENAME, META, META_TEXT, MS_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -547,7 +597,8 @@ public class ServerSqlAttackAssertionTest {
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_OFFSET, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -558,8 +609,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_OracleOffsetExploitMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_OFFSET, META, META_TEXT, MS_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -572,7 +625,8 @@ public class ServerSqlAttackAssertionTest {
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_TIMESTAMP, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -583,8 +637,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_OracleTimestampExploitMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.REQUEST, ORACLE_EXPLOIT_TIMESTAMP, META, META_TEXT, MS_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -595,8 +651,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardAttackInResponseCaughtByMETA_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.RESPONSE, STANDARD_SQL_ATTACK_RESPONSE_MESSAGE, META);
+
         assertEquals(AssertionStatus.BAD_RESPONSE, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -607,8 +665,10 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardAttackInResponseCaughtByMETATEXT_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.RESPONSE, STANDARD_SQL_ATTACK_RESPONSE_MESSAGE, META_TEXT);
+
         assertEquals(AssertionStatus.BAD_RESPONSE, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -620,204 +680,551 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_StandardAttackInResponseMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
                 runTestWithResource(TargetMessageType.RESPONSE, STANDARD_SQL_ATTACK_RESPONSE_MESSAGE, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
-    // Request URL tests
+    // Request URL Query String tests
 
     /**
-     * Request URL contains double dash characters - should be caught by ORA_SQL protection.
+     * Target is a Context Variable but only includeQueryString is specified - SQLATTACK_NOT_HTTP should be logged and
+     * the URL Query String should not be scanned, but the assertion should succeed.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_InvasiveDoubleDashInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=data--", META);
+    public void testCheckRequest_IncludeUrlQueryStringForVariableTarget_NotHttpLogged_AssertionStatusNone() throws Exception {
+        final String varName = "testInput";
+
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, true, false, META);
+        assertion.setOtherTargetMessageVariable(varName);
+
+        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
+
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(TargetMessageType.OTHER, null);
+        context.setVariable(varName, createMessageFromXmlResource(INVASIVE_SQL_DOUBLE_DASH));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_NOT_HTTP));
+
+        checkAuditPresence(false, false, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains double dash characters - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveDoubleDashInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=data--", false, true, META);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, true, true);
     }
 
     /**
-     * Request URL contains double dash characters - should not be caught by protections other than ORA_SQL.
+     * Request URL Query String contains double dash characters - should not be caught by protections
+     * other than ORA_SQL.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_InvasiveDoubleDashInUrl_AssertionStatusNone() throws Exception {
+    public void testCheckRequest_InvasiveDoubleDashInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl("rest?input=data--", META_TEXT, MS_SQL, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=data--", false, true, META_TEXT, MS_SQL, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, false, false);
     }
 
     /**
-     * Request URL contains hash mark character - should be caught by ORA_SQL protection.
+     * Request URL Query String contains hash mark character - should be caught by ORA_SQL protection.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_InvasiveHashMarkInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=dat#a", META);
+    public void testCheckRequest_InvasiveHashMarkInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=dat#a", false, true, META);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, true, true);
     }
 
     /**
-     * Request URL contains hash mark character - should not be caught by protections other than ORA_SQL.
+     * Request URL Query String contains hash mark character - should not be caught by protections other than ORA_SQL.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_InvasiveHashMarkInUrl_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=dat#a", META_TEXT, MS_SQL, ORA_SQL);
-
-        assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains single quote character - should be caught by ORA_SQL protection.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_InvasiveSingleQuoteInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=';DROP%20TABLE%20USERS;'", META);
-
-        assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains single quote character - should not be caught by protections other than ORA_SQL.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_InvasiveSingleQuoteInUrl_AssertionStatusNone() throws Exception {
+    public void testCheckRequest_InvasiveHashMarkInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl("rest?input=';DROP%20TABLE%20USERS;'", META_TEXT, MS_SQL, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=dat#a", false, true, META_TEXT, MS_SQL, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, false, false);
     }
 
     /**
-     * Request URL contains Oracle 'bfilename' exploit - should be caught by ORA_SQL protection.
+     * Request URL Query String contains single quote character - should be caught by ORA_SQL protection.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_OracleBfilenameExploitInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=bfilename", ORA_SQL);
-
-        assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains Oracle 'bfilename' exploit - should not be caught by protections other than ORA_SQL.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_OracleBfilenameExploitInUrl_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=bfilename", META, META_TEXT, MS_SQL);
-
-        assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains Oracle 'offset' exploit - should be caught by ORA_SQL protection.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_OracleOffsetExploitInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=tz_offset", ORA_SQL);
-
-        assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains Oracle 'offset' exploit - should not be caught by protections other than ORA_SQL.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_OracleOffsetExploitInUrl_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=tz_offset", META, META_TEXT, MS_SQL);
-
-        assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains Oracle 'timestamp' exploit - should be caught by ORA_SQL protection.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_OracleTimestampExploitInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=to_timestamp_tz", ORA_SQL);
-
-        assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains Oracle 'timestamp' exploit - should not be caught by protections other than ORA_SQL.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_OracleTimestampExploitInUrl_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=to_timestamp_tz", META, META_TEXT, MS_SQL);
-
-        assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains MS SQL Server 'exec sp_' exploit - should be caught by MS_SQL protection.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_MSSQLServerExecSPExploitInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=exec%20sp_dropextendedproc", MS_SQL);
-
-        assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains MS SQL Server 'exec sp_' exploit - should not be caught by protections other than MS_SQL.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_MSSQLServerExecSPExploitInUrlMissed_AssertionStatusNone() throws Exception {
+    public void testCheckRequest_InvasiveSingleQuoteInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl("rest?input=exec%20sp_dropextendedproc", META, META_TEXT, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=';DROP%20TABLE%20USERS;'", false, true, META);
 
-        assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
-    }
-
-    /**
-     * Request URL contains MS SQL Server 'exec xp_' exploit - should be caught by MS_SQL protection.
-     * @throws Exception
-     */
-    @Test
-    public void testCheckRequest_MSSQLServerExecXPExploitInUrl_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl("rest?input=exec%20xp_smtp_sendmail", MS_SQL);
         assertEquals(AssertionStatus.BAD_REQUEST, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, true, true);
     }
 
     /**
-     * Request URL contains MS SQL Server 'exec xp_' exploit - should not be caught by protections other than MS_SQL.
+     * Request URL Query String contains single quote character - should not be caught by protections
+     * other than ORA_SQL.
      * @throws Exception
      */
     @Test
-    public void testCheckRequest_MSSQLServerExecXPExploitInUrlMissed_AssertionStatusNone() throws Exception {
-        final AssertionStatus status =
-                runTestOnRequestUrl("rest?input=exec%20xp_smtp_sendmail", META, META_TEXT, ORA_SQL);
+    public void testCheckRequest_InvasiveSingleQuoteInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=';DROP%20TABLE%20USERS;'",
+                false, true, META_TEXT, MS_SQL, ORA_SQL);
+
         assertEquals(AssertionStatus.NONE, status);
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'bfilename' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleBfilenameExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=bfilename", false, true, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, false, true, false, false, true, true);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'bfilename' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleBfilenameExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=bfilename", false, true, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'offset' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleOffsetExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=tz_offset", false, true, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, false, true, false, false, true, true);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'offset' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleOffsetExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=tz_offset", false, true, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'timestamp' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleTimestampExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=to_timestamp_tz", false, true, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, false, true, false, false, true, true);
+    }
+
+    /**
+     * Request URL Query String contains Oracle 'timestamp' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleTimestampExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=to_timestamp_tz",
+                false, true, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains MS SQL Server 'exec sp_' exploit - should be caught by MS_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecSPExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20sp_dropextendedproc", false, true, MS_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, false, true, false, false, true, true);
+    }
+
+    /**
+     * Request URL Query String contains MS SQL Server 'exec sp_' exploit - should not be caught by protections
+     * other than MS_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecSPExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20sp_dropextendedproc",
+                false, true, META, META_TEXT, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    /**
+     * Request URL Query String contains MS SQL Server 'exec xp_' exploit - should be caught by MS_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecXPExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20xp_smtp_sendmail", false, true, MS_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, false, true, false, false, true, true);
+    }
+
+    /**
+     * Request URL Query String contains MS SQL Server 'exec xp_' exploit - should not be caught by protections
+     * other than MS_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecXPExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20xp_smtp_sendmail",
+                false, true, META, META_TEXT, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, false, true, false, false, false, false);
+    }
+
+    // Request URL Path tests
+
+    /**
+     * Target is a Context Variable but only includePath is specified - SQLATTACK_NOT_HTTP should be logged and the path
+     * should not be scanned, but the assertion should succeed.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_IncludeUrlPathForVariableTarget_NotHttpLogged_AssertionStatusNone() throws Exception {
+        final String varName = "testInput";
+
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, true, false, false, META);
+        assertion.setOtherTargetMessageVariable(varName);
+
+        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
+
+        final PolicyEnforcementContext context = createPolicyEnforcementContext(TargetMessageType.OTHER, null);
+        context.setVariable(varName, createMessageFromXmlResource(INVASIVE_SQL_DOUBLE_DASH));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SQLATTACK_NOT_HTTP));
+
+        checkAuditPresence(false, false, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains double dash characters - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveDoubleDashInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl("/path/to/re--source", BENIGN_URL_QUERY_STRING, true, false, META);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains double dash characters - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveDoubleDashInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/re--source", BENIGN_URL_QUERY_STRING,
+                true, false, META_TEXT, MS_SQL, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains hash mark character - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveHashMarkInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl("/p#ath/to/resource", BENIGN_URL_QUERY_STRING, true, false, META);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains hash mark character - should not be caught by protections other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveHashMarkInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/p#ath/to/resource", BENIGN_URL_QUERY_STRING,
+                true, false, META_TEXT, MS_SQL, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains single quote character - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveSingleQuoteInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/re';DROP%20TABLE%20USERS;'source",
+                BENIGN_URL_QUERY_STRING, true, false, META);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains single quote character - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_InvasiveSingleQuoteInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/re';DROP%20TABLE%20USERS;'source",
+                BENIGN_URL_QUERY_STRING, true, false, META_TEXT, MS_SQL, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'bfilename' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleBfilenameExploitInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl("/path/to/re+bfilename+source", BENIGN_URL_QUERY_STRING, true, false, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'bfilename' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleBfilenameExploitInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/re+bfilename+source", BENIGN_URL_QUERY_STRING,
+                true, false, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'offset' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleOffsetExploitInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status =
+                runTestOnRequestUrl("/path/to/resource+tz_offset",
+                        BENIGN_URL_QUERY_STRING, true, false, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'offset' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleOffsetExploitInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+tz_offset",
+                BENIGN_URL_QUERY_STRING, true, false, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'timestamp' exploit - should be caught by ORA_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleTimestampExploitInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+to_timestamp_tz",
+                BENIGN_URL_QUERY_STRING, true, false, ORA_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains Oracle 'timestamp' exploit - should not be caught by protections
+     * other than ORA_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_OracleTimestampExploitInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+to_timestamp_tz",
+                BENIGN_URL_QUERY_STRING, true, false, META, META_TEXT, MS_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains MS SQL Server 'exec sp_' exploit - should be caught by MS_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecSPExploitInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+exec+sp_dropextendedproc",
+                BENIGN_URL_QUERY_STRING, true, false, MS_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains MS SQL Server 'exec sp_' exploit - should not be caught by protections
+     * other than MS_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecSPExploitInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+exec+sp_dropextendedproc",
+                BENIGN_URL_QUERY_STRING, true, false, META, META_TEXT, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    /**
+     * Request URL Path contains MS SQL Server 'exec xp_' exploit - should be caught by MS_SQL protection.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecXPExploitInUrlPathCaught_AssertionStatusBadRequest() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+exec+xp_smtp_sendmail",
+                BENIGN_URL_QUERY_STRING, true, false, MS_SQL);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+
+        checkAuditPresence(false, true, false, false, true, false, true);
+    }
+
+    /**
+     * Request URL Path contains MS SQL Server 'exec xp_' exploit - should not be caught by protections
+     * other than MS_SQL.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_MSSQLServerExecXPExploitInUrlPathMissed_AssertionStatusNone() throws Exception {
+        final AssertionStatus status = runTestOnRequestUrl("/path/to/resource+exec+xp_smtp_sendmailsource",
+                BENIGN_URL_QUERY_STRING, true, false, META, META_TEXT, ORA_SQL);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(false, true, false, false, false, false, false);
+    }
+
+    // Scan all target message components test
+
+    /**
+     * Valid benign request message, test all components against all protection types, should pass without issue.
+     * @throws Exception
+     */
+    @Test
+    public void testCheckRequest_IncludeAllComponentsForRequestTarget_AssertionStatusNone() throws Exception {
+        SqlAttackAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, true, true, true, META, META_TEXT, ORA_SQL, MS_SQL);
+        ServerSqlAttackAssertion serverAssertion = createServer(assertion);
+
+        Message request = createRequest(HttpMethod.POST, BENIGN_URL_PATH, BENIGN_URL_QUERY_STRING,
+                new String(IOUtils.slurpStream(getClass().getResourceAsStream(VALID_SOAP_REQUEST)), Charsets.UTF8),
+                ContentTypeHeader.XML_DEFAULT);
+
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, createResponse());
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(true, true, true, false, false, false, false);
     }
 
     // Context variable tests
@@ -830,7 +1237,7 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveSqlInContextVariableTargetCaught_AssertionStatusFalsified() throws Exception {
         final String varName = "testInput";
 
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, true, META);
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, false, true, META);
         assertion.setOtherTargetMessageVariable(varName);
 
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
@@ -839,7 +1246,10 @@ public class ServerSqlAttackAssertionTest {
         context.setVariable(varName, createMessageFromXmlResource(INVASIVE_SQL_DOUBLE_DASH));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
+
         assertEquals(AssertionStatus.FALSIFIED, status);
+
+        checkAuditPresence(true, false, false, true, false, false, true);
     }
 
     /**
@@ -850,7 +1260,8 @@ public class ServerSqlAttackAssertionTest {
     public void testCheckRequest_InvasiveSqlInContextVariableTargetMissed_AssertionStatusNone() throws Exception {
         final String varName = "testInput";
 
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, true, META_TEXT, MS_SQL, ORA_SQL);
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.OTHER, false, false, true,
+                META_TEXT, MS_SQL, ORA_SQL);
         assertion.setOtherTargetMessageVariable(varName);
 
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
@@ -859,7 +1270,10 @@ public class ServerSqlAttackAssertionTest {
         context.setVariable(varName, createMessageFromXmlResource(INVASIVE_SQL_DOUBLE_DASH));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
+
         assertEquals(AssertionStatus.NONE, status);
+
+        checkAuditPresence(true, false, false, false, false, false, false);
     }
 
     /**
@@ -888,7 +1302,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_REQUESTMessagePostRouting_AssertionStatusFailed() throws Exception {
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.REQUEST, false, true, META);
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.REQUEST, false, false, true, META);
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
 
         Message request = createRequest();
@@ -909,7 +1323,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_RESPONSEMessageNotRouted_AssertionStatusNone() throws Exception {
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.RESPONSE, false, true, META);
+        SqlAttackAssertion assertion = createAssertion(TargetMessageType.RESPONSE, false, false, true, META);
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
 
         Message request = createRequest();
@@ -931,7 +1345,7 @@ public class ServerSqlAttackAssertionTest {
         String contextVariableName = "testMessage";
         Message otherTargetMessage = null;
 
-        SqlAttackAssertion assertion = createAssertion(targetType, false, true, protections);
+        SqlAttackAssertion assertion = createAssertion(targetType, false, false, true, protections);
 
         if(TargetMessageType.OTHER == targetType) {
             otherTargetMessage = createMessageFromXmlResource(resource);
@@ -948,12 +1362,15 @@ public class ServerSqlAttackAssertionTest {
         return serverAssertion.checkRequest(context);
     }
 
-    private AssertionStatus runTestOnRequestUrl(String url, String... protections)
+    private AssertionStatus runTestOnRequestUrl(String urlPath, String urlQueryString,
+                                                boolean includePath, boolean includeQueryString,
+                                                String... protections)
             throws IOException, PolicyAssertionException, SAXException {
-        SqlAttackAssertion assertion = createAssertion(TargetMessageType.REQUEST, true, false, protections);
+        SqlAttackAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, includePath, includeQueryString, false, protections);
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
 
-        Message request = createRequest(HttpMethod.GET, url, "", ContentTypeHeader.TEXT_DEFAULT);
+        Message request = createRequest(HttpMethod.GET, urlPath, urlQueryString, "", ContentTypeHeader.TEXT_DEFAULT);
 
         final PolicyEnforcementContext context =
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, createResponse());
@@ -961,13 +1378,15 @@ public class ServerSqlAttackAssertionTest {
         return serverAssertion.checkRequest(context);
     }
 
-    private SqlAttackAssertion createAssertion(TargetMessageType targetMessageType, boolean includeRequestUrl,
-                                               boolean includeRequestBody, String... protections) {
+    private SqlAttackAssertion createAssertion(TargetMessageType targetMessageType, boolean includeUrlPath,
+                                               boolean includeUrlQueryString, boolean includeBody,
+                                               String... protections) {
         SqlAttackAssertion assertion = new SqlAttackAssertion();
 
         assertion.setTarget(targetMessageType);
-        assertion.setIncludeUrl(includeRequestUrl);
-        assertion.setIncludeBody(includeRequestBody);
+        assertion.setIncludeUrlPath(includeUrlPath);
+        assertion.setIncludeUrlQueryString(includeUrlQueryString);
+        assertion.setIncludeBody(includeBody);
 
         for(String protection : protections) {
             assertion.setProtection(protection);
@@ -1018,19 +1437,25 @@ public class ServerSqlAttackAssertionTest {
         return new Message(XmlUtil.parse(getClass().getResourceAsStream(resource)));
     }
 
-    private Message createRequest(HttpMethod httpMethod, @Nullable String queryString,
+    private Message createRequest(HttpMethod httpMethod, @Nullable String requestPath, @Nullable String queryString,
                                   @Nullable String body, ContentTypeHeader contentTypeHeader) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hRequest = new MockHttpServletRequest(servletContext);
-        hRequest.setMethod(httpMethod.name());
 
-        if(null != queryString) {
+        hRequest.setMethod(httpMethod.name());
+        hRequest.addHeader("Content-Type", contentTypeHeader.getFullValue());
+
+        if (null != requestPath) {
+            hRequest.setRequestURI(requestPath);
+        }
+
+        if (null != queryString) {
             hRequest.setQueryString(queryString);
         }
 
         Message request = new Message();
 
-        if(null != body) {
+        if (null != body) {
             request.initialize(stashManager, contentTypeHeader, new ByteArrayInputStream(body.getBytes(Charsets.UTF8)));
         }
 
@@ -1055,5 +1480,29 @@ public class ServerSqlAttackAssertionTest {
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hResponse));
 
         return response;
+    }
+
+    /**
+     * Checks presence or absence of audits to confirm the correct operations were/not carried out and any expected
+     * results were recorded properly.
+     */
+    private void checkAuditPresence(boolean scanningBody, boolean scanningUrlPath, boolean scanningUrlQueryString,
+                                    boolean detectedBody, boolean detectedUrlPath, boolean detectedUrlQueryString,
+                                    boolean rejected) {
+        assertEquals(AssertionMessages.SQLATTACK_SCANNING_BODY_TEXT.getMessage(),
+                scanningBody, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_SCANNING_BODY_TEXT));
+        assertEquals(AssertionMessages.SQLATTACK_SCANNING_URL_PATH.getMessage(),
+                scanningUrlPath, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_SCANNING_URL_PATH));
+        assertEquals(AssertionMessages.SQLATTACK_SCANNING_URL_QUERY_STRING.getMessage(),
+                scanningUrlQueryString,
+                testAudit.isAuditPresent(AssertionMessages.SQLATTACK_SCANNING_URL_QUERY_STRING));
+        assertEquals(AssertionMessages.SQLATTACK_DETECTED.getMessage(),
+                detectedBody, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_DETECTED));
+        assertEquals(AssertionMessages.SQLATTACK_DETECTED_PATH.getMessage(),
+                detectedUrlPath, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_DETECTED_PATH));
+        assertEquals(AssertionMessages.SQLATTACK_DETECTED_PARAM.getMessage(),
+                detectedUrlQueryString, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_DETECTED_PARAM));
+        assertEquals(AssertionMessages.SQLATTACK_REJECTED.getMessage(),
+                rejected, testAudit.isAuditPresent(AssertionMessages.SQLATTACK_REJECTED));
     }
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog">
-  <grid id="cbd77" binding="_contentPane" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="417" height="336"/>
+      <xy x="48" y="54" width="633" height="433"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -11,7 +11,7 @@
       <grid id="94766" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="8" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -29,7 +29,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="e7465" class="javax.swing.JButton" binding="_okButton">
+              <component id="e7465" class="javax.swing.JButton" binding="okButton">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -37,7 +37,7 @@
                   <text value="OK"/>
                 </properties>
               </component>
-              <component id="5723f" class="javax.swing.JButton" binding="_cancelButton">
+              <component id="5723f" class="javax.swing.JButton" binding="cancelButton">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -49,7 +49,7 @@
           </grid>
         </children>
       </grid>
-      <grid id="61182" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="1">
+      <grid id="61182" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -67,70 +67,59 @@
               <text value="Apply protection to:"/>
             </properties>
           </component>
-          <component id="a095d" class="javax.swing.JCheckBox" binding="_requestUrlCheckBox">
+          <grid id="3429d" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <actionCommand value="Request URL"/>
-              <margin top="2" left="23" bottom="2" right="23"/>
-              <selected value="true"/>
-              <text value="URL"/>
-            </properties>
-          </component>
-          <component id="9b897" class="javax.swing.JRadioButton" binding="_requestRadioButton">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <selected value="true"/>
-              <text value="Request"/>
-            </properties>
-          </component>
-          <component id="7f16c" class="javax.swing.JCheckBox" binding="_requestBodyCheckBox">
-            <constraints>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <actionCommand value="Request body"/>
-              <margin top="2" left="23" bottom="2" right="23"/>
-              <selected value="true"/>
-              <text value="Body"/>
-            </properties>
-          </component>
-          <component id="c5c3b" class="javax.swing.JRadioButton" binding="_responseRadioButton">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <actionCommand value="Response body"/>
-              <label value="Response (Body)"/>
-              <text value="Response (Body)"/>
-            </properties>
-          </component>
-          <component id="b6046" class="javax.swing.JRadioButton" binding="_contextVariableRadioButton" default-binding="true">
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <actionCommand value="Response body"/>
-              <label value="Context Variable"/>
-              <text value="Context Variable"/>
-            </properties>
-          </component>
-          <component id="e92a6" class="javax.swing.JTextField" binding="_contextVarName">
-            <constraints>
-              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="100" height="-1"/>
-              </grid>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
-          </component>
+            <border type="none"/>
+            <children>
+              <component id="a095d" class="javax.swing.JCheckBox" binding="urlQueryStringCheckBox">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="URL Query String"/>
+                  <margin top="2" left="23" bottom="2" right="23"/>
+                  <selected value="true"/>
+                  <text value="URL Query String"/>
+                </properties>
+              </component>
+              <hspacer id="6fecd">
+                <constraints>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
+              <component id="7f16c" class="javax.swing.JCheckBox" binding="bodyCheckBox">
+                <constraints>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="Body"/>
+                  <margin top="2" left="23" bottom="2" right="23"/>
+                  <selected value="true"/>
+                  <text value="Body"/>
+                </properties>
+              </component>
+              <component id="2caaf" class="javax.swing.JCheckBox" binding="urlPathCheckBox">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="URL Path"/>
+                  <margin top="2" left="23" bottom="2" right="23"/>
+                  <selected value="true"/>
+                  <text value="URL Path"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
       <scrollpane id="fd25a">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <minimum-size width="-1" height="100"/>
             <preferred-size width="420" height="120"/>
           </grid>
@@ -138,7 +127,7 @@
         <properties/>
         <border type="etched" title="Description"/>
         <children>
-          <component id="d8810" class="javax.swing.JTextArea" binding="_descriptionText">
+          <component id="d8810" class="javax.swing.JTextArea" binding="descriptionText">
             <constraints/>
             <properties>
               <background swing-color="control"/>
@@ -150,31 +139,36 @@
           </component>
         </children>
       </scrollpane>
-      <grid id="203db" binding="_protectionsPanel" layout-manager="GridBagLayout">
+      <component id="6e9d4" class="javax.swing.JLabel">
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Select the code injection protections that you would like to enable"/>
+        </properties>
+      </component>
+      <scrollpane id="9aeb3">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <minimum-size width="-1" height="140"/>
+            <preferred-size width="420" height="150"/>
+          </grid>
         </constraints>
         <properties/>
-        <border type="none"/>
+        <border type="etched" title="Available Protections"/>
         <children>
-          <component id="6e9d4" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-              <gridbag top="0" left="0" bottom="0" right="8" weightx="0.0" weighty="1.0"/>
-            </constraints>
-            <properties>
-              <text value="Protect against:"/>
-            </properties>
-          </component>
-        </children>
-      </grid>
-      <vspacer id="df4b4">
-        <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-            <minimum-size width="-1" height="8"/>
-            <preferred-size width="-1" height="8"/>
-            <maximum-size width="-1" height="8"/>
+          <grid id="e52cb" binding="protectionsPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints/>
+            <properties/>
+            <border type="none"/>
+            <children/>
           </grid>
+        </children>
+      </scrollpane>
+      <vspacer id="caab6">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
     </children>

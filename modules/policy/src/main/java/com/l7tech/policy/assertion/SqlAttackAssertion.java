@@ -22,17 +22,20 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     public static final String PROT_ORASQL = "OraSql";
 
     private static final List<String> ATTACK_PROTECTION_NAMES =
-            new ArrayList<String>(Arrays.asList(PROT_MSSQL, PROT_ORASQL, PROT_METATEXT, PROT_META));
+            new ArrayList<>(Arrays.asList(PROT_MSSQL, PROT_ORASQL, PROT_METATEXT, PROT_META));
     private static final Map<String,SqlAttackProtectionType> ATTACK_PROTECTION_TYPES =
             Collections.unmodifiableMap(createProtectionMap());
 
-    /** Whether to apply protections to request URL. */
-    private boolean includeUrl;
+    /** Whether to apply protections to request URL path. */
+    private boolean includeUrlPath;
+
+    /** Whether to apply protections to request URL query string. */
+    private boolean includeUrlQueryString;
 
     /** Whether to apply protections to request body. */
     private boolean includeBody;
 
-    Set<String> protections = new HashSet<String>();
+    Set<String> protections = new HashSet<>();
 
     public SqlAttackAssertion() {
         super(false);
@@ -42,20 +45,37 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
 
     private final static String baseName = "Protect Against SQL Attacks";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SqlAttackAssertion>(){
+    final static AssertionNodeNameFactory<SqlAttackAssertion> policyNameFactory =
+            new AssertionNodeNameFactory<SqlAttackAssertion>() {
         @Override
-        public String getAssertionName( final SqlAttackAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
+        public String getAssertionName(final SqlAttackAssertion assertion, final boolean decorate) {
+            if (!decorate) return baseName;
 
             StringBuilder sb = new StringBuilder(baseName);
 
-            if(assertion.includeUrl && !assertion.includeBody) {
-                sb.append(" [URL]");
-            } else if(assertion.includeUrl && assertion.includeBody) {
-                sb.append(" [URL + Body]");
-            } else if(!assertion.includeUrl && assertion.includeBody) {
-                sb.append(" [Body]");
+            sb.append(" [");
+
+            if (assertion.includeUrlPath) {
+                sb.append("URL Path");
+
+                if (assertion.includeUrlQueryString) {
+                    sb.append(" + URL Query String");
+                }
+
+                if (assertion.includeBody) {
+                    sb.append(" + Body");
+                }
+            } else if (assertion.includeUrlQueryString) {
+                sb.append("URL Query String");
+
+                if (assertion.includeBody) {
+                    sb.append(" + Body");
+                }
+            } else if (assertion.includeBody) {
+                sb.append("Body");
             }
+
+            sb.append("]");
 
             return AssertionUtils.decorateName(assertion, sb);
         }
@@ -105,8 +125,9 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
      * @deprecated this method is only here for deserialization purposes and should not be called directly.
      */
     @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
     public void setProtections(Set<String> protections) {
-        this.protections = protections == null ? new HashSet<String>() : new HashSet<String>(protections);
+        this.protections = protections == null ? new HashSet<String>() : new HashSet<>(protections);
     }
 
     /**
@@ -183,12 +204,28 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
                 : protectionType.getPattern();
     }
 
-    public boolean isIncludeUrl() {
-        return includeUrl;
+    /**
+     * @deprecated this method is only here for deserialization purposes and should not be called directly.
+     */
+    @Deprecated
+    public void setIncludeUrl(boolean includeUrl) {
+        this.includeUrlQueryString = includeUrl;
     }
 
-    public void setIncludeUrl(boolean includeUrl) {
-        this.includeUrl = includeUrl;
+    public boolean isIncludeUrlPath() {
+        return includeUrlPath;
+    }
+
+    public void setIncludeUrlPath(boolean includeUrlPath) {
+        this.includeUrlPath = includeUrlPath;
+    }
+
+    public boolean isIncludeUrlQueryString() {
+        return includeUrlQueryString;
+    }
+
+    public void setIncludeUrlQueryString(boolean includeUrlQueryString) {
+        this.includeUrlQueryString = includeUrlQueryString;
     }
 
     public boolean isIncludeBody() {
@@ -205,7 +242,7 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     }
 
     private static Map<String, SqlAttackProtectionType> createProtectionMap() {
-        HashMap<String, SqlAttackProtectionType> patternMap = new HashMap<String, SqlAttackProtectionType>(4);
+        HashMap<String, SqlAttackProtectionType> patternMap = new HashMap<>(4);
 
         patternMap.put(PROT_MSSQL, SqlAttackProtectionType.MS_SQL);
         patternMap.put(PROT_ORASQL, SqlAttackProtectionType.ORACLE);

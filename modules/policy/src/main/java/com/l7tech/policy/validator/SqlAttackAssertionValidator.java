@@ -21,25 +21,26 @@ public class SqlAttackAssertionValidator implements AssertionValidator {
                           final PolicyValidatorResult result) {
         if (sqlAttackAssertion.getProtections().isEmpty()) {
             result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
-                    "No SQL protections have been specified", null));
+                    "No SQL protections have been specified.", null));
         }
 
-        if (sqlAttackAssertion.isIncludeUrl() && sqlAttackAssertion.getTarget() != TargetMessageType.REQUEST) {
+        if ((sqlAttackAssertion.isIncludeUrlPath() || sqlAttackAssertion.isIncludeUrlQueryString()) &&
+                sqlAttackAssertion.getTarget() != TargetMessageType.REQUEST) {
             result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
                     "URL cannot be checked if the message is not targeted to Request.", null));
         }
 
-        if (!sqlAttackAssertion.isIncludeUrl() && !sqlAttackAssertion.isIncludeBody()) {
+        if (!sqlAttackAssertion.isIncludeUrlPath() && !sqlAttackAssertion.isIncludeUrlQueryString() &&
+                !sqlAttackAssertion.isIncludeBody()) {
             result.addError(new PolicyValidatorResult.Error(sqlAttackAssertion,
                     "Neither the URL nor Body has been selected to be protected.", null));
         }
 
         // Check if any WSS Token Assertions violate the option "Invasive SQL Injection Attack Protection" or not.
-        if (sqlAttackAssertion.isSqlMetaEnabled()) {
-            if ( hasWssAssertion( assertionPath.getPath(), sqlAttackAssertion ) ) {
-                result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
-                        "WS-Security message decoration violates the selected \"Invasive SQL Injection Attack Protection\".", null));
-            }
+        if (sqlAttackAssertion.isSqlMetaEnabled() && hasWssAssertion(assertionPath.getPath(), sqlAttackAssertion)) {
+            result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
+                    "WS-Security message decoration violates the selected " +
+                            "\"Invasive SQL Injection Attack Protection\".", null));
         }
     }
 

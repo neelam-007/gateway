@@ -23,17 +23,23 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion {
 
-    /** Whether to apply protections to request URL. */
-    private boolean _includeRequestUrl;
+    /** Whether to apply protections to request URL path. */
+    private boolean includeUrlPath;
+
+    /** Whether to apply protections to request URL query string. */
+    private boolean includeUrlQueryString;
 
     /** Whether to apply protections to request body. */
-    private boolean _includeRequestBody;
+    private boolean includeBody;
 
-    /** Whether to apply protections to response body. */
-    private boolean _includeResponseBody;
+    /** DEPRECATED: Whether to apply protections to request body. */
+    private boolean includeRequestBody = false;
+
+    /** DEPRECATED: Whether to apply protections to response body. */
+    private boolean includeResponseBody = false;
 
     /** Protection types to apply. Replaces previous _protection since 4.3. */
-    private CodeInjectionProtectionType[] _protections = new CodeInjectionProtectionType[0];
+    private CodeInjectionProtectionType[] protections = new CodeInjectionProtectionType[0];
 
     public CodeInjectionProtectionAssertion() {
         super(null, false);
@@ -42,51 +48,80 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
     @Override
     public Object clone() {
         final CodeInjectionProtectionAssertion clone = (CodeInjectionProtectionAssertion) super.clone();
-        clone._protections = _protections.clone();
+        clone.protections = protections.clone();
         return clone;
     }
 
-    public boolean isIncludeRequestUrl() {
-        return _includeRequestUrl;
+    public boolean isIncludeUrlPath() {
+        return includeUrlPath;
     }
 
-    public void setIncludeRequestUrl(boolean b) {
-        _includeRequestUrl = b;
+    public void setIncludeUrlPath(boolean includeUrlPath) {
+        this.includeUrlPath = includeUrlPath;
     }
 
-    public boolean isIncludeRequestBody() {
-        return _includeRequestBody;
+    public boolean isIncludeUrlQueryString() {
+        return includeUrlQueryString;
     }
 
-    public void setIncludeRequestBody(boolean b) {
-        _includeRequestBody = b;
+    public void setIncludeUrlQueryString(boolean includeUrlQueryString) {
+        this.includeUrlQueryString = includeUrlQueryString;
+    }
+
+    public boolean isIncludeBody() {
+        return includeBody;
+    }
+
+    public void setIncludeBody(boolean includeBody) {
+        this.includeBody = includeBody;
+    }
+
+    /**
+     * @deprecated this method is only here for deserialization purposes and should not be called directly.
+     */
+    @Deprecated
+    @SuppressWarnings("UnusedDeclaration")
+    public void setIncludeRequestUrl(boolean includeUrlQueryString) {
+        this.includeUrlQueryString = includeUrlQueryString;
+
+        updateState();
+    }
+
+    /**
+     * @deprecated this method is only here for deserialization purposes and should not be called directly.
+     */
+    @Deprecated
+    public void setIncludeRequestBody(boolean includeRequestBody) {
+        this.includeRequestBody = includeRequestBody;
+
+        updateState();
     }
 
     /**
      * @deprecated This assertion is now MessageTargetable
      */
     @Deprecated
-    public boolean isIncludeResponseBody() {
-        return _includeResponseBody;
+    @SuppressWarnings("UnusedDeclaration")
+    public void setIncludeResponseBody(boolean includeResponseBody) {
+        this.includeResponseBody = includeResponseBody;
+
+        updateState();
     }
 
     /**
-     * @deprecated This assertion is now MessageTargetable
+     * @deprecated this method is only here for deserialization purposes and should not be called directly.
      */
     @Deprecated
-    public void setIncludeResponseBody(boolean b) {
-        _includeResponseBody = b;
-    }
-
+    @SuppressWarnings("UnusedDeclaration")
     public void setProtection(final CodeInjectionProtectionType protection) {
-        _protections = new CodeInjectionProtectionType[]{protection};
+        protections = new CodeInjectionProtectionType[]{protection};
     }
 
     /**
      * @return protection types to apply; never null
      */
     public CodeInjectionProtectionType[] getProtections() {
-        return _protections;
+        return protections;
     }
 
     /**
@@ -96,40 +131,44 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
     public void setProtections(final CodeInjectionProtectionType[] protections) {
         if (protections == null)
             throw new IllegalArgumentException("protections array must not be null");
-        _protections = protections;
-    }
-
-    @Override
-    public TargetMessageType getTarget() {
-        TargetMessageType target = super.getTarget();
-
-        // If not configured then use the values that were available before
-        // this assertion was message targetable.
-        if ( target == null ) {
-            target = _includeResponseBody ?
-                    TargetMessageType.RESPONSE :
-                    TargetMessageType.REQUEST;
-        }
-        return target;
-    }
-
-    @Override
-    public void setTarget( final TargetMessageType target ) {
-        super.setTarget(target);
-        if ( target == TargetMessageType.REQUEST &&
-             !( _includeRequestUrl || _includeRequestBody ) ) {
-            _includeRequestUrl = true;
-            _includeRequestBody = true;       
-        }
+        this.protections = protections;
     }
 
     private final static String baseName = "Protect Against Code Injection";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<CodeInjectionProtectionAssertion>(){
+    final static AssertionNodeNameFactory<CodeInjectionProtectionAssertion> policyNameFactory =
+            new AssertionNodeNameFactory<CodeInjectionProtectionAssertion>() {
         @Override
-        public String getAssertionName( final CodeInjectionProtectionAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
-            return AssertionUtils.decorateName(assertion, baseName);
+        public String getAssertionName(final CodeInjectionProtectionAssertion assertion, final boolean decorate) {
+            if (!decorate) return baseName;
+
+            StringBuilder sb = new StringBuilder(baseName);
+
+            sb.append(" [");
+
+            if (assertion.includeUrlPath) {
+                sb.append("URL Path");
+
+                if (assertion.includeUrlQueryString) {
+                    sb.append(" + URL Query String");
+                }
+
+                if (assertion.includeBody) {
+                    sb.append(" + Body");
+                }
+            } else if (assertion.includeUrlQueryString) {
+                sb.append("URL Query String");
+
+                if (assertion.includeBody) {
+                    sb.append(" + Body");
+                }
+            } else if (assertion.includeBody) {
+                sb.append("Body");
+            }
+
+            sb.append("]");
+
+            return AssertionUtils.decorateName(assertion, sb);
         }
     };
 
@@ -144,12 +183,29 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Code Injection Protection Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>(){
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>() {
             @Override
             public Set<ValidatorFlag> call(CodeInjectionProtectionAssertion assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
         return meta;
+    }
+
+    /**
+     * Updates the state of the assertion based on the values of any deprecated variables that might have been set.
+     */
+    private void updateState() {
+        if (includeResponseBody) {
+            if (null == getTarget()) {
+                setTarget(TargetMessageType.RESPONSE);
+            }
+        } else if (includeRequestBody || includeUrlQueryString) {
+            if (null == getTarget()) {
+                setTarget(TargetMessageType.REQUEST);
+            }
+        }
+
+        includeBody = includeRequestBody || includeResponseBody;
     }
 }

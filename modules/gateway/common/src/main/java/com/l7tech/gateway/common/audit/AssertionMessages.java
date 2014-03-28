@@ -723,7 +723,7 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
     public static final M CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE = m(7155, Level.WARNING, "Message is not HTTP, cannot parse content type ''{0}''");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_URL = m(7156, Level.FINE, "Scanning request URL.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_URL_QUERY_STRING = m(7156, Level.FINE, "Scanning request URL query string.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED = m(7157, Level.FINE, "Scanning request message body as application/x-www-form-urlencoded.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA = m(7158, Level.FINE, "Scanning {0} message body as multipart/form-data.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_XML = m(7159, Level.FINE, "Scanning {0} message body as text/xml.");
@@ -732,6 +732,8 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT = m(7162, Level.FINE, "Scanning {0} as text/xml.");
     public static final M CODEINJECTIONPROJECTION_ALREADY_ROUTED = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_JSON = m(7164, Level.FINE, "Scanning {0} message body as application/json.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_URL_PATH = m(7165, Level.FINE, "Scanning request URL path.");
+    public static final M CODEINJECTIONPROTECTION_DETECTED_PATH = m(7166, Level.WARNING, "{3} detected in {0} path \"{1}\": {2}");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
@@ -739,11 +741,13 @@ public class AssertionMessages extends Messages {
     public static final M SQLATTACK_REJECTED = m(7204, Level.WARNING, true, false, "{0} was flagged by Protect Against SQL Attacks Assertion");
     public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
     public static final M SQLATTACK_NOT_HTTP = m(7210, Level.FINE, "Request is not HTTP.");
-    public static final M SQLATTACK_SCANNING_URL = m(7211, Level.FINE, "Scanning request URL.");
+    public static final M SQLATTACK_SCANNING_URL_QUERY_STRING = m(7211, Level.FINE, "Scanning request URL query string.");
     public static final M SQLATTACK_SCANNING_BODY_TEXT = m(7212, Level.FINE, "Scanning {0} message body as text.");
     public static final M SQLATTACK_CANNOT_PARSE = m(7213, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M SQLATTACK_DETECTED_PARAM = m(7214, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M SQLATTACK_DETECTED = m(7215, Level.WARNING, "{2} detected in {0}: {1}");
+    public static final M SQLATTACK_SCANNING_URL_PATH = m(7216, Level.FINE, "Scanning request URL path.");
+    public static final M SQLATTACK_DETECTED_PATH = m(7217, Level.WARNING, "{3} detected in {0} path \"{1}\": {2}");
 
     /**
      * @deprecated

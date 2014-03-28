@@ -35,14 +35,12 @@ import java.util.regex.Pattern;
  * @author darmstrong
  */
 public class ServerCodeInjectionProtectionAssertionTest {
-    private ApplicationContext appContext;
-    private StashManagerFactory factory;
     private StashManager stashManager;
 
     @Before
-    public void setUp(){
-        appContext = ApplicationContexts.getTestApplicationContext();
-        factory = (StashManagerFactory) appContext.getBean("stashManagerFactory");
+    public void setUp() {
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        StashManagerFactory factory = (StashManagerFactory) appContext.getBean("stashManagerFactory");
         stashManager = factory.createStashManager();
     }
 

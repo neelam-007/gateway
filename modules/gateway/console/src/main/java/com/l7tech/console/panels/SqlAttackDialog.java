@@ -17,24 +17,26 @@ import java.util.logging.Logger;
 
 /**
  * @author megery
+ * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackAssertion> {
     private static final String PROTECTION_KEY = "PROT.KEY";
     private static final String PROTECTION_DESCRIPTION = "PROT.DESCRIPTION";
 
     private JPanel mainPanel;
-    private JTextArea attackDescription;
-    private JPanel attackNameList;
+    private JTextArea descriptionText;
+    private JPanel protectionsPanel;
 
-    private JCheckBox urlCheckBox;
+    private JCheckBox urlQueryStringCheckBox;
     private JCheckBox bodyCheckBox;
 
     private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
     private JButton cancelButton;
+    private JCheckBox urlPathCheckBox;
 
     private boolean confirmed = false;
-    private List<JCheckBox> attacks;
+    private List<JCheckBox> protectionCheckBoxes;
 
     private static final Logger logger = Logger.getLogger(SqlAttackDialog.class.getName());
 
@@ -47,14 +49,14 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void doInit(SqlAttackAssertion assertion) {
-        attackNameList.setLayout(new BoxLayout(attackNameList, BoxLayout.Y_AXIS));
-        attacks = new ArrayList<JCheckBox>();
+        protectionsPanel.setLayout(new BoxLayout(protectionsPanel, BoxLayout.Y_AXIS));
+        protectionCheckBoxes = new ArrayList<>();
 
         this.sqlAssertion = assertion;
         getContentPane().add(mainPanel);
 
-        attackNameList.setBackground(mainPanel.getBackground());
-        attackDescription.setBackground(mainPanel.getBackground());
+        protectionsPanel.setBackground(mainPanel.getBackground());
+        descriptionText.setBackground(mainPanel.getBackground());
         Utilities.equalizeButtonSizes(okButton, cancelButton);
 
         okButton.addActionListener(new ActionListener() {
@@ -71,7 +73,16 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             }
         });
 
-        urlCheckBox.setSelected(sqlAssertion.isIncludeUrl());
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                doCancel();
+            }
+        });
+
+        urlPathCheckBox.setSelected(sqlAssertion.isIncludeUrlPath());
+        urlQueryStringCheckBox.setSelected(sqlAssertion.isIncludeUrlQueryString());
+
         bodyCheckBox.setSelected(sqlAssertion.isIncludeBody());
 
         Utilities.setEscKeyStrokeDisposes(this);
@@ -80,23 +91,41 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void initAssertionTargetComponents() {
-
-        urlCheckBox.addItemListener(new ItemListener() {
+        urlPathCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOkButton();
             }
         });
 
-        urlCheckBox.addMouseListener(new MouseAdapter() {
+        urlPathCheckBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                attackDescription.setText("Scan parameter values in URL query string.");
+                descriptionText.setText("Scan URL path.");
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                attackDescription.setText("");
+                descriptionText.setText("");
+            }
+        });
+
+        urlQueryStringCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOkButton();
+            }
+        });
+
+        urlQueryStringCheckBox.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                descriptionText.setText("Scan parameter values in URL query string.");
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                descriptionText.setText("");
             }
         });
 
@@ -110,12 +139,12 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
         bodyCheckBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                attackDescription.setText("Scan request message body.");
+                descriptionText.setText("Scan message body.");
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                attackDescription.setText("");
+                descriptionText.setText("");
             }
         });
     }
@@ -132,14 +161,14 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
         boolean ok = false;
 
         // Ensures at least one protection type has been selected.
-        for (JCheckBox checkBox : attacks) {
+        for (JCheckBox checkBox : protectionCheckBoxes) {
             if (checkBox.isSelected()) {
                 ok = true;
                 break;
             }
         }
 
-        ok &= (urlCheckBox.isSelected() || bodyCheckBox.isSelected());
+        ok &= (urlPathCheckBox.isSelected() || urlQueryStringCheckBox.isSelected() || bodyCheckBox.isSelected());
 
         okButton.setEnabled(ok && !isReadOnly());
     }
@@ -150,15 +179,17 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void doSave() {
-        sqlAssertion.setIncludeUrl(urlCheckBox.isSelected());
+        sqlAssertion.setIncludeUrlPath(urlPathCheckBox.isSelected());
+        sqlAssertion.setIncludeUrlQueryString(urlQueryStringCheckBox.isSelected());
         sqlAssertion.setIncludeBody(bodyCheckBox.isSelected());
 
-        for (JCheckBox checkBox : attacks) {
-            String thekey = (String) checkBox.getClientProperty(PROTECTION_KEY);
+        for (JCheckBox checkBox : protectionCheckBoxes) {
+            String key = (String) checkBox.getClientProperty(PROTECTION_KEY);
+
             if (checkBox.isSelected()) {
-                sqlAssertion.setProtection(thekey);
+                sqlAssertion.setProtection(key);
             } else {
-                sqlAssertion.removeProtection(thekey);
+                sqlAssertion.removeProtection(key);
             }
         }
 
@@ -182,11 +213,11 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
     }
 
     private void populateProtectionList() {
-        List protections = getAvailableProtections();
+        List<String> protections = getAvailableProtections();
+
         if (protections != null) {
-            for (Object protection : protections) {
-                String theProtection = (String) protection;
-                addProtectionToList(theProtection, sqlAssertion);
+            for (String protection : protections) {
+                addProtectionToList(protection, sqlAssertion);
             }
         }
     }
@@ -230,8 +261,8 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
             theCheckBox.putClientProperty(PROTECTION_KEY, theProtection);
             theCheckBox.putClientProperty(PROTECTION_DESCRIPTION, theDescription);
             theCheckBox.setSelected(enabledProtections.contains(theProtection));
-            attacks.add(theCheckBox);
-            attackNameList.add(theCheckBox);
+            protectionCheckBoxes.add(theCheckBox);
+            protectionsPanel.add(theCheckBox);
         } catch (PolicyAssertionException e) {
             logger.log(Level.WARNING,
                     "Error adding protection: " + e.getMessage(), ExceptionUtils.getDebugException(e));
@@ -243,11 +274,11 @@ public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackA
 
     private void updateDescription(JCheckBox checkbox) {
         String theDescription = (String) checkbox.getClientProperty(PROTECTION_DESCRIPTION);
-        attackDescription.setText(theDescription);
+        descriptionText.setText(theDescription);
         repaint();
     }
 
-    private List getAvailableProtections() {
+    private List<String> getAvailableProtections() {
         return SqlAttackAssertion.getAllProtections();
     }
 }

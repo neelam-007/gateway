@@ -1561,7 +1561,7 @@ public class PolicyProcessingTest {
         final MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         hrequest.setMethod("POST");
-        if ( message.indexOf("Content-ID: ") < 0 ) {
+        if (!message.contains("Content-ID: ")) {
             hrequest.setContentType("text/xml; charset=utf8");
             hrequest.addHeader("Content-Type", "text/xml; charset=utf8");
         } else {

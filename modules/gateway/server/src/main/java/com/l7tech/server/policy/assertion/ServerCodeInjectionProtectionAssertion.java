@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -24,7 +23,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -35,8 +33,6 @@ import java.util.Map;
  * @since SecureSpan 3.7
  */
 public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTargetableServerAssertion<CodeInjectionProtectionAssertion> {
-    private static final EnumSet<HttpMethod> putAndPost = EnumSet.of(HttpMethod.POST, HttpMethod.PUT);
-
     /** Number of characters in front of the suspicious code to log when detected. */
     private static final int EVIDENCE_MARGIN_BEFORE = 16;
 
@@ -51,54 +47,63 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message msg,
                                               final String targetName,
-                                              final AuthenticationContext authContext )
+                                              final AuthenticationContext authContext)
             throws IOException, PolicyAssertionException {
-
         boolean routed = context.isPostRouting();
-        boolean scanBody = true;
+        HttpServletRequestKnob httpServletRequestKnob = null;
 
-        if (isRequest() && routed) {
-            logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_ALREADY_ROUTED);
-            return AssertionStatus.FAILED;
-        }
+        if (isRequest()) {
+            if (routed) {
+                logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_ALREADY_ROUTED);
+                return AssertionStatus.FAILED;
+            }
 
-        if (isResponse() && !routed) {
+            httpServletRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
+        } else if (isResponse() && !routed) {
             logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED);
             return AssertionStatus.NONE;
         }
 
-        if (isRequest()) {
-            final HttpServletRequestKnob httpServletRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
-            boolean isHttp = httpServletRequestKnob != null;
-            scanBody = assertion.isIncludeRequestBody() && (!isHttp || putAndPost.contains(httpServletRequestKnob.getMethod()));
+        AssertionStatus result = AssertionStatus.NONE;
 
-            if (assertion.isIncludeRequestUrl()) {
-                if (!isHttp) {
-                    //bug 5290: URL scan configured but applicable only to HTTP requests
-                    logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_NOT_HTTP);
-                } else {
-                    AssertionStatus status = scanHttpRequestUrl(httpServletRequestKnob);
-                    if (status != AssertionStatus.NONE)
-                        return status;
+        if (null != httpServletRequestKnob) { // if the message is HTTP and thereby has a request URL
+            if (assertion.isIncludeUrlPath()) {
+                result = scanHttpRequestPath(httpServletRequestKnob);
+
+                if (result != AssertionStatus.NONE) {
+                    return result;
                 }
             }
+
+            if (assertion.isIncludeUrlQueryString()) {
+                result = scanHttpRequestUrlQueryString(httpServletRequestKnob);
+
+                if (result != AssertionStatus.NONE) {
+                    return result;
+                }
+            }
+        } else if (assertion.isIncludeUrlPath() || assertion.isIncludeUrlQueryString()) {
+            // bug 5290: URL scan configured but applicable only to HTTP requests
+            logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_NOT_HTTP);
         }
 
-        if (scanBody)
-            return scanBody(msg, targetName);
-        else
-            return AssertionStatus.NONE;
+        if (assertion.isIncludeBody()) {
+            result = scanBody(msg, targetName);
+        }
+
+        return result;
     }
 
     private AssertionStatus scanBody(final Message message, final String messageDesc) throws IOException {
         final ContentTypeHeader contentType = message.getMimeKnob().getOuterContentType();
+
         if (isRequest() && contentType.matches("application", "x-www-form-urlencoded")) {
             return scanRequestBodyAsWwwForm(message);
         } else if (contentType.matches("multipart", "form-data")) {
             return scanBodyAsMultipartFormData(message, messageDesc);
         } else if (message.isXml()) {
             return scanBodyAsXml(message, messageDesc);
-        } else if (message.isJson()){
+        } else if (message.isJson()) {
             return scanBodyAsJson(message, messageDesc);
         } else {
             return scanBodyAsText(message, messageDesc, contentType.getEncoding());
@@ -108,7 +113,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
     private AssertionStatus scanRequestBodyAsWwwForm(Message message) throws IOException {
         final HttpServletRequestKnob httpServletRequestKnob = message.getKnob(HttpServletRequestKnob.class);
         //this can only work with http
-        if ( httpServletRequestKnob == null ) {
+        if (httpServletRequestKnob == null) {
             logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE, "application/x-www-form-urlencoded");
             return AssertionStatus.FALSIFIED;
         }
@@ -117,30 +122,60 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
 
         final StringBuilder evidence = new StringBuilder();
         final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
+
         for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
             final String urlParamName = entry.getKey();
+
             for (String urlParamValue : entry.getValue()) {
-                final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
+                final CodeInjectionProtectionType protectionViolated =
+                        scan(urlParamValue, assertion.getProtections(), evidence);
+
                 if (protectionViolated != null) {
-                    logAndAudit("request message body", evidence, urlParamName, protectionViolated);
+                    logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED, "Request message body",
+                            urlParamName, evidence.toString(), protectionViolated.getDisplayName());
                     return AssertionStatus.FALSIFIED;
                 }
             }
         }
+
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanHttpRequestUrl(final HttpServletRequestKnob httpServletRequestKnob) throws IOException {
-        logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL);
+    private AssertionStatus scanHttpRequestPath(final HttpServletRequestKnob httpServletRequestKnob) throws IOException {
+        logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_PATH);
+
+        final StringBuilder evidence = new StringBuilder();
+        final String urlPath = httpServletRequestKnob.getRequestUri();
+
+        final CodeInjectionProtectionType protectionViolated = scan(urlPath, assertion.getProtections(), evidence);
+
+        if (protectionViolated != null) {
+            logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PATH,
+                    "Request URL", urlPath, evidence.toString(), protectionViolated.getDisplayName());
+            return getBadMessageStatus();
+        }
+
+        return AssertionStatus.NONE;
+    }
+
+    private AssertionStatus scanHttpRequestUrlQueryString(final HttpServletRequestKnob httpServletRequestKnob)
+            throws IOException {
+        logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_QUERY_STRING);
+
         final StringBuilder evidence = new StringBuilder();
         final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
+
         for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
             final String urlParamName = entry.getKey();
+
             for (String urlParamValue : entry.getValue()) {
-                final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
+                final CodeInjectionProtectionType protectionViolated =
+                        scan(urlParamValue, assertion.getProtections(), evidence);
+
                 if (protectionViolated != null) {
-                    logAndAudit("request URL", evidence, urlParamName, protectionViolated);
-                    return AssertionStatus.FALSIFIED;
+                    logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
+                            "Request URL", evidence.toString(), urlParamName, protectionViolated.getDisplayName());
+                    return getBadMessageStatus();
                 }
             }
         }
@@ -156,7 +191,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
      * @return an assertion status
      * @throws IOException if error in parsing
      */
-    private AssertionStatus scanBodyAsMultipartFormData(final Message message, final String messageDesc ) throws IOException {
+    private AssertionStatus scanBodyAsMultipartFormData(final Message message, final String messageDesc) throws IOException {
         logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA, messageDesc);
         final MimeKnob mimeKnob = message.getMimeKnob();
         try {
@@ -175,7 +210,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                         }
                     } catch (SAXException e) {
                         logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                                new String[]{where, "text/xml"}, ExceptionUtils.getDebugException(e));
+                                new String[] {where, "text/xml"}, ExceptionUtils.getDebugException(e));
                         return getBadMessageStatus();
                     }
                 } else {
@@ -185,14 +220,16 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                         final byte[] partBytes = IOUtils.slurpStream(partInfo.getInputStream(false));
                         final String partString = new String(partBytes, partContentType.getEncoding());
                         StringBuilder evidence = new StringBuilder();
-                        final CodeInjectionProtectionType protectionViolated = scan(partString, assertion.getProtections(), evidence);
+                        final CodeInjectionProtectionType protectionViolated =
+                                scan(partString, assertion.getProtections(), evidence);
+
                         if (protectionViolated != null) {
-                            logAndAudit(where, evidence, protectionViolated);
+                            logAndAuditBodyDetection(where, evidence, protectionViolated);
                             return AssertionStatus.FALSIFIED;
                         }
                     } catch (NoSuchPartException e) {
                         logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                                new String[]{where, "text"}, ExceptionUtils.getDebugException(e));
+                                new String[] {where, "text"}, ExceptionUtils.getDebugException(e));
                         return getBadMessageStatus();
                     }
                 }
@@ -206,7 +243,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanBodyAsJson(final Message message, final String messageDesc ) throws IOException {
+    private AssertionStatus scanBodyAsJson(final Message message, final String messageDesc) throws IOException {
         logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON, messageDesc);
         final String where = messageDesc + " message body";
         final JsonKnob knob = message.getJsonKnob();
@@ -224,7 +261,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanBodyAsXml(final Message message, final String messageDesc ) throws IOException {
+    private AssertionStatus scanBodyAsXml(final Message message, final String messageDesc) throws IOException {
         logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML, messageDesc);
         final String where = messageDesc + " message body";
         try {
@@ -241,7 +278,8 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanBodyAsText(final Message message, final String messageDesc, final Charset encoding ) throws IOException {
+    private AssertionStatus scanBodyAsText(final Message message, final String messageDesc, final Charset encoding)
+            throws IOException {
         logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT, messageDesc);
         final String where = messageDesc + " message body";
         final MimeKnob mimeKnob = message.getMimeKnob();
@@ -249,14 +287,16 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             final byte[] bodyBytes = IOUtils.slurpStream(mimeKnob.getEntireMessageBodyAsInputStream());
             final String bodyString = new String(bodyBytes, encoding);
             final StringBuilder evidence = new StringBuilder();
-            final CodeInjectionProtectionType protectionViolated = scan(bodyString, assertion.getProtections(), evidence);
+            final CodeInjectionProtectionType protectionViolated =
+                    scan(bodyString, assertion.getProtections(), evidence);
+
             if (protectionViolated != null) {
-                logAndAudit(where, evidence, protectionViolated);
+                logAndAuditBodyDetection(where, evidence, protectionViolated);
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException e) {
             logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                    new String[]{where, "text"}, ExceptionUtils.getDebugException(e));
+                    new String[] {where, "text"}, ExceptionUtils.getDebugException(e));
             return getBadMessageStatus();
         }
 
@@ -268,7 +308,8 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         try {
             process(o);
         } catch (CodeInjectionDetectedException e) {
-            logAndAudit(where + " in JSON value", new StringBuilder(e.getEvidence()), e.getProtectionViolated());
+            logAndAuditBodyDetection(where + " in JSON value",
+                    new StringBuilder(e.getEvidence()), e.getProtectionViolated());
             return true;
         }
 
@@ -297,7 +338,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
     private void processString(String value) throws CodeInjectionDetectedException{
         final StringBuilder evidence = new StringBuilder(EVIDENCE_MARGIN_BEFORE + 1 + EVIDENCE_MARGIN_AFTER);
         final CodeInjectionProtectionType protectionViolated = scan(value, assertion.getProtections(), evidence);
-        if(protectionViolated != null){
+        if(protectionViolated != null) {
             throw new CodeInjectionDetectedException(evidence.toString(), protectionViolated);
         }
     }
@@ -308,12 +349,13 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void process(Object value) throws CodeInjectionDetectedException {
-        if(value instanceof Map){
+        if (value instanceof Map) {
             processMap((Map<Object, Object>) value);
-        } else if (value instanceof List){
+        } else if (value instanceof List) {
             processList((List<Object>) value);
-        } else if (value instanceof String){
+        } else if (value instanceof String) {
             processString((String) value);
         }
     }
@@ -355,9 +397,12 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             case Node.ATTRIBUTE_NODE:
             case Node.CDATA_SECTION_NODE:
             case Node.TEXT_NODE:
-                final CodeInjectionProtectionType protectionViolated = scan(node.getNodeValue(), assertion.getProtections(), evidence);
+                final CodeInjectionProtectionType protectionViolated =
+                        scan(node.getNodeValue(), assertion.getProtections(), evidence);
+
                 if (protectionViolated != null) {
                     String nodePath = node.getNodeName();
+
                     if (node.getParentNode() != null) {
                         nodePath = node.getParentNode().getNodeName() + "/" + node.getNodeName();
                     } else if (node instanceof Attr) {
@@ -366,31 +411,29 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                             nodePath = element.getNodeName() + "@" + node.getNodeName();
                         }
                     }
-                    logAndAudit(where + " in XML node " + nodePath, evidence, protectionViolated);
+
+                    logAndAuditBodyDetection(where + " in XML node " + nodePath, evidence, protectionViolated);
                     return true;
                 }
+
                 break;
         }
 
         return false;
     }
 
-    private void logAndAudit(String where, StringBuilder evidence, CodeInjectionProtectionType protectionViolated) {
-        if(protectionViolated.containsNonIdentifiableCharacters()){
+    private void convertAnyNonIdentifiableCharacters(StringBuilder evidence, CodeInjectionProtectionType protection) {
+        if (protection.containsNonIdentifiableCharacters()) {
             TextUtils.makeIgnorableCharactersViewableAsUnicode(evidence);
         }
+    }
+
+    private void logAndAuditBodyDetection(String where, StringBuilder evidence,
+                                          CodeInjectionProtectionType protectionViolated) {
+        convertAnyNonIdentifiableCharacters(evidence, protectionViolated);
 
         logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
                 where, evidence.toString(), protectionViolated.getDisplayName());
-    }
-
-    private void logAndAudit(String where, StringBuilder evidence, String urlParamName, CodeInjectionProtectionType protectionViolated) {
-        if(protectionViolated.containsNonIdentifiableCharacters()){
-            TextUtils.makeIgnorableCharactersViewableAsUnicode(evidence);
-        }
-
-        logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                where, urlParamName, evidence.toString(), protectionViolated.getDisplayName());
     }
 
     /**

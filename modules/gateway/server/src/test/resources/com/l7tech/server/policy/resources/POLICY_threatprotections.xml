@@ -13,6 +13,7 @@
             <L7p:OversizedText/>
             <L7p:CodeInjectionProtectionAssertion>
                 <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+                <L7p:Target target="REQUEST"/>
             </L7p:CodeInjectionProtectionAssertion>
             <L7p:SetVariable>
                 <L7p:Base64Expression stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzb2FwZW52OkVudmVsb3BlDQogICAgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iDQogICAgeG1sbnM6eHNkPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+DQogICAgPHNvYXBlbnY6SGVhZGVyLz4NCiAgICA8c29hcGVudjpCb2R5Pg0KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPg0KICAgICAgICAgICAgPHRuczpkZWxheT5pbnQ8L3RuczpkZWxheT4NCiAgICAgICAgPC90bnM6bGlzdFByb2R1Y3RzPg0KICAgIDwvc29hcGVudjpCb2R5Pg0KPC9zb2FwZW52OkVudmVsb3BlPg=="/>
