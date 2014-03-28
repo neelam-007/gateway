@@ -2,7 +2,6 @@ package com.l7tech.server.stepdebug;
 
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +19,7 @@ public class DebugManagerStub implements DebugManager {
 
     @NotNull
     @Override
-    public DebugContext createDebugContext(@NotNull Goid entityGoid, @NotNull PolicyType policyType) {
+    public DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

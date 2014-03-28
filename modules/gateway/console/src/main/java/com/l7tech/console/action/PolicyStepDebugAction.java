@@ -3,10 +3,11 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.stepdebug.PolicyStepDebugDialog;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 
 /**
@@ -42,14 +43,23 @@ public class PolicyStepDebugAction extends NodeAction {
     protected void performAction() {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode) node;
         try {
-            Goid entityGoid = policyNode.getEntityGoid();
-            Policy policy = policyNode.getPolicy();
-            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), entityGoid, policy);
+            PolicyStepDebugDialog dlg;
+            Entity entity = policyNode.getEntity();
+            if (entity instanceof PublishedService) {
+                dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), (PublishedService) entity);
+            } else if (entity instanceof Policy) {
+                dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), (Policy) entity);
+            } else {
+                // Unexpected entity type.
+                //
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "Unexpected entity type. Must be either Published Service or Policy.", null, null);
+                return;
+            }
             dlg.pack();
             Utilities.centerOnParentWindow(dlg);
             DialogDisplayer.display(dlg);
         } catch (FindException e) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "The policy is not found.", e, null);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "The service/policy is not found.", e, null);
         }
     }
 }

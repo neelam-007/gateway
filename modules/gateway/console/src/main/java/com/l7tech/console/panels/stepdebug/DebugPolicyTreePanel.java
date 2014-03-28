@@ -1,10 +1,7 @@
 package com.l7tech.console.panels.stepdebug;
 
 import com.l7tech.console.tree.AssertionLineNumbersTree;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.PolicyTreeUtils;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.Goid;
@@ -133,6 +130,13 @@ public class DebugPolicyTreePanel extends JPanel {
         }
         policyTree.repaint();
         breakpointsTree.updateTree();
+        AssertionTreeNode currentNode = this.findCurrentLineNode();
+        if (currentNode instanceof IncludeAssertionPolicyNode &&
+            ((IncludeAssertionPolicyNode) currentNode).getPolicy() == null) {
+            // If the included fragment policy is not available, disable the Step In button.
+            //
+            policyStepDebugDialog.disableStepInButton();
+        }
     }
 
     /**
@@ -283,7 +287,7 @@ public class DebugPolicyTreePanel extends JPanel {
      * Find the current node.
      */
     private AssertionTreeNode findCurrentLineNode() {
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode) policyTree.getModel().getRoot();
+        AssertionTreeNode root = (AssertionTreeNode) policyTree.getModel().getRoot();
         Enumeration e = root.preorderEnumeration();
         while (e.hasMoreElements()) {
             AssertionTreeNode node = (AssertionTreeNode) e.nextElement();

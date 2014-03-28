@@ -2,9 +2,8 @@ package com.l7tech.gateway.common.stepdebug;
 
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.policy.Policy;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,28 +11,35 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UPDATE;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.UNCHECKED_WIDE_OPEN;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  * Remote admin interface for managing policy step debugger.
  */
-@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured(types= {EntityType.SERVICE, EntityType.POLICY})
+@Secured
 @Administrative
 public interface DebugAdmin {
 
     /**
-     * Initializes policy step debugging for the given service/policy GOID.
+     * Initializes policy step debugging for the given service.
      *
-     * @param entityGoid the service or policy GOID
-     * @param policyType the policy type
+     * @param service the service
      * @return the debug result
      */
-    @Secured(stereotype=UPDATE)
+    @Secured(types=SERVICE, stereotype=UPDATE)
     @NotNull
-    DebugResult initializeDebug(@NotNull Goid entityGoid, @NotNull PolicyType policyType);
+    DebugResult initializeDebugService(@NotNull PublishedService service);
+
+    /**
+     * Initializes policy step debugging for the given policy.
+     *
+     * @param policy the policy
+     * @return the debug result
+     */
+    @Secured(types=POLICY, stereotype=UPDATE)
+    @NotNull
+    DebugResult initializeDebugPolicy(@NotNull Policy policy);
 
     /**
      * Starts debugging for the given task ID. After debugging is started, it waits for

@@ -57,7 +57,7 @@ public class ApplicationContextTest  {
     private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin");
-    private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");
+    private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "debugAdmin", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");
     private static final Set<String> SECURED_RETURNTYPE_WHITELIST = set(
             "com.l7tech.gateway.common.audit.AuditAdmin.getDigestsForAuditRecords",
             "com.l7tech.gateway.common.audit.AuditAdmin.downloadAllAudits",

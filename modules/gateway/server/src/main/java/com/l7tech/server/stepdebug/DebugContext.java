@@ -3,7 +3,6 @@ package com.l7tech.server.stepdebug;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ public class DebugContext {
     private boolean isDirty = false; // Indicates debug context has changed.
 
     private final Goid entityGoid;
-    private final PolicyType policyType;
+    private final boolean isService;
     private final String taskId;
     private final DebugPecData debugPecData;
     private DebugState debugState;
@@ -37,13 +36,13 @@ public class DebugContext {
      * Creates <code>DebugContext</code>.
      *
      * @param entityGoid the service or policy GOID
-     * @param policyType the policy type
+     * @param isService true if the entity is a service, false if the entity is a policy
      * @param taskId the task ID
      * @param audit the audit
      */
-    public DebugContext(@NotNull Goid entityGoid, @NotNull PolicyType policyType, @NotNull String taskId, @NotNull Audit audit) {
+    public DebugContext(@NotNull Goid entityGoid, boolean isService, @NotNull String taskId, @NotNull Audit audit) {
         this.entityGoid = entityGoid;
-        this.policyType = policyType;
+        this.isService = isService;
         this.taskId = taskId;
         this.debugPecData = new DebugPecData(audit);
         this.setDebugState(DebugState.STOPPED);
@@ -65,15 +64,14 @@ public class DebugContext {
     }
 
     /**
-     * Returns the policy type.
+     * Returns true if the entity is a service, otherwise false.
      *
-     * @return the policy type
+     * @return true if the entity is a service, otherwise false
      */
-    @NotNull
-    public PolicyType getPolicyType() {
+    public boolean isService() {
         lock.lock();
         try {
-            return policyType;
+            return isService;
         } finally {
             lock.unlock();
         }

@@ -63,8 +63,6 @@ public class DebugPolicyTreeCellRenderer extends PolicyTreeCellRenderer{
      */
     private void setPolicyVersion(@NotNull PolicyStepDebugDialog policyStepDebugDialog) {
         Policy policy = policyStepDebugDialog.getPolicy();
-        if (policy == null) return;
-
         try {
             PolicyVersion activePolicyVersion = Registry.getDefault().getPolicyAdmin().findActivePolicyVersionForPolicy(policy.getGoid());
             setPolicyVersion(activePolicyVersion);

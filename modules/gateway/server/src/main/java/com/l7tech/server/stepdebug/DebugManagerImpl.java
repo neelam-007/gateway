@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -35,9 +34,9 @@ public class DebugManagerImpl implements DebugManager {
 
     @Override
     @NotNull
-    public DebugContext createDebugContext(@NotNull Goid entityGoid, @NotNull PolicyType policyType) {
+    public DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService) {
         String taskId = UUID.randomUUID().toString();
-        DebugContext debugContext = new DebugContext(entityGoid, policyType, taskId, audit);
+        DebugContext debugContext = new DebugContext(entityGoid, isService, taskId, audit);
         debugTasks.put(taskId, debugContext);
 
         return debugContext;
@@ -65,7 +64,7 @@ public class DebugManagerImpl implements DebugManager {
 
         audit.logAndAudit(
             SystemMessages.SERVICE_DEBUGGER_START,
-            debugContext.getPolicyType().isServicePolicy() ? "service" : "policy",
+            debugContext.isService() ? "service" : "policy",
             debugContext.getEntityGoid().toString());
         debugContext.startDebugging();
         return Option.none();
@@ -77,7 +76,7 @@ public class DebugManagerImpl implements DebugManager {
         if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
             audit.logAndAudit(
                 SystemMessages.SERVICE_DEBUGGER_STOP,
-                debugContext.getPolicyType().isServicePolicy() ? "service" : "policy",
+                debugContext.isService() ? "service" : "policy",
                 debugContext.getEntityGoid().toString());
             debugContext.stopDebugging();
         }

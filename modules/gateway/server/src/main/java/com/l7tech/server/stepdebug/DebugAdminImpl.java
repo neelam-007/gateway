@@ -1,9 +1,9 @@
 package com.l7tech.server.stepdebug;
 
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.stepdebug.DebugAdmin;
 import com.l7tech.gateway.common.stepdebug.DebugResult;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.Policy;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,8 +24,15 @@ public class DebugAdminImpl implements DebugAdmin {
 
     @Override
     @NotNull
-    public DebugResult initializeDebug(@NotNull Goid entityGoid, @NotNull PolicyType policyType) {
-        DebugContext debugContext = debugManager.createDebugContext(entityGoid, policyType);
+    public DebugResult initializeDebugService(@NotNull PublishedService service) {
+        DebugContext debugContext = debugManager.createDebugContext(service.getGoid(), true);
+        return this.createDebugResult(debugContext);
+    }
+
+    @Override
+    @NotNull
+    public DebugResult initializeDebugPolicy(@NotNull Policy policy) {
+        DebugContext debugContext = debugManager.createDebugContext(policy.getGoid(), false);
         return this.createDebugResult(debugContext);
     }
 

@@ -1,7 +1,6 @@
 package com.l7tech.server.stepdebug;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -18,11 +17,11 @@ public interface DebugManager {
      *  Creates a {@link DebugContext} for the given service/policy GOID.
      *
      * @param entityGoid the service or policy GOID
-     * @param policyType the policy type
+     * @param isService true if the entity is a service, false if the entity is a policy
      * @return the debug context
      */
     @NotNull
-    DebugContext createDebugContext(@NotNull Goid entityGoid, @NotNull PolicyType policyType);
+    DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService);
 
     /**
      * Starts debugging for the given task ID. After debugging is started, it waits for
