@@ -22,6 +22,7 @@ public class DebugManagerImpl implements DebugManager {
 
     private final Audit audit;
     private final Map<String, DebugContext> debugTasks = new ConcurrentHashMap<>();
+    private final Map<Goid, DebugContext> waitingForMsg = new ConcurrentHashMap<>(); // Debugger started and waiting for message to arrive.
 
     /**
      * Constructor.
@@ -46,7 +47,7 @@ public class DebugManagerImpl implements DebugManager {
     @NotNull
     public Option<String> startDebug(@NotNull String taskId) {
         DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        // Do not start debugger, if another debugger is running for the
+        // Do not start debugger, if another debugger already running for the
         // given service/policy.
         //
         Goid entityGoid = debugContext.getEntityGoid();
@@ -66,7 +67,10 @@ public class DebugManagerImpl implements DebugManager {
             SystemMessages.SERVICE_DEBUGGER_START,
             debugContext.isService() ? "service" : "policy",
             debugContext.getEntityGoid().toString());
+
         debugContext.startDebugging();
+        waitingForMsg.put(entityGoid, debugContext);
+
         return Option.none();
     }
 
@@ -144,11 +148,9 @@ public class DebugManagerImpl implements DebugManager {
 
     @Override
     public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid entityGoid) {
-        for (DebugContext debugContext : debugTasks.values()) {
-            if (debugContext.isWaitingForMessageToArrive(entityGoid)) {
-                debugContext.onMessageArrived(pec);
-                break;
-            }
+        DebugContext debugContext = waitingForMsg.remove(entityGoid);
+        if (debugContext != null) {
+            debugContext.onMessageArrived(pec);
         }
     }
 

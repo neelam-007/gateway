@@ -305,21 +305,6 @@ public class DebugContext {
     }
 
     /**
-     * Returns true if the debug context is waiting for a message to arrive for the given service/policy GOID, false otherwise.
-     *
-     * @param entityGoid the service or policy GOID
-     * @return true if the debug context is waiting for a message to arrive for the given service/policy GOID, false otherwise.
-     */
-    public boolean isWaitingForMessageToArrive(@NotNull Goid entityGoid) {
-        lock.lock();
-        try {
-            return debugState.equals(DebugState.STARTED) && this.entityGoid.equals(entityGoid);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * This method must be called when a message arrives.
      *
      * @param pec the PEC
