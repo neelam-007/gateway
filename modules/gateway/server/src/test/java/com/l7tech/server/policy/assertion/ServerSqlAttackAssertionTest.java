@@ -37,8 +37,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test coverage of SQL Attack Protection Assertion
  *
- * @author jwilliams
- * @version 1.1 2012/09/12
+ * @author Jamie Williams - jamie.williams2@ca.com
+ * @version 1.2 2014/03/28
  */
 public class ServerSqlAttackAssertionTest {
 
@@ -719,7 +719,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_InvasiveDoubleDashInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=data--", false, true, META);
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=data--", false, true, META);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -734,7 +734,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_InvasiveDoubleDashInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=data--", false, true, META_TEXT, MS_SQL, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=data--", false, true, META_TEXT, MS_SQL, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
 
@@ -747,7 +747,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_InvasiveHashMarkInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=dat#a", false, true, META);
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=dat#a", false, true, META);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -761,7 +761,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_InvasiveHashMarkInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=dat#a", false, true, META_TEXT, MS_SQL, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=dat#a", false, true, META_TEXT, MS_SQL, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
 
@@ -775,7 +775,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_InvasiveSingleQuoteInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=';DROP%20TABLE%20USERS;'", false, true, META);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=';DROP%20TABLE%20USERS;'", false, true, META);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -789,7 +789,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_InvasiveSingleQuoteInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=';DROP%20TABLE%20USERS;'",
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=';DROP%20TABLE%20USERS;'",
                 false, true, META_TEXT, MS_SQL, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
@@ -804,7 +804,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_OracleBfilenameExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=bfilename", false, true, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=bfilename", false, true, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -819,7 +819,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_OracleBfilenameExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=bfilename", false, true, META, META_TEXT, MS_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=bfilename", false, true, META, META_TEXT, MS_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
 
@@ -833,7 +833,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_OracleOffsetExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=tz_offset", false, true, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=tz_offset", false, true, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -848,7 +848,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_OracleOffsetExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=tz_offset", false, true, META, META_TEXT, MS_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=tz_offset", false, true, META, META_TEXT, MS_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
 
@@ -862,7 +862,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_OracleTimestampExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=to_timestamp_tz", false, true, ORA_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=to_timestamp_tz", false, true, ORA_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -876,7 +876,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_OracleTimestampExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=to_timestamp_tz",
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=to_timestamp_tz",
                 false, true, META, META_TEXT, MS_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
@@ -891,7 +891,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_MSSQLServerExecSPExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20sp_dropextendedproc", false, true, MS_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=exec%20sp_dropextendedproc", false, true, MS_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -905,7 +905,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_MSSQLServerExecSPExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20sp_dropextendedproc",
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=exec%20sp_dropextendedproc",
                 false, true, META, META_TEXT, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
@@ -920,7 +920,7 @@ public class ServerSqlAttackAssertionTest {
     @Test
     public void testCheckRequest_MSSQLServerExecXPExploitInUrlQueryStringCaught_AssertionStatusBadRequest() throws Exception {
         final AssertionStatus status =
-                runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20xp_smtp_sendmail", false, true, MS_SQL);
+                runTestOnRequestUrl(BENIGN_URL_PATH, "input=exec%20xp_smtp_sendmail", false, true, MS_SQL);
 
         assertEquals(AssertionStatus.BAD_REQUEST, status);
 
@@ -934,7 +934,7 @@ public class ServerSqlAttackAssertionTest {
      */
     @Test
     public void testCheckRequest_MSSQLServerExecXPExploitInUrlQueryStringMissed_AssertionStatusNone() throws Exception {
-        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "rest?input=exec%20xp_smtp_sendmail",
+        final AssertionStatus status = runTestOnRequestUrl(BENIGN_URL_PATH, "input=exec%20xp_smtp_sendmail",
                 false, true, META, META_TEXT, ORA_SQL);
 
         assertEquals(AssertionStatus.NONE, status);
@@ -1347,7 +1347,7 @@ public class ServerSqlAttackAssertionTest {
 
         SqlAttackAssertion assertion = createAssertion(targetType, false, false, true, protections);
 
-        if(TargetMessageType.OTHER == targetType) {
+        if (TargetMessageType.OTHER == targetType) {
             otherTargetMessage = createMessageFromXmlResource(resource);
             assertion.setOtherTargetMessageVariable(contextVariableName);
         }
@@ -1355,7 +1355,7 @@ public class ServerSqlAttackAssertionTest {
         ServerSqlAttackAssertion serverAssertion = createServer(assertion);
         final PolicyEnforcementContext context = createPolicyEnforcementContext(targetType, resource);
 
-        if(TargetMessageType.OTHER == targetType) {
+        if (TargetMessageType.OTHER == targetType) {
             context.setVariable(contextVariableName, otherTargetMessage);
         }
 
@@ -1411,13 +1411,13 @@ public class ServerSqlAttackAssertionTest {
         Message request;
         Message response;
 
-        if(TargetMessageType.REQUEST == targetType && null != resource) {
+        if (TargetMessageType.REQUEST == targetType && null != resource) {
             request = createMessageFromXmlResource(resource);
         } else {
             request = createRequest();
         }
 
-        if(TargetMessageType.RESPONSE == targetType && null != resource) {
+        if (TargetMessageType.RESPONSE == targetType && null != resource) {
             response = createMessageFromXmlResource(resource);
         } else {
             response = createResponse();
@@ -1426,7 +1426,7 @@ public class ServerSqlAttackAssertionTest {
         PolicyEnforcementContext context =
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-        if(TargetMessageType.RESPONSE == targetType) {
+        if (TargetMessageType.RESPONSE == targetType) {
             context.setRoutingStatus(RoutingStatus.ROUTED);
         }
 
