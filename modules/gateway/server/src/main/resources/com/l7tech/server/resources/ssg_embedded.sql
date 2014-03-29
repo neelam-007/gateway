@@ -422,7 +422,7 @@ create table http_configuration (
     tls_cipher_suites varchar(4096),
     tls_key_use varchar(255),
     tls_key_alias varchar(255),
-    tls_keystore_goid CHAR(16) FOR BIT DATA,
+    tls_keystore_goid CHAR(16) FOR BIT DATA not null,
     tls_version varchar(8),
     username varchar(255),
     version integer,
@@ -1252,6 +1252,18 @@ alter table sample_messages
     add constraint FK_SAMPLE_MESSAGE_PUB_SERVICE
     foreign key (published_service_goid)
     references published_service
+    on delete cascade;
+
+alter table http_configuration
+    add constraint FK_PROXY_PASSWORD
+    foreign key (proxy_password_goid)
+    references secure_password
+    on delete cascade;
+
+alter table http_configuration
+    add constraint FK_PASSWORD
+    foreign key (password_goid)
+    references secure_password
     on delete cascade;
 
 -- **************************************************************************

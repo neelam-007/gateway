@@ -167,7 +167,8 @@
     </bean>
     <bean id="httpConfigurationResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.HttpConfigurationResourceFactory" parent="entityResourceFactoryParent">
         <constructor-arg index="3" ref="httpConfigurationManager"/>
-        <constructor-arg index="4" ref="securityZoneManager"/>
+        <constructor-arg index="4" ref="securePasswordManager"/>
+        <constructor-arg index="5" ref="securityZoneManager"/>
     </bean>
     <bean id="rbacRoleResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.RbacRoleResourceFactory" parent="entityResourceFactoryParent">
         <constructor-arg index="3" ref="roleManager"/>

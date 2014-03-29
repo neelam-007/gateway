@@ -111,18 +111,18 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
             @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "host"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
-            @QueryParam("name") List<String> names,
+            @QueryParam("host") List<String> names,
             @QueryParam("protocol") HttpConfiguration.Protocol protocol,
             @QueryParam("ntlmHost") List<String> ntlmHosts,
             @QueryParam("ntlmDomain") List<String> ntlmDomains,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "protocol", "ntlmHost", "ntlmDomain", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("host", "protocol", "ntlmHost", "ntlmDomain", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
-            filters.put("name", (List) names);
+            filters.put("host", (List) names);
         }
         if (protocol != null) {
             filters.put("protocol", (List) Arrays.asList(protocol));

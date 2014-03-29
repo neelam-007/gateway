@@ -4,14 +4,14 @@ import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
-import com.l7tech.objectmodel.ConstraintViolationException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.globalresources.HttpConfigurationManager;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -22,12 +22,16 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 @ResourceFactory.ResourceType(type = HttpConfigurationMO.class)
 public class HttpConfigurationResourceFactory extends SecurityZoneableEntityManagerResourceFactory<HttpConfigurationMO, HttpConfiguration, EntityHeader> {
+    private final SecurePasswordManager securePasswordManager;
+
     public HttpConfigurationResourceFactory(final RbacServices services,
                                             final SecurityFilter securityFilter,
                                             final PlatformTransactionManager transactionManager,
                                             final HttpConfigurationManager httpConfigurationManager,
+                                            final SecurePasswordManager securePasswordManager,
                                             final SecurityZoneManager securityZoneManager) {
         super(false, false, services, securityFilter, transactionManager, httpConfigurationManager, securityZoneManager);
+        this.securePasswordManager = securePasswordManager;
     }
 
     /**
@@ -49,7 +53,8 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
         httpConfigurationMO.setNtlmDomain(httpConfiguration.getNtlmDomain());
         httpConfigurationMO.setTlsVersion(httpConfiguration.getTlsVersion());
         httpConfigurationMO.setTlsKeyUse(httpConfiguration.getTlsKeyUse() == null ? null : HttpConfigurationMO.Option.valueOf(httpConfiguration.getTlsKeyUse().toString()));
-        httpConfigurationMO.setTlsKeystoreId(httpConfiguration.getTlsKeystoreGoid() == null ? null : httpConfiguration.getTlsKeystoreGoid().toString());
+        //The default keystore id is 0. in this return null as it means no keystore id had been set.
+        httpConfigurationMO.setTlsKeystoreId((httpConfiguration.getTlsKeystoreGoid() == null || Goid.equals(new Goid(0, 0), httpConfiguration.getTlsKeystoreGoid())) ? null : httpConfiguration.getTlsKeystoreGoid().toString());
         httpConfigurationMO.setTlsKeystoreAlias(httpConfiguration.getTlsKeystoreAlias());
         httpConfigurationMO.setTlsCipherSuites(httpConfiguration.getTlsCipherSuites());
         httpConfigurationMO.setConnectTimeout(httpConfiguration.getConnectTimeout());
@@ -93,19 +98,20 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
         httpConfiguration.setProtocol(httpConfigurationMO.getProtocol() == null || HttpConfigurationMO.Protocol.ANY.equals(httpConfigurationMO.getProtocol()) ? null : HttpConfiguration.Protocol.valueOf(httpConfigurationMO.getProtocol().toString()));
         httpConfiguration.setPath(trimNullable(httpConfigurationMO.getPath()));
         httpConfiguration.setUsername(trimNullable(httpConfigurationMO.getUsername()));
-        httpConfiguration.setPasswordGoid(httpConfigurationMO.getPasswordId() == null ? null : Goid.parseGoid(httpConfigurationMO.getPasswordId()));
+        httpConfiguration.setPasswordGoid(httpConfigurationMO.getPasswordId() == null ? null : validatePassword(httpConfigurationMO.getPasswordId(), strict));
         httpConfiguration.setNtlmHost(trimNullable(httpConfigurationMO.getNtlmHost()));
         httpConfiguration.setNtlmDomain(trimNullable(httpConfigurationMO.getNtlmDomain()));
         httpConfiguration.setTlsVersion(httpConfigurationMO.getTlsVersion());
         httpConfiguration.setTlsKeyUse(httpConfigurationMO.getTlsKeyUse() == null ? null : HttpConfiguration.Option.valueOf(httpConfigurationMO.getTlsKeyUse().toString()));
-        httpConfiguration.setTlsKeystoreGoid(httpConfigurationMO.getTlsKeystoreId() == null ? null : Goid.parseGoid(httpConfigurationMO.getTlsKeystoreId()));
+        //if the keystore id is null we must set it to the default 0, otherwise we get data integrity errors.
+        httpConfiguration.setTlsKeystoreGoid(httpConfigurationMO.getTlsKeystoreId() == null ? new Goid(0, 0) : Goid.parseGoid(httpConfigurationMO.getTlsKeystoreId()));
         httpConfiguration.setTlsKeystoreAlias(httpConfigurationMO.getTlsKeystoreAlias());
         httpConfiguration.setTlsCipherSuites(httpConfigurationMO.getTlsCipherSuites());
         httpConfiguration.setConnectTimeout(httpConfigurationMO.getConnectTimeout());
         httpConfiguration.setReadTimeout(httpConfigurationMO.getReadTimeout());
         httpConfiguration.setFollowRedirects(httpConfigurationMO.isFollowRedirects());
         httpConfiguration.setProxyUse(httpConfigurationMO.getProxyUse() == null ? null : HttpConfiguration.Option.valueOf(httpConfigurationMO.getProxyUse().toString()));
-        httpConfiguration.setProxyConfiguration(httpConfigurationMO.getProxyConfiguration() == null ? new HttpProxyConfiguration() : convertProxyFromResource(httpConfigurationMO.getProxyConfiguration()));
+        httpConfiguration.setProxyConfiguration(httpConfigurationMO.getProxyConfiguration() == null ? new HttpProxyConfiguration() : convertProxyFromResource(httpConfigurationMO.getProxyConfiguration(), strict));
 
         // handle SecurityZone
         doSecurityZoneFromResource(httpConfigurationMO, httpConfiguration, strict);
@@ -113,15 +119,47 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
         return httpConfiguration;
     }
 
-    private HttpProxyConfiguration convertProxyFromResource(HttpConfigurationMO.HttpProxyConfiguration proxyConfigurationMO) {
+    private HttpProxyConfiguration convertProxyFromResource(HttpConfigurationMO.HttpProxyConfiguration proxyConfigurationMO, boolean strict) throws InvalidResourceException {
         if (proxyConfigurationMO == null)
             return null;
         HttpProxyConfiguration httpProxyConfiguration = new HttpProxyConfiguration();
         httpProxyConfiguration.setHost(trimNullable(proxyConfigurationMO.getHost()));
         httpProxyConfiguration.setPort(proxyConfigurationMO.getPort());
         httpProxyConfiguration.setUsername(trimNullable(proxyConfigurationMO.getUsername()));
-        httpProxyConfiguration.setPasswordGoid(proxyConfigurationMO.getPasswordId() == null ? null : Goid.parseGoid(proxyConfigurationMO.getPasswordId()));
+        httpProxyConfiguration.setPasswordGoid(proxyConfigurationMO.getPasswordId() == null ? null : validatePassword(proxyConfigurationMO.getPasswordId(), strict));
         return httpProxyConfiguration;
+    }
+
+    /**
+     * Validates a password string id. This will check that it is a proper goid. and it will thrown an exception if the
+     * password does not exist and strict is true
+     *
+     * @param passwordId The password id to validate
+     * @param strict     Weather to throw an error if the password exists.
+     * @return The password goid.
+     * @throws InvalidResourceException
+     */
+    private Goid validatePassword(@NotNull final String passwordId, final boolean strict) throws InvalidResourceException {
+        final Goid passwordGoid;
+        try {
+            //validate that the id is a proper goid
+            passwordGoid = Goid.parseGoid(passwordId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid password id: " + e.getMessage());
+        }
+        if (strict) {
+            //check if the password exists
+            SecurePassword password;
+            try {
+                password = securePasswordManager.findByPrimaryKey(passwordGoid);
+            } catch (FindException e) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot find password with ID " + passwordGoid);
+            }
+            if (password == null) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot find password with ID " + passwordGoid);
+            }
+        }
+        return passwordGoid;
     }
 
     private static String trimNullable(@Nullable String str) {

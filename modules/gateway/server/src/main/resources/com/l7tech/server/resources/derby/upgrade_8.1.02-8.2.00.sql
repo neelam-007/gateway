@@ -20,3 +20,16 @@ create table jms_endpoint_message_rule (
   PRIMARY KEY (goid)
 );
 
+-- updating the http_configuration table to match the one in mysql.
+alter table http_configuration alter column tls_keystore_goid NOT NULL;
+alter table http_configuration
+    add constraint FK_PROXY_PASSWORD
+    foreign key (proxy_password_goid)
+    references secure_password
+    on delete cascade;
+alter table http_configuration
+    add constraint FK_PASSWORD
+    foreign key (password_goid)
+    references secure_password
+    on delete cascade;
+
