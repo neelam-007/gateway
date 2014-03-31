@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -23,6 +25,7 @@ public class DebugManagerImpl implements DebugManager {
     private final Audit audit;
     private final Map<String, DebugContext> debugTasks = new ConcurrentHashMap<>();
     private final Map<Goid, DebugContext> waitingForMsg = new ConcurrentHashMap<>(); // Debugger started and waiting for message to arrive.
+    private final Lock lock = new ReentrantLock(true);
 
     /**
      * Constructor.
@@ -46,74 +49,110 @@ public class DebugManagerImpl implements DebugManager {
     @Override
     @NotNull
     public Option<String> startDebug(@NotNull String taskId) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        // Do not start debugger, if another debugger already running for the
-        // given service/policy.
-        //
-        Goid entityGoid = debugContext.getEntityGoid();
-        boolean isFound = false;
-        for (DebugContext context : debugTasks.values()) {
-            if (entityGoid.equals(context.getEntityGoid()) &&
-                !context.getDebugState().equals(DebugState.STOPPED)) {
-                isFound = true;
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
+            // Do not start debugger, if another debugger already running for the
+            // given service/policy.
+            //
+            Goid entityGoid = debugContext.getEntityGoid();
+            boolean isFound = false;
+            for (DebugContext context : debugTasks.values()) {
+                if (entityGoid.equals(context.getEntityGoid()) &&
+                    !context.getDebugState().equals(DebugState.STOPPED)) {
+                    isFound = true;
+                }
             }
+
+            if (isFound) {
+                return Option.some("Cannot start Service Debugger. There is a Service Debugger already running for the service/policy.");
+            }
+
+            audit.logAndAudit(
+                SystemMessages.SERVICE_DEBUGGER_START,
+                debugContext.isService() ? "service" : "policy",
+                debugContext.getEntityGoid().toString());
+
+            debugContext.startDebugging();
+            waitingForMsg.put(entityGoid, debugContext);
+        } finally {
+            lock.unlock();
         }
-
-        if (isFound) {
-            return Option.some("Cannot start Service Debugger. There is a Service Debugger already running for the service/policy.");
-        }
-
-        audit.logAndAudit(
-            SystemMessages.SERVICE_DEBUGGER_START,
-            debugContext.isService() ? "service" : "policy",
-            debugContext.getEntityGoid().toString());
-
-        debugContext.startDebugging();
-        waitingForMsg.put(entityGoid, debugContext);
 
         return Option.none();
     }
 
     @Override
     public void stopDebug(@NotNull String taskId) {
-        DebugContext debugContext = this.getDebugContext(taskId);
-        if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
-            audit.logAndAudit(
-                SystemMessages.SERVICE_DEBUGGER_STOP,
-                debugContext.isService() ? "service" : "policy",
-                debugContext.getEntityGoid().toString());
-            debugContext.stopDebugging();
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContext(taskId);
+            if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
+                audit.logAndAudit(
+                    SystemMessages.SERVICE_DEBUGGER_STOP,
+                    debugContext.isService() ? "service" : "policy",
+                    debugContext.getEntityGoid().toString());
+                debugContext.stopDebugging();
+                waitingForMsg.remove(debugContext.getEntityGoid());
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void stepOver(@NotNull String taskId, @NotNull Collection<Integer> assertionNumber) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        debugContext.stepOver(assertionNumber);
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
+            debugContext.stepOver(assertionNumber);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void stepInto(@NotNull String taskId) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        debugContext.stepInto();
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
+            debugContext.stepInto();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void stepOut(@NotNull String taskId, @NotNull Collection<Integer> assertionNumber) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        debugContext.stepOut(assertionNumber);
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
+            debugContext.stepOut(assertionNumber);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void resume(@NotNull String taskId) {
-        DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
-        debugContext.resume();
+        lock.lock();
+        try {
+            DebugContext debugContext = this.getDebugContextFailIfNull(taskId);
+            debugContext.resume();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void terminateDebug(@NotNull String taskId) {
-        this.stopDebug(taskId);
-        debugTasks.remove(taskId);
+        lock.lock();
+        try {
+            this.stopDebug(taskId);
+            debugTasks.remove(taskId);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -148,17 +187,27 @@ public class DebugManagerImpl implements DebugManager {
 
     @Override
     public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid entityGoid) {
-        DebugContext debugContext = waitingForMsg.remove(entityGoid);
-        if (debugContext != null) {
-            debugContext.onMessageArrived(pec);
+        lock.lock();
+        try {
+            DebugContext debugContext = waitingForMsg.remove(entityGoid);
+            if (debugContext != null) {
+                debugContext.onMessageArrived(pec);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void onMessageFinished(@NotNull PolicyEnforcementContext pec) {
-        DebugContext debugContext = pec.getDebugContext();
-        if (debugContext != null) {
-            this.stopDebug(debugContext.getTaskId());
+        lock.lock();
+        try {
+            DebugContext debugContext = pec.getDebugContext();
+            if (debugContext != null) {
+                this.stopDebug(debugContext.getTaskId());
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
