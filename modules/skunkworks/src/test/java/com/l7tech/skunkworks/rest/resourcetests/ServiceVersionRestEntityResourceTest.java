@@ -234,22 +234,8 @@ public class ServiceVersionRestEntityResourceTest extends RestEntityTestBase {
         logger.log(Level.INFO, response.toString());
 
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals("Expected successful response", 200, response.getStatus());
-        Assert.assertNotNull("Expected not null response body", response.getBody());
-
-        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-        Item item = MarshallingUtils.unmarshal(Item.class, source);
-
-        Assert.assertEquals("Id's don't match", policyVersion.getId(), item.getId());
-        Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
-        Assert.assertEquals("Type is incorrect", getExpectedTitle(policyVersion.getId()), item.getName());
-
-        Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
-        Link self = findLink("self", item.getLinks());
-        Assert.assertNotNull("self link must be present", self);
-        Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + policyVersion.getOrdinal(), self.getUri());
-
-        verifyEntity(policyVersion.getId(), (PolicyVersionMO) item.getContent());
+        Assert.assertEquals("Expected successful response", 204, response.getStatus());
+        Assert.assertTrue("Expected empty response body", response.getBody() == null || response.getBody().isEmpty());
 
         List<PolicyVersion> versions = policyVersionManager.findAllForPolicy(publishedService.getPolicy().getGoid());
         for(PolicyVersion version : versions){

@@ -198,17 +198,11 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      * Activates the specified policy version
      *
      * @param versionNumber The id of the policy version to set active.
-     * @return A reference to the activated policy version
      */
     @POST
     @Path("{versionNumber}/activate")
-    public Response activate(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
+    public void activate(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.activate(serviceOrPolicyId, versionNumber);
-        final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
-        return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))
-                .addLink(getLink(policyVersion))
-                .addLinks(getRelatedLinks(policyVersion))
-                .build()).build();
     }
 
     @NotNull
