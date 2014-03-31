@@ -12,116 +12,28 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
 
 import java.io.IOException;
-import java.util.*;
 import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the SqlAttackAssertion all-in-one convenience assertion.
  * Internally this is implemented, essentially, as just zero or more regexp assertions.
  */
-public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAssertion<SqlAttackAssertion> {
+public class ServerSqlAttackAssertion extends ServerInjectionThreatProtectionAssertion<SqlAttackAssertion> {
     public ServerSqlAttackAssertion(SqlAttackAssertion assertion) {
         super(assertion);
     }
 
     @Override
-    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
-                                              final Message msg,
-                                              final String targetName,
-                                              final AuthenticationContext authContext )
+    protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                             final Message msg,
+                                             final String targetName,
+                                             final AuthenticationContext authContext)
             throws IOException, PolicyAssertionException {
-        boolean routed = context.isPostRouting();
-        HttpServletRequestKnob httpServletRequestKnob = null;
-
-        if (isRequest()) {
-            if (routed) {
-                logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
-                return AssertionStatus.FAILED;
-            }
-
-            httpServletRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
-        } else if (isResponse() && !routed) {
-            logAndAudit(AssertionMessages.SQLATTACK_SKIP_RESPONSE_NOT_ROUTED);
-            return AssertionStatus.NONE;
-        }
-
-        AssertionStatus result = AssertionStatus.NONE;
-
-        if (null != httpServletRequestKnob) { // if the message is HTTP and thereby has a request URL
-            if (assertion.isIncludeUrlPath()) {
-                result = scanHttpRequestUrlPath(httpServletRequestKnob);
-
-                if (result != AssertionStatus.NONE) {
-                    logAndAudit(AssertionMessages.SQLATTACK_REJECTED, assertion.getTargetName());
-                    return result;
-                }
-            }
-
-            if (assertion.isIncludeUrlQueryString()) {
-                result = scanHttpRequestUrlQueryString(httpServletRequestKnob);
-
-                if (result != AssertionStatus.NONE) {
-                    logAndAudit(AssertionMessages.SQLATTACK_REJECTED, assertion.getTargetName());
-                    return result;
-                }
-            }
-        } else if (assertion.isIncludeUrlPath() || assertion.isIncludeUrlQueryString()) {
-            logAndAudit(AssertionMessages.SQLATTACK_NOT_HTTP);
-        }
-
-        if (assertion.isIncludeBody()) {
-            result = scanBody(msg, targetName);
-        }
-
-        if (result != AssertionStatus.NONE) {
-            logAndAudit(AssertionMessages.SQLATTACK_REJECTED, assertion.getTargetName());
-        }
-
-        return result;
+        return applyThreatProtection(context, msg, targetName);
     }
 
-    private AssertionStatus scanHttpRequestUrlPath(final HttpServletRequestKnob httpServletRequestKnob) throws IOException {
-        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_URL_PATH);
-
-        final StringBuilder evidence = new StringBuilder();
-        final String urlPath = httpServletRequestKnob.getRequestUri();
-
-        final String protectionViolated = scan(urlPath, assertion.getProtections(), evidence);
-
-        if (protectionViolated != null) {
-            logAndAudit(AssertionMessages.SQLATTACK_DETECTED_PATH,
-                    "Request URL", urlPath, evidence.toString(), protectionViolated);
-            return getBadMessageStatus();
-        }
-
-        return AssertionStatus.NONE;
-    }
-
-    private AssertionStatus scanHttpRequestUrlQueryString(final HttpServletRequestKnob httpServletRequestKnob)
-            throws IOException {
-        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_URL_QUERY_STRING);
-
-        final StringBuilder evidence = new StringBuilder();
-        final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
-
-        for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
-            final String urlParamName = entry.getKey();
-
-            for (String urlParamValue : entry.getValue()) {
-                final String protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
-
-                if (protectionViolated != null) {
-                    logAndAudit(AssertionMessages.SQLATTACK_DETECTED_PARAM,
-                            "Request URL", urlParamName, evidence.toString(), protectionViolated);
-                    return getBadMessageStatus();
-                }
-            }
-        }
-
-        return AssertionStatus.NONE;
-    }
-
-    private AssertionStatus scanBody(final Message message, final String targetName) throws IOException {
+    @Override
+    protected AssertionStatus scanBody(final Message message, final String targetName) throws IOException {
         logAndAudit(AssertionMessages.SQLATTACK_SCANNING_BODY_TEXT, targetName);
 
         final ContentTypeHeader contentType = message.getMimeKnob().getOuterContentType();
@@ -132,7 +44,7 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
             final byte[] bodyBytes = IOUtils.slurpStream(mimeKnob.getEntireMessageBodyAsInputStream());
             final String bodyString = new String(bodyBytes, contentType.getEncoding());
             final StringBuilder evidence = new StringBuilder();
-            final String protectionViolated = scan(bodyString, assertion.getProtections(), evidence);
+            final String protectionViolated = scan(bodyString, evidence);
 
             if (protectionViolated != null) {
                 logAndAudit(AssertionMessages.SQLATTACK_DETECTED, where, evidence.toString(), protectionViolated);
@@ -147,30 +59,22 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         return AssertionStatus.NONE;
     }
 
-    /**
-     * Scans for code injection pattern.
-     *
-     * @param s             string to scan
-     * @param protections   protection types to apply
-     * @param evidence      for passing back snippet of string surrounding the
-     *                      first match (if found), for logging purpose
-     * @return the first protection type violated if found (<code>evidence</code> is then populated);
-     *         <code>null</code> if none found
-     */
-    private String scan(final String s, final Set<String> protections, final StringBuilder evidence) {
+    @Override
+    protected String scan(final String s, final StringBuilder evidence) {
         String protectionViolated = null;
         int minIndex = -1;
 
-        for (String protection : protections) {
+        for (String protection : assertion.getProtections()) {
             Pattern protectionPattern = SqlAttackAssertion.getProtectionPattern(protection);
 
-            if(null == protectionPattern) {
+            if (null == protectionPattern) {
                 logAndAudit(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION, protection);
                 throw new AssertionStatusException(AssertionStatus.FAILED, "Unrecognized protection pattern.");
             }
 
             final StringBuilder tmpEvidence = new StringBuilder();
             final int index = TextUtils.scanAndRecordMatch(s, protectionPattern, tmpEvidence);
+
             if (index != -1 && (minIndex == -1 || index < minIndex)) {
                 minIndex = index;
                 evidence.setLength(0);
@@ -180,5 +84,47 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
         }
 
         return protectionViolated;
+    }
+
+    @Override
+    protected void logAndAuditRequestAlreadyRouted() {
+        logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
+    }
+
+    @Override
+    protected void logAndAuditResponseNotRouted() {
+        logAndAudit(AssertionMessages.SQLATTACK_SKIP_RESPONSE_NOT_ROUTED);
+    }
+
+    @Override
+    protected void logAndAuditMessageNotHttp() {
+        logAndAudit(AssertionMessages.SQLATTACK_NOT_HTTP);
+    }
+
+    @Override
+    protected void logAndAuditScanningUrlPath() {
+        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_URL_PATH);
+    }
+
+    @Override
+    protected void logAndAuditAttackDetectedInUrlPath(StringBuilder evidence, String urlPath, String protectionViolated) {
+        logAndAudit(AssertionMessages.SQLATTACK_DETECTED_PATH,
+                "Request URL", urlPath, evidence.toString(), protectionViolated);
+    }
+
+    @Override
+    protected void logAndAuditScanningUrlQueryString() {
+        logAndAudit(AssertionMessages.SQLATTACK_SCANNING_URL_QUERY_STRING);
+    }
+
+    @Override
+    protected void logAndAuditAttackDetectedInQueryParameter(StringBuilder evidence, String urlParamName, String protectionViolated) {
+        logAndAudit(AssertionMessages.SQLATTACK_DETECTED_PARAM,
+                "Request URL", urlParamName, evidence.toString(), protectionViolated);
+    }
+
+    @Override
+    protected void logAndAuditAttackRejected() {
+        logAndAudit(AssertionMessages.SQLATTACK_REJECTED, assertion.getTargetName());
     }
 }

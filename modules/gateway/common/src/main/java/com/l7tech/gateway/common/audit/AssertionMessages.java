@@ -722,17 +722,17 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
-    public static final M CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE = m(7155, Level.WARNING, "Message is not HTTP, cannot parse content type ''{0}''");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_URL_QUERY_STRING = m(7156, Level.FINE, "Scanning request URL query string.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED = m(7157, Level.FINE, "Scanning request message body as application/x-www-form-urlencoded.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA = m(7158, Level.FINE, "Scanning {0} message body as multipart/form-data.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_XML = m(7159, Level.FINE, "Scanning {0} message body as text/xml.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT = m(7160, Level.FINE, "Scanning {0} message body as text.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML = m(7161, Level.FINE, "Scanning {0} as text/xml.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT = m(7162, Level.FINE, "Scanning {0} as text/xml.");
-    public static final M CODEINJECTIONPROJECTION_ALREADY_ROUTED = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_JSON = m(7164, Level.FINE, "Scanning {0} message body as application/json.");
-    public static final M CODEINJECTIONPROJECTION_SCANNING_URL_PATH = m(7165, Level.FINE, "Scanning request URL path.");
+    public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE_CONTENT_TYPE = m(7155, Level.WARNING, "Message is not HTTP, cannot parse content type ''{0}''");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_URL_QUERY_STRING = m(7156, Level.FINE, "Scanning request URL query string.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED = m(7157, Level.FINE, "Scanning request message body as application/x-www-form-urlencoded.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA = m(7158, Level.FINE, "Scanning {0} message body as multipart/form-data.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_BODY_XML = m(7159, Level.FINE, "Scanning {0} message body as text/xml.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT = m(7160, Level.FINE, "Scanning {0} message body as text.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_XML = m(7161, Level.FINE, "Scanning {0} as text/xml.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_TEXT = m(7162, Level.FINE, "Scanning {0} as text/xml.");
+    public static final M CODEINJECTIONPROTECTION_ALREADY_ROUTED = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_BODY_JSON = m(7164, Level.FINE, "Scanning {0} message body as application/json.");
+    public static final M CODEINJECTIONPROTECTION_SCANNING_URL_PATH = m(7165, Level.FINE, "Scanning request URL path.");
     public static final M CODEINJECTIONPROTECTION_DETECTED_PATH = m(7166, Level.WARNING, "{3} detected in {0} path \"{1}\": {2}");
 
     // SqlAttackAssertion

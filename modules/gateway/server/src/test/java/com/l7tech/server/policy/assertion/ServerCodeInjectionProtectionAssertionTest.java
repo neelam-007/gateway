@@ -96,8 +96,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Status should be NONE", AssertionStatus.NONE, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
         checkAuditPresence(false, false, false, false, false);
     }
 
@@ -124,8 +124,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
         final AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals("Status should be NONE", AssertionStatus.NONE, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML));
         checkAuditPresence(false, false, false, false, false);
     }
 
@@ -150,8 +150,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Status should be FALSIFIED", AssertionStatus.FALSIFIED, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -182,8 +182,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         status = serverAssertion.checkRequest(context);
         assertEquals("Status should be FALSIFIED", AssertionStatus.FALSIFIED, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -203,8 +203,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Status should be BAD_REQUEST", AssertionStatus.BAD_REQUEST, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -220,8 +220,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -237,8 +237,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -254,8 +254,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
         checkAuditPresence(false, false, true, false, false);
     }
 
@@ -288,8 +288,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
                 AssertionStatus status = serverAssertion.checkRequest(context);
                 assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
-                assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                        testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
+                assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                        testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
                 checkAuditPresence(false, false, true, false, false);
 
                 context.close();//close to ensure the stash manager is closed, otherwise it will continue to initialize the request with the same content!
@@ -316,22 +316,22 @@ public class ServerCodeInjectionProtectionAssertionTest {
         final AssertionStatus status = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.FAILED, status);
 
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_ALREADY_ROUTED));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_ALREADY_ROUTED));
 
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_TEXT));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_XML));
 
         checkAuditPresence(false, false, false, false, false);
     }
@@ -355,20 +355,20 @@ public class ServerCodeInjectionProtectionAssertionTest {
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED));
 
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT));
-        assertFalse(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_TEXT));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_ATTACHMENT_XML));
 
         checkAuditPresence(false, false, false, false, false);
     }
@@ -437,8 +437,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
         final AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, status);
-        assertTrue(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML.getMessage(),
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML));
+        assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML));
         checkAuditPresence(true, true, false, false, false);
     }
 
@@ -584,11 +584,11 @@ public class ServerCodeInjectionProtectionAssertionTest {
      */
     private void checkAuditPresence(boolean scanningUrlPath, boolean scanningUrlQueryString,
                                     boolean detectedBody, boolean detectedUrlPath, boolean detectedUrlQueryString) {
-        assertEquals(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_PATH.getMessage(), scanningUrlPath,
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_PATH));
-        assertEquals(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_QUERY_STRING.getMessage(),
+        assertEquals(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_URL_PATH.getMessage(), scanningUrlPath,
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_URL_PATH));
+        assertEquals(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_URL_QUERY_STRING.getMessage(),
                 scanningUrlQueryString,
-                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL_QUERY_STRING));
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_URL_QUERY_STRING));
         assertEquals(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED.getMessage(), detectedBody,
                 testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
         assertEquals(AssertionMessages.SQLATTACK_DETECTED_PATH.getMessage(), detectedUrlPath,

@@ -15,75 +15,31 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Assertion that triggers the canned SQL attack threat protection behavior.
  */
-public class SqlAttackAssertion extends MessageTargetableAssertion {
+public class SqlAttackAssertion extends InjectionThreatProtectionAssertion {
     public static final String PROT_METATEXT = "SqlMetaText";
     public static final String PROT_META = "SqlMeta";
     public static final String PROT_MSSQL = "MsSql";
     public static final String PROT_ORASQL = "OraSql";
+
+    private static final String baseName = "Protect Against SQL Attacks";
 
     private static final List<String> ATTACK_PROTECTION_NAMES =
             new ArrayList<>(Arrays.asList(PROT_MSSQL, PROT_ORASQL, PROT_METATEXT, PROT_META));
     private static final Map<String,SqlAttackProtectionType> ATTACK_PROTECTION_TYPES =
             Collections.unmodifiableMap(createProtectionMap());
 
-    /** Whether to apply protections to request URL path. */
-    private boolean includeUrlPath;
-
-    /** Whether to apply protections to request URL query string. */
-    private boolean includeUrlQueryString;
-
-    /** Whether to apply protections to request body. */
-    private boolean includeBody;
-
     Set<String> protections = new HashSet<>();
 
     public SqlAttackAssertion() {
-        super(false);
+        super(TargetMessageType.REQUEST, false);
 
         includeBody = true;
     }
 
-    private final static String baseName = "Protect Against SQL Attacks";
-
-    final static AssertionNodeNameFactory<SqlAttackAssertion> policyNameFactory =
-            new AssertionNodeNameFactory<SqlAttackAssertion>() {
-        @Override
-        public String getAssertionName(final SqlAttackAssertion assertion, final boolean decorate) {
-            if (!decorate) return baseName;
-
-            StringBuilder sb = new StringBuilder(baseName);
-
-            sb.append(" [");
-
-            if (assertion.includeUrlPath) {
-                sb.append("URL Path");
-
-                if (assertion.includeUrlQueryString) {
-                    sb.append(" + URL Query String");
-                }
-
-                if (assertion.includeBody) {
-                    sb.append(" + Body");
-                }
-            } else if (assertion.includeUrlQueryString) {
-                sb.append("URL Query String");
-
-                if (assertion.includeBody) {
-                    sb.append(" + Body");
-                }
-            } else if (assertion.includeBody) {
-                sb.append("Body");
-            }
-
-            sb.append("]");
-
-            return AssertionUtils.decorateName(assertion, sb);
-        }
-    };
-
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
@@ -100,6 +56,7 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
+
         return meta;
     }
 
@@ -212,35 +169,6 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         this.includeUrlQueryString = includeUrl;
     }
 
-    public boolean isIncludeUrlPath() {
-        return includeUrlPath;
-    }
-
-    public void setIncludeUrlPath(boolean includeUrlPath) {
-        this.includeUrlPath = includeUrlPath;
-    }
-
-    public boolean isIncludeUrlQueryString() {
-        return includeUrlQueryString;
-    }
-
-    public void setIncludeUrlQueryString(boolean includeUrlQueryString) {
-        this.includeUrlQueryString = includeUrlQueryString;
-    }
-
-    public boolean isIncludeBody() {
-        return includeBody;
-    }
-
-    public void setIncludeBody(boolean includeBody) {
-        this.includeBody = includeBody;
-    }
-
-    @Override
-    public void setTarget( final TargetMessageType target ) {
-        super.setTarget(target);
-    }
-
     private static Map<String, SqlAttackProtectionType> createProtectionMap() {
         HashMap<String, SqlAttackProtectionType> patternMap = new HashMap<>(4);
 
@@ -250,5 +178,10 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         patternMap.put(PROT_META, SqlAttackProtectionType.META);
 
         return patternMap;
+    }
+
+    @Override
+    protected String getBaseName() {
+        return baseName;
     }
 }
