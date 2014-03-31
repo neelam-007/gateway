@@ -59,7 +59,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @return The user resource for handling user requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/users")
+    @Path("{id}/"+ UserResource.USERS_URI)
     public UserResource users(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         return resourceContext.initResource(new UserResource(id));
     }

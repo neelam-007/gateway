@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -12,6 +13,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -55,6 +57,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private DependencyAnalyzer dependencyAnalyzer;
     @Inject
     private EntityCrud entityCrud;
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
 
     /**
      * This will import the given entity bundle. If test is true or there is an error during bundle import nothing is
@@ -87,7 +91,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     final Entity baseEntity = entity == null? null: (Entity)entity.getEntity();
                     //Find an existing entity to map it to.
                     //TODO: move this into the try block?
-                    final Entity existingEntity = locateExistingEntity(mapping,baseEntity);
+                    final Entity existingEntity = locateExistingEntity(mapping,baseEntity,resourceMapping);
                     try {
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
@@ -414,7 +418,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * this entity to.
      */
     @Nullable
-    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, final Entity entity) {
+    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, final Entity entity,final Map<EntityHeader, EntityHeader> resourceMapping ) {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         final TransactionTemplate tt = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         tt.setReadOnly(true);
@@ -422,10 +426,50 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             return tt.execute(new TransactionCallback<Entity>() {
                 @Override
                 public Entity doInTransaction(final TransactionStatus transactionStatus) {
+
                     try {
                         final Entity resource;
                         //check if should search by name
+
+                        if(mapping.getIdentityProviderId()!= null){
+                            final Goid idProvider = getMappedIdentityProviderID(mapping.getIdentityProviderId(),resourceMapping);
+                            IdentityProvider provider = identityProviderFactory.getProvider(idProvider);
+                            if (provider == null) return null;
+
+                            if (mapping.getTargetMapping() != null){
+                                switch (mapping.getTargetMapping().getType()) {
+                                    case ID:{
+                                        final String targetID = mapping.getTargetMapping().getTargetID() == null ? mapping.getSourceEntityHeader().getStrId() : mapping.getTargetMapping().getTargetID();
+                                        if (mapping.getSourceEntityHeader().getType() == EntityType.USER) {
+                                            return provider.getUserManager().findByPrimaryKey(targetID);
+                                        } else if (mapping.getSourceEntityHeader().getType() == EntityType.GROUP) {
+                                            return provider.getGroupManager().findByPrimaryKey(targetID);
+                                        }
+                                    }
+                                    break;
+                                    case NAME:{
+                                        String mapTo = mapping.getTargetMapping().getTargetID();
+                                        if (mapTo == null) return null;
+                                        if (mapping.getSourceEntityHeader().getType() == EntityType.USER) {
+                                            return provider.getUserManager().findByLogin(mapTo);
+                                        } else if (mapping.getSourceEntityHeader().getType() == EntityType.GROUP) {
+                                            return provider.getGroupManager().findByName(mapTo);
+                                        }
+                                    }
+                                    default:
+                                        return null;
+                                }
+                            }
+                            //find the entity by the id in the source header
+                            if (mapping.getSourceEntityHeader().getType() == EntityType.USER) {
+                                return provider.getUserManager().findByPrimaryKey(mapping.getSourceEntityHeader().getStrId());
+                            } else if (mapping.getSourceEntityHeader().getType() == EntityType.GROUP) {
+                                return provider.getGroupManager().findByPrimaryKey(mapping.getSourceEntityHeader().getStrId());
+                            }
+                        }
+
                         if (mapping.getTargetMapping() != null) {
+
                             switch (mapping.getTargetMapping().getType()) {
                                 case ID: {
                                     //use the source ID if the target ID is null.
@@ -475,5 +519,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             //ignore this exception. It will be thrown if an entity cannot be found.
             return null;
         }
+    }
+
+    private Goid getMappedIdentityProviderID(Goid providerGoid, Map<EntityHeader, EntityHeader> resourceMapping) {
+        for(EntityHeader header: resourceMapping.keySet()){
+            if(header.getGoid().equals(providerGoid) && header.getType().equals(EntityType.ID_PROVIDER_CONFIG) )
+                return resourceMapping.get(header).getGoid();
+        }
+        return providerGoid;
     }
 }

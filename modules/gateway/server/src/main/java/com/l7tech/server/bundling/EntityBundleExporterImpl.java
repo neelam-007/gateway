@@ -4,8 +4,9 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
@@ -95,14 +96,20 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             if(connection == null)
                 throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint,(JmsConnection)connection));
+        }else if (entity instanceof Identity){
+            // not include identities in bundle
+            return;
+        }else if (entity instanceof IdentityProviderConfig){
+            // not include id providers in bundle
+            return;
         }else if (entity instanceof RevocationCheckPolicy){
             // not include revocation check policy in bundle
             return;
-        }else if(entity instanceof PersistentEntity){
-            entityContainers.add( new PersistentEntityContainer((PersistentEntity)entity));
         }else if(entity instanceof SsgKeyEntry){
             // not include private key entity info in bundle
             return;
+        }else if(entity instanceof PersistentEntity){
+            entityContainers.add( new PersistentEntityContainer((PersistentEntity)entity));
         }else{
             entityContainers.add( new EntityContainer(entity));
         }
@@ -132,6 +139,22 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     false);
         }else if(entity instanceof RevocationCheckPolicy){
             // map only for revocation check policy
+            mapping = new EntityMappingInstructions(
+                    ((DependentEntity) dependentObject).getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+        }else if(entity instanceof IdentityProviderConfig){
+            // map only for identity providers
+            mapping = new EntityMappingInstructions(
+                    ((DependentEntity) dependentObject).getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
+        }else if(entity instanceof Identity){
+            // map only for identities
             mapping = new EntityMappingInstructions(
                     ((DependentEntity) dependentObject).getEntityHeader(),
                     null,

@@ -8,10 +8,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
@@ -20,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import javax.ws.rs.ext.Provider;
 import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -29,8 +28,11 @@ import java.util.List;
 /**
  * This resource handles user operations.
  */
+@Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + "users")
 public class UserResource implements URLAccessible<UserMO> {
+
+    protected static final String USERS_URI = "users";
 
     @SpringBean
     private UserRestResourceFactory userRestResourceFactory;
@@ -46,6 +48,10 @@ public class UserResource implements URLAccessible<UserMO> {
 
     //The provider id to manage users for.
     private String providerId;
+
+    public UserResource() {
+        providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
+    }
 
     /**
      * Creates a new user resource for handling user requests for the given provider id
@@ -272,35 +278,39 @@ public class UserResource implements URLAccessible<UserMO> {
 
     @NotNull
     @Override
-    public String getUrl(@NotNull UserMO user) {
-        //TODO: check if the user is from the default identity provider.
-        return getUrlString(user.getId());
+    public String getUrl(@NotNull final UserMO user) {
+        return getUrlString(user.getProviderId(),user.getId());
     }
 
     @NotNull
     @Override
-    public String getUrl(@NotNull EntityHeader header) {
-        //TODO: check if the user is from the default identity provider.
-        return getUrlString(header.getName());
+    public String getUrl(@NotNull final EntityHeader userHeader) {
+        if(userHeader instanceof IdentityHeader){
+            return getUrlString(((IdentityHeader)userHeader).getProviderGoid().toString(),userHeader.getStrId());
+        }
+        return getUrlString(providerId,userHeader.getStrId());
     }
 
     @NotNull
     @Override
-    public Link getLink(@NotNull UserMO user) {
+    public Link getLink(@NotNull final UserMO user) {
         return ManagedObjectFactory.createLink("self", getUrl(user));
     }
 
     @NotNull
     @Override
-    public List<Link> getRelatedLinks(@Nullable UserMO user) {
-        //TODO: check if the user is from the default identity provider.
-        return Arrays.asList(ManagedObjectFactory.createLink("list", getUrlString(null)));
+    public List<Link> getRelatedLinks(@Nullable final UserMO user) {
+        return Arrays.asList(
+                ManagedObjectFactory.createLink("list", getUrlString(providerId,null)));
     }
 
-    public String getUrlString(@Nullable String id) {
-        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
-        if (id != null) {
-            uriBuilder.path(id);
+    private String getUrlString(String providerId, @Nullable String userId) {
+        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder()
+                .path(IdentityProviderResource.class)
+                .path(providerId)
+                .path(USERS_URI);
+        if (userId != null) {
+            uriBuilder.path(userId);
         }
         return uriBuilder.build().toString();
     }
