@@ -50,6 +50,9 @@ public class UserResource implements URLAccessible<UserMO> {
     //The provider id to manage users for.
     private String providerId;
 
+    /**
+     * Creates a user resource for handling group request for the internal identity provider
+     */
     public UserResource() {
         providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
     }

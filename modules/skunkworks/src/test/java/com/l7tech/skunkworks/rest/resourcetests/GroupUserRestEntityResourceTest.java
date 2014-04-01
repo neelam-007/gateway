@@ -254,6 +254,17 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
     }
 
     @Test
+    public void GroupGetTest() throws Exception {
+
+        RestResponse response = processRequest("identityProviders/"+internalProviderId+"/groups/"+groupsToCleanup.get(1), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(200, response.getStatus());
+        Item<GroupMO> groupList = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertNotNull(groupList.getContent());
+        assertEquals(groupsToCleanup.get(1),groupList.getContent().getId());
+    }
+
+    @Test
     public void GroupListTest() throws Exception {
 
         RestResponse response = processRequest("identityProviders/"+internalProviderId+"/groups", HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");

@@ -63,10 +63,10 @@ public class GroupRestResourceFactory {
         }
     }
 
-    public GroupMO getResource(@NotNull String providerId, @NotNull String name) throws FindException, ResourceFactory.ResourceNotFoundException {
-        Group group = retrieveGroupManager(providerId).findByName(name);
+    public GroupMO getResource(@NotNull String providerId, @NotNull String id) throws FindException, ResourceFactory.ResourceNotFoundException {
+        Group group = retrieveGroupManager(providerId).findByPrimaryKey(id);
         if(group== null){
-            throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + name);
+            throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + id);
         }
         rbacAccessService.validatePermitted(group, OperationType.READ);
         return transformer.convertToMO(group);

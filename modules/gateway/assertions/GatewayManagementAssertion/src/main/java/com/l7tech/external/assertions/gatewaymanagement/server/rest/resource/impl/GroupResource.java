@@ -6,9 +6,11 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.GroupTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -19,14 +21,18 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * This resource handles policy version operations.
  */
+@Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + "groups")
 public class GroupResource implements URLAccessible<GroupMO> {
+
+    protected static final String GROUPS_URI = "groups";
 
     @SpringBean
     private GroupRestResourceFactory groupRestResourceFactory;
@@ -39,6 +45,13 @@ public class GroupResource implements URLAccessible<GroupMO> {
 
     //The provider id to manage version for.
     private String providerId;
+
+    /**
+     * Creates a group resource for handling group request for the internal identity provider
+     */
+    public GroupResource() {
+        providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
+    }
 
     /**
      * Creates a new group resource for handling group requests for the given provider id
@@ -93,11 +106,16 @@ public class GroupResource implements URLAccessible<GroupMO> {
                 .build();
     }
 
-    private String getGroupUri(String id) {
-        return getUrlString(providerId + "/groups/" + id);
-    }
-
-    public Item<GroupMO> getResource(String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    /**
+     * This implements the GET method to retrieve an entity by a given id.
+     *
+     * @param id The identity of the entity to select
+     * @return The selected entity.
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    @GET
+    @Path("{id}")
+    public Item<GroupMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         GroupMO group = groupRestResourceFactory.getResource(providerId, id);
         return new ItemBuilder<>(transformer.convertToItem(group))
                 .addLink(getLink(group))
@@ -114,13 +132,16 @@ public class GroupResource implements URLAccessible<GroupMO> {
     @NotNull
     @Override
     public String getUrl(@NotNull GroupMO group) {
-        return getGroupUri(group.getName());
+        return getUrlString(group.getProviderId(), group.getId());
     }
 
     @NotNull
     @Override
     public String getUrl(@NotNull EntityHeader groupHeader) {
-        return getGroupUri(groupHeader.getName());
+        if(groupHeader instanceof IdentityHeader){
+            return getUrlString(((IdentityHeader)groupHeader).getProviderGoid().toString(),groupHeader.getStrId());
+        }
+        return getUrlString(providerId, groupHeader.getStrId());
     }
 
     @NotNull
@@ -132,19 +153,23 @@ public class GroupResource implements URLAccessible<GroupMO> {
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable GroupMO group) {
-        return Arrays.asList(ManagedObjectFactory.createLink("list", getGroupUri(null)));
+        return Arrays.asList(ManagedObjectFactory.createLink("list", getUrlString(providerId, null)));
     }
 
     /**
      * Returns the Url of this resource with the given id
      *
-     * @param id The id of the resource. Leave it blank to get the resource listing url
+     * @param providerId The id of the identity provider that the group belongs to.
+     * @param groupId The id of the resource. Leave it blank to get the resource listing url
      * @return The url of the resource
      */
-    public String getUrlString(@Nullable String id) {
-        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
-        if (id != null) {
-            uriBuilder.path(id);
+    private String getUrlString(String providerId, @Nullable String groupId) {
+        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder()
+                .path(IdentityProviderResource.class)
+                .path(providerId)
+                .path(GROUPS_URI);
+        if (groupId != null) {
+            uriBuilder.path(groupId);
         }
         return uriBuilder.build().toString();
     }
