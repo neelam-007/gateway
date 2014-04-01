@@ -77,8 +77,8 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
         return factory.getResourceType();
     }
 
-    public ItemsList<R> listResources(final int offset, final int count, final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
-        List<Item<R>> items = Functions.map(factory.listResources(offset, count, sort, asc, filters), new Functions.Unary<Item<R>, R>() {
+    public ItemsList<R> listResources(final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
+        List<Item<R>> items = Functions.map(factory.listResources(sort, asc, filters), new Functions.Unary<Item<R>, R>() {
             @Override
             public Item<R> call(R resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

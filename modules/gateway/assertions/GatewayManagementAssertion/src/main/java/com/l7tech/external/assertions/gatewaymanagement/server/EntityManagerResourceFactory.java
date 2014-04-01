@@ -163,9 +163,9 @@ public abstract class EntityManagerResourceFactory<R, E extends PersistentEntity
     }
 
     @Override
-    public List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
+    public List<R> getResources(String sort, Boolean ascending, Map<String, List<Object>> filters) {
         try {
-            List<E> entities = manager.findPagedMatching(offset, count, sort, ascending, filters);
+            List<E> entities = manager.findPagedMatching(0, -1, sort, ascending, filters);
             entities = accessFilter(entities, manager.getEntityType(), OperationType.READ, null);
             entities = filterEntities(entities);
 

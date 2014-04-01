@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.AssertionSecurityZoneMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +52,12 @@ public class AssertionSecurityZoneAPIResourceFactory extends WsmanBaseResourceFa
         return factory.getResource(CollectionUtils.MapBuilder.<String, String>builder().put("name", name).map());
     }
 
-    public Iterable<AssertionSecurityZoneMO> listResources(final String sortKey, final Boolean ascending, final Map<String, List<Object>> filtersMap) {
-        return factory.listResources(sortKey,ascending, filtersMap);
+    public List<AssertionSecurityZoneMO> listResources(final String sortKey, final Boolean ascending, final Map<String, List<Object>> filtersMap) {
+        return Functions.map(factory.listResources(sortKey, ascending, filtersMap), new Functions.Unary<AssertionSecurityZoneMO, AssertionSecurityZoneMO>() {
+            @Override
+            public AssertionSecurityZoneMO call(AssertionSecurityZoneMO assertionSecurityZoneMO) {
+                return assertionSecurityZoneMO;
+            }
+        });
     }
 }

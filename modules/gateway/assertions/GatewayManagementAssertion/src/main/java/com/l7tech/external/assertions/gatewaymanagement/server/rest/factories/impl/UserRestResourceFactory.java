@@ -4,9 +4,7 @@ import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CertificateTransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
-import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.UserMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
@@ -16,7 +14,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.TrustedEsmUserManager;
-import com.l7tech.server.bundling.PersistentEntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
@@ -74,7 +71,7 @@ public class UserRestResourceFactory {
     @Inject
     private ClientCertManager clientCertManager;
 
-    public List<UserMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
+    public List<UserMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) {
         try {
             UserManager userManager  = retrieveUserManager(providerId);
             List<IdentityHeader> users = new ArrayList<>();

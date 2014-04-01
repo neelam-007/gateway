@@ -47,8 +47,6 @@ public class PolicyVersionRestResourceFactory {
     private static final Map<String, String> propertyNamesMap = CollectionUtils.MapBuilder.<String, String>builder().put("name", "comment").map();
 
     public List<PolicyVersionMO> listPolicyVersions(@NotNull final Either<String, String> serviceOrPolicyId,
-                                                    @NotNull final Integer offset,
-                                                    @NotNull final Integer count,
                                                     @Nullable final String sort,
                                                     @Nullable final Boolean order,
                                                     @Nullable final Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
@@ -60,7 +58,7 @@ public class PolicyVersionRestResourceFactory {
                     final HashMap<String, List<Object>> filtersWithPolicyGoid = new HashMap<>(filters);
                     //add the policy Goid filter so that only policy versions from the given policy are listed.
                     filtersWithPolicyGoid.put("policyGoid", Arrays.<Object>asList(Goid.parseGoid(policyId)));
-                    List<PolicyVersion> policyVersions = policyVersionManager.findPagedMatching(offset, count, sort, order, filtersWithPolicyGoid);
+                    List<PolicyVersion> policyVersions = policyVersionManager.findPagedMatching(0, -1, sort, order, filtersWithPolicyGoid);
                     //filter the policy versions.
                     policyVersions = rbacAccessService.accessFilter(policyVersions, EntityType.POLICY_VERSION, OperationType.READ, null);
                     return Functions.map(policyVersions, new Functions.Unary<PolicyVersionMO, PolicyVersion>() {

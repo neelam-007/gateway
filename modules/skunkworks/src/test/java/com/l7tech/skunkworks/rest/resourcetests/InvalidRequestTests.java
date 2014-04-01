@@ -12,64 +12,6 @@ import org.junit.Test;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class InvalidRequestTests extends RestEntityTestBase {
 
-    @BugId("SSG-8198")
-    @Test
-    public void testInvalidOffset() throws Exception {
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=asd", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=" + Integer.MAX_VALUE + "0", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=-1", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=" + Integer.MAX_VALUE, HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        //test the valid cases
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=0", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 200, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "offset=5", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 200, response.getStatus());
-    }
-
-    @BugId("SSG-8196")
-    @Test
-    public void testInvalidCount() throws Exception {
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=asd", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=501", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=0", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=-1", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 400, response.getStatus());
-
-        //test the valid cases
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=500", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 200, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=1", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 200, response.getStatus());
-
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "count=234", HttpMethod.GET, null, null);
-        Assert.assertEquals("Incorrect Response:\n" + response.toString(), 200, response.getStatus());
-    }
-
     @Test
     public void testInvalidOrder() throws Exception {
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("roles", "order=asd", HttpMethod.GET, null, null);

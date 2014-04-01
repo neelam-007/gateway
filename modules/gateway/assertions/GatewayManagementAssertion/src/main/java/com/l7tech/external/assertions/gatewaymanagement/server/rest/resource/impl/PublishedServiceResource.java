@@ -104,10 +104,8 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
-     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
-     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
-     * ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
+     * either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
      * /restman/services?name=MyService
      * <p/>
@@ -119,8 +117,6 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param offset          The offset to start the listing from
-     * @param count           The offset ot start the listing from
      * @param sort            the key to sort the list by.
      * @param order           the order to sort the list. true for ascending, false for descending. null implies
      *                        ascending
@@ -137,8 +133,6 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<ServiceMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -146,7 +140,6 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
             @QueryParam("soap") Boolean soap,
             @QueryParam("parentFolder.id") List<Goid> parentFolderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "guid", "soap", "parentFolder.id", "securityZone.id"));
 
@@ -166,7 +159,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(offset, count, convertSort(sort), ascendingSort,
+        return super.listResources(convertSort(sort), ascendingSort,
                 filters.map());
     }
 

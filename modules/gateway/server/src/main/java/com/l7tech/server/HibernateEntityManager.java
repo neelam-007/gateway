@@ -335,8 +335,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     }
 
                     criteria.setFirstResult( offset );
-                    criteria.setFetchSize( count );
-                    criteria.setMaxResults( count );
+                    //If the count is negative return the full list.
+                    if (count >= 0) {
+                        criteria.setFetchSize(count);
+                        criteria.setMaxResults(count);
+                    }
 
                     final List<ET> list = (List<ET>) criteria.list();
                     for (final ET et : list) {

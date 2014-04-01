@@ -128,14 +128,12 @@ public interface ResourceFactory<R,E> {
 
     /**
      * Gets all resources given the offset, count, sort, and filter properties.
-     * @param offset The offset to start returning resources from
-     * @param count The number of resources to return
      * @param sort The property to sort the resources by.
      * @param ascending The sort order.
      * @param filters The filters to search for entities with.
      * @return The entities found
      */
-    List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters);
+    List<R> getResources(String sort, Boolean ascending, Map<String, List<Object>> filters);
 
     /**
      * Returns true is the resource exists. False otherwise.

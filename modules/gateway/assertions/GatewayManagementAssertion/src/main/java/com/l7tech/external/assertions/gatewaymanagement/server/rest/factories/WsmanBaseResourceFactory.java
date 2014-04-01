@@ -74,8 +74,8 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
 
 
     @Override
-    public List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
-        return factory.getResources(offset, count, sort, ascending, filters);
+    public List<R> listResources(@Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
+        return factory.getResources(sort, ascending, filters);
     }
 
     @Override

@@ -58,10 +58,9 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     }
 
     /**
-     * This will return a list of policy versions for the selected policy. It will return a maximum of count references,
-     * it can return fewer references if there are fewer than count entities found. Setting an offset will start listing
-     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
-     * ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of policy versions for the selected policy. A sort can be specified to allow the
+     * resulting list to be sorted in either ascending or descending order. Other params given will be used as search
+     * values. Examples:
      * <p/>
      * ?id=a86a7745f9005baa52d380d228a3735a
      * <p/>
@@ -73,8 +72,6 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      * <p/>
      * If any other parameters are given an error will be returned
      *
-     * @param offset   The offset to start the listing from. Default is 0
-     * @param count    The maximum number of entities to return. Default is 100
      * @param sort     The key to sort the list by. Default is null
      * @param order    The order to sort the list. 'asc' for ascending, 'desc' for descending. Default is ascending
      * @param ids      The id filter
@@ -86,14 +83,11 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @GET
     @Produces(MediaType.APPLICATION_XML)
     public ItemsList<PolicyVersionMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty final Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty final Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "version"}) final String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) final String order,
             @QueryParam("id") final List<Goid> ids,
             @QueryParam("active") final Boolean active,
             @QueryParam("comment") final List<String> comments) throws ResourceFactory.ResourceNotFoundException {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
         final Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("id", "active", "comment"));
 
@@ -114,7 +108,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
             })));
         }
         //create the items list of policy versions
-        final List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listPolicyVersions(serviceOrPolicyId, offset, count, sort, ascendingSort, filters.map()), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
+        final List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listPolicyVersions(serviceOrPolicyId, sort, ascendingSort, filters.map()), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
             @Override
             public Item<PolicyVersionMO> call(PolicyVersionMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

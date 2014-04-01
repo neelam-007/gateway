@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
@@ -10,8 +11,10 @@ import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
+import com.l7tech.util.Functions;
 import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
@@ -104,10 +107,8 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     }
 
     /**
-     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
-     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
-     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
-     * ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
+     * either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
      * /restman/services?name=MyService
      * <p/>
@@ -119,8 +120,6 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param offset          The offset to start the listing from
-     * @param count           The offset ot start the listing from
      * @param sort            the key to sort the list by.
      * @param order           the order to sort the list. true for ascending, false for descending. null implies
      *                        ascending
@@ -138,17 +137,14 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<PolicyMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
             @QueryParam("guid") List<String> guids,
-            @QueryParam("type") List<String> types,
+            @QueryParam("type") @ChoiceParam({"Include", "Internal", "Global"}) List<String> types,
             @QueryParam("soap") Boolean soap,
             @QueryParam("parentFolder.id") List<Goid> parentFolderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "guid", "type", "soap", "parentFolder.id", "securityZone.id"));
 
@@ -160,7 +156,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
             filters.put("guid", (List) guids);
         }
         if (types != null && !types.isEmpty()) {
-            filters.put("type", (List) types);
+            filters.put("type", (List) convertTypes(types));
         }
         if (soap != null) {
             filters.put("soap", (List) Arrays.asList(soap));
@@ -171,8 +167,26 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(offset, count, convertSort(sort), ascendingSort,
+        return super.listResources(convertSort(sort), ascendingSort,
                 filters.map());
+    }
+
+    private List<PolicyType> convertTypes(List<String> types) {
+        return Functions.map(types, new Functions.UnaryThrows<PolicyType, String, InvalidArgumentException>() {
+            @Override
+            public PolicyType call(String type) {
+                switch(type){
+                    case "Include":
+                        return PolicyType.INCLUDE_FRAGMENT;
+                    case "Internal":
+                        return PolicyType.INTERNAL;
+                    case "Global":
+                        return PolicyType.GLOBAL_FRAGMENT;
+                    default:
+                        throw new InvalidArgumentException("type", "Invalid policy type '" + type + "'. Expected either: Include, Internal, or Global");
+                }
+            }
+        });
     }
 
     private String convertSort(String sort) {

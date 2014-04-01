@@ -50,10 +50,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
     }
 
     /**
-     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
-     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
-     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
-     * ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of entity references. Other params given will be used as search values. Examples:
      * <p/>
      * /restman/services?name=MyService
      * <p/>
@@ -65,11 +62,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param offset The offset to start the listing from
-     * @param count  The offset ot start the listing from
-     * @param sort   the key to sort the list by.
-     * @param order  the order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param names  The name filter
+     * @param names The name filter
      * @return A list of entities. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
@@ -78,13 +71,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<GroupMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
-            @QueryParam("sort") @ChoiceParam({"name"}) String sort,
-            @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
-        Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
@@ -92,7 +79,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
             filters.put("name", (List) names);
         }
 
-        List<Item<GroupMO>> items = Functions.map(groupRestResourceFactory.listResources(providerId, offset, count, sort, ascendingSort, filters.map()), new Functions.Unary<Item<GroupMO>, GroupMO>() {
+        List<Item<GroupMO>> items = Functions.map(groupRestResourceFactory.listResources(providerId, filters.map()), new Functions.Unary<Item<GroupMO>, GroupMO>() {
             @Override
             public Item<GroupMO> call(GroupMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))

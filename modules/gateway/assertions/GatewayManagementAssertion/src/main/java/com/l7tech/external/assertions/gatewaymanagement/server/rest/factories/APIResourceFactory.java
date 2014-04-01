@@ -66,18 +66,16 @@ public interface APIResourceFactory<R> {
     public boolean resourceExists(@NotNull String id);
 
     /**
-     * Returns a list of resources. The list starts at the given offset and contains a maximum of count elements. It
-     * can optionally be sorted by the given sort key in either ascending or descending order. The filters given are
-     * used to restrict the returned resources to only those entities that match the filters.
+     * Returns a list of resources. It can optionally be sorted by the given sort key in either ascending or descending
+     * order. The filters given are used to restrict the returned resources to only those entities that match the
+     * filters.
      *
-     * @param offset    The offset to start listing from
-     * @param count     The number of resources to list. This is the maximum that will be returned.
      * @param sortKey   The attribute to sort the entities by. Null for no sorting
      * @param ascending The order to sort the entities
      * @param filters   The collection of filters specifying which entities to include.
      * @return The list of resources matching the given parameters
      */
-    List<R> listResources(@NotNull Integer offset, @NotNull Integer count, @Nullable String sortKey, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters);
+    List<R> listResources(@Nullable String sortKey, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters);
 
     /**
      * This will delete a resource with the given id.

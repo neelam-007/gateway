@@ -384,26 +384,11 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             testList(query, response, expectedIds);
 
             if (query.isEmpty()) {
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "count=1", HttpMethod.GET, null, "");
-                testList("count=1", response, expectedIds.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "count=1&offset=1", HttpMethod.GET, null, "");
-                testList("count=1&offset=1", response, expectedIds.subList(1, 2));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "offset=500", HttpMethod.GET, null, "");
-                testList("offset=500", response, Collections.<String>emptyList());
-
                 List<String> orderedList = new ArrayList<>(expectedIds);
                 Collections.sort(orderedList);
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc", HttpMethod.GET, null, "");
                 testList("sort=id&order=asc", response, orderedList);
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=asc&count=1", response, orderedList.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1&offset=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=asc&count=1&offset=1", response, orderedList.subList(1, 2));
 
                 List<String> reverseList = new ArrayList<>(expectedIds);
                 Collections.sort(reverseList);
@@ -411,12 +396,6 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc", HttpMethod.GET, null, "");
                 testList("sort=id&order=desc", response, reverseList);
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc&count=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=desc&count=1", response, reverseList.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc&count=1&offset=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=desc&count=1&offset=1", response, reverseList.subList(1, 2));
 
                 //test unprivileged
                 InternalUser user = createUnprivilegedUser();
@@ -434,8 +413,14 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
     public void testListEntitiesFailed() throws Exception {
         Map<String, Functions.BinaryVoid<String, RestResponse>> badQueries = getBadListQueries();
 
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "badparam=test", HttpMethod.GET, null, "");
+        logger.log(Level.FINE, response.toString());
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+
         for (String query : badQueries.keySet()) {
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), query, HttpMethod.GET, null, "");
+            response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), query, HttpMethod.GET, null, "");
             logger.log(Level.FINE, response.toString());
 
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());

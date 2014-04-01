@@ -316,26 +316,11 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
             testList(query, response, expectedIds);
 
             if (query.isEmpty()) {
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "count=1", HttpMethod.GET, null, "");
-                testList("count=1", response, expectedIds.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "count=1&offset=1", HttpMethod.GET, null, "");
-                testList("count=1&offset=1", response, expectedIds.subList(1, 2));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "offset=500", HttpMethod.GET, null, "");
-                testList("offset=500", response, Collections.<String>emptyList());
-
                 List<String> orderedList = new ArrayList<>(expectedIds);
                 Collections.sort(orderedList);
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc", HttpMethod.GET, null, "");
                 testList("sort=id&order=asc", response, orderedList);
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=asc&count=1", response, orderedList.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc&count=1&offset=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=asc&count=1&offset=1", response, orderedList.subList(1, 2));
 
                 List<String> reverseList = new ArrayList<>(expectedIds);
                 Collections.sort(reverseList);
@@ -343,12 +328,6 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc", HttpMethod.GET, null, "");
                 testList("sort=id&order=desc", response, reverseList);
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc&count=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=desc&count=1", response, reverseList.subList(0, 1));
-
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc&count=1&offset=1", HttpMethod.GET, null, "");
-                testList("sort=id&order=desc&count=1&offset=1", response, reverseList.subList(1, 2));
             }
         }
     }

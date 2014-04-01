@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyDetail;
-import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -32,6 +30,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -74,7 +73,22 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
         policyDetail.setName("Policy Name");
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
         policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("PropertyKey", "PropertyValue").map());
-
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <exp:References/>\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>\n");
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
         policyMO.setPolicyDetail(policyDetail);
         return policyMO;
     }

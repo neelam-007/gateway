@@ -139,16 +139,16 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     @Override
-    public List<PrivateKeyMO> getResources(final Integer offset, final Integer count, String sort, Boolean ascending, final Map<String, List<Object>> filters) {
+    public List<PrivateKeyMO> getResources(String sort, Boolean ascending, final Map<String, List<Object>> filters) {
         return transactional(new TransactionalCallback<List<PrivateKeyMO>>() {
             @Override
             public List<PrivateKeyMO> execute() throws ObjectModelException {
-                return Functions.map( CollectionUtils.safeSubList(getEntityHeaders(!filters.containsKey("alias")?null:Functions.map(filters.get("alias"), new Unary<String, Object>() {
+                return Functions.map( getEntityHeaders(!filters.containsKey("alias")?null:Functions.map(filters.get("alias"), new Unary<String, Object>() {
                     @Override
                     public String call(Object o) {
                         return o.toString();
                     }
-                })), offset, count), new Functions.UnaryThrows<PrivateKeyMO, SsgKeyHeader, FindException>() {
+                })), new Functions.UnaryThrows<PrivateKeyMO, SsgKeyHeader, FindException>() {
                     @Override
                     public PrivateKeyMO call( final SsgKeyHeader header ) throws FindException{
                         SsgKeyEntry keyEntry;

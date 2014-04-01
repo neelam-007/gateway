@@ -35,7 +35,7 @@ public class GroupRestResourceFactory {
     @Inject
     private RbacAccessService rbacAccessService;
 
-    public List<GroupMO> listResources(@NotNull String providerId, @NotNull Integer offset, @NotNull Integer count, @Nullable String sort, @Nullable Boolean order, @Nullable Map<String, List<Object>> filters) {
+    public List<GroupMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) {
         try {
             GroupManager groupManager = retrieveGroupManager(providerId);
             List<IdentityHeader> groups = new ArrayList<>();

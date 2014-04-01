@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ActiveConnectorAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.NotEmpty;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ActiveConnectorTransformer;
@@ -74,9 +73,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * This will return a list of active connector references. It will return a maximum of {@code count} references, it
-     * can return fewer references if there are fewer then {@code count} active connectors found. Setting an offset will
-     * start listing active connectors from the given offset. A sort can be specified to allow the resulting list to be
+     * This will return a list of active connector references. A sort can be specified to allow the resulting list to be
      * sorted in either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
      * /restman/services?name=MyService
@@ -89,8 +86,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      * <p/>
      * If a parameter is not a valid search value a bad request error will be returned.
      *
-     * @param offset                The offset to start the listing from
-     * @param count                 The offset ot start the listing from
      * @param sort                  the key to sort the list by.
      * @param order                 the order to sort the list. true for ascending, false for descending. null implies
      *                              ascending
@@ -107,8 +102,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<ActiveConnectorMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -116,7 +109,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
             @QueryParam("type") List<String> types,
             @QueryParam("hardwiredServiceId") List<Goid> hardwiredServiceGoids,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
 
@@ -136,7 +128,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(offset, count, sort, ascendingSort,
+        return super.listResources(sort, ascendingSort,
                 filters.map());
     }
 

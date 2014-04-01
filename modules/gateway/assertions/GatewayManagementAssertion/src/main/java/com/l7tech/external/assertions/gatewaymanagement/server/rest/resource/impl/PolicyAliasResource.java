@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAliasAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.NotEmpty;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyAliasTransformer;
@@ -73,10 +72,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     }
 
     /**
-     * This will return a list of entity references. It will return a maximum of {@code count} references, it can return
-     * fewer references if there are fewer then {@code count} entities found. Setting an offset will start listing
-     * entities from the given offset. A sort can be specified to allow the resulting list to be sorted in either
-     * ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
+     * either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
      * /restman/services?name=MyService
      * <p/>
@@ -88,8 +85,6 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param offset          The offset to start the listing from
-     * @param count           The offset ot start the listing from
      * @param sort            the key to sort the list by.
      * @param order           the order to sort the list. true for ascending, false for descending. null implies
      *                        ascending
@@ -104,14 +99,11 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<PolicyAliasMO> listResources(
-            @QueryParam("offset") @DefaultValue("0") @NotEmpty Integer offset,
-            @QueryParam("count") @DefaultValue("100") @NotEmpty Integer count,
             @QueryParam("sort") @ChoiceParam({"id", "policy.id", "folder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("policy.id") List<Goid> policyIds,
             @QueryParam("folder.id") List<Goid> folderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
-        ParameterValidationUtils.validateOffsetCount(offset, count);
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("policy.id", "folder.id", "securityZone.id"));
 
@@ -125,7 +117,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(offset, count, convertSort(sort), ascendingSort,
+        return super.listResources(convertSort(sort), ascendingSort,
                 filters.map());
     }
 

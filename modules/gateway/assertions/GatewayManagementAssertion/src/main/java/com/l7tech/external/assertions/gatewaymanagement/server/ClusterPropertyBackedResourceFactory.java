@@ -1,15 +1,14 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.*;
-import com.l7tech.util.Eithers.*;
-import com.l7tech.util.Functions.*;
+import com.l7tech.util.Eithers.E2;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -95,13 +94,12 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     }
 
     @Override
-    public List<R> getResources(Integer offset, Integer count, String sort, Boolean ascending, Map<String, List<Object>> filters) {
+    public List<R> getResources(String sort, Boolean ascending, Map<String, List<Object>> filters) {
         try{
             final ClusterProperty property = getClusterPropertyForRead();
             List<RI> entities = new ArrayList<>(parseProperty( property ));
 
             entities = filterAndSortEntities(entities,sort,ascending,filters);
-            entities = entities.subList(offset,Math.min(entities.size(), offset+count));
 
             return Functions.map(entities, new Functions.UnaryThrows<R, RI, ObjectModelException>() {
                 @Override

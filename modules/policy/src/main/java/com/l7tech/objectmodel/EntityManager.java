@@ -85,9 +85,11 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * Returns a list of entities matching the given properties.
      *
      * @param offset          The offset to start listing from.
-     * @param count           The number of elements to include in the list
+     * @param count           The number of elements to include in the list. If the count is negative all the items
+     *                        after the offset will be returned in the list
      * @param sortProperty    The property to sort the list by
-     * @param ascending       The sort order. True for ascending, false for descending. Defaults to true if this is null.
+     * @param ascending       The sort order. True for ascending, false for descending. Defaults to true if this is
+     *                        null.
      * @param matchProperties The map of properties that the returned entities must match. For example if the following
      *                        match properties are given: {"brand":["Honda", "BMW"],"type":"sedan"} all entities with
      *                        brand 'Honda' OR 'BMW' AND with type 'sedan' with be returned.
