@@ -3,7 +3,8 @@ package com.l7tech.server.upgrade;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.util.Pair;
+import com.l7tech.util.Triple;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,8 +31,13 @@ public class Upgrade70To71UpdateRoles extends AbstractDynamicRolePermissionsUpgr
     }
 
     @Override
-    protected List<Pair<OperationType, EntityType>> permissionsToAdd() {
-        return Arrays.asList(new Pair<OperationType, EntityType>(READ, ENCAPSULATED_ASSERTION));
+    protected List<Triple<OperationType, String, EntityType>> permissionsToAdd(EntityType entityType) {
+        return Arrays.asList(new Triple<OperationType, String, EntityType>(READ, null, ENCAPSULATED_ASSERTION));
+    }
+
+    @Override
+    protected boolean shouldSetPermissionScope() {
+        return false;
     }
 
     @Override
@@ -39,6 +45,7 @@ public class Upgrade70To71UpdateRoles extends AbstractDynamicRolePermissionsUpgr
         return !PolicyType.INCLUDE_FRAGMENT.equals(policyType);
     }
 
+    @NotNull
     @Override
     protected Collection<EntityType> getEntityTypesToUpgrade() {
         return Arrays.asList(EntityType.SERVICE, EntityType.POLICY, EntityType.FOLDER);

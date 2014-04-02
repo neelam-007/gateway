@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.*;
@@ -260,6 +261,7 @@ public class ServiceManagerImp
         newRole.addEntityPermission(READ, SERVICE, service.getId()); // Read this service
         newRole.addEntityPermission(UPDATE, SERVICE, service.getId()); // Update this service
         newRole.addEntityPermission(DELETE, SERVICE, service.getId()); // Delete this service
+        newRole.addEntityOtherPermission(SERVICE, service.getId(), OtherOperationName.DEBUGGER.getOperationName());
 
         // Read/Update the policy for this service (don't need to be able to delete it; the policy's lifecycle is tied to the service's)
         newRole.addEntityPermission(READ,   POLICY, service.getPolicy().getId());

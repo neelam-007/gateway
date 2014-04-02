@@ -12,7 +12,8 @@ public enum OtherOperationName {
 
     /**Operation which allows the internal audit viewer policy to be invoked.*/
     AUDIT_VIEWER_POLICY("audit-viewer policy"),
-    LOG_VIEWER("log-viewer");
+    LOG_VIEWER("log-viewer"),
+    DEBUGGER("debugger");
 
     private OtherOperationName( final String operationName ) {
         this.operationName = operationName;

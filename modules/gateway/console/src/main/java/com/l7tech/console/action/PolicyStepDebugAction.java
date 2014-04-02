@@ -2,12 +2,16 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.stepdebug.PolicyStepDebugDialog;
 import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.security.rbac.AttemptedOther;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 
 /**
@@ -18,10 +22,19 @@ public class PolicyStepDebugAction extends NodeAction {
     /**
      * Creates <code>PolicyStepDebugAction</code>.
      *
-     * @param policyNode the entity with policy node
+     * @param serviceNode the service node
      */
-    public PolicyStepDebugAction(EntityWithPolicyNode policyNode) {
-        super(policyNode);
+    public PolicyStepDebugAction(ServiceNode serviceNode) {
+        super(serviceNode, (Class) null, new AttemptedOther(EntityType.SERVICE, OtherOperationName.DEBUGGER.getOperationName()));
+    }
+
+    /**
+     * Creates <code>PolicyStepDebugAction</code>.
+     *
+     * @param policyNode the policy entity node
+     */
+    public PolicyStepDebugAction(PolicyEntityNode policyNode) {
+        super(policyNode, (Class) null, new AttemptedOther(EntityType.POLICY, OtherOperationName.DEBUGGER.getOperationName()));
     }
 
     @Override
@@ -43,23 +56,14 @@ public class PolicyStepDebugAction extends NodeAction {
     protected void performAction() {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode) node;
         try {
-            PolicyStepDebugDialog dlg;
-            Entity entity = policyNode.getEntity();
-            if (entity instanceof PublishedService) {
-                dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), (PublishedService) entity);
-            } else if (entity instanceof Policy) {
-                dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), (Policy) entity);
-            } else {
-                // Unexpected entity type.
-                //
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "Unexpected entity type. Must be either Published Service or Policy.", null, null);
-                return;
-            }
+            Goid entityGoid = policyNode.getEntityGoid();
+            Policy policy = policyNode.getPolicy();
+            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), entityGoid, policy);
             dlg.pack();
             Utilities.centerOnParentWindow(dlg);
             DialogDisplayer.display(dlg);
         } catch (FindException e) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "The service/policy is not found.", e, null);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "The policy is not found.", e, null);
         }
     }
 }

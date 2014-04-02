@@ -2,8 +2,7 @@ package com.l7tech.gateway.common.stepdebug;
 
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.policy.Policy;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,22 +23,22 @@ public interface DebugAdmin {
     /**
      * Initializes policy step debugging for the given service.
      *
-     * @param service the service
+     * @param serviceGoid the service GOID
      * @return the debug result
      */
-    @Secured(types=SERVICE, stereotype=UPDATE)
+    @Secured(types=SERVICE, stereotype=ENTITY_OPERATION, otherOperation="debugger", relevantArg=0)
     @NotNull
-    DebugResult initializeDebugService(@NotNull PublishedService service);
+    DebugResult initializeDebugService(@NotNull Goid serviceGoid);
 
     /**
      * Initializes policy step debugging for the given policy.
      *
-     * @param policy the policy
+     * @param policyGoid the policy GOID
      * @return the debug result
      */
-    @Secured(types=POLICY, stereotype=UPDATE)
+    @Secured(types=POLICY, stereotype=ENTITY_OPERATION, otherOperation="debugger", relevantArg=0)
     @NotNull
-    DebugResult initializeDebugPolicy(@NotNull Policy policy);
+    DebugResult initializeDebugPolicy(@NotNull Goid policyGoid);
 
     /**
      * Starts debugging for the given task ID. After debugging is started, it waits for

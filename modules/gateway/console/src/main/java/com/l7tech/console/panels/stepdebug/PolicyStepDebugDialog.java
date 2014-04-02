@@ -3,17 +3,16 @@ package com.l7tech.console.panels.stepdebug;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.stepdebug.DebugAdmin;
 import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,8 +45,8 @@ public class PolicyStepDebugDialog extends JDialog {
     private JButton closeButton;
 
     private final DebugAdmin debugAdmin;
-    private PublishedService service;
-    private Policy policy;
+    private final Goid entityGoid; // The service or Policy GOID.
+    private final Policy policy;
     private DebugResult debugResult;
     private Timer refreshTimer;
     private boolean scrollToCurrentLineOnRefresh = true;
@@ -66,20 +65,22 @@ public class PolicyStepDebugDialog extends JDialog {
      * Creates <code>PolicyStepDebugDialog</code>.
      *
      * @param owner the owner
-     * @param service the service to debug
-     */
-    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull PublishedService service) {
-        this(owner, service, null);
-    }
-
-    /**
-     * Creates <code>PolicyStepDebugDialog</code>.
-     *
-     * @param owner the owner
+     * @param entityGoid the service or policy GOID
      * @param policy the policy to debug
      */
-    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Policy policy) {
-        this(owner, null, policy);
+    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Goid entityGoid, @NotNull Policy policy) {
+        super(owner, "Service Debugger", false);
+
+        Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
+        if (option.isSome()) {
+            this.debugAdmin = option.some();
+        } else {
+            throw new RuntimeException("DebugAdmin interface not found.");
+        }
+
+        this.entityGoid = entityGoid;
+        this.policy = policy;
+        this.initialize();
     }
 
     /**
@@ -153,13 +154,7 @@ public class PolicyStepDebugDialog extends JDialog {
 
     @NotNull
     Policy getPolicy() {
-        if (service != null) {
-            return service.getPolicy();
-        } else if (policy != null) {
-            return policy;
-        } else {
-            throw new RuntimeException("Unexpected state. Either service or policy must be not null.");
-        }
+        return policy;
     }
 
     @Override
@@ -175,21 +170,6 @@ public class PolicyStepDebugDialog extends JDialog {
         }
 
         super.dispose();
-    }
-
-    private PolicyStepDebugDialog(@NotNull Frame owner, @Nullable PublishedService service, @Nullable Policy policy) {
-        super(owner, "Service Debugger", false);
-
-        Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
-        if (option.isSome()) {
-            this.debugAdmin = option.some();
-        } else {
-            throw new RuntimeException("DebugAdmin interface not found.");
-        }
-
-        this.service = service;
-        this.policy = policy;
-        this.initialize();
     }
 
     /**
@@ -253,7 +233,7 @@ public class PolicyStepDebugDialog extends JDialog {
         this.pack();
         Utilities.centerOnParentWindow(this);
 
-        boolean isSuccessful = policyTreePanel.initialize(this.getPolicy());
+        boolean isSuccessful = policyTreePanel.initialize(policy);
 
         // Register shortcut keys.
         // IMPORTANT: Remove key binding for F2 key in JTree components, prior to adding new key bindings.
@@ -287,10 +267,10 @@ public class PolicyStepDebugDialog extends JDialog {
 
     private void onInit() {
         try {
-            if (this.getPolicy().getType().isServicePolicy()) {
-                this.debugResult = debugAdmin.initializeDebugService(service);
+            if (policy.getType().isServicePolicy()) {
+                debugResult = debugAdmin.initializeDebugService(entityGoid);
             } else {
-                this.debugResult = debugAdmin.initializeDebugPolicy(policy);
+                debugResult = debugAdmin.initializeDebugPolicy(entityGoid);
             }
         } catch (PermissionDeniedException e) {
             this.dispose();

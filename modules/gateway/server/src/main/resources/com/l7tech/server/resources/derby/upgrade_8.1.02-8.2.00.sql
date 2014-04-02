@@ -33,3 +33,13 @@ alter table http_configuration
     references secure_password
     on delete cascade;
 
+-- RABC for "debugger" other permission: Update "Publish Webservices" canned role --
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'OTHER','debugger','SERVICE');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -444),0, toGoid(0, -400),'OTHER','debugger','POLICY');
+
+--
+-- Register upgrade task for adding "debugger" other permission to auto-created "Manage <Blah>" roles
+--
+INSERT INTO cluster_properties
+    (goid, version, propkey, propvalue, properties)
+    VALUES (toGoid(0,-800200),0,'upgrade.task.800200','com.l7tech.server.upgrade.Upgrade8102To8200UpdateRoles',null);

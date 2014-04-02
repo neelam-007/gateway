@@ -1,6 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
@@ -283,6 +284,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         newRole.addEntityPermission(READ, POLICY, policy.getId()); // Read this policy
         newRole.addEntityPermission(UPDATE, POLICY, policy.getId()); // Update this policy
         newRole.addEntityPermission(DELETE, POLICY, policy.getId()); // Delete this policy
+        if (policy.getType().equals(PolicyType.GLOBAL_FRAGMENT)) {
+            newRole.addEntityOtherPermission(POLICY, policy.getId(), OtherOperationName.DEBUGGER.getOperationName());
+        }
         newRole.addEntityPermission(READ, SERVICE_TEMPLATE, null);
 
         // Read all JDBC Connections
