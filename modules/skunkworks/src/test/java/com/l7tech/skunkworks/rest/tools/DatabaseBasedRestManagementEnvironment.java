@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAsserti
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.external.assertions.whichmodule.GenericEntityManagerDemoAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -78,6 +79,7 @@ public class DatabaseBasedRestManagementEnvironment {
         assertionRegistry.registerAssertion(JdbcQueryAssertion.class);
         assertionRegistry.registerAssertion(GatewayManagementAssertion.class);
         assertionRegistry.registerAssertion(RESTGatewayManagementAssertion.class);
+        assertionRegistry.registerAssertion(GenericEntityManagerDemoAssertion.class);
     }
 
     /**

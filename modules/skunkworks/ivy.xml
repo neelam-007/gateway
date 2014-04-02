@@ -26,6 +26,7 @@
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
         <dependency name="layer7-ems" rev="latest.integration" conf="core"/>
         <dependency name="JdbcQueryAssertion" rev="latest.integration" conf="core"/>
+        <dependency name="WhichModuleAssertion" rev="latest.integration" conf="core"/>
         <dependency name="GatewayManagementAssertion" rev="latest.integration" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>

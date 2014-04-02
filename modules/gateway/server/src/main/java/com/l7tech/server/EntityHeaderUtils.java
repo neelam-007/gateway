@@ -18,6 +18,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.GenericEntity;
+import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.GoidUpgradeMapper;
@@ -111,6 +113,9 @@ public final class EntityHeaderUtils {
             guidEntityHeader.setGuid(config.getGuid());
             guidEntityHeader.setSecurityZoneId(config.getSecurityZone() == null ? null : config.getSecurityZone().getGoid());
             return guidEntityHeader;
+        } else if (e instanceof GenericEntity) {
+            final GenericEntity genericEntity = (GenericEntity) e;
+            return new GenericEntityHeader(genericEntity);
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             EntityHeader entityHeader = new EntityHeader(entity.getGoid(),

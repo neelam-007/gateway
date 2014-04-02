@@ -9,10 +9,12 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -59,6 +61,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private EntityCrud entityCrud;
     @Inject
     private IdentityProviderFactory identityProviderFactory;
+    @Inject
+    private GenericEntityManager genericEntityManager;
 
     /**
      * This will import the given entity bundle. If test is true or there is an error during bundle import nothing is
@@ -266,18 +270,35 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Goid importedID;
                 try {
                     try {
-                        if (existingEntity == null) {
-                            if (id == null) {
-                                importedID = (Goid) entityCrud.save(baseEntity);
+                        if (baseEntity instanceof GenericEntity){
+                            // todo refactor?
+                            if (existingEntity == null) {
+                                if (id == null) {
+                                    importedID = genericEntityManager.save((GenericEntity)baseEntity);
+                                } else {
+                                    genericEntityManager.save(id, (GenericEntity)baseEntity);
+                                    importedID = id;
+                                }
                             } else {
-                                entityCrud.save(id, baseEntity);
+                                baseEntity.setGoid(id);
+                                baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
+                                genericEntityManager.update((GenericEntity)baseEntity);
                                 importedID = id;
                             }
-                        } else {
-                            baseEntity.setGoid(id);
-                            baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
-                            entityCrud.update(baseEntity);
-                            importedID = id;
+                        }else{
+                            if (existingEntity == null) {
+                                if (id == null) {
+                                    importedID = (Goid) entityCrud.save(baseEntity);
+                                } else {
+                                    entityCrud.save(id, baseEntity);
+                                    importedID = id;
+                                }
+                            } else {
+                                baseEntity.setGoid(id);
+                                baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
+                                entityCrud.update(baseEntity);
+                                importedID = id;
+                            }
                         }
                     } catch (SaveException | UpdateException e) {
                         return Either.left((ObjectModelException) e);
@@ -431,6 +452,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final Entity resource;
                         //check if should search by name
 
+                        // todo refactor -  user/group, generic entity, general
                         if(mapping.getIdentityProviderId()!= null){
                             final Goid idProvider = getMappedIdentityProviderID(mapping.getIdentityProviderId(),resourceMapping);
                             IdentityProvider provider = identityProviderFactory.getProvider(idProvider);
@@ -466,6 +488,25 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             } else if (mapping.getSourceEntityHeader().getType() == EntityType.GROUP) {
                                 return provider.getGroupManager().findByPrimaryKey(mapping.getSourceEntityHeader().getStrId());
                             }
+                        }
+                        if(mapping.getSourceEntityHeader().getType().equals(EntityType.GENERIC)){
+                            if (mapping.getTargetMapping() != null){
+                                switch (mapping.getTargetMapping().getType()) {
+                                    case ID:{
+                                        final String targetID = mapping.getTargetMapping().getTargetID() == null ? mapping.getSourceEntityHeader().getStrId() : mapping.getTargetMapping().getTargetID();
+                                        return genericEntityManager.findByPrimaryKey(Goid.parseGoid(targetID));
+                                    }
+                                    case NAME:{
+                                        String mapTo = mapping.getTargetMapping().getTargetID();
+                                        if (mapTo == null) return null;
+                                        return genericEntityManager.findByUniqueName(mapTo);
+                                    }
+                                    default:
+                                        return null;
+                                }
+                            }
+                            //find the entity by the id in the source header
+                            return genericEntityManager.findByPrimaryKey(mapping.getSourceEntityHeader().getGoid());
                         }
 
                         if (mapping.getTargetMapping() != null) {

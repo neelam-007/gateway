@@ -350,6 +350,21 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     @Nullable
     protected EntityHeader findMappedHeader(Map<EntityHeader, EntityHeader> replacementMap, final EntityHeader dependentHeader) {
         EntityHeader header = replacementMap.get(dependentHeader);
+
+        // check by ID
+        if (header == null ) {
+            EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
+                @Override
+                public Boolean call(EntityHeader entityHeader) {
+                    return entityHeader.getType().equals(dependentHeader.getType())
+                            && entityHeader.getGoid().equals(dependentHeader.getGoid());
+                }
+            });
+            if (headerKey != null) {
+                header = replacementMap.get(headerKey);
+            }
+        }
+
         // check by GUID
         if (header == null && dependentHeader instanceof GuidEntityHeader) {
             EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
